@@ -120,7 +120,12 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
             return handler(request)
 
         self._apply_cache_control(request)
-        return handler(request)
+        try:
+            return handler(request)
+        finally:
+            # Clean up cache_control to prevent it from being passed to fallback models
+            # that don't support this Anthropic-specific parameter
+            request.model_settings.pop("cache_control", None)
 
     async def awrap_model_call(
         self,
@@ -140,4 +145,9 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
             return await handler(request)
 
         self._apply_cache_control(request)
-        return await handler(request)
+        try:
+            return await handler(request)
+        finally:
+            # Clean up cache_control to prevent it from being passed to fallback models
+            # that don't support this Anthropic-specific parameter
+            request.model_settings.pop("cache_control", None)
