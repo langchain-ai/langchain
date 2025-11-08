@@ -1433,7 +1433,8 @@ def _fetch_last_ai_and_tool_messages(
             break
 
     if last_ai_message is None or last_ai_index is None:
-        raise ValueError("No AIMessage found in messages list")
+    msg = "No AIMessage found in messages list"
+    raise ValueError(msg)
 
     tool_messages = [m for m in messages[last_ai_index + 1 :] if isinstance(m, ToolMessage)]
     return last_ai_message, tool_messages
