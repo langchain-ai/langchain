@@ -98,7 +98,7 @@ def _check_python_version_from_requirement(
         return True
     else:
         marker_str = str(requirement.marker)
-        if "python_version" or "python_full_version" in marker_str:
+        if "python_version" in marker_str or "python_full_version" in marker_str:
             python_version_str = "".join(
                 char
                 for char in marker_str

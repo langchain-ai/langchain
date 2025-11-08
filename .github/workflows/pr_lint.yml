@@ -79,7 +79,7 @@ jobs:
             core
             cli
             langchain
-            langchain_classic
+            langchain-classic
             model-profiles
             standard-tests
             text-splitters
