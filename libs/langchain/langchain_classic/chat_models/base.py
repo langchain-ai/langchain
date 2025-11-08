@@ -5,15 +5,10 @@ from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from importlib import util
 from typing import Any, Literal, TypeAlias, cast, overload
 
-from langchain_core.language_models import (
-    BaseChatModel,
-    LanguageModelInput,
-    SimpleChatModel,
-)
-from langchain_core.language_models.chat_models import (
-    agenerate_from_stream,
-    generate_from_stream,
-)
+from langchain_core.language_models import (BaseChatModel, LanguageModelInput,
+                                            SimpleChatModel)
+from langchain_core.language_models.chat_models import (agenerate_from_stream,
+                                                        generate_from_stream)
 from langchain_core.messages import AIMessage, AnyMessage
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.runnables.schema import StreamEvent
@@ -397,7 +392,20 @@ def _init_chat_model_helper(
         return ChatCohere(model=model, **kwargs)
     if model_provider == "google_vertexai":
         _check_pkg("langchain_google_vertexai")
+        from langchain_core.messages import AIMessage, HumanMessage
         from langchain_google_vertexai import ChatVertexAI
+
+        # Handle Gemini-specific message conversion if needed
+        if model.startswith("gemini") and "messages" in kwargs:
+            messages = kwargs["messages"]
+            if isinstance(messages, dict) and "messages" in messages:
+                # Convert dict format to proper Message objects
+                messages = [
+                    HumanMessage(content=msg["content"]) if msg["role"] == "user"
+                    else AIMessage(content=msg["content"])
+                    for msg in messages["messages"]
+                ]
+                kwargs["messages"] = messages
 
         return ChatVertexAI(model=model, **kwargs)
     if model_provider == "google_genai":
@@ -685,10 +693,8 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     @override
     def InputType(self) -> TypeAlias:
         """Get the input type for this `Runnable`."""
-        from langchain_core.prompt_values import (
-            ChatPromptValueConcrete,
-            StringPromptValue,
-        )
+        from langchain_core.prompt_values import (ChatPromptValueConcrete,
+                                                  StringPromptValue)
 
         # This is a version of LanguageModelInput which replaces the abstract
         # base class BaseMessage with a union of its subclasses, which makes
