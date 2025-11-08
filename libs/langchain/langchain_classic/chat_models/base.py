@@ -392,8 +392,16 @@ def _init_chat_model_helper(
         return ChatCohere(model=model, **kwargs)
     if model_provider == "google_vertexai":
         _check_pkg("langchain_google_vertexai")
+        import asyncio
+
         from langchain_core.messages import AIMessage, HumanMessage
         from langchain_google_vertexai import ChatVertexAI
+
+        # Create a custom ChatVertexAI class that handles async operations correctly
+        class AsyncSafeChatVertexAI(ChatVertexAI):
+            async def ainvoke(self, input, **kwargs):
+                # Use asyncio.to_thread to safely run synchronous invoke in a separate thread
+                return await asyncio.to_thread(self.invoke, input, **kwargs)
 
         # Handle Gemini-specific message conversion if needed
         if model.startswith("gemini") and "messages" in kwargs:
@@ -407,7 +415,7 @@ def _init_chat_model_helper(
                 ]
                 kwargs["messages"] = messages
 
-        return ChatVertexAI(model=model, **kwargs)
+        return AsyncSafeChatVertexAI(model=model, **kwargs)
     if model_provider == "google_genai":
         _check_pkg("langchain_google_genai")
         from langchain_google_genai import ChatGoogleGenerativeAI
@@ -983,4 +991,5 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         schema: dict | type[BaseModel],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, dict | BaseModel]:
+        return self.__getattr__("with_structured_output")(schema, **kwargs)
         return self.__getattr__("with_structured_output")(schema, **kwargs)
