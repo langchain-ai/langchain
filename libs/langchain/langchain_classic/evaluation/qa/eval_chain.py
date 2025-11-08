@@ -77,7 +77,7 @@ def _parse_string_eval_output(text: str) -> dict:
 class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     """LLM Chain for evaluating question answering."""
 
-    output_key: str = "results"  #: :meta private:
+    output_key: str = "results"
 
     model_config = ConfigDict(
         extra="ignore",

@@ -377,6 +377,7 @@ jobs:
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
+          LANGCHAIN_TESTS_USER_AGENT: ${{ secrets.LANGCHAIN_TESTS_USER_AGENT }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
@@ -395,7 +396,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        partner: [anthropic]
+        partner: [openai, anthropic]
       fail-fast: false # Continue testing other partners if one fails
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -409,6 +410,7 @@ jobs:
       AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME }}
       AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
       AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
+      LANGCHAIN_TESTS_USER_AGENT: ${{ secrets.LANGCHAIN_TESTS_USER_AGENT }}
     steps:
       - uses: actions/checkout@v5
 

@@ -187,7 +187,7 @@ def init_embeddings(
         model = init_embeddings("openai:text-embedding-3-small", api_key="sk-...")
         ```
 
-    !!! version-added "Added in version 0.3.9"
+    !!! version-added "Added in `langchain` 0.3.9"
 
     """
     if not model:

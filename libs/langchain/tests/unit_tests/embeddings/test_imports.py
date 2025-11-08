@@ -11,6 +11,7 @@ EXPECTED_ALL = [
     "FastEmbedEmbeddings",
     "HuggingFaceEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",
+    "HypotheticalDocumentEmbedder",
     "InfinityEmbeddings",
     "GradientEmbeddings",
     "JinaEmbeddings",

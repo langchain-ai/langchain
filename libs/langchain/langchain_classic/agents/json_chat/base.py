@@ -50,7 +50,7 @@ def create_json_chat_agent(
     Example:
         ```python
         from langchain_classic import hub
-        from langchain_community.chat_models import ChatOpenAI
+        from langchain_openai import ChatOpenAI
         from langchain_classic.agents import AgentExecutor, create_json_chat_agent
 
         prompt = hub.pull("hwchase17/react-chat-json")

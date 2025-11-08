@@ -19,15 +19,11 @@ def test_middleware_initialization_validation():
     with pytest.raises(ValueError, match="At least one limit must be specified"):
         ToolCallLimitMiddleware()
 
-    # Test invalid exit behavior
-    with pytest.raises(ValueError, match="Invalid exit_behavior"):
-        ToolCallLimitMiddleware(thread_limit=5, exit_behavior="invalid")  # type: ignore[arg-type]
-
-    # Test valid initialization
+    # Test valid initialization with both limits
     middleware = ToolCallLimitMiddleware(thread_limit=5, run_limit=3)
     assert middleware.thread_limit == 5
     assert middleware.run_limit == 3
-    assert middleware.exit_behavior == "end"
+    assert middleware.exit_behavior == "continue"
     assert middleware.tool_name is None
 
     # Test with tool name
@@ -35,6 +31,32 @@ def test_middleware_initialization_validation():
     assert middleware.tool_name == "search"
     assert middleware.thread_limit == 5
     assert middleware.run_limit is None
+
+    # Test exit behaviors
+    for behavior in ["error", "end", "continue"]:
+        middleware = ToolCallLimitMiddleware(thread_limit=5, exit_behavior=behavior)
+        assert middleware.exit_behavior == behavior
+
+    # Test invalid exit behavior
+    with pytest.raises(ValueError, match="Invalid exit_behavior"):
+        ToolCallLimitMiddleware(thread_limit=5, exit_behavior="invalid")  # type: ignore[arg-type]
+
+    # Test run_limit exceeding thread_limit
+    with pytest.raises(
+        ValueError,
+        match="run_limit .* cannot exceed thread_limit",
+    ):
+        ToolCallLimitMiddleware(thread_limit=3, run_limit=5)
+
+    # Test run_limit equal to thread_limit (should be valid)
+    middleware = ToolCallLimitMiddleware(thread_limit=5, run_limit=5)
+    assert middleware.thread_limit == 5
+    assert middleware.run_limit == 5
+
+    # Test run_limit less than thread_limit (should be valid)
+    middleware = ToolCallLimitMiddleware(thread_limit=5, run_limit=3)
+    assert middleware.thread_limit == 5
+    assert middleware.run_limit == 3
 
 
 def test_middleware_name_property():
@@ -56,61 +78,98 @@ def test_middleware_name_property():
 
 
 def test_middleware_unit_functionality():
-    """Test that the middleware works as expected in isolation."""
-    # Test with end behavior - global tool limit
-    middleware = ToolCallLimitMiddleware(thread_limit=3, run_limit=2)
+    """Test that the middleware works as expected in isolation.
 
-    # Mock runtime (not used in current implementation)
+    Tests basic count tracking, thread limit, run limit, and limit-not-exceeded cases.
+    """
+    middleware = ToolCallLimitMiddleware(thread_limit=3, run_limit=2, exit_behavior="end")
     runtime = None
 
-    # Test when limits are not exceeded
+    # Test when limits are not exceeded - counts should increment normally
     state = {
         "messages": [
             HumanMessage("Question"),
-            AIMessage(
-                "Response",
-                tool_calls=[{"name": "search", "args": {}, "id": "1"}],
-            ),
+            AIMessage("Response", tool_calls=[{"name": "search", "args": {}, "id": "1"}]),
         ],
         "thread_tool_call_count": {},
         "run_tool_call_count": {},
     }
-    result = middleware.before_model(state, runtime)  # type: ignore[arg-type]
-    assert result is None
+    result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
+    assert result is not None
+    assert result["thread_tool_call_count"] == {"__all__": 1}
+    assert result["run_tool_call_count"] == {"__all__": 1}
+    assert "jump_to" not in result
 
-    # Test when thread limit is exceeded
+    # Test thread limit exceeded (start at thread_limit so next call will exceed)
     state = {
         "messages": [
-            HumanMessage("Question 1"),
-            AIMessage(
-                "Response 1",
-                tool_calls=[
-                    {"name": "search", "args": {}, "id": "1"},
-                    {"name": "calculator", "args": {}, "id": "2"},
-                ],
-            ),
-            ToolMessage("Result 1", tool_call_id="1"),
-            ToolMessage("Result 2", tool_call_id="2"),
             HumanMessage("Question 2"),
-            AIMessage(
-                "Response 2",
-                tool_calls=[{"name": "search", "args": {}, "id": "3"}],
-            ),
+            AIMessage("Response 2", tool_calls=[{"name": "search", "args": {}, "id": "3"}]),
         ],
-        "thread_tool_call_count": {"__all__": 3},  # 2 from first AI message + 1 from second
-        "run_tool_call_count": {"__all__": 1},  # 1 from second AI message (after HumanMessage)
+        "thread_tool_call_count": {"__all__": 3},  # Already exceeds thread_limit=3
+        "run_tool_call_count": {"__all__": 0},  # No calls yet
     }
-    result = middleware.before_model(state, runtime)  # type: ignore[arg-type]
+    result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
     assert result is not None
     assert result["jump_to"] == "end"
-    assert "messages" in result
-    assert len(result["messages"]) == 1
-    assert "thread limit (3/3)" in result["messages"][0].content
+    # Check the ToolMessage (sent to model - no thread/run details)
+    tool_msg = result["messages"][0]
+    assert isinstance(tool_msg, ToolMessage)
+    assert tool_msg.status == "error"
+    assert "Tool call limit exceeded" in tool_msg.content
+    # Should include "Do not" instruction
+    assert "Do not" in tool_msg.content, (
+        "Tool message should include 'Do not' instruction when limit exceeded"
+    )
+    # Check the final AI message (displayed to user - includes thread/run details)
+    final_ai_msg = result["messages"][-1]
+    assert isinstance(final_ai_msg, AIMessage)
+    assert "limit" in final_ai_msg.content.lower()
+    assert "thread limit exceeded" in final_ai_msg.content.lower()
+    # Thread count stays at 3 (blocked call not counted)
+    assert result["thread_tool_call_count"] == {"__all__": 3}
+    # Run count goes to 1 (includes blocked call)
+    assert result["run_tool_call_count"] == {"__all__": 1}
 
-    # Test when run limit is exceeded
+    # Test run limit exceeded (thread count must be >= run count)
     state = {
         "messages": [
             HumanMessage("Question"),
+            AIMessage("Response", tool_calls=[{"name": "search", "args": {}, "id": "1"}]),
+        ],
+        "thread_tool_call_count": {"__all__": 2},
+        "run_tool_call_count": {"__all__": 2},
+    }
+    result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
+    assert result is not None
+    assert result["jump_to"] == "end"
+    # Check the final AI message includes run limit details
+    final_ai_msg = result["messages"][-1]
+    assert "run limit exceeded" in final_ai_msg.content
+    assert "3/2 calls" in final_ai_msg.content
+    # Check the tool message (sent to model) - should always include "Do not" instruction
+    tool_msg = result["messages"][0]
+    assert isinstance(tool_msg, ToolMessage)
+    assert "Tool call limit exceeded" in tool_msg.content
+    assert "Do not" in tool_msg.content, (
+        "Tool message should include 'Do not' instruction for both run and thread limits"
+    )
+
+
+def test_middleware_end_behavior_with_unrelated_parallel_tool_calls():
+    """Test that 'end' behavior raises NotImplementedError when there are parallel calls to unrelated tools.
+
+    When limiting a specific tool with "end" behavior and the model proposes parallel calls
+    to BOTH the limited tool AND other tools, we can't handle this scenario (we'd be stopping
+    execution while other tools should run).
+    """
+    # Limit search tool specifically
+    middleware = ToolCallLimitMiddleware(tool_name="search", thread_limit=1, exit_behavior="end")
+    runtime = None
+
+    # Test with search + calculator calls when search exceeds limit
+    state = {
+        "messages": [
             AIMessage(
                 "Response",
                 tool_calls=[
@@ -119,119 +178,88 @@ def test_middleware_unit_functionality():
                 ],
             ),
         ],
-        "thread_tool_call_count": {"__all__": 2},
-        "run_tool_call_count": {"__all__": 2},  # 2 tool calls in current run
+        "thread_tool_call_count": {"search": 1},
+        "run_tool_call_count": {"search": 1},
     }
-    result = middleware.before_model(state, runtime)  # type: ignore[arg-type]
-    assert result is not None
-    assert result["jump_to"] == "end"
-    assert "run limit (2/2)" in result["messages"][0].content
+
+    with pytest.raises(
+        NotImplementedError, match="Cannot end execution with other tool calls pending"
+    ):
+        middleware.after_model(state, runtime)  # type: ignore[arg-type]
 
 
 def test_middleware_with_specific_tool():
-    """Test middleware that limits a specific tool."""
-    # Limit only the "search" tool
-    middleware = ToolCallLimitMiddleware(tool_name="search", thread_limit=2, run_limit=1)
-
+    """Test middleware that limits a specific tool while ignoring others."""
+    middleware = ToolCallLimitMiddleware(
+        tool_name="search", thread_limit=2, run_limit=1, exit_behavior="end"
+    )
     runtime = None
 
-    # Test with search tool calls
+    # Test search tool exceeding run limit
     state = {
         "messages": [
-            HumanMessage("Question"),
-            AIMessage(
-                "Response",
-                tool_calls=[
-                    {"name": "search", "args": {}, "id": "1"},
-                    {"name": "calculator", "args": {}, "id": "2"},
-                ],
-            ),
+            AIMessage("Response 2", tool_calls=[{"name": "search", "args": {}, "id": "3"}]),
         ],
-        "thread_tool_call_count": {"search": 1},  # 1 search call
-        "run_tool_call_count": {"search": 1},  # 1 search call in current run
+        "thread_tool_call_count": {"search": 1},
+        "run_tool_call_count": {"search": 1},
     }
-    # Run limit for search is 1, should be exceeded
-    result = middleware.before_model(state, runtime)  # type: ignore[arg-type]
+    result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
     assert result is not None
-    assert "'search' tool call" in result["messages"][0].content
-    assert "run limit (1/1)" in result["messages"][0].content
+    assert result["jump_to"] == "end"
+    assert "search" in result["messages"][0].content.lower()
 
-    # Test with only calculator calls (should not trigger limit)
+    # Test calculator tool - should be ignored by search-specific middleware
     state = {
         "messages": [
-            HumanMessage("Question"),
-            AIMessage(
-                "Response",
-                tool_calls=[
-                    {"name": "calculator", "args": {}, "id": "1"},
-                    {"name": "calculator", "args": {}, "id": "2"},
-                ],
-            ),
+            AIMessage("Response", tool_calls=[{"name": "calculator", "args": {}, "id": "1"}] * 10),
         ],
-        "thread_tool_call_count": {},  # 0 search calls
-        "run_tool_call_count": {},  # 0 search calls
+        "thread_tool_call_count": {},
+        "run_tool_call_count": {},
     }
-    result = middleware.before_model(state, runtime)  # type: ignore[arg-type]
-    assert result is None
+    result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
+    assert result is None, "Calculator calls shouldn't be counted by search-specific middleware"
 
 
 def test_middleware_error_behavior():
-    """Test middleware with error exit behavior."""
-    middleware = ToolCallLimitMiddleware(thread_limit=2, run_limit=1, exit_behavior="error")
-
+    """Test that middleware raises ToolCallLimitExceededError when configured with exit_behavior='error'."""
+    middleware = ToolCallLimitMiddleware(thread_limit=2, exit_behavior="error")
     runtime = None
 
-    # Test exception when thread limit exceeded
     state = {
-        "messages": [
-            HumanMessage("Q"),
-            AIMessage("R", tool_calls=[{"name": "search", "args": {}, "id": "1"}]),
-            ToolMessage("Result", tool_call_id="1"),
-            AIMessage("R", tool_calls=[{"name": "search", "args": {}, "id": "2"}]),
-        ],
-        "thread_tool_call_count": {"__all__": 2},  # 2 tool calls total
-        "run_tool_call_count": {"__all__": 1},  # 1 tool call in current run
+        "messages": [AIMessage("Response", tool_calls=[{"name": "search", "args": {}, "id": "1"}])],
+        "thread_tool_call_count": {"__all__": 2},
+        "run_tool_call_count": {"__all__": 2},
     }
+
     with pytest.raises(ToolCallLimitExceededError) as exc_info:
-        middleware.before_model(state, runtime)  # type: ignore[arg-type]
+        middleware.after_model(state, runtime)  # type: ignore[arg-type]
 
-    assert "thread limit (2/2)" in str(exc_info.value)
-    assert exc_info.value.thread_count == 2
-    assert exc_info.value.thread_limit == 2
-
-    # Test exception when run limit exceeded
-    state = {
-        "messages": [
-            HumanMessage("Question"),
-            AIMessage("R", tool_calls=[{"name": "search", "args": {}, "id": "1"}]),
-        ],
-        "thread_tool_call_count": {"__all__": 1},
-        "run_tool_call_count": {"__all__": 1},  # 1 tool call in current run
-    }
-    with pytest.raises(ToolCallLimitExceededError) as exc_info:
-        middleware.before_model(state, runtime)  # type: ignore[arg-type]
-
-    assert "run limit (1/1)" in str(exc_info.value)
+    error = exc_info.value
+    # Thread count in error message shows hypothetical count (what it would have been)
+    assert error.thread_count == 3
+    assert error.thread_limit == 2
+    # Run count includes the blocked call
+    assert error.run_count == 3
+    assert error.tool_name is None
 
 
 def test_multiple_middleware_instances():
-    """Test using multiple ToolCallLimitMiddleware instances in the same agent."""
+    """Test that multiple middleware instances can coexist and track independently."""
 
     @tool
     def search(query: str) -> str:
         """Search for information."""
-        return f"Results for: {query}"
+        return f"Results for {query}"
 
     @tool
     def calculator(expression: str) -> str:
         """Calculate an expression."""
         return f"Result: {expression}"
 
-    # Create model that makes multiple tool calls
     model = FakeToolCallingModel(
         tool_calls=[
             [
-                ToolCall(name="search", args={"query": "test1"}, id="1"),
+                ToolCall(name="search", args={"query": "test"}, id="1"),
                 ToolCall(name="calculator", args={"expression": "1+1"}, id="2"),
             ],
             [
@@ -245,132 +273,335 @@ def test_multiple_middleware_instances():
         ]
     )
 
-    # Global limit: max 5 tool calls per thread
-    # Search-specific limit: max 2 search calls per thread
-    global_limiter = ToolCallLimitMiddleware(thread_limit=5)
-    search_limiter = ToolCallLimitMiddleware(tool_name="search", thread_limit=2)
+    # Create two middleware instances - one for each tool
+    search_limiter = ToolCallLimitMiddleware(
+        tool_name="search", thread_limit=2, exit_behavior="end"
+    )
+    calc_limiter = ToolCallLimitMiddleware(
+        tool_name="calculator", thread_limit=2, exit_behavior="end"
+    )
 
     agent = create_agent(
         model=model,
         tools=[search, calculator],
-        middleware=[global_limiter, search_limiter],
+        middleware=[search_limiter, calc_limiter],
         checkpointer=InMemorySaver(),
     )
 
-    # First invocation: 2 search calls, 2 calculator calls (4 total)
-    # Should succeed - within both limits
     result = agent.invoke(
-        {"messages": [HumanMessage("First question")]},
-        {"configurable": {"thread_id": "test_thread"}},
-    )
-    assert len(result["messages"]) > 0
-
-    # Second invocation would add 1 more search call (total 3), exceeding search limit
-    # Should hit the search-specific limit
-    result = agent.invoke(
-        {"messages": [HumanMessage("Second question")]},
+        {"messages": [HumanMessage("Question")]},
         {"configurable": {"thread_id": "test_thread"}},
     )
 
-    # Check that the limit was hit
-    last_message = result["messages"][-1]
-    assert isinstance(last_message, AIMessage)
-    assert "'search' tool call" in last_message.content
-    assert "thread limit" in last_message.content
+    # The agent should stop after the second iteration
+    # because search will hit its limit (3 calls > 2 limit)
+    ai_limit_messages = [
+        msg
+        for msg in result["messages"]
+        if isinstance(msg, AIMessage) and "limit" in msg.content.lower()
+    ]
+    assert len(ai_limit_messages) > 0, "Should have AI message explaining limit was exceeded"
 
 
 def test_run_limit_with_multiple_human_messages():
-    """Test that run limit correctly resets after each HumanMessage."""
+    """Test that run limits reset between invocations.
+
+    Verifies that when using run_limit, the count resets for each new user message,
+    allowing execution to continue across multiple invocations in the same thread.
+    """
 
     @tool
     def search(query: str) -> str:
         """Search for information."""
-        return f"Results for: {query}"
+        return f"Results for {query}"
 
-    # Model makes 2 tool calls, then 1 tool call, then no tool calls
     model = FakeToolCallingModel(
         tool_calls=[
-            [
-                ToolCall(name="search", args={"query": "test1"}, id="1"),
-                ToolCall(name="search", args={"query": "test2"}, id="2"),
-            ],
-            [ToolCall(name="search", args={"query": "test3"}, id="3")],
+            [ToolCall(name="search", args={"query": "test1"}, id="1")],
+            [ToolCall(name="search", args={"query": "test2"}, id="2")],
             [],
         ]
     )
 
-    # Run limit of 2 tool calls per run
-    middleware = ToolCallLimitMiddleware(run_limit=2)
-
+    middleware = ToolCallLimitMiddleware(run_limit=1, exit_behavior="end")
     agent = create_agent(
         model=model, tools=[search], middleware=[middleware], checkpointer=InMemorySaver()
     )
 
-    thread_config = {"configurable": {"thread_id": "test_thread"}}
+    # First invocation: test1 executes successfully, test2 exceeds limit
+    result1 = agent.invoke(
+        {"messages": [HumanMessage("Question 1")]},
+        {"configurable": {"thread_id": "test_thread"}},
+    )
+    tool_messages = [msg for msg in result1["messages"] if isinstance(msg, ToolMessage)]
+    successful_tool_msgs = [msg for msg in tool_messages if msg.status != "error"]
+    error_tool_msgs = [msg for msg in tool_messages if msg.status == "error"]
+    ai_limit_msgs = [
+        msg
+        for msg in result1["messages"]
+        if isinstance(msg, AIMessage) and "limit" in msg.content.lower() and not msg.tool_calls
+    ]
 
-    # First run: 2 tool calls, should hit run limit
-    result = agent.invoke({"messages": [HumanMessage("Question 1")]}, thread_config)
-    last_message = result["messages"][-1]
-    assert "run limit (2/2)" in last_message.content
+    assert len(successful_tool_msgs) == 1, "Should have 1 successful tool execution (test1)"
+    assert len(error_tool_msgs) == 1, "Should have 1 artificial error ToolMessage (test2)"
+    assert len(ai_limit_msgs) == 1, "Should have AI limit message after test2 proposed"
 
-    # Second run: starts fresh, should also hit run limit after 2 calls
-    result = agent.invoke({"messages": [HumanMessage("Question 2")]}, thread_config)
-    last_message = result["messages"][-1]
-    # This should also hit the limit because run count resets
-    assert "run limit (2/2)" in last_message.content
+    # Second invocation: run limit should reset, allowing continued execution
+    result2 = agent.invoke(
+        {"messages": [HumanMessage("Question 2")]},
+        {"configurable": {"thread_id": "test_thread"}},
+    )
+
+    assert len(result2["messages"]) > len(result1["messages"]), (
+        "Second invocation should add new messages, proving run limit reset"
+    )
 
 
 def test_exception_error_messages():
-    """Test that exceptions provide clear error messages."""
-    # Test global tool limit
-    middleware = ToolCallLimitMiddleware(thread_limit=3, run_limit=2, exit_behavior="error")
-
-    state = {
-        "messages": [
-            HumanMessage("Q"),
-            AIMessage("R", tool_calls=[{"name": "search", "args": {}, "id": "1"}]),
-            ToolMessage("Result", tool_call_id="1"),
-            AIMessage("R", tool_calls=[{"name": "search", "args": {}, "id": "2"}]),
-            ToolMessage("Result", tool_call_id="2"),
-            AIMessage("R", tool_calls=[{"name": "search", "args": {}, "id": "3"}]),
-        ],
-        "thread_tool_call_count": {"__all__": 3},  # 3 tool calls total
-        "run_tool_call_count": {"__all__": 2},  # 2 tool calls in current run
-    }
-
+    """Test that error messages include expected information."""
+    # Test for specific tool
     with pytest.raises(ToolCallLimitExceededError) as exc_info:
-        middleware.before_model(state, None)  # type: ignore[arg-type]
+        raise ToolCallLimitExceededError(
+            thread_count=5, run_count=3, thread_limit=4, run_limit=2, tool_name="search"
+        )
+    msg = str(exc_info.value)
+    assert "search" in msg.lower()
+    assert "5/4" in msg or "thread" in msg.lower()
 
-    error_msg = str(exc_info.value)
-    assert "Tool call limits exceeded" in error_msg
-    assert "thread limit (3/3)" in error_msg
+    # Test for all tools
+    with pytest.raises(ToolCallLimitExceededError) as exc_info:
+        raise ToolCallLimitExceededError(
+            thread_count=10, run_count=5, thread_limit=8, run_limit=None, tool_name=None
+        )
+    msg = str(exc_info.value)
+    assert "10/8" in msg or "thread" in msg.lower()
 
-    # Test specific tool limit
-    middleware = ToolCallLimitMiddleware(tool_name="search", thread_limit=2, exit_behavior="error")
 
+def test_limit_reached_but_not_exceeded():
+    """Test that limits are only triggered when exceeded (>), not when reached (==)."""
+    middleware = ToolCallLimitMiddleware(thread_limit=3, run_limit=2, exit_behavior="end")
+    runtime = None
+
+    # Test when limit is reached exactly (count = limit) - should not trigger
+    state = {
+        "messages": [AIMessage("Response", tool_calls=[{"name": "search", "args": {}, "id": "1"}])],
+        "thread_tool_call_count": {"__all__": 2},  # After +1 will be exactly 3
+        "run_tool_call_count": {"__all__": 1},
+    }
+    result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
+    assert result is not None
+    assert "jump_to" not in result
+    assert result["thread_tool_call_count"]["__all__"] == 3
+
+    # Test when limit is exceeded (count > limit) - should trigger
+    state = {
+        "messages": [AIMessage("Response", tool_calls=[{"name": "search", "args": {}, "id": "1"}])],
+        "thread_tool_call_count": {"__all__": 3},  # After +1 will be 4 > 3
+        "run_tool_call_count": {"__all__": 1},
+    }
+    result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
+    assert result is not None
+    assert "jump_to" in result
+    assert result["jump_to"] == "end"
+
+
+def test_exit_behavior_continue():
+    """Test that exit_behavior='continue' blocks only the exceeded tool, not others.
+
+    Verifies that when a specific tool hits its limit, it gets blocked with error messages
+    while other tools continue to execute normally.
+    """
+
+    @tool
+    def search(query: str) -> str:
+        """Search for information."""
+        return f"Search: {query}"
+
+    @tool
+    def calculator(expression: str) -> str:
+        """Calculate an expression."""
+        return f"Calc: {expression}"
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                ToolCall(name="search", args={"query": "q1"}, id="1"),
+                ToolCall(name="calculator", args={"expression": "1+1"}, id="2"),
+            ],
+            [
+                ToolCall(name="search", args={"query": "q2"}, id="3"),
+                ToolCall(name="calculator", args={"expression": "2+2"}, id="4"),
+            ],
+            [
+                ToolCall(name="search", args={"query": "q3"}, id="5"),  # Should be blocked
+                ToolCall(name="calculator", args={"expression": "3+3"}, id="6"),  # Should work
+            ],
+            [],
+        ]
+    )
+
+    # Limit search to 2 calls, but allow other tools to continue
+    search_limiter = ToolCallLimitMiddleware(
+        tool_name="search", thread_limit=2, exit_behavior="continue"
+    )
+
+    agent = create_agent(
+        model=model,
+        tools=[search, calculator],
+        middleware=[search_limiter],
+        checkpointer=InMemorySaver(),
+    )
+
+    result = agent.invoke(
+        {"messages": [HumanMessage("Question")]},
+        {"configurable": {"thread_id": "test_thread"}},
+    )
+
+    tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
+
+    # Verify search has 2 successful + 1 blocked, calculator has all 3 successful
+    successful_search_msgs = [msg for msg in tool_messages if "Search:" in msg.content]
+    blocked_search_msgs = [
+        msg
+        for msg in tool_messages
+        if "limit" in msg.content.lower() and "search" in msg.content.lower()
+    ]
+    successful_calc_msgs = [msg for msg in tool_messages if "Calc:" in msg.content]
+
+    assert len(successful_search_msgs) == 2, "Should have 2 successful search calls"
+    assert len(blocked_search_msgs) == 1, "Should have 1 blocked search call with limit error"
+    assert len(successful_calc_msgs) == 3, "All calculator calls should succeed"
+
+
+def test_thread_count_excludes_blocked_run_calls():
+    """Test that thread count only includes allowed calls, not blocked run-scoped calls.
+
+    When run_limit is lower than thread_limit and multiple parallel calls are made,
+    only the allowed calls should increment the thread count.
+
+    Example: If run_limit=1 and 3 parallel calls are made, thread count should be 1
+    (not 3) because the other 2 were blocked by the run limit.
+    """
+    # Set run_limit=1, thread_limit=10 (much higher)
+    middleware = ToolCallLimitMiddleware(thread_limit=10, run_limit=1, exit_behavior="continue")
+    runtime = None
+
+    # Make 3 parallel tool calls - only 1 should be allowed by run_limit
     state = {
         "messages": [
-            HumanMessage("Q"),
             AIMessage(
-                "R",
+                "Response",
                 tool_calls=[
                     {"name": "search", "args": {}, "id": "1"},
-                    {"name": "calculator", "args": {}, "id": "2"},
+                    {"name": "search", "args": {}, "id": "2"},
+                    {"name": "search", "args": {}, "id": "3"},
                 ],
-            ),
-            ToolMessage("Result", tool_call_id="1"),
-            ToolMessage("Result", tool_call_id="2"),
-            AIMessage("R", tool_calls=[{"name": "search", "args": {}, "id": "3"}]),
+            )
         ],
-        "thread_tool_call_count": {
-            "search": 2
-        },  # 2 search calls total (calculator calls don't count)
-        "run_tool_call_count": {"search": 1},  # 1 search call in current run
+        "thread_tool_call_count": {},
+        "run_tool_call_count": {},
     }
+    result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
+    assert result is not None
 
-    with pytest.raises(ToolCallLimitExceededError) as exc_info:
-        middleware.before_model(state, None)  # type: ignore[arg-type]
+    # Thread count should be 1 (only the allowed call)
+    assert result["thread_tool_call_count"]["__all__"] == 1, (
+        "Thread count should only include the 1 allowed call, not the 2 blocked calls"
+    )
+    # Run count should be 3 (all attempted calls)
+    assert result["run_tool_call_count"]["__all__"] == 3, (
+        "Run count should include all 3 attempted calls"
+    )
 
-    error_msg = str(exc_info.value)
-    assert "'search' tool call limits exceeded" in error_msg
-    assert "thread limit (2/2)" in error_msg
+    # Verify 2 error messages were created for blocked calls
+    assert "messages" in result
+    error_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
+    assert len(error_messages) == 2, "Should have 2 error messages for the 2 blocked calls"
+
+
+def test_unified_error_messages():
+    """Test that error messages instruct model not to call again for both run and thread limits.
+
+    Previously, only thread limit messages included 'Do not' instruction.
+    Now both run and thread limit messages should include it.
+    """
+    middleware = ToolCallLimitMiddleware(thread_limit=10, run_limit=1, exit_behavior="continue")
+    runtime = None
+
+    # Test with run limit exceeded (thread limit not exceeded)
+    state = {
+        "messages": [AIMessage("Response", tool_calls=[{"name": "search", "args": {}, "id": "2"}])],
+        "thread_tool_call_count": {"__all__": 1},  # Under thread limit
+        "run_tool_call_count": {"__all__": 1},  # At run limit, next call will exceed
+    }
+    result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
+    assert result is not None
+
+    # Check the error message includes "Do not" instruction
+    error_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
+    assert len(error_messages) == 1
+    error_content = error_messages[0].content
+    assert "Do not" in error_content, (
+        "Run limit error message should include 'Do not' instruction to guide model behavior"
+    )
+
+
+def test_end_behavior_creates_artificial_messages():
+    """Test that 'end' behavior creates an AI message explaining why execution stopped.
+
+    Verifies that when limit is exceeded with exit_behavior='end', the middleware:
+    1. Injects an artificial error ToolMessage for the blocked tool call
+    2. Adds an AI message explaining the limit to the user
+    3. Jumps to end, stopping execution
+    """
+
+    @tool
+    def search(query: str) -> str:
+        """Search for information."""
+        return f"Results: {query}"
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="search", args={"query": "q1"}, id="1")],
+            [ToolCall(name="search", args={"query": "q2"}, id="2")],
+            [ToolCall(name="search", args={"query": "q3"}, id="3")],  # Exceeds limit
+            [],
+        ]
+    )
+
+    limiter = ToolCallLimitMiddleware(thread_limit=2, exit_behavior="end")
+    agent = create_agent(
+        model=model, tools=[search], middleware=[limiter], checkpointer=InMemorySaver()
+    )
+
+    result = agent.invoke(
+        {"messages": [HumanMessage("Test")]}, {"configurable": {"thread_id": "test"}}
+    )
+
+    # Verify AI message explaining the limit (displayed to user - includes thread/run details)
+    ai_limit_messages = [
+        msg
+        for msg in result["messages"]
+        if isinstance(msg, AIMessage) and "limit" in msg.content.lower() and not msg.tool_calls
+    ]
+    assert len(ai_limit_messages) == 1, "Should have exactly one AI message explaining the limit"
+
+    ai_msg_content = ai_limit_messages[0].content.lower()
+    assert "thread limit exceeded" in ai_msg_content or "run limit exceeded" in ai_msg_content, (
+        "AI message should include thread/run limit details for the user"
+    )
+
+    # Verify tool message counts
+    tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
+    successful_tool_msgs = [msg for msg in tool_messages if msg.status != "error"]
+    error_tool_msgs = [msg for msg in tool_messages if msg.status == "error"]
+
+    assert len(successful_tool_msgs) == 2, "Should have 2 successful tool messages (q1, q2)"
+    assert len(error_tool_msgs) == 1, "Should have 1 artificial error tool message (q3)"
+
+    # Verify the error tool message (sent to model - no thread/run details, includes instruction)
+    error_msg_content = error_tool_msgs[0].content
+    assert "Tool call limit exceeded" in error_msg_content
+    assert "Do not" in error_msg_content, (
+        "Tool message should instruct model not to call tool again"
+    )
