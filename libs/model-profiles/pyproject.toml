@@ -3,18 +3,18 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-authors = []
+name = "langchain-model-profiles"
+description = "Centralized reference of LLM capabilities."
+readme = "README.md"
 license = { text = "MIT" }
+authors = []
+
+version = "0.0.3"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "tomli>=2.0.0,<3.0.0; python_version < '3.11'",
     "typing-extensions>=4.7.0,<5.0.0",
 ]
-
-name = "langchain-model-profiles"
-version = "0.0.2"
-description = "Centralized reference of LLM capabilities."
-readme = "README.md"
 
 [project.urls]
 Homepage = "https://docs.langchain.com/"

@@ -79,7 +79,6 @@ jobs:
             core
             cli
             langchain
-            langchain_v1
             langchain-classic
             model-profiles
             standard-tests
