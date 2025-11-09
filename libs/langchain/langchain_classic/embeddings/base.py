@@ -14,6 +14,7 @@ _SUPPORTED_PROVIDERS = {
     "mistralai": "langchain_mistralai",
     "ollama": "langchain_ollama",
     "openai": "langchain_openai",
+    "openrouter": "langchain_openrouter",
 }
 
 
@@ -159,6 +160,7 @@ def init_embeddings(
             - `huggingface`             -> [`langchain-huggingface`](https://docs.langchain.com/oss/python/integrations/providers/huggingface)
             - `mistraiai`               -> [`langchain-mistralai`](https://docs.langchain.com/oss/python/integrations/providers/mistralai)
             - `ollama`                  -> [`langchain-ollama`](https://docs.langchain.com/oss/python/integrations/providers/ollama)
+            - `openrouter`              -> [`langchain-openrouter`](https://docs.langchain.com/oss/python/integrations/providers/openrouter)
 
         **kwargs: Additional model-specific parameters passed to the embedding model.
             These vary by provider, see the provider-specific documentation for details.
@@ -231,6 +233,10 @@ def init_embeddings(
         from langchain_ollama import OllamaEmbeddings
 
         return OllamaEmbeddings(model=model_name, **kwargs)
+    if provider == "openrouter":
+        from langchain_openrouter import OpenRouterEmbeddings
+
+        return OpenRouterEmbeddings(model=model_name, **kwargs)
     msg = (
         f"Provider '{provider}' is not supported.\n"
         f"Supported providers and their required packages:\n"
