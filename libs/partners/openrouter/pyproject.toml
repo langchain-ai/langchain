@@ -9,11 +9,11 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.0.0"
+version = "1.0.2"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0,<2.0.0",
-    "langchain-openai>=1.0.0,<2.0.0",
+    "langchain-core>=1.0.2,<2.0.0",
+    "langchain-openai>=1.0.2,<2.0.0",
 ]
 
 [project.urls]
@@ -31,7 +31,9 @@ test = [
     "pytest-asyncio>=0.23.2,<1.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
     "pytest-watcher>=0.3.4,<1.0.0",
-    "pytest-timeout>=2.3.1,<3.0.0",
+    "pytest-timeout>=0.3.1,<3.0.0",
+    "numpy>=1.26.4; python_version<'3.13'",
+    "numpy>=2.1.0; python_version>='3.13'",
     "langchain-tests",
     "langchain-openai",
 ]

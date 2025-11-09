@@ -30,8 +30,8 @@ integration_test integration_tests:
 PYTHON_FILES=.
 MYPY_CACHE=.mypy_cache
 lint format: PYTHON_FILES=.
-lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/partners/deepseek --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
-lint_package: PYTHON_FILES=langchain_deepseek
+lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/partners/openrouter --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
+lint_package: PYTHON_FILES=langchain_openrouter
 lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
@@ -44,7 +44,7 @@ format format_diff:
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check --fix $(PYTHON_FILES)
 
-check_imports: $(shell find langchain_deepseek -name '*.py')
+check_imports: $(shell find langchain_openrouter -name '*.py')
 	uv run --all-groups python ./scripts/check_imports.py $^
 
 ######################
@@ -52,6 +52,16 @@ check_imports: $(shell find langchain_deepseek -name '*.py')
 ######################
 
 help:
+	@echo '----'
+	@echo 'check_imports				- check imports'
+	@echo 'format                       - run code formatters'
+	@echo 'lint                         - run linters'
+	@echo 'test                         - run unit tests'
+	@echo 'tests                        - run unit tests'
+	@echo 'test TEST_FILE=<test_file>   - run all tests in file'
+	@echo 'integration_tests            - run integration tests'
+	@echo 'test_watch                   - run tests in watch mode'
+	@echo 'extended_tests               - run extended tests'
 	@echo '----'
 	@echo 'check_imports				- check imports'
 	@echo 'format                       - run code formatters'

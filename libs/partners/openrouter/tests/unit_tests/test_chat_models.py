@@ -308,6 +308,5 @@ class TestChatOpenRouterCustomUnit:
         result = chat_model._create_chat_result(mock_response)
         assert len(result.generations) == 2  # noqa: PLR2004
         for generation in result.generations:
-            assert (
-                generation.message.response_metadata.get("model_provider") == "openrouter"
-            )
+            metadata = generation.message.response_metadata
+            assert metadata.get("model_provider") == "openrouter"

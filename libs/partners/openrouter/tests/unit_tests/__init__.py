@@ -1,1 +1,1 @@
-"""Unit tests for `langchain_deepseek` package."""
+"""Unit tests for `langchain_openrouter` package."""
