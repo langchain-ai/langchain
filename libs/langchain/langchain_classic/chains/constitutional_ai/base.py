@@ -165,7 +165,7 @@ class ConstitutionalChain(Chain):
 
     Example:
         ```python
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
         from langchain_classic.chains import LLMChain, ConstitutionalChain
         from langchain_classic.chains.constitutional_ai.models \
             import ConstitutionalPrinciple

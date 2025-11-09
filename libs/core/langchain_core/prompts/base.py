@@ -46,21 +46,27 @@ class BasePromptTemplate(
 
     input_variables: list[str]
     """A list of the names of the variables whose values are required as inputs to the
-    prompt."""
+    prompt.
+    """
     optional_variables: list[str] = Field(default=[])
-    """optional_variables: A list of the names of the variables for placeholder
-       or MessagePlaceholder that are optional. These variables are auto inferred
-       from the prompt and user need not provide them."""
+    """A list of the names of the variables for placeholder or `MessagePlaceholder` that
+    are optional.
+
+    These variables are auto inferred from the prompt and user need not provide them.
+    """
     input_types: typing.Dict[str, Any] = Field(default_factory=dict, exclude=True)  # noqa: UP006
     """A dictionary of the types of the variables the prompt template expects.
-    If not provided, all variables are assumed to be strings."""
+
+    If not provided, all variables are assumed to be strings.
+    """
     output_parser: BaseOutputParser | None = None
     """How to parse the output of calling an LLM on this formatted prompt."""
     partial_variables: Mapping[str, Any] = Field(default_factory=dict)
     """A dictionary of the partial variables the prompt template carries.
 
-    Partial variables populate the template so that you don't need to
-    pass them in every time you call the prompt."""
+    Partial variables populate the template so that you don't need to pass them in every
+    time you call the prompt.
+    """
     metadata: typing.Dict[str, Any] | None = None  # noqa: UP006
     """Metadata to be used for tracing."""
     tags: list[str] | None = None
@@ -105,7 +111,7 @@ class BasePromptTemplate(
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     model_config = ConfigDict(
@@ -127,7 +133,7 @@ class BasePromptTemplate(
         """Get the input schema for the prompt.
 
         Args:
-            config: configuration for the prompt.
+            config: Configuration for the prompt.
 
         Returns:
             The input schema for the prompt.
@@ -195,8 +201,8 @@ class BasePromptTemplate(
         """Invoke the prompt.
 
         Args:
-            input: Dict, input to the prompt.
-            config: RunnableConfig, configuration for the prompt.
+            input: Input to the prompt.
+            config: Configuration for the prompt.
 
         Returns:
             The output of the prompt.
@@ -221,8 +227,8 @@ class BasePromptTemplate(
         """Async invoke the prompt.
 
         Args:
-            input: Dict, input to the prompt.
-            config: RunnableConfig, configuration for the prompt.
+            input: Input to the prompt.
+            config: Configuration for the prompt.
 
         Returns:
             The output of the prompt.
@@ -242,7 +248,7 @@ class BasePromptTemplate(
 
     @abstractmethod
     def format_prompt(self, **kwargs: Any) -> PromptValue:
-        """Create Prompt Value.
+        """Create `PromptValue`.
 
         Args:
             **kwargs: Any arguments to be passed to the prompt template.
@@ -252,7 +258,7 @@ class BasePromptTemplate(
         """
 
     async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
-        """Async create Prompt Value.
+        """Async create `PromptValue`.
 
         Args:
             **kwargs: Any arguments to be passed to the prompt template.
@@ -266,7 +272,7 @@ class BasePromptTemplate(
         """Return a partial of the prompt template.
 
         Args:
-            **kwargs: partial variables to set.
+            **kwargs: Partial variables to set.
 
         Returns:
             A partial of the prompt template.
@@ -296,9 +302,9 @@ class BasePromptTemplate(
             A formatted string.
 
         Example:
-        ```python
-        prompt.format(variable1="foo")
-        ```
+            ```python
+            prompt.format(variable1="foo")
+            ```
         """
 
     async def aformat(self, **kwargs: Any) -> FormatOutputType:
@@ -311,9 +317,9 @@ class BasePromptTemplate(
             A formatted string.
 
         Example:
-        ```python
-        await prompt.aformat(variable1="foo")
-        ```
+            ```python
+            await prompt.aformat(variable1="foo")
+            ```
         """
         return self.format(**kwargs)
 
@@ -348,9 +354,9 @@ class BasePromptTemplate(
             NotImplementedError: If the prompt type is not implemented.
 
         Example:
-        ```python
-        prompt.save(file_path="path/prompt.yaml")
-        ```
+            ```python
+            prompt.save(file_path="path/prompt.yaml")
+            ```
         """
         if self.partial_variables:
             msg = "Cannot save prompt with partial variables."
@@ -402,23 +408,23 @@ def format_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
 
     First, this pulls information from the document from two sources:
 
-    1. page_content:
-        This takes the information from the `document.page_content`
-        and assigns it to a variable named `page_content`.
-    2. metadata:
-        This takes information from `document.metadata` and assigns
-        it to variables of the same name.
+    1. `page_content`:
+        This takes the information from the `document.page_content` and assigns it to a
+        variable named `page_content`.
+    2. `metadata`:
+        This takes information from `document.metadata` and assigns it to variables of
+        the same name.
 
     Those variables are then passed into the `prompt` to produce a formatted string.
 
     Args:
-        doc: Document, the page_content and metadata will be used to create
+        doc: `Document`, the `page_content` and `metadata` will be used to create
             the final string.
-        prompt: BasePromptTemplate, will be used to format the page_content
-            and metadata into the final string.
+        prompt: `BasePromptTemplate`, will be used to format the `page_content`
+            and `metadata` into the final string.
 
     Returns:
-        string of the document formatted.
+        String of the document formatted.
 
     Example:
         ```python
@@ -429,7 +435,6 @@ def format_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
         prompt = PromptTemplate.from_template("Page {page}: {page_content}")
         format_document(doc, prompt)
         >>> "Page 1: This is a joke"
-
         ```
     """
     return prompt.format(**_get_document_info(doc, prompt))
@@ -440,22 +445,22 @@ async def aformat_document(doc: Document, prompt: BasePromptTemplate[str]) -> st
 
     First, this pulls information from the document from two sources:
 
-    1. page_content:
-        This takes the information from the `document.page_content`
-        and assigns it to a variable named `page_content`.
-    2. metadata:
-        This takes information from `document.metadata` and assigns
-        it to variables of the same name.
+    1. `page_content`:
+        This takes the information from the `document.page_content` and assigns it to a
+        variable named `page_content`.
+    2. `metadata`:
+        This takes information from `document.metadata` and assigns it to variables of
+        the same name.
 
     Those variables are then passed into the `prompt` to produce a formatted string.
 
     Args:
-        doc: Document, the page_content and metadata will be used to create
+        doc: `Document`, the `page_content` and `metadata` will be used to create
             the final string.
-        prompt: BasePromptTemplate, will be used to format the page_content
-            and metadata into the final string.
+        prompt: `BasePromptTemplate`, will be used to format the `page_content`
+            and `metadata` into the final string.
 
     Returns:
-        string of the document formatted.
+        String of the document formatted.
     """
     return await prompt.aformat(**_get_document_info(doc, prompt))

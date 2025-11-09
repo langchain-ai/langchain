@@ -3,7 +3,15 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING, Annotated, Any, cast, get_args, get_origin, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    cast,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
@@ -11,10 +19,11 @@ from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
+from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
 from langgraph.runtime import Runtime  # noqa: TC002
 from langgraph.types import Command, Send
 from langgraph.typing import ContextT  # noqa: TC002
-from typing_extensions import NotRequired, Required, TypedDict, TypeVar
+from typing_extensions import NotRequired, Required, TypedDict
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -23,6 +32,8 @@ from langchain.agents.middleware.types import (
     ModelRequest,
     ModelResponse,
     OmitFromSchema,
+    ResponseT,
+    StateT_co,
     _InputAgentState,
     _OutputAgentState,
 )
@@ -33,11 +44,11 @@ from langchain.agents.structured_output import (
     ProviderStrategy,
     ProviderStrategyBinding,
     ResponseFormat,
+    StructuredOutputError,
     StructuredOutputValidationError,
     ToolStrategy,
 )
 from langchain.chat_models import init_chat_model
-from langchain.tools.tool_node import ToolCallWithContext, _ToolNode
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
@@ -48,11 +59,9 @@ if TYPE_CHECKING:
     from langgraph.store.base import BaseStore
     from langgraph.types import Checkpointer
 
-    from langchain.tools.tool_node import ToolCallRequest, ToolCallWrapper
+    from langchain.agents.middleware.types import ToolCallRequest, ToolCallWrapper
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
-
-ResponseT = TypeVar("ResponseT")
 
 
 def _normalize_to_model_response(result: ModelResponse | AIMessage) -> ModelResponse:
@@ -508,7 +517,7 @@ def create_agent(  # noqa: PLR0915
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
     *,
     system_prompt: str | None = None,
-    middleware: Sequence[AgentMiddleware[AgentState[ResponseT], ContextT]] = (),
+    middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
     response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
     state_schema: type[AgentState[ResponseT]] | None = None,
     context_schema: type[ContextT] | None = None,
@@ -529,44 +538,65 @@ def create_agent(  # noqa: PLR0915
 
     Args:
         model: The language model for the agent. Can be a string identifier
-            (e.g., `"openai:gpt-4"`) or a chat model instance (e.g., `ChatOpenAI()`).
+            (e.g., `"openai:gpt-4"`) or a direct chat model instance (e.g.,
+            [`ChatOpenAI`][langchain_openai.ChatOpenAI] or other another
+            [chat model](https://docs.langchain.com/oss/python/integrations/chat)).
+
             For a full list of supported model strings, see
             [`init_chat_model`][langchain.chat_models.init_chat_model(model_provider)].
-        tools: A list of tools, `dicts`, or `Callable`. If `None` or an empty list,
-            the agent will consist of a model node without a tool calling loop.
-        system_prompt: An optional system prompt for the LLM. Prompts are converted to a
-            `SystemMessage` and added to the beginning of the message list.
+        tools: A list of tools, `dicts`, or `Callable`.
+
+            If `None` or an empty list, the agent will consist of a model node without a
+            tool calling loop.
+        system_prompt: An optional system prompt for the LLM.
+
+            Prompts are converted to a
+            [`SystemMessage`][langchain.messages.SystemMessage] and added to the
+            beginning of the message list.
         middleware: A sequence of middleware instances to apply to the agent.
-            Middleware can intercept and modify agent behavior at various stages.
+
+            Middleware can intercept and modify agent behavior at various stages. See
+            the [full guide](https://docs.langchain.com/oss/python/langchain/middleware).
         response_format: An optional configuration for structured responses.
+
             Can be a `ToolStrategy`, `ProviderStrategy`, or a Pydantic model class.
+
             If provided, the agent will handle structured output during the
             conversation flow. Raw schemas will be wrapped in an appropriate strategy
             based on model capabilities.
         state_schema: An optional `TypedDict` schema that extends `AgentState`.
+
             When provided, this schema is used instead of `AgentState` as the base
             schema for merging with middleware state schemas. This allows users to
             add custom state fields without needing to create custom middleware.
-            Generally, it's recommended to use state_schema extensions via middleware
+            Generally, it's recommended to use `state_schema` extensions via middleware
             to keep relevant extensions scoped to corresponding hooks / tools.
+
             The schema must be a subclass of `AgentState[ResponseT]`.
         context_schema: An optional schema for runtime context.
-        checkpointer: An optional checkpoint saver object. This is used for persisting
-            the state of the graph (e.g., as chat memory) for a single thread
-            (e.g., a single conversation).
-        store: An optional store object. This is used for persisting data
-            across multiple threads (e.g., multiple conversations / users).
+        checkpointer: An optional checkpoint saver object.
+
+            Used for persisting the state of the graph (e.g., as chat memory) for a
+            single thread (e.g., a single conversation).
+        store: An optional store object.
+
+            Used for persisting data across multiple threads (e.g., multiple
+            conversations / users).
         interrupt_before: An optional list of node names to interrupt before.
+
             Useful if you want to add a user confirmation or other interrupt
             before taking an action.
         interrupt_after: An optional list of node names to interrupt after.
+
             Useful if you want to return directly or run additional processing
             on an output.
-        debug: Whether to enable verbose logging for graph execution. When enabled,
-            prints detailed information about each node execution, state updates,
-            and transitions during agent runtime. Useful for debugging middleware
-            behavior and understanding agent execution flow.
+        debug: Whether to enable verbose logging for graph execution.
+
+            When enabled, prints detailed information about each node execution, state
+            updates, and transitions during agent runtime. Useful for debugging
+            middleware behavior and understanding agent execution flow.
         name: An optional name for the `CompiledStateGraph`.
+
             This name will be automatically used when adding the agent graph to
             another graph as a subgraph node - particularly useful for building
             multi-agent systems.
@@ -576,11 +606,12 @@ def create_agent(  # noqa: PLR0915
         A compiled `StateGraph` that can be used for chat interactions.
 
     The agent node calls the language model with the messages list (after applying
-    the system prompt). If the resulting `AIMessage` contains `tool_calls`, the graph
-    will then call the tools. The tools node executes the tools and adds the responses
-    to the messages list as `ToolMessage` objects. The agent node then calls the
-    language model again. The process repeats until no more `tool_calls` are
-    present in the response. The agent then returns the full list of messages.
+    the system prompt). If the resulting [`AIMessage`][langchain.messages.AIMessage]
+    contains `tool_calls`, the graph will then call the tools. The tools node executes
+    the tools and adds the responses to the messages list as
+    [`ToolMessage`][langchain.messages.ToolMessage] objects. The agent node then calls
+    the language model again. The process repeats until no more `tool_calls` are present
+    in the response. The agent then returns the full list of messages.
 
     Example:
         ```python
@@ -593,7 +624,7 @@ def create_agent(  # noqa: PLR0915
 
 
         graph = create_agent(
-            model="anthropic:claude-sonnet-4-5",
+            model="anthropic:claude-sonnet-4-5-20250929",
             tools=[check_weather],
             system_prompt="You are a helpful assistant",
         )
@@ -675,7 +706,7 @@ def create_agent(  # noqa: PLR0915
         awrap_tool_call_wrapper = _chain_async_tool_call_wrappers(async_wrappers)
 
     # Setup tools
-    tool_node: _ToolNode | None = None
+    tool_node: ToolNode | None = None
     # Extract built-in provider tools (dict format) and regular tools (BaseTool/callables)
     built_in_tools = [t for t in tools if isinstance(t, dict)]
     regular_tools = [t for t in tools if not isinstance(t, dict)]
@@ -685,7 +716,7 @@ def create_agent(  # noqa: PLR0915
 
     # Only create ToolNode if we have client-side tools
     tool_node = (
-        _ToolNode(
+        ToolNode(
             tools=available_tools,
             wrap_tool_call=wrap_tool_call_wrapper,
             awrap_tool_call=awrap_tool_call_wrapper,
@@ -762,7 +793,7 @@ def create_agent(  # noqa: PLR0915
         async_handlers = [m.awrap_model_call for m in middleware_w_awrap_model_call]
         awrap_model_call_handler = _chain_async_model_call_handlers(async_handlers)
 
-    state_schemas = {m.state_schema for m in middleware}
+    state_schemas: set[type] = {m.state_schema for m in middleware}
     # Use provided state_schema if available, otherwise use base AgentState
     base_state = state_schema if state_schema is not None else AgentState
     state_schemas.add(base_state)
@@ -797,8 +828,16 @@ def create_agent(  # noqa: PLR0915
                 provider_strategy_binding = ProviderStrategyBinding.from_schema_spec(
                     effective_response_format.schema_spec
                 )
-                structured_response = provider_strategy_binding.parse(output)
-                return {"messages": [output], "structured_response": structured_response}
+                try:
+                    structured_response = provider_strategy_binding.parse(output)
+                except Exception as exc:  # noqa: BLE001
+                    schema_name = getattr(
+                        effective_response_format.schema_spec.schema, "__name__", "response_format"
+                    )
+                    validation_error = StructuredOutputValidationError(schema_name, exc, output)
+                    raise validation_error
+                else:
+                    return {"messages": [output], "structured_response": structured_response}
             return {"messages": [output]}
 
         # Handle structured output with tool strategy
@@ -812,11 +851,11 @@ def create_agent(  # noqa: PLR0915
             ]
 
             if structured_tool_calls:
-                exception: Exception | None = None
+                exception: StructuredOutputError | None = None
                 if len(structured_tool_calls) > 1:
                     # Handle multiple structured outputs error
                     tool_names = [tc["name"] for tc in structured_tool_calls]
-                    exception = MultipleStructuredOutputsError(tool_names)
+                    exception = MultipleStructuredOutputsError(tool_names, output)
                     should_retry, error_message = _handle_structured_output_error(
                         exception, effective_response_format
                     )
@@ -858,7 +897,7 @@ def create_agent(  # noqa: PLR0915
                         "structured_response": structured_response,
                     }
                 except Exception as exc:  # noqa: BLE001
-                    exception = StructuredOutputValidationError(tool_call["name"], exc)
+                    exception = StructuredOutputValidationError(tool_call["name"], exc, output)
                     should_retry, error_message = _handle_structured_output_error(
                         exception, effective_response_format
                     )
@@ -1229,11 +1268,14 @@ def create_agent(  # noqa: PLR0915
 
         graph.add_conditional_edges(
             "tools",
-            _make_tools_to_model_edge(
-                tool_node=tool_node,
-                model_destination=loop_entry_node,
-                structured_output_tools=structured_output_tools,
-                end_destination=exit_node,
+            RunnableCallable(
+                _make_tools_to_model_edge(
+                    tool_node=tool_node,
+                    model_destination=loop_entry_node,
+                    structured_output_tools=structured_output_tools,
+                    end_destination=exit_node,
+                ),
+                trace=False,
             ),
             tools_to_model_destinations,
         )
@@ -1250,19 +1292,25 @@ def create_agent(  # noqa: PLR0915
 
         graph.add_conditional_edges(
             loop_exit_node,
-            _make_model_to_tools_edge(
-                model_destination=loop_entry_node,
-                structured_output_tools=structured_output_tools,
-                end_destination=exit_node,
+            RunnableCallable(
+                _make_model_to_tools_edge(
+                    model_destination=loop_entry_node,
+                    structured_output_tools=structured_output_tools,
+                    end_destination=exit_node,
+                ),
+                trace=False,
             ),
             model_to_tools_destinations,
         )
     elif len(structured_output_tools) > 0:
         graph.add_conditional_edges(
             loop_exit_node,
-            _make_model_to_model_edge(
-                model_destination=loop_entry_node,
-                end_destination=exit_node,
+            RunnableCallable(
+                _make_model_to_model_edge(
+                    model_destination=loop_entry_node,
+                    end_destination=exit_node,
+                ),
+                trace=False,
             ),
             [loop_entry_node, exit_node],
         )
@@ -1372,7 +1420,7 @@ def create_agent(  # noqa: PLR0915
         debug=debug,
         name=name,
         cache=cache,
-    )
+    ).with_config({"recursion_limit": 10_000})
 
 
 def _resolve_jump(
@@ -1491,7 +1539,7 @@ def _make_model_to_model_edge(
 
 def _make_tools_to_model_edge(
     *,
-    tool_node: _ToolNode,
+    tool_node: ToolNode,
     model_destination: str,
     structured_output_tools: dict[str, OutputToolBinding],
     end_destination: str,
@@ -1563,7 +1611,7 @@ def _add_middleware_edge(
         if "model" in can_jump_to and name != model_destination:
             destinations.append(model_destination)
 
-        graph.add_conditional_edges(name, jump_edge, destinations)
+        graph.add_conditional_edges(name, RunnableCallable(jump_edge, trace=False), destinations)
 
     else:
         graph.add_edge(name, default_destination)

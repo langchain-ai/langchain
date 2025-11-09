@@ -313,6 +313,12 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "description": "Class for storing a piece of text and "
                 "associated metadata.\n"
                 "\n"
+                "!!! note\n"
+                "    `Document` is for **retrieval workflows**, not chat I/O. For "
+                "sending text\n"
+                "    to an LLM in a conversation, use message types from "
+                "`langchain.messages`.\n"
+                "\n"
                 "Example:\n"
                 "    ```python\n"
                 "    from langchain_core.documents import Document\n"
@@ -5719,3 +5725,37 @@ def test_runnable_assign() -> None:
 
     result = runnable_assign.invoke({"input": 5})
     assert result == {"input": 5, "add_step": {"added": 15}}
+
+
+def test_runnable_typed_dict_schema() -> None:
+    """Testing that the schema is generated properly(not empty) when using TypedDict.
+
+    subclasses to annotate the arguments of a RunnableParallel children.
+    """
+
+    class Foo(TypedDict):
+        foo: str
+
+    class InputData(Foo):
+        bar: str
+
+    def forward_foo(input_data: InputData) -> str:
+        return input_data["foo"]
+
+    def transform_input(input_data: InputData) -> dict[str, str]:
+        foo = input_data["foo"]
+        bar = input_data["bar"]
+
+        return {"transformed": foo + bar}
+
+    foo_runnable = RunnableLambda(forward_foo)
+    other_runnable = RunnableLambda(transform_input)
+
+    parallel = RunnableParallel(
+        foo=foo_runnable,
+        other=other_runnable,
+    )
+    assert (
+        repr(parallel.input_schema.model_validate({"foo": "Y", "bar": "Z"}))
+        == "RunnableParallel<foo,other>Input(root={'foo': 'Y', 'bar': 'Z'})"
+    )

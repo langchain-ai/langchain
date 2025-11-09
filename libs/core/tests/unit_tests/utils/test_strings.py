@@ -62,7 +62,7 @@ def test_stringify_value_nested_structures() -> None:
 
     result = stringify_value(nested_data)
 
-    # Shoudl contain all the nested values
+    # Should contain all the nested values
     assert "users:" in result
     assert "name: Alice" in result
     assert "name: Bob" in result

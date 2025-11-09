@@ -310,7 +310,7 @@ def create_openai_functions_agent(
         Creating an agent with no memory
 
         ```python
-        from langchain_community.chat_models import ChatOpenAI
+        from langchain_openai import ChatOpenAI
         from langchain_classic.agents import (
             AgentExecutor,
             create_openai_functions_agent,

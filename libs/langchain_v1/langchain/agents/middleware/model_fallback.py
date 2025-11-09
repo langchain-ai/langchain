@@ -31,7 +31,7 @@ class ModelFallbackMiddleware(AgentMiddleware):
 
         fallback = ModelFallbackMiddleware(
             "openai:gpt-4o-mini",  # Try first on error
-            "anthropic:claude-3-5-sonnet-20241022",  # Then this
+            "anthropic:claude-sonnet-4-5-20250929",  # Then this
         )
 
         agent = create_agent(
@@ -39,7 +39,7 @@ class ModelFallbackMiddleware(AgentMiddleware):
             middleware=[fallback],
         )
 
-        # If primary fails: tries gpt-4o-mini, then claude-3-5-sonnet
+        # If primary fails: tries gpt-4o-mini, then claude-sonnet-4-5-20250929
         result = await agent.invoke({"messages": [HumanMessage("Hello")]})
         ```
     """

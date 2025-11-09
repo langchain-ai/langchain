@@ -572,7 +572,11 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the LangChain object."""
+        """Get the namespace of the LangChain object.
+
+        Returns:
+            `["langchain", "chat_models", "azure_openai"]`
+        """
         return ["langchain", "chat_models", "azure_openai"]
 
     @property
@@ -833,10 +837,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - a JSON Schema,
-                - a `TypedDict` class,
-                - a Pydantic class,
-                - or an OpenAI function/tool schema.
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - A Pydantic class,
+                - Or an OpenAI function/tool schema.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
@@ -865,11 +869,15 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 support which methods [here](https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format).
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a `BaseMessage`) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
@@ -951,13 +959,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     depends on the `schema` as described above.
                 - `'parsing_error'`: `BaseException | None`
 
-        !!! warning "Behavior changed in 0.3.0"
+        !!! warning "Behavior changed in `langchain-openai` 0.3.0"
             `method` default changed from "function_calling" to "json_schema".
 
-        !!! warning "Behavior changed in 0.3.12"
+        !!! warning "Behavior changed in `langchain-openai` 0.3.12"
             Support for `tools` added.
 
-        !!! warning "Behavior changed in 0.3.21"
+        !!! warning "Behavior changed in `langchain-openai` 0.3.21"
             Pass `kwargs` through to the model.
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`, `strict=True`"
