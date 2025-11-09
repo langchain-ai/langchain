@@ -1315,7 +1315,16 @@ def _convert_chunk_to_message_chunk(
             function_call["name"] = ""
         additional_kwargs["function_call"] = function_call
     if _dict.get("tool_calls"):
-        additional_kwargs["tool_calls"] = _dict["tool_calls"]
+        # Groq sends 'null' (JSON null) for tools with no arguments, but we
+        # expect '{}' (empty JSON object) to represent empty arguments
+        tool_calls = _dict["tool_calls"]
+        for tool_call in tool_calls:
+            if (
+                tool_call.get("function")
+                and tool_call["function"].get("arguments") == "null"
+            ):
+                tool_call["function"]["arguments"] = "{}"
+        additional_kwargs["tool_calls"] = tool_calls
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
@@ -1385,6 +1394,14 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         tool_calls = []
         invalid_tool_calls = []
         if raw_tool_calls := _dict.get("tool_calls"):
+            # Groq sends 'null' (JSON null) for tools with no arguments, but we
+            # expect '{}' (empty JSON object) to represent empty arguments
+            for raw_tool_call in raw_tool_calls:
+                if (
+                    raw_tool_call.get("function")
+                    and raw_tool_call["function"].get("arguments") == "null"
+                ):
+                    raw_tool_call["function"]["arguments"] = "{}"
             additional_kwargs["tool_calls"] = raw_tool_calls
             for raw_tool_call in raw_tool_calls:
                 try:
