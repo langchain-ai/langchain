@@ -127,6 +127,7 @@ def init_chat_model(
             - `nvidia`                  -> [`langchain-nvidia-ai-endpoints`](https://docs.langchain.com/oss/python/integrations/providers/nvidia)
             - `xai`                     -> [`langchain-xai`](https://docs.langchain.com/oss/python/integrations/providers/xai)
             - `perplexity`              -> [`langchain-perplexity`](https://docs.langchain.com/oss/python/integrations/providers/perplexity)
+            - `openrouter`              -> [`langchain-openrouter`](https://docs.langchain.com/oss/python/integrations/providers/openrouter)
 
             Will attempt to infer `model_provider` from model if not specified. The
             following providers will be inferred based on these model prefixes:
@@ -489,6 +490,11 @@ def _init_chat_model_helper(
         from langchain_perplexity import ChatPerplexity
 
         return ChatPerplexity(model=model, **kwargs)
+    if model_provider == "openrouter":
+        _check_pkg("langchain_openrouter")
+        from langchain_openrouter import ChatOpenRouter
+
+        return ChatOpenRouter(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
     supported = ", ".join(_SUPPORTED_PROVIDERS)
     msg = (
         f"Unsupported {model_provider=}.\n\nSupported model providers are: {supported}"
@@ -517,6 +523,7 @@ _SUPPORTED_PROVIDERS = {
     "ibm",
     "xai",
     "perplexity",
+    "openrouter",
 }
 
 
@@ -541,6 +548,8 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
         return "xai"
     if model_name.startswith("sonar"):
         return "perplexity"
+    if "openrouter" in model_name.lower() or "openrouter" in model_name:
+        return "openrouter"
     return None
 
 
