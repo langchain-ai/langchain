@@ -1468,6 +1468,54 @@ def test_summarization_middleware_full_workflow() -> None:
     assert "Generated summary" in summary_message.content
 
 
+async def test_summarization_middleware_full_workflow_async() -> None:
+    """Test SummarizationMiddleware complete summarization workflow."""
+
+    class MockModel(BaseChatModel):
+        def _generate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Blep"))])
+
+        async def _agenerate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Blip"))])
+
+        @property
+        def _llm_type(self):
+            return "mock"
+
+    middleware = SummarizationMiddleware(
+        model=MockModel(), trigger=("tokens", 1000), keep=("messages", 2)
+    )
+
+    # Mock high token count to trigger summarization
+    def mock_token_counter(messages):
+        return 1500  # Above threshold
+
+    middleware.token_counter = mock_token_counter
+
+    messages = [
+        HumanMessage(content="1"),
+        HumanMessage(content="2"),
+        HumanMessage(content="3"),
+        HumanMessage(content="4"),
+        HumanMessage(content="5"),
+    ]
+
+    state = {"messages": messages}
+    result = await middleware.abefore_model(state, None)
+
+    assert result is not None
+    assert "messages" in result
+    assert len(result["messages"]) > 0
+
+    expected_types = ["remove", "human", "human", "human"]
+    actual_types = [message.type for message in result["messages"]]
+    assert actual_types == expected_types
+    assert [message.content for message in result["messages"][2:]] == ["4", "5"]
+
+    summary_message = result["messages"][1]
+    assert "Blip" in summary_message.text
+
+
 def test_summarization_middleware_keep_messages() -> None:
     """Test SummarizationMiddleware with keep parameter specifying messages."""
 
