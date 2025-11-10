@@ -21,7 +21,7 @@ from langchain.agents.middleware.types import AgentMiddleware
 
 
 def _expand_include_patterns(pattern: str) -> list[str] | None:
-    """Expand brace patterns like ``*.{py,pyi}`` into a list of globs."""
+    """Expand brace patterns like `*.{py,pyi}` into a list of globs."""
     if "}" in pattern and "{" not in pattern:
         return None
 
@@ -88,6 +88,7 @@ class FilesystemFileSearchMiddleware(AgentMiddleware):
     """Provides Glob and Grep search over filesystem files.
 
     This middleware adds two tools that search through local filesystem:
+
     - Glob: Fast file pattern matching by file path
     - Grep: Fast content search using ripgrep or Python fallback
 
@@ -100,7 +101,7 @@ class FilesystemFileSearchMiddleware(AgentMiddleware):
 
         agent = create_agent(
             model=model,
-            tools=[],
+            tools=[],  # Add tools as needed
             middleware=[
                 FilesystemFileSearchMiddleware(root_path="/workspace"),
             ],
@@ -119,9 +120,10 @@ class FilesystemFileSearchMiddleware(AgentMiddleware):
 
         Args:
             root_path: Root directory to search.
-            use_ripgrep: Whether to use ripgrep for search (default: True).
+            use_ripgrep: Whether to use ripgrep for search.
+
                 Falls back to Python if ripgrep unavailable.
-            max_file_size_mb: Maximum file size to search in MB (default: 10).
+            max_file_size_mb: Maximum file size to search in MB.
         """
         self.root_path = Path(root_path).resolve()
         self.use_ripgrep = use_ripgrep
@@ -132,8 +134,10 @@ class FilesystemFileSearchMiddleware(AgentMiddleware):
         def glob_search(pattern: str, path: str = "/") -> str:
             """Fast file pattern matching tool that works with any codebase size.
 
-            Supports glob patterns like **/*.js or src/**/*.ts.
+            Supports glob patterns like `**/*.js` or `src/**/*.ts`.
+
             Returns matching file paths sorted by modification time.
+
             Use this tool when you need to find files by name patterns.
 
             Args:
@@ -142,7 +146,7 @@ class FilesystemFileSearchMiddleware(AgentMiddleware):
 
             Returns:
                 Newline-separated list of matching file paths, sorted by modification
-                time (most recently modified first). Returns "No files found" if no
+                time (most recently modified first). Returns `'No files found'` if no
                 matches.
             """
             try:
@@ -184,15 +188,16 @@ class FilesystemFileSearchMiddleware(AgentMiddleware):
             Args:
                 pattern: The regular expression pattern to search for in file contents.
                 path: The directory to search in. If not specified, searches from root.
-                include: File pattern to filter (e.g., "*.js", "*.{ts,tsx}").
+                include: File pattern to filter (e.g., `'*.js'`, `'*.{ts,tsx}'`).
                 output_mode: Output format:
-                    - "files_with_matches": Only file paths containing matches (default)
-                    - "content": Matching lines with file:line:content format
-                    - "count": Count of matches per file
+
+                    - `'files_with_matches'`: Only file paths containing matches
+                    - `'content'`: Matching lines with `file:line:content` format
+                    - `'count'`: Count of matches per file
 
             Returns:
-                Search results formatted according to output_mode. Returns "No matches
-                found" if no results.
+                Search results formatted according to `output_mode`.
+                    Returns `'No matches found'` if no results.
             """
             # Compile regex pattern (for validation)
             try:
