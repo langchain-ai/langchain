@@ -88,6 +88,7 @@ addopts = "--strict-markers --strict-config --durations=5"
 markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
     "scheduled: mark tests to run in scheduled testing",
+    "retry: retry test if it fails",
 ]
 asyncio_mode = "auto"
 
