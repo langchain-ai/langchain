@@ -906,7 +906,7 @@ def create_agent(  # noqa: PLR0915
         awrap_tool_call_wrapper = _chain_async_tool_call_wrappers(async_wrappers)
 
     # Setup tools
-     tool_node: ToolNode | SequentialToolNode | None = None
+    tool_node: ToolNode | SequentialToolNode | None = None
     # Extract built-in provider tools (dict format) and regular tools (BaseTool/callables)
     built_in_tools = [t for t in tools if isinstance(t, dict)]
     regular_tools = [t for t in tools if not isinstance(t, dict)]
