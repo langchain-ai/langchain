@@ -153,9 +153,7 @@ class TodoListMiddleware(AgentMiddleware):
 
     Args:
         system_prompt: Custom system prompt to guide the agent on using the todo tool.
-            If not provided, uses the default `WRITE_TODOS_SYSTEM_PROMPT`.
         tool_description: Custom description for the write_todos tool.
-            If not provided, uses the default `WRITE_TODOS_TOOL_DESCRIPTION`.
     """
 
     state_schema = PlanningState
@@ -166,11 +164,12 @@ class TodoListMiddleware(AgentMiddleware):
         system_prompt: str = WRITE_TODOS_SYSTEM_PROMPT,
         tool_description: str = WRITE_TODOS_TOOL_DESCRIPTION,
     ) -> None:
-        """Initialize the TodoListMiddleware with optional custom prompts.
+        """Initialize the `TodoListMiddleware` with optional custom prompts.
 
         Args:
-            system_prompt: Custom system prompt to guide the agent on using the todo tool.
-            tool_description: Custom description for the write_todos tool.
+            system_prompt: Custom system prompt to guide the agent on using the todo
+                tool.
+            tool_description: Custom description for the `write_todos` tool.
         """
         super().__init__()
         self.system_prompt = system_prompt

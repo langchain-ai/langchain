@@ -69,7 +69,7 @@ ResponseT = TypeVar("ResponseT")
 
 
 class _ModelRequestOverrides(TypedDict, total=False):
-    """Possible overrides for ModelRequest.override() method."""
+    """Possible overrides for `ModelRequest.override()` method."""
 
     model: BaseChatModel
     system_prompt: str | None
@@ -98,27 +98,31 @@ class ModelRequest:
         """Replace the request with a new request with the given overrides.
 
         Returns a new `ModelRequest` instance with the specified attributes replaced.
+
         This follows an immutable pattern, leaving the original request unchanged.
 
         Args:
-            **overrides: Keyword arguments for attributes to override. Supported keys:
-                - model: BaseChatModel instance
-                - system_prompt: Optional system prompt string
-                - messages: List of messages
-                - tool_choice: Tool choice configuration
-                - tools: List of available tools
-                - response_format: Response format specification
-                - model_settings: Additional model settings
+            **overrides: Keyword arguments for attributes to override.
+
+                Supported keys:
+
+                - `model`: `BaseChatModel` instance
+                - `system_prompt`: Optional system prompt string
+                - `messages`: `list` of messages
+                - `tool_choice`: Tool choice configuration
+                - `tools`: `list` of available tools
+                - `response_format`: Response format specification
+                - `model_settings`: Additional model settings
 
         Returns:
-            New ModelRequest instance with specified overrides applied.
+            New `ModelRequest` instance with specified overrides applied.
 
         Examples:
-            ```python
-            # Create a new request with different model
+            ```python title="Create a new request with different model"
             new_request = request.override(model=different_model)
+            ```
 
-            # Override multiple attributes
+            ```python title="Override multiple attributes"
             new_request = request.override(system_prompt="New instructions", tool_choice="auto")
             ```
         """
@@ -129,24 +133,25 @@ class ModelRequest:
 class ModelResponse:
     """Response from model execution including messages and optional structured output.
 
-    The result will usually contain a single AIMessage, but may include
-    an additional ToolMessage if the model used a tool for structured output.
+    The result will usually contain a single `AIMessage`, but may include an additional
+    `ToolMessage` if the model used a tool for structured output.
     """
 
     result: list[BaseMessage]
     """List of messages from model execution."""
 
     structured_response: Any = None
-    """Parsed structured output if response_format was specified, None otherwise."""
+    """Parsed structured output if `response_format` was specified, `None` otherwise."""
 
 
 # Type alias for middleware return type - allows returning either full response or just AIMessage
 ModelCallResult: TypeAlias = "ModelResponse | AIMessage"
-"""Type alias for model call handler return value.
+"""`TypeAlias` for model call handler return value.
 
 Middleware can return either:
-- ModelResponse: Full response with messages and optional structured output
-- AIMessage: Simplified return for simple use cases
+
+- `ModelResponse`: Full response with messages and optional structured output
+- `AIMessage`: Simplified return for simple use cases
 """
 
 
@@ -257,15 +262,19 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         Args:
             request: Model request to execute (includes state and runtime).
             handler: Callback that executes the model request and returns
-                `ModelResponse`. Call this to execute the model. Can be called multiple
-                times for retry logic. Can skip calling it to short-circuit.
+                `ModelResponse`.
+
+                Call this to execute the model.
+
+                Can be called multiple times for retry logic.
+
+                Can skip calling it to short-circuit.
 
         Returns:
             `ModelCallResult`
 
         Examples:
-            Retry on error:
-            ```python
+            ```python title="Retry on error"
             def wrap_model_call(self, request, handler):
                 for attempt in range(3):
                     try:
@@ -275,8 +284,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                             raise
             ```
 
-            Rewrite response:
-            ```python
+            ```python title="Rewrite response"
             def wrap_model_call(self, request, handler):
                 response = handler(request)
                 ai_msg = response.result[0]
@@ -286,8 +294,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                 )
             ```
 
-            Error to fallback:
-            ```python
+            ```python title="Error to fallback"
             def wrap_model_call(self, request, handler):
                 try:
                     return handler(request)
@@ -295,8 +302,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                     return ModelResponse(result=[AIMessage(content="Service unavailable")])
             ```
 
-            Cache/short-circuit:
-            ```python
+            ```python title="Cache/short-circuit"
             def wrap_model_call(self, request, handler):
                 if cached := get_cache(request):
                     return cached  # Short-circuit with cached result
@@ -305,8 +311,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                 return response
             ```
 
-            Simple AIMessage return (converted automatically):
-            ```python
+            ```python title="Simple `AIMessage` return (converted automatically)"
             def wrap_model_call(self, request, handler):
                 response = handler(request)
                 # Can return AIMessage directly for simple cases
@@ -333,6 +338,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         """Intercept and control async model execution via handler callback.
 
         The handler callback executes the model request and returns a `ModelResponse`.
+
         Middleware can call the handler multiple times for retry logic, skip calling
         it to short-circuit, or modify the request/response. Multiple middleware
         compose with first in list as outermost layer.
@@ -340,15 +346,19 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         Args:
             request: Model request to execute (includes state and runtime).
             handler: Async callback that executes the model request and returns
-                `ModelResponse`. Call this to execute the model. Can be called multiple
-                times for retry logic. Can skip calling it to short-circuit.
+                `ModelResponse`.
+
+                Call this to execute the model.
+
+                Can be called multiple times for retry logic.
+
+                Can skip calling it to short-circuit.
 
         Returns:
-            ModelCallResult
+            `ModelCallResult`
 
         Examples:
-            Retry on error:
-            ```python
+            ```python title="Retry on error"
             async def awrap_model_call(self, request, handler):
                 for attempt in range(3):
                     try:
@@ -386,31 +396,30 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         """Intercept tool execution for retries, monitoring, or modification.
 
         Multiple middleware compose automatically (first defined = outermost).
+
         Exceptions propagate unless `handle_tool_errors` is configured on `ToolNode`.
 
         Args:
             request: Tool call request with call `dict`, `BaseTool`, state, and runtime.
+
                 Access state via `request.state` and runtime via `request.runtime`.
-            handler: Callable to execute the tool (can be called multiple times).
+            handler: `Callable` to execute the tool (can be called multiple times).
 
         Returns:
             `ToolMessage` or `Command` (the final result).
 
-        The handler callable can be invoked multiple times for retry logic.
+        The handler `Callable` can be invoked multiple times for retry logic.
+
         Each call to handler is independent and stateless.
 
         Examples:
-            Modify request before execution:
-
-            ```python
+            ```python title="Modify request before execution"
             def wrap_tool_call(self, request, handler):
                 request.tool_call["args"]["value"] *= 2
                 return handler(request)
             ```
 
-            Retry on error (call handler multiple times):
-
-            ```python
+            ```python title="Retry on error (call handler multiple times)"
             def wrap_tool_call(self, request, handler):
                 for attempt in range(3):
                     try:
@@ -423,9 +432,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                 return result
             ```
 
-            Conditional retry based on response:
-
-            ```python
+            ```python title="Conditional retry based on response"
             def wrap_tool_call(self, request, handler):
                 for attempt in range(3):
                     result = handler(request)
@@ -462,20 +469,26 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
         Args:
             request: Tool call request with call `dict`, `BaseTool`, state, and runtime.
+
                 Access state via `request.state` and runtime via `request.runtime`.
             handler: Async callable to execute the tool and returns `ToolMessage` or
-                `Command`. Call this to execute the tool. Can be called multiple times
-                for retry logic. Can skip calling it to short-circuit.
+                `Command`.
+
+                Call this to execute the tool.
+
+                Can be called multiple times for retry logic.
+
+                Can skip calling it to short-circuit.
 
         Returns:
             `ToolMessage` or `Command` (the final result).
 
-        The handler callable can be invoked multiple times for retry logic.
+        The handler `Callable` can be invoked multiple times for retry logic.
+
         Each call to handler is independent and stateless.
 
         Examples:
-            Async retry on error:
-            ```python
+            ```python title="Async retry on error"
             async def awrap_tool_call(self, request, handler):
                 for attempt in range(3):
                     try:
@@ -574,16 +587,20 @@ def hook_config(
     can jump to, which establishes conditional edges in the agent graph.
 
     Args:
-        can_jump_to: Optional list of valid jump destinations. Can be:
-            - "tools": Jump to the tools node
-            - "model": Jump back to the model node
-            - "end": Jump to the end of the graph
+        can_jump_to: Optional list of valid jump destinations.
+
+            Can be:
+
+            - `'tools'`: Jump to the tools node
+            - `'model'`: Jump back to the model node
+            - `'end'`: Jump to the end of the graph
 
     Returns:
         Decorator function that marks the method with configuration metadata.
 
     Examples:
         Using decorator on a class method:
+
         ```python
         class MyMiddleware(AgentMiddleware):
             @hook_config(can_jump_to=["end", "model"])
@@ -593,7 +610,9 @@ def hook_config(
                 return None
         ```
 
-        Alternative: Use the `can_jump_to` parameter in `before_model`/`after_model` decorators:
+        Alternative: Use the `can_jump_to` parameter in `before_model`/`after_model`
+        decorators:
+
         ```python
         @before_model(can_jump_to=["end"])
         def conditional_middleware(state: AgentState) -> dict[str, Any] | None:
@@ -644,35 +663,39 @@ def before_model(
     """Decorator used to dynamically create a middleware with the `before_model` hook.
 
     Args:
-        func: The function to be decorated. Must accept:
-            `state: StateT, runtime: Runtime[ContextT]` - State and runtime context
-        state_schema: Optional custom state schema type. If not provided, uses the default
-            `AgentState` schema.
+        func: The function to be decorated.
+
+            Must accept: `state: StateT, runtime: Runtime[ContextT]` - State and runtime
+                context
+        state_schema: Optional custom state schema type.
+
+            If not provided, uses the default `AgentState` schema.
         tools: Optional list of additional tools to register with this middleware.
         can_jump_to: Optional list of valid jump destinations for conditional edges.
-            Valid values are: `"tools"`, `"model"`, `"end"`
-        name: Optional name for the generated middleware class. If not provided,
-            uses the decorated function's name.
+
+            Valid values are: `'tools'`, `'model'`, `'end'`
+        name: Optional name for the generated middleware class.
+
+            If not provided, uses the decorated function's name.
 
     Returns:
         Either an `AgentMiddleware` instance (if func is provided directly) or a
-        decorator function that can be applied to a function it is wrapping.
+            decorator function that can be applied to a function it is wrapping.
 
     The decorated function should return:
-        - `dict[str, Any]` - State updates to merge into the agent state
-        - `Command` - A command to control flow (e.g., jump to different node)
-        - `None` - No state updates or flow control
+
+    - `dict[str, Any]` - State updates to merge into the agent state
+    - `Command` - A command to control flow (e.g., jump to different node)
+    - `None` - No state updates or flow control
 
     Examples:
-        Basic usage:
-        ```python
+        ```python title="Basic usage"
         @before_model
         def log_before_model(state: AgentState, runtime: Runtime) -> None:
             print(f"About to call model with {len(state['messages'])} messages")
         ```
 
-        With conditional jumping:
-        ```python
+        ```python title="With conditional jumping"
         @before_model(can_jump_to=["end"])
         def conditional_before_model(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
             if some_condition(state):
@@ -680,8 +703,7 @@ def before_model(
             return None
         ```
 
-        With custom state schema:
-        ```python
+        ```python title="With custom state schema"
         @before_model(state_schema=MyCustomState)
         def custom_before_model(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
             return {"custom_field": "updated_value"}
@@ -786,35 +808,39 @@ def after_model(
     """Decorator used to dynamically create a middleware with the `after_model` hook.
 
     Args:
-        func: The function to be decorated. Must accept:
-            `state: StateT, runtime: Runtime[ContextT]` - State and runtime context
-        state_schema: Optional custom state schema type. If not provided, uses the
-            default `AgentState` schema.
+        func: The function to be decorated.
+
+            Must accept: `state: StateT, runtime: Runtime[ContextT]` - State and runtime
+            context
+        state_schema: Optional custom state schema type.
+
+            If not provided, uses the default `AgentState` schema.
         tools: Optional list of additional tools to register with this middleware.
         can_jump_to: Optional list of valid jump destinations for conditional edges.
-            Valid values are: `"tools"`, `"model"`, `"end"`
-        name: Optional name for the generated middleware class. If not provided,
-            uses the decorated function's name.
+
+            Valid values are: `'tools'`, `'model'`, `'end'`
+        name: Optional name for the generated middleware class.
+
+            If not provided, uses the decorated function's name.
 
     Returns:
         Either an `AgentMiddleware` instance (if func is provided) or a decorator
-        function that can be applied to a function.
+            function that can be applied to a function.
 
     The decorated function should return:
-        - `dict[str, Any]` - State updates to merge into the agent state
-        - `Command` - A command to control flow (e.g., jump to different node)
-        - `None` - No state updates or flow control
+
+    - `dict[str, Any]` - State updates to merge into the agent state
+    - `Command` - A command to control flow (e.g., jump to different node)
+    - `None` - No state updates or flow control
 
     Examples:
-        Basic usage for logging model responses:
-        ```python
+        ```python title="Basic usage for logging model responses"
         @after_model
         def log_latest_message(state: AgentState, runtime: Runtime) -> None:
             print(state["messages"][-1].content)
         ```
 
-        With custom state schema:
-        ```python
+        ```python title="With custom state schema"
         @after_model(state_schema=MyCustomState, name="MyAfterModelMiddleware")
         def custom_after_model(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
             return {"custom_field": "updated_after_model"}
@@ -917,35 +943,39 @@ def before_agent(
     """Decorator used to dynamically create a middleware with the `before_agent` hook.
 
     Args:
-        func: The function to be decorated. Must accept:
-            `state: StateT, runtime: Runtime[ContextT]` - State and runtime context
-        state_schema: Optional custom state schema type. If not provided, uses the
-            default `AgentState` schema.
+        func: The function to be decorated.
+
+            Must accept: `state: StateT, runtime: Runtime[ContextT]` - State and runtime
+            context
+        state_schema: Optional custom state schema type.
+
+            If not provided, uses the default `AgentState` schema.
         tools: Optional list of additional tools to register with this middleware.
         can_jump_to: Optional list of valid jump destinations for conditional edges.
-            Valid values are: `"tools"`, `"model"`, `"end"`
-        name: Optional name for the generated middleware class. If not provided,
-            uses the decorated function's name.
+
+            Valid values are: `'tools'`, `'model'`, `'end'`
+        name: Optional name for the generated middleware class.
+
+            If not provided, uses the decorated function's name.
 
     Returns:
         Either an `AgentMiddleware` instance (if func is provided directly) or a
-        decorator function that can be applied to a function it is wrapping.
+            decorator function that can be applied to a function it is wrapping.
 
     The decorated function should return:
-        - `dict[str, Any]` - State updates to merge into the agent state
-        - `Command` - A command to control flow (e.g., jump to different node)
-        - `None` - No state updates or flow control
+
+    - `dict[str, Any]` - State updates to merge into the agent state
+    - `Command` - A command to control flow (e.g., jump to different node)
+    - `None` - No state updates or flow control
 
     Examples:
-        Basic usage:
-        ```python
+        ```python title="Basic usage"
         @before_agent
         def log_before_agent(state: AgentState, runtime: Runtime) -> None:
             print(f"Starting agent with {len(state['messages'])} messages")
         ```
 
-        With conditional jumping:
-        ```python
+        ```python title="With conditional jumping"
         @before_agent(can_jump_to=["end"])
         def conditional_before_agent(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
             if some_condition(state):
@@ -953,8 +983,7 @@ def before_agent(
             return None
         ```
 
-        With custom state schema:
-        ```python
+        ```python title="With custom state schema"
         @before_agent(state_schema=MyCustomState)
         def custom_before_agent(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
             return {"custom_field": "initialized_value"}
@@ -1059,35 +1088,39 @@ def after_agent(
     """Decorator used to dynamically create a middleware with the `after_agent` hook.
 
     Args:
-        func: The function to be decorated. Must accept:
-            `state: StateT, runtime: Runtime[ContextT]` - State and runtime context
-        state_schema: Optional custom state schema type. If not provided, uses the
-            default `AgentState` schema.
+        func: The function to be decorated.
+
+            Must accept: `state: StateT, runtime: Runtime[ContextT]` - State and runtime
+            context
+        state_schema: Optional custom state schema type.
+
+            If not provided, uses the default `AgentState` schema.
         tools: Optional list of additional tools to register with this middleware.
         can_jump_to: Optional list of valid jump destinations for conditional edges.
-            Valid values are: `"tools"`, `"model"`, `"end"`
-        name: Optional name for the generated middleware class. If not provided,
-            uses the decorated function's name.
+
+            Valid values are: `'tools'`, `'model'`, `'end'`
+        name: Optional name for the generated middleware class.
+
+            If not provided, uses the decorated function's name.
 
     Returns:
         Either an `AgentMiddleware` instance (if func is provided) or a decorator
-        function that can be applied to a function.
+            function that can be applied to a function.
 
     The decorated function should return:
-        - `dict[str, Any]` - State updates to merge into the agent state
-        - `Command` - A command to control flow (e.g., jump to different node)
-        - `None` - No state updates or flow control
+
+    - `dict[str, Any]` - State updates to merge into the agent state
+    - `Command` - A command to control flow (e.g., jump to different node)
+    - `None` - No state updates or flow control
 
     Examples:
-        Basic usage for logging agent completion:
-        ```python
+        ```python title="Basic usage for logging agent completion"
         @after_agent
         def log_completion(state: AgentState, runtime: Runtime) -> None:
             print(f"Agent completed with {len(state['messages'])} messages")
         ```
 
-        With custom state schema:
-        ```python
+        ```python title="With custom state schema"
         @after_agent(state_schema=MyCustomState, name="MyAfterAgentMiddleware")
         def custom_after_agent(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
             return {"custom_field": "finalized_value"}
@@ -1188,18 +1221,21 @@ def dynamic_prompt(
     a string that will be set as the system prompt for the model request.
 
     Args:
-        func: The function to be decorated. Must accept:
-            `request: ModelRequest` - Model request (contains state and runtime)
+        func: The function to be decorated.
+
+            Must accept: `request: ModelRequest` - Model request (contains state and
+            runtime)
 
     Returns:
-        Either an AgentMiddleware instance (if func is provided) or a decorator function
-        that can be applied to a function.
+        Either an `AgentMiddleware` instance (if func is provided) or a decorator
+            function that can be applied to a function.
 
     The decorated function should return:
-        - `str` - The system prompt to use for the model request
+        - `str` – The system prompt to use for the model request
 
     Examples:
         Basic usage with dynamic content:
+
         ```python
         @dynamic_prompt
         def my_prompt(request: ModelRequest) -> str:
@@ -1208,6 +1244,7 @@ def dynamic_prompt(
         ```
 
         Using state to customize the prompt:
+
         ```python
         @dynamic_prompt
         def context_aware_prompt(request: ModelRequest) -> str:
@@ -1218,6 +1255,7 @@ def dynamic_prompt(
         ```
 
         Using with agent:
+
         ```python
         agent = create_agent(model, middleware=[my_prompt])
         ```
@@ -1322,23 +1360,27 @@ def wrap_model_call(
 ):
     """Create middleware with `wrap_model_call` hook from a function.
 
-    Converts a function with handler callback into middleware that can intercept
-    model calls, implement retry logic, handle errors, and rewrite responses.
+    Converts a function with handler callback into middleware that can intercept model
+    calls, implement retry logic, handle errors, and rewrite responses.
 
     Args:
         func: Function accepting (request, handler) that calls handler(request)
             to execute the model and returns `ModelResponse` or `AIMessage`.
+
             Request contains state and runtime.
-        state_schema: Custom state schema. Defaults to `AgentState`.
+        state_schema: Custom state schema.
+
+            Defaults to `AgentState`.
         tools: Additional tools to register with this middleware.
-        name: Middleware class name. Defaults to function name.
+        name: Middleware class name.
+
+            Defaults to function name.
 
     Returns:
         `AgentMiddleware` instance if func provided, otherwise a decorator.
 
     Examples:
-        Basic retry logic:
-        ```python
+        ```python title="Basic retry logic"
         @wrap_model_call
         def retry_on_error(request, handler):
             max_retries = 3
@@ -1350,8 +1392,7 @@ def wrap_model_call(
                         raise
         ```
 
-        Model fallback:
-        ```python
+        ```python title="Model fallback"
         @wrap_model_call
         def fallback_model(request, handler):
             # Try primary model
@@ -1365,8 +1406,7 @@ def wrap_model_call(
             return handler(request)
         ```
 
-        Rewrite response content (full ModelResponse):
-        ```python
+        ```python title="Rewrite response content (full `ModelResponse`)"
         @wrap_model_call
         def uppercase_responses(request, handler):
             response = handler(request)
@@ -1377,8 +1417,7 @@ def wrap_model_call(
             )
         ```
 
-        Simple AIMessage return (converted automatically):
-        ```python
+        ```python title="Simple `AIMessage` return (converted automatically)"
         @wrap_model_call
         def simple_response(request, handler):
             # AIMessage is automatically converted to ModelResponse
@@ -1476,16 +1515,19 @@ def wrap_tool_call(
     Args:
         func: Function accepting (request, handler) that calls
             handler(request) to execute the tool and returns final `ToolMessage` or
-            `Command`. Can be sync or async.
+            `Command`.
+
+            Can be sync or async.
         tools: Additional tools to register with this middleware.
-        name: Middleware class name. Defaults to function name.
+        name: Middleware class name.
+
+            Defaults to function name.
 
     Returns:
         `AgentMiddleware` instance if func provided, otherwise a decorator.
 
     Examples:
-        Retry logic:
-        ```python
+        ```python title="Retry logic"
         @wrap_tool_call
         def retry_on_error(request, handler):
             max_retries = 3
@@ -1497,8 +1539,7 @@ def wrap_tool_call(
                         raise
         ```
 
-        Async retry logic:
-        ```python
+        ```python title="Async retry logic"
         @wrap_tool_call
         async def async_retry(request, handler):
             for attempt in range(3):
@@ -1509,16 +1550,14 @@ def wrap_tool_call(
                         raise
         ```
 
-        Modify request:
-        ```python
+        ```python title="Modify request"
         @wrap_tool_call
         def modify_args(request, handler):
             request.tool_call["args"]["value"] *= 2
             return handler(request)
         ```
 
-        Short-circuit with cached result:
-        ```python
+        ```python title="Short-circuit with cached result"
         @wrap_tool_call
         def with_cache(request, handler):
             if cached := get_cache(request):

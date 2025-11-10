@@ -76,7 +76,7 @@ class SummarizationMiddleware(AgentMiddleware):
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
         summary_prefix: str = SUMMARY_PREFIX,
     ) -> None:
-        """Initialize the summarization middleware.
+        """Initialize summarization middleware.
 
         Args:
             model: The language model to use for generating summaries.

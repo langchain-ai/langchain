@@ -49,7 +49,8 @@ def _create_tool_selection_response(tools: list[BaseTool]) -> TypeAdapter:
         tools: Available tools to include in the schema.
 
     Returns:
-        TypeAdapter for a schema where each tool name is a Literal with its description.
+        `TypeAdapter` for a schema where each tool name is a `Literal` with its
+            description.
     """
     if not tools:
         msg = "Invalid usage: tools must be non-empty"
@@ -92,8 +93,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
     and helps the main model focus on the right tools.
 
     Examples:
-        Limit to 3 tools:
-        ```python
+        ```python title="Limit to 3 tools"
         from langchain.agents.middleware import LLMToolSelectorMiddleware
 
         middleware = LLMToolSelectorMiddleware(max_tools=3)
@@ -105,8 +105,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         )
         ```
 
-        Use a smaller model for selection:
-        ```python
+        ```python title="Use a smaller model for selection"
         middleware = LLMToolSelectorMiddleware(model="openai:gpt-4o-mini", max_tools=2)
         ```
     """
@@ -122,13 +121,20 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         """Initialize the tool selector.
 
         Args:
-            model: Model to use for selection. If not provided, uses the agent's main model.
-                Can be a model identifier string or BaseChatModel instance.
+            model: Model to use for selection.
+
+                If not provided, uses the agent's main model.
+
+                Can be a model identifier string or `BaseChatModel` instance.
             system_prompt: Instructions for the selection model.
-            max_tools: Maximum number of tools to select. If the model selects more,
-                only the first max_tools will be used. No limit if not specified.
+            max_tools: Maximum number of tools to select.
+
+                If the model selects more, only the first `max_tools` will be used.
+
+                No limit if not specified.
             always_include: Tool names to always include regardless of selection.
-                These do not count against the max_tools limit.
+
+                These do not count against the `max_tools` limit.
         """
         super().__init__()
         self.system_prompt = system_prompt
@@ -144,7 +150,8 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         """Prepare inputs for tool selection.
 
         Returns:
-            SelectionRequest with prepared inputs, or None if no selection is needed.
+            `SelectionRequest` with prepared inputs, or `None` if no selection is
+                needed.
         """
         # If no tools available, return None
         if not request.tools or len(request.tools) == 0:
@@ -211,7 +218,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         valid_tool_names: list[str],
         request: ModelRequest,
     ) -> ModelRequest:
-        """Process the selection response and return filtered ModelRequest."""
+        """Process the selection response and return filtered `ModelRequest`."""
         selected_tool_names: list[str] = []
         invalid_tool_selections = []
 

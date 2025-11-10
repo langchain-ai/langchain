@@ -22,7 +22,7 @@ class ModelFallbackMiddleware(AgentMiddleware):
     """Automatic fallback to alternative models on errors.
 
     Retries failed model calls with alternative models in sequence until
-    success or all models exhausted. Primary model specified in create_agent().
+    success or all models exhausted. Primary model specified in `create_agent`.
 
     Example:
         ```python
