@@ -1134,6 +1134,7 @@ def test_o1_stream_default_works() -> None:
     assert len(result) > 0
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 def test_multi_party_conversation() -> None:
     llm = ChatOpenAI(model="gpt-5-nano")
     messages = [
