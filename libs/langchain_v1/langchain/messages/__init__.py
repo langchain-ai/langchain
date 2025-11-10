@@ -2,11 +2,6 @@
 
 Includes message types for different roles (e.g., human, AI, system), as well as types
 for message content blocks (e.g., text, image, audio) and tool calls.
-
-!!! warning "Reference docs"
-    This page contains **reference documentation** for Messages. See
-    [the docs](https://docs.langchain.com/oss/python/langchain/messages) for conceptual
-    guides, tutorials, and examples on using Messages.
 """
 
 from langchain_core.messages import (

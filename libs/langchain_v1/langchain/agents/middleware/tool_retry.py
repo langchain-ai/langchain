@@ -27,6 +27,7 @@ class ToolRetryMiddleware(AgentMiddleware):
 
     Examples:
         Basic usage with default settings (2 retries, exponential backoff):
+
         ```python
         from langchain.agents import create_agent
         from langchain.agents.middleware import ToolRetryMiddleware
@@ -35,6 +36,7 @@ class ToolRetryMiddleware(AgentMiddleware):
         ```
 
         Retry specific exceptions only:
+
         ```python
         from requests.exceptions import RequestException, Timeout
 
@@ -46,6 +48,7 @@ class ToolRetryMiddleware(AgentMiddleware):
         ```
 
         Custom exception filtering:
+
         ```python
         from requests.exceptions import HTTPError
 
@@ -64,6 +67,7 @@ class ToolRetryMiddleware(AgentMiddleware):
         ```
 
         Apply to specific tools with custom error handling:
+
         ```python
         def format_error(exc: Exception) -> str:
             return "Database temporarily unavailable. Please try again later."
@@ -77,6 +81,7 @@ class ToolRetryMiddleware(AgentMiddleware):
         ```
 
         Apply to specific tools using BaseTool instances:
+
         ```python
         from langchain_core.tools import tool
 
@@ -94,6 +99,7 @@ class ToolRetryMiddleware(AgentMiddleware):
         ```
 
         Constant backoff (no exponential growth):
+
         ```python
         retry = ToolRetryMiddleware(
             max_retries=5,
@@ -103,6 +109,7 @@ class ToolRetryMiddleware(AgentMiddleware):
         ```
 
         Raise exception on failure:
+
         ```python
         retry = ToolRetryMiddleware(
             max_retries=2,
@@ -125,34 +132,42 @@ class ToolRetryMiddleware(AgentMiddleware):
         max_delay: float = 60.0,
         jitter: bool = True,
     ) -> None:
-        """Initialize ToolRetryMiddleware.
+        """Initialize `ToolRetryMiddleware`.
 
         Args:
             max_retries: Maximum number of retry attempts after the initial call.
-                Default is 2 retries (3 total attempts). Must be >= 0.
+                Default is `2` retries (`3` total attempts). Must be `>= 0`.
             tools: Optional list of tools or tool names to apply retry logic to.
+
                 Can be a list of `BaseTool` instances or tool name strings.
-                If `None`, applies to all tools. Default is `None`.
+
+                If `None`, applies to all tools.
             retry_on: Either a tuple of exception types to retry on, or a callable
                 that takes an exception and returns `True` if it should be retried.
+
                 Default is to retry on all exceptions.
             on_failure: Behavior when all retries are exhausted. Options:
-                - `"return_message"` (default): Return a ToolMessage with error details,
-                  allowing the LLM to handle the failure and potentially recover.
-                - `"raise"`: Re-raise the exception, stopping agent execution.
-                - Custom callable: Function that takes the exception and returns a string
-                  for the ToolMessage content, allowing custom error formatting.
-            backoff_factor: Multiplier for exponential backoff. Each retry waits
-                `initial_delay * (backoff_factor ** retry_number)` seconds.
-                Set to 0.0 for constant delay. Default is 2.0.
-            initial_delay: Initial delay in seconds before first retry. Default is 1.0.
-            max_delay: Maximum delay in seconds between retries. Caps exponential
-                backoff growth. Default is 60.0.
-            jitter: Whether to add random jitter (±25%) to delay to avoid thundering herd.
-                Default is `True`.
+
+                - `'return_message'`: Return a `ToolMessage` with error details,
+                    allowing the LLM to handle the failure and potentially recover.
+                - `'raise'`: Re-raise the exception, stopping agent execution.
+                - Custom callable: Function that takes the exception and returns a
+                    string for the `ToolMessage` content, allowing custom error
+                    formatting.
+            backoff_factor: Multiplier for exponential backoff.
+
+                Each retry waits `initial_delay * (backoff_factor ** retry_number)`
+                seconds.
+
+                Set to `0.0` for constant delay.
+            initial_delay: Initial delay in seconds before first retry.
+            max_delay: Maximum delay in seconds between retries.
+
+                Caps exponential backoff growth.
+            jitter: Whether to add random jitter (`±25%`) to delay to avoid thundering herd.
 
         Raises:
-            ValueError: If max_retries < 0 or delays are negative.
+            ValueError: If `max_retries < 0` or delays are negative.
         """
         super().__init__()
 
@@ -260,15 +275,15 @@ class ToolRetryMiddleware(AgentMiddleware):
 
         Args:
             tool_name: Name of the tool that failed.
-            tool_call_id: ID of the tool call (may be None).
+            tool_call_id: ID of the tool call (may be `None`).
             exc: The exception that caused the failure.
             attempts_made: Number of attempts actually made.
 
         Returns:
-            ToolMessage with error details.
+            `ToolMessage` with error details.
 
         Raises:
-            Exception: If on_failure is "raise", re-raises the exception.
+            Exception: If `on_failure` is `'raise'`, re-raises the exception.
         """
         if self.on_failure == "raise":
             raise exc
@@ -293,11 +308,11 @@ class ToolRetryMiddleware(AgentMiddleware):
         """Intercept tool execution and retry on failure.
 
         Args:
-            request: Tool call request with call dict, BaseTool, state, and runtime.
+            request: Tool call request with call dict, `BaseTool`, state, and runtime.
             handler: Callable to execute the tool (can be called multiple times).
 
         Returns:
-            ToolMessage or Command (the final result).
+            `ToolMessage` or `Command` (the final result).
         """
         tool_name = request.tool.name if request.tool else request.tool_call["name"]
 
@@ -342,11 +357,12 @@ class ToolRetryMiddleware(AgentMiddleware):
         """Intercept and control async tool execution with retry logic.
 
         Args:
-            request: Tool call request with call dict, BaseTool, state, and runtime.
-            handler: Async callable to execute the tool and returns ToolMessage or Command.
+            request: Tool call request with call `dict`, `BaseTool`, state, and runtime.
+            handler: Async callable to execute the tool and returns `ToolMessage` or
+                `Command`.
 
         Returns:
-            ToolMessage or Command (the final result).
+            `ToolMessage` or `Command` (the final result).
         """
         tool_name = request.tool.name if request.tool else request.tool_call["name"]
 
