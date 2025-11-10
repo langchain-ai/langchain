@@ -1256,14 +1256,13 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
 
     # Test we don't engage summarization
     # total_tokens = 4 * 200 = 800
-    # max_output_tokens = 150
-    # buffer_tokens = 50
-    # 800 + 150 + 50 <= 1000 -> summarization not triggered
+    # max_input_tokens = 1000
+    # 0.81 * 1000 == 810 > 800 -> summarization not triggered
     result = middleware.before_model(state, None)
     assert result is None
 
     # Engage summarization
-    # 800 + 150 + 51 > 1000
+    # 0.80 * 1000 == 800 <= 800
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
         trigger=("fraction", 0.80),
@@ -1282,7 +1281,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         "Message 4",
     ]
 
-    # With tokens_to_keep = 0.6 the target token allowance becomes 600,
+    # With keep=("fraction", 0.6) the target token allowance becomes 600,
     # so the cutoff shifts to keep the last three messages instead of two.
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
@@ -1298,7 +1297,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         "Message 4",
     ]
 
-    # Once tokens_to_keep reaches 0.8 the inferred limit equals the full
+    # Once keep=("fraction", 0.8) the inferred limit equals the full
     # context (target tokens = 800), so token-based retention keeps everything
     # and summarization is skipped entirely.
     middleware = SummarizationMiddleware(
@@ -1389,7 +1388,7 @@ def test_summarization_middleware_token_retention_pct_respects_tool_pairs() -> N
     assert preserved_tokens > target_token_count
 
 
-def test_summarization_middleware_profile_inference_fallbacks() -> None:
+def test_summarization_middleware_missing_profile() -> None:
     """Ensure automatic profile inference falls back when profiles are unavailable."""
 
     class ImportErrorProfileModel(BaseChatModel):
@@ -1404,29 +1403,13 @@ def test_summarization_middleware_profile_inference_fallbacks() -> None:
         def profile(self):
             raise ImportError("Profile not available")
 
-    class MissingKeysProfileModel(BaseChatModel):
-        def _generate(self, messages, **kwargs):
-            raise NotImplementedError
-
-        @property
-        def _llm_type(self) -> str:
-            return "mock"
-
-        @property
-        def profile(self) -> "ModelProfile":
-            return {"max_input_tokens": 1000}
-
-    models = [
-        ImportErrorProfileModel(),
-        MissingKeysProfileModel(),
-    ]
-
-    for model in models:
-        middleware = SummarizationMiddleware(model=model, keep=("messages", 1))
-        middleware.token_counter = lambda _messages: 10_000
-        state = {"messages": [HumanMessage(content=str(i)) for i in range(3)]}
-        result = middleware.before_model(state, None)
-        assert result is None
+    with pytest.raises(
+        ValueError,
+        match="Model profile information is required to use fractional token limits",
+    ):
+        _ = SummarizationMiddleware(
+            model=ImportErrorProfileModel, trigger=("fraction", 0.5), keep=("messages", 1)
+        )
 
 
 def test_summarization_middleware_full_workflow() -> None:
@@ -1485,8 +1468,8 @@ def test_summarization_middleware_full_workflow() -> None:
     assert "Generated summary" in summary_message.content
 
 
-def test_summarization_middleware_messages_before_summary() -> None:
-    """Test SummarizationMiddleware with messages_before_summary parameter."""
+def test_summarization_middleware_keep_messages() -> None:
+    """Test SummarizationMiddleware with keep parameter specifying messages."""
 
     class MockModel(BaseChatModel):
         def invoke(self, prompt):
@@ -1527,6 +1510,10 @@ def test_summarization_middleware_messages_before_summary() -> None:
     result = middleware.before_model(state_at, None)
     assert result is not None
     assert "messages" in result
+    expected_types = ["remove", "human", "human", "human"]
+    actual_types = [message.type for message in result["messages"]]
+    assert actual_types == expected_types
+    assert [message.content for message in result["messages"][2:]] == ["4", "5"]
 
     # Above threshold - should also trigger summarization
     messages_above = messages_at_threshold + [HumanMessage(content="6")]
@@ -1534,6 +1521,10 @@ def test_summarization_middleware_messages_before_summary() -> None:
     result = middleware.before_model(state_above, None)
     assert result is not None
     assert "messages" in result
+    expected_types = ["remove", "human", "human", "human"]
+    actual_types = [message.type for message in result["messages"]]
+    assert actual_types == expected_types
+    assert [message.content for message in result["messages"][2:]] == ["5", "6"]
 
     # Test with both parameters disabled
     middleware_disabled = SummarizationMiddleware(model=MockModel(), trigger=None)
