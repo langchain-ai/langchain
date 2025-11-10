@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Callable, Iterator, Sequence
 from json import JSONDecodeError
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias
 
 import openai
 from langchain_core.callbacks import (
