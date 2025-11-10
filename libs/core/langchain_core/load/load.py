@@ -265,8 +265,6 @@ def load(
             return reviver(loaded_obj)
         if isinstance(obj, list):
             return [_load(o) for o in obj]
-        if isinstance(obj, str) and obj in reviver.secrets_map:
-            return reviver.secrets_map[obj]
         return obj
 
     return _load(obj)
