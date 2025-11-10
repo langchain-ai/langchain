@@ -14,19 +14,6 @@ from langchain_core.messages.block_translators.groq import (
 )
 
 
-def test_groq_translator_imports() -> None:
-    """Test that groq translator module can be imported successfully.
-
-    This test ensures that all required dependencies for the groq translator
-    are available, including the _extract_reasoning_from_additional_kwargs function.
-    This would catch issues like the one in langchain-core 1.0.0 where the function
-    was not accessible in the PyPI package.
-    """
-    # If imports at top of file succeeded, the translator dependencies are available
-    assert callable(translate_content)
-    assert callable(_extract_reasoning_from_additional_kwargs)
-
-
 def test_groq_translator_registered() -> None:
     """Test that groq translator is properly registered."""
     assert "groq" in PROVIDER_TRANSLATORS
