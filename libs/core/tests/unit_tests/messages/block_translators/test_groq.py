@@ -19,6 +19,8 @@ def test_groq_translator_imports() -> None:
 
     This test ensures that all required dependencies for the groq translator
     are available, including the _extract_reasoning_from_additional_kwargs function.
+    This would catch issues like the one in langchain-core 1.0.0 where the function
+    was not accessible in the PyPI package.
     """
     # If imports at top of file succeeded, the translator dependencies are available
     assert callable(translate_content)
