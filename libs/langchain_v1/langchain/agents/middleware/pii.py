@@ -93,7 +93,9 @@ class PIIMiddleware(AgentMiddleware):
 
     def __init__(
         self,
-        pii_type: str,
+        # From a typing point of view, the literals are covered by 'str'.
+        # Nonetheless, we escape PYI051 to keep hints and autocompletion for the caller.
+        pii_type: Literal["email", "credit_card", "ip", "mac_address", "url"] | str,  # noqa: PYI051
         *,
         strategy: Literal["block", "redact", "mask", "hash"] = "redact",
         detector: Callable[[str], list[PIIMatch]] | str | None = None,
