@@ -511,6 +511,171 @@ def _chain_async_tool_call_wrappers(
 
     return result
 
+class SequentialToolNode:
+    """Tool node that executes tool calls sequentially, propagating state between calls.
+
+    This node wraps a standard ToolNode but executes tool calls one by one,
+    ensuring each subsequent tool receives the updated state from previous tool
+    executions. This is useful when tools have dependencies on each other.
+    """
+
+    def __init__(
+        self,
+        tools: Sequence[BaseTool | Callable | dict[str, Any]],
+        wrap_tool_call: Callable[
+            [ToolCallRequest, Callable[[ToolCallRequest], ToolMessage | Command]],
+            ToolMessage | Command,
+        ]
+        | None = None,
+        awrap_tool_call: Callable[
+            [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]],
+            Awaitable[ToolMessage | Command],
+        ]
+        | None = None,
+    ):
+        """Initialize SequentialToolNode.
+
+        Args:
+            tools: List of tools to execute.
+            wrap_tool_call: Optional synchronous tool call wrapper.
+            awrap_tool_call: Optional asynchronous tool call wrapper.
+        """
+        self._tool_node = ToolNode(
+            tools=tools,
+            wrap_tool_call=wrap_tool_call,
+            awrap_tool_call=awrap_tool_call,
+        )
+        self.tools_by_name = self._tool_node.tools_by_name
+
+    def __call__(self, state: dict[str, Any]) -> dict[str, Any]:
+        """Execute tool calls sequentially (synchronous).
+
+        Args:
+            state: Current agent state.
+
+        Returns:
+            Updated state with tool messages added.
+        """
+        # Get the last AI message with tool calls
+        messages = list(state.get("messages", []))
+        last_ai_message: AIMessage | None = None
+        last_ai_index = -1
+        for i in range(len(messages) - 1, -1, -1):
+            if isinstance(messages[i], AIMessage):
+                last_ai_message = messages[i]
+                last_ai_index = i
+                break
+
+        if not last_ai_message or not last_ai_message.tool_calls:
+            # No tool calls, return state as-is
+            return state
+
+        # Execute tools sequentially
+        tool_messages: list[ToolMessage] = []
+        current_messages = messages.copy()
+
+        for tool_call in last_ai_message.tool_calls:
+            # Create a temporary state with only this tool call
+            # Replace the last AI message with one containing only this tool call
+            temp_ai_message = AIMessage(
+                content=last_ai_message.content,
+                tool_calls=[tool_call],
+                id=last_ai_message.id,
+            )
+            temp_messages = current_messages[:last_ai_index] + [temp_ai_message]
+            temp_state = {
+                **state,
+                "messages": temp_messages,
+            }
+
+            # Execute this tool call using the wrapped ToolNode
+            tool_result = self._tool_node(temp_state)
+
+            # Extract the new tool message from the result
+            result_messages = tool_result.get("messages", [])
+            new_tool_messages = [
+                msg for msg in result_messages
+                if isinstance(msg, ToolMessage) and msg.tool_call_id == tool_call["id"]
+            ]
+
+            if new_tool_messages:
+                tool_messages.extend(new_tool_messages)
+                # Update current messages with the new tool message
+                # This ensures the next tool call sees the updated state
+                current_messages = current_messages + new_tool_messages
+
+        # Return updated state with all tool messages
+        # Ensure we include the original AI message with all tool calls
+        final_messages = messages[:last_ai_index + 1] + tool_messages
+        return {
+            **state,
+            "messages": final_messages,
+        }
+
+    async def __acall__(self, state: dict[str, Any]) -> dict[str, Any]:
+        """Execute tool calls sequentially (asynchronous).
+
+        Args:
+            state: Current agent state.
+
+        Returns:
+            Updated state with tool messages added.
+        """
+        # Get the last AI message with tool calls
+        messages = list(state.get("messages", []))
+        last_ai_message: AIMessage | None = None
+        last_ai_index = -1
+        for i in range(len(messages) - 1, -1, -1):
+            if isinstance(messages[i], AIMessage):
+                last_ai_message = messages[i]
+                last_ai_index = i
+                break
+
+        if not last_ai_message or not last_ai_message.tool_calls:
+            # No tool calls, return state as-is
+            return state
+
+        # Execute tools sequentially
+        tool_messages: list[ToolMessage] = []
+        current_messages = messages.copy()
+
+        for tool_call in last_ai_message.tool_calls:
+            # Create a temporary state with only this tool call
+            # Replace the last AI message with one containing only this tool call
+            temp_ai_message = AIMessage(
+                content=last_ai_message.content,
+                tool_calls=[tool_call],
+                id=last_ai_message.id,
+            )
+            temp_messages = current_messages[:last_ai_index] + [temp_ai_message]
+            temp_state = {
+                **state,
+                "messages": temp_messages,
+            }
+
+            # Execute this tool call using the wrapped ToolNode
+            tool_result = await self._tool_node.__acall__(temp_state)
+
+            # Extract the new tool message from the result
+            result_messages = tool_result.get("messages", [])
+            new_tool_messages = [
+                msg for msg in result_messages
+                if isinstance(msg, ToolMessage) and msg.tool_call_id == tool_call["id"]
+            ]
+
+            if new_tool_messages:
+                tool_messages.extend(new_tool_messages)
+                # Update current messages with the new tool message
+                # This ensures the next tool call sees the updated state
+                current_messages = current_messages + new_tool_messages
+
+        # Return updated state with all tool messages
+        # Ensure we include the original AI message with all tool calls
+        final_messages = messages[:last_ai_index + 1] + tool_messages
+        return {
+            **state,
+            "messages": final_messages,
+        }
 
 def create_agent(  # noqa: PLR0915
     model: str | BaseChatModel,
@@ -528,6 +693,7 @@ def create_agent(  # noqa: PLR0915
     debug: bool = False,
     name: str | None = None,
     cache: BaseCache | None = None,
+    sequential_tool_calls: bool = False,
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
@@ -623,6 +789,16 @@ def create_agent(  # noqa: PLR0915
             another graph as a subgraph node - particularly useful for building
             multi-agent systems.
         cache: An optional `BaseCache` instance to enable caching of graph execution.
+        sequential_tool_calls: Whether to execute multiple tool calls sequentially
+            instead of in parallel. When `True`, tools are executed one by one, and
+            each subsequent tool receives the updated state from previous tool executions.
+            This is useful when tools have dependencies on each other. Defaults to `False`
+            for backward compatibility.
+
+            When `False` (default), all tools from a batch of tool calls execute
+            concurrently based on the same initial state snapshot. When `True`, tools
+            execute sequentially, with each tool receiving state updates from previous
+            tool executions.
 
     Returns:
         A compiled `StateGraph` that can be used for chat interactions.
@@ -728,7 +904,7 @@ def create_agent(  # noqa: PLR0915
         awrap_tool_call_wrapper = _chain_async_tool_call_wrappers(async_wrappers)
 
     # Setup tools
-    tool_node: ToolNode | None = None
+    tool_node: ToolNode | SequentialToolNode | None = None
     # Extract built-in provider tools (dict format) and regular tools (BaseTool/callables)
     built_in_tools = [t for t in tools if isinstance(t, dict)]
     regular_tools = [t for t in tools if not isinstance(t, dict)]
@@ -737,15 +913,21 @@ def create_agent(  # noqa: PLR0915
     available_tools = middleware_tools + regular_tools
 
     # Only create ToolNode if we have client-side tools
-    tool_node = (
-        ToolNode(
-            tools=available_tools,
-            wrap_tool_call=wrap_tool_call_wrapper,
-            awrap_tool_call=awrap_tool_call_wrapper,
-        )
-        if available_tools
-        else None
-    )
+    if available_tools:
+        if sequential_tool_calls:
+            tool_node = SequentialToolNode(
+                tools=available_tools,
+                wrap_tool_call=wrap_tool_call_wrapper,
+                awrap_tool_call=awrap_tool_call_wrapper,
+            )
+        else:
+            tool_node = ToolNode(
+                tools=available_tools,
+                wrap_tool_call=wrap_tool_call_wrapper,
+                awrap_tool_call=awrap_tool_call_wrapper,
+            )
+    else:
+        tool_node = None
 
     # Default tools for ModelRequest initialization
     # Use converted BaseTool instances from ToolNode (not raw callables)
@@ -1035,7 +1217,7 @@ def create_agent(  # noqa: PLR0915
                     raise ValueError(msg)
 
             # Force tool use if we have structured output tools
-            tool_choice = "any" if structured_output_tools else request.tool_choice
+            tool_choice = "required" if structured_output_tools else request.tool_choice
             return (
                 request.model.bind_tools(
                     final_tools, tool_choice=tool_choice, **request.model_settings
