@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 import logging
@@ -1191,6 +1192,8 @@ class BaseChatOpenAI(BaseChatModel):
                     if "reasoning" in generation_chunk.message.additional_kwargs:
                         has_reasoning = True
                     yield generation_chunk
+                    # Ensure event loop can process other tasks in Python 3.10
+                    await asyncio.sleep(0)
 
     def _should_stream_usage(
         self, stream_usage: bool | None = None, **kwargs: Any
@@ -1269,6 +1272,7 @@ class BaseChatOpenAI(BaseChatModel):
                         )
                     is_first_chunk = False
                     yield generation_chunk
+                    await asyncio.sleep(0)
         except openai.BadRequestError as e:
             _handle_openai_bad_request(e)
         if hasattr(response, "get_final_completion") and "response_format" in payload:
@@ -1281,6 +1285,7 @@ class BaseChatOpenAI(BaseChatModel):
                     generation_chunk.text, chunk=generation_chunk
                 )
             yield generation_chunk
+            await asyncio.sleep(0)
 
     def _generate(
         self,
@@ -2947,9 +2952,11 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         if self._use_responses_api({**kwargs, **self.model_kwargs}):
             async for chunk in super()._astream_responses(*args, **kwargs):
                 yield chunk
+                await asyncio.sleep(0)
         else:
             async for chunk in super()._astream(*args, **kwargs):
                 yield chunk
+                await asyncio.sleep(0)
 
     def with_structured_output(
         self,
