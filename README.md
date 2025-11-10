@@ -1,38 +1,26 @@
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset=".github/images/logo-dark.svg">
-    <source media="(prefers-color-scheme: dark)" srcset=".github/images/logo-light.svg">
-    <img alt="LangChain Logo" src=".github/images/logo-dark.svg" width="80%">
-  </picture>
-</p>
+<div align="center">
+  <a href="https://www.langchain.com/">
+    <picture>
+      <source media="(prefers-color-scheme: light)" srcset=".github/images/logo-dark.svg">
+      <source media="(prefers-color-scheme: dark)" srcset=".github/images/logo-light.svg">
+      <img alt="LangChain Logo" src=".github/images/logo-dark.svg" width="80%">
+    </picture>
+  </a>
+</div>
 
-<p align="center">
-    The platform for reliable agents.
-</p>
+<div align="center">
+  <h3>The platform for reliable agents.</h3>
+</div>
 
-<p align="center">
-  <a href="https://opensource.org/licenses/MIT" target="_blank">
-      <img src="https://img.shields.io/pypi/l/langchain" alt="PyPI - License">
-  </a>
-  <a href="https://pypistats.org/packages/langchain" target="_blank">
-      <img src="https://img.shields.io/pepy/dt/langchain" alt="PyPI - Downloads">
-  </a>
-  <a href="https://pypi.org/project/langchain/#history" target="_blank">
-      <img src="https://img.shields.io/pypi/v/langchain?label=%20" alt="Version">
-  </a>
-  <a href="https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/langchain-ai/langchain" target="_blank">
-      <img src="https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode" alt="Open in Dev Containers">
-  </a>
-  <a href="https://codespaces.new/langchain-ai/langchain" target="_blank">
-      <img src="https://github.com/codespaces/badge.svg" alt="Open in Github Codespace" title="Open in Github Codespace" width="150" height="20">
-  </a>
-  <a href="https://codspeed.io/langchain-ai/langchain" target="_blank">
-      <img src="https://img.shields.io/endpoint?url=https://codspeed.io/badge.json" alt="CodSpeed Badge">
-  </a>
-  <a href="https://twitter.com/langchainai" target="_blank">
-      <img src="https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI" alt="Twitter / X">
-  </a>
-</p>
+<div align="center">
+  <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/pypi/l/langchain" alt="PyPI - License"></a>
+  <a href="https://pypistats.org/packages/langchain" target="_blank"><img src="https://img.shields.io/pepy/dt/langchain" alt="PyPI - Downloads"></a>
+  <a href="https://pypi.org/project/langchain/#history" target="_blank"><img src="https://img.shields.io/pypi/v/langchain?label=%20" alt="Version"></a>
+  <a href="https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/langchain-ai/langchain" target="_blank"><img src="https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode" alt="Open in Dev Containers"></a>
+  <a href="https://codespaces.new/langchain-ai/langchain" target="_blank"><img src="https://github.com/codespaces/badge.svg" alt="Open in Github Codespace" title="Open in Github Codespace" width="150" height="20"></a>
+  <a href="https://codspeed.io/langchain-ai/langchain" target="_blank"><img src="https://img.shields.io/endpoint?url=https://codspeed.io/badge.json" alt="CodSpeed Badge"></a>
+  <a href="https://twitter.com/langchainai" target="_blank"><img src="https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI" alt="Twitter / X"></a>
+</div>
 
 LangChain is a framework for building agents and LLM-powered applications. It helps you chain together interoperable components and third-party integrations to simplify AI application development – all while future-proofing decisions as the underlying technology evolves.
 
@@ -60,8 +48,12 @@ LangChain helps developers build applications powered by LLMs through a standard
 
 Use LangChain for:
 
-- **Real-time data augmentation**. Easily connect LLMs to diverse data sources and external/internal systems, drawing from LangChain’s vast library of integrations with model providers, tools, vector stores, retrievers, and more.
-- **Model interoperability**. Swap models in and out as your engineering team experiments to find the best choice for your application’s needs. As the industry frontier evolves, adapt quickly – LangChain’s abstractions keep you moving without losing momentum.
+- **Real-time data augmentation**. Easily connect LLMs to diverse data sources and external/internal systems, drawing from LangChain's vast library of integrations with model providers, tools, vector stores, retrievers, and more.
+- **Model interoperability**. Swap models in and out as your engineering team experiments to find the best choice for your application's needs. As the industry frontier evolves, adapt quickly – LangChain's abstractions keep you moving without losing momentum.
+- **Rapid prototyping**. Quickly build and iterate on LLM applications with LangChain's modular, component-based architecture. Test different approaches and workflows without rebuilding from scratch, accelerating your development cycle.
+- **Production-ready features**. Deploy reliable applications with built-in support for monitoring, evaluation, and debugging through integrations like LangSmith. Scale with confidence using battle-tested patterns and best practices.
+- **Vibrant community and ecosystem**. Leverage a rich ecosystem of integrations, templates, and community-contributed components. Benefit from continuous improvements and stay up-to-date with the latest AI developments through an active open-source community.
+- **Flexible abstraction layers**. Work at the level of abstraction that suits your needs - from high-level chains for quick starts to low-level components for fine-grained control. LangChain grows with your application's complexity.
 
 ## LangChain ecosystem
 

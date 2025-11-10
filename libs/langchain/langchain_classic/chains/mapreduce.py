@@ -44,8 +44,8 @@ class MapReduceChain(Chain):
     """Chain to use to combine documents."""
     text_splitter: TextSplitter
     """Text splitter to use."""
-    input_key: str = "input_text"  #: :meta private:
-    output_key: str = "output_text"  #: :meta private:
+    input_key: str = "input_text"
+    output_key: str = "output_text"
 
     @classmethod
     def from_params(
@@ -88,18 +88,12 @@ class MapReduceChain(Chain):
 
     @property
     def input_keys(self) -> list[str]:
-        """Expect input key.
-
-        :meta private:
-        """
+        """Expect input key."""
         return [self.input_key]
 
     @property
     def output_keys(self) -> list[str]:
-        """Return output key.
-
-        :meta private:
-        """
+        """Return output key."""
         return [self.output_key]
 
     def _call(

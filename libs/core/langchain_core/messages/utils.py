@@ -1101,7 +1101,7 @@ def convert_to_openai_messages(
         # ]
         ```
 
-    !!! version-added "Added in version 0.3.11"
+    !!! version-added "Added in `langchain-core` 0.3.11"
 
     """  # noqa: E501
     if text_format not in {"string", "block"}:
@@ -1701,7 +1701,7 @@ def count_tokens_approximately(
     Warning:
         This function does not currently support counting image tokens.
 
-    !!! version-added "Added in version 0.3.46"
+    !!! version-added "Added in `langchain-core` 0.3.46"
 
     """
     token_count = 0.0

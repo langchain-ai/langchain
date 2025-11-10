@@ -43,7 +43,7 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
           'input_token_details': {'cache_read': 0, 'cache_creation': 0}}}
         ```
 
-    !!! version-added "Added in version 0.3.49"
+    !!! version-added "Added in `langchain-core` 0.3.49"
 
     """
 
@@ -134,7 +134,7 @@ def get_usage_metadata_callback(
         }
         ```
 
-    !!! version-added "Added in version 0.3.49"
+    !!! version-added "Added in `langchain-core` 0.3.49"
 
     """
     usage_metadata_callback_var: ContextVar[UsageMetadataCallbackHandler | None] = (

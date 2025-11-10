@@ -91,8 +91,11 @@ class AnthropicTool(TypedDict):
     """Anthropic tool definition."""
 
     name: str
+
     input_schema: dict[str, Any]
+
     description: NotRequired[str]
+
     cache_control: NotRequired[dict[str, str]]
 
 
@@ -1929,7 +1932,7 @@ class ChatAnthropic(BaseChatModel):
             parallel_tool_calls: Set to `False` to disable parallel tool use.
                 Defaults to `None` (no specification, which allows parallel tool use).
 
-                !!! version-added "Added in version 0.3.2"
+                !!! version-added "Added in `langchain-anthropic` 0.3.2"
             kwargs: Any additional parameters are passed directly to `bind`.
 
         Example:
@@ -2189,11 +2192,11 @@ class ChatAnthropic(BaseChatModel):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - an Anthropic tool schema,
-                - an OpenAI function/tool schema,
-                - a JSON Schema,
-                - a `TypedDict` class,
-                - or a Pydantic class.
+                - An Anthropic tool schema,
+                - An OpenAI function/tool schema,
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - Or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
@@ -2204,11 +2207,15 @@ class ChatAnthropic(BaseChatModel):
                 more on how to properly specify types and descriptions of schema fields
                 when specifying a Pydantic or `TypedDict` class.
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a `BaseMessage`) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
@@ -2408,7 +2415,7 @@ class ChatAnthropic(BaseChatModel):
         403
         ```
 
-        !!! warning "Behavior changed in 0.3.0"
+        !!! warning "Behavior changed in `langchain-anthropic` 0.3.0"
             Uses Anthropic's [token counting API](https://docs.claude.com/en/docs/build-with-claude/token-counting) to count tokens in messages.
 
         """  # noqa: D214,E501

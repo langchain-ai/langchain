@@ -87,6 +87,21 @@ def init_chat_model(
 
             You can also specify model and model provider in a single argument using
             `'{model_provider}:{model}'` format, e.g. `'openai:o1'`.
+
+            Will attempt to infer `model_provider` from model if not specified.
+
+            The following providers will be inferred based on these model prefixes:
+
+            - `gpt-...` | `o1...` | `o3...`       -> `openai`
+            - `claude...`                         -> `anthropic`
+            - `amazon...`                         -> `bedrock`
+            - `gemini...`                         -> `google_vertexai`
+            - `command...`                        -> `cohere`
+            - `accounts/fireworks...`             -> `fireworks`
+            - `mistral...`                        -> `mistralai`
+            - `deepseek...`                       -> `deepseek`
+            - `grok...`                           -> `xai`
+            - `sonar...`                          -> `perplexity`
         model_provider: The model provider if not specified as part of the model arg
             (see above).
 
@@ -115,19 +130,6 @@ def init_chat_model(
             - `xai`                     -> [`langchain-xai`](https://docs.langchain.com/oss/python/integrations/providers/xai)
             - `perplexity`              -> [`langchain-perplexity`](https://docs.langchain.com/oss/python/integrations/providers/perplexity)
 
-            Will attempt to infer `model_provider` from model if not specified. The
-            following providers will be inferred based on these model prefixes:
-
-            - `gpt-...` | `o1...` | `o3...`       -> `openai`
-            - `claude...`                         -> `anthropic`
-            - `amazon...`                         -> `bedrock`
-            - `gemini...`                         -> `google_vertexai`
-            - `command...`                        -> `cohere`
-            - `accounts/fireworks...`             -> `fireworks`
-            - `mistral...`                        -> `mistralai`
-            - `deepseek...`                       -> `deepseek`
-            - `grok...`                           -> `xai`
-            - `sonar...`                          -> `perplexity`
         configurable_fields: Which model parameters are configurable at runtime:
 
             - `None`: No configurable fields (i.e., a fixed model).
@@ -142,6 +144,7 @@ def init_chat_model(
             If `model` is not specified, then defaults to `("model", "model_provider")`.
 
             !!! warning "Security note"
+
                 Setting `configurable_fields="any"` means fields like `api_key`,
                 `base_url`, etc., can be altered at runtime, potentially redirecting
                 model requests to a different service/user.
@@ -602,7 +605,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> _ConfigurableModel:
-        """Bind config to a Runnable, returning a new Runnable."""
+        """Bind config to a `Runnable`, returning a new `Runnable`."""
         config = RunnableConfig(**(config or {}), **cast("RunnableConfig", kwargs))
         model_params = self._model_params(config)
         remaining_config = {k: v for k, v in config.items() if k != "configurable"}

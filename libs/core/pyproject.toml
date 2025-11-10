@@ -3,8 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-authors = []
+name = "langchain-core"
+description = "Building applications with LLMs through composability"
 license = {text = "MIT"}
+readme = "README.md"
+authors = []
+
+version = "1.0.4"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langsmith>=0.3.45,<1.0.0",
@@ -15,10 +20,6 @@ dependencies = [
     "packaging>=23.2.0,<26.0.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
-name = "langchain-core"
-version = "1.0.3"
-description = "Building applications with LLMs through composability"
-readme = "README.md"
 
 [project.urls]
 Homepage = "https://docs.langchain.com/"

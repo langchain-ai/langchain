@@ -537,17 +537,29 @@ def create_agent(  # noqa: PLR0915
     visit the [Agents](https://docs.langchain.com/oss/python/langchain/agents) docs.
 
     Args:
-        model: The language model for the agent. Can be a string identifier
-            (e.g., `"openai:gpt-4"`) or a direct chat model instance (e.g.,
-            [`ChatOpenAI`][langchain_openai.ChatOpenAI] or other another
-            [chat model](https://docs.langchain.com/oss/python/integrations/chat)).
+        model: The language model for the agent.
+
+            Can be a string identifier (e.g., `"openai:gpt-4"`) or a direct chat model
+            instance (e.g., [`ChatOpenAI`][langchain_openai.ChatOpenAI] or other another
+            [LangChain chat model](https://docs.langchain.com/oss/python/integrations/chat)).
 
             For a full list of supported model strings, see
             [`init_chat_model`][langchain.chat_models.init_chat_model(model_provider)].
-        tools: A list of tools, `dicts`, or `Callable`.
+
+            !!! tip ""
+
+                See the [Models](https://docs.langchain.com/oss/python/langchain/models)
+                docs for more information.
+        tools: A list of tools, `dict`, or `Callable`.
 
             If `None` or an empty list, the agent will consist of a model node without a
             tool calling loop.
+
+
+            !!! tip ""
+
+                See the [Tools](https://docs.langchain.com/oss/python/langchain/tools)
+                docs for more information.
         system_prompt: An optional system prompt for the LLM.
 
             Prompts are converted to a
@@ -555,24 +567,34 @@ def create_agent(  # noqa: PLR0915
             beginning of the message list.
         middleware: A sequence of middleware instances to apply to the agent.
 
-            Middleware can intercept and modify agent behavior at various stages. See
-            the [full guide](https://docs.langchain.com/oss/python/langchain/middleware).
+            Middleware can intercept and modify agent behavior at various stages.
+
+            !!! tip ""
+
+                See the [Middleware](https://docs.langchain.com/oss/python/langchain/middleware)
+                docs for more information.
         response_format: An optional configuration for structured responses.
 
             Can be a `ToolStrategy`, `ProviderStrategy`, or a Pydantic model class.
 
             If provided, the agent will handle structured output during the
-            conversation flow. Raw schemas will be wrapped in an appropriate strategy
-            based on model capabilities.
+            conversation flow.
+
+            Raw schemas will be wrapped in an appropriate strategy based on model
+            capabilities.
+
+            !!! tip ""
+
+                See the [Structured output](https://docs.langchain.com/oss/python/langchain/structured-output)
+                docs for more information.
         state_schema: An optional `TypedDict` schema that extends `AgentState`.
 
             When provided, this schema is used instead of `AgentState` as the base
             schema for merging with middleware state schemas. This allows users to
             add custom state fields without needing to create custom middleware.
+
             Generally, it's recommended to use `state_schema` extensions via middleware
             to keep relevant extensions scoped to corresponding hooks / tools.
-
-            The schema must be a subclass of `AgentState[ResponseT]`.
         context_schema: An optional schema for runtime context.
         checkpointer: An optional checkpoint saver object.
 
@@ -1420,7 +1442,7 @@ def create_agent(  # noqa: PLR0915
         debug=debug,
         name=name,
         cache=cache,
-    )
+    ).with_config({"recursion_limit": 10_000})
 
 
 def _resolve_jump(

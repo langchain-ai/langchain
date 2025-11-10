@@ -83,7 +83,7 @@ class SummarizationMiddleware(AgentMiddleware):
         trim_tokens_to_summarize: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
         **deprecated_kwargs: Any,
     ) -> None:
-        """Initialize the summarization middleware.
+        """Initialize summarization middleware.
 
         Args:
             model: The language model to use for generating summaries.
