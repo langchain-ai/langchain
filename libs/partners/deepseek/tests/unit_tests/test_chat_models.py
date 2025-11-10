@@ -255,7 +255,7 @@ class TestChatDeepSeekStrictMode:
     """Tests for DeepSeek strict mode support.
 
     This tests the experimental beta feature that uses the beta API endpoint
-    when strict=True is used. These tests can be removed when strict mode
+    when `strict=True` is used. These tests can be removed when strict mode
     becomes stable in the default base API.
     """
 

@@ -381,18 +381,17 @@ class ChatDeepSeek(BaseChatOpenAI):
     ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
 
-        Overrides parent to use beta endpoint when strict=True.
+        Overrides parent to use beta endpoint when `strict=True`.
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
             tool_choice: Which tool to require the model to call.
             strict: If True, uses beta API for strict schema validation.
-            parallel_tool_calls: Set to False to disable parallel tool use.
-            **kwargs: Additional parameters passed to parent bind_tools.
+            parallel_tool_calls: Set to `False` to disable parallel tool use.
+            **kwargs: Additional parameters passed to parent `bind_tools`.
 
         Returns:
             A Runnable that takes same inputs as a chat model.
-
         """
         # If strict mode is enabled and using default API base, switch to beta endpoint
         if strict is True and self.api_base == DEFAULT_API_BASE:
@@ -470,11 +469,14 @@ class ChatDeepSeek(BaseChatOpenAI):
 
             strict:
                 Whether to enable strict schema adherence when generating the function
-                call. When set to True, DeepSeek will use the beta API endpoint
-                (https://api.deepseek.com/beta) for strict schema validation.
+                call. When set to `True`, DeepSeek will use the beta API endpoint
+                (`https://api.deepseek.com/beta`) for strict schema validation.
                 This ensures model outputs exactly match the defined schema.
-                Note: DeepSeek's strict mode requires all object properties to be
-                marked as required in the schema.
+
+                !!! note
+
+                    DeepSeek's strict mode requires all object properties to be marked
+                    as required in the schema.
 
             kwargs: Additional keyword args aren't supported.
 
