@@ -19,20 +19,14 @@ This package contains the LangChain integration with Ollama
 
 ## 📖 Documentation
 
-View the [documentation](https://docs.langchain.com/oss/python/integrations/providers/ollama) for more details.
+For full documentation, see the [API reference](https://reference.langchain.com/python/integrations/langchain_ollama/). For conceptual guides, tutorials, and examples on using these classes, see the [LangChain Docs](https://docs.langchain.com/oss/python/integrations/providers/ollama).
 
-## Development
+## 📕 Releases & Versioning
 
-### Running Tests
+See our [Releases](https://docs.langchain.com/oss/python/release-policy) and [Versioning](https://docs.langchain.com/oss/python/versioning) policies.
 
-To run integration tests (`make integration_tests`), you will need the following models installed in your Ollama server:
+## 💁 Contributing
 
-- `llama3.1`
-- `deepseek-r1:1.5b`
-- `gpt-oss:20b`
+As an open-source project in a rapidly developing field, we are extremely open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
 
-Install these models by running:
-
-```bash
-ollama pull <name-of-model>
-```
+For detailed information on how to contribute, see the [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview).
