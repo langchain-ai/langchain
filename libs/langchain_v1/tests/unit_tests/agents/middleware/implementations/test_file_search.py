@@ -7,6 +7,9 @@ import pytest
 
 from langchain.agents.middleware.file_search import (
     FilesystemFileSearchMiddleware,
+    _expand_include_patterns,
+    _is_valid_include_pattern,
+    _match_include_pattern,
 )
 
 
@@ -264,82 +267,60 @@ class TestPathTraversalSecurity:
 class TestExpandIncludePatterns:
     """Tests for _expand_include_patterns helper function."""
 
-    def test_expand_patterns_basic_brace_expansion(self, tmp_path: Path) -> None:
+    def test_expand_patterns_basic_brace_expansion(self) -> None:
         """Test basic brace expansion with multiple options."""
-        from langchain.agents.middleware.file_search import _expand_include_patterns
-
         result = _expand_include_patterns("*.{py,txt}")
         assert result == ["*.py", "*.txt"]
 
-    def test_expand_patterns_nested_braces(self, tmp_path: Path) -> None:
+    def test_expand_patterns_nested_braces(self) -> None:
         """Test nested brace expansion."""
-        from langchain.agents.middleware.file_search import _expand_include_patterns
-
         result = _expand_include_patterns("test.{a,b}.{c,d}")
         assert result is not None
         assert len(result) == 4
         assert "test.a.c" in result
         assert "test.b.d" in result
 
-    def test_expand_patterns_closing_brace_without_opening(self, tmp_path: Path) -> None:
-        """Test pattern with } but no { returns None."""
-        from langchain.agents.middleware.file_search import _expand_include_patterns
-
-        result = _expand_include_patterns("*.py}")
-        assert result is None
-
-    def test_expand_patterns_empty_braces(self, tmp_path: Path) -> None:
-        """Test pattern with empty braces {} returns None."""
-        from langchain.agents.middleware.file_search import _expand_include_patterns
-
-        result = _expand_include_patterns("*.{}")
-        assert result is None
-
-    def test_expand_patterns_unclosed_brace(self, tmp_path: Path) -> None:
-        """Test pattern with unclosed brace { returns None."""
-        from langchain.agents.middleware.file_search import _expand_include_patterns
-
-        result = _expand_include_patterns("*.{py")
+    @pytest.mark.parametrize(
+        "pattern",
+        [
+            "*.py}",  # closing brace without opening
+            "*.{}",  # empty braces
+            "*.{py",  # unclosed brace
+        ],
+    )
+    def test_expand_patterns_invalid_braces(self, pattern: str) -> None:
+        """Test patterns with invalid brace syntax return None."""
+        result = _expand_include_patterns(pattern)
         assert result is None
 
 
 class TestValidateIncludePattern:
     """Tests for _is_valid_include_pattern helper function."""
 
-    def test_validate_empty_pattern(self, tmp_path: Path) -> None:
-        """Test that empty pattern is invalid."""
-        from langchain.agents.middleware.file_search import _is_valid_include_pattern
-
-        assert not _is_valid_include_pattern("")
-
-    def test_validate_pattern_with_null_byte(self, tmp_path: Path) -> None:
-        """Test that pattern with null byte is invalid."""
-        from langchain.agents.middleware.file_search import _is_valid_include_pattern
-
-        assert not _is_valid_include_pattern("*.py\x00")
-
-    def test_validate_pattern_with_newline(self, tmp_path: Path) -> None:
-        """Test that pattern with newline is invalid."""
-        from langchain.agents.middleware.file_search import _is_valid_include_pattern
-
-        assert not _is_valid_include_pattern("*.py\n")
+    @pytest.mark.parametrize(
+        "pattern",
+        [
+            "",  # empty pattern
+            "*.py\x00",  # null byte
+            "*.py\n",  # newline
+        ],
+    )
+    def test_validate_invalid_patterns(self, pattern: str) -> None:
+        """Test that invalid patterns are rejected."""
+        assert not _is_valid_include_pattern(pattern)
 
 
 class TestMatchIncludePattern:
     """Tests for _match_include_pattern helper function."""
 
-    def test_match_pattern_with_braces(self, tmp_path: Path) -> None:
+    def test_match_pattern_with_braces(self) -> None:
         """Test matching with brace expansion."""
-        from langchain.agents.middleware.file_search import _match_include_pattern
-
         assert _match_include_pattern("test.py", "*.{py,txt}")
         assert _match_include_pattern("test.txt", "*.{py,txt}")
         assert not _match_include_pattern("test.md", "*.{py,txt}")
 
-    def test_match_pattern_invalid_expansion(self, tmp_path: Path) -> None:
+    def test_match_pattern_invalid_expansion(self) -> None:
         """Test matching with pattern that cannot be expanded returns False."""
-        from langchain.agents.middleware.file_search import _match_include_pattern
-
         assert not _match_include_pattern("test.py", "*.{}")
 
 

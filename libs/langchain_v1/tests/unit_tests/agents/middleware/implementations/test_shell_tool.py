@@ -1,20 +1,20 @@
 from __future__ import annotations
 
-import time
+import asyncio
 import gc
 import tempfile
+import time
 from pathlib import Path
 
 import pytest
-
-from langchain_core.messages import ToolMessage, AIMessage
+from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.tools.base import ToolException
 
 from langchain.agents.middleware.shell_tool import (
     HostExecutionPolicy,
+    RedactionRule,
     ShellToolMiddleware,
     _SessionResources,
-    RedactionRule,
     _ShellToolInput,
 )
 from langchain.agents.middleware.types import AgentState
@@ -432,23 +432,25 @@ def test_stderr_output_labeling(tmp_path: Path) -> None:
             state.update(updates)
 
 
-def test_normalize_commands_string_tuple_list(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    ("startup_commands", "expected"),
+    [
+        ("echo test", ("echo test",)),  # String
+        (["echo test", "pwd"], ("echo test", "pwd")),  # List
+        (("echo test",), ("echo test",)),  # Tuple
+        (None, ()),  # None
+    ],
+)
+def test_normalize_commands_string_tuple_list(
+    tmp_path: Path,
+    startup_commands: str | list[str] | tuple[str, ...] | None,
+    expected: tuple[str, ...],
+) -> None:
     """Test various command normalization formats."""
-    # String
-    m1 = ShellToolMiddleware(workspace_root=tmp_path / "w1", startup_commands="echo test")
-    assert m1._startup_commands == ("echo test",)  # type: ignore[attr-defined]
-
-    # List
-    m2 = ShellToolMiddleware(workspace_root=tmp_path / "w2", startup_commands=["echo test", "pwd"])
-    assert m2._startup_commands == ("echo test", "pwd")  # type: ignore[attr-defined]
-
-    # Tuple
-    m3 = ShellToolMiddleware(workspace_root=tmp_path / "w3", startup_commands=("echo test",))
-    assert m3._startup_commands == ("echo test",)  # type: ignore[attr-defined]
-
-    # None
-    m4 = ShellToolMiddleware(workspace_root=tmp_path / "w4")
-    assert m4._startup_commands == ()  # type: ignore[attr-defined]
+    middleware = ShellToolMiddleware(
+        workspace_root=tmp_path / "workspace", startup_commands=startup_commands
+    )
+    assert middleware._startup_commands == expected  # type: ignore[attr-defined]
 
 
 def test_async_methods_delegate_to_sync(tmp_path: Path) -> None:
@@ -456,7 +458,6 @@ def test_async_methods_delegate_to_sync(tmp_path: Path) -> None:
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
     try:
         state: AgentState = _empty_state()
-        import asyncio
 
         # Test abefore_agent
         updates = asyncio.run(middleware.abefore_agent(state, None))
