@@ -683,6 +683,13 @@ class BaseChatOpenAI(BaseChatModel):
     include_response_headers: bool = False
     """Whether to include response headers in the output message `response_metadata`."""
 
+    include_raw_response: bool = False
+    """Whether to include the raw model response in AIMessage.raw_response.
+
+    When enabled, the complete raw response from the API will be stored in the
+    AIMessage's raw_response attribute.
+    """
+
     disabled_params: dict[str, Any] | None = Field(default=None)
     """Parameters of the OpenAI client or `chat.completions` endpoint that should be
     disabled for the given model.
@@ -1061,6 +1068,9 @@ class BaseChatOpenAI(BaseChatModel):
             if isinstance(message_chunk, AIMessageChunk):
                 message_chunk.chunk_position = "last"
 
+                if self.include_raw_response:
+                    message_chunk.raw_response = chunk
+
         logprobs = choice.get("logprobs")
         if logprobs:
             generation_info["logprobs"] = logprobs
@@ -1259,6 +1269,13 @@ class BaseChatOpenAI(BaseChatModel):
                     )
                     if generation_chunk is None:
                         continue
+                    if (
+                        generation_chunk.message.chunk_position == "last"
+                        and self.include_raw_response
+                        and isinstance(generation_chunk.message, AIMessageChunk)
+                    ):
+                        generation_chunk.message.raw_response = chunk
+
                     default_chunk_class = generation_chunk.message.__class__
                     logprobs = (generation_chunk.generation_info or {}).get("logprobs")
                     if run_manager:
@@ -1420,6 +1437,9 @@ class BaseChatOpenAI(BaseChatModel):
                 message.usage_metadata = _create_usage_metadata(
                     token_usage, service_tier
                 )
+            if self.include_raw_response and isinstance(message, AIMessage):
+                message.raw_response = response_dict
+
             generation_info = generation_info or {}
             generation_info["finish_reason"] = (
                 res.get("finish_reason")
@@ -1503,6 +1523,14 @@ class BaseChatOpenAI(BaseChatModel):
                     )
                     if generation_chunk is None:
                         continue
+
+                    if (
+                        generation_chunk.message.chunk_position == "last"
+                        and self.include_raw_response
+                        and isinstance(generation_chunk.message, AIMessageChunk)
+                    ):
+                        generation_chunk.message.raw_response = chunk
+
                     default_chunk_class = generation_chunk.message.__class__
                     logprobs = (generation_chunk.generation_info or {}).get("logprobs")
                     if run_manager:

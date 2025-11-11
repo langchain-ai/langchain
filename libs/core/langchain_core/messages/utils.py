@@ -202,9 +202,13 @@ def message_chunk_to_message(chunk: BaseMessage) -> BaseMessage:
     ignore_keys = ["type"]
     if isinstance(chunk, AIMessageChunk):
         ignore_keys.extend(["tool_call_chunks", "chunk_position"])
-    return chunk.__class__.__mro__[1](
-        **{k: v for k, v in chunk.__dict__.items() if k not in ignore_keys}
-    )
+
+    data = {k: v for k, v in chunk.__dict__.items() if k not in ignore_keys}
+    # Preserve raw_response if it exists and is not None
+    if hasattr(chunk, "raw_response") and chunk.raw_response is not None:
+        data["raw_response"] = chunk.raw_response
+
+    return chunk.__class__.__mro__[1](**data)
 
 
 MessageLikeRepresentation = (

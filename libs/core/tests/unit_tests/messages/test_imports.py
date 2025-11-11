@@ -40,6 +40,7 @@ EXPECTED_ALL = [
     "VideoContentBlock",
     "ReasoningContentBlock",
     "RemoveMessage",
+    "add_ai_message_chunks",
     "convert_to_messages",
     "ensure_id",
     "get_buffer_string",
