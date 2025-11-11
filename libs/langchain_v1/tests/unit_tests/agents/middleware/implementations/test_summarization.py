@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from langchain.agents.middleware.summarization import SummarizationMiddleware
 
-from ..model import FakeToolCallingModel
+from ...model import FakeToolCallingModel
 
 if TYPE_CHECKING:
     from langchain_model_profiles import ModelProfile

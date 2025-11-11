@@ -19,7 +19,7 @@ from langchain.agents.middleware.todo import (
 )
 from langchain.agents.middleware.types import ModelRequest, ModelResponse
 
-from ..model import FakeToolCallingModel
+from ...model import FakeToolCallingModel
 
 
 def _fake_runtime() -> Runtime:

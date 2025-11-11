@@ -9,7 +9,7 @@ from langchain.agents.middleware.model_call_limit import (
     ModelCallLimitExceededError,
 )
 
-from ..model import FakeToolCallingModel
+from ...model import FakeToolCallingModel
 
 
 @tool

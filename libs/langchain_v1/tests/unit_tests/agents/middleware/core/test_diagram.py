@@ -6,7 +6,7 @@ from langchain.agents.factory import create_agent
 from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
 from langchain_core.messages import AIMessage
 
-from ..model import FakeToolCallingModel
+from ...model import FakeToolCallingModel
 
 
 def test_create_agent_diagram(

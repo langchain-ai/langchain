@@ -15,7 +15,7 @@ from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.types import ModelRequest, ModelResponse
 from langgraph.runtime import Runtime
 
-from ..model import FakeToolCallingModel
+from ...model import FakeToolCallingModel
 
 
 def _fake_runtime() -> Runtime:
