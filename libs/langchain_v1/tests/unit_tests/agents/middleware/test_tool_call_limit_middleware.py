@@ -10,7 +10,7 @@ from langchain.agents.middleware.tool_call_limit import (
     ToolCallLimitExceededError,
     ToolCallLimitMiddleware,
 )
-from tests.unit_tests.agents.test_middleware_agent import FakeToolCallingModel
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 def test_middleware_initialization_validation():

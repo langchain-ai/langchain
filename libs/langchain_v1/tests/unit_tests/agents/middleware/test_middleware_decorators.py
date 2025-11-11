@@ -22,7 +22,7 @@ from langchain.agents.middleware.types import (
     hook_config,
 )
 from langchain.agents.factory import create_agent, _get_can_jump_to
-from .model import FakeToolCallingModel
+from ..model import FakeToolCallingModel
 
 
 class CustomState(AgentState):
