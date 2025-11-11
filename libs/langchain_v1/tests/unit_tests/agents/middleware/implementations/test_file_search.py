@@ -376,7 +376,7 @@ class TestGrepEdgeCases:
         middleware = FilesystemFileSearchMiddleware(
             root_path=str(tmp_path),
             use_ripgrep=False,
-            max_file_size_mb=1  # 1MB limit
+            max_file_size_mb=1,  # 1MB limit
         )
 
         result = middleware.grep_search.func(pattern="x")

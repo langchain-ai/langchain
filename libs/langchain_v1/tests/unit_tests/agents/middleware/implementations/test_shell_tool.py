@@ -215,8 +215,7 @@ def test_normalize_env_non_string_keys() -> None:
 def test_normalize_env_coercion(tmp_path: Path) -> None:
     """Test that environment values are coerced to strings."""
     middleware = ShellToolMiddleware(
-        workspace_root=tmp_path / "workspace",
-        env={"NUM": 42, "BOOL": True}
+        workspace_root=tmp_path / "workspace", env={"NUM": 42, "BOOL": True}
     )
     try:
         state: AgentState = _empty_state()
@@ -225,9 +224,7 @@ def test_normalize_env_coercion(tmp_path: Path) -> None:
             state.update(updates)
         resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
         result = middleware._run_shell_tool(
-            resources,
-            {"command": "echo $NUM $BOOL"},
-            tool_call_id=None
+            resources, {"command": "echo $NUM $BOOL"}, tool_call_id=None
         )
         assert "42" in result
         assert "True" in result
@@ -248,17 +245,13 @@ def test_shell_tool_missing_command_string(tmp_path: Path) -> None:
         resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
 
         with pytest.raises(ToolException, match="expects a 'command' string"):
-            middleware._run_shell_tool(
-                resources,
-                {"command": None},
-                tool_call_id=None
-            )
+            middleware._run_shell_tool(resources, {"command": None}, tool_call_id=None)
 
         with pytest.raises(ToolException, match="expects a 'command' string"):
             middleware._run_shell_tool(
                 resources,
                 {"command": 123},  # type: ignore[dict-item]
-                tool_call_id=None
+                tool_call_id=None,
             )
     finally:
         updates = middleware.after_agent(state, None)
@@ -277,9 +270,7 @@ def test_tool_message_formatting_with_id(tmp_path: Path) -> None:
         resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
 
         result = middleware._run_shell_tool(
-            resources,
-            {"command": "echo test"},
-            tool_call_id="test-id-123"
+            resources, {"command": "echo test"}, tool_call_id="test-id-123"
         )
 
         assert isinstance(result, ToolMessage)
@@ -306,7 +297,7 @@ def test_nonzero_exit_code_returns_error(tmp_path: Path) -> None:
         result = middleware._run_shell_tool(
             resources,
             {"command": "false"},  # Command that exits with 1 but doesn't kill shell
-            tool_call_id="test-id"
+            tool_call_id="test-id",
         )
 
         assert isinstance(result, ToolMessage)
@@ -322,10 +313,7 @@ def test_nonzero_exit_code_returns_error(tmp_path: Path) -> None:
 def test_truncation_by_bytes(tmp_path: Path) -> None:
     """Test that output is truncated by bytes when max_output_bytes is exceeded."""
     policy = HostExecutionPolicy(max_output_bytes=50, command_timeout=5.0)
-    middleware = ShellToolMiddleware(
-        workspace_root=tmp_path / "workspace",
-        execution_policy=policy
-    )
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace", execution_policy=policy)
     try:
         state: AgentState = _empty_state()
         updates = middleware.before_agent(state, None)
@@ -334,9 +322,7 @@ def test_truncation_by_bytes(tmp_path: Path) -> None:
         resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
 
         result = middleware._run_shell_tool(
-            resources,
-            {"command": "python3 -c 'print(\"x\" * 100)'"},
-            tool_call_id=None
+            resources, {"command": "python3 -c 'print(\"x\" * 100)'"}, tool_call_id=None
         )
 
         assert "truncated at 50 bytes" in result.lower()
@@ -348,9 +334,9 @@ def test_truncation_by_bytes(tmp_path: Path) -> None:
 
 def test_startup_command_failure(tmp_path: Path) -> None:
     """Test that startup command failure raises an error."""
+    policy = HostExecutionPolicy(startup_timeout=1.0)
     middleware = ShellToolMiddleware(
-        workspace_root=tmp_path / "workspace",
-        startup_commands=("exit 1",)
+        workspace_root=tmp_path / "workspace", startup_commands=("exit 1",), execution_policy=policy
     )
     state: AgentState = _empty_state()
     with pytest.raises(RuntimeError, match="Startup command.*failed"):
@@ -359,9 +345,11 @@ def test_startup_command_failure(tmp_path: Path) -> None:
 
 def test_shutdown_command_failure_logged(tmp_path: Path) -> None:
     """Test that shutdown command failures are logged but don't raise."""
+    policy = HostExecutionPolicy(command_timeout=1.0)
     middleware = ShellToolMiddleware(
         workspace_root=tmp_path / "workspace",
-        shutdown_commands=("exit 1",)
+        shutdown_commands=("exit 1",),
+        execution_policy=policy,
     )
     try:
         state: AgentState = _empty_state()
@@ -379,7 +367,7 @@ def test_shutdown_command_timeout_logged(tmp_path: Path) -> None:
     middleware = ShellToolMiddleware(
         workspace_root=tmp_path / "workspace",
         execution_policy=policy,
-        shutdown_commands=("sleep 2",)
+        shutdown_commands=("sleep 2",),
     )
     try:
         state: AgentState = _empty_state()
@@ -413,7 +401,7 @@ def test_empty_output_replaced_with_no_output(tmp_path: Path) -> None:
         result = middleware._run_shell_tool(
             resources,
             {"command": "true"},  # Command that produces no output
-            tool_call_id=None
+            tool_call_id=None,
         )
 
         assert "<no output>" in result
@@ -434,9 +422,7 @@ def test_stderr_output_labeling(tmp_path: Path) -> None:
         resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
 
         result = middleware._run_shell_tool(
-            resources,
-            {"command": "echo error >&2"},
-            tool_call_id=None
+            resources, {"command": "echo error >&2"}, tool_call_id=None
         )
 
         assert "[stderr] error" in result
@@ -449,24 +435,15 @@ def test_stderr_output_labeling(tmp_path: Path) -> None:
 def test_normalize_commands_string_tuple_list(tmp_path: Path) -> None:
     """Test various command normalization formats."""
     # String
-    m1 = ShellToolMiddleware(
-        workspace_root=tmp_path / "w1",
-        startup_commands="echo test"
-    )
+    m1 = ShellToolMiddleware(workspace_root=tmp_path / "w1", startup_commands="echo test")
     assert m1._startup_commands == ("echo test",)  # type: ignore[attr-defined]
 
     # List
-    m2 = ShellToolMiddleware(
-        workspace_root=tmp_path / "w2",
-        startup_commands=["echo test", "pwd"]
-    )
+    m2 = ShellToolMiddleware(workspace_root=tmp_path / "w2", startup_commands=["echo test", "pwd"])
     assert m2._startup_commands == ("echo test", "pwd")  # type: ignore[attr-defined]
 
     # Tuple
-    m3 = ShellToolMiddleware(
-        workspace_root=tmp_path / "w3",
-        startup_commands=("echo test",)
-    )
+    m3 = ShellToolMiddleware(workspace_root=tmp_path / "w3", startup_commands=("echo test",))
     assert m3._startup_commands == ("echo test",)  # type: ignore[attr-defined]
 
     # None

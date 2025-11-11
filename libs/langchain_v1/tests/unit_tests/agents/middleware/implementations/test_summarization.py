@@ -564,3 +564,458 @@ def test_summarization_middleware_keep_messages() -> None:
     middleware_disabled = SummarizationMiddleware(model=MockModel(), trigger=None)
     result = middleware_disabled.before_model(state_above, None)
     assert result is None
+
+
+def test_summarization_middleware_validation_edge_cases() -> None:
+    """Test validation of context size parameters with edge cases."""
+    model = FakeToolCallingModel()
+
+    # Test invalid fraction values
+    with pytest.raises(ValueError, match="Fractional trigger values must be between 0 and 1"):
+        SummarizationMiddleware(model=model, trigger=("fraction", 0.0))
+
+    with pytest.raises(ValueError, match="Fractional trigger values must be between 0 and 1"):
+        SummarizationMiddleware(model=model, trigger=("fraction", 1.5))
+
+    with pytest.raises(ValueError, match="Fractional keep values must be between 0 and 1"):
+        SummarizationMiddleware(model=model, keep=("fraction", -0.1))
+
+    # Test invalid token/message counts
+    with pytest.raises(ValueError, match="trigger thresholds must be greater than 0"):
+        SummarizationMiddleware(model=model, trigger=("tokens", 0))
+
+    with pytest.raises(ValueError, match="trigger thresholds must be greater than 0"):
+        SummarizationMiddleware(model=model, trigger=("messages", -5))
+
+    with pytest.raises(ValueError, match="keep thresholds must be greater than 0"):
+        SummarizationMiddleware(model=model, keep=("tokens", 0))
+
+    # Test unsupported context size types
+    with pytest.raises(ValueError, match="Unsupported context size type"):
+        SummarizationMiddleware(model=model, trigger=("invalid", 100))
+
+    with pytest.raises(ValueError, match="Unsupported context size type"):
+        SummarizationMiddleware(model=model, keep=("invalid", 100))
+
+
+def test_summarization_middleware_multiple_triggers() -> None:
+    """Test middleware with multiple trigger conditions."""
+
+    class MockModel(BaseChatModel):
+        def invoke(self, prompt):
+            return AIMessage(content="Generated summary")
+
+        def _generate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @property
+        def _llm_type(self):
+            return "mock"
+
+    # Test with multiple triggers - should activate when ANY condition is met
+    middleware = SummarizationMiddleware(
+        model=MockModel(),
+        trigger=[("messages", 10), ("tokens", 500)],
+        keep=("messages", 2),
+    )
+
+    # Mock token counter to return low count
+    def mock_low_tokens(messages):
+        return 100
+
+    middleware.token_counter = mock_low_tokens
+
+    # Should not trigger - neither condition met
+    messages = [HumanMessage(content=str(i)) for i in range(5)]
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+    assert result is None
+
+    # Should trigger - message count threshold met
+    messages = [HumanMessage(content=str(i)) for i in range(10)]
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+    assert result is not None
+
+    # Test token trigger
+    def mock_high_tokens(messages):
+        return 600
+
+    middleware.token_counter = mock_high_tokens
+    messages = [HumanMessage(content=str(i)) for i in range(5)]
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+    assert result is not None
+
+
+def test_summarization_middleware_profile_edge_cases() -> None:
+    """Test profile retrieval with various edge cases."""
+
+    class NoProfileModel(BaseChatModel):
+        def _generate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @property
+        def _llm_type(self):
+            return "mock"
+
+    # Model without profile attribute
+    middleware = SummarizationMiddleware(model=NoProfileModel(), trigger=("messages", 5))
+    assert middleware._get_profile_limits() is None
+
+    class InvalidProfileModel(BaseChatModel):
+        def _generate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @property
+        def _llm_type(self):
+            return "mock"
+
+        @property
+        def profile(self):
+            return "invalid_profile_type"
+
+    # Model with non-dict profile
+    middleware = SummarizationMiddleware(model=InvalidProfileModel(), trigger=("messages", 5))
+    assert middleware._get_profile_limits() is None
+
+    class MissingTokensModel(BaseChatModel):
+        def _generate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @property
+        def _llm_type(self):
+            return "mock"
+
+        @property
+        def profile(self):
+            return {"other_field": 100}
+
+    # Model with profile but no max_input_tokens
+    middleware = SummarizationMiddleware(model=MissingTokensModel(), trigger=("messages", 5))
+    assert middleware._get_profile_limits() is None
+
+    class InvalidTokenTypeModel(BaseChatModel):
+        def _generate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @property
+        def _llm_type(self):
+            return "mock"
+
+        @property
+        def profile(self):
+            return {"max_input_tokens": "not_an_int"}
+
+    # Model with non-int max_input_tokens
+    middleware = SummarizationMiddleware(model=InvalidTokenTypeModel(), trigger=("messages", 5))
+    assert middleware._get_profile_limits() is None
+
+
+def test_summarization_middleware_trim_messages_error_fallback() -> None:
+    """Test that trim_messages_for_summary falls back gracefully on errors."""
+
+    class MockModel(BaseChatModel):
+        def _generate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @property
+        def _llm_type(self):
+            return "mock"
+
+    middleware = SummarizationMiddleware(model=MockModel(), trigger=("messages", 5))
+
+    # Create a mock token counter that raises an exception
+    def failing_token_counter(messages):
+        raise Exception("Token counting failed")
+
+    middleware.token_counter = failing_token_counter
+
+    # Should fall back to last 15 messages
+    messages = [HumanMessage(content=str(i)) for i in range(20)]
+    trimmed = middleware._trim_messages_for_summary(messages)
+    assert len(trimmed) == 15
+    assert trimmed == messages[-15:]
+
+
+def test_summarization_middleware_binary_search_edge_cases() -> None:
+    """Test binary search in _find_token_based_cutoff with edge cases."""
+
+    class MockModel(BaseChatModel):
+        def _generate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @property
+        def _llm_type(self):
+            return "mock"
+
+    middleware = SummarizationMiddleware(
+        model=MockModel(), trigger=("messages", 5), keep=("tokens", 100)
+    )
+
+    # Test with single message that's too large
+    def token_counter_single_large(messages):
+        return len(messages) * 200
+
+    middleware.token_counter = token_counter_single_large
+
+    single_message = [HumanMessage(content="x" * 200)]
+    cutoff = middleware._find_token_based_cutoff(single_message)
+    assert cutoff == 0
+
+    # Test with empty messages
+    cutoff = middleware._find_token_based_cutoff([])
+    assert cutoff == 0
+
+    # Test when all messages fit within token budget
+    def token_counter_small(messages):
+        return len(messages) * 10
+
+    middleware.token_counter = token_counter_small
+    messages = [HumanMessage(content=str(i)) for i in range(5)]
+    cutoff = middleware._find_token_based_cutoff(messages)
+    assert cutoff == 0
+
+
+def test_summarization_middleware_tool_call_extraction_edge_cases() -> None:
+    """Test tool call ID extraction with various message formats."""
+    model = FakeToolCallingModel()
+    middleware = SummarizationMiddleware(model=model, trigger=("messages", 5))
+
+    # Test with dict-style tool calls
+    ai_message_dict = AIMessage(
+        content="test", tool_calls=[{"name": "tool1", "args": {}, "id": "id1"}]
+    )
+    ids = middleware._extract_tool_call_ids(ai_message_dict)
+    assert ids == {"id1"}
+
+    # Test with multiple tool calls
+    ai_message_multiple = AIMessage(
+        content="test",
+        tool_calls=[
+            {"name": "tool1", "args": {}, "id": "id1"},
+            {"name": "tool2", "args": {}, "id": "id2"},
+        ],
+    )
+    ids = middleware._extract_tool_call_ids(ai_message_multiple)
+    assert ids == {"id1", "id2"}
+
+    # Test with empty tool calls list
+    ai_message_empty = AIMessage(content="test", tool_calls=[])
+    ids = middleware._extract_tool_call_ids(ai_message_empty)
+    assert len(ids) == 0
+
+
+def test_summarization_middleware_complex_tool_pair_scenarios() -> None:
+    """Test complex tool call pairing scenarios."""
+    model = FakeToolCallingModel()
+    middleware = SummarizationMiddleware(model=model, trigger=("messages", 5), keep=("messages", 3))
+
+    # Test with multiple AI messages with tool calls
+    messages = [
+        HumanMessage(content="msg1"),
+        AIMessage(content="ai1", tool_calls=[{"name": "tool1", "args": {}, "id": "call1"}]),
+        ToolMessage(content="result1", tool_call_id="call1"),
+        HumanMessage(content="msg2"),
+        AIMessage(content="ai2", tool_calls=[{"name": "tool2", "args": {}, "id": "call2"}]),
+        ToolMessage(content="result2", tool_call_id="call2"),
+        HumanMessage(content="msg3"),
+    ]
+
+    # Test cutoff at index 1 - unsafe (separates first AI/Tool pair)
+    assert not middleware._is_safe_cutoff_point(messages, 2)
+
+    # Test cutoff at index 3 - safe (keeps first pair together)
+    assert middleware._is_safe_cutoff_point(messages, 3)
+
+    # Test cutoff at index 5 - unsafe (separates second AI/Tool pair)
+    assert not middleware._is_safe_cutoff_point(messages, 5)
+
+    # Test _cutoff_separates_tool_pair directly
+    assert middleware._cutoff_separates_tool_pair(messages, 1, 2, {"call1"})
+    assert not middleware._cutoff_separates_tool_pair(messages, 1, 0, {"call1"})
+    assert not middleware._cutoff_separates_tool_pair(messages, 1, 3, {"call1"})
+
+
+def test_summarization_middleware_tool_call_in_search_range() -> None:
+    """Test tool call safety with messages at edge of search range."""
+    model = FakeToolCallingModel()
+    middleware = SummarizationMiddleware(
+        model=model, trigger=("messages", 10), keep=("messages", 2)
+    )
+
+    # Create messages with tool pair separated by some distance
+    # Search range is 5, so messages within 5 positions of cutoff are checked
+    messages = [
+        HumanMessage(content="msg1"),
+        HumanMessage(content="msg2"),
+        AIMessage(content="ai", tool_calls=[{"name": "tool", "args": {}, "id": "call1"}]),
+        HumanMessage(content="msg3"),
+        HumanMessage(content="msg4"),
+        ToolMessage(content="result", tool_call_id="call1"),
+        HumanMessage(content="msg6"),
+    ]
+
+    # Cutoff at index 3 would separate: [0,1,2] from [3,4,5,6]
+    # AI at index 2 is before cutoff, Tool at index 5 is after cutoff - unsafe
+    assert not middleware._is_safe_cutoff_point(messages, 3)
+
+    # Cutoff at index 6 keeps AI and Tool both in summarized section
+    assert middleware._is_safe_cutoff_point(messages, 6)
+
+    # Cutoff at index 0 or 1 also safe - both AI and Tool in preserved section
+    assert middleware._is_safe_cutoff_point(messages, 0)
+    assert middleware._is_safe_cutoff_point(messages, 1)
+
+
+def test_summarization_middleware_zero_and_negative_target_tokens() -> None:
+    """Test handling of edge cases with target token calculations."""
+
+    class ProfileModel(BaseChatModel):
+        def _generate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+        @property
+        def profile(self) -> "ModelProfile":
+            return {"max_input_tokens": 1000}
+
+    # Test with very small fraction that rounds to zero
+    middleware = SummarizationMiddleware(
+        model=ProfileModel(), trigger=("fraction", 0.0001), keep=("fraction", 0.0001)
+    )
+
+    # Should set threshold to 1 when calculated value is <= 0
+    messages = [HumanMessage(content="test")]
+    state = {"messages": messages}
+
+    # The trigger fraction calculation: int(1000 * 0.0001) = 0, but should be set to 1
+    # Token count of 1 message should exceed threshold of 1
+    def token_counter(msgs):
+        return 2
+
+    middleware.token_counter = token_counter
+    assert middleware._should_summarize(messages, 2)
+
+
+async def test_summarization_middleware_async_error_handling() -> None:
+    """Test async summary creation with errors."""
+
+    class ErrorAsyncModel(BaseChatModel):
+        def _generate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        async def _agenerate(self, messages, **kwargs):
+            raise Exception("Async model error")
+
+        @property
+        def _llm_type(self):
+            return "mock"
+
+    middleware = SummarizationMiddleware(model=ErrorAsyncModel(), trigger=("messages", 5))
+    messages = [HumanMessage(content="test")]
+    summary = await middleware._acreate_summary(messages)
+    assert "Error generating summary: Async model error" in summary
+
+
+def test_summarization_middleware_cutoff_at_boundary() -> None:
+    """Test cutoff index determination at exact message boundaries."""
+
+    class MockModel(BaseChatModel):
+        def _generate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @property
+        def _llm_type(self):
+            return "mock"
+
+    middleware = SummarizationMiddleware(
+        model=MockModel(), trigger=("messages", 5), keep=("messages", 5)
+    )
+
+    # When we want to keep exactly as many messages as we have
+    messages = [HumanMessage(content=str(i)) for i in range(5)]
+    cutoff = middleware._find_safe_cutoff(messages, 5)
+    assert cutoff == 0  # Should not cut anything
+
+    # When we want to keep more messages than we have
+    cutoff = middleware._find_safe_cutoff(messages, 10)
+    assert cutoff == 0
+
+
+def test_summarization_middleware_deprecated_parameters_with_defaults() -> None:
+    """Test that deprecated parameters work correctly with default values."""
+
+    class MockModel(BaseChatModel):
+        def _generate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @property
+        def _llm_type(self):
+            return "mock"
+
+    # Test that deprecated max_tokens_before_summary is ignored when trigger is set
+    with pytest.warns(DeprecationWarning):
+        middleware = SummarizationMiddleware(
+            model=MockModel(), trigger=("tokens", 2000), max_tokens_before_summary=1000
+        )
+    assert middleware.trigger == ("tokens", 2000)
+
+    # Test that messages_to_keep is ignored when keep is not default
+    with pytest.warns(DeprecationWarning):
+        middleware = SummarizationMiddleware(
+            model=MockModel(), keep=("messages", 5), messages_to_keep=10
+        )
+    assert middleware.keep == ("messages", 5)
+
+
+def test_summarization_middleware_fraction_trigger_with_no_profile() -> None:
+    """Test fractional trigger condition when profile data becomes unavailable."""
+
+    class ProfileModel(BaseChatModel):
+        def _generate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+        @property
+        def profile(self) -> "ModelProfile":
+            return {"max_input_tokens": 1000}
+
+    middleware = SummarizationMiddleware(
+        model=ProfileModel(), trigger=[("fraction", 0.5), ("messages", 100)], keep=("messages", 5)
+    )
+
+    # Test that when fractional condition can't be evaluated, other triggers still work
+    messages = [HumanMessage(content=str(i)) for i in range(100)]
+
+    # Mock _get_profile_limits to return None
+    original_method = middleware._get_profile_limits
+    middleware._get_profile_limits = lambda: None
+
+    # Should still trigger based on message count
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+    assert result is not None
+
+    # Restore original method
+    middleware._get_profile_limits = original_method
+
+
+def test_summarization_middleware_is_safe_cutoff_at_end() -> None:
+    """Test _is_safe_cutoff_point when cutoff is at or past the end."""
+    model = FakeToolCallingModel()
+    middleware = SummarizationMiddleware(model=model, trigger=("messages", 5))
+
+    messages = [HumanMessage(content=str(i)) for i in range(5)]
+
+    # Cutoff at exactly the length should be safe
+    assert middleware._is_safe_cutoff_point(messages, len(messages))
+
+    # Cutoff past the length should also be safe
+    assert middleware._is_safe_cutoff_point(messages, len(messages) + 5)
