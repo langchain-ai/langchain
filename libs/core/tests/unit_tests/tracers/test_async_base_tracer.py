@@ -65,7 +65,7 @@ async def test_tracer_llm_run() -> None:
             {"name": "start", "time": datetime.now(timezone.utc)},
             {"name": "end", "time": datetime.now(timezone.utc)},
         ],
-        extra={},
+        extra={"metadata": {"ls_tools_called": []}},
         serialized=SERIALIZED,
         inputs={"prompts": []},
         outputs=LLMResult(generations=[[]]),  # type: ignore[arg-type]
@@ -98,7 +98,7 @@ async def test_tracer_chat_model_run() -> None:
             {"name": "start", "time": datetime.now(timezone.utc)},
             {"name": "end", "time": datetime.now(timezone.utc)},
         ],
-        extra={},
+        extra={"metadata": {"ls_tools_called": []}},
         serialized=SERIALIZED_CHAT,
         inputs={"prompts": ["Human: "]},
         outputs=LLMResult(generations=[[]]),  # type: ignore[arg-type]
@@ -134,7 +134,7 @@ async def test_tracer_multiple_llm_runs() -> None:
             {"name": "start", "time": datetime.now(timezone.utc)},
             {"name": "end", "time": datetime.now(timezone.utc)},
         ],
-        extra={},
+        extra={"metadata": {"ls_tools_called": []}},
         serialized=SERIALIZED,
         inputs={"prompts": []},
         outputs=LLMResult(generations=[[]]),  # type: ignore[arg-type]
@@ -291,7 +291,7 @@ async def test_tracer_nested_run() -> None:
                             {"name": "start", "time": datetime.now(timezone.utc)},
                             {"name": "end", "time": datetime.now(timezone.utc)},
                         ],
-                        extra={},
+                        extra={"metadata": {"ls_tools_called": []}},
                         serialized=SERIALIZED,
                         inputs={"prompts": []},
                         outputs=LLMResult(generations=[[]]),  # type: ignore[arg-type]
@@ -311,7 +311,7 @@ async def test_tracer_nested_run() -> None:
                     {"name": "start", "time": datetime.now(timezone.utc)},
                     {"name": "end", "time": datetime.now(timezone.utc)},
                 ],
-                extra={},
+                extra={"metadata": {"ls_tools_called": []}},
                 serialized=SERIALIZED,
                 inputs={"prompts": []},
                 outputs=LLMResult(generations=[[]]),  # type: ignore[arg-type]
@@ -526,7 +526,7 @@ async def test_tracer_nested_runs_on_error() -> None:
                     {"name": "start", "time": datetime.now(timezone.utc)},
                     {"name": "end", "time": datetime.now(timezone.utc)},
                 ],
-                extra={},
+                extra={"metadata": {"ls_tools_called": []}},
                 serialized=SERIALIZED,
                 error=None,
                 inputs={"prompts": []},
@@ -544,7 +544,7 @@ async def test_tracer_nested_runs_on_error() -> None:
                     {"name": "start", "time": datetime.now(timezone.utc)},
                     {"name": "end", "time": datetime.now(timezone.utc)},
                 ],
-                extra={},
+                extra={"metadata": {"ls_tools_called": []}},
                 serialized=SERIALIZED,
                 error=None,
                 inputs={"prompts": []},
