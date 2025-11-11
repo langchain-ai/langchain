@@ -2543,7 +2543,6 @@ def _make_message_chunk_from_anthropic_event(
     message_chunk: AIMessageChunk | None = None
     # Reference: Anthropic SDK streaming implementation
     # https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
-
     if event.type == "message_start" and stream_usage:
         # Capture model name, but don't include usage_metadata yet
         # as it will be properly reported in message_delta with complete info
@@ -2560,17 +2559,11 @@ def _make_message_chunk_from_anthropic_event(
     elif (
         event.type == "content_block_start"
         and event.content_block is not None
-        and event.content_block.type
-        in (
-            "tool_use",  # Standard tool usage
-            "code_execution_tool_result",  # Built-in code execution results
-            "document",
-            "redacted_thinking",
-            "mcp_tool_use",
-            "mcp_tool_result",
-            "server_tool_use",  # Server-side tool usage
-            "web_search_tool_result",  # Built-in web search results
-            "web_fetch_tool_result",  # Built-in web fetch results,
+        and (
+            "tool_result" in event.content_block.type
+            or "tool_use" in event.content_block.type
+            or "document" in event.content_block.type
+            or "redacted_thinking" in event.content_block.type
         )
     ):
         if coerce_content_to_string:
