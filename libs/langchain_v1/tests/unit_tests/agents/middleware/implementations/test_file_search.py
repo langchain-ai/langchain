@@ -259,3 +259,127 @@ class TestPathTraversalSecurity:
 
         assert result == "No matches found"
         assert "secret" not in result
+
+
+class TestExpandIncludePatterns:
+    """Tests for _expand_include_patterns helper function."""
+
+    def test_expand_patterns_basic_brace_expansion(self, tmp_path: Path) -> None:
+        """Test basic brace expansion with multiple options."""
+        from langchain.agents.middleware.file_search import _expand_include_patterns
+
+        result = _expand_include_patterns("*.{py,txt}")
+        assert result == ["*.py", "*.txt"]
+
+    def test_expand_patterns_nested_braces(self, tmp_path: Path) -> None:
+        """Test nested brace expansion."""
+        from langchain.agents.middleware.file_search import _expand_include_patterns
+
+        result = _expand_include_patterns("test.{a,b}.{c,d}")
+        assert result is not None
+        assert len(result) == 4
+        assert "test.a.c" in result
+        assert "test.b.d" in result
+
+    def test_expand_patterns_closing_brace_without_opening(self, tmp_path: Path) -> None:
+        """Test pattern with } but no { returns None."""
+        from langchain.agents.middleware.file_search import _expand_include_patterns
+
+        result = _expand_include_patterns("*.py}")
+        assert result is None
+
+    def test_expand_patterns_empty_braces(self, tmp_path: Path) -> None:
+        """Test pattern with empty braces {} returns None."""
+        from langchain.agents.middleware.file_search import _expand_include_patterns
+
+        result = _expand_include_patterns("*.{}")
+        assert result is None
+
+    def test_expand_patterns_unclosed_brace(self, tmp_path: Path) -> None:
+        """Test pattern with unclosed brace { returns None."""
+        from langchain.agents.middleware.file_search import _expand_include_patterns
+
+        result = _expand_include_patterns("*.{py")
+        assert result is None
+
+
+class TestValidateIncludePattern:
+    """Tests for _is_valid_include_pattern helper function."""
+
+    def test_validate_empty_pattern(self, tmp_path: Path) -> None:
+        """Test that empty pattern is invalid."""
+        from langchain.agents.middleware.file_search import _is_valid_include_pattern
+
+        assert not _is_valid_include_pattern("")
+
+    def test_validate_pattern_with_null_byte(self, tmp_path: Path) -> None:
+        """Test that pattern with null byte is invalid."""
+        from langchain.agents.middleware.file_search import _is_valid_include_pattern
+
+        assert not _is_valid_include_pattern("*.py\x00")
+
+    def test_validate_pattern_with_newline(self, tmp_path: Path) -> None:
+        """Test that pattern with newline is invalid."""
+        from langchain.agents.middleware.file_search import _is_valid_include_pattern
+
+        assert not _is_valid_include_pattern("*.py\n")
+
+
+class TestMatchIncludePattern:
+    """Tests for _match_include_pattern helper function."""
+
+    def test_match_pattern_with_braces(self, tmp_path: Path) -> None:
+        """Test matching with brace expansion."""
+        from langchain.agents.middleware.file_search import _match_include_pattern
+
+        assert _match_include_pattern("test.py", "*.{py,txt}")
+        assert _match_include_pattern("test.txt", "*.{py,txt}")
+        assert not _match_include_pattern("test.md", "*.{py,txt}")
+
+    def test_match_pattern_invalid_expansion(self, tmp_path: Path) -> None:
+        """Test matching with pattern that cannot be expanded returns False."""
+        from langchain.agents.middleware.file_search import _match_include_pattern
+
+        assert not _match_include_pattern("test.py", "*.{}")
+
+
+class TestGrepEdgeCases:
+    """Tests for edge cases in grep search."""
+
+    def test_grep_with_special_chars_in_pattern(self, tmp_path: Path) -> None:
+        """Test grep with special characters in pattern."""
+        (tmp_path / "test.py").write_text("def test():\n    pass\n", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+
+        result = middleware.grep_search.func(pattern="def.*:")
+
+        assert "/test.py" in result
+
+    def test_grep_case_insensitive(self, tmp_path: Path) -> None:
+        """Test grep with case-insensitive search."""
+        (tmp_path / "test.py").write_text("HELLO world\n", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+
+        result = middleware.grep_search.func(pattern="(?i)hello")
+
+        assert "/test.py" in result
+
+    def test_grep_with_large_file_skipping(self, tmp_path: Path) -> None:
+        """Test that grep skips files larger than max_file_size_mb."""
+        # Create a file larger than 1MB
+        large_content = "x" * (2 * 1024 * 1024)  # 2MB
+        (tmp_path / "large.txt").write_text(large_content, encoding="utf-8")
+        (tmp_path / "small.txt").write_text("x", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(
+            root_path=str(tmp_path),
+            use_ripgrep=False,
+            max_file_size_mb=1  # 1MB limit
+        )
+
+        result = middleware.grep_search.func(pattern="x")
+
+        # Large file should be skipped
+        assert "/small.txt" in result

@@ -3,6 +3,7 @@
 import typing
 from typing import Union, Any, Literal
 
+import pytest
 from itertools import cycle
 from pydantic import BaseModel
 
@@ -596,3 +597,16 @@ class TestDuplicateAndInvalidTools:
             assert len(tool_names) == 2
             assert "get_weather" in tool_names
             assert "search_web" in tool_names
+
+
+class TestEdgeCases:
+    """Test edge cases and error handling."""
+
+    def test_empty_tools_list_raises_error(self) -> None:
+        """Test that empty tools list raises an error in schema creation."""
+        from langchain.agents.middleware.tool_selection import (
+            _create_tool_selection_response,
+        )
+
+        with pytest.raises(AssertionError, match="tools must be non-empty"):
+            _create_tool_selection_response([])
