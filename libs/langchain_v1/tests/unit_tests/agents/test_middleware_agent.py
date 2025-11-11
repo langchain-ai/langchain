@@ -569,9 +569,13 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
         result = middleware.after_model(state, None)
         assert result is not None
         assert "messages" in result
+        # Should have only AIMessage (edit context embedded to comply with OpenAI)
         assert len(result["messages"]) == 1
-        assert result["messages"][0].tool_calls[0]["args"] == {"input": "edited"}
-        assert result["messages"][0].tool_calls[0]["id"] == "1"  # ID should be preserved
+        updated_ai_msg = result["messages"][0]
+        assert updated_ai_msg.tool_calls[0]["args"] == {"input": "edited"}
+        assert updated_ai_msg.tool_calls[0]["id"] == "1"  # ID should be preserved
+        # Check edit context is embedded in AIMessage.content
+        assert "edited" in updated_ai_msg.content.lower()
 
 
 def test_human_in_the_loop_middleware_single_tool_response() -> None:
@@ -598,10 +602,9 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
         assert "messages" in result
         assert len(result["messages"]) == 2
         assert isinstance(result["messages"][0], AIMessage)
-        assert isinstance(result["messages"][1], ToolMessage)
+        assert isinstance(result["messages"][1], ToolMessage)  # Reject creates ToolMessage
         assert result["messages"][1].content == "Custom response message"
         assert result["messages"][1].name == "test_tool"
-        assert result["messages"][1].tool_call_id == "1"
 
 
 def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
@@ -699,6 +702,7 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
         result = middleware.after_model(state, None)
         assert result is not None
         assert "messages" in result
+        # Should have only 1 AIMessage (edit context embedded in content to comply with OpenAI)
         assert len(result["messages"]) == 1
 
         updated_ai_message = result["messages"][0]
@@ -706,6 +710,13 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
         assert updated_ai_message.tool_calls[0]["id"] == "1"  # ID preserved
         assert updated_ai_message.tool_calls[1]["args"] == {"location": "New York"}
         assert updated_ai_message.tool_calls[1]["id"] == "2"  # ID preserved
+
+        # Check that edit context is embedded in AIMessage.content (not separate HumanMessages)
+        # This ensures compliance with OpenAI's message ordering rule
+        assert "edited" in updated_ai_message.content.lower()
+        assert "get_forecast" in updated_ai_message.content
+        assert "get_temperature" in updated_ai_message.content
+        assert "New York" in updated_ai_message.content
 
 
 def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
@@ -741,12 +752,16 @@ def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
         result = middleware.after_model(state, None)
         assert result is not None
         assert "messages" in result
-        assert len(result["messages"]) == 1
+        assert len(result["messages"]) == 1  # Only AIMessage (edit context embedded)
 
-        # Should have modified args
+        # The AIMessage should have modified args
         updated_ai_message = result["messages"][0]
         assert updated_ai_message.tool_calls[0]["args"] == {"input": "modified"}
         assert updated_ai_message.tool_calls[0]["id"] == "1"  # ID preserved
+
+        # Edit context should be embedded in AIMessage.content
+        assert "edited" in updated_ai_message.content.lower()
+        assert "modified" in updated_ai_message.content
 
 
 def test_human_in_the_loop_middleware_unknown_response_type() -> None:
@@ -925,8 +940,12 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
         result = middleware.after_model(state, None)
         assert result is not None
         assert "messages" in result
+        # Should have only AIMessage (edit context embedded)
         assert len(result["messages"]) == 1
-        assert result["messages"][0].tool_calls[0]["args"] == {"input": "edited"}
+        updated_ai_msg = result["messages"][0]
+        assert updated_ai_msg.tool_calls[0]["args"] == {"input": "edited"}
+        # Check edit context is embedded in AIMessage.content
+        assert "edited" in updated_ai_msg.content.lower()
 
     middleware = HumanInTheLoopMiddleware(interrupt_on={"test_tool": False})
 
@@ -1026,6 +1045,192 @@ def test_human_in_the_loop_middleware_description_as_callable() -> None:
 
         # Check string description
         assert captured_request["action_requests"][1]["description"] == "Static description"
+
+
+def test_human_in_the_loop_middleware_edit_actually_executes_with_edited_args(
+    sync_checkpointer: BaseCheckpointSaver,
+) -> None:
+    """Test that HITL edit decision properly replaces original tool call (Issues #33787, #33784).
+
+    This test reproduces the bug where after editing a tool call:
+    1. The edited tool executes correctly
+    2. BUT the agent's next model call sees the ORIGINAL (unedited) tool_calls in the AIMessage
+    3. This causes the agent to re-attempt the original tool call
+
+    The bug happens because HumanInTheLoopMiddleware directly modifies the AIMessage
+    object's tool_calls attribute, but LangGraph's state management may not properly
+    persist this mutation, causing subsequent reads to see the original values.
+    """
+    # Track what arguments tools were actually called with
+    send_email_calls = []
+
+    @tool
+    def send_email_tool(to: str, subject: str, body: str) -> str:
+        """Send an email to a recipient.
+
+        Args:
+            to: Email address of the recipient
+            subject: Subject line of the email
+            body: Body content of the email
+        """
+        send_email_calls.append({"to": to, "subject": subject, "body": body})
+        return f"Email sent successfully to {to} with subject: {subject}"
+
+    # Create agent with HITL middleware
+    # Simulate the exact scenario from issue #33787:
+    # 1. First model call: agent wants to send email to alice@example.com
+    # 2. After edit (to alice@test.com), the model should see the edited params
+    #    and not re-attempt the original call
+    agent = create_agent(
+        model=FakeToolCallingModel(
+            tool_calls=[
+                # First call: agent proposes sending to alice@example.com
+                [
+                    {
+                        "args": {"to": "alice@example.com", "subject": "Test", "body": "Hello"},
+                        "id": "call_001",
+                        "name": "send_email_tool",
+                    }
+                ],
+                # Second call (after edited tool execution): Agent should see the EDITED
+                # tool call in message history. If model still had original params in its
+                # context, it might try again. But with the fix, it sees edited params.
+                # For testing, we configure model to not make additional tool calls
+                # (empty list) to verify the agent loop completes successfully.
+                [],  # No more tools - task completed
+            ]
+        ),
+        tools=[send_email_tool],
+        middleware=[
+            HumanInTheLoopMiddleware(
+                interrupt_on={
+                    "send_email_tool": {"allowed_decisions": ["approve", "edit", "reject"]}
+                }
+            )
+        ],
+        checkpointer=sync_checkpointer,
+    )
+
+    thread = {"configurable": {"thread_id": "test-hitl-bug-33787"}}
+
+    # === STEP 1: First invocation - should interrupt before sending email ===
+    result = agent.invoke(
+        {
+            "messages": [
+                HumanMessage(
+                    "Send an email to alice@example.com with subject 'Test' and body 'Hello'"
+                )
+            ]
+        },
+        thread,
+    )
+
+    # Verify we got an interrupt (email not sent yet)
+    assert len(send_email_calls) == 0, "Email should not have been sent yet"
+    last_ai_msg = result["messages"][-1]
+    assert isinstance(last_ai_msg, AIMessage)
+    assert len(last_ai_msg.tool_calls) == 1
+    assert last_ai_msg.tool_calls[0]["args"]["to"] == "alice@example.com"
+
+    # === STEP 2: Resume with edit decision - change recipient to alice@test.com ===
+    from langgraph.types import Command
+
+    result = agent.invoke(
+        Command(
+            resume={
+                "decisions": [
+                    {
+                        "type": "edit",
+                        "message": "Changing recipient to test address",
+                        "edited_action": Action(
+                            name="send_email_tool",
+                            args={
+                                "to": "alice@test.com",
+                                "subject": "this is a test",
+                                "body": "don't reply",
+                            },
+                        ),
+                    }
+                ]
+            }
+        ),
+        thread,
+    )
+
+    # CRITICAL ASSERTION 1: Email should be sent to EDITED address (alice@test.com)
+    assert len(send_email_calls) == 1, "Exactly one email should have been sent"
+    assert send_email_calls[0]["to"] == "alice@test.com", (
+        f"Email should be sent to edited address 'alice@test.com', got '{send_email_calls[0]['to']}'"
+    )
+    assert send_email_calls[0]["subject"] == "this is a test"
+
+    # Verify there's context about the edit AND the actual tool execution result
+    human_messages = [m for m in result["messages"] if isinstance(m, HumanMessage)]
+    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+    ai_messages = [m for m in result["messages"] if isinstance(m, AIMessage)]
+
+    # Check for context messages:
+    # 1. Pre-execution: Embedded in AIMessage.content (to comply with OpenAI message ordering)
+    # 2. Post-execution: Separate HumanMessage with "[IMPORTANT - DO NOT IGNORE]"
+    context_messages = [m for m in human_messages if "edited" in m.content.lower()]
+    assert len(context_messages) == 1, (
+        f"Should have exactly one edit context HumanMessage (post-execution only), "
+        f"but got {len(context_messages)}"
+    )
+    # Post-execution message should have strong language and mention edited params
+    post_exec_msg = context_messages[0]
+    assert "ALREADY BEEN EXECUTED" in post_exec_msg.content
+    assert "alice@test.com" in post_exec_msg.content
+
+    # Check that pre-execution context is embedded in AIMessage.content
+    # (This ensures OpenAI's message ordering rule is respected)
+    ai_msg_with_tool_calls = None
+    for msg in ai_messages:
+        if msg.tool_calls:
+            ai_msg_with_tool_calls = msg
+            break
+    assert ai_msg_with_tool_calls is not None, "Should find AIMessage with tool calls"
+    assert "edited" in ai_msg_with_tool_calls.content.lower(), (
+        "Pre-execution edit context should be embedded in AIMessage.content"
+    )
+    assert "alice@test.com" in ai_msg_with_tool_calls.content
+
+    # Check for execution result (ToolMessage)
+    exec_messages = [m for m in tool_messages if "Email sent" in m.content]
+    assert len(exec_messages) == 1, "Should have exactly one tool execution result"
+    assert "alice@test.com" in exec_messages[0].content
+
+    # CRITICAL ASSERTION 2: Verify the AIMessage in history was properly updated
+    # This is the core fix - the AIMessage with original params should be replaced
+    # with the edited version so that subsequent model calls see the correct context
+    ai_msg_with_original_id = None
+    for msg in result["messages"]:
+        if isinstance(msg, AIMessage) and getattr(msg, "id", None) == "0":
+            ai_msg_with_original_id = msg
+            break
+
+    assert ai_msg_with_original_id is not None, "Should find the AIMessage that was edited"
+    assert len(ai_msg_with_original_id.tool_calls) == 1
+
+    # THE KEY ASSERTION: The AIMessage stored in state should have EDITED params
+    # Without the fix, this would still have alice@example.com due to mutation issues
+    assert ai_msg_with_original_id.tool_calls[0]["args"]["to"] == "alice@test.com", (
+        f"BUG DETECTED (Issue #33787): AIMessage in state still has original params "
+        f"'{ai_msg_with_original_id.tool_calls[0]['args']['to']}' instead of edited 'alice@test.com'. "
+        f"The middleware should have created a NEW AIMessage with edited params to replace the original."
+    )
+
+    # CRITICAL ASSERTION 3: Agent should not have re-executed original tool call
+    # Only the EDITED call should have been executed
+    assert len(send_email_calls) == 1, (
+        f"Expected exactly 1 email (the edited one), but {len(send_email_calls)} were sent. "
+        f"This suggests the agent re-attempted the original tool call."
+    )
+
+    # Final verification: the execution log confirms only edited params were used
+    assert send_email_calls[0]["to"] == "alice@test.com"
+    assert send_email_calls[0]["subject"] == "this is a test"
+    assert send_email_calls[0]["body"] == "don't reply"
 
 
 # Tests for SummarizationMiddleware

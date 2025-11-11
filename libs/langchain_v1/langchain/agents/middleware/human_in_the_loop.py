@@ -1,8 +1,9 @@
 """Human in the loop middleware."""
 
+import json
 from typing import Any, Literal, Protocol
 
-from langchain_core.messages import AIMessage, ToolCall, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langgraph.runtime import Runtime
 from langgraph.types import interrupt
 from typing_extensions import NotRequired, TypedDict
@@ -157,7 +158,111 @@ class InterruptOnConfig(TypedDict):
 
 
 class HumanInTheLoopMiddleware(AgentMiddleware):
-    """Human in the loop middleware."""
+    """Human in the loop middleware.
+
+    This middleware allows human review and editing of tool calls before execution.
+
+    Design Note - Message Ordering for OpenAI Compatibility:
+        When a user edits a tool call, the edit notification is embedded in the
+        AIMessage.content rather than created as a separate message. This design
+        choice ensures compatibility with OpenAI's strict message ordering rule:
+        AIMessage with tool_calls must be immediately followed by ToolMessage.
+
+        The embedded notifications use clear visual separators (e.g., "=" lines)
+        and explicit language ("SYSTEM NOTIFICATION - NOT AI RESPONSE") to minimize
+        semantic confusion and help the model distinguish between its own output
+        and framework-generated metadata.
+
+        For optimal results, provide appropriate system prompts to guide the model's
+        behavior. Use `get_recommended_system_prompt()` to generate recommended
+        prompts for your LLM provider.
+
+    Example:
+            ```python
+            system_prompt = HumanInTheLoopMiddleware.get_recommended_system_prompt("openai")
+            agent = create_agent(
+                model="gpt-4",
+                tools=[...],
+                middleware=[HumanInTheLoopMiddleware(...)],
+                system_prompt=system_prompt,
+            )
+            ```
+
+    Future Enhancement:
+        A provider-specific message adapter could generate optimal message formats
+        for each LLM provider (embedded for OpenAI, separate messages for others).
+        This would provide the best of both worlds: API compatibility and semantic
+        clarity.
+    """
+
+    @staticmethod
+    def get_recommended_system_prompt(provider: str = "openai") -> str:
+        """Get recommended system prompt for HITL middleware.
+
+        This helper generates system prompts that help models correctly interpret
+        embedded edit notifications and avoid semantic confusion.
+
+        Args:
+            provider: The LLM provider ("openai", "anthropic", "groq", "google", etc.)
+
+        Returns:
+            Recommended system prompt to guide model behavior with HITL middleware.
+
+        Example:
+            ```python
+            system_prompt = HumanInTheLoopMiddleware.get_recommended_system_prompt("openai")
+            agent = create_agent(
+                model="gpt-4",
+                tools=[...],
+                middleware=[HumanInTheLoopMiddleware(...)],
+                system_prompt=system_prompt,
+            )
+            ```
+        """
+        base_prompt = """You are a helpful assistant.
+
+CRITICAL INSTRUCTIONS FOR SYSTEM NOTIFICATIONS:
+1. You may see [SYSTEM NOTIFICATION] sections in messages.
+2. These are NOT your words - they are framework-generated metadata.
+3. DO NOT reference system notifications as if you said them.
+4. Examples of INCORRECT responses:
+   ❌ "As I mentioned earlier, the user edited..."
+   ❌ "According to the system notification..."
+   ❌ "I noted that the parameters were modified..."
+5. Examples of CORRECT responses:
+   ✅ "The task has been completed successfully."
+   ✅ "The file has been written to /path/to/file."
+6. Focus on tool execution results, not on system metadata."""
+
+        provider_specific = {
+            "openai": """
+
+TOOL EXECUTION RULES:
+- When you see a ToolMessage, the tool has ALREADY been executed.
+- Do NOT execute the same tool again.
+- Report the result directly to the user.""",
+            "anthropic": """
+
+TOOL EXECUTION RULES:
+- When you see a ToolMessage, the tool has ALREADY been executed.
+- Do NOT execute the same tool again.
+- Provide a clear summary of the result.""",
+            "groq": """
+
+TOOL EXECUTION RULES:
+- When you see a ToolMessage, the tool has ALREADY been executed.
+- Do NOT execute the same tool again.
+- Do NOT attempt to re-execute with different parameters.
+- Report only the actual execution result.""",
+            "google": """
+
+TOOL EXECUTION RULES:
+- When you see a ToolMessage, the tool has ALREADY been executed.
+- Do NOT execute the same tool again.
+- Summarize the result for the user.""",
+        }
+
+        return base_prompt + provider_specific.get(provider.lower(), provider_specific["openai"])
 
     def __init__(
         self,
@@ -198,6 +303,53 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                 resolved_configs[tool_name] = tool_config
         self.interrupt_on = resolved_configs
         self.description_prefix = description_prefix
+        # Track edits to provide context after tool execution
+        self._pending_edit_contexts: dict[str, dict[str, Any]] = {}
+
+    def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
+        """Inject context messages after tool execution for edited tool calls."""
+        if not self._pending_edit_contexts:
+            return None
+
+        messages = state["messages"]
+        if not messages:
+            return None
+
+        # Check recent messages for ToolMessages that correspond to edited tool calls
+        context_messages: list[HumanMessage] = []
+        completed_edits: list[str] = []
+
+        # Look through recent messages for ToolMessages
+        for msg in reversed(messages):
+            if isinstance(msg, ToolMessage):
+                tool_call_id = msg.tool_call_id
+                if tool_call_id in self._pending_edit_contexts:
+                    # Found a ToolMessage for an edited tool call
+                    edit_info = self._pending_edit_contexts[tool_call_id]
+                    args_json = json.dumps(edit_info["args"], indent=2)
+                    context_msg = HumanMessage(
+                        content=(
+                            f"[IMPORTANT - DO NOT IGNORE] The tool '{edit_info['name']}' "
+                            f"has ALREADY BEEN EXECUTED SUCCESSFULLY with edited parameters: "
+                            f"{args_json}. The task is COMPLETE. DO NOT execute this tool again. "
+                            f"Your response must reference the edited parameters shown above, "
+                            f"NOT the user's original request."
+                        ),
+                    )
+                    context_messages.append(context_msg)
+                    completed_edits.append(tool_call_id)
+            # Only check recent messages (stop at the last AIMessage with tool calls)
+            elif isinstance(msg, AIMessage) and msg.tool_calls:
+                break
+
+        # Clear completed edits from pending contexts
+        for tool_call_id in completed_edits:
+            del self._pending_edit_contexts[tool_call_id]
+
+        if context_messages:
+            return {"messages": context_messages}
+
+        return None
 
     def _create_action_and_config(
         self,
@@ -235,12 +387,67 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
         return action_request, review_config
 
+    def _build_updated_content(
+        self,
+        original_content: str | list[str | dict[Any, Any]],
+        edit_info: dict[str, dict[str, Any]],
+    ) -> str | list[str | dict[Any, Any]]:
+        """Build updated AIMessage content with embedded edit information.
+
+        For OpenAI API compatibility, edit notifications are embedded in
+        AIMessage.content rather than separate messages. This ensures the
+        message ordering rule (AIMessage with tool_calls must be immediately
+        followed by ToolMessage) is respected.
+
+        The notifications use clear visual separators and explicit language
+        to minimize semantic confusion.
+
+        Args:
+            original_content: The original AIMessage content
+            edit_info: Dictionary mapping tool_call_id to edit information
+
+        Returns:
+            Updated content with edit notices embedded
+        """
+        if not edit_info:
+            return original_content
+
+        # Build edit context messages with clear visual separation
+        separator = "=" * 60
+        edit_notices = []
+
+        for info in edit_info.values():
+            args_json = json.dumps(info["args"], indent=2)
+            notice = f"""{separator}
+[SYSTEM NOTIFICATION - NOT AI RESPONSE]
+This is framework-generated metadata. Do not attribute to AI.
+
+User edited the tool call: '{info["name"]}'
+Modified parameters:
+{args_json}
+
+⚠️  IMPORTANT: Do not reference this notification in your response.
+    Report only the tool execution results to the user.
+{separator}"""
+            edit_notices.append(notice)
+
+        edit_context = "\n\n".join(edit_notices)
+
+        # For now, only handle string content. If content is a list, return as-is
+        # (this is a rare case and embedding edit info in list content is complex)
+        if isinstance(original_content, str):
+            if original_content:
+                return f"{original_content}\n\n{edit_context}"
+            return edit_context
+        # If content is a list, return original (could be enhanced in future)
+        return original_content
+
     def _process_decision(
         self,
         decision: Decision,
         tool_call: ToolCall,
         config: InterruptOnConfig,
-    ) -> tuple[ToolCall | None, ToolMessage | None]:
+    ) -> tuple[ToolCall | None, ToolMessage | HumanMessage | None]:
         """Process a single decision and return the revised tool call and optional tool message."""
         allowed_decisions = config["allowed_decisions"]
 
@@ -248,15 +455,17 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             return tool_call, None
         if decision["type"] == "edit" and "edit" in allowed_decisions:
             edited_action = decision["edited_action"]
-            return (
-                ToolCall(
-                    type="tool_call",
-                    name=edited_action["name"],
-                    args=edited_action["args"],
-                    id=tool_call["id"],
-                ),
-                None,
+            edited_tool_call = ToolCall(
+                type="tool_call",
+                name=edited_action["name"],
+                args=edited_action["args"],
+                id=tool_call["id"],
             )
+            # Don't create a separate HumanMessage here - it would break OpenAI's
+            # message ordering rule (AIMessage with tool_calls must be immediately
+            # followed by ToolMessage). Instead, we'll embed edit info in AIMessage.content
+            # in the after_model method.
+            return edited_tool_call, None
         if decision["type"] == "reject" and "reject" in allowed_decisions:
             # Create a tool message with the human's text response
             content = decision.get("message") or (
@@ -302,7 +511,9 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
         # Process all tool calls that require interrupts
         revised_tool_calls: list[ToolCall] = auto_approved_tool_calls.copy()
-        artificial_tool_messages: list[ToolMessage] = []
+        artificial_tool_messages: list[ToolMessage | HumanMessage] = []
+        # Track edits for post-execution context messages
+        edit_info: dict[str, dict[str, Any]] = {}
 
         # Create action requests and review configs for all tools that need approval
         action_requests: list[ActionRequest] = []
@@ -346,10 +557,44 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             revised_tool_call, tool_message = self._process_decision(decision, tool_call, config)
             if revised_tool_call:
                 revised_tool_calls.append(revised_tool_call)
+                # Track if this was an edit for post-execution context
+                if decision["type"] == "edit":
+                    tool_call_id = revised_tool_call["id"]
+                    if tool_call_id:  # Type guard for mypy
+                        edit_info[tool_call_id] = {
+                            "name": revised_tool_call["name"],
+                            "args": revised_tool_call["args"],
+                        }
             if tool_message:
                 artificial_tool_messages.append(tool_message)
 
-        # Update the AI message to only include approved tool calls
-        last_ai_msg.tool_calls = revised_tool_calls
+        # Create a new AIMessage with updated tool calls instead of mutating the original
+        # This ensures LangGraph's state management properly persists the changes
+        # (fixes Issues #33787 and #33784 where edits weren't persisted correctly)
+        #
+        # CRITICAL: We must ensure last_ai_msg has an ID for the add_messages reducer
+        # to properly replace it (not append a duplicate). If no ID exists, generate one.
+        if last_ai_msg.id is None:
+            import uuid
 
-        return {"messages": [last_ai_msg, *artificial_tool_messages]}
+            last_ai_msg.id = str(uuid.uuid4())
+
+        # Embed edit information in AIMessage.content to comply with OpenAI's message
+        # ordering rule (AIMessage with tool_calls must be immediately followed by ToolMessage)
+        updated_content = self._build_updated_content(last_ai_msg.content, edit_info)
+
+        updated_ai_msg = AIMessage(
+            content=updated_content,
+            tool_calls=revised_tool_calls,
+            id=last_ai_msg.id,  # Same ID ensures replacement, not appending
+            name=last_ai_msg.name,
+            additional_kwargs=last_ai_msg.additional_kwargs,
+            response_metadata=last_ai_msg.response_metadata,
+            usage_metadata=last_ai_msg.usage_metadata,
+        )
+
+        # Store edit info for use in before_model to inject post-execution context
+        if edit_info:
+            self._pending_edit_contexts.update(edit_info)
+
+        return {"messages": [updated_ai_msg, *artificial_tool_messages]}
