@@ -5,12 +5,17 @@ from __future__ import annotations
 from typing import cast
 
 import pytest
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
 
+from langchain.agents.factory import create_agent
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.types import ModelRequest, ModelResponse
 from langgraph.runtime import Runtime
+
+from ..model import FakeToolCallingModel
 
 
 def _fake_runtime() -> Runtime:
@@ -213,3 +218,90 @@ async def test_all_models_fail_async() -> None:
 
     with pytest.raises(ValueError, match="Model failed"):
         await middleware.awrap_model_call(request, mock_handler)
+
+
+def test_model_fallback_middleware_with_agent() -> None:
+    """Test ModelFallbackMiddleware with agent.invoke and fallback models only."""
+
+    class FailingModel(BaseChatModel):
+        """Model that always fails."""
+
+        def _generate(self, messages, **kwargs):
+            raise ValueError("Primary model failed")
+
+        @property
+        def _llm_type(self):
+            return "failing"
+
+    class SuccessModel(BaseChatModel):
+        """Model that succeeds."""
+
+        def _generate(self, messages, **kwargs):
+            return ChatResult(
+                generations=[ChatGeneration(message=AIMessage(content="Fallback success"))]
+            )
+
+        @property
+        def _llm_type(self):
+            return "success"
+
+    primary = FailingModel()
+    fallback = SuccessModel()
+
+    # Only pass fallback models to middleware (not the primary)
+    fallback_middleware = ModelFallbackMiddleware(fallback)
+
+    agent = create_agent(model=primary, middleware=[fallback_middleware])
+
+    result = agent.invoke({"messages": [HumanMessage("Test")]})
+
+    # Should have succeeded with fallback model
+    assert len(result["messages"]) == 2
+    assert result["messages"][1].content == "Fallback success"
+
+
+def test_model_fallback_middleware_exhausted_with_agent() -> None:
+    """Test ModelFallbackMiddleware with agent.invoke when all models fail."""
+
+    class AlwaysFailingModel(BaseChatModel):
+        """Model that always fails."""
+
+        def __init__(self, name: str):
+            super().__init__()
+            self.name = name
+
+        def _generate(self, messages, **kwargs):
+            raise ValueError(f"{self.name} failed")
+
+        @property
+        def _llm_type(self):
+            return self.name
+
+    primary = AlwaysFailingModel("primary")
+    fallback1 = AlwaysFailingModel("fallback1")
+    fallback2 = AlwaysFailingModel("fallback2")
+
+    # Primary fails (attempt 1), then fallback1 (attempt 2), then fallback2 (attempt 3)
+    fallback_middleware = ModelFallbackMiddleware(fallback1, fallback2)
+
+    agent = create_agent(model=primary, middleware=[fallback_middleware])
+
+    # Should fail with the last fallback's error
+    with pytest.raises(ValueError, match="fallback2 failed"):
+        agent.invoke({"messages": [HumanMessage("Test")]})
+
+
+def test_model_fallback_middleware_initialization() -> None:
+    """Test ModelFallbackMiddleware initialization."""
+
+    # Test with no models - now a TypeError (missing required argument)
+    with pytest.raises(TypeError):
+        ModelFallbackMiddleware()  # type: ignore[call-arg]
+
+    # Test with one fallback model (valid)
+    middleware = ModelFallbackMiddleware(FakeToolCallingModel())
+    assert len(middleware.models) == 1
+
+    # Test with multiple fallback models
+    middleware = ModelFallbackMiddleware(FakeToolCallingModel(), FakeToolCallingModel())
+    assert len(middleware.models) == 2
