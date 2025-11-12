@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from pydantic import Field
 from typing_extensions import override
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from langchain_core.callbacks import CallbackManagerForLLMRun
 
 
 class ChatParrotLink(BaseChatModel):
