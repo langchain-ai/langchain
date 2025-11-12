@@ -15,25 +15,26 @@ class WeatherBaseModel(BaseModel):
 
 def get_weather(city: str) -> str:  # noqa: ARG001
     """Get the weather for a city."""
-    return "The weather is sunny and 75°F."
+    return f"The weather in {city} is sunny and 75°F."
 
 
 @pytest.mark.requires("langchain_openai")
-def test_inference_to_native_output() -> None:
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_inference_to_native_output(use_responses_api: bool) -> None:
     """Test that native output is inferred when a model supports it."""
     from langchain_openai import ChatOpenAI
 
-    model = ChatOpenAI(model="gpt-5")
+    model = ChatOpenAI(model="gpt-4.1-mini", use_responses_api=use_responses_api)
     agent = create_agent(
         model,
         system_prompt=(
-            "You are a helpful weather assistant. Please call the get_weather tool, "
-            "then use the WeatherReport tool to generate the final response."
+            "You are a helpful weather assistant. Please call the get_weather tool "
+            "once, then use the WeatherReport tool to generate the final response."
         ),
         tools=[get_weather],
         response_format=WeatherBaseModel,
     )
-    response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+    response = agent.invoke({"messages": [HumanMessage("What's the weather in Boston?")]})
 
     assert isinstance(response["structured_response"], WeatherBaseModel)
     assert response["structured_response"].temperature == 75.0
@@ -49,16 +50,17 @@ def test_inference_to_native_output() -> None:
 
 
 @pytest.mark.requires("langchain_openai")
-def test_inference_to_tool_output() -> None:
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_inference_to_tool_output(use_responses_api: bool) -> None:
     """Test that tool output is inferred when a model supports it."""
     from langchain_openai import ChatOpenAI
 
-    model = ChatOpenAI(model="gpt-4")
+    model = ChatOpenAI(model="gpt-4.1-mini", use_responses_api=use_responses_api)
     agent = create_agent(
         model,
         system_prompt=(
-            "You are a helpful weather assistant. Please call the get_weather tool, "
-            "then use the WeatherReport tool to generate the final response."
+            "You are a helpful weather assistant. Please call the get_weather tool "
+            "once, then use the WeatherReport tool to generate the final response."
         ),
         tools=[get_weather],
         response_format=ToolStrategy(WeatherBaseModel),
