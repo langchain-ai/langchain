@@ -11,17 +11,23 @@ OPENAI_API_KEY=... uv run python -m pytest tests/unit_tests/agents/test_response
 ```
 
 The cassettes are compressed. To read them:
+```bash
+gunzip -c "tests/cassettes/test_inference_to_native_output[True].yaml.gz" | \
+    yq -o json . | \
+    jq '.requests[].body |= (gsub("\n";"") | @base64d | fromjson) |
+        .responses[].body.string |= (gsub("\n";"") | @base64d | fromjson)'
+```
+
+Or, in  Python:
 ```python
 import json
 
 from langchain_tests.conftest import CustomPersister, CustomSerializer
 
-
 def bytes_encoder(obj):
     return obj.decode("utf-8", errors="replace")
 
-
-path = "/path/to/test_inference_to_native_output[True].yaml.gz"
+path = "tests/cassettes/test_inference_to_native_output[True].yaml.gz"
 
 requests, responses = CustomPersister().load_cassette(path, CustomSerializer())
 assert len(requests) == len(responses)
