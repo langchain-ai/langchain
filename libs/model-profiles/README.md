@@ -10,29 +10,29 @@
 
 Centralized reference of LLM capabilities for LangChain chat models.
 
-## Overview
+## Quick Install
+
+```bash
+pip install "langchain[model-profiles]"
+```
+
+## 🤔 What is this?
 
 `langchain-model-profiles` enables programmatic access to model capabilities through a `.profile` property on LangChain chat models.
 
 This allows you to query model-specific features such as context window sizes, supported input/output modalities, structured output support, tool calling capabilities, and more.
+
+## 📖 Documentation
+
+For full documentation, see the [API reference](https://reference.langchain.com/python/langchain_model_profiles/). For conceptual guides, tutorials, and examples on using LangChain, see the [LangChain Docs](https://docs.langchain.com/oss/python/langchain/overview).
+
+---
 
 ## Data sources
 
 This package is built on top of the excellent work by the [models.dev](https://github.com/sst/models.dev) project, an open source initiative that provides model capability data.
 
 This package augments the data from models.dev with some additional fields. We intend to keep this aligned with the upstream project as it evolves.
-
-## Installation
-
-```bash
-pip install "langchain[model-profiles]"
-```
-
-Or with uv:
-
-```bash
-uv add "langchain[model-profiles]"
-```
 
 ## Usage
 
@@ -60,7 +60,3 @@ if profile.get("..."):
 ## Available fields
 
 See `ModelProfile` in [`model_profile.py`](./langchain_model_profiles/model_profile.py) for the full list of available fields and their descriptions.
-
-## License
-
-MIT

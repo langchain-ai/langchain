@@ -183,6 +183,33 @@ class SummarizationMiddleware(AgentMiddleware):
             ]
         }
 
+    async def abefore_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
+        """Process messages before model invocation, potentially triggering summarization."""
+        messages = state["messages"]
+        self._ensure_message_ids(messages)
+
+        total_tokens = self.token_counter(messages)
+        if not self._should_summarize(messages, total_tokens):
+            return None
+
+        cutoff_index = self._determine_cutoff_index(messages)
+
+        if cutoff_index <= 0:
+            return None
+
+        messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
+
+        summary = await self._acreate_summary(messages_to_summarize)
+        new_messages = self._build_new_messages(summary)
+
+        return {
+            "messages": [
+                RemoveMessage(id=REMOVE_ALL_MESSAGES),
+                *new_messages,
+                *preserved_messages,
+            ]
+        }
+
     def _should_summarize(self, messages: list[AnyMessage], total_tokens: int) -> bool:
         """Determine whether summarization should run for the current token usage."""
         if not self._trigger_conditions:
@@ -401,6 +428,23 @@ class SummarizationMiddleware(AgentMiddleware):
 
         try:
             response = self.model.invoke(self.summary_prompt.format(messages=trimmed_messages))
+            return response.text.strip()
+        except Exception as e:  # noqa: BLE001
+            return f"Error generating summary: {e!s}"
+
+    async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
+        """Generate summary for the given messages."""
+        if not messages_to_summarize:
+            return "No previous conversation history."
+
+        trimmed_messages = self._trim_messages_for_summary(messages_to_summarize)
+        if not trimmed_messages:
+            return "Previous conversation was too long to summarize."
+
+        try:
+            response = await self.model.ainvoke(
+                self.summary_prompt.format(messages=trimmed_messages)
+            )
             return response.text.strip()
         except Exception as e:  # noqa: BLE001
             return f"Error generating summary: {e!s}"

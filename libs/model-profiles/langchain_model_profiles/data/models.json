@@ -2333,6 +2333,11 @@
       },
       "gpt-5-codex": {
         "attachment": false,
+        "cost": {
+          "cache_read": 0.13,
+          "input": 1.25,
+          "output": 10
+        },
         "id": "gpt-5-codex",
         "knowledge": "2024-09-30",
         "last_updated": "2025-09-15",
@@ -2605,13 +2610,13 @@
     ],
     "id": "baseten",
     "models": {
-      "Qwen3/Qwen3-Coder-480B-A35B-Instruct": {
+      "Qwen/Qwen3-Coder-480B-A35B-Instruct": {
         "attachment": false,
         "cost": {
           "input": 0.38,
           "output": 1.53
         },
-        "id": "Qwen3/Qwen3-Coder-480B-A35B-Instruct",
+        "id": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
         "knowledge": "2025-04",
         "last_updated": "2025-07-23",
         "limit": {
@@ -3366,6 +3371,10 @@
       },
       "llama-2-7b-chat-int8": {
         "attachment": false,
+        "cost": {
+          "input": 0.556,
+          "output": 6.667
+        },
         "id": "llama-2-7b-chat-int8",
         "last_updated": "2023-09-25",
         "limit": {
@@ -3443,6 +3452,10 @@
       },
       "llama-3.1-70b-instruct": {
         "attachment": false,
+        "cost": {
+          "input": 0.293,
+          "output": 2.253
+        },
         "id": "llama-3.1-70b-instruct",
         "last_updated": "2024-12-15",
         "limit": {
@@ -3520,6 +3533,10 @@
       },
       "llama-3.1-8b-instruct-fast": {
         "attachment": false,
+        "cost": {
+          "input": 0.045,
+          "output": 0.384
+        },
         "id": "llama-3.1-8b-instruct-fast",
         "last_updated": "2024-09-25",
         "limit": {
@@ -4799,6 +4816,60 @@
         "temperature": true,
         "tool_call": true
       },
+      "openai/gpt-oss-120b": {
+        "attachment": false,
+        "cost": {
+          "input": 0.05,
+          "output": 0.24
+        },
+        "id": "openai/gpt-oss-120b",
+        "last_updated": "2025-08-05",
+        "limit": {
+          "context": 131072,
+          "output": 16384
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "GPT OSS 120B",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-08-05",
+        "temperature": true,
+        "tool_call": true
+      },
+      "openai/gpt-oss-20b": {
+        "attachment": false,
+        "cost": {
+          "input": 0.03,
+          "output": 0.14
+        },
+        "id": "openai/gpt-oss-20b",
+        "last_updated": "2025-08-05",
+        "limit": {
+          "context": 131072,
+          "output": 16384
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "GPT OSS 20B",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-08-05",
+        "temperature": true,
+        "tool_call": true
+      },
       "zai-org/GLM-4.5": {
         "attachment": false,
         "cost": {
@@ -5128,6 +5199,34 @@
         "open_weights": true,
         "reasoning": false,
         "release_date": "2025-07-11",
+        "temperature": true,
+        "tool_call": true
+      },
+      "accounts/fireworks/models/minimax-m2": {
+        "attachment": false,
+        "cost": {
+          "input": 0.3,
+          "output": 1.2
+        },
+        "id": "accounts/fireworks/models/minimax-m2",
+        "knowledge": "2024-11",
+        "last_updated": "2025-10-27",
+        "limit": {
+          "context": 128000,
+          "output": 16384
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "MiniMax-M2",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-10-27",
         "temperature": true,
         "tool_call": true
       },
@@ -8278,8 +8377,8 @@
     "npm": "@ai-sdk/mistral"
   },
   "nebius": {
-    "api": "https://api.studio.nebius.com/v1/",
-    "doc": "https://docs.studio.nebius.com/quickstart",
+    "api": "https://api.tokenfactory.nebius.com/v1",
+    "doc": "https://docs.tokenfactory.nebius.com/",
     "env": [
       "NEBIUS_API_KEY"
     ],
@@ -8706,7 +8805,7 @@
         "tool_call": true
       }
     },
-    "name": "Nebius AI Studio",
+    "name": "Nebius Token Factory",
     "npm": "@ai-sdk/openai-compatible"
   },
   "nvidia": {
@@ -8857,6 +8956,34 @@
         "open_weights": false,
         "reasoning": true,
         "release_date": "2024-12-01",
+        "temperature": true,
+        "tool_call": true
+      },
+      "minimaxai/minimax-m2": {
+        "attachment": false,
+        "cost": {
+          "input": 0,
+          "output": 0
+        },
+        "id": "minimaxai/minimax-m2",
+        "knowledge": "2024-07",
+        "last_updated": "2025-10-31",
+        "limit": {
+          "context": 128000,
+          "output": 16384
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "MiniMax-M2",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-10-27",
         "temperature": true,
         "tool_call": true
       },
@@ -9030,6 +9157,34 @@
         "temperature": false,
         "tool_call": false
       },
+      "nvidia/nvidia-nemotron-nano-9b-v2": {
+        "attachment": false,
+        "cost": {
+          "input": 0,
+          "output": 0
+        },
+        "id": "nvidia/nvidia-nemotron-nano-9b-v2",
+        "knowledge": "2024-09",
+        "last_updated": "2025-08-18",
+        "limit": {
+          "context": 131072,
+          "output": 131072
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "nvidia-nemotron-nano-9b-v2",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-08-18",
+        "temperature": true,
+        "tool_call": true
+      },
       "nvidia/parakeet-tdt-0.6b-v2": {
         "attachment": false,
         "cost": {
@@ -9167,6 +9322,62 @@
         "open_weights": false,
         "reasoning": false,
         "release_date": "2025-07-23",
+        "temperature": true,
+        "tool_call": true
+      },
+      "qwen/qwen3-next-80b-a3b-instruct": {
+        "attachment": false,
+        "cost": {
+          "input": 0,
+          "output": 0
+        },
+        "id": "qwen/qwen3-next-80b-a3b-instruct",
+        "knowledge": "2024-12",
+        "last_updated": "2025-09-05",
+        "limit": {
+          "context": 262144,
+          "output": 16384
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Qwen3-Next-80B-A3B-Instruct",
+        "open_weights": false,
+        "reasoning": false,
+        "release_date": "2024-12-01",
+        "temperature": true,
+        "tool_call": true
+      },
+      "qwen/qwen3-next-80b-a3b-thinking": {
+        "attachment": false,
+        "cost": {
+          "input": 0,
+          "output": 0
+        },
+        "id": "qwen/qwen3-next-80b-a3b-thinking",
+        "knowledge": "2024-12",
+        "last_updated": "2025-09-05",
+        "limit": {
+          "context": 262144,
+          "output": 16384
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Qwen3-Next-80B-A3B-Thinking",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2024-12-01",
         "temperature": true,
         "tool_call": true
       }
@@ -11775,6 +11986,35 @@
         "temperature": true,
         "tool_call": true
       },
+      "moonshotai/kimi-k2-thinking": {
+        "attachment": false,
+        "cost": {
+          "cache_read": 0.15,
+          "input": 0.6,
+          "output": 2.5
+        },
+        "id": "moonshotai/kimi-k2-thinking",
+        "knowledge": "2024-08",
+        "last_updated": "2025-11-06",
+        "limit": {
+          "context": 262144,
+          "output": 262144
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Kimi K2 Thinking",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-11-06",
+        "temperature": true,
+        "tool_call": true
+      },
       "moonshotai/kimi-k2:free": {
         "attachment": false,
         "cost": {
@@ -11884,6 +12124,34 @@
         "open_weights": true,
         "reasoning": true,
         "release_date": "2025-08-25",
+        "temperature": true,
+        "tool_call": true
+      },
+      "nvidia/nemotron-nano-9b-v2": {
+        "attachment": false,
+        "cost": {
+          "input": 0.04,
+          "output": 0.16
+        },
+        "id": "nvidia/nemotron-nano-9b-v2",
+        "knowledge": "2024-09",
+        "last_updated": "2025-08-18",
+        "limit": {
+          "context": 131072,
+          "output": 131072
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "nvidia-nemotron-nano-9b-v2",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-08-18",
         "temperature": true,
         "tool_call": true
       },
@@ -12378,6 +12646,35 @@
         "open_weights": false,
         "reasoning": false,
         "release_date": "2025-08-01",
+        "temperature": false,
+        "tool_call": true
+      },
+      "openrouter/polaris-alpha": {
+        "attachment": true,
+        "cost": {
+          "input": 0,
+          "output": 0
+        },
+        "id": "openrouter/polaris-alpha",
+        "knowledge": "2025-07",
+        "last_updated": "2025-07-30",
+        "limit": {
+          "context": 256000,
+          "output": 128000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Polaris Alpha",
+        "open_weights": false,
+        "reasoning": false,
+        "release_date": "2025-07-30",
         "temperature": false,
         "tool_call": true
       },
