@@ -1,3 +1,42 @@
+"""Test response_format for langchain-openai.
+
+If tests fail, cassettes may need to be re-recorded.
+
+To re-record cassettes:
+
+1. Delete existing cassettes (`rm tests/cassettes/test_inference_to_*.yaml.gz`)
+2. Re run the tests with a valid OPENAI_API_KEY in your environment:
+```bash
+OPENAI_API_KEY=... uv run python -m pytest tests/unit_tests/agents/test_response_format_integration.py
+```
+
+The cassettes are compressed. To read them:
+```python
+import json
+
+from langchain_tests.conftest import CustomPersister, CustomSerializer
+
+
+def bytes_encoder(obj):
+    return obj.decode("utf-8", errors="replace")
+
+
+path = "/path/to/test_inference_to_native_output[True].yaml.gz"
+
+requests, responses = CustomPersister().load_cassette(path, CustomSerializer())
+assert len(requests) == len(responses)
+for request, response in list(zip(requests, responses)):
+    print("------ REQUEST ------")
+    req = request._to_dict()
+    req["body"] = json.loads(req["body"])
+    print(json.dumps(req, indent=2, default=bytes_encoder))
+    print("\n\n ------ RESPONSE ------")
+    resp = response
+    print(json.dumps(resp, indent=2, default=bytes_encoder))
+print("\n\n")
+```
+"""
+
 import os
 
 import pytest
