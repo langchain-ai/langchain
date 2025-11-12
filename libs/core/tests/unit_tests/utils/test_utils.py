@@ -1,10 +1,9 @@
 import os
 import re
 import sys
-from collections.abc import Callable
 from contextlib import AbstractContextManager, nullcontext
 from copy import deepcopy
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -22,6 +21,9 @@ from langchain_core.utils import (
 )
 from langchain_core.utils._merge import merge_dicts
 from langchain_core.utils.utils import secret_from_env
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 @pytest.mark.parametrize(
