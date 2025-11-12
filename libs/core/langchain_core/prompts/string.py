@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC
-from collections.abc import Callable, Sequence
 from string import Formatter
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, create_model
 
@@ -15,6 +14,9 @@ from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.utils import get_colored_text, mustache
 from langchain_core.utils.formatting import formatter
 from langchain_core.utils.interactive_env import is_interactive_env
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 try:
     from jinja2 import Environment, meta

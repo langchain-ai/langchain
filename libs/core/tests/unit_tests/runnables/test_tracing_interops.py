@@ -3,20 +3,24 @@ from __future__ import annotations
 import json
 import sys
 import uuid
-from collections.abc import AsyncGenerator, Callable, Coroutine, Generator
 from inspect import isasyncgenfunction
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import MagicMock, patch
 
 import pytest
 from langsmith import Client, get_current_run_tree, traceable
 from langsmith.run_helpers import tracing_context
-from langsmith.run_trees import RunTree
 from langsmith.utils import get_env_var
 
-from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.runnables.base import RunnableLambda, RunnableParallel
 from langchain_core.tracers.langchain import LangChainTracer
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Callable, Coroutine, Generator
+
+    from langsmith.run_trees import RunTree
+
+    from langchain_core.callbacks import BaseCallbackHandler
 
 
 def _get_posts(client: Client) -> list:

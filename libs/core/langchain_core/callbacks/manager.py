@@ -39,7 +39,6 @@ from langchain_core.tracers.context import (
     tracing_v2_callback_var,
 )
 from langchain_core.tracers.langchain import LangChainTracer
-from langchain_core.tracers.schemas import Run
 from langchain_core.tracers.stdout import ConsoleCallbackHandler
 from langchain_core.utils.env import env_var_is_set
 
@@ -52,6 +51,7 @@ if TYPE_CHECKING:
     from langchain_core.documents import Document
     from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
     from langchain_core.runnables.config import RunnableConfig
+    from langchain_core.tracers.schemas import Run
 
 logger = logging.getLogger(__name__)
 

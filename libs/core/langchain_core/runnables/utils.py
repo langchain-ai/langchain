@@ -7,8 +7,7 @@ import asyncio
 import inspect
 import sys
 import textwrap
-from collections.abc import Callable, Mapping, Sequence
-from contextvars import Context
+from collections.abc import Mapping, Sequence
 from functools import lru_cache
 from inspect import signature
 from itertools import groupby
@@ -31,9 +30,11 @@ if TYPE_CHECKING:
         AsyncIterable,
         AsyncIterator,
         Awaitable,
+        Callable,
         Coroutine,
         Iterable,
     )
+    from contextvars import Context
 
     from langchain_core.runnables.schema import StreamEvent
 

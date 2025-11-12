@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import warnings
-from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from langchain_core.language_models._utils import (
@@ -14,6 +13,8 @@ from langchain_core.language_models._utils import (
 from langchain_core.messages import content as types
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from langchain_core.messages import AIMessage, AIMessageChunk
 
 

@@ -6,7 +6,7 @@ import contextlib
 import json
 import typing
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from functools import cached_property
 from pathlib import Path
 from typing import (
@@ -33,6 +33,8 @@ from langchain_core.runnables.config import ensure_config
 from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from langchain_core.documents import Document
 
 

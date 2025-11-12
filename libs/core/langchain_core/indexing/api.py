@@ -6,16 +6,9 @@ import hashlib
 import json
 import uuid
 import warnings
-from collections.abc import (
-    AsyncIterable,
-    AsyncIterator,
-    Callable,
-    Iterable,
-    Iterator,
-    Sequence,
-)
 from itertools import islice
 from typing import (
+    TYPE_CHECKING,
     Any,
     Literal,
     TypedDict,
@@ -28,6 +21,16 @@ from langchain_core.documents import Document
 from langchain_core.exceptions import LangChainException
 from langchain_core.indexing.base import DocumentIndex, RecordManager
 from langchain_core.vectorstores import VectorStore
+
+if TYPE_CHECKING:
+    from collections.abc import (
+        AsyncIterable,
+        AsyncIterator,
+        Callable,
+        Iterable,
+        Iterator,
+        Sequence,
+    )
 
 # Magic UUID to use as a namespace for hashing.
 # Used to try and generate a unique UUID for each document

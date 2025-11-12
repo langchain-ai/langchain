@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from langchain_text_splitters.base import TextSplitter
 
@@ -10,7 +10,11 @@ try:
     # Type ignores needed as long as spacy doesn't support Python 3.14.
     import spacy  # type: ignore[import-not-found, unused-ignore]
     from spacy.lang.en import English  # type: ignore[import-not-found, unused-ignore]
-    from spacy.language import Language  # type: ignore[import-not-found, unused-ignore]
+
+    if TYPE_CHECKING:
+        from spacy.language import (  # type: ignore[import-not-found, unused-ignore]
+            Language,
+        )
 
     _HAS_SPACY = True
 except ImportError:

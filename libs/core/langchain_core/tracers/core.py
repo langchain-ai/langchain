@@ -15,12 +15,6 @@ from typing import (
 
 from langchain_core.exceptions import TracerException
 from langchain_core.load import dumpd
-from langchain_core.outputs import (
-    ChatGeneration,
-    ChatGenerationChunk,
-    GenerationChunk,
-    LLMResult,
-)
 from langchain_core.tracers.schemas import Run
 
 if TYPE_CHECKING:
@@ -31,6 +25,12 @@ if TYPE_CHECKING:
 
     from langchain_core.documents import Document
     from langchain_core.messages import BaseMessage
+    from langchain_core.outputs import (
+        ChatGeneration,
+        ChatGenerationChunk,
+        GenerationChunk,
+        LLMResult,
+    )
 
 logger = logging.getLogger(__name__)
 
