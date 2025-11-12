@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from .file import File
-from .folder import Folder
+if TYPE_CHECKING:
+    from .file import File
+    from .folder import Folder
 
 
 @dataclass
