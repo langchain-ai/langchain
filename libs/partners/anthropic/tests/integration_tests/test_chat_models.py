@@ -1503,6 +1503,7 @@ def test_web_fetch_v1(output_version: Literal["v0", "v1"]) -> None:
     )
 
 
+@pytest.mark.default_cassette("test_code_execution.yaml.gz")
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["v0", "v1"])
 def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
@@ -1512,11 +1513,11 @@ def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
     """
     llm = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]
-        betas=["code-execution-2025-05-22"],
+        betas=["code-execution-2025-08-25"],
         output_version=output_version,
     )
 
-    tool = {"type": "code_execution_20250522", "name": "code_execution"}
+    tool = {"type": "code_execution_20250825", "name": "code_execution"}
     llm_with_tools = llm.bind_tools([tool])
 
     input_message = {
@@ -1535,7 +1536,12 @@ def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
     assert all(isinstance(block, dict) for block in response.content)
     block_types = {block["type"] for block in response.content}  # type: ignore[index]
     if output_version == "v0":
-        assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
+        assert block_types == {
+            "text",
+            "server_tool_use",
+            "text_editor_code_execution_tool_result",
+            "bash_code_execution_tool_result",
+        }
     else:
         assert block_types == {"text", "server_tool_call", "server_tool_result"}
 
@@ -1548,7 +1554,12 @@ def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
     assert isinstance(full.content, list)
     block_types = {block["type"] for block in full.content}  # type: ignore[index]
     if output_version == "v0":
-        assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
+        assert block_types == {
+            "text",
+            "server_tool_use",
+            "text_editor_code_execution_tool_result",
+            "bash_code_execution_tool_result",
+        }
     else:
         assert block_types == {"text", "server_tool_call", "server_tool_result"}
 
