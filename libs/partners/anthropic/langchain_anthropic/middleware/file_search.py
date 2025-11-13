@@ -9,7 +9,7 @@ from __future__ import annotations
 import fnmatch
 import re
 from pathlib import Path, PurePosixPath
-from typing import TYPE_CHECKING, Annotated, Literal, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 if TYPE_CHECKING:
     from typing import Any
@@ -128,9 +128,9 @@ class StateFileSearchMiddleware(AgentMiddleware):
         # Create tool instances
         @tool
         def glob_search(  # noqa: D417
+            runtime: ToolRuntime[None, AnthropicToolsState],
             pattern: str,
             path: str = "/",
-            runtime: ToolRuntime[None, AnthropicToolsState] = None,
         ) -> str:
             """Fast file pattern matching tool that works with any codebase size.
 
@@ -190,13 +190,13 @@ class StateFileSearchMiddleware(AgentMiddleware):
 
         @tool
         def grep_search(  # noqa: D417
+            runtime: ToolRuntime[None, AnthropicToolsState],
             pattern: str,
             path: str = "/",
             include: str | None = None,
             output_mode: Literal[
                 "files_with_matches", "content", "count"
             ] = "files_with_matches",
-            runtime: ToolRuntime[None, AnthropicToolsState] = None,
         ) -> str:
             """Fast content search tool that works with any codebase size.
 
