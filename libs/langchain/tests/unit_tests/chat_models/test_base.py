@@ -101,7 +101,12 @@ def test_init_chat_model_huggingface() -> None:
         )
         assert isinstance(llm2, ChatHuggingFace)
         assert llm2.llm is not None
-    except Exception as e:
+    except (
+        ImportError,
+        OSError,
+        RuntimeError,
+        ValueError,
+    ) as e:
         # If model download fails in CI, skip the test rather than failing
         # The important part is that the code path doesn't raise ValidationError
         # about missing 'llm' field, which was the original bug
