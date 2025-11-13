@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
 from langchain_core.messages import (
@@ -64,8 +65,18 @@ class ContextEdit(Protocol):
         ...
 
 
+@dataclass(init=False)
 class ClearToolUsesEdit(ContextEdit):
     """Configuration for clearing tool outputs when token limits are exceeded."""
+
+    trigger: ContextSize | list[ContextSize]
+    clear_at_least: int
+    keep: ContextSize
+    clear_tool_inputs: bool
+    exclude_tools: Sequence[str]
+    placeholder: str
+    model: BaseChatModel | None
+    _trigger_conditions: list[ContextSize]
 
     def __init__(
         self,
@@ -124,7 +135,7 @@ class ClearToolUsesEdit(ContextEdit):
         # Validate and store trigger conditions
         if isinstance(trigger, list):
             validated_list = [self._validate_context_size(item, "trigger") for item in trigger]
-            self.trigger: ContextSize | list[ContextSize] = validated_list
+            self.trigger = validated_list
             trigger_conditions: list[ContextSize] = validated_list
         else:
             validated = self._validate_context_size(trigger, "trigger")
@@ -177,7 +188,7 @@ class ClearToolUsesEdit(ContextEdit):
         if keep_count >= len(candidates):
             candidates = []
         else:
-            candidates = candidates[: -keep_count] if keep_count > 0 else candidates
+            candidates = candidates[:-keep_count] if keep_count > 0 else candidates
 
         cleared_tokens = 0
         excluded_tools = set(self.exclude_tools)

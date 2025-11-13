@@ -430,7 +430,9 @@ def test_new_api_with_tokens_trigger_and_messages_keep() -> None:
 
     # Count how many tool messages were cleared
     cleared_messages = [
-        msg for msg in request.messages if isinstance(msg, ToolMessage) and msg.content == "[cleared]"
+        msg
+        for msg in request.messages
+        if isinstance(msg, ToolMessage) and msg.content == "[cleared]"
     ]
 
     # Should clear 3 out of 5 tool messages (keep 2)
@@ -473,7 +475,9 @@ def test_new_api_with_messages_trigger() -> None:
 
     # Should trigger because we have 20 messages (10 AI + 10 Tool)
     cleared_messages = [
-        msg for msg in request.messages if isinstance(msg, ToolMessage) and msg.content == "[cleared]"
+        msg
+        for msg in request.messages
+        if isinstance(msg, ToolMessage) and msg.content == "[cleared]"
     ]
 
     # Should clear 7 out of 10 tool messages (keep 3)
@@ -510,7 +514,9 @@ def test_new_api_with_multiple_triggers() -> None:
 
     # Should trigger because we have 6 messages (>5) and also >200 tokens
     cleared_messages = [
-        msg for msg in request.messages if isinstance(msg, ToolMessage) and msg.content == "[cleared]"
+        msg
+        for msg in request.messages
+        if isinstance(msg, ToolMessage) and msg.content == "[cleared]"
     ]
 
     # Should clear 2 out of 3 tool messages (keep 1)
@@ -572,7 +578,9 @@ def test_new_api_fractional_trigger_with_model_profile() -> None:
     middleware.wrap_model_call(request, mock_handler)
 
     cleared_messages = [
-        msg for msg in request.messages if isinstance(msg, ToolMessage) and msg.content == "[cleared]"
+        msg
+        for msg in request.messages
+        if isinstance(msg, ToolMessage) and msg.content == "[cleared]"
     ]
 
     # Should clear some messages (keep 3)
