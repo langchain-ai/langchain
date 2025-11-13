@@ -44,7 +44,7 @@ body:
       description: |
         Which `langchain` package(s) is this bug related to? Select at least one.
 
-        Note that if the package you are reporting for is not listed here, it is not in this repository (e.g. `langchain-google-genai` is in `langchain-ai/langchain`).
+        Note that if the package you are reporting for is not listed here, it is not in this repository (e.g. `langchain-google-genai` is in [`langchain-ai/langchain-google`](https://github.com/langchain-ai/langchain-google/)).
 
         Please report issues for other packages to their respective repositories.
       options:
