@@ -2286,6 +2286,7 @@ class Runnable(ABC, Generic[Input, Output]):
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
+        iterator = None
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
             if accepts_config(transformer):
@@ -2341,6 +2342,9 @@ class Runnable(ABC, Generic[Input, Output]):
             raise
         else:
             run_manager.on_chain_end(final_output, inputs=final_input)
+        finally:
+            if iterator is not None and hasattr(iterator, "close"):
+                iterator.close()
 
     async def _atransform_stream_with_config(
         self,
