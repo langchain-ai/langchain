@@ -4700,20 +4700,23 @@ class RunnableLambda(Runnable[Input, Output]):
     ) -> Output:
         if inspect.isgeneratorfunction(self.func):
             output: Output | None = None
-            for chunk in call_func_with_variable_args(
-                cast("Callable[[Input], Iterator[Output]]", self.func),
-                input_,
-                config,
-                run_manager,
-                **kwargs,
-            ):
-                if output is None:
-                    output = chunk
-                else:
-                    try:
-                        output = output + chunk  # type: ignore[operator]
-                    except TypeError:
+            with contextlib.closing(
+                call_func_with_variable_args(
+                    cast("Callable[[Input], Iterator[Output]]", self.func),
+                    input_,
+                    config,
+                    run_manager,
+                    **kwargs,
+                )
+            ) as generator:
+                for chunk in generator:
+                    if output is None:
                         output = chunk
+                    else:
+                        try:
+                            output = output + chunk  # type: ignore[operator]
+                        except TypeError:
+                            output = chunk
         else:
             output = call_func_with_variable_args(
                 self.func, input_, config, run_manager, **kwargs
@@ -4755,20 +4758,23 @@ class RunnableLambda(Runnable[Input, Output]):
                     **kwargs: Any,
                 ) -> Output:
                     output: Output | None = None
-                    for chunk in call_func_with_variable_args(
-                        cast("Callable[[Input], Iterator[Output]]", self.func),
-                        value,
-                        config,
-                        run_manager.get_sync(),
-                        **kwargs,
-                    ):
-                        if output is None:
-                            output = chunk
-                        else:
-                            try:
-                                output = output + chunk  # type: ignore[operator]
-                            except TypeError:
+                    with contextlib.closing(
+                        call_func_with_variable_args(
+                            cast("Callable[[Input], Iterator[Output]]", self.func),
+                            value,
+                            config,
+                            run_manager.get_sync(),
+                            **kwargs,
+                        )
+                    ) as generator:
+                        for chunk in generator:
+                            if output is None:
                                 output = chunk
+                            else:
+                                try:
+                                    output = output + chunk  # type: ignore[operator]
+                                except TypeError:
+                                    output = chunk
                     return cast("Output", output)
 
             else:
