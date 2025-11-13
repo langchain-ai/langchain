@@ -1771,6 +1771,7 @@ class BaseChatOpenAI(BaseChatModel):
         tool_choice: dict | str | bool | None = None,
         strict: bool | None = None,
         parallel_tool_calls: bool | None = None,
+        response_format: _DictOrPydanticClass | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
@@ -1796,6 +1797,9 @@ class BaseChatOpenAI(BaseChatModel):
                 be validated. If `None`, `strict` argument will not be passed to the model.
             parallel_tool_calls: Set to `False` to disable parallel tool use.
                 Defaults to `None` (no specification, which allows parallel tool use).
+            response_format: Optional schema to format model response. If provided
+                and the model does not call a tool, the model will generate a
+                [structured response](https://platform.openai.com/docs/guides/structured-outputs).
             kwargs: Any additional parameters are passed directly to `bind`.
         """  # noqa: E501
         if parallel_tool_calls is not None:
@@ -1838,6 +1842,11 @@ class BaseChatOpenAI(BaseChatModel):
                 )
                 raise ValueError(msg)
             kwargs["tool_choice"] = tool_choice
+
+        if response_format:
+            kwargs["response_format"] = _convert_to_openai_response_format(
+                response_format
+            )
         return super().bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(
@@ -3479,6 +3488,7 @@ def _convert_to_openai_response_format(
         strict is not None
         and strict is not response_format["json_schema"].get("strict")
         and isinstance(schema, dict)
+        and "strict" in schema.get("json_schema", {})
     ):
         msg = (
             f"Output schema already has 'strict' value set to "
