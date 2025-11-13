@@ -1844,6 +1844,14 @@ class BaseChatOpenAI(BaseChatModel):
             kwargs["tool_choice"] = tool_choice
 
         if response_format:
+            if (
+                isinstance(response_format, dict)
+                and response_format.get("type") == "json_schema"
+                and "schema" in response_format.get("json_schema", {})
+            ):
+                # compat with langchain.agents.create_agent response_format, which is
+                # an approximation of OpenAI format
+                response_format = cast(dict, response_format["json_schema"]["schema"])
             kwargs["response_format"] = _convert_to_openai_response_format(
                 response_format
             )
