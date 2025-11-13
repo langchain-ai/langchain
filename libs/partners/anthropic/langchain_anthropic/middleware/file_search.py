@@ -151,6 +151,8 @@ class StateFileSearchMiddleware(AgentMiddleware):
             base_path = path if path.startswith("/") else "/" + path
 
             # Get files from state
+            if state is None:
+                return "No files found"
             files = cast("dict[str, Any]", state.get(self.state_key, {}))
 
             # Match files
@@ -229,6 +231,8 @@ class StateFileSearchMiddleware(AgentMiddleware):
                 return "Invalid include pattern"
 
             # Search files
+            if state is None:
+                return "No matches found"
             files = cast("dict[str, Any]", state.get(self.state_key, {}))
             results: dict[str, list[tuple[int, str]]] = {}
 

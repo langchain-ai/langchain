@@ -198,8 +198,74 @@ class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, Any]):
 
         return None
 
+    @hook_config(can_jump_to=["end"])
+    async def abefore_model(
+        self,
+        state: ModelCallLimitState,
+        runtime: Runtime,  # noqa: ARG002
+    ) -> dict[str, Any] | None:
+        """Async check model call limits before making a model call.
+
+        Args:
+            state: The current agent state containing call counts.
+            runtime: The langgraph runtime.
+
+        Returns:
+            If limits are exceeded and exit_behavior is `'end'`, returns
+                a `Command` to jump to the end with a limit exceeded message. Otherwise
+                returns `None`.
+
+        Raises:
+            ModelCallLimitExceededError: If limits are exceeded and `exit_behavior`
+                is `'error'`.
+        """
+        thread_count = state.get("thread_model_call_count", 0)
+        run_count = state.get("run_model_call_count", 0)
+
+        # Check if any limits will be exceeded after the next call
+        thread_limit_exceeded = self.thread_limit is not None and thread_count >= self.thread_limit
+        run_limit_exceeded = self.run_limit is not None and run_count >= self.run_limit
+
+        if thread_limit_exceeded or run_limit_exceeded:
+            if self.exit_behavior == "error":
+                raise ModelCallLimitExceededError(
+                    thread_count=thread_count,
+                    run_count=run_count,
+                    thread_limit=self.thread_limit,
+                    run_limit=self.run_limit,
+                )
+            if self.exit_behavior == "end":
+                # Create a message indicating the limit was exceeded
+                limit_message = _build_limit_exceeded_message(
+                    thread_count, run_count, self.thread_limit, self.run_limit
+                )
+                limit_ai_message = AIMessage(content=limit_message)
+
+                return {"jump_to": "end", "messages": [limit_ai_message]}
+
+        return None
+
     def after_model(self, state: ModelCallLimitState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
         """Increment model call counts after a model call.
+
+        Args:
+            state: The current agent state.
+            runtime: The langgraph runtime.
+
+        Returns:
+            State updates with incremented call counts.
+        """
+        return {
+            "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
+            "run_model_call_count": state.get("run_model_call_count", 0) + 1,
+        }
+
+    async def aafter_model(
+        self,
+        state: ModelCallLimitState,
+        runtime: Runtime,  # noqa: ARG002
+    ) -> dict[str, Any] | None:
+        """Async increment model call counts after a model call.
 
         Args:
             state: The current agent state.
