@@ -45,7 +45,11 @@ if TYPE_CHECKING:
 __all__ = [
     "AgentMiddleware",
     "AgentState",
+    "ContextFraction",
+    "ContextMessages",
+    "ContextSize",
     "ContextT",
+    "ContextTokens",
     "ModelRequest",
     "ModelResponse",
     "OmitFromSchema",
@@ -64,6 +68,26 @@ __all__ = [
 
 JumpTo = Literal["tools", "model", "end"]
 """Destination to jump to when a middleware node returns."""
+
+ContextFraction = tuple[Literal["fraction"], float]
+"""Context size specified as a fraction (0.0 to 1.0) of the model's maximum tokens."""
+
+ContextTokens = tuple[Literal["tokens"], int]
+"""Context size specified as an absolute token count."""
+
+ContextMessages = tuple[Literal["messages"], int]
+"""Context size specified as a message count."""
+
+ContextSize = ContextFraction | ContextTokens | ContextMessages
+"""Union type for context size configurations.
+
+Can be one of:
+
+- `ContextFraction`: Fractional limits (0.0 to 1.0), e.g., `("fraction", 0.8)`
+  for 80% of model's max tokens
+- `ContextTokens`: Absolute token counts, e.g., `("tokens", 100000)`
+- `ContextMessages`: Message count limits, e.g., `("messages", 50)`
+"""
 
 ResponseT = TypeVar("ResponseT")
 

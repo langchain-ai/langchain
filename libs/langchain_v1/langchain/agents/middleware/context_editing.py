@@ -29,6 +29,7 @@ if TYPE_CHECKING:
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
+    ContextSize,
     ModelCallResult,
     ModelRequest,
     ModelResponse,
@@ -38,13 +39,6 @@ DEFAULT_TOOL_PLACEHOLDER = "[cleared]"
 
 _DEFAULT_TRIGGER_TOKENS = 100_000
 _DEFAULT_KEEP = 3
-
-ContextFraction = tuple[Literal["fraction"], float]
-ContextTokens = tuple[Literal["tokens"], int]
-ContextMessages = tuple[Literal["messages"], int]
-
-ContextSize = ContextFraction | ContextTokens | ContextMessages
-
 
 TokenCounter = Callable[
     [Sequence[BaseMessage]],
@@ -65,7 +59,7 @@ class ContextEdit(Protocol):
         ...
 
 
-@dataclass(slots=true, init=False)
+@dataclass(slots=True, init=False)
 class ClearToolUsesEdit(ContextEdit):
     """Configuration for clearing tool outputs when token limits are exceeded."""
 
@@ -133,18 +127,25 @@ class ClearToolUsesEdit(ContextEdit):
             trigger = ("tokens", _DEFAULT_TRIGGER_TOKENS)
 
         # Validate and store trigger conditions
-        if isinstance(trigger, list):
-            validated_list = [self._validate_context_size(item, "trigger") for item in trigger]
+        # At this point, trigger is guaranteed to be ContextSize | list[ContextSize]
+        # (None was handled above, int was converted to tuple)
+        trigger_normalized: ContextSize | list[ContextSize] = trigger  # type: ignore[assignment]
+        if isinstance(trigger_normalized, list):
+            validated_list = [
+                self._validate_context_size(item, "trigger") for item in trigger_normalized
+            ]
             self.trigger = validated_list
             trigger_conditions: list[ContextSize] = validated_list
         else:
-            validated = self._validate_context_size(trigger, "trigger")
+            validated = self._validate_context_size(trigger_normalized, "trigger")
             self.trigger = validated
             trigger_conditions = [validated]
         self._trigger_conditions = trigger_conditions
 
         self.clear_at_least = clear_at_least
-        self.keep = self._validate_context_size(keep, "keep")
+        # At this point, keep is guaranteed to be ContextSize (int was converted to tuple)
+        keep_normalized: ContextSize = keep  # type: ignore[assignment]
+        self.keep = self._validate_context_size(keep_normalized, "keep")
         self.clear_tool_inputs = clear_tool_inputs
         self.exclude_tools = exclude_tools
         self.placeholder = placeholder

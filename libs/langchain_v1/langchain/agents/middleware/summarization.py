@@ -3,7 +3,7 @@
 import uuid
 import warnings
 from collections.abc import Callable, Iterable, Mapping
-from typing import Any, Literal, cast
+from typing import Any, cast
 
 from langchain_core.messages import (
     AIMessage,
@@ -19,7 +19,11 @@ from langgraph.graph.message import (
 )
 from langgraph.runtime import Runtime
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ContextSize,
+)
 from langchain.chat_models import BaseChatModel, init_chat_model
 
 TokenCounter = Callable[[Iterable[MessageLikeRepresentation]], int]
@@ -56,12 +60,6 @@ _DEFAULT_MESSAGES_TO_KEEP = 20
 _DEFAULT_TRIM_TOKEN_LIMIT = 4000
 _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
 _SEARCH_RANGE_FOR_TOOL_PAIRS = 5
-
-ContextFraction = tuple[Literal["fraction"], float]
-ContextTokens = tuple[Literal["tokens"], int]
-ContextMessages = tuple[Literal["messages"], int]
-
-ContextSize = ContextFraction | ContextTokens | ContextMessages
 
 
 class SummarizationMiddleware(AgentMiddleware):
