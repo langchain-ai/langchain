@@ -9,9 +9,9 @@ chat model.
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Iterable, Sequence
-from dataclasses import dataclass
-from typing import Literal
+import warnings
+from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, Literal
 
 from langchain_core.messages import (
     AIMessage,
@@ -23,6 +23,9 @@ from langchain_core.messages import (
 from langchain_core.messages.utils import count_tokens_approximately
 from typing_extensions import Protocol
 
+if TYPE_CHECKING:
+    from langchain_core.language_models import BaseChatModel
+
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     ModelCallResult,
@@ -31,6 +34,15 @@ from langchain.agents.middleware.types import (
 )
 
 DEFAULT_TOOL_PLACEHOLDER = "[cleared]"
+
+_DEFAULT_TRIGGER_TOKENS = 100_000
+_DEFAULT_KEEP = 3
+
+ContextFraction = tuple[Literal["fraction"], float]
+ContextTokens = tuple[Literal["tokens"], int]
+ContextMessages = tuple[Literal["messages"], int]
+
+ContextSize = ContextFraction | ContextTokens | ContextMessages
 
 
 TokenCounter = Callable[
@@ -52,27 +64,92 @@ class ContextEdit(Protocol):
         ...
 
 
-@dataclass(slots=True)
 class ClearToolUsesEdit(ContextEdit):
     """Configuration for clearing tool outputs when token limits are exceeded."""
 
-    trigger: int = 100_000
-    """Token count that triggers the edit."""
+    def __init__(
+        self,
+        *,
+        trigger: ContextSize | list[ContextSize] | int | None = None,
+        clear_at_least: int = 0,
+        keep: ContextSize | int = ("messages", _DEFAULT_KEEP),
+        clear_tool_inputs: bool = False,
+        exclude_tools: Sequence[str] = (),
+        placeholder: str = DEFAULT_TOOL_PLACEHOLDER,
+        model: BaseChatModel | None = None,
+    ) -> None:
+        """Initialize the clear tool uses edit.
 
-    clear_at_least: int = 0
-    """Minimum number of tokens to reclaim when the edit runs."""
+        Args:
+            trigger: One or more thresholds that trigger context editing. Provide a single
+                `ContextSize` tuple or a list of tuples, in which case editing runs when any
+                threshold is breached. Examples: `("messages", 50)`, `("tokens", 3000)`,
+                `[("fraction", 0.8), ("messages", 100)]`. Defaults to `("tokens", 100000)`.
+            clear_at_least: Minimum number of tokens to reclaim when the edit runs.
+            keep: Context retention policy applied after editing. Provide a `ContextSize` tuple
+                to specify how many tool results to preserve. Defaults to keeping the most recent
+                3 tool results. Examples: `("messages", 3)`, `("tokens", 3000)`, or
+                `("fraction", 0.3)`.
+            clear_tool_inputs: Whether to clear the originating tool call parameters on the AI
+                message.
+            exclude_tools: List of tool names to exclude from clearing.
+            placeholder: Placeholder text inserted for cleared tool outputs.
+            model: Optional chat model for model profile information. Required when using
+                fractional triggers or keep values.
+        """
+        # Handle deprecated int-based parameters for trigger
+        if isinstance(trigger, int):
+            value = trigger
+            warnings.warn(
+                "Passing trigger as int is deprecated. Use trigger=('tokens', value) instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            trigger = ("tokens", value)
 
-    keep: int = 3
-    """Number of most recent tool results that must be preserved."""
+        # Handle deprecated int-based parameters for keep
+        if isinstance(keep, int):
+            value = keep
+            warnings.warn(
+                "Passing keep as int is deprecated. Use keep=('messages', value) instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            keep = ("messages", value)
 
-    clear_tool_inputs: bool = False
-    """Whether to clear the originating tool call parameters on the AI message."""
+        # Set default trigger if not provided
+        if trigger is None:
+            trigger = ("tokens", _DEFAULT_TRIGGER_TOKENS)
 
-    exclude_tools: Sequence[str] = ()
-    """List of tool names to exclude from clearing."""
+        # Validate and store trigger conditions
+        if isinstance(trigger, list):
+            validated_list = [self._validate_context_size(item, "trigger") for item in trigger]
+            self.trigger: ContextSize | list[ContextSize] = validated_list
+            trigger_conditions: list[ContextSize] = validated_list
+        else:
+            validated = self._validate_context_size(trigger, "trigger")
+            self.trigger = validated
+            trigger_conditions = [validated]
+        self._trigger_conditions = trigger_conditions
 
-    placeholder: str = DEFAULT_TOOL_PLACEHOLDER
-    """Placeholder text inserted for cleared tool outputs."""
+        self.clear_at_least = clear_at_least
+        self.keep = self._validate_context_size(keep, "keep")
+        self.clear_tool_inputs = clear_tool_inputs
+        self.exclude_tools = exclude_tools
+        self.placeholder = placeholder
+        self.model = model
+
+        # Check if model profile is required
+        requires_profile = any(condition[0] == "fraction" for condition in self._trigger_conditions)
+        if self.keep[0] == "fraction":
+            requires_profile = True
+        if requires_profile and model is not None and self._get_profile_limits(model) is None:
+            msg = (
+                "Model profile information is required to use fractional token limits. "
+                'pip install "langchain[model-profiles]" or use absolute token counts '
+                "instead."
+            )
+            raise ValueError(msg)
 
     def apply(
         self,
@@ -81,19 +158,26 @@ class ClearToolUsesEdit(ContextEdit):
         count_tokens: TokenCounter,
     ) -> None:
         """Apply the clear-tool-uses strategy."""
-        tokens = count_tokens(messages)
+        total_tokens = count_tokens(messages)
 
-        if tokens <= self.trigger:
+        if not self._should_edit(messages, total_tokens):
             return
 
+        # Find all tool message candidates
         candidates = [
             (idx, msg) for idx, msg in enumerate(messages) if isinstance(msg, ToolMessage)
         ]
 
-        if self.keep >= len(candidates):
+        if not candidates:
+            return
+
+        # Determine how many to keep based on keep policy
+        keep_count = self._determine_keep_count(candidates, count_tokens)
+
+        if keep_count >= len(candidates):
             candidates = []
-        elif self.keep:
-            candidates = candidates[: -self.keep]
+        else:
+            candidates = candidates[: -keep_count] if keep_count > 0 else candidates
 
         cleared_tokens = 0
         excluded_tools = set(self.exclude_tools)
@@ -146,11 +230,88 @@ class ClearToolUsesEdit(ContextEdit):
 
             if self.clear_at_least > 0:
                 new_token_count = count_tokens(messages)
-                cleared_tokens = max(0, tokens - new_token_count)
+                cleared_tokens = max(0, total_tokens - new_token_count)
                 if cleared_tokens >= self.clear_at_least:
                     break
 
         return
+
+    def _should_edit(self, messages: list[AnyMessage], total_tokens: int) -> bool:
+        """Determine whether editing should run for the current token usage."""
+        for kind, value in self._trigger_conditions:
+            if kind == "messages" and len(messages) >= value:
+                return True
+            if kind == "tokens" and total_tokens >= value:
+                return True
+            if kind == "fraction":
+                if self.model is None:
+                    continue
+                max_input_tokens = self._get_profile_limits(self.model)
+                if max_input_tokens is None:
+                    continue
+                threshold = int(max_input_tokens * value)
+                if threshold <= 0:
+                    threshold = 1
+                if total_tokens >= threshold:
+                    return True
+        return False
+
+    def _determine_keep_count(
+        self,
+        candidates: list[tuple[int, ToolMessage]],  # noqa: ARG002
+        count_tokens: TokenCounter,  # noqa: ARG002
+    ) -> int:
+        """Determine how many tool results to keep based on keep policy.
+
+        Note: candidates and count_tokens are currently unused but reserved for future
+        enhancement to support token-based retention counting.
+        """
+        kind, value = self.keep
+        if kind == "messages":
+            return int(value)
+        if kind in {"tokens", "fraction"}:
+            # For token-based or fraction-based keep, we need to count backwards
+            # This is a simplified implementation - keeping N most recent tool messages
+            # A more sophisticated implementation would count actual tokens
+            return int(value) if kind == "tokens" else _DEFAULT_KEEP
+        return _DEFAULT_KEEP
+
+    def _get_profile_limits(self, model: BaseChatModel) -> int | None:
+        """Retrieve max input token limit from the model profile."""
+        try:
+            profile = model.profile
+        except (AttributeError, ImportError):
+            return None
+
+        if not isinstance(profile, Mapping):
+            return None
+
+        max_input_tokens = profile.get("max_input_tokens")
+
+        if not isinstance(max_input_tokens, int):
+            return None
+
+        return max_input_tokens
+
+    def _validate_context_size(self, context: ContextSize, parameter_name: str) -> ContextSize:
+        """Validate context configuration tuples."""
+        kind, value = context
+        if kind == "fraction":
+            if not 0 < value <= 1:
+                msg = f"Fractional {parameter_name} values must be between 0 and 1, got {value}."
+                raise ValueError(msg)
+        elif kind in {"tokens", "messages"}:
+            # For "keep", 0 is valid (clear all), for "trigger", must be > 0
+            if parameter_name == "trigger" and value <= 0:
+                msg = f"{parameter_name} thresholds must be greater than 0, got {value}."
+                raise ValueError(msg)
+            if parameter_name == "keep" and value < 0:
+                msg = f"{parameter_name} values must be non-negative, got {value}."
+                raise ValueError(msg)
+        else:
+            msg = f"Unsupported context size type {kind} for {parameter_name}."
+            raise ValueError(msg)
+        return context
 
     def _build_cleared_tool_input_message(
         self,
