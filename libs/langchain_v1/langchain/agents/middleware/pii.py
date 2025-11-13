@@ -256,7 +256,7 @@ class PIIMiddleware(AgentMiddleware):
     async def abefore_model(
         self,
         state: AgentState,
-        runtime: Runtime,  # noqa: ARG002
+        runtime: Runtime,
     ) -> dict[str, Any] | None:
         """Async check user messages and tool results for PII before model invocation.
 
@@ -271,81 +271,7 @@ class PIIMiddleware(AgentMiddleware):
         Raises:
             PIIDetectionError: If PII is detected and strategy is `'block'`.
         """
-        if not self.apply_to_input and not self.apply_to_tool_results:
-            return None
-
-        messages = state["messages"]
-        if not messages:
-            return None
-
-        new_messages = list(messages)
-        any_modified = False
-
-        # Check user input if enabled
-        if self.apply_to_input:
-            # Get last user message
-            last_user_msg = None
-            last_user_idx = None
-            for i in range(len(messages) - 1, -1, -1):
-                if isinstance(messages[i], HumanMessage):
-                    last_user_msg = messages[i]
-                    last_user_idx = i
-                    break
-
-            if last_user_idx is not None and last_user_msg and last_user_msg.content:
-                # Detect PII in message content
-                content = str(last_user_msg.content)
-                new_content, matches = self._process_content(content)
-
-                if matches:
-                    updated_message: AnyMessage = HumanMessage(
-                        content=new_content,
-                        id=last_user_msg.id,
-                        name=last_user_msg.name,
-                    )
-
-                    new_messages[last_user_idx] = updated_message
-                    any_modified = True
-
-        # Check tool results if enabled
-        if self.apply_to_tool_results:
-            # Find the last AIMessage, then process all `ToolMessage` objects after it
-            last_ai_idx = None
-            for i in range(len(messages) - 1, -1, -1):
-                if isinstance(messages[i], AIMessage):
-                    last_ai_idx = i
-                    break
-
-            if last_ai_idx is not None:
-                # Get all tool messages after the last AI message
-                for i in range(last_ai_idx + 1, len(messages)):
-                    msg = messages[i]
-                    if isinstance(msg, ToolMessage):
-                        tool_msg = msg
-                        if not tool_msg.content:
-                            continue
-
-                        content = str(tool_msg.content)
-                        new_content, matches = self._process_content(content)
-
-                        if not matches:
-                            continue
-
-                        # Create updated tool message
-                        updated_message = ToolMessage(
-                            content=new_content,
-                            id=tool_msg.id,
-                            name=tool_msg.name,
-                            tool_call_id=tool_msg.tool_call_id,
-                        )
-
-                        new_messages[i] = updated_message
-                        any_modified = True
-
-        if any_modified:
-            return {"messages": new_messages}
-
-        return None
+        return self.before_model(state, runtime)
 
     def after_model(
         self,
@@ -409,7 +335,7 @@ class PIIMiddleware(AgentMiddleware):
     async def aafter_model(
         self,
         state: AgentState,
-        runtime: Runtime,  # noqa: ARG002
+        runtime: Runtime,
     ) -> dict[str, Any] | None:
         """Async check AI messages for PII after model invocation.
 
@@ -424,46 +350,7 @@ class PIIMiddleware(AgentMiddleware):
         Raises:
             PIIDetectionError: If PII is detected and strategy is `'block'`.
         """
-        if not self.apply_to_output:
-            return None
-
-        messages = state["messages"]
-        if not messages:
-            return None
-
-        # Get last AI message
-        last_ai_msg = None
-        last_ai_idx = None
-        for i in range(len(messages) - 1, -1, -1):
-            msg = messages[i]
-            if isinstance(msg, AIMessage):
-                last_ai_msg = msg
-                last_ai_idx = i
-                break
-
-        if last_ai_idx is None or not last_ai_msg or not last_ai_msg.content:
-            return None
-
-        # Detect PII in message content
-        content = str(last_ai_msg.content)
-        new_content, matches = self._process_content(content)
-
-        if not matches:
-            return None
-
-        # Create updated message
-        updated_message = AIMessage(
-            content=new_content,
-            id=last_ai_msg.id,
-            name=last_ai_msg.name,
-            tool_calls=last_ai_msg.tool_calls,
-        )
-
-        # Return updated messages
-        new_messages = list(messages)
-        new_messages[last_ai_idx] = updated_message
-
-        return {"messages": new_messages}
+        return self.after_model(state, runtime)
 
 
 __all__ = [
