@@ -65,7 +65,7 @@ class ContextEdit(Protocol):
         ...
 
 
-@dataclass(init=False)
+@dataclass(slots=true, init=False)
 class ClearToolUsesEdit(ContextEdit):
     """Configuration for clearing tool outputs when token limits are exceeded."""
 
