@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from typing import Any
 
 from langchain.agents.middleware.types import AgentMiddleware
-from langchain_core.tools import InjectedToolArg, tool
+from langchain.tools import ToolRuntime, tool
 
 from langchain_anthropic.middleware.anthropic_tools import AnthropicToolsState
 
@@ -130,7 +130,7 @@ class StateFileSearchMiddleware(AgentMiddleware):
         def glob_search(  # noqa: D417
             pattern: str,
             path: str = "/",
-            state: Annotated[AnthropicToolsState, InjectedToolArg] = None,  # type: ignore[assignment]
+            runtime: ToolRuntime[None, AnthropicToolsState] = None,
         ) -> str:
             """Fast file pattern matching tool that works with any codebase size.
 
@@ -151,9 +151,7 @@ class StateFileSearchMiddleware(AgentMiddleware):
             base_path = path if path.startswith("/") else "/" + path
 
             # Get files from state
-            if state is None:
-                return "No files found"
-            files = cast("dict[str, Any]", state.get(self.state_key, {}))
+            files = cast("dict[str, Any]", runtime.state.get(self.state_key, {}))
 
             # Match files
             matches = []
@@ -198,7 +196,7 @@ class StateFileSearchMiddleware(AgentMiddleware):
             output_mode: Literal[
                 "files_with_matches", "content", "count"
             ] = "files_with_matches",
-            state: Annotated[AnthropicToolsState, InjectedToolArg] = None,  # type: ignore[assignment]
+            runtime: ToolRuntime[None, AnthropicToolsState] = None,
         ) -> str:
             """Fast content search tool that works with any codebase size.
 
@@ -231,9 +229,7 @@ class StateFileSearchMiddleware(AgentMiddleware):
                 return "Invalid include pattern"
 
             # Search files
-            if state is None:
-                return "No matches found"
-            files = cast("dict[str, Any]", state.get(self.state_key, {}))
+            files = cast("dict[str, Any]", runtime.state.get(self.state_key, {}))
             results: dict[str, list[tuple[int, str]]] = {}
 
             for file_path, file_data in files.items():
