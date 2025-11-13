@@ -44,12 +44,20 @@ def create_react_agent(
         tools_renderer: This controls how the tools are converted into a string and
             then passed into the LLM.
         stop_sequence: bool or list of str.
-            If `True`, adds a stop token of "Observation:" to avoid hallucinates.
+            If `True`, adds a stop token of "\\nObservation:" to avoid hallucinations.
             If `False`, does not add a stop token.
             If a list of str, uses the provided list as the stop tokens.
 
-            You may to set this to False if the LLM you are using
-            does not support stop sequences.
+            Default is `True`, but you may need to set this to `False` or provide
+            custom stop sequences if the LLM you are using does not support stop
+            sequences or has restrictions on allowed stop sequences.
+
+            **AWS Bedrock Compatibility**: AWS Bedrock models have strict validation
+            on stop sequences and only accept sequences matching the pattern
+            `^(\\s|\\+|User:)$`. The default stop sequence "\\nObservation:" will
+            cause a ValidationException. For Bedrock models, use:
+            - `stop_sequence=False` to disable stop sequences, or
+            - `stop_sequence=["User:"]` to use a Bedrock-compatible stop sequence.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
@@ -82,6 +90,17 @@ def create_react_agent(
                 "chat_history": "Human: My name is Bob\nAI: Hello Bob!",
             }
         )
+
+        # Use with AWS Bedrock (requires custom stop sequence)
+        from langchain_community.llms import Bedrock
+
+        bedrock_llm = Bedrock(
+            model_id="amazon.titan-text-express-v1",
+            model_kwargs={"temperature": 0.9},
+        )
+        # Use stop_sequence=False or ["User:"] for Bedrock compatibility
+        agent = create_react_agent(bedrock_llm, tools, prompt, stop_sequence=False)
+        agent_executor = AgentExecutor(agent=agent, tools=tools)
         ```
 
     Prompt:
