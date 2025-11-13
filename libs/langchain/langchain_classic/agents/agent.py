@@ -1507,22 +1507,26 @@ class AgentExecutor(Chain):
         for agent_action in actions:
             yield agent_action
 
-        # Use asyncio.gather to run multiple tool.arun() calls concurrently
-        result = await asyncio.gather(
-            *[
-                self._aperform_agent_action(
-                    name_to_tool_map,
-                    color_mapping,
-                    agent_action,
-                    run_manager,
-                )
-                for agent_action in actions
-            ],
-        )
+        # Create tasks for concurrent execution and yield results as they complete
+        # This ensures streaming behavior where chunks are sent immediately
+        # rather than being batched after all tools finish
+        tasks = [
+            self._aperform_agent_action(
+                name_to_tool_map,
+                color_mapping,
+                agent_action,
+                run_manager,
+            )
+            for agent_action in actions
+        ]
 
-        # TODO: This could yield each result as it becomes available
-        for chunk in result:
+        # Yield results as they become available instead of waiting for all to complete
+        for coro in asyncio.as_completed(tasks):
+            chunk = await coro
             yield chunk
+            # Explicit yield to event loop for better task scheduling,
+            # especially important on Windows with ProactorEventLoop
+            await asyncio.sleep(0)
 
     async def _aperform_agent_action(
         self,
