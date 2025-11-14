@@ -384,7 +384,10 @@ def _supports_provider_strategy(model: str | BaseChatModel, tools: list | None =
 
     return (
         "grok" in model_name.lower()
-        or any(part in model_name for part in ["gpt-5", "gpt-4.1", "gpt-oss", "o3-pro", "o3-mini"])
+        or any(
+            part in model_name
+            for part in ["gpt-5", "gpt-4.1", "gpt-4o", "gpt-oss", "o3-pro", "o3-mini"]
+        )
         if model_name
         else False
     )
