@@ -21,7 +21,6 @@ from langchain.agents.middleware.types import (
 )
 from langchain.tools import ToolRuntime, tool
 from langchain_core.messages import ToolMessage
-from langchain_core.tools import BaseTool
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
 
