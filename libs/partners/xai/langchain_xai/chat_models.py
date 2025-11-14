@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias
+import warnings
 
 import openai
 from langchain_core.messages import AIMessageChunk
@@ -546,8 +547,6 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
         # Warn about search_parameters deprecation
         if self.search_parameters is not None:
-            import warnings
-
             warnings.warn(
                 "The 'search_parameters' field is deprecated and will be removed "
                 "after December 15, 2025. Please migrate to 'server_tools' for "
