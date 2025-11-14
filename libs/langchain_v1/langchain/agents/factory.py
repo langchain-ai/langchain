@@ -715,6 +715,73 @@ def create_agent(  # noqa: PLR0915
     # Handle tools being None or empty
     if tools is None:
         tools = []
+    
+    # Handle MCP session configuration if provided
+    mcp_session = None
+    mcp_wrapped_tools = None
+    if mcp_session_config:
+        # Check if any tools are MCP tools (by checking metadata or attributes)
+        has_mcp_tools = any(
+            hasattr(tool, "__mcp_server__") or 
+            (hasattr(tool, "metadata") and isinstance(getattr(tool, "metadata", {}), dict) and 
+             getattr(tool, "metadata", {}).get("mcp_server"))
+            for tool in tools
+            if isinstance(tool, BaseTool)
+        )
+        
+        if has_mcp_tools:
+            # Import MCP utilities dynamically to avoid circular imports
+            try:
+                from langchain.agents.mcp_utils import create_stateful_mcp_agent
+                from langchain_mcp_adapters import load_mcp_tools
+                
+                import asyncio
+                import warnings
+                
+                # Create a stateful session for MCP tools
+                client = mcp_session_config["client"]
+                server_name = mcp_session_config["server_name"]
+                auto_cleanup = mcp_session_config.get("auto_cleanup", True)
+                
+                # Create session and load tools asynchronously
+                async def _setup_mcp_session():
+                    session = await client.session(server_name).__aenter__()
+                    stateful_tools = await load_mcp_tools(session)
+                    return session, stateful_tools
+                
+                # Run async setup
+                try:
+                    loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                
+                mcp_session, mcp_wrapped_tools = loop.run_until_complete(_setup_mcp_session())
+                
+                # Replace MCP tools with stateful versions
+                non_mcp_tools = [
+                    tool for tool in tools 
+                    if not (hasattr(tool, "__mcp_server__") or 
+                           (hasattr(tool, "metadata") and isinstance(getattr(tool, "metadata", {}), dict) and 
+                            getattr(tool, "metadata", {}).get("mcp_server")))
+                ]
+                tools = non_mcp_tools + mcp_wrapped_tools
+                
+                # Add cleanup handler if auto_cleanup is enabled
+                if auto_cleanup:
+                    warnings.warn(
+                        "MCP session auto-cleanup is enabled. The session will be closed "
+                        "when the agent is garbage collected. For explicit control, "
+                        "consider using StatefulMCPAgentExecutor or mcp_agent_session "
+                        "context manager from langchain.agents.mcp_utils.",
+                        UserWarning,
+                        stacklevel=2
+                    )
+            except ImportError as e:
+                raise ImportError(
+                    "MCP session configuration requires langchain-mcp-adapters. "
+                    "Install it with: pip install langchain-mcp-adapters"
+                ) from e
 
     # Convert response format and setup structured output tools
     # Raw schemas are wrapped in AutoStrategy to preserve auto-detection intent.
@@ -1695,6 +1762,7 @@ def _add_middleware_edge(
 __all__ = [
     "create_agent",
 ]
+
 
 
 
