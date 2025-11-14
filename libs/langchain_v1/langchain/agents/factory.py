@@ -349,11 +349,13 @@ def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> l
     return []
 
 
-def _supports_provider_strategy(model: str | BaseChatModel) -> bool:
+def _supports_provider_strategy(model: str | BaseChatModel, tools: list | None = None) -> bool:
     """Check if a model supports provider-specific structured output.
 
     Args:
         model: Model name string or `BaseChatModel` instance.
+        tools: Optional list of tools provided to the agent. Needed because some models
+            don't support structured output together with tool calling.
 
     Returns:
         `True` if the model supports provider-specific structured output, `False` otherwise.
@@ -362,7 +364,23 @@ def _supports_provider_strategy(model: str | BaseChatModel) -> bool:
     if isinstance(model, str):
         model_name = model
     elif isinstance(model, BaseChatModel):
-        model_name = getattr(model, "model_name", None)
+        model_name = (
+            getattr(model, "model_name", None)
+            or getattr(model, "model", None)
+            or getattr(model, "model_id", "")
+        )
+        try:
+            model_profile = model.profile
+        except ImportError:
+            pass
+        else:
+            if (
+                model_profile.get("structured_output")
+                # We make an exception for Gemini models, which currently do not support
+                # simultaneous tool use with structured output
+                and not (tools and isinstance(model_name, str) and "gemini" in model_name.lower())
+            ):
+                return True
 
     return (
         "grok" in model_name.lower()
@@ -988,7 +1006,7 @@ def create_agent(  # noqa: PLR0915
         effective_response_format: ResponseFormat | None
         if isinstance(request.response_format, AutoStrategy):
             # User provided raw schema via AutoStrategy - auto-detect best strategy based on model
-            if _supports_provider_strategy(request.model):
+            if _supports_provider_strategy(request.model, tools=request.tools):
                 # Model supports provider strategy - use it
                 effective_response_format = ProviderStrategy(schema=request.response_format.schema)
             else:
