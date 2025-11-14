@@ -266,23 +266,14 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
     ) -> ModelResponse:
         """Inject Anthropic tool descriptor and optional system prompt."""
         # Replace our BaseTool with Anthropic's native tool descriptor
-        tools = []
-        for t in request.tools or []:
-            # Skip our registered tool - we'll replace it with Anthropic's descriptor
-            if isinstance(t, dict) and t.get("name") == self.tool_name:
-                continue
-            # Check if it's a BaseTool with matching name
-            if hasattr(t, "name") and t.name == self.tool_name:
-                continue
-            tools.append(t)
-
-        # Add Anthropic's native tool descriptor
-        tools.append(
-            {
-                "type": self.tool_type,
-                "name": self.tool_name,
-            }
-        )
+        tools = [
+            t
+            for t in (request.tools or [])
+            if not (
+                (isinstance(t, dict) and t.get("name") == self.tool_name)
+                or (hasattr(t, "name") and t.name == self.tool_name)
+            )
+        ] + [{"type": self.tool_type, "name": self.tool_name}]
 
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}
@@ -302,23 +293,14 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
     ) -> ModelResponse:
         """Inject Anthropic tool descriptor and optional system prompt."""
         # Replace our BaseTool with Anthropic's native tool descriptor
-        tools = []
-        for t in request.tools or []:
-            # Skip our registered tool - we'll replace it with Anthropic's descriptor
-            if isinstance(t, dict) and t.get("name") == self.tool_name:
-                continue
-            # Check if it's a BaseTool with matching name
-            if hasattr(t, "name") and t.name == self.tool_name:
-                continue
-            tools.append(t)
-
-        # Add Anthropic's native tool descriptor
-        tools.append(
-            {
-                "type": self.tool_type,
-                "name": self.tool_name,
-            }
-        )
+        tools = [
+            t
+            for t in (request.tools or [])
+            if not (
+                (isinstance(t, dict) and t.get("name") == self.tool_name)
+                or (hasattr(t, "name") and t.name == self.tool_name)
+            )
+        ] + [{"type": self.tool_type, "name": self.tool_name}]
 
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}
@@ -766,23 +748,11 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
     ) -> ModelResponse:
         """Inject Anthropic tool descriptor and optional system prompt."""
         # Replace our BaseTool with Anthropic's native tool descriptor
-        tools = []
-        for t in request.tools or []:
-            # Skip our registered tool - we'll replace it with Anthropic's descriptor
-            if isinstance(t, dict) and t.get("name") == self.tool_name:
-                continue
-            # Check if it's a BaseTool with matching name
-            if hasattr(t, "name") and t.name == self.tool_name:
-                continue
-            tools.append(t)
-
-        # Add Anthropic's native tool descriptor
-        tools.append(
-            {
-                "type": self.tool_type,
-                "name": self.tool_name,
-            }
-        )
+        tools = [
+            t
+            for t in (request.tools or [])
+            if getattr(t, "name", None) != self.tool_name
+        ] + [{"type": self.tool_type, "name": self.tool_name}]
 
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}
@@ -802,23 +772,11 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
     ) -> ModelResponse:
         """Inject Anthropic tool descriptor and optional system prompt."""
         # Replace our BaseTool with Anthropic's native tool descriptor
-        tools = []
-        for t in request.tools or []:
-            # Skip our registered tool - we'll replace it with Anthropic's descriptor
-            if isinstance(t, dict) and t.get("name") == self.tool_name:
-                continue
-            # Check if it's a BaseTool with matching name
-            if hasattr(t, "name") and t.name == self.tool_name:
-                continue
-            tools.append(t)
-
-        # Add Anthropic's native tool descriptor
-        tools.append(
-            {
-                "type": self.tool_type,
-                "name": self.tool_name,
-            }
-        )
+        tools = [
+            t
+            for t in (request.tools or [])
+            if getattr(t, "name", None) != self.tool_name
+        ] + [{"type": self.tool_type, "name": self.tool_name}]
 
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}

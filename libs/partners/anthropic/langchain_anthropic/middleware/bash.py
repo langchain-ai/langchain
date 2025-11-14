@@ -60,17 +60,9 @@ class ClaudeBashToolMiddleware(ShellToolMiddleware):
     ) -> ModelResponse:
         """Replace our tool with Claude's bash descriptor."""
         # Filter out our registered bash tool and replace with Claude's descriptor
-        tools = []
-        for t in request.tools:
-            # Skip our registered tool
-            if isinstance(t, dict) and t.get("name") == "bash":
-                continue
-            if hasattr(t, "name") and t.name == "bash":
-                continue
-            tools.append(t)
-
-        # Add Claude's native bash descriptor
-        tools.append(_CLAUDE_BASH_DESCRIPTOR)
+        tools = [t for t in request.tools if getattr(t, "name", None) != "bash"] + [
+            _CLAUDE_BASH_DESCRIPTOR
+        ]
         return handler(request.override(tools=tools))
 
     async def awrap_model_call(
@@ -80,17 +72,9 @@ class ClaudeBashToolMiddleware(ShellToolMiddleware):
     ) -> ModelResponse:
         """Async: replace our tool with Claude's bash descriptor."""
         # Filter out our registered bash tool and replace with Claude's descriptor
-        tools = []
-        for t in request.tools:
-            # Skip our registered tool
-            if isinstance(t, dict) and t.get("name") == "bash":
-                continue
-            if hasattr(t, "name") and t.name == "bash":
-                continue
-            tools.append(t)
-
-        # Add Claude's native bash descriptor
-        tools.append(_CLAUDE_BASH_DESCRIPTOR)
+        tools = [t for t in request.tools if getattr(t, "name", None) != "bash"] + [
+            _CLAUDE_BASH_DESCRIPTOR
+        ]
         return await handler(request.override(tools=tools))
 
     def _format_tool_message(
