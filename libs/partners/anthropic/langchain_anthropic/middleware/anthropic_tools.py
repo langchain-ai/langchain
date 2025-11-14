@@ -19,6 +19,7 @@ from langchain.agents.middleware.types import (
     ModelResponse,
 )
 from langchain_core.messages import ToolMessage
+from langchain_core.tools import BaseTool
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
 
@@ -41,6 +42,22 @@ MEMORY PROTOCOL:
    - As you make progress, record status / progress / thoughts etc in your memory.
 ASSUME INTERRUPTION: Your context window might be reset at any moment, so you risk \
 losing any progress that is not recorded in your memory directory."""
+
+
+class _PlaceholderTool(BaseTool):
+    """Placeholder tool to enable agent looping.
+
+    This tool is never actually called - it exists solely to signal to the agent
+    factory that tool execution is needed. The middleware intercepts the actual
+    tool calls before they reach this placeholder.
+    """
+
+    name: str = "placeholder"
+    description: str = "This tool should never be called"
+
+    def _run(self, *args: Any, **kwargs: Any) -> str:
+        msg = "Placeholder tool was called - this should never happen"
+        raise RuntimeError(msg)
 
 
 class FileData(TypedDict):
@@ -183,6 +200,8 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         self.state_key = state_key
         self.allowed_prefixes = allowed_path_prefixes
         self.system_prompt = system_prompt
+        # Use placeholder tool to enable agent looping
+        self.tools = [_PlaceholderTool()]
 
     def wrap_model_call(
         self,
@@ -688,6 +707,8 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         self.allowed_prefixes = allowed_prefixes or ["/"]
         self.max_file_size_bytes = max_file_size_mb * 1024 * 1024
         self.system_prompt = system_prompt
+        # Use placeholder tool to enable agent looping
+        self.tools = [_PlaceholderTool()]
 
         # Create root directory if it doesn't exist
         self.root_path.mkdir(parents=True, exist_ok=True)

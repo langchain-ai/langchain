@@ -12,9 +12,26 @@ from langchain.agents.middleware.types import (
     ToolCallRequest,
 )
 from langchain_core.messages import ToolMessage
+from langchain_core.tools import BaseTool
 from langgraph.types import Command
 
 _CLAUDE_BASH_DESCRIPTOR = {"type": "bash_20250124", "name": "bash"}
+
+
+class _PlaceholderTool(BaseTool):
+    """Placeholder tool to enable agent looping.
+
+    This tool is never actually called - it exists solely to signal to the agent
+    factory that tool execution is needed. The middleware intercepts the actual
+    tool calls before they reach this placeholder.
+    """
+
+    name: str = "placeholder"
+    description: str = "This tool should never be called"
+
+    def _run(self, *args: Any, **kwargs: Any) -> str:
+        msg = "Placeholder tool was called - this should never happen"
+        raise RuntimeError(msg)
 
 
 class ClaudeBashToolMiddleware(ShellToolMiddleware):
@@ -26,7 +43,8 @@ class ClaudeBashToolMiddleware(ShellToolMiddleware):
         super().__init__(*args, **kwargs)
         # Remove the base tool so Claude's native descriptor is the sole entry.
         self._tool = None  # type: ignore[assignment]
-        self.tools = []
+        # Use placeholder tool to enable agent looping
+        self.tools = [_PlaceholderTool()]
 
     def wrap_model_call(
         self,
