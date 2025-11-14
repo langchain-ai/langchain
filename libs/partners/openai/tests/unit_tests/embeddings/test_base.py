@@ -101,11 +101,7 @@ async def test_embed_with_kwargs_async() -> None:
 
 
 def test_embeddings_respects_token_limit() -> None:
-    """Test that embeddings respect the 300k token per request limit.
-
-    This tests the fix for issue #31227 where large batches of embeddings
-    would exceed OpenAI's token limit.
-    """
+    """Test that embeddings respect the 300k token per request limit."""
     # Create embeddings instance
     embeddings = OpenAIEmbeddings(
         model="text-embedding-ada-002", api_key=SecretStr("test-key")
