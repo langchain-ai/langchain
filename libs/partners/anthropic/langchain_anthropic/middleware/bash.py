@@ -40,6 +40,18 @@ class ClaudeBashToolMiddleware(ShellToolMiddleware):
             request = request.override(tools=tools)
         return handler(request)
 
+    async def awrap_model_call(
+        self,
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelResponse:
+        """Async: ensure the Claude bash descriptor is available to the model."""
+        tools = request.tools
+        if all(tool is not _CLAUDE_BASH_DESCRIPTOR for tool in tools):
+            tools = [*tools, _CLAUDE_BASH_DESCRIPTOR]
+            request = request.override(tools=tools)
+        return await handler(request)
+
     def wrap_tool_call(
         self,
         request: ToolCallRequest,

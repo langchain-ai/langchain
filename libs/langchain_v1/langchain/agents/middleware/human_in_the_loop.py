@@ -353,3 +353,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         last_ai_msg.tool_calls = revised_tool_calls
 
         return {"messages": [last_ai_msg, *artificial_tool_messages]}
+
+    async def aafter_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+        """Async trigger interrupt flows for relevant tool calls after an `AIMessage`."""
+        return self.after_model(state, runtime)
