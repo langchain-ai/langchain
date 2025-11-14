@@ -482,7 +482,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         return {"shell_session_resources": resources}
 
     async def abefore_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:
-        """Async counterpart to `before_agent`."""
+        """Async start the shell session and run startup commands."""
         return self.before_agent(state, runtime)
 
     def after_agent(self, state: ShellToolState, runtime: Runtime) -> None:  # noqa: ARG002
@@ -494,7 +494,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
             resources._finalizer()
 
     async def aafter_agent(self, state: ShellToolState, runtime: Runtime) -> None:
-        """Async counterpart to `after_agent`."""
+        """Async run shutdown commands and release resources when an agent completes."""
         return self.after_agent(state, runtime)
 
     def _ensure_resources(self, state: ShellToolState) -> _SessionResources:
@@ -689,7 +689,8 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         request: ToolCallRequest,
         handler: typing.Callable[[ToolCallRequest], typing.Awaitable[ToolMessage | Command]],
     ) -> ToolMessage | Command:
-        """Async interception mirroring the synchronous tool handler."""
+        """Async intercept local shell tool calls and execute them via the managed session."""
+        # The sync version already handles all the work, no need for async-specific logic
         if isinstance(request.tool, _PersistentShellTool):
             resources = self._ensure_resources(request.state)
             return self._run_shell_tool(

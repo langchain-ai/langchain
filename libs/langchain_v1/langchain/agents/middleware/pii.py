@@ -252,6 +252,27 @@ class PIIMiddleware(AgentMiddleware):
 
         return None
 
+    @hook_config(can_jump_to=["end"])
+    async def abefore_model(
+        self,
+        state: AgentState,
+        runtime: Runtime,
+    ) -> dict[str, Any] | None:
+        """Async check user messages and tool results for PII before model invocation.
+
+        Args:
+            state: The current agent state.
+            runtime: The langgraph runtime.
+
+        Returns:
+            Updated state with PII handled according to strategy, or `None` if no PII
+                detected.
+
+        Raises:
+            PIIDetectionError: If PII is detected and strategy is `'block'`.
+        """
+        return self.before_model(state, runtime)
+
     def after_model(
         self,
         state: AgentState,
@@ -310,6 +331,26 @@ class PIIMiddleware(AgentMiddleware):
         new_messages[last_ai_idx] = updated_message
 
         return {"messages": new_messages}
+
+    async def aafter_model(
+        self,
+        state: AgentState,
+        runtime: Runtime,
+    ) -> dict[str, Any] | None:
+        """Async check AI messages for PII after model invocation.
+
+        Args:
+            state: The current agent state.
+            runtime: The langgraph runtime.
+
+        Returns:
+            Updated state with PII handled according to strategy, or None if no PII
+                detected.
+
+        Raises:
+            PIIDetectionError: If PII is detected and strategy is `'block'`.
+        """
+        return self.after_model(state, runtime)
 
 
 __all__ = [

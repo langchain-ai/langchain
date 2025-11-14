@@ -91,7 +91,10 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
             try:
                 metadata["body"] = response.json()
             except Exception:
-                metadata["body"] = getattr(response, "text", None)
+                try:
+                    metadata["body"] = getattr(response, "text", None)
+                except Exception:
+                    metadata["body"] = None
         if hasattr(response, "headers"):
             try:
                 metadata["headers"] = dict(response.headers)
