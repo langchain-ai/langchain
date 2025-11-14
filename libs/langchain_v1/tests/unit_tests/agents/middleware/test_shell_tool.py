@@ -28,7 +28,7 @@ def test_executes_command_and_persists_state(tmp_path: Path) -> None:
         updates = middleware.before_agent(state, None)
         if updates:
             state.update(updates)
-        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
         middleware._run_shell_tool(resources, {"command": "cd /"}, tool_call_id=None)
         result = middleware._run_shell_tool(resources, {"command": "pwd"}, tool_call_id=None)
@@ -51,14 +51,14 @@ def test_restart_resets_session_environment(tmp_path: Path) -> None:
         updates = middleware.before_agent(state, None)
         if updates:
             state.update(updates)
-        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
         middleware._run_shell_tool(resources, {"command": "export FOO=bar"}, tool_call_id=None)
         restart_message = middleware._run_shell_tool(
             resources, {"restart": True}, tool_call_id=None
         )
         assert "restarted" in restart_message.lower()
-        resources = middleware._ensure_resources(state)  # reacquire after restart
+        resources = middleware._get_or_create_resources(state)  # reacquire after restart
         result = middleware._run_shell_tool(
             resources, {"command": "echo ${FOO:-unset}"}, tool_call_id=None
         )
@@ -77,7 +77,7 @@ def test_truncation_indicator_present(tmp_path: Path) -> None:
         updates = middleware.before_agent(state, None)
         if updates:
             state.update(updates)
-        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
         result = middleware._run_shell_tool(resources, {"command": "seq 1 20"}, tool_call_id=None)
         assert "Output truncated" in result
     finally:
@@ -94,7 +94,7 @@ def test_timeout_returns_error(tmp_path: Path) -> None:
         updates = middleware.before_agent(state, None)
         if updates:
             state.update(updates)
-        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
         start = time.monotonic()
         result = middleware._run_shell_tool(resources, {"command": "sleep 2"}, tool_call_id=None)
         elapsed = time.monotonic() - start
@@ -116,7 +116,7 @@ def test_redaction_policy_applies(tmp_path: Path) -> None:
         updates = middleware.before_agent(state, None)
         if updates:
             state.update(updates)
-        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
         message = middleware._run_shell_tool(
             resources,
             {"command": "printf 'Contact: user@example.com\\n'"},
