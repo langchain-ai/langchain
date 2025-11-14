@@ -339,7 +339,7 @@ class _ShellToolInput(BaseModel):
     restart: bool | None = None
     """Whether to restart the shell session."""
 
-    runtime: Annotated[Any, SkipJsonSchema] = None
+    runtime: Annotated[Any, SkipJsonSchema()] = None
     """The runtime for the shell tool.
 
     Included as a workaround at the moment bc args_schema doesn't work with
