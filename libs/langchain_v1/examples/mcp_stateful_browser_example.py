@@ -12,11 +12,11 @@ causing subsequent tool calls to fail with "Ref not found" errors.
 """
 
 import asyncio
-from typing import Any
 
-from langchain.agents import create_agent
 from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import MemorySaver
+
+from langchain.agents import create_agent
 
 # Note: langchain-mcp-adapters must be installed separately
 # pip install langchain-mcp-adapters
@@ -24,21 +24,19 @@ try:
     from langchain_mcp_adapters.client import MultiServerMCPClient
     from langchain_mcp_adapters.tools import load_mcp_tools
 except ImportError:
-    raise ImportError(
-        "Please install langchain-mcp-adapters: pip install langchain-mcp-adapters"
-    )
+    raise ImportError("Please install langchain-mcp-adapters: pip install langchain-mcp-adapters")
 
 
 async def stateless_example_problematic():
     """Problematic example showing stateless MCP usage that causes browser session termination.
-    
+
     This demonstrates the INCORRECT way that leads to the reported issue.
     Each tool call creates a new browser session, causing state loss between calls.
     """
     print("\n" + "=" * 80)
     print("PROBLEMATIC EXAMPLE: Stateless MCP Usage (Browser closes after each tool call)")
     print("=" * 80)
-    
+
     # Initialize MCP client with Playwright server
     client = MultiServerMCPClient(
         {
@@ -53,18 +51,18 @@ async def stateless_example_problematic():
             }
         }
     )
-    
+
     # PROBLEM: Using get_tools() creates stateless tools
     # Each tool invocation will create a new session
     tools = await client.get_tools()
     print(f"✗ Loaded {len(tools)} stateless MCP tools")
-    
+
     # Create model and agent
     from langchain_openai import ChatOpenAI
-    
+
     model = ChatOpenAI(model="gpt-4", temperature=0)
     model_with_tools = model.bind_tools(tools)
-    
+
     # Create agent with memory
     memory = MemorySaver()
     agent = create_agent(
@@ -74,14 +72,14 @@ async def stateless_example_problematic():
         system_prompt="You are a web testing engineer using Playwright tools.",
         checkpointer=memory,
     )
-    
+
     # This will fail on the second tool call because the browser session is lost
     test_prompt = """
     1. Navigate to https://example.com
     2. Take a screenshot
     3. Click on the 'More information...' link
     """
-    
+
     try:
         config = {"configurable": {"thread_id": "test-thread"}}
         response = await agent.ainvoke(
@@ -96,14 +94,14 @@ async def stateless_example_problematic():
 
 async def stateful_example_correct():
     """Correct example showing stateful MCP usage that maintains browser sessions.
-    
+
     This demonstrates the CORRECT way to use MCP tools for browser automation.
     A single browser session is maintained across all tool calls.
     """
     print("\n" + "=" * 80)
     print("CORRECT EXAMPLE: Stateful MCP Usage (Browser session persists)")
     print("=" * 80)
-    
+
     # Initialize MCP client with Playwright server
     client = MultiServerMCPClient(
         {
@@ -118,20 +116,20 @@ async def stateful_example_correct():
             }
         }
     )
-    
+
     # SOLUTION: Create a persistent session and load tools from it
     # This maintains the browser session across all tool calls
     async with client.session("playwright") as session:
         # Load tools with the persistent session
         tools = await load_mcp_tools(session)
         print(f"✓ Loaded {len(tools)} stateful MCP tools with persistent session")
-        
+
         # Create model and agent
         from langchain_openai import ChatOpenAI
-        
+
         model = ChatOpenAI(model="gpt-4", temperature=0)
         model_with_tools = model.bind_tools(tools)
-        
+
         # Create agent with memory
         memory = MemorySaver()
         agent = create_agent(
@@ -141,7 +139,7 @@ async def stateful_example_correct():
             system_prompt="You are a web testing engineer using Playwright tools.",
             checkpointer=memory,
         )
-        
+
         # Complex multi-step browser interaction that requires session persistence
         test_prompt = """
         Please perform the following browser automation tasks:
@@ -152,7 +150,7 @@ async def stateful_example_correct():
         5. Go back to the previous page
         6. Verify you're back on example.com
         """
-        
+
         try:
             config = {"configurable": {"thread_id": "test-thread"}}
             response = await agent.ainvoke(
@@ -163,20 +161,20 @@ async def stateful_example_correct():
             print("Response:", response["messages"][-1].content)
         except Exception as e:
             print(f"❌ Unexpected error: {e}")
-    
+
     # Session automatically cleaned up when exiting the context manager
     print("✓ Browser session properly closed after all operations")
 
 
 async def advanced_stateful_example():
     """Advanced example showing complex browser automation with form filling and validation.
-    
+
     This demonstrates a real-world scenario where session persistence is critical.
     """
     print("\n" + "=" * 80)
     print("ADVANCED EXAMPLE: Complex Browser Automation with Session State")
     print("=" * 80)
-    
+
     client = MultiServerMCPClient(
         {
             "playwright": {
@@ -189,15 +187,15 @@ async def advanced_stateful_example():
             }
         }
     )
-    
+
     async with client.session("playwright") as session:
         tools = await load_mcp_tools(session)
-        
+
         from langchain_openai import ChatOpenAI
-        
+
         model = ChatOpenAI(model="gpt-4", temperature=0)
         model_with_tools = model.bind_tools(tools)
-        
+
         memory = MemorySaver()
         agent = create_agent(
             model_with_tools,
@@ -208,7 +206,7 @@ async def advanced_stateful_example():
             Always maintain the browser session state across operations.""",
             checkpointer=memory,
         )
-        
+
         # Complex test scenario requiring persistent session
         test_scenario = """
         Perform a comprehensive test of a web form:
@@ -223,7 +221,7 @@ async def advanced_stateful_example():
         9. Submit the form
         10. Verify the submission was successful by checking the response page
         """
-        
+
         try:
             config = {"configurable": {"thread_id": "form-test"}}
             response = await agent.ainvoke(
@@ -238,7 +236,6 @@ async def advanced_stateful_example():
 
 async def main():
     """Run all examples to demonstrate the difference between stateless and stateful MCP usage."""
-    
     print("\n" + "🔍" * 40)
     print("MCP STATEFUL BROWSER AUTOMATION EXAMPLES")
     print("🔍" * 40)
@@ -255,19 +252,19 @@ The stateful approach is ESSENTIAL for:
 - Database connections that need transactions
 - Any tools requiring persistent state between calls
     """)
-    
+
     # Run the problematic stateless example
     try:
         await stateless_example_problematic()
     except Exception as e:
         print(f"Stateless example failed (expected): {e}")
-    
+
     # Run the correct stateful example
     await stateful_example_correct()
-    
+
     # Run the advanced example
     await advanced_stateful_example()
-    
+
     print("\n" + "=" * 80)
     print("SUMMARY: Always use stateful sessions for browser automation!")
     print("Pattern: async with client.session('server_name') as session:")

@@ -9,11 +9,10 @@ stateful connections persist across multiple tool invocations.
 from __future__ import annotations
 
 import asyncio
+from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, Any, AsyncIterator, Iterator, Literal
+from typing import TYPE_CHECKING, Any
 
-from langchain_core.messages import BaseMessage
-from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 
 if TYPE_CHECKING:
@@ -22,40 +21,42 @@ if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
     from langgraph.graph.state import CompiledStateGraph
 
-    from langchain.agents.middleware.types import AgentMiddleware, AgentState
+    from langchain.agents.middleware.types import AgentMiddleware
 
 
 class StatefulMCPAgentExecutor:
     """Wrapper class that manages MCP session lifecycle for agents.
-    
+
     This class ensures that MCP tools maintain persistent sessions across
     multiple invocations, solving the common issue of browser sessions
     terminating between tool calls.
-    
+
     Example:
         ```python
         from langchain_mcp_adapters.client import MultiServerMCPClient
         from langchain.agents.mcp_utils import StatefulMCPAgentExecutor
-        
-        client = MultiServerMCPClient({
-            "playwright": {
-                "command": "npx",
-                "args": ["@playwright/mcp@latest"],
-                "transport": "stdio",
+
+        client = MultiServerMCPClient(
+            {
+                "playwright": {
+                    "command": "npx",
+                    "args": ["@playwright/mcp@latest"],
+                    "transport": "stdio",
+                }
             }
-        })
-        
+        )
+
         async with StatefulMCPAgentExecutor(
             client=client,
             server_name="playwright",
             model="gpt-4",
         ) as executor:
-            result = await executor.ainvoke({
-                "messages": [{"role": "user", "content": "Navigate and interact with a webpage"}]
-            })
+            result = await executor.ainvoke(
+                {"messages": [{"role": "user", "content": "Navigate and interact with a webpage"}]}
+            )
         ```
     """
-    
+
     def __init__(
         self,
         client: Any,  # MultiServerMCPClient
@@ -70,7 +71,7 @@ class StatefulMCPAgentExecutor:
         debug: bool = False,
     ) -> None:
         """Initialize the stateful MCP agent executor.
-        
+
         Args:
             client: MultiServerMCPClient instance for MCP connections.
             server_name: Name of the MCP server to create a session for.
@@ -91,34 +92,36 @@ class StatefulMCPAgentExecutor:
         self.interrupt_before = interrupt_before
         self.interrupt_after = interrupt_after
         self.debug = debug
-        
+
         self._session = None
         self._agent: CompiledStateGraph | None = None
         self._tools: list[BaseTool] | None = None
-    
+
     async def __aenter__(self) -> StatefulMCPAgentExecutor:
         """Async context manager entry: create session and initialize agent."""
         try:
             # Import here to avoid circular dependencies
             from langchain_mcp_adapters.tools import load_mcp_tools
+
             from langchain.agents import create_agent
-            
+
             # Create persistent MCP session
             self._session = await self.client.session(self.server_name).__aenter__()
-            
+
             # Load tools with the persistent session
             self._tools = await load_mcp_tools(self._session)
-            
+
             # Initialize model
             if isinstance(self.model, str):
                 from langchain.chat_models import init_chat_model
+
                 model = init_chat_model(self.model)
             else:
                 model = self.model
-            
+
             # Bind tools to model
             model_with_tools = model.bind_tools(self._tools)
-            
+
             # Create agent with stateful tools
             self._agent = create_agent(
                 model_with_tools,
@@ -130,20 +133,20 @@ class StatefulMCPAgentExecutor:
                 interrupt_after=self.interrupt_after,
                 debug=self.debug,
             )
-            
+
             return self
-            
+
         except Exception:
             # Clean up session if initialization fails
             if self._session:
                 await self._session.__aexit__(None, None, None)
             raise
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """Async context manager exit: cleanup session."""
         if self._session:
             await self._session.__aexit__(exc_type, exc_val, exc_tb)
-    
+
     async def ainvoke(
         self,
         input: dict[str, Any],
@@ -151,15 +154,15 @@ class StatefulMCPAgentExecutor:
         **kwargs: Any,
     ) -> dict[str, Any]:
         """Asynchronously invoke the agent with the given input.
-        
+
         Args:
             input: Input dictionary containing messages.
             config: Optional configuration dictionary.
             **kwargs: Additional keyword arguments.
-            
+
         Returns:
             Agent response dictionary.
-            
+
         Raises:
             RuntimeError: If agent is not initialized (not in context manager).
         """
@@ -170,9 +173,9 @@ class StatefulMCPAgentExecutor:
                 "    result = await executor.ainvoke(...)"
             )
             raise RuntimeError(msg)
-        
+
         return await self._agent.ainvoke(input, config, **kwargs)
-    
+
     def invoke(
         self,
         input: dict[str, Any],
@@ -180,15 +183,15 @@ class StatefulMCPAgentExecutor:
         **kwargs: Any,
     ) -> dict[str, Any]:
         """Synchronously invoke the agent with the given input.
-        
+
         Args:
             input: Input dictionary containing messages.
             config: Optional configuration dictionary.
             **kwargs: Additional keyword arguments.
-            
+
         Returns:
             Agent response dictionary.
-            
+
         Raises:
             RuntimeError: If agent is not initialized (not in context manager).
         """
@@ -199,9 +202,9 @@ class StatefulMCPAgentExecutor:
                 "    result = await executor.ainvoke(...)"
             )
             raise RuntimeError(msg)
-        
+
         return self._agent.invoke(input, config, **kwargs)
-    
+
     async def astream(
         self,
         input: dict[str, Any],
@@ -209,15 +212,15 @@ class StatefulMCPAgentExecutor:
         **kwargs: Any,
     ) -> AsyncIterator[dict[str, Any]]:
         """Stream agent responses asynchronously.
-        
+
         Args:
             input: Input dictionary containing messages.
             config: Optional configuration dictionary.
             **kwargs: Additional keyword arguments.
-            
+
         Yields:
             Agent response chunks.
-            
+
         Raises:
             RuntimeError: If agent is not initialized (not in context manager).
         """
@@ -229,10 +232,10 @@ class StatefulMCPAgentExecutor:
                 "        ..."
             )
             raise RuntimeError(msg)
-        
+
         async for chunk in self._agent.astream(input, config, **kwargs):
             yield chunk
-    
+
     def stream(
         self,
         input: dict[str, Any],
@@ -240,15 +243,15 @@ class StatefulMCPAgentExecutor:
         **kwargs: Any,
     ) -> Iterator[dict[str, Any]]:
         """Stream agent responses synchronously.
-        
+
         Args:
             input: Input dictionary containing messages.
             config: Optional configuration dictionary.
             **kwargs: Additional keyword arguments.
-            
+
         Yields:
             Agent response chunks.
-            
+
         Raises:
             RuntimeError: If agent is not initialized (not in context manager).
         """
@@ -260,15 +263,15 @@ class StatefulMCPAgentExecutor:
                 "        ..."
             )
             raise RuntimeError(msg)
-        
+
         for chunk in self._agent.stream(input, config, **kwargs):
             yield chunk
-    
+
     @property
     def agent(self) -> CompiledStateGraph | None:
         """Get the underlying agent graph."""
         return self._agent
-    
+
     @property
     def tools(self) -> list[BaseTool] | None:
         """Get the loaded MCP tools."""
@@ -289,11 +292,11 @@ async def create_stateful_mcp_agent(
     auto_cleanup: bool = True,
 ) -> tuple[CompiledStateGraph, Any]:  # (agent, session)
     """Factory function to create an agent with stateful MCP tools.
-    
+
     This function creates an agent with MCP tools that maintain persistent
     sessions across multiple invocations. It returns both the agent and
     the session object for manual lifecycle management.
-    
+
     Args:
         client: MultiServerMCPClient instance for MCP connections.
         server_name: Name of the MCP server to create a session for.
@@ -305,24 +308,26 @@ async def create_stateful_mcp_agent(
         interrupt_after: Optional list of node names to interrupt after.
         debug: Whether to enable debug mode.
         auto_cleanup: If False, caller is responsible for session cleanup.
-        
+
     Returns:
         Tuple of (agent, session). If auto_cleanup is False, the caller
         must call `await session.__aexit__(None, None, None)` when done.
-        
+
     Example:
         ```python
         from langchain_mcp_adapters.client import MultiServerMCPClient
         from langchain.agents.mcp_utils import create_stateful_mcp_agent
-        
-        client = MultiServerMCPClient({
-            "playwright": {
-                "command": "npx",
-                "args": ["@playwright/mcp@latest"],
-                "transport": "stdio",
+
+        client = MultiServerMCPClient(
+            {
+                "playwright": {
+                    "command": "npx",
+                    "args": ["@playwright/mcp@latest"],
+                    "transport": "stdio",
+                }
             }
-        })
-        
+        )
+
         # With auto cleanup (recommended)
         agent, session = await create_stateful_mcp_agent(
             client=client,
@@ -333,31 +338,33 @@ async def create_stateful_mcp_agent(
             result = await agent.ainvoke({"messages": [...]})
         finally:
             await session.__aexit__(None, None, None)
-        
+
         # Or use the StatefulMCPAgentExecutor context manager instead
         ```
     """
     # Import here to avoid circular dependencies
     from langchain_mcp_adapters.tools import load_mcp_tools
+
     from langchain.agents import create_agent
-    
+
     # Create persistent MCP session
     session = await client.session(server_name).__aenter__()
-    
+
     try:
         # Load tools with the persistent session
         tools = await load_mcp_tools(session)
-        
+
         # Initialize model
         if isinstance(model, str):
             from langchain.chat_models import init_chat_model
+
             model_instance = init_chat_model(model)
         else:
             model_instance = model
-        
+
         # Bind tools to model
         model_with_tools = model_instance.bind_tools(tools)
-        
+
         # Create agent with stateful tools
         agent = create_agent(
             model_with_tools,
@@ -369,11 +376,11 @@ async def create_stateful_mcp_agent(
             interrupt_after=interrupt_after,
             debug=debug,
         )
-        
+
         if auto_cleanup:
             # Wrap agent to auto-cleanup session on deletion
             original_del = getattr(agent, "__del__", None)
-            
+
             def cleanup_on_del(self):
                 # Schedule session cleanup
                 try:
@@ -384,14 +391,14 @@ async def create_stateful_mcp_agent(
                         loop.run_until_complete(session.__aexit__(None, None, None))
                 except Exception:
                     pass  # Best effort cleanup
-                
+
                 if original_del:
                     original_del()
-            
+
             agent.__del__ = cleanup_on_del.__get__(agent, type(agent))
-        
+
         return agent, session
-        
+
     except Exception:
         # Clean up session if initialization fails
         await session.__aexit__(None, None, None)
@@ -412,10 +419,10 @@ async def mcp_agent_session(
     debug: bool = False,
 ) -> AsyncIterator[CompiledStateGraph]:
     """Context manager for creating an agent with stateful MCP tools.
-    
+
     This is a convenience function that automatically manages the session
     lifecycle, ensuring proper cleanup even if an error occurs.
-    
+
     Args:
         client: MultiServerMCPClient instance for MCP connections.
         server_name: Name of the MCP server to create a session for.
@@ -426,31 +433,33 @@ async def mcp_agent_session(
         interrupt_before: Optional list of node names to interrupt before.
         interrupt_after: Optional list of node names to interrupt after.
         debug: Whether to enable debug mode.
-        
+
     Yields:
         Configured agent with stateful MCP tools.
-        
+
     Example:
         ```python
         from langchain_mcp_adapters.client import MultiServerMCPClient
         from langchain.agents.mcp_utils import mcp_agent_session
-        
-        client = MultiServerMCPClient({
-            "playwright": {
-                "command": "npx",
-                "args": ["@playwright/mcp@latest"],
-                "transport": "stdio",
+
+        client = MultiServerMCPClient(
+            {
+                "playwright": {
+                    "command": "npx",
+                    "args": ["@playwright/mcp@latest"],
+                    "transport": "stdio",
+                }
             }
-        })
-        
+        )
+
         async with mcp_agent_session(
             client=client,
             server_name="playwright",
             model="gpt-4",
         ) as agent:
-            result = await agent.ainvoke({
-                "messages": [{"role": "user", "content": "Navigate to a webpage"}]
-            })
+            result = await agent.ainvoke(
+                {"messages": [{"role": "user", "content": "Navigate to a webpage"}]}
+            )
         ```
     """
     agent, session = await create_stateful_mcp_agent(
@@ -465,7 +474,7 @@ async def mcp_agent_session(
         debug=debug,
         auto_cleanup=False,  # We'll handle cleanup manually
     )
-    
+
     try:
         yield agent
     finally:

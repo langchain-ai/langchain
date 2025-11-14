@@ -66,17 +66,17 @@ STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
 class MCPSessionConfig(TypedDict):
     """Configuration for MCP session management in agents.
-    
+
     When provided, enables stateful session management for MCP tools,
     maintaining persistent connections across multiple tool invocations.
     """
-    
+
     client: Required[Any]
     """The MCP client instance (e.g., MultiServerMCPClient)."""
-    
+
     server_name: Required[str]
     """The name of the MCP server to connect to (e.g., 'playwright', 'database')."""
-    
+
     auto_cleanup: NotRequired[bool]
     """Whether to automatically cleanup the session when the agent is destroyed. Defaults to True."""
 
@@ -653,12 +653,12 @@ def create_agent(  # noqa: PLR0915
             - `server_name`: The name of the MCP server (e.g., 'playwright')
             - `auto_cleanup`: Whether to auto-cleanup the session (default: True)
 
-            Example:
+    Example:
             ```python
             from langchain_mcp_adapters import MultiServerMCPClient
-            
+
             mcp_client = MultiServerMCPClient()
-            
+
             # Create agent with stateful MCP session
             agent = create_agent(
                 model="gpt-4",
@@ -667,7 +667,7 @@ def create_agent(  # noqa: PLR0915
                     "client": mcp_client,
                     "server_name": "playwright",
                     "auto_cleanup": True,
-                }
+                },
             )
             ```
 
@@ -715,7 +715,7 @@ def create_agent(  # noqa: PLR0915
     # Handle tools being None or empty
     if tools is None:
         tools = []
-    
+
     # Handle MCP session configuration if provided
     # This enables stateful session management for MCP tools
     if mcp_session_config:
@@ -724,11 +724,11 @@ def create_agent(  # noqa: PLR0915
             """Check if a tool is an MCP tool by examining its metadata."""
             if not isinstance(tool, BaseTool):
                 return False
-            
+
             # Check for MCP-specific attributes or metadata
             if hasattr(tool, "__mcp_server__"):
                 return True
-            
+
             # Check tool metadata for MCP indicators
             metadata = getattr(tool, "metadata", {})
             if isinstance(metadata, dict):
@@ -737,20 +737,20 @@ def create_agent(  # noqa: PLR0915
                     return True
                 if metadata.get("source") == "mcp":
                     return True
-            
+
             # Check if tool name suggests MCP origin (common patterns)
             tool_name = getattr(tool, "name", "")
             mcp_prefixes = ["mcp_", "playwright_", "browser_", "puppeteer_"]
             if tool_name and any(tool_name.startswith(prefix) for prefix in mcp_prefixes):
                 return True
-            
+
             return False
-        
+
         has_mcp_tools = any(is_mcp_tool(tool) for tool in tools)
-        
+
         if has_mcp_tools:
             import warnings
-            
+
             # Warn user about automatic session management
             warnings.warn(
                 f"MCP tools detected. Enabling stateful session management for "
@@ -758,14 +758,14 @@ def create_agent(  # noqa: PLR0915
                 f"will share the same session. For explicit control, use "
                 f"StatefulMCPAgentExecutor from langchain.agents.mcp_utils.",
                 UserWarning,
-                stacklevel=2
+                stacklevel=2,
             )
-            
+
             # Note: We don't actually create the session here during graph construction.
             # Instead, we'll wrap the tools with session-aware versions that will
             # create and manage the session at runtime. This maintains the lazy
             # initialization pattern and avoids creating sessions that might not be used.
-            
+
             # Mark tools that should use the MCP session
             for tool in tools:
                 if is_mcp_tool(tool) and isinstance(tool, BaseTool):
@@ -774,7 +774,7 @@ def create_agent(  # noqa: PLR0915
                         tool.metadata = {}
                     elif not isinstance(tool.metadata, dict):
                         tool.metadata = {"original_metadata": tool.metadata}
-                    
+
                     tool.metadata["__mcp_session_config__"] = mcp_session_config
 
     # Convert response format and setup structured output tools
@@ -1756,10 +1756,3 @@ def _add_middleware_edge(
 __all__ = [
     "create_agent",
 ]
-
-
-
-
-
-
-
