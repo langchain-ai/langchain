@@ -3,7 +3,7 @@
 import uuid
 import warnings
 from collections.abc import Callable, Iterable, Mapping
-from typing import Any, Literal, cast
+from typing import Any, cast
 
 from langchain_core.messages import (
     AIMessage,
@@ -19,6 +19,10 @@ from langgraph.graph.message import (
 )
 from langgraph.runtime import Runtime
 
+from langchain.agents.middleware._context import (
+    ContextCondition,
+    ContextSize,
+)
 from langchain.agents.middleware.types import AgentMiddleware, AgentState
 from langchain.chat_models import BaseChatModel, init_chat_model
 
@@ -56,21 +60,6 @@ _DEFAULT_MESSAGES_TO_KEEP = 20
 _DEFAULT_TRIM_TOKEN_LIMIT = 4000
 _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
 _SEARCH_RANGE_FOR_TOOL_PAIRS = 5
-
-ContextFraction = tuple[Literal["fraction"], float]
-"""Tuple specifying context size as a fraction of the model's context window."""
-ContextTokens = tuple[Literal["tokens"], int]
-"""Tuple specifying context size as a number of tokens."""
-ContextMessages = tuple[Literal["messages"], int]
-"""Tuple specifying context size as a number of messages."""
-
-ContextSize = ContextFraction | ContextTokens | ContextMessages
-"""Context size tuple to specify how much history to preserve."""
-
-ContextCondition = ContextSize | list[ContextSize | list[ContextSize]]
-"""Recursive type to support nested AND/OR conditions
-
-Top-level list = OR logic, nested list = AND logic."""
 
 
 class SummarizationMiddleware(AgentMiddleware):

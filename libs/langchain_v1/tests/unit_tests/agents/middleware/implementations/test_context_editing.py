@@ -399,3 +399,154 @@ async def test_exclude_tools_prevents_clearing_async() -> None:
 
     assert isinstance(calc_tool, ToolMessage)
     assert calc_tool.content == "[cleared]"
+
+
+# New API tests
+
+
+def test_new_api_trigger_with_context_size_tuple() -> None:
+    """Test new API with ContextSize tuple for trigger."""
+    tool_call_id = "call-1"
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[{"id": tool_call_id, "name": "search", "args": {}}],
+    )
+    tool_message = ToolMessage(content="x" * 200, tool_call_id=tool_call_id)
+
+    state, request = _make_state_and_request([ai_message, tool_message])
+
+    # Use new API with tuple
+    edit = ClearToolUsesEdit(
+        trigger=("tokens", 50),
+        keep=("messages", 0),
+        placeholder="[cleared]",
+    )
+    middleware = ContextEditingMiddleware(edits=[edit])
+
+    def mock_handler(req: ModelRequest) -> AIMessage:
+        return AIMessage(content="mock response")
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    cleared_tool = request.messages[1]
+    assert isinstance(cleared_tool, ToolMessage)
+    assert cleared_tool.content == "[cleared]"
+
+
+def test_new_api_keep_with_messages_tuple() -> None:
+    """Test new API with messages-based keep."""
+    conversation: list[AIMessage | ToolMessage] = []
+    for i in range(5):
+        call_id = f"call-{i}"
+        conversation.append(
+            AIMessage(
+                content="",
+                tool_calls=[{"id": call_id, "name": "tool", "args": {}}],
+            )
+        )
+        conversation.append(ToolMessage(content="x" * 50, tool_call_id=call_id))
+
+    state, request = _make_state_and_request(conversation)
+
+    edit = ClearToolUsesEdit(
+        trigger=("tokens", 50),
+        keep=("messages", 2),  # Keep last 2 tool results
+        placeholder="[cleared]",
+    )
+    middleware = ContextEditingMiddleware(edits=[edit])
+
+    def mock_handler(req: ModelRequest) -> AIMessage:
+        return AIMessage(content="mock response")
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    # Check that first 3 tool messages are cleared, last 2 are preserved
+    tool_messages = [msg for msg in request.messages if isinstance(msg, ToolMessage)]
+    cleared = [msg for msg in tool_messages if msg.content == "[cleared]"]
+    preserved = [msg for msg in tool_messages if msg.content != "[cleared]"]
+
+    assert len(cleared) == 3
+    assert len(preserved) == 2
+
+
+def test_new_api_or_conditions() -> None:
+    """Test new API with OR trigger conditions."""
+    tool_call_id = "call-1"
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[{"id": tool_call_id, "name": "search", "args": {}}],
+    )
+    tool_message = ToolMessage(content="x" * 200, tool_call_id=tool_call_id)
+
+    state, request = _make_state_and_request([ai_message, tool_message])
+
+    # Use OR conditions: triggers if tokens >= 50 OR messages >= 100
+    edit = ClearToolUsesEdit(
+        trigger=[("tokens", 50), ("messages", 100)],
+        keep=("messages", 0),
+        placeholder="[cleared]",
+    )
+    middleware = ContextEditingMiddleware(edits=[edit])
+
+    def mock_handler(req: ModelRequest) -> AIMessage:
+        return AIMessage(content="mock response")
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    # Should trigger because tokens >= 50 (even though messages < 100)
+    cleared_tool = request.messages[1]
+    assert isinstance(cleared_tool, ToolMessage)
+    assert cleared_tool.content == "[cleared]"
+
+
+def test_new_api_backwards_compatibility() -> None:
+    """Test that old integer API still works."""
+    tool_call_id = "call-1"
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[{"id": tool_call_id, "name": "search", "args": {}}],
+    )
+    tool_message = ToolMessage(content="x" * 200, tool_call_id=tool_call_id)
+
+    state, request = _make_state_and_request([ai_message, tool_message])
+
+    # Old API with integers
+    edit = ClearToolUsesEdit(
+        trigger=50,  # int
+        keep=0,  # int
+        placeholder="[cleared]",
+    )
+    middleware = ContextEditingMiddleware(edits=[edit])
+
+    def mock_handler(req: ModelRequest) -> AIMessage:
+        return AIMessage(content="mock response")
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    cleared_tool = request.messages[1]
+    assert isinstance(cleared_tool, ToolMessage)
+    assert cleared_tool.content == "[cleared]"
+
+
+def test_new_api_validation_errors() -> None:
+    """Test that validation errors are raised for invalid configurations."""
+    # Test invalid fraction value
+    try:
+        ClearToolUsesEdit(trigger=("fraction", 1.5), keep=("messages", 3))
+        assert False, "Should have raised ValueError"
+    except ValueError as e:
+        assert "must be between 0 and 1" in str(e)
+
+    # Test invalid token count
+    try:
+        ClearToolUsesEdit(trigger=("tokens", -1), keep=("messages", 3))
+        assert False, "Should have raised ValueError"
+    except ValueError as e:
+        assert "must be greater than 0" in str(e)
+
+    # Test unsupported type
+    try:
+        ClearToolUsesEdit(trigger=("invalid", 100), keep=("messages", 3))  # type: ignore[arg-type]
+        assert False, "Should have raised ValueError"
+    except ValueError as e:
+        assert "Unsupported context size type" in str(e)
