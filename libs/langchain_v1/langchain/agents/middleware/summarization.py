@@ -262,37 +262,31 @@ class SummarizationMiddleware(AgentMiddleware):
     ) -> bool:
         """Check if a single condition is satisfied."""
         kind, value = condition
-
         if kind == "messages":
             return len(messages) >= value
-
         if kind == "tokens":
             return total_tokens >= value
-
-        if kind != "fraction":
-            return False
-
-        max_input_tokens = self._get_profile_limits()
-        if max_input_tokens is None:
-            return False
-
-        threshold = max(1, int(max_input_tokens * value))
-        return total_tokens >= threshold
+        if kind == "fraction":
+            max_input_tokens = self._get_profile_limits()
+            if max_input_tokens is None:
+                return False
+            threshold = int(max_input_tokens * value)
+            if threshold <= 0:
+                threshold = 1
+            return total_tokens >= threshold
+        return False
 
     def _determine_cutoff_index(self, messages: list[AnyMessage]) -> int:
         """Choose cutoff index respecting retention configuration."""
         kind, value = self.keep
-
-        if kind not in {"tokens", "fraction"}:
-            return self._find_safe_cutoff(messages, cast("int", value))
-
-        token_based_cutoff = self._find_token_based_cutoff(messages)
-        if token_based_cutoff is not None:
-            return token_based_cutoff
-
-        # None cutoff -> model profile data not available (caught in __init__ but
-        # here for safety), fallback to message count
-        return self._find_safe_cutoff(messages, _DEFAULT_MESSAGES_TO_KEEP)
+        if kind in {"tokens", "fraction"}:
+            token_based_cutoff = self._find_token_based_cutoff(messages)
+            if token_based_cutoff is not None:
+                return token_based_cutoff
+            # None cutoff -> model profile data not available (caught in __init__ but
+            # here for safety), fallback to message count
+            return self._find_safe_cutoff(messages, _DEFAULT_MESSAGES_TO_KEEP)
+        return self._find_safe_cutoff(messages, cast("int", value))
 
     def _find_token_based_cutoff(self, messages: list[AnyMessage]) -> int | None:
         """Find cutoff index based on target token retention."""
@@ -300,7 +294,6 @@ class SummarizationMiddleware(AgentMiddleware):
             return 0
 
         kind, value = self.keep
-
         if kind == "fraction":
             max_input_tokens = self._get_profile_limits()
             if max_input_tokens is None:
@@ -311,7 +304,8 @@ class SummarizationMiddleware(AgentMiddleware):
         else:
             return None
 
-        target_token_count = max(1, target_token_count)
+        if target_token_count <= 0:
+            target_token_count = 1
 
         if self.token_counter(messages) <= target_token_count:
             return 0
@@ -477,11 +471,9 @@ class SummarizationMiddleware(AgentMiddleware):
 
     def _has_tool_calls(self, message: AnyMessage) -> bool:
         """Check if message is an AI message with tool calls."""
-        if not isinstance(message, AIMessage):
-            return False
-        if not hasattr(message, "tool_calls"):
-            return False
-        return bool(message.tool_calls)
+        return (
+            isinstance(message, AIMessage) and hasattr(message, "tool_calls") and message.tool_calls  # type: ignore[return-value]
+        )
 
     def _extract_tool_call_ids(self, ai_message: AIMessage) -> set[str]:
         """Extract tool call IDs from an AI message."""
@@ -502,15 +494,11 @@ class SummarizationMiddleware(AgentMiddleware):
         """Check if cutoff separates an AI message from its corresponding tool messages."""
         for j in range(ai_message_index + 1, len(messages)):
             message = messages[j]
-            if not isinstance(message, ToolMessage):
-                continue
-            if message.tool_call_id not in tool_call_ids:
-                continue
-
-            ai_before_cutoff = ai_message_index < cutoff_index
-            tool_before_cutoff = j < cutoff_index
-            if ai_before_cutoff != tool_before_cutoff:
-                return True
+            if isinstance(message, ToolMessage) and message.tool_call_id in tool_call_ids:
+                ai_before_cutoff = ai_message_index < cutoff_index
+                tool_before_cutoff = j < cutoff_index
+                if ai_before_cutoff != tool_before_cutoff:
+                    return True
         return False
 
     def _create_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
