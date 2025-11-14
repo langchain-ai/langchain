@@ -146,6 +146,7 @@ def test_server_tools_param() -> None:
             {"type": "code_execution"},
         ],
     )
+    assert llm.server_tools is not None
     assert len(llm.server_tools) == 3
 
     # Test that server_tools is added to default params
