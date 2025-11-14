@@ -1,12 +1,11 @@
 from collections.abc import Callable
 
+from langchain_core.messages import AIMessage
 from syrupy.assertion import SnapshotAssertion
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
-from langchain_core.messages import AIMessage
-
-from ...model import FakeToolCallingModel
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 def test_create_agent_diagram(

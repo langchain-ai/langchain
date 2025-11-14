@@ -1,15 +1,14 @@
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, RemoveMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
-from unittest.mock import patch
 
 from langchain.agents.middleware.summarization import SummarizationMiddleware
-
-from ...model import FakeToolCallingModel
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 if TYPE_CHECKING:
     from langchain_model_profiles import ModelProfile
@@ -165,7 +164,8 @@ def test_summarization_middleware_summary_creation() -> None:
     # Test error handling
     class ErrorModel(BaseChatModel):
         def invoke(self, prompt):
-            raise Exception("Model error")
+            msg = "Model error"
+            raise ValueError(msg)
 
         def _generate(self, messages, **kwargs):
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
@@ -222,7 +222,8 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         def profile(self) -> "ModelProfile":
             return {"max_input_tokens": 1000}
 
-    token_counter = lambda messages: len(messages) * 200
+    def token_counter(messages):
+        return len(messages) * 200
 
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
@@ -241,14 +242,14 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     }
 
     # Test we don't engage summarization
-    # total_tokens = 4 * 200 = 800
-    # max_input_tokens = 1000
-    # 0.81 * 1000 == 810 > 800 -> summarization not triggered
+    # we have total_tokens = 4 * 200 = 800
+    # and max_input_tokens = 1000
+    # since 0.81 * 1000 == 810 > 800 -> summarization not triggered
     result = middleware.before_model(state, None)
     assert result is None
 
     # Engage summarization
-    # 0.80 * 1000 == 800 <= 800
+    # since 0.80 * 1000 == 800 <= 800
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
         trigger=("fraction", 0.80),
@@ -387,7 +388,8 @@ def test_summarization_middleware_missing_profile() -> None:
 
         @property
         def profile(self):
-            raise ImportError("Profile not available")
+            msg = "Profile not available"
+            raise ImportError(msg)
 
     with pytest.raises(
         ValueError,
@@ -550,7 +552,7 @@ def test_summarization_middleware_keep_messages() -> None:
     assert [message.content for message in result["messages"][2:]] == ["4", "5"]
 
     # Above threshold - should also trigger summarization
-    messages_above = messages_at_threshold + [HumanMessage(content="6")]
+    messages_above = [*messages_at_threshold, HumanMessage(content="6")]
     state_above = {"messages": messages_above}
     result = middleware.before_model(state_above, None)
     assert result is not None

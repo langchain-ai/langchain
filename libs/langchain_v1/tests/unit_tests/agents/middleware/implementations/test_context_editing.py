@@ -2,13 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Iterable, cast
+from collections.abc import Iterable
+from typing import cast
 
-from langchain.agents.middleware.context_editing import (
-    ClearToolUsesEdit,
-    ContextEditingMiddleware,
-)
-from langchain.agents.middleware.types import AgentState, ModelRequest
 from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -17,6 +13,12 @@ from langchain_core.messages import (
 )
 from langgraph.runtime import Runtime
 
+from langchain.agents.middleware.context_editing import (
+    ClearToolUsesEdit,
+    ContextEditingMiddleware,
+)
+from langchain.agents.middleware.types import AgentState, ModelRequest
+
 
 class _TokenCountingChatModel(FakeChatModel):
     """Fake chat model that counts tokens deterministically for tests."""
@@ -24,7 +26,7 @@ class _TokenCountingChatModel(FakeChatModel):
     def get_num_tokens_from_messages(
         self,
         messages: list[MessageLikeRepresentation],
-        tools: Iterable | None = None,  # noqa: ARG002
+        tools: Iterable | None = None,
     ) -> int:
         return sum(_count_message_tokens(message) for message in messages)
 
@@ -54,7 +56,7 @@ def _make_state_and_request(
 ) -> tuple[AgentState, ModelRequest]:
     model = _TokenCountingChatModel()
     conversation = list(messages)
-    state = cast(AgentState, {"messages": conversation})
+    state = cast("AgentState", {"messages": conversation})
     request = ModelRequest(
         model=model,
         system_prompt=system_prompt,
@@ -154,7 +156,7 @@ def test_respects_keep_last_tool_results() -> None:
         )
         conversation.append(ToolMessage(content=text, tool_call_id=call_id))
 
-    state, request = _make_state_and_request(conversation)
+    _state, request = _make_state_and_request(conversation)
 
     middleware = ContextEditingMiddleware(
         edits=[
@@ -164,7 +166,7 @@ def test_respects_keep_last_tool_results() -> None:
                 placeholder="[cleared]",
             )
         ],
-        token_count_method="model",
+        token_count_method="model",  # noqa: S106
     )
 
     def mock_handler(req: ModelRequest) -> AIMessage:
@@ -188,7 +190,7 @@ def test_exclude_tools_prevents_clearing() -> None:
     search_call = "call-search"
     calc_call = "call-calc"
 
-    state, request = _make_state_and_request(
+    _state, request = _make_state_and_request(
         [
             AIMessage(
                 content="",
@@ -232,7 +234,7 @@ def test_exclude_tools_prevents_clearing() -> None:
 
 
 def _fake_runtime() -> Runtime:
-    return cast(Runtime, object())
+    return cast("Runtime", object())
 
 
 async def test_no_edit_when_below_trigger_async() -> None:
@@ -323,7 +325,7 @@ async def test_respects_keep_last_tool_results_async() -> None:
         )
         conversation.append(ToolMessage(content=text, tool_call_id=call_id))
 
-    state, request = _make_state_and_request(conversation)
+    _state, request = _make_state_and_request(conversation)
 
     middleware = ContextEditingMiddleware(
         edits=[
@@ -333,7 +335,7 @@ async def test_respects_keep_last_tool_results_async() -> None:
                 placeholder="[cleared]",
             )
         ],
-        token_count_method="model",
+        token_count_method="model",  # noqa: S106
     )
 
     async def mock_handler(req: ModelRequest) -> AIMessage:
@@ -358,7 +360,7 @@ async def test_exclude_tools_prevents_clearing_async() -> None:
     search_call = "call-search"
     calc_call = "call-calc"
 
-    state, request = _make_state_and_request(
+    _state, request = _make_state_and_request(
         [
             AIMessage(
                 content="",

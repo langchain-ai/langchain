@@ -1,17 +1,15 @@
 from __future__ import annotations
 
-import time
 import gc
 import tempfile
+import time
 from pathlib import Path
-
-import pytest
 
 from langchain.agents.middleware.shell_tool import (
     HostExecutionPolicy,
+    RedactionRule,
     ShellToolMiddleware,
     _SessionResources,
-    RedactionRule,
 )
 from langchain.agents.middleware.types import AgentState
 
@@ -157,14 +155,14 @@ def test_session_resources_finalizer_cleans_up(tmp_path: Path) -> None:
         def __init__(self) -> None:
             self.stopped: bool = False
 
-        def stop(self, timeout: float) -> None:  # noqa: ARG002
+        def stop(self, timeout: float) -> None:
             self.stopped = True
 
     session = DummySession()
     tempdir = tempfile.TemporaryDirectory(dir=tmp_path)
     tempdir_path = Path(tempdir.name)
     resources = _SessionResources(session=session, tempdir=tempdir, policy=policy)  # type: ignore[arg-type]
-    finalizer = resources._finalizer
+    finalizer = resources.finalizer
 
     # Drop our last strong reference and force collection.
     del resources
