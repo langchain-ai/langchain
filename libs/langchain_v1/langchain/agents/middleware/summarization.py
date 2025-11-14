@@ -62,6 +62,9 @@ ContextTokens = tuple[Literal["tokens"], int]
 ContextMessages = tuple[Literal["messages"], int]
 
 ContextSize = ContextFraction | ContextTokens | ContextMessages
+# Recursive type to support nested AND/OR conditions
+# Top-level list = OR logic, nested list = AND logic
+ContextCondition = ContextSize | list["ContextSize | list[ContextSize]"]
 
 
 class SummarizationMiddleware(AgentMiddleware):
@@ -76,7 +79,7 @@ class SummarizationMiddleware(AgentMiddleware):
         self,
         model: str | BaseChatModel,
         *,
-        trigger: ContextSize | list[ContextSize] | None = None,
+        trigger: ContextCondition | None = None,
         keep: ContextSize = ("messages", _DEFAULT_MESSAGES_TO_KEEP),
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
@@ -87,10 +90,16 @@ class SummarizationMiddleware(AgentMiddleware):
 
         Args:
             model: The language model to use for generating summaries.
-            trigger: One or more thresholds that trigger summarization. Provide a single
-                `ContextSize` tuple or a list of tuples, in which case summarization runs
-                when any threshold is breached. Examples: `("messages", 50)`, `("tokens", 3000)`,
-                `[("fraction", 0.8), ("messages", 100)]`.
+            trigger: One or more thresholds that trigger summarization. Supports flexible
+                AND/OR logic via nested lists. Top-level list items are combined with OR,
+                nested lists are combined with AND. Examples:
+                - Single condition: `("messages", 50)`
+                - OR conditions: `[("tokens", 3000), ("messages", 100)]` (triggers when
+                  tokens >= 3000 OR messages >= 100)
+                - AND conditions: `[("tokens", 500), ("fraction", 0.8)]` as a nested list
+                  within the top-level list
+                - Mixed AND/OR: `[("messages", 10), [("tokens", 500), ("fraction", 0.8)]]`
+                  (triggers when messages >= 10 OR (tokens >= 500 AND fraction >= 0.8))
             keep: Context retention policy applied after summarization. Provide a
                 `ContextSize` tuple to specify how much history to preserve. Defaults to
                 keeping the most recent 20 messages. Examples: `("messages", 20)`,
@@ -128,13 +137,15 @@ class SummarizationMiddleware(AgentMiddleware):
 
         self.model = model
         if trigger is None:
-            self.trigger: ContextSize | list[ContextSize] | None = None
-            trigger_conditions: list[ContextSize] = []
+            self.trigger: ContextCondition | None = None
+            trigger_conditions: list[ContextSize | list[ContextSize]] = []
         elif isinstance(trigger, list):
-            validated_list = [self._validate_context_size(item, "trigger") for item in trigger]
+            # Validate and normalize nested structure
+            validated_list = self._validate_trigger_conditions(trigger)
             self.trigger = validated_list
             trigger_conditions = validated_list
         else:
+            # Single ContextSize tuple
             validated = self._validate_context_size(trigger, "trigger")
             self.trigger = validated
             trigger_conditions = [validated]
@@ -145,7 +156,7 @@ class SummarizationMiddleware(AgentMiddleware):
         self.summary_prompt = summary_prompt
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
 
-        requires_profile = any(condition[0] == "fraction" for condition in self._trigger_conditions)
+        requires_profile = self._requires_profile(self._trigger_conditions)
         if self.keep[0] == "fraction":
             requires_profile = True
         if requires_profile and self._get_profile_limits() is None:
@@ -211,24 +222,52 @@ class SummarizationMiddleware(AgentMiddleware):
         }
 
     def _should_summarize(self, messages: list[AnyMessage], total_tokens: int) -> bool:
-        """Determine whether summarization should run for the current token usage."""
+        """Determine whether summarization should run for the current token usage.
+
+        Evaluates trigger conditions with AND/OR logic:
+        - Top-level items are OR'd together
+        - Nested lists are AND'd together
+        """
         if not self._trigger_conditions:
             return False
 
-        for kind, value in self._trigger_conditions:
-            if kind == "messages" and len(messages) >= value:
-                return True
-            if kind == "tokens" and total_tokens >= value:
-                return True
-            if kind == "fraction":
-                max_input_tokens = self._get_profile_limits()
-                if max_input_tokens is None:
-                    continue
-                threshold = int(max_input_tokens * value)
-                if threshold <= 0:
-                    threshold = 1
-                if total_tokens >= threshold:
+        # OR logic across top-level conditions
+        for condition in self._trigger_conditions:
+            if isinstance(condition, list):
+                # AND group - all must be satisfied
+                if self._check_and_group(condition, messages, total_tokens):
                     return True
+            elif self._check_single_condition(condition, messages, total_tokens):
+                # Single condition
+                return True
+        return False
+
+    def _check_and_group(
+        self, and_group: list[ContextSize], messages: list[AnyMessage], total_tokens: int
+    ) -> bool:
+        """Check if all conditions in an AND group are satisfied."""
+        for condition in and_group:
+            if not self._check_single_condition(condition, messages, total_tokens):
+                return False
+        return True
+
+    def _check_single_condition(
+        self, condition: ContextSize, messages: list[AnyMessage], total_tokens: int
+    ) -> bool:
+        """Check if a single condition is satisfied."""
+        kind, value = condition
+        if kind == "messages":
+            return len(messages) >= value
+        if kind == "tokens":
+            return total_tokens >= value
+        if kind == "fraction":
+            max_input_tokens = self._get_profile_limits()
+            if max_input_tokens is None:
+                return False
+            threshold = int(max_input_tokens * value)
+            if threshold <= 0:
+                threshold = 1
+            return total_tokens >= threshold
         return False
 
     def _determine_cutoff_index(self, messages: list[AnyMessage]) -> int:
@@ -327,6 +366,45 @@ class SummarizationMiddleware(AgentMiddleware):
             msg = f"Unsupported context size type {kind} for {parameter_name}."
             raise ValueError(msg)
         return context
+
+    def _validate_trigger_conditions(
+        self, conditions: list[Any]
+    ) -> list[ContextSize | list[ContextSize]]:
+        """Validate and normalize trigger conditions with nested AND/OR logic.
+
+        Args:
+            conditions: List of ContextSize tuples or nested lists of ContextSize tuples.
+
+        Returns:
+            Validated list where top-level items are OR'd and nested lists are AND'd.
+        """
+        validated: list[ContextSize | list[ContextSize]] = []
+        for item in conditions:
+            if isinstance(item, tuple):
+                # Single condition (tuple)
+                validated.append(self._validate_context_size(item, "trigger"))
+            elif isinstance(item, list):
+                # AND group (nested list)
+                if not item:
+                    msg = "Empty AND groups are not allowed in trigger conditions."
+                    raise ValueError(msg)
+                and_group = [self._validate_context_size(cond, "trigger") for cond in item]
+                validated.append(and_group)
+            else:
+                msg = f"Trigger conditions must be tuples or lists, got {type(item).__name__}."
+                raise ValueError(msg)
+        return validated
+
+    def _requires_profile(self, conditions: list[ContextSize | list[ContextSize]]) -> bool:
+        """Check if any condition requires model profile information."""
+        for condition in conditions:
+            if isinstance(condition, list):
+                # AND group
+                if any(c[0] == "fraction" for c in condition):
+                    return True
+            elif condition[0] == "fraction":
+                return True
+        return False
 
     def _build_new_messages(self, summary: str) -> list[HumanMessage]:
         return [

@@ -896,3 +896,172 @@ def test_summarization_middleware_is_safe_cutoff_at_end() -> None:
 
     # Cutoff past the length should also be safe
     assert middleware._is_safe_cutoff_point(messages, len(messages) + 5)
+
+
+def test_summarization_middleware_and_logic() -> None:
+    """Test middleware with AND logic using nested lists."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=[[("messages", 5), ("tokens", 300)]],  # AND group as nested list
+        keep=("messages", 2),
+    )
+
+    def mock_token_counter(messages):
+        return len(messages) * 50  # 50 tokens per message
+
+    middleware.token_counter = mock_token_counter
+
+    # Test: 4 messages, 200 tokens - neither condition met in AND group
+    messages = [HumanMessage(content=str(i)) for i in range(4)]
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+    assert result is None
+
+    # Test: 5 messages, 250 tokens - messages met but not tokens
+    messages = [HumanMessage(content=str(i)) for i in range(5)]
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+    assert result is None
+
+    # Test: 7 messages, 350 tokens - both conditions met
+    messages = [HumanMessage(content=str(i)) for i in range(7)]
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+    assert result is not None
+
+
+def test_summarization_middleware_mixed_and_or_logic() -> None:
+    """Test middleware with mixed AND/OR logic."""
+    # Trigger when: messages >= 10 OR (tokens >= 500 AND messages >= 3)
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=[("messages", 10), [("tokens", 500), ("messages", 3)]],
+        keep=("messages", 2),
+    )
+
+    def mock_token_counter(messages):
+        return len(messages) * 100
+
+    middleware.token_counter = mock_token_counter
+
+    # Test: 2 messages, 200 tokens - no conditions met
+    messages = [HumanMessage(content=str(i)) for i in range(2)]
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+    assert result is None
+
+    # Test: 5 messages, 500 tokens - AND group satisfied (tokens >= 500 AND messages >= 3)
+    messages = [HumanMessage(content=str(i)) for i in range(5)]
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+    assert result is not None
+
+    # Test: 10 messages - first OR condition satisfied
+    def mock_low_tokens(messages):
+        return 100
+
+    middleware.token_counter = mock_low_tokens
+    messages = [HumanMessage(content=str(i)) for i in range(10)]
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+    assert result is not None
+
+
+def test_summarization_middleware_and_with_fraction() -> None:
+    """Test AND logic with fractional triggers."""
+    # Trigger when: tokens >= 400 AND fraction >= 0.5
+    middleware = SummarizationMiddleware(
+        model=ProfileChatModel(),  # max_input_tokens = 1000
+        trigger=[[("tokens", 400), ("fraction", 0.5)]],
+        keep=("messages", 2),
+    )
+
+    def mock_token_counter(messages):
+        return len(messages) * 100
+
+    middleware.token_counter = mock_token_counter
+
+    # Test: 4 messages, 400 tokens - tokens met but fraction not (400 < 500)
+    messages = [HumanMessage(content=str(i)) for i in range(4)]
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+    assert result is None
+
+    # Test: 6 messages, 600 tokens - both conditions met (600 >= 400 AND 600 >= 500)
+    messages = [HumanMessage(content=str(i)) for i in range(6)]
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+    assert result is not None
+
+
+def test_summarization_middleware_nested_validation() -> None:
+    """Test validation of nested AND groups."""
+    model = MockChatModel()
+
+    # Valid nested list
+    middleware = SummarizationMiddleware(
+        model=model, trigger=[("messages", 5), [("tokens", 100), ("messages", 3)]]
+    )
+    assert middleware.trigger is not None
+
+    # Empty AND group should raise error
+    with pytest.raises(ValueError, match="Empty AND groups are not allowed"):
+        SummarizationMiddleware(model=model, trigger=[("messages", 5), []])
+
+    # Invalid type in trigger list
+    with pytest.raises(ValueError, match="Trigger conditions must be tuples or lists"):
+        SummarizationMiddleware(model=model, trigger=[("messages", 5), "invalid"])
+
+    # Invalid tuple in AND group
+    with pytest.raises(ValueError, match="Unsupported context size type"):
+        SummarizationMiddleware(model=model, trigger=[[("invalid", 100)]])
+
+
+def test_summarization_middleware_complex_and_or() -> None:
+    """Test complex AND/OR combinations."""
+    # Trigger when:
+    # - messages >= 20 OR
+    # - (tokens >= 300 AND messages >= 5) OR
+    # - (tokens >= 500 AND messages >= 3)
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=[
+            ("messages", 20),
+            [("tokens", 300), ("messages", 5)],
+            [("tokens", 500), ("messages", 3)],
+        ],
+        keep=("messages", 2),
+    )
+
+    def mock_token_counter(messages):
+        return len(messages) * 100
+
+    middleware.token_counter = mock_token_counter
+
+    # Test: 2 messages, 200 tokens - no conditions met
+    messages = [HumanMessage(content=str(i)) for i in range(2)]
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+    assert result is None
+
+    # Test: 5 messages, 500 tokens - second AND group satisfied
+    messages = [HumanMessage(content=str(i)) for i in range(5)]
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+    assert result is not None
+
+    # Test: 4 messages, 400 tokens - third AND group satisfied (tokens >= 500 is False)
+    messages = [HumanMessage(content=str(i)) for i in range(4)]
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+    assert result is None
+
+    # Test: 20 messages - first OR condition satisfied
+    def mock_low_tokens(messages):
+        return 50
+
+    middleware.token_counter = mock_low_tokens
+    messages = [HumanMessage(content=str(i)) for i in range(20)]
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+    assert result is not None
