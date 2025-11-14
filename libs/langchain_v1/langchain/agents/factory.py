@@ -64,6 +64,23 @@ if TYPE_CHECKING:
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
 
+class MCPSessionConfig(TypedDict):
+    """Configuration for MCP session management in agents.
+    
+    When provided, enables stateful session management for MCP tools,
+    maintaining persistent connections across multiple tool invocations.
+    """
+    
+    client: Required[Any]
+    """The MCP client instance (e.g., MultiServerMCPClient)."""
+    
+    server_name: Required[str]
+    """The name of the MCP server to connect to (e.g., 'playwright', 'database')."""
+    
+    auto_cleanup: NotRequired[bool]
+    """Whether to automatically cleanup the session when the agent is destroyed. Defaults to True."""
+
+
 def _normalize_to_model_response(result: ModelResponse | AIMessage) -> ModelResponse:
     """Normalize middleware return value to ModelResponse."""
     if isinstance(result, AIMessage):
@@ -1642,4 +1659,5 @@ def _add_middleware_edge(
 __all__ = [
     "create_agent",
 ]
+
 
