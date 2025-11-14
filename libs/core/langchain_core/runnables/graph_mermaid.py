@@ -280,6 +280,7 @@ def draw_mermaid_png(
     padding: int = 10,
     max_retries: int = 1,
     retry_delay: float = 1.0,
+    base_url: str | None = None,
     proxies: Optional[dict] = None,
 ) -> bytes:
     """Draws a Mermaid graph as PNG using provided syntax.
@@ -290,12 +291,9 @@ def draw_mermaid_png(
         draw_method: Method to draw the graph.
         background_color: Background color of the image.
         padding: Padding around the image.
-        max_retries: Maximum number of retries (`MermaidDrawMethod.API`).
-        retry_delay: Delay between retries (`MermaidDrawMethod.API`).
-        proxies: HTTP/HTTPS proxies for requests.
-
-            e.g. `{"http": "http://127.0.0.1:7890",
-            "https": "http://127.0.0.1:7890"}`.
+        max_retries: Maximum number of retries (MermaidDrawMethod.API).
+        retry_delay: Delay between retries (MermaidDrawMethod.API).
+        base_url: Base URL for the Mermaid.ink API.
         proxies (dict, optional): HTTP/HTTPS proxies for requests, e.g. {"http": "http://127.0.0.1:7890", "https": "http://127.0.0.1:7890"}. Defaults to None.
 
     Returns:
@@ -317,7 +315,7 @@ def draw_mermaid_png(
             background_color=background_color,
             max_retries=max_retries,
             retry_delay=retry_delay,
-            proxies=proxies,
+            base_url=base_url,
             proxies=proxies,
         )
     else:
@@ -411,6 +409,7 @@ def _render_mermaid_using_api(
     max_retries: int = 1,
     retry_delay: float = 1.0,
     proxies: Optional[dict] = None,
+    base_url: str | None = None,
 ) -> bytes:
     """Renders Mermaid graph using the Mermaid.INK API."""
     # Defaults to using the public mermaid.ink server.

@@ -641,6 +641,7 @@ class Graph:
         max_retries: int = 1,
         retry_delay: float = 1.0,
         frontmatter_config: dict[str, Any] | None = None,
+        base_url: str | None = None,
         proxies: Optional[dict] = None,
     ) -> bytes:
         """Draw the graph as a PNG image using Mermaid.
@@ -674,12 +675,6 @@ class Graph:
                 }
                 ```
             base_url: The base URL of the Mermaid server for rendering via API.
-
-
-            proxies (dict, optional): HTTP/HTTPS proxies for requests, e.g. {"http": "http://127.0.0.1:7890", "https": "http://127.0.0.1:7890"}. Defaults to None.
-
-            proxies (dict, optional): HTTP/HTTPS proxies for requests, e.g. {"http": "http://127.0.0.1:7890", "https": "http://127.0.0.1:7890"}. Defaults to None.
-
             proxies (dict, optional): HTTP/HTTPS proxies for requests, e.g. {"http": "http://127.0.0.1:7890", "https": "http://127.0.0.1:7890"}. Defaults to None.
 
         Returns:
@@ -705,7 +700,7 @@ class Graph:
             max_retries=max_retries,
             retry_delay=retry_delay,
             proxies=proxies,
-            proxies=proxies,
+            base_url=base_url,
         )
 
 
