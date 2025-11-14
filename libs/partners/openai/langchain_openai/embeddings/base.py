@@ -19,8 +19,8 @@ from langchain_openai.chat_models._client_utils import _resolve_sync_and_async_a
 
 logger = logging.getLogger(__name__)
 
-# OpenAI API limits
-MAX_TOKENS_PER_REQUEST = 300000  # OpenAI's max tokens per embedding request
+MAX_TOKENS_PER_REQUEST = 300000
+"""API limit per request for embedding tokens."""
 
 
 def _process_batched_chunked_embeddings(
@@ -527,9 +527,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     ) -> list[list[float]]:
         """Generate length-safe embeddings for a list of texts.
 
-        This method handles tokenization and embedding generation, respecting the
-        set embedding context length and chunk size. It supports both tiktoken
-        and HuggingFace tokenizer based on the tiktoken_enabled flag.
+        This method handles tokenization and embedding generation, respecting the set
+        embedding context length and chunk size. It supports both tiktoken and
+        HuggingFace tokenizer based on the tiktoken_enabled flag.
 
         Args:
             texts: A list of texts to embed.
@@ -543,7 +543,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         client_kwargs = {**self._invocation_params, **kwargs}
         _iter, tokens, indices = self._tokenize(texts, _chunk_size)
         batched_embeddings: list[list[float]] = []
-        # Calculate actual token counts for each chunk
+        # Calculate token counts per chunk
         token_counts = [
             len(t) if isinstance(t, list) else len(t.split()) for t in tokens
         ]
@@ -621,7 +621,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             None, self._tokenize, texts, _chunk_size
         )
         batched_embeddings: list[list[float]] = []
-        # Calculate actual token counts for each chunk
+        # Calculate token counts per chunk
         token_counts = [
             len(t) if isinstance(t, list) else len(t.split()) for t in tokens
         ]
