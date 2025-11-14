@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import itertools
+import sys
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -512,6 +514,27 @@ def _chain_async_tool_call_wrappers(
     return result
 
 
+def set_windows_selector_event_loop_policy() -> None:
+    """Set Windows event loop policy to SelectorEventLoop for async PostgreSQL compatibility.
+
+    On Windows, Python defaults to ProactorEventLoop, but psycopg (async PostgreSQL
+    driver) requires SelectorEventLoop. This function sets the correct policy.
+
+    Call this function before creating AsyncPostgresSaver checkpointer on Windows.
+    It is automatically called by create_agent(), but if you create the checkpointer
+    before calling create_agent(), you should call this function first.
+    """
+    if sys.platform == "win32":
+        try:
+            # Check if we're using ProactorEventLoop (default on Windows)
+            loop = asyncio.get_running_loop()
+            if isinstance(loop, asyncio.ProactorEventLoop):
+                asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        except RuntimeError:
+            # No running loop, set policy for new loop
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+
 def create_agent(  # noqa: PLR0915
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
@@ -655,6 +678,9 @@ def create_agent(  # noqa: PLR0915
             print(chunk)
         ```
     """
+    # Set Windows event loop policy for async PostgreSQL checkpointer compatibility
+    set_windows_selector_event_loop_policy()
+
     # init chat model
     if isinstance(model, str):
         model = init_chat_model(model)
@@ -1641,4 +1667,5 @@ def _add_middleware_edge(
 
 __all__ = [
     "create_agent",
+    "set_windows_selector_event_loop_policy",
 ]
