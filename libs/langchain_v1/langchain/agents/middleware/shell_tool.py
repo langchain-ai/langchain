@@ -21,6 +21,7 @@ from langchain_core.messages import ToolMessage
 from langchain_core.tools.base import ToolException
 from langgraph.channels.untracked_value import UntrackedValue
 from pydantic import BaseModel, model_validator
+from pydantic.json_schema import SkipJsonSchema
 from typing_extensions import NotRequired
 
 from langchain.agents.middleware._execution import (
@@ -338,6 +339,13 @@ class _ShellToolInput(BaseModel):
     restart: bool | None = None
     """Whether to restart the shell session."""
 
+    runtime: Annotated[Any, SkipJsonSchema] = None
+    """The runtime for the shell tool.
+
+    Included as a workaround at the moment bc args_schema doesn't work with
+    injected ToolRuntime.
+    """
+
     @model_validator(mode="after")
     def validate_payload(self) -> _ShellToolInput:
         if self.command is None and not self.restart:
@@ -377,6 +385,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         execution_policy: BaseExecutionPolicy | None = None,
         redaction_rules: tuple[RedactionRule, ...] | list[RedactionRule] | None = None,
         tool_description: str | None = None,
+        tool_name: str = SHELL_TOOL_NAME,
         shell_command: Sequence[str] | str | None = None,
         env: Mapping[str, Any] | None = None,
     ) -> None:
@@ -398,6 +407,9 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
                 returning it to the model.
             tool_description: Optional override for the registered shell tool
                 description.
+            tool_name: Name for the registered shell tool.
+
+                Defaults to `"shell"`.
             shell_command: Optional shell executable (string) or argument sequence used
                 to launch the persistent session.
 
@@ -409,6 +421,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         """
         super().__init__()
         self._workspace_root = Path(workspace_root) if workspace_root else None
+        self._tool_name = tool_name
         self._shell_command = self._normalize_shell_command(shell_command)
         self._environment = self._normalize_env(env)
         if execution_policy is not None:
@@ -425,7 +438,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         # Create a proper tool that executes directly (no interception needed)
         description = tool_description or DEFAULT_TOOL_DESCRIPTION
 
-        @tool(SHELL_TOOL_NAME, args_schema=_ShellToolInput, description=description)
+        @tool(self._tool_name, args_schema=_ShellToolInput, description=description)
         def shell_tool(
             *,
             runtime: ToolRuntime[None, ShellToolState],
@@ -439,7 +452,8 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
                 tool_call_id=runtime.tool_call_id,
             )
 
-        self.tools = [shell_tool]
+        self._shell_tool = shell_tool
+        self.tools = [self._shell_tool]
 
     @staticmethod
     def _normalize_commands(
@@ -682,7 +696,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         return ToolMessage(
             content=content,
             tool_call_id=tool_call_id,
-            name=SHELL_TOOL_NAME,
+            name=self._tool_name,
             status=status,
             artifact=artifact,
         )

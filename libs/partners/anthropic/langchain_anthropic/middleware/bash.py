@@ -5,15 +5,15 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from langchain.agents.middleware.shell_tool import SHELL_TOOL_NAME, ShellToolMiddleware
+from langchain.agents.middleware.shell_tool import ShellToolMiddleware
 from langchain.agents.middleware.types import (
     ModelRequest,
     ModelResponse,
 )
 
 # Tool type constants for Anthropic
-TOOL_TYPE = "bash_20250124"
-TOOL_NAME = SHELL_TOOL_NAME
+BASH_TOOL_TYPE = "bash_20250124"
+BASH_TOOL_NAME = "bash"
 
 
 class ClaudeBashToolMiddleware(ShellToolMiddleware):
@@ -49,10 +49,11 @@ class ClaudeBashToolMiddleware(ShellToolMiddleware):
             execution_policy=execution_policy,
             redaction_rules=redaction_rules,
             tool_description=tool_description,
+            tool_name=BASH_TOOL_NAME,
             shell_command=("/bin/bash",),
             env=env,
         )
-        # Parent class creates a "shell" tool that we'll use
+        # Parent class now creates the tool with name "bash" via tool_name parameter
 
     def wrap_model_call(
         self,
@@ -60,9 +61,10 @@ class ClaudeBashToolMiddleware(ShellToolMiddleware):
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelResponse:
         """Replace parent's shell tool with Claude's bash descriptor."""
-        tools = [t for t in request.tools if getattr(t, "name", None) != "shell"] + [
-            {"type": TOOL_TYPE, "name": TOOL_NAME}
+        filtered = [
+            t for t in request.tools if getattr(t, "name", None) != BASH_TOOL_NAME
         ]
+        tools = [*filtered, {"type": BASH_TOOL_TYPE, "name": BASH_TOOL_NAME}]
         return handler(request.override(tools=tools))
 
     async def awrap_model_call(
@@ -71,9 +73,10 @@ class ClaudeBashToolMiddleware(ShellToolMiddleware):
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelResponse:
         """Async: replace parent's shell tool with Claude's bash descriptor."""
-        tools = [t for t in request.tools if getattr(t, "name", None) != "shell"] + [
-            {"type": TOOL_TYPE, "name": TOOL_NAME}
+        filtered = [
+            t for t in request.tools if getattr(t, "name", None) != BASH_TOOL_NAME
         ]
+        tools = [*filtered, {"type": BASH_TOOL_TYPE, "name": BASH_TOOL_NAME}]
         return await handler(request.override(tools=tools))
 
 
