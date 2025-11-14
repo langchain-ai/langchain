@@ -17,6 +17,7 @@ from langchain.agents.middleware.types import (
     AgentState,
     ModelRequest,
     ModelResponse,
+    _ModelRequestOverrides,
 )
 from langchain.tools import ToolRuntime, tool
 from langchain_core.messages import ToolMessage
@@ -26,7 +27,6 @@ from typing_extensions import NotRequired, TypedDict
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
 
-    from langchain.agents.middleware.types import ToolCallRequest
 
 # Tool type constants
 TEXT_EDITOR_TOOL_TYPE = "text_editor_20250728"
@@ -42,8 +42,6 @@ MEMORY PROTOCOL:
    - As you make progress, record status / progress / thoughts etc in your memory.
 ASSUME INTERRUPTION: Your context window might be reset at any moment, so you risk \
 losing any progress that is not recorded in your memory directory."""
-
-
 
 
 class FileData(TypedDict):
@@ -189,7 +187,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
 
         # Create tool that will be executed by the tool node
         @tool(tool_name)
-        def file_tool(  # noqa: D417
+        def file_tool(
             runtime: ToolRuntime[None, AnthropicToolsState],
             command: str,
             path: str,
@@ -204,7 +202,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
 
             Args:
                 runtime: Tool runtime providing access to state.
-                command: Operation to perform (view, create, str_replace, insert, delete, rename).
+                command: Operation to perform.
                 path: File path to operate on.
                 file_text: Full file content for create command.
                 old_str: String to replace for str_replace command.
@@ -217,7 +215,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
                 Command for state update or string result.
             """
             # Build args dict for handler methods
-            args = {"path": path}
+            args: dict[str, Any] = {"path": path}
             if file_text is not None:
                 args["file_text"] = file_text
             if old_str is not None:
@@ -235,20 +233,27 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
             try:
                 if command == "view":
                     return self._handle_view(args, runtime.state, runtime.tool_call_id)
-                elif command == "create":
-                    return self._handle_create(args, runtime.state, runtime.tool_call_id)
-                elif command == "str_replace":
+                if command == "create":
+                    return self._handle_create(
+                        args, runtime.state, runtime.tool_call_id
+                    )
+                if command == "str_replace":
                     return self._handle_str_replace(
                         args, runtime.state, runtime.tool_call_id
                     )
-                elif command == "insert":
-                    return self._handle_insert(args, runtime.state, runtime.tool_call_id)
-                elif command == "delete":
-                    return self._handle_delete(args, runtime.state, runtime.tool_call_id)
-                elif command == "rename":
-                    return self._handle_rename(args, runtime.state, runtime.tool_call_id)
-                else:
-                    return f"Unknown command: {command}"
+                if command == "insert":
+                    return self._handle_insert(
+                        args, runtime.state, runtime.tool_call_id
+                    )
+                if command == "delete":
+                    return self._handle_delete(
+                        args, runtime.state, runtime.tool_call_id
+                    )
+                if command == "rename":
+                    return self._handle_rename(
+                        args, runtime.state, runtime.tool_call_id
+                    )
+                return f"Unknown command: {command}"
             except (ValueError, FileNotFoundError) as e:
                 return str(e)
 
@@ -262,7 +267,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         """Inject Anthropic tool descriptor and optional system prompt."""
         # Replace our BaseTool with Anthropic's native tool descriptor
         tools = []
-        for t in (request.tools or []):
+        for t in request.tools or []:
             # Skip our registered tool - we'll replace it with Anthropic's descriptor
             if isinstance(t, dict) and t.get("name") == self.tool_name:
                 continue
@@ -280,7 +285,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         )
 
         # Inject system prompt if provided
-        overrides = {"tools": tools}
+        overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
             overrides["system_prompt"] = (
                 request.system_prompt + "\n\n" + self.system_prompt
@@ -295,10 +300,10 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelResponse:
-        """Inject Anthropic tool descriptor and optional system prompt (async version)."""
+        """Inject Anthropic tool descriptor and optional system prompt."""
         # Replace our BaseTool with Anthropic's native tool descriptor
         tools = []
-        for t in (request.tools or []):
+        for t in request.tools or []:
             # Skip our registered tool - we'll replace it with Anthropic's descriptor
             if isinstance(t, dict) and t.get("name") == self.tool_name:
                 continue
@@ -316,7 +321,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         )
 
         # Inject system prompt if provided
-        overrides = {"tools": tools}
+        overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
             overrides["system_prompt"] = (
                 request.system_prompt + "\n\n" + self.system_prompt
@@ -692,7 +697,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
 
         # Create tool that will be executed by the tool node
         @tool(tool_name)
-        def file_tool(  # noqa: D417
+        def file_tool(
             runtime: ToolRuntime,
             command: str,
             path: str,
@@ -707,7 +712,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
 
             Args:
                 runtime: Tool runtime providing tool_call_id.
-                command: Operation to perform (view, create, str_replace, insert, delete, rename).
+                command: Operation to perform.
                 path: File path to operate on.
                 file_text: Full file content for create command.
                 old_str: String to replace for str_replace command.
@@ -720,7 +725,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
                 Command for message update or string result.
             """
             # Build args dict for handler methods
-            args = {"path": path}
+            args: dict[str, Any] = {"path": path}
             if file_text is not None:
                 args["file_text"] = file_text
             if old_str is not None:
@@ -738,18 +743,17 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
             try:
                 if command == "view":
                     return self._handle_view(args, runtime.tool_call_id)
-                elif command == "create":
+                if command == "create":
                     return self._handle_create(args, runtime.tool_call_id)
-                elif command == "str_replace":
+                if command == "str_replace":
                     return self._handle_str_replace(args, runtime.tool_call_id)
-                elif command == "insert":
+                if command == "insert":
                     return self._handle_insert(args, runtime.tool_call_id)
-                elif command == "delete":
+                if command == "delete":
                     return self._handle_delete(args, runtime.tool_call_id)
-                elif command == "rename":
+                if command == "rename":
                     return self._handle_rename(args, runtime.tool_call_id)
-                else:
-                    return f"Unknown command: {command}"
+                return f"Unknown command: {command}"
             except (ValueError, FileNotFoundError, PermissionError) as e:
                 return str(e)
 
@@ -763,7 +767,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         """Inject Anthropic tool descriptor and optional system prompt."""
         # Replace our BaseTool with Anthropic's native tool descriptor
         tools = []
-        for t in (request.tools or []):
+        for t in request.tools or []:
             # Skip our registered tool - we'll replace it with Anthropic's descriptor
             if isinstance(t, dict) and t.get("name") == self.tool_name:
                 continue
@@ -781,7 +785,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         )
 
         # Inject system prompt if provided
-        overrides = {"tools": tools}
+        overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
             overrides["system_prompt"] = (
                 request.system_prompt + "\n\n" + self.system_prompt
@@ -796,10 +800,10 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelResponse:
-        """Inject Anthropic tool descriptor and optional system prompt (async version)."""
+        """Inject Anthropic tool descriptor and optional system prompt."""
         # Replace our BaseTool with Anthropic's native tool descriptor
         tools = []
-        for t in (request.tools or []):
+        for t in request.tools or []:
             # Skip our registered tool - we'll replace it with Anthropic's descriptor
             if isinstance(t, dict) and t.get("name") == self.tool_name:
                 continue
@@ -817,7 +821,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         )
 
         # Inject system prompt if provided
-        overrides = {"tools": tools}
+        overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
             overrides["system_prompt"] = (
                 request.system_prompt + "\n\n" + self.system_prompt

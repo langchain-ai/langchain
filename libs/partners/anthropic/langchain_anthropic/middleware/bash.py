@@ -5,15 +5,13 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from typing import Any, Literal
 
-from langchain.agents.middleware.shell_tool import ShellToolMiddleware
+from langchain.agents.middleware.shell_tool import ShellToolMiddleware, ShellToolState
 from langchain.agents.middleware.types import (
     ModelRequest,
     ModelResponse,
-    ToolCallRequest,
 )
 from langchain.tools import ToolRuntime, tool
 from langchain_core.messages import ToolMessage
-from langgraph.types import Command
 
 _CLAUDE_BASH_DESCRIPTOR = {"type": "bash_20250124", "name": "bash"}
 
@@ -31,7 +29,10 @@ class ClaudeBashToolMiddleware(ShellToolMiddleware):
         # Create tool that will be executed by the tool node
         @tool("bash")
         def bash_tool(
-            runtime: ToolRuntime, command: str, restart: bool = False
+            *,
+            runtime: ToolRuntime[None, ShellToolState],
+            command: str,
+            restart: bool = False,
         ) -> ToolMessage | str:
             """Execute bash commands.
 
