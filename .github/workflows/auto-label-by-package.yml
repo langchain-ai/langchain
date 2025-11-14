@@ -1,0 +1,107 @@
+name: Auto Label Issues by Package
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  label-by-package:
+    permissions:
+      issues: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Sync package labels
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const body = context.payload.issue.body || "";
+
+            // Extract text under "### Package"
+            const match = body.match(/### Package\s+([\s\S]*?)\n###/i);
+            if (!match) return;
+
+            const packageSection = match[1].trim();
+
+            // Mapping table for package names to labels
+            const mapping = {
+              "langchain": "langchain",
+              "langchain-openai": "openai",
+              "langchain-anthropic": "anthropic",
+              "langchain-classic": "langchain-classic",
+              "langchain-core": "core",
+              "langchain-cli": "cli",
+              "langchain-model-profiles": "model-profiles",
+              "langchain-tests": "standard-tests",
+              "langchain-text-splitters": "text-splitters",
+              "langchain-chroma": "chroma",
+              "langchain-deepseek": "deepseek",
+              "langchain-exa": "exa",
+              "langchain-fireworks": "fireworks",
+              "langchain-groq": "groq",
+              "langchain-huggingface": "huggingface",
+              "langchain-mistralai": "mistralai",
+              "langchain-nomic": "nomic",
+              "langchain-ollama": "ollama",
+              "langchain-perplexity": "perplexity",
+              "langchain-prompty": "prompty",
+              "langchain-qdrant": "qdrant",
+              "langchain-xai": "xai",
+            };
+
+            // All possible package labels we manage
+            const allPackageLabels = Object.values(mapping);
+            const selectedLabels = [];
+
+            // Check if this is checkbox format (multiple selection)
+            const checkboxMatches = packageSection.match(/- \[x\]\s+([^\n\r]+)/gi);
+            if (checkboxMatches) {
+              // Handle checkbox format
+              for (const match of checkboxMatches) {
+                const packageName = match.replace(/- \[x\]\s+/i, '').trim();
+                const label = mapping[packageName];
+                if (label && !selectedLabels.includes(label)) {
+                  selectedLabels.push(label);
+                }
+              }
+            } else {
+              // Handle dropdown format (single selection)
+              const label = mapping[packageSection];
+              if (label) {
+                selectedLabels.push(label);
+              }
+            }
+
+            // Get current issue labels
+            const issue = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const currentLabels = issue.data.labels.map(label => label.name);
+            const currentPackageLabels = currentLabels.filter(label => allPackageLabels.includes(label));
+
+            // Determine labels to add and remove
+            const labelsToAdd = selectedLabels.filter(label => !currentPackageLabels.includes(label));
+            const labelsToRemove = currentPackageLabels.filter(label => !selectedLabels.includes(label));
+
+            // Add new labels
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: labelsToAdd
+              });
+            }
+
+            // Remove old labels
+            for (const label of labelsToRemove) {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: label
+              });
+            }

@@ -9,7 +9,7 @@ from langchain.agents.middleware.types import AgentMiddleware, AgentState, Model
 from langgraph.prebuilt.tool_node import ToolNode
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.tools import tool
-from .model import FakeToolCallingModel
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 def test_model_request_tools_are_base_tools() -> None:
