@@ -147,9 +147,7 @@ def test_server_tools_code_execution() -> None:
     assert len(response.content) > 0
     # Should contain the Fibonacci sequence in some form
     content_str = (
-        response.content
-        if isinstance(response.content, str)
-        else str(response.content)
+        response.content if isinstance(response.content, str) else str(response.content)
     )
     assert "1" in content_str or "fibonacci" in content_str.lower()
 
