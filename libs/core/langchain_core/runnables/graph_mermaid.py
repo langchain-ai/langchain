@@ -10,7 +10,7 @@ import string
 import time
 from dataclasses import asdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 import yaml
 
@@ -280,7 +280,7 @@ def draw_mermaid_png(
     padding: int = 10,
     max_retries: int = 1,
     retry_delay: float = 1.0,
-    proxies: dict | None = None,
+    proxies: Optional[dict] = None,
 ) -> bytes:
     """Draws a Mermaid graph as PNG using provided syntax.
 
@@ -293,9 +293,10 @@ def draw_mermaid_png(
         max_retries: Maximum number of retries (`MermaidDrawMethod.API`).
         retry_delay: Delay between retries (`MermaidDrawMethod.API`).
         proxies: HTTP/HTTPS proxies for requests.
-            
+
             e.g. `{"http": "http://127.0.0.1:7890",
             "https": "http://127.0.0.1:7890"}`.
+        proxies (dict, optional): HTTP/HTTPS proxies for requests, e.g. {"http": "http://127.0.0.1:7890", "https": "http://127.0.0.1:7890"}. Defaults to None.
 
     Returns:
         PNG image bytes.
@@ -316,6 +317,7 @@ def draw_mermaid_png(
             background_color=background_color,
             max_retries=max_retries,
             retry_delay=retry_delay,
+            proxies=proxies,
             proxies=proxies,
         )
     else:
@@ -408,7 +410,7 @@ def _render_mermaid_using_api(
     file_type: Literal["jpeg", "png", "webp"] | None = "png",
     max_retries: int = 1,
     retry_delay: float = 1.0,
-    proxies: dict | None = None,
+    proxies: Optional[dict] = None,
 ) -> bytes:
     """Renders Mermaid graph using the Mermaid.INK API."""
     # Defaults to using the public mermaid.ink server.
