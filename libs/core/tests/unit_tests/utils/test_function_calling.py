@@ -1,4 +1,3 @@
-import json
 import typing
 from collections.abc import Callable, Iterable, Mapping, MutableMapping, Sequence
 from typing import Annotated as ExtensionsAnnotated
@@ -12,7 +11,6 @@ from typing import TypedDict as TypingTypedDict
 import pytest
 from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
 from pydantic import Field as FieldV2Maybe  # pydantic: ignore
-from pydantic.fields import FieldInfo
 from typing_extensions import TypedDict as ExtensionsTypedDict
 
 try:
@@ -1187,46 +1185,34 @@ def test_pydantic_fieldinfo_serialization() -> None:
         optional_field: str | None = Field(None, description="An optional field")
         default_field: int = Field(default=42, description="A field with default")
 
-    # Convert to OpenAI function format
     result = convert_to_openai_function(MyModel)
 
-    # This should not raise an error if FieldInfo objects are properly serialized
-    json_str = json.dumps(result)
-    assert json_str is not None
+    expected = {
+        "name": "MyModel",
+        "description": "Test model with various field configurations.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "required_field": {
+                    "type": "string",
+                    "description": "A required field",
+                },
+                "optional_field": {
+                    "anyOf": [
+                        {"type": "string"},
+                        {"type": "null"},
+                    ],
+                    "default": None,
+                    "description": "An optional field",
+                },
+                "default_field": {
+                    "type": "integer",
+                    "default": 42,
+                    "description": "A field with default",
+                },
+            },
+            "required": ["required_field"],
+        },
+    }
 
-    # Verify the schema structure is correct
-    assert result["name"] == "MyModel"
-    assert result["description"] == "Test model with various field configurations."
-    assert "parameters" in result
-
-    params = result["parameters"]
-    assert params["type"] == "object"
-    assert "properties" in params
-
-    # Check that all fields are present and properly formatted
-    props = params["properties"]
-    assert "required_field" in props
-    assert props["required_field"]["type"] == "string"
-    assert props["required_field"]["description"] == "A required field"
-
-    assert "optional_field" in props
-    assert props["optional_field"]["description"] == "An optional field"
-
-    assert "default_field" in props
-    assert props["default_field"]["type"] == "integer"
-    assert props["default_field"]["description"] == "A field with default"
-
-    # Ensure no FieldInfo objects in the schema by checking all nested values
-    def check_no_fieldinfo(obj: Any) -> None:
-        """Recursively check that no FieldInfo objects exist in the structure."""
-        if isinstance(obj, FieldInfo):
-            msg = "FieldInfo object found in schema - serialization mode not applied"
-            raise TypeError(msg)
-        if isinstance(obj, dict):
-            for value in obj.values():
-                check_no_fieldinfo(value)
-        elif isinstance(obj, list):
-            for item in obj:
-                check_no_fieldinfo(item)
-
-    check_no_fieldinfo(result)
+    assert result == expected
