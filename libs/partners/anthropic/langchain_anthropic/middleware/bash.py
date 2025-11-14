@@ -11,27 +11,11 @@ from langchain.agents.middleware.types import (
     ModelResponse,
     ToolCallRequest,
 )
+from langchain.tools import ToolRuntime, tool
 from langchain_core.messages import ToolMessage
-from langchain_core.tools import BaseTool
 from langgraph.types import Command
 
 _CLAUDE_BASH_DESCRIPTOR = {"type": "bash_20250124", "name": "bash"}
-
-
-class _PlaceholderTool(BaseTool):
-    """Placeholder tool to enable agent looping.
-
-    This tool is never actually called - it exists solely to signal to the agent
-    factory that tool execution is needed. The middleware intercepts the actual
-    tool calls before they reach this placeholder.
-    """
-
-    name: str = "placeholder"
-    description: str = "This tool should never be called"
-
-    def _run(self, *args: Any, **kwargs: Any) -> str:
-        msg = "Placeholder tool was called - this should never happen"
-        raise RuntimeError(msg)
 
 
 class ClaudeBashToolMiddleware(ShellToolMiddleware):
@@ -43,64 +27,70 @@ class ClaudeBashToolMiddleware(ShellToolMiddleware):
         super().__init__(*args, **kwargs)
         # Remove the base tool so Claude's native descriptor is the sole entry.
         self._tool = None  # type: ignore[assignment]
-        # Use placeholder tool to enable agent looping
-        self.tools = [_PlaceholderTool()]
+
+        # Create tool that will be executed by the tool node
+        @tool("bash")
+        def bash_tool(
+            runtime: ToolRuntime, command: str, restart: bool = False
+        ) -> ToolMessage | str:
+            """Execute bash commands.
+
+            Args:
+                runtime: Tool runtime providing access to state and tool_call_id.
+                command: The bash command to execute.
+                restart: Whether to restart the shell session.
+
+            Returns:
+                The command output as ToolMessage or string.
+            """
+            resources = self._ensure_resources(runtime.state)
+            return self._run_shell_tool(
+                resources,
+                {"command": command, "restart": restart},
+                tool_call_id=runtime.tool_call_id,
+            )
+
+        self.tools = [bash_tool]
 
     def wrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelResponse:
-        """Ensure the Claude bash descriptor is available to the model."""
-        tools = request.tools
-        if all(tool is not _CLAUDE_BASH_DESCRIPTOR for tool in tools):
-            tools = [*tools, _CLAUDE_BASH_DESCRIPTOR]
-            request = request.override(tools=tools)
-        return handler(request)
+        """Replace our tool with Claude's bash descriptor."""
+        # Filter out our registered bash tool and replace with Claude's descriptor
+        tools = []
+        for t in request.tools:
+            # Skip our registered tool
+            if isinstance(t, dict) and t.get("name") == "bash":
+                continue
+            if hasattr(t, "name") and t.name == "bash":
+                continue
+            tools.append(t)
+
+        # Add Claude's native bash descriptor
+        tools.append(_CLAUDE_BASH_DESCRIPTOR)
+        return handler(request.override(tools=tools))
 
     async def awrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelResponse:
-        """Async: ensure the Claude bash descriptor is available to the model."""
-        tools = request.tools
-        if all(tool is not _CLAUDE_BASH_DESCRIPTOR for tool in tools):
-            tools = [*tools, _CLAUDE_BASH_DESCRIPTOR]
-            request = request.override(tools=tools)
-        return await handler(request)
+        """Async: replace our tool with Claude's bash descriptor."""
+        # Filter out our registered bash tool and replace with Claude's descriptor
+        tools = []
+        for t in request.tools:
+            # Skip our registered tool
+            if isinstance(t, dict) and t.get("name") == "bash":
+                continue
+            if hasattr(t, "name") and t.name == "bash":
+                continue
+            tools.append(t)
 
-    def wrap_tool_call(
-        self,
-        request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], Command | ToolMessage],
-    ) -> Command | ToolMessage:
-        """Intercept Claude bash tool calls and execute them locally."""
-        tool_call = request.tool_call
-        if tool_call.get("name") != "bash":
-            return handler(request)
-        resources = self._ensure_resources(request.state)
-        return self._run_shell_tool(
-            resources,
-            tool_call["args"],
-            tool_call_id=tool_call.get("id"),
-        )
-
-    async def awrap_tool_call(
-        self,
-        request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], Awaitable[Command | ToolMessage]],
-    ) -> Command | ToolMessage:
-        """Async interception mirroring the synchronous implementation."""
-        tool_call = request.tool_call
-        if tool_call.get("name") != "bash":
-            return await handler(request)
-        resources = self._ensure_resources(request.state)
-        return self._run_shell_tool(
-            resources,
-            tool_call["args"],
-            tool_call_id=tool_call.get("id"),
-        )
+        # Add Claude's native bash descriptor
+        tools.append(_CLAUDE_BASH_DESCRIPTOR)
+        return await handler(request.override(tools=tools))
 
     def _format_tool_message(
         self,
