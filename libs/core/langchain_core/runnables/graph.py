@@ -10,7 +10,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     NamedTuple,
-    Optional,
     Protocol,
     TypedDict,
     overload,
@@ -642,7 +641,7 @@ class Graph:
         retry_delay: float = 1.0,
         frontmatter_config: dict[str, Any] | None = None,
         base_url: str | None = None,
-        proxies: Optional[dict] = None,
+        proxies: dict[str, str] | None = None,
     ) -> bytes:
         """Draw the graph as a PNG image using Mermaid.
 
@@ -675,7 +674,7 @@ class Graph:
                 }
                 ```
             base_url: The base URL of the Mermaid server for rendering via API.
-            proxies (dict, optional): HTTP/HTTPS proxies for requests, e.g. {"http": "http://127.0.0.1:7890", "https": "http://127.0.0.1:7890"}. Defaults to None.
+            proxies: HTTP/HTTPS proxies for requests (e.g. {"http": "http://127.0.0.1:7890"}).
 
         Returns:
             The PNG image as bytes.
