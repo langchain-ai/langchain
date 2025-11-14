@@ -129,3 +129,45 @@ def test_convert_dict_to_message_tool() -> None:
     expected_output = ToolMessage(content="foo", tool_call_id="bar")
     assert result == expected_output
     assert _convert_message_to_dict(expected_output) == message
+
+
+def test_server_tools_param() -> None:
+    """Test server_tools parameter handling."""
+    # Test with single server tool
+    llm = ChatXAI(model=MODEL_NAME, server_tools=[{"type": "web_search"}])
+    assert llm.server_tools == [{"type": "web_search"}]
+
+    # Test with multiple server tools
+    llm = ChatXAI(
+        model=MODEL_NAME,
+        server_tools=[
+            {"type": "web_search"},
+            {"type": "x_search"},
+            {"type": "code_execution"},
+        ],
+    )
+    assert len(llm.server_tools) == 3
+
+    # Test that server_tools is added to default params
+    params = llm._default_params
+    assert "server_tools" in params
+    assert params["server_tools"] == llm.server_tools
+
+
+def test_server_tools_and_search_parameters_conflict() -> None:
+    """Test that using both server_tools and search_parameters raises error."""
+    with pytest.raises(
+        ValueError,
+        match="Cannot set both 'search_parameters' and 'server_tools'",
+    ):
+        ChatXAI(
+            model=MODEL_NAME,
+            server_tools=[{"type": "web_search"}],
+            search_parameters={"mode": "auto"},
+        )
+
+
+def test_search_parameters_deprecation_warning() -> None:
+    """Test that search_parameters shows deprecation warning."""
+    with pytest.warns(DeprecationWarning, match="search_parameters.*deprecated"):
+        ChatXAI(model=MODEL_NAME, search_parameters={"mode": "auto"})
