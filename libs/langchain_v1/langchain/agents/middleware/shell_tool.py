@@ -489,19 +489,6 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
             normalized[key] = str(value)
         return normalized
 
-    @staticmethod
-    def _has_resources(state: AgentState) -> bool:
-        """Check if the state contains valid shell session resources.
-
-        Args:
-            state: The agent state to check.
-
-        Returns:
-            `True` if the state contains valid session resources, `False` otherwise.
-        """
-        resources = state.get("shell_session_resources")
-        return isinstance(resources, _SessionResources)
-
     def before_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
         """Start the shell session and run startup commands."""
         resources = self._get_or_create_resources(state)
@@ -513,11 +500,9 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
 
     def after_agent(self, state: ShellToolState, runtime: Runtime) -> None:  # noqa: ARG002
         """Run shutdown commands and release resources when an agent completes."""
-        if not self._has_resources(state):
-            # Resources were never created, nothing to clean up
-            return
         resources = state.get("shell_session_resources")
         if not isinstance(resources, _SessionResources):
+            # Resources were never created, nothing to clean up
             return
         try:
             self._run_shutdown_commands(resources.session)
@@ -540,10 +525,9 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         Returns:
             Session resources, either retrieved from state or newly created.
         """
-        if self._has_resources(state):
-            resources = state.get("shell_session_resources")
-            if isinstance(resources, _SessionResources):
-                return resources
+        resources = state.get("shell_session_resources")
+        if isinstance(resources, _SessionResources):
+            return resources
 
         new_resources = self._create_resources()
         # Cast needed to make state dict-like for mutation
