@@ -198,6 +198,29 @@ class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, Any]):
 
         return None
 
+    @hook_config(can_jump_to=["end"])
+    async def abefore_model(
+        self,
+        state: ModelCallLimitState,
+        runtime: Runtime,
+    ) -> dict[str, Any] | None:
+        """Async check model call limits before making a model call.
+
+        Args:
+            state: The current agent state containing call counts.
+            runtime: The langgraph runtime.
+
+        Returns:
+            If limits are exceeded and exit_behavior is `'end'`, returns
+                a `Command` to jump to the end with a limit exceeded message. Otherwise
+                returns `None`.
+
+        Raises:
+            ModelCallLimitExceededError: If limits are exceeded and `exit_behavior`
+                is `'error'`.
+        """
+        return self.before_model(state, runtime)
+
     def after_model(self, state: ModelCallLimitState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
         """Increment model call counts after a model call.
 
@@ -212,3 +235,19 @@ class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, Any]):
             "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
             "run_model_call_count": state.get("run_model_call_count", 0) + 1,
         }
+
+    async def aafter_model(
+        self,
+        state: ModelCallLimitState,
+        runtime: Runtime,
+    ) -> dict[str, Any] | None:
+        """Async increment model call counts after a model call.
+
+        Args:
+            state: The current agent state.
+            runtime: The langgraph runtime.
+
+        Returns:
+            State updates with incremented call counts.
+        """
+        return self.after_model(state, runtime)
