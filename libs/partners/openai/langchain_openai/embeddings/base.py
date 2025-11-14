@@ -544,7 +544,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         _iter, tokens, indices = self._tokenize(texts, _chunk_size)
         batched_embeddings: list[list[float]] = []
         # Calculate actual token counts for each chunk
-        token_counts = [len(t) if isinstance(t, list) else len(t.split()) for t in tokens]
+        token_counts = [
+            len(t) if isinstance(t, list) else len(t.split()) for t in tokens
+        ]
 
         # Process in batches respecting the token limit
         i = 0
@@ -566,9 +568,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
             # Make API call with this batch
             batch_tokens = tokens[i:batch_end]
-            response = self.client.create(
-                input=batch_tokens, **client_kwargs
-            )
+            response = self.client.create(input=batch_tokens, **client_kwargs)
             if not isinstance(response, dict):
                 response = response.model_dump()
             batched_embeddings.extend(r["embedding"] for r in response["data"])
@@ -622,7 +622,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         )
         batched_embeddings: list[list[float]] = []
         # Calculate actual token counts for each chunk
-        token_counts = [len(t) if isinstance(t, list) else len(t.split()) for t in tokens]
+        token_counts = [
+            len(t) if isinstance(t, list) else len(t.split()) for t in tokens
+        ]
 
         # Process in batches respecting the token limit
         i = 0
