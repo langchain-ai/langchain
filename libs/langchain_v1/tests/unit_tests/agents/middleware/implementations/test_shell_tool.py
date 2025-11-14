@@ -1,17 +1,21 @@
 from __future__ import annotations
 
-import time
+import asyncio
 import gc
 import tempfile
+import time
 from pathlib import Path
 
 import pytest
+from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.tools.base import ToolException
 
 from langchain.agents.middleware.shell_tool import (
     HostExecutionPolicy,
+    RedactionRule,
     ShellToolMiddleware,
     _SessionResources,
-    RedactionRule,
+    _ShellToolInput,
 )
 from langchain.agents.middleware.types import AgentState
 
@@ -173,3 +177,294 @@ def test_session_resources_finalizer_cleans_up(tmp_path: Path) -> None:
     assert not finalizer.alive
     assert session.stopped
     assert not tempdir_path.exists()
+
+
+def test_shell_tool_input_validation() -> None:
+    """Test _ShellToolInput validation rules."""
+    # Both command and restart not allowed
+    with pytest.raises(ValueError, match="only one"):
+        _ShellToolInput(command="ls", restart=True)
+
+    # Neither command nor restart provided
+    with pytest.raises(ValueError, match="requires either"):
+        _ShellToolInput()
+
+    # Valid: command only
+    valid_cmd = _ShellToolInput(command="ls")
+    assert valid_cmd.command == "ls"
+    assert not valid_cmd.restart
+
+    # Valid: restart only
+    valid_restart = _ShellToolInput(restart=True)
+    assert valid_restart.restart is True
+    assert valid_restart.command is None
+
+
+def test_normalize_shell_command_empty() -> None:
+    """Test that empty shell command raises an error."""
+    with pytest.raises(ValueError, match="at least one argument"):
+        ShellToolMiddleware(shell_command=[])
+
+
+def test_normalize_env_non_string_keys() -> None:
+    """Test that non-string environment keys raise an error."""
+    with pytest.raises(TypeError, match="must be strings"):
+        ShellToolMiddleware(env={123: "value"})  # type: ignore[dict-item]
+
+
+def test_normalize_env_coercion(tmp_path: Path) -> None:
+    """Test that environment values are coerced to strings."""
+    middleware = ShellToolMiddleware(
+        workspace_root=tmp_path / "workspace", env={"NUM": 42, "BOOL": True}
+    )
+    try:
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
+        if updates:
+            state.update(updates)
+        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+        result = middleware._run_shell_tool(
+            resources, {"command": "echo $NUM $BOOL"}, tool_call_id=None
+        )
+        assert "42" in result
+        assert "True" in result
+    finally:
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
+
+
+def test_shell_tool_missing_command_string(tmp_path: Path) -> None:
+    """Test that shell tool raises an error when command is not a string."""
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    try:
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
+        if updates:
+            state.update(updates)
+        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+
+        with pytest.raises(ToolException, match="expects a 'command' string"):
+            middleware._run_shell_tool(resources, {"command": None}, tool_call_id=None)
+
+        with pytest.raises(ToolException, match="expects a 'command' string"):
+            middleware._run_shell_tool(
+                resources,
+                {"command": 123},  # type: ignore[dict-item]
+                tool_call_id=None,
+            )
+    finally:
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
+
+
+def test_tool_message_formatting_with_id(tmp_path: Path) -> None:
+    """Test that tool messages are properly formatted with tool_call_id."""
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    try:
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
+        if updates:
+            state.update(updates)
+        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+
+        result = middleware._run_shell_tool(
+            resources, {"command": "echo test"}, tool_call_id="test-id-123"
+        )
+
+        assert isinstance(result, ToolMessage)
+        assert result.tool_call_id == "test-id-123"
+        assert result.name == "shell"
+        assert result.status == "success"
+        assert "test" in result.content
+    finally:
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
+
+
+def test_nonzero_exit_code_returns_error(tmp_path: Path) -> None:
+    """Test that non-zero exit codes are marked as errors."""
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    try:
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
+        if updates:
+            state.update(updates)
+        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+
+        result = middleware._run_shell_tool(
+            resources,
+            {"command": "false"},  # Command that exits with 1 but doesn't kill shell
+            tool_call_id="test-id",
+        )
+
+        assert isinstance(result, ToolMessage)
+        assert result.status == "error"
+        assert "Exit code: 1" in result.content
+        assert result.artifact["exit_code"] == 1  # type: ignore[index]
+    finally:
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
+
+
+def test_truncation_by_bytes(tmp_path: Path) -> None:
+    """Test that output is truncated by bytes when max_output_bytes is exceeded."""
+    policy = HostExecutionPolicy(max_output_bytes=50, command_timeout=5.0)
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace", execution_policy=policy)
+    try:
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
+        if updates:
+            state.update(updates)
+        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+
+        result = middleware._run_shell_tool(
+            resources, {"command": "python3 -c 'print(\"x\" * 100)'"}, tool_call_id=None
+        )
+
+        assert "truncated at 50 bytes" in result.lower()
+    finally:
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
+
+
+def test_startup_command_failure(tmp_path: Path) -> None:
+    """Test that startup command failure raises an error."""
+    policy = HostExecutionPolicy(startup_timeout=1.0)
+    middleware = ShellToolMiddleware(
+        workspace_root=tmp_path / "workspace", startup_commands=("exit 1",), execution_policy=policy
+    )
+    state: AgentState = _empty_state()
+    with pytest.raises(RuntimeError, match="Startup command.*failed"):
+        middleware.before_agent(state, None)
+
+
+def test_shutdown_command_failure_logged(tmp_path: Path) -> None:
+    """Test that shutdown command failures are logged but don't raise."""
+    policy = HostExecutionPolicy(command_timeout=1.0)
+    middleware = ShellToolMiddleware(
+        workspace_root=tmp_path / "workspace",
+        shutdown_commands=("exit 1",),
+        execution_policy=policy,
+    )
+    try:
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
+        if updates:
+            state.update(updates)
+    finally:
+        # Should not raise despite shutdown command failing
+        middleware.after_agent(state, None)
+
+
+def test_shutdown_command_timeout_logged(tmp_path: Path) -> None:
+    """Test that shutdown command timeouts are logged but don't raise."""
+    policy = HostExecutionPolicy(command_timeout=0.1)
+    middleware = ShellToolMiddleware(
+        workspace_root=tmp_path / "workspace",
+        execution_policy=policy,
+        shutdown_commands=("sleep 2",),
+    )
+    try:
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
+        if updates:
+            state.update(updates)
+    finally:
+        # Should not raise despite shutdown command timing out
+        middleware.after_agent(state, None)
+
+
+def test_ensure_resources_missing_state(tmp_path: Path) -> None:
+    """Test that _ensure_resources raises when resources are missing."""
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    state: AgentState = _empty_state()
+
+    with pytest.raises(ToolException, match="Shell session resources are unavailable"):
+        middleware._ensure_resources(state)  # type: ignore[attr-defined]
+
+
+def test_empty_output_replaced_with_no_output(tmp_path: Path) -> None:
+    """Test that empty command output is replaced with '<no output>'."""
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    try:
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
+        if updates:
+            state.update(updates)
+        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+
+        result = middleware._run_shell_tool(
+            resources,
+            {"command": "true"},  # Command that produces no output
+            tool_call_id=None,
+        )
+
+        assert "<no output>" in result
+    finally:
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
+
+
+def test_stderr_output_labeling(tmp_path: Path) -> None:
+    """Test that stderr output is properly labeled."""
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    try:
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
+        if updates:
+            state.update(updates)
+        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+
+        result = middleware._run_shell_tool(
+            resources, {"command": "echo error >&2"}, tool_call_id=None
+        )
+
+        assert "[stderr] error" in result
+    finally:
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
+
+
+@pytest.mark.parametrize(
+    ("startup_commands", "expected"),
+    [
+        ("echo test", ("echo test",)),  # String
+        (["echo test", "pwd"], ("echo test", "pwd")),  # List
+        (("echo test",), ("echo test",)),  # Tuple
+        (None, ()),  # None
+    ],
+)
+def test_normalize_commands_string_tuple_list(
+    tmp_path: Path,
+    startup_commands: str | list[str] | tuple[str, ...] | None,
+    expected: tuple[str, ...],
+) -> None:
+    """Test various command normalization formats."""
+    middleware = ShellToolMiddleware(
+        workspace_root=tmp_path / "workspace", startup_commands=startup_commands
+    )
+    assert middleware._startup_commands == expected  # type: ignore[attr-defined]
+
+
+def test_async_methods_delegate_to_sync(tmp_path: Path) -> None:
+    """Test that async methods properly delegate to sync methods."""
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    try:
+        state: AgentState = _empty_state()
+
+        # Test abefore_agent
+        updates = asyncio.run(middleware.abefore_agent(state, None))
+        if updates:
+            state.update(updates)
+
+        # Test aafter_agent
+        asyncio.run(middleware.aafter_agent(state, None))
+    finally:
+        pass
