@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias
 import warnings
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias
 
 import openai
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from typing_extensions import Self
+
 from langchain_core.messages import AIMessageChunk
 from langchain_core.utils import secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import Self
 
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import (
