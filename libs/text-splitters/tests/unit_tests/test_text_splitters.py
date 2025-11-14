@@ -5,11 +5,9 @@ from __future__ import annotations
 import random
 import re
 import string
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
-from bs4 import Tag
 from langchain_core._api import suppress_langchain_beta_warning
 from langchain_core.documents import Document
 
@@ -33,6 +31,11 @@ from langchain_text_splitters.markdown import (
     MarkdownHeaderTextSplitter,
 )
 from langchain_text_splitters.python import PythonCodeTextSplitter
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from bs4 import Tag
 
 FAKE_PYTHON_TEXT = """
 class Foo:

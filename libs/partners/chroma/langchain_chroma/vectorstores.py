@@ -925,7 +925,7 @@ class Chroma(VectorStore):
         ):
             # Obtain image embedding
             # Assuming embed_image returns a single embedding
-            image_embedding = self._embedding_function.embed_image(uris=[uri])
+            image_embedding = self._embedding_function.embed_image(uris=[uri])[0]
 
             # Perform similarity search based on the obtained embedding
             return self.similarity_search_by_vector(

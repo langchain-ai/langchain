@@ -14,10 +14,10 @@ class Action(TypedDict):
     """Represents an action with a name and args."""
 
     name: str
-    """The type or name of action being requested (e.g., "add_numbers")."""
+    """The type or name of action being requested (e.g., `'add_numbers'`)."""
 
     args: dict[str, Any]
-    """Key-value pairs of args needed for the action (e.g., {"a": 1, "b": 2})."""
+    """Key-value pairs of args needed for the action (e.g., `{"a": 1, "b": 2}`)."""
 
 
 class ActionRequest(TypedDict):
@@ -27,7 +27,7 @@ class ActionRequest(TypedDict):
     """The name of the action being requested."""
 
     args: dict[str, Any]
-    """Key-value pairs of args needed for the action (e.g., {"a": 1, "b": 2})."""
+    """Key-value pairs of args needed for the action (e.g., `{"a": 1, "b": 2}`)."""
 
     description: NotRequired[str]
     """The description of the action to be reviewed."""
@@ -169,18 +169,22 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
         Args:
             interrupt_on: Mapping of tool name to allowed actions.
+
                 If a tool doesn't have an entry, it's auto-approved by default.
 
                 * `True` indicates all decisions are allowed: approve, edit, and reject.
                 * `False` indicates that the tool is auto-approved.
                 * `InterruptOnConfig` indicates the specific decisions allowed for this
                     tool.
-                    The InterruptOnConfig can include a `description` field (`str` or
+
+                    The `InterruptOnConfig` can include a `description` field (`str` or
                     `Callable`) for custom formatting of the interrupt description.
             description_prefix: The prefix to use when constructing action requests.
+
                 This is used to provide context about the tool call and the action being
-                requested. Not used if a tool has a `description` in its
-                `InterruptOnConfig`.
+                requested.
+
+                Not used if a tool has a `description` in its `InterruptOnConfig`.
         """
         super().__init__()
         resolved_configs: dict[str, InterruptOnConfig] = {}
@@ -349,3 +353,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         last_ai_msg.tool_calls = revised_tool_calls
 
         return {"messages": [last_ai_msg, *artificial_tool_messages]}
+
+    async def aafter_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+        """Async trigger interrupt flows for relevant tool calls after an `AIMessage`."""
+        return self.after_model(state, runtime)

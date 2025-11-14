@@ -87,6 +87,21 @@ def init_chat_model(
 
             You can also specify model and model provider in a single argument using
             `'{model_provider}:{model}'` format, e.g. `'openai:o1'`.
+
+            Will attempt to infer `model_provider` from model if not specified.
+
+            The following providers will be inferred based on these model prefixes:
+
+            - `gpt-...` | `o1...` | `o3...`       -> `openai`
+            - `claude...`                         -> `anthropic`
+            - `amazon...`                         -> `bedrock`
+            - `gemini...`                         -> `google_vertexai`
+            - `command...`                        -> `cohere`
+            - `accounts/fireworks...`             -> `fireworks`
+            - `mistral...`                        -> `mistralai`
+            - `deepseek...`                       -> `deepseek`
+            - `grok...`                           -> `xai`
+            - `sonar...`                          -> `perplexity`
         model_provider: The model provider if not specified as part of the model arg
             (see above).
 
@@ -110,24 +125,11 @@ def init_chat_model(
             - `ollama`                  -> [`langchain-ollama`](https://docs.langchain.com/oss/python/integrations/providers/ollama)
             - `google_anthropic_vertex` -> [`langchain-google-vertexai`](https://docs.langchain.com/oss/python/integrations/providers/google)
             - `deepseek`                -> [`langchain-deepseek`](https://docs.langchain.com/oss/python/integrations/providers/deepseek)
-            - `ibm`                     -> [`langchain-ibm`](https://docs.langchain.com/oss/python/integrations/providers/deepseek)
+            - `ibm`                     -> [`langchain-ibm`](https://docs.langchain.com/oss/python/integrations/providers/ibm)
             - `nvidia`                  -> [`langchain-nvidia-ai-endpoints`](https://docs.langchain.com/oss/python/integrations/providers/nvidia)
             - `xai`                     -> [`langchain-xai`](https://docs.langchain.com/oss/python/integrations/providers/xai)
             - `perplexity`              -> [`langchain-perplexity`](https://docs.langchain.com/oss/python/integrations/providers/perplexity)
 
-            Will attempt to infer `model_provider` from model if not specified. The
-            following providers will be inferred based on these model prefixes:
-
-            - `gpt-...` | `o1...` | `o3...`       -> `openai`
-            - `claude...`                         -> `anthropic`
-            - `amazon...`                         -> `bedrock`
-            - `gemini...`                         -> `google_vertexai`
-            - `command...`                        -> `cohere`
-            - `accounts/fireworks...`             -> `fireworks`
-            - `mistral...`                        -> `mistralai`
-            - `deepseek...`                       -> `deepseek`
-            - `grok...`                           -> `xai`
-            - `sonar...`                          -> `perplexity`
         configurable_fields: Which model parameters are configurable at runtime:
 
             - `None`: No configurable fields (i.e., a fixed model).
@@ -142,6 +144,7 @@ def init_chat_model(
             If `model` is not specified, then defaults to `("model", "model_provider")`.
 
             !!! warning "Security note"
+
                 Setting `configurable_fields="any"` means fields like `api_key`,
                 `base_url`, etc., can be altered at runtime, potentially redirecting
                 model requests to a different service/user.

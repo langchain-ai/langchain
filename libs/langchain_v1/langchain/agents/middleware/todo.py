@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Annotated, Literal
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-from langchain_core.messages import SystemMessage, ToolMessage
+from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
@@ -153,9 +153,7 @@ class TodoListMiddleware(AgentMiddleware):
 
     Args:
         system_prompt: Custom system prompt to guide the agent on using the todo tool.
-            If not provided, uses the default `WRITE_TODOS_SYSTEM_PROMPT`.
         tool_description: Custom description for the write_todos tool.
-            If not provided, uses the default `WRITE_TODOS_TOOL_DESCRIPTION`.
     """
 
     state_schema = PlanningState
@@ -166,11 +164,12 @@ class TodoListMiddleware(AgentMiddleware):
         system_prompt: str = WRITE_TODOS_SYSTEM_PROMPT,
         tool_description: str = WRITE_TODOS_TOOL_DESCRIPTION,
     ) -> None:
-        """Initialize the TodoListMiddleware with optional custom prompts.
+        """Initialize the `TodoListMiddleware` with optional custom prompts.
 
         Args:
-            system_prompt: Custom system prompt to guide the agent on using the todo tool.
-            tool_description: Custom description for the write_todos tool.
+            system_prompt: Custom system prompt to guide the agent on using the todo
+                tool.
+            tool_description: Custom description for the `write_todos` tool.
         """
         super().__init__()
         self.system_prompt = system_prompt
@@ -199,22 +198,11 @@ class TodoListMiddleware(AgentMiddleware):
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
         """Update the system prompt to include the todo system prompt."""
-        if request.system_prompt is None:
-            request.system_prompt = self.system_prompt
-        elif isinstance(request.system_prompt, str):
-            request.system_prompt = request.system_prompt + "\n\n" + self.system_prompt
-        elif isinstance(request.system_prompt, SystemMessage) and isinstance(
-            request.system_prompt.content, str
-        ):
-            request.system_prompt = SystemMessage(
-                content=request.system_prompt.content + self.system_prompt
-            )
-        elif isinstance(request.system_prompt, SystemMessage) and isinstance(
-            request.system_prompt.content, list
-        ):
-            request.system_prompt = SystemMessage(
-                content=[*request.system_prompt.content, self.system_prompt]
-            )
+        request.system_prompt = (
+            request.system_prompt + "\n\n" + self.system_prompt
+            if request.system_prompt
+            else self.system_prompt
+        )
         return handler(request)
 
     async def awrap_model_call(
@@ -223,20 +211,9 @@ class TodoListMiddleware(AgentMiddleware):
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
         """Update the system prompt to include the todo system prompt (async version)."""
-        if request.system_prompt is None:
-            request.system_prompt = self.system_prompt
-        elif isinstance(request.system_prompt, str):
-            request.system_prompt = request.system_prompt + "\n\n" + self.system_prompt
-        elif isinstance(request.system_prompt, SystemMessage) and isinstance(
-            request.system_prompt.content, str
-        ):
-            request.system_prompt = SystemMessage(
-                content=request.system_prompt.content + self.system_prompt
-            )
-        elif isinstance(request.system_prompt, SystemMessage) and isinstance(
-            request.system_prompt.content, list
-        ):
-            request.system_prompt = SystemMessage(
-                content=[*request.system_prompt.content, self.system_prompt]
-            )
+        request.system_prompt = (
+            request.system_prompt + "\n\n" + self.system_prompt
+            if request.system_prompt
+            else self.system_prompt
+        )
         return await handler(request)

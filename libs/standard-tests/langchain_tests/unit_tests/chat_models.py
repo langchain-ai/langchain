@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 import os
 from abc import abstractmethod
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 from unittest import mock
 
 import pytest
@@ -17,11 +17,15 @@ from pydantic import BaseModel, Field, SecretStr
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
-from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
-from syrupy.assertion import SnapshotAssertion
 
 from langchain_tests.base import BaseStandardTests
 from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
+
+if TYPE_CHECKING:
+    from pytest_benchmark.fixture import (  # type: ignore[import-untyped]
+        BenchmarkFixture,
+    )
+    from syrupy.assertion import SnapshotAssertion
 
 
 def generate_schema_pydantic_v1_from_2() -> Any:

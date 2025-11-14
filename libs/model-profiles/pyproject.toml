@@ -9,7 +9,7 @@ readme = "README.md"
 license = { text = "MIT" }
 authors = []
 
-version = "0.0.3"
+version = "0.0.4"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "tomli>=2.0.0,<3.0.0; python_version < '3.11'",
