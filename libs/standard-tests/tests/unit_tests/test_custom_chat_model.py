@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
-from langchain_core.language_models.chat_models import BaseChatModel
 
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 from langchain_tests.unit_tests import ChatModelUnitTests
 
 from .custom_chat_model import ChatParrotLink
+
+if TYPE_CHECKING:
+    from langchain_core.language_models.chat_models import BaseChatModel
 
 
 class TestChatParrotLinkUnit(ChatModelUnitTests):
