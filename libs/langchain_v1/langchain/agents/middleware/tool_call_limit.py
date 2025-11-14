@@ -451,3 +451,28 @@ class ToolCallLimitMiddleware(
             "run_tool_call_count": run_counts,
             "messages": artificial_messages,
         }
+
+    @hook_config(can_jump_to=["end"])
+    async def aafter_model(
+        self,
+        state: ToolCallLimitState[ResponseT],
+        runtime: Runtime[ContextT],
+    ) -> dict[str, Any] | None:
+        """Async increment tool call counts after a model call and check limits.
+
+        Args:
+            state: The current agent state.
+            runtime: The langgraph runtime.
+
+        Returns:
+            State updates with incremented tool call counts. If limits are exceeded
+                and exit_behavior is `'end'`, also includes a jump to end with a
+                `ToolMessage` and AI message for the single exceeded tool call.
+
+        Raises:
+            ToolCallLimitExceededError: If limits are exceeded and `exit_behavior`
+                is `'error'`.
+            NotImplementedError: If limits are exceeded, `exit_behavior` is `'end'`,
+                and there are multiple tool calls.
+        """
+        return self.after_model(state, runtime)
