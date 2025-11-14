@@ -21,6 +21,7 @@ from langchain.agents.middleware.types import (
 )
 from langchain.tools import ToolRuntime, tool
 from langchain_core.messages import ToolMessage
+from langchain_core.tools import BaseTool
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
 
@@ -269,10 +270,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         tools = [
             t
             for t in (request.tools or [])
-            if not (
-                (isinstance(t, dict) and t.get("name") == self.tool_name)
-                or (hasattr(t, "name") and t.name == self.tool_name)
-            )
+            if getattr(t, "name", None) != self.tool_name
         ] + [{"type": self.tool_type, "name": self.tool_name}]
 
         # Inject system prompt if provided
@@ -296,10 +294,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         tools = [
             t
             for t in (request.tools or [])
-            if not (
-                (isinstance(t, dict) and t.get("name") == self.tool_name)
-                or (hasattr(t, "name") and t.name == self.tool_name)
-            )
+            if getattr(t, "name", None) != self.tool_name
         ] + [{"type": self.tool_type, "name": self.tool_name}]
 
         # Inject system prompt if provided
