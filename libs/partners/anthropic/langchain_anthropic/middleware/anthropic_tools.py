@@ -217,17 +217,17 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
                 "name": self.tool_name,
             }
         )
-        request.tools = tools
 
         # Inject system prompt if provided
+        overrides = {"tools": tools}
         if self.system_prompt:
-            request.system_prompt = (
+            overrides["system_prompt"] = (
                 request.system_prompt + "\n\n" + self.system_prompt
                 if request.system_prompt
                 else self.system_prompt
             )
 
-        return handler(request)
+        return handler(request.override(**overrides))
 
     async def awrap_model_call(
         self,
@@ -243,17 +243,17 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
                 "name": self.tool_name,
             }
         )
-        request.tools = tools
 
         # Inject system prompt if provided
+        overrides = {"tools": tools}
         if self.system_prompt:
-            request.system_prompt = (
+            overrides["system_prompt"] = (
                 request.system_prompt + "\n\n" + self.system_prompt
                 if request.system_prompt
                 else self.system_prompt
             )
 
-        return await handler(request)
+        return await handler(request.override(**overrides))
 
     def wrap_tool_call(
         self,
@@ -727,16 +727,17 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
                 "name": self.tool_name,
             }
         )
-        request.tools = tools
 
         # Inject system prompt if provided
+        overrides = {"tools": tools}
         if self.system_prompt:
-            request.system_prompt = (
+            overrides["system_prompt"] = (
                 request.system_prompt + "\n\n" + self.system_prompt
                 if request.system_prompt
                 else self.system_prompt
             )
-        return handler(request)
+
+        return handler(request.override(**overrides))
 
     async def awrap_model_call(
         self,
@@ -752,17 +753,17 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
                 "name": self.tool_name,
             }
         )
-        request.tools = tools
 
         # Inject system prompt if provided
+        overrides = {"tools": tools}
         if self.system_prompt:
-            request.system_prompt = (
+            overrides["system_prompt"] = (
                 request.system_prompt + "\n\n" + self.system_prompt
                 if request.system_prompt
                 else self.system_prompt
             )
 
-        return await handler(request)
+        return await handler(request.override(**overrides))
 
     def wrap_tool_call(
         self,
