@@ -545,6 +545,7 @@ def create_agent(  # noqa: PLR0915
     debug: bool = False,
     name: str | None = None,
     cache: BaseCache | None = None,
+    mcp_session_config: MCPSessionConfig | None = None,
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
@@ -1659,5 +1660,6 @@ def _add_middleware_edge(
 __all__ = [
     "create_agent",
 ]
+
 
 
