@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Literal
 
 from langchain_core.messages import ToolMessage
-from langchain_core.tools.base import BaseTool, ToolException
+from langchain_core.tools.base import ToolException
 from langgraph.channels.untracked_value import UntrackedValue
 from pydantic import BaseModel, model_validator
 from typing_extensions import NotRequired
@@ -38,6 +38,7 @@ from langchain.agents.middleware._redaction import (
     ResolvedRedactionRule,
 )
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, PrivateStateAttr
+from langchain.tools import ToolRuntime, tool
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -347,24 +348,6 @@ class _ShellToolInput(BaseModel):
         return self
 
 
-class _PersistentShellTool(BaseTool):
-    """Tool wrapper that relies on middleware interception for execution."""
-
-    name: str = "shell"
-    description: str = DEFAULT_TOOL_DESCRIPTION
-    args_schema: type[BaseModel] = _ShellToolInput
-
-    def __init__(self, middleware: ShellToolMiddleware, description: str | None = None) -> None:
-        super().__init__()
-        self._middleware = middleware
-        if description is not None:
-            self.description = description
-
-    def _run(self, **_: Any) -> Any:  # pragma: no cover - executed via middleware wrapper
-        msg = "Persistent shell tool execution should be intercepted via middleware wrappers."
-        raise RuntimeError(msg)
-
-
 class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
     """Middleware that registers a persistent shell tool for agents.
 
@@ -438,9 +421,34 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         self._startup_commands = self._normalize_commands(startup_commands)
         self._shutdown_commands = self._normalize_commands(shutdown_commands)
 
+        # Create a proper tool that executes directly (no interception needed)
         description = tool_description or DEFAULT_TOOL_DESCRIPTION
-        self._tool = _PersistentShellTool(self, description=description)
-        self.tools = [self._tool]
+
+        @tool("shell", args_schema=_ShellToolInput)
+        def shell_tool(
+            *,
+            runtime: ToolRuntime[None, ShellToolState],
+            command: str | None = None,
+            restart: bool = False,
+        ) -> ToolMessage | str:
+            f"""{description}
+
+            Args:
+                runtime: Tool runtime providing access to state and tool_call_id.
+                command: The shell command to execute.
+                restart: Whether to restart the shell session.
+
+            Returns:
+                The command output as ToolMessage or string.
+            """
+            resources = self._ensure_resources(runtime.state)
+            return self._run_shell_tool(
+                resources,
+                {"command": command, "restart": restart},
+                tool_call_id=runtime.tool_call_id,
+            )
+
+        self.tools = [shell_tool]
 
     @staticmethod
     def _normalize_commands(
@@ -669,37 +677,6 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
             artifact=artifact,
         )
 
-    def wrap_tool_call(
-        self,
-        request: ToolCallRequest,
-        handler: typing.Callable[[ToolCallRequest], ToolMessage | Command],
-    ) -> ToolMessage | Command:
-        """Intercept local shell tool calls and execute them via the managed session."""
-        if isinstance(request.tool, _PersistentShellTool):
-            resources = self._ensure_resources(request.state)
-            return self._run_shell_tool(
-                resources,
-                request.tool_call["args"],
-                tool_call_id=request.tool_call.get("id"),
-            )
-        return handler(request)
-
-    async def awrap_tool_call(
-        self,
-        request: ToolCallRequest,
-        handler: typing.Callable[[ToolCallRequest], typing.Awaitable[ToolMessage | Command]],
-    ) -> ToolMessage | Command:
-        """Async intercept local shell tool calls and execute them via the managed session."""
-        # The sync version already handles all the work, no need for async-specific logic
-        if isinstance(request.tool, _PersistentShellTool):
-            resources = self._ensure_resources(request.state)
-            return self._run_shell_tool(
-                resources,
-                request.tool_call["args"],
-                tool_call_id=request.tool_call.get("id"),
-            )
-        return await handler(request)
-
     def _format_tool_message(
         self,
         content: str,
@@ -714,7 +691,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         return ToolMessage(
             content=content,
             tool_call_id=tool_call_id,
-            name=self._tool.name,
+            name="shell",
             status=status,
             artifact=artifact,
         )

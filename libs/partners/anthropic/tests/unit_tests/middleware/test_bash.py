@@ -3,67 +3,59 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-from langchain_core.messages.tool import ToolCall
 
 pytest.importorskip(
     "anthropic", reason="Anthropic SDK is required for Claude middleware tests"
 )
 
-from langchain.agents.middleware.types import ToolCallRequest
-from langchain_core.messages import ToolMessage
-
 from langchain_anthropic.middleware.bash import ClaudeBashToolMiddleware
 
 
-def test_wrap_tool_call_handles_claude_bash(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_creates_bash_tool(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that ClaudeBashToolMiddleware creates a 'bash' tool."""
     middleware = ClaudeBashToolMiddleware()
-    sentinel = ToolMessage(content="ok", tool_call_id="call-1", name="bash")
 
-    monkeypatch.setattr(middleware, "_run_shell_tool", MagicMock(return_value=sentinel))
-    monkeypatch.setattr(
-        middleware, "_ensure_resources", MagicMock(return_value=MagicMock())
+    # Should have exactly one tool registered
+    assert len(middleware.tools) == 1
+
+    # The tool should be named "bash"
+    bash_tool = middleware.tools[0]
+    assert bash_tool.name == "bash"
+
+
+def test_replaces_tool_with_claude_descriptor() -> None:
+    """Test that wrap_model_call replaces bash tool with Claude's native descriptor."""
+    from langchain.agents.middleware.types import ModelRequest
+
+    middleware = ClaudeBashToolMiddleware()
+
+    # Create a mock request with the bash tool
+    bash_tool = middleware.tools[0]
+    request = ModelRequest(
+        model=MagicMock(),
+        system_prompt=None,
+        messages=[],
+        tool_choice=None,
+        tools=[bash_tool],
+        response_format=None,
+        state={},
+        runtime=MagicMock(),
     )
 
-    tool_call: ToolCall = {
+    # Mock handler that captures the modified request
+    captured_request = None
+
+    def handler(req: ModelRequest) -> MagicMock:
+        nonlocal captured_request
+        captured_request = req
+        return MagicMock()
+
+    middleware.wrap_model_call(request, handler)
+
+    # The bash tool should be replaced with Claude's native descriptor
+    assert captured_request is not None
+    assert len(captured_request.tools) == 1
+    assert captured_request.tools[0] == {
+        "type": "bash_20250124",
         "name": "bash",
-        "args": {"command": "echo hi"},
-        "id": "call-1",
     }
-    request = ToolCallRequest(
-        tool_call=tool_call,
-        tool=MagicMock(),
-        state={},
-        runtime=None,  # type: ignore[arg-type]
-    )
-
-    handler_called = False
-
-    def handler(_: ToolCallRequest) -> ToolMessage:
-        nonlocal handler_called
-        handler_called = True
-        return ToolMessage(content="should not be used", tool_call_id="call-1")
-
-    result = middleware.wrap_tool_call(request, handler)
-    assert result is sentinel
-    assert handler_called is False
-
-
-def test_wrap_tool_call_passes_through_other_tools(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    middleware = ClaudeBashToolMiddleware()
-    tool_call: ToolCall = {"name": "other", "args": {}, "id": "call-2"}
-    request = ToolCallRequest(
-        tool_call=tool_call,
-        tool=MagicMock(),
-        state={},
-        runtime=None,  # type: ignore[arg-type]
-    )
-
-    sentinel = ToolMessage(content="handled", tool_call_id="call-2", name="other")
-
-    def handler(_: ToolCallRequest) -> ToolMessage:
-        return sentinel
-
-    result = middleware.wrap_tool_call(request, handler)
-    assert result is sentinel
