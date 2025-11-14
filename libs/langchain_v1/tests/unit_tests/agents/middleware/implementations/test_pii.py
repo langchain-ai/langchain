@@ -14,7 +14,7 @@ from langchain.agents.middleware.pii import (
 )
 from langchain.agents.factory import create_agent
 
-from .model import FakeToolCallingModel
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 # ============================================================================

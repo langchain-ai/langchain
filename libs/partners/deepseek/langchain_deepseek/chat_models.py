@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator, Sequence
 from json import JSONDecodeError
 from typing import Any, Literal, TypeAlias
 
@@ -12,15 +12,17 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import LangSmithParams, LanguageModelInput
-from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
 from langchain_core.utils import from_env, secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 DEFAULT_API_BASE = "https://api.deepseek.com/v1"
+DEFAULT_BETA_API_BASE = "https://api.deepseek.com/beta"
 
 _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[BaseModel]
 _DictOrPydantic: TypeAlias = dict[str, Any] | BaseModel
@@ -39,7 +41,7 @@ class ChatDeepSeek(BaseChatOpenAI):
 
     Key init args — completion params:
         model:
-            Name of DeepSeek model to use, e.g. `"deepseek-chat"`.
+            Name of DeepSeek model to use, e.g. `'deepseek-chat'`.
         temperature:
             Sampling temperature.
         max_tokens:
@@ -368,6 +370,50 @@ class ChatDeepSeek(BaseChatOpenAI):
                 e.pos,
             ) from e
 
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
+        *,
+        tool_choice: dict | str | bool | None = None,
+        strict: bool | None = None,
+        parallel_tool_calls: bool | None = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, AIMessage]:
+        """Bind tool-like objects to this chat model.
+
+        Overrides parent to use beta endpoint when `strict=True`.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+            tool_choice: Which tool to require the model to call.
+            strict: If True, uses beta API for strict schema validation.
+            parallel_tool_calls: Set to `False` to disable parallel tool use.
+            **kwargs: Additional parameters passed to parent `bind_tools`.
+
+        Returns:
+            A Runnable that takes same inputs as a chat model.
+        """
+        # If strict mode is enabled and using default API base, switch to beta endpoint
+        if strict is True and self.api_base == DEFAULT_API_BASE:
+            # Create a new instance with beta endpoint
+            beta_model = self.model_copy(update={"api_base": DEFAULT_BETA_API_BASE})
+            return beta_model.bind_tools(
+                tools,
+                tool_choice=tool_choice,
+                strict=strict,
+                parallel_tool_calls=parallel_tool_calls,
+                **kwargs,
+            )
+
+        # Otherwise use parent implementation
+        return super().bind_tools(
+            tools,
+            tool_choice=tool_choice,
+            strict=strict,
+            parallel_tool_calls=parallel_tool_calls,
+            **kwargs,
+        )
+
     def with_structured_output(
         self,
         schema: _DictOrPydanticClass | None = None,
@@ -423,10 +469,14 @@ class ChatDeepSeek(BaseChatOpenAI):
 
             strict:
                 Whether to enable strict schema adherence when generating the function
-                call. This parameter is included for compatibility with other chat
-                models, and if specified will be passed to the Chat Completions API
-                in accordance with the OpenAI API specification. However, the DeepSeek
-                API may ignore the parameter.
+                call. When set to `True`, DeepSeek will use the beta API endpoint
+                (`https://api.deepseek.com/beta`) for strict schema validation.
+                This ensures model outputs exactly match the defined schema.
+
+                !!! note
+
+                    DeepSeek's strict mode requires all object properties to be marked
+                    as required in the schema.
 
             kwargs: Additional keyword args aren't supported.
 
@@ -448,6 +498,19 @@ class ChatDeepSeek(BaseChatOpenAI):
         # methods) be handled.
         if method == "json_schema":
             method = "function_calling"
+
+        # If strict mode is enabled and using default API base, switch to beta endpoint
+        if strict is True and self.api_base == DEFAULT_API_BASE:
+            # Create a new instance with beta endpoint
+            beta_model = self.model_copy(update={"api_base": DEFAULT_BETA_API_BASE})
+            return beta_model.with_structured_output(
+                schema,
+                method=method,
+                include_raw=include_raw,
+                strict=strict,
+                **kwargs,
+            )
+
         return super().with_structured_output(
             schema,
             method=method,

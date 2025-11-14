@@ -11,7 +11,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.tool_retry import ToolRetryMiddleware
-from tests.unit_tests.agents.test_middleware_agent import FakeToolCallingModel
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 @tool

@@ -368,17 +368,18 @@ class _PersistentShellTool(BaseTool):
 class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
     """Middleware that registers a persistent shell tool for agents.
 
-    The middleware exposes a single long-lived shell session. Use the execution policy to
-    match your deployment's security posture:
+    The middleware exposes a single long-lived shell session. Use the execution policy
+    to match your deployment's security posture:
 
-    * ``HostExecutionPolicy`` - full host access; best for trusted environments where the
-      agent already runs inside a container or VM that provides isolation.
-    * ``CodexSandboxExecutionPolicy`` - reuses the Codex CLI sandbox for additional
-      syscall/filesystem restrictions when the CLI is available.
-    * ``DockerExecutionPolicy`` - launches a separate Docker container for each agent run,
-      providing harder isolation, optional read-only root filesystems, and user remapping.
+    * `HostExecutionPolicy` – full host access; best for trusted environments where the
+        agent already runs inside a container or VM that provides isolation.
+    * `CodexSandboxExecutionPolicy` – reuses the Codex CLI sandbox for additional
+        syscall/filesystem restrictions when the CLI is available.
+    * `DockerExecutionPolicy` – launches a separate Docker container for each agent run,
+        providing harder isolation, optional read-only root filesystems, and user
+        remapping.
 
-    When no policy is provided the middleware defaults to ``HostExecutionPolicy``.
+    When no policy is provided the middleware defaults to `HostExecutionPolicy`.
     """
 
     state_schema = ShellToolState
@@ -398,20 +399,29 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         """Initialize the middleware.
 
         Args:
-            workspace_root: Base directory for the shell session. If omitted, a temporary
-                directory is created when the agent starts and removed when it ends.
-            startup_commands: Optional commands executed sequentially after the session starts.
+            workspace_root: Base directory for the shell session.
+
+                If omitted, a temporary directory is created when the agent starts and
+                removed when it ends.
+            startup_commands: Optional commands executed sequentially after the session
+                starts.
             shutdown_commands: Optional commands executed before the session shuts down.
-            execution_policy: Execution policy controlling timeouts, output limits, and resource
-                configuration. Defaults to :class:`HostExecutionPolicy` for native execution.
+            execution_policy: Execution policy controlling timeouts, output limits, and
+                resource configuration.
+
+                Defaults to `HostExecutionPolicy` for native execution.
             redaction_rules: Optional redaction rules to sanitize command output before
                 returning it to the model.
-            tool_description: Optional override for the registered shell tool description.
-            shell_command: Optional shell executable (string) or argument sequence used to
-                launch the persistent session. Defaults to an implementation-defined bash command.
-            env: Optional environment variables to supply to the shell session. Values are
-                coerced to strings before command execution. If omitted, the session inherits the
-                parent process environment.
+            tool_description: Optional override for the registered shell tool
+                description.
+            shell_command: Optional shell executable (string) or argument sequence used
+                to launch the persistent session.
+
+                Defaults to an implementation-defined bash command.
+            env: Optional environment variables to supply to the shell session.
+
+                Values are coerced to strings before command execution. If omitted, the
+                session inherits the parent process environment.
         """
         super().__init__()
         self._workspace_root = Path(workspace_root) if workspace_root else None

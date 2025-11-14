@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 import gzip
-from os import PathLike
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 import yaml
 from vcr import VCR
 from vcr.persisters.filesystem import CassetteNotFoundError
 from vcr.request import Request
+
+if TYPE_CHECKING:
+    from os import PathLike
 
 
 class CustomSerializer:

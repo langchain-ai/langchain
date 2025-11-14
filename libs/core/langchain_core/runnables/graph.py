@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import inspect
 from collections import defaultdict
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import (
@@ -22,7 +21,7 @@ from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.utils.pydantic import _IgnoreUnserializable, is_basemodel_subclass
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     from pydantic import BaseModel
 

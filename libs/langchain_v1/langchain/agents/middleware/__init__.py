@@ -1,15 +1,10 @@
-"""Entrypoint to using [Middleware](https://docs.langchain.com/oss/python/langchain/middleware) plugins with [Agents](https://docs.langchain.com/oss/python/langchain/agents).
-
-!!! warning "Reference docs"
-    This page contains **reference documentation** for Middleware. See
-    [the docs](https://docs.langchain.com/oss/python/langchain/middleware) for conceptual
-    guides, tutorials, and examples on using Middleware.
-"""  # noqa: E501
+"""Entrypoint to using [middleware](https://docs.langchain.com/oss/python/langchain/middleware) plugins with [Agents](https://docs.langchain.com/oss/python/langchain/agents)."""  # noqa: E501
 
 from .context_editing import (
     ClearToolUsesEdit,
     ContextEditingMiddleware,
 )
+from .file_search import FilesystemFileSearchMiddleware
 from .human_in_the_loop import (
     HumanInTheLoopMiddleware,
     InterruptOnConfig,
@@ -52,6 +47,7 @@ __all__ = [
     "CodexSandboxExecutionPolicy",
     "ContextEditingMiddleware",
     "DockerExecutionPolicy",
+    "FilesystemFileSearchMiddleware",
     "HostExecutionPolicy",
     "HumanInTheLoopMiddleware",
     "InterruptOnConfig",

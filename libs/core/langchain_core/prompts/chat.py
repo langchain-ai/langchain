@@ -587,14 +587,15 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         for prompt in self.prompt:
             inputs = {var: kwargs[var] for var in prompt.input_variables}
             if isinstance(prompt, StringPromptTemplate):
-                formatted: str | ImageURL | dict[str, Any] = prompt.format(**inputs)
-                content.append({"type": "text", "text": formatted})
+                formatted_text: str = prompt.format(**inputs)
+                if formatted_text != "":
+                    content.append({"type": "text", "text": formatted_text})
             elif isinstance(prompt, ImagePromptTemplate):
-                formatted = prompt.format(**inputs)
-                content.append({"type": "image_url", "image_url": formatted})
+                formatted_image: ImageURL = prompt.format(**inputs)
+                content.append({"type": "image_url", "image_url": formatted_image})
             elif isinstance(prompt, DictPromptTemplate):
-                formatted = prompt.format(**inputs)
-                content.append(formatted)
+                formatted_dict: dict[str, Any] = prompt.format(**inputs)
+                content.append(formatted_dict)
         return self._msg_class(
             content=content, additional_kwargs=self.additional_kwargs
         )
@@ -617,16 +618,15 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         for prompt in self.prompt:
             inputs = {var: kwargs[var] for var in prompt.input_variables}
             if isinstance(prompt, StringPromptTemplate):
-                formatted: str | ImageURL | dict[str, Any] = await prompt.aformat(
-                    **inputs
-                )
-                content.append({"type": "text", "text": formatted})
+                formatted_text: str = await prompt.aformat(**inputs)
+                if formatted_text != "":
+                    content.append({"type": "text", "text": formatted_text})
             elif isinstance(prompt, ImagePromptTemplate):
-                formatted = await prompt.aformat(**inputs)
-                content.append({"type": "image_url", "image_url": formatted})
+                formatted_image: ImageURL = await prompt.aformat(**inputs)
+                content.append({"type": "image_url", "image_url": formatted_image})
             elif isinstance(prompt, DictPromptTemplate):
-                formatted = prompt.format(**inputs)
-                content.append(formatted)
+                formatted_dict: dict[str, Any] = prompt.format(**inputs)
+                content.append(formatted_dict)
         return self._msg_class(
             content=content, additional_kwargs=self.additional_kwargs
         )
