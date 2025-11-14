@@ -15,7 +15,7 @@ import uuid
 import weakref
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
 
 from langchain_core.messages import ToolMessage
 from langchain_core.tools.base import ToolException
@@ -339,7 +339,7 @@ class _ShellToolInput(BaseModel):
     restart: bool | None = None
     """Whether to restart the shell session."""
 
-    runtime: Annotated[Any, SkipJsonSchema] = None
+    runtime: Annotated[Any, SkipJsonSchema()] = None
     """The runtime for the shell tool.
 
     Included as a workaround at the moment bc args_schema doesn't work with
@@ -445,7 +445,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
             command: str | None = None,
             restart: bool = False,
         ) -> ToolMessage | str:
-            resources = self._ensure_resources(runtime.state)
+            resources = self._get_or_create_resources(runtime.state)
             return self._run_shell_tool(
                 resources,
                 {"command": command, "restart": restart},
@@ -491,7 +491,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
 
     def before_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
         """Start the shell session and run startup commands."""
-        resources = self._create_resources()
+        resources = self._get_or_create_resources(state)
         return {"shell_session_resources": resources}
 
     async def abefore_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:
@@ -500,7 +500,10 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
 
     def after_agent(self, state: ShellToolState, runtime: Runtime) -> None:  # noqa: ARG002
         """Run shutdown commands and release resources when an agent completes."""
-        resources = self._ensure_resources(state)
+        resources = state.get("shell_session_resources")
+        if not isinstance(resources, _SessionResources):
+            # Resources were never created, nothing to clean up
+            return
         try:
             self._run_shutdown_commands(resources.session)
         finally:
@@ -510,17 +513,26 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         """Async run shutdown commands and release resources when an agent completes."""
         return self.after_agent(state, runtime)
 
-    def _ensure_resources(self, state: ShellToolState) -> _SessionResources:
+    def _get_or_create_resources(self, state: ShellToolState) -> _SessionResources:
+        """Get existing resources from state or create new ones if they don't exist.
+
+        This method enables resumability by checking if resources already exist in the state
+        (e.g., after an interrupt), and only creating new resources if they're not present.
+
+        Args:
+            state: The agent state which may contain shell session resources.
+
+        Returns:
+            Session resources, either retrieved from state or newly created.
+        """
         resources = state.get("shell_session_resources")
-        if resources is not None and not isinstance(resources, _SessionResources):
-            resources = None
-        if resources is None:
-            msg = (
-                "Shell session resources are unavailable. Ensure `before_agent` ran successfully "
-                "before invoking the shell tool."
-            )
-            raise ToolException(msg)
-        return resources
+        if isinstance(resources, _SessionResources):
+            return resources
+
+        new_resources = self._create_resources()
+        # Cast needed to make state dict-like for mutation
+        cast("dict[str, Any]", state)["shell_session_resources"] = new_resources
+        return new_resources
 
     def _create_resources(self) -> _SessionResources:
         workspace = self._workspace_root
