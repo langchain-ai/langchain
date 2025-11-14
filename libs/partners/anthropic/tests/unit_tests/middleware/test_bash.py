@@ -38,7 +38,7 @@ def test_replaces_tool_with_claude_descriptor() -> None:
         tool_choice=None,
         tools=[bash_tool],
         response_format=None,
-        state={},
+        state={"messages": []},
         runtime=MagicMock(),
     )
 
