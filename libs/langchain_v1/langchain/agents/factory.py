@@ -641,6 +641,41 @@ def create_agent(  # noqa: PLR0915
             another graph as a subgraph node - particularly useful for building
             multi-agent systems.
         cache: An optional `BaseCache` instance to enable caching of graph execution.
+        mcp_session_config: Optional configuration for MCP session management.
+
+            When provided, enables stateful session management for MCP tools,
+            maintaining persistent connections across multiple tool invocations.
+            This is essential for tools that require session state, such as
+            browser automation (Playwright) or database connections.
+
+            The configuration should include:
+            - `client`: The MCP client instance (e.g., MultiServerMCPClient)
+            - `server_name`: The name of the MCP server (e.g., 'playwright')
+            - `auto_cleanup`: Whether to auto-cleanup the session (default: True)
+
+            Example:
+            ```python
+            from langchain_mcp_adapters import MultiServerMCPClient
+            
+            mcp_client = MultiServerMCPClient()
+            
+            # Create agent with stateful MCP session
+            agent = create_agent(
+                model="gpt-4",
+                tools=mcp_tools,
+                mcp_session_config={
+                    "client": mcp_client,
+                    "server_name": "playwright",
+                    "auto_cleanup": True,
+                }
+            )
+            ```
+
+            !!! note
+                Without this configuration, MCP tools will use stateless sessions,
+                creating a new session for each tool call. This can cause issues
+                with tools that maintain state (e.g., browser sessions closing
+                between navigation and interaction).
 
     Returns:
         A compiled `StateGraph` that can be used for chat interactions.
@@ -1660,6 +1695,7 @@ def _add_middleware_edge(
 __all__ = [
     "create_agent",
 ]
+
 
 
 
