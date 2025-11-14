@@ -11,7 +11,6 @@ import subprocess
 import tempfile
 import threading
 import time
-import typing
 import uuid
 import weakref
 from dataclasses import dataclass, field
@@ -44,9 +43,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
     from langgraph.runtime import Runtime
-    from langgraph.types import Command
 
-    from langchain.agents.middleware.types import ToolCallRequest
 
 LOGGER = logging.getLogger(__name__)
 _DONE_MARKER_PREFIX = "__LC_SHELL_DONE__"
@@ -60,6 +57,7 @@ DEFAULT_TOOL_DESCRIPTION = (
     "session remains stable. Outputs may be truncated when they become very large, and long "
     "running commands will be terminated once their configured timeout elapses."
 )
+SHELL_TOOL_NAME = "shell"
 
 
 def _cleanup_resources(
@@ -335,7 +333,10 @@ class _ShellToolInput(BaseModel):
     """Input schema for the persistent shell tool."""
 
     command: str | None = None
+    """The shell command to execute."""
+
     restart: bool | None = None
+    """Whether to restart the shell session."""
 
     @model_validator(mode="after")
     def validate_payload(self) -> _ShellToolInput:
@@ -424,23 +425,13 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         # Create a proper tool that executes directly (no interception needed)
         description = tool_description or DEFAULT_TOOL_DESCRIPTION
 
-        @tool("shell", args_schema=_ShellToolInput)
+        @tool(SHELL_TOOL_NAME, args_schema=_ShellToolInput, description=description)
         def shell_tool(
             *,
             runtime: ToolRuntime[None, ShellToolState],
             command: str | None = None,
             restart: bool = False,
         ) -> ToolMessage | str:
-            f"""{description}
-
-            Args:
-                runtime: Tool runtime providing access to state and tool_call_id.
-                command: The shell command to execute.
-                restart: Whether to restart the shell session.
-
-            Returns:
-                The command output as ToolMessage or string.
-            """
             resources = self._ensure_resources(runtime.state)
             return self._run_shell_tool(
                 resources,
@@ -691,7 +682,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         return ToolMessage(
             content=content,
             tool_call_id=tool_call_id,
-            name="shell",
+            name=SHELL_TOOL_NAME,
             status=status,
             artifact=artifact,
         )
