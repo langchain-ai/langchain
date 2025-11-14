@@ -63,6 +63,18 @@ if TYPE_CHECKING:
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
+FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
+    # if langchain-model-profiles is not installed, these models are assumed to support
+    # structured output
+    "grok",
+    "gpt-5",
+    "gpt-4.1",
+    "gpt-4o",
+    "gpt-oss",
+    "o3-pro",
+    "o3-mini",
+]
+
 
 def _normalize_to_model_response(result: ModelResponse | AIMessage) -> ModelResponse:
     """Normalize middleware return value to ModelResponse."""
@@ -383,11 +395,7 @@ def _supports_provider_strategy(model: str | BaseChatModel, tools: list | None =
                 return True
 
     return (
-        "grok" in model_name.lower()
-        or any(
-            part in model_name
-            for part in ["gpt-5", "gpt-4.1", "gpt-4o", "gpt-oss", "o3-pro", "o3-mini"]
-        )
+        any(part in model_name.lower() for part in FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT)
         if model_name
         else False
     )
