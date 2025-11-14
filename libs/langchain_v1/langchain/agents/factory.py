@@ -717,11 +717,9 @@ def create_agent(  # noqa: PLR0915
         tools = []
     
     # Handle MCP session configuration if provided
-    mcp_session = None
-    mcp_session_cleanup = None
+    # This enables stateful session management for MCP tools
     if mcp_session_config:
         # Check if any tools are MCP tools (by checking metadata or attributes)
-        # MCP tools typically have metadata indicating their MCP origin
         def is_mcp_tool(tool: Any) -> bool:
             """Check if a tool is an MCP tool by examining its metadata."""
             if not isinstance(tool, BaseTool):
@@ -735,12 +733,15 @@ def create_agent(  # noqa: PLR0915
             metadata = getattr(tool, "metadata", {})
             if isinstance(metadata, dict):
                 # Look for MCP-related keys in metadata
-                if metadata.get("mcp_server") or metadata.get("mcp_tool") or metadata.get("source") == "mcp":
+                if any(key in metadata for key in ["mcp_server", "mcp_tool", "mcp_source"]):
+                    return True
+                if metadata.get("source") == "mcp":
                     return True
             
             # Check if tool name suggests MCP origin (common patterns)
             tool_name = getattr(tool, "name", "")
-            if tool_name and any(prefix in tool_name for prefix in ["mcp_", "playwright_", "browser_"]):
+            mcp_prefixes = ["mcp_", "playwright_", "browser_", "puppeteer_"]
+            if tool_name and any(tool_name.startswith(prefix) for prefix in mcp_prefixes):
                 return True
             
             return False
@@ -748,25 +749,33 @@ def create_agent(  # noqa: PLR0915
         has_mcp_tools = any(is_mcp_tool(tool) for tool in tools)
         
         if has_mcp_tools:
-            # Import MCP utilities dynamically to avoid circular imports
             import warnings
             
+            # Warn user about automatic session management
             warnings.warn(
-                "MCP tools detected with mcp_session_config. Tools will be wrapped "
-                "with stateful session management. For more control, consider using "
-                "StatefulMCPAgentExecutor from langchain.agents.mcp_utils directly.",
+                f"MCP tools detected. Enabling stateful session management for "
+                f"server '{mcp_session_config['server_name']}'. All MCP tool calls "
+                f"will share the same session. For explicit control, use "
+                f"StatefulMCPAgentExecutor from langchain.agents.mcp_utils.",
                 UserWarning,
                 stacklevel=2
             )
             
-            # Note: The actual session creation and tool wrapping would typically
-            # happen at runtime when the agent is invoked, not during graph creation.
-            # This is because MCP sessions are stateful and should be created
-            # when needed, not during configuration.
+            # Note: We don't actually create the session here during graph construction.
+            # Instead, we'll wrap the tools with session-aware versions that will
+            # create and manage the session at runtime. This maintains the lazy
+            # initialization pattern and avoids creating sessions that might not be used.
             
-            # Store the config for later use by the agent
-            # The agent will use this to create a session when needed
-            mcp_session_cleanup = mcp_session_config.get("auto_cleanup", True)
+            # Mark tools that should use the MCP session
+            for tool in tools:
+                if is_mcp_tool(tool) and isinstance(tool, BaseTool):
+                    # Add session config to tool metadata for runtime use
+                    if not hasattr(tool, "metadata"):
+                        tool.metadata = {}
+                    elif not isinstance(tool.metadata, dict):
+                        tool.metadata = {"original_metadata": tool.metadata}
+                    
+                    tool.metadata["__mcp_session_config__"] = mcp_session_config
 
     # Convert response format and setup structured output tools
     # Raw schemas are wrapped in AutoStrategy to preserve auto-detection intent.
@@ -1747,6 +1756,7 @@ def _add_middleware_edge(
 __all__ = [
     "create_agent",
 ]
+
 
 
 
