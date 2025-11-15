@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import heapq
 import itertools
+from collections import deque
+from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -29,9 +32,13 @@ from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     JumpTo,
+    MergeStrategy,
+    MiddlewareOrderCycleError,
+    MiddlewareSpec,
     ModelRequest,
     ModelResponse,
     OmitFromSchema,
+    OrderingConstraints,
     ResponseT,
     StateT_co,
     _InputAgentState,
@@ -541,6 +548,367 @@ def _chain_async_tool_call_wrappers(
     return result
 
 
+@dataclass(slots=True)
+class _ResolvedMiddlewareNode:
+    """Internal representation of middleware during dependency resolution."""
+
+    instance: AgentMiddleware[Any, Any]
+    id: str
+    order_index: int
+    insertion_seq: int
+    priority_value: float
+    priority_raw: Any
+    tags: tuple[str, ...]
+    before: set[str] = field(default_factory=set)
+    after: set[str] = field(default_factory=set)
+    requires_before: set[str] = field(default_factory=set)
+    processed: bool = False
+
+
+@dataclass(slots=True)
+class _MiddlewareIdGenerator:
+    counts: dict[str, int] = field(default_factory=dict)
+
+    def assign(self, instance: AgentMiddleware[Any, Any]) -> None:
+        if instance.id:
+            return
+
+        qualified = f"{instance.__class__.__module__}.{instance.__class__.__qualname__}"
+        count = self.counts.get(qualified, 0)
+        self.counts[qualified] = count + 1
+
+        identifier = instance.name if count == 0 else f"{qualified}#{count + 1}"
+
+        instance.id = identifier
+
+
+def _normalize_tags(tags: Sequence[str] | None) -> tuple[str, ...]:
+    if not tags:
+        return ()
+    return tuple(dict.fromkeys(tags))
+
+
+def _merge_tags(existing: tuple[str, ...], new: tuple[str, ...]) -> tuple[str, ...]:
+    if not new:
+        return existing
+    return tuple(dict.fromkeys((*existing, *new)))
+
+
+def _normalize_priority(value: Any) -> tuple[float, Any]:
+    if value is None:
+        return 0.0, None
+    try:
+        return float(value), value
+    except (TypeError, ValueError) as exc:
+        msg = f"Middleware priority {value!r} cannot be converted to a float"
+        raise TypeError(msg) from exc
+
+
+def _get_middleware_id(instance: AgentMiddleware[Any, Any]) -> str:
+    identifier = instance.id if instance.id is not None else instance.name
+    instance.id = identifier
+    return identifier
+
+
+def _ensure_instance_metadata(
+    instance: AgentMiddleware[Any, Any],
+) -> tuple[str, tuple[str, ...], float, Any]:
+    identifier = _get_middleware_id(instance)
+    tags_tuple = _normalize_tags(getattr(instance, "tags", ()))
+    instance.tags = tags_tuple
+    priority_value, priority_raw = _normalize_priority(getattr(instance, "priority", None))
+    instance.priority = priority_raw
+    return identifier, tags_tuple, priority_value, priority_raw
+
+
+def _prepare_spec_instance(
+    spec: MiddlewareSpec[Any, Any],
+) -> tuple[AgentMiddleware[Any, Any], OrderingConstraints | None, MergeStrategy]:
+    instance: AgentMiddleware[Any, Any] | None
+    if spec.middleware is not None:
+        instance = spec.middleware
+    elif spec.factory is not None:
+        instance = spec.factory()
+    else:  # pragma: no cover - guarded by MiddlewareSpec
+        instance = None
+
+    if instance is None:
+        msg = "MiddlewareSpec factory returned None"
+        raise ValueError(msg)
+
+    if spec.id is not None:
+        instance.id = spec.id
+    if spec.priority is not None:
+        instance.priority = spec.priority
+    if spec.tags is not None:
+        instance.tags = tuple(spec.tags)
+
+    return instance, spec.ordering, spec.merge_strategy
+
+
+def _register_middleware_node(
+    *,
+    instance: AgentMiddleware[Any, Any],
+    origin_index: int,
+    merge_strategy: MergeStrategy,
+    ordering: OrderingConstraints | None,
+    nodes: dict[str, _ResolvedMiddlewareNode],
+    insertion_counter: list[int],
+    id_generator: _MiddlewareIdGenerator,
+) -> tuple[_ResolvedMiddlewareNode, bool, bool]:
+    id_generator.assign(instance)
+    identifier, tags_tuple, priority_value, priority_raw = _ensure_instance_metadata(instance)
+    ordering_before = ordering.before if ordering else ()
+    ordering_after = ordering.after if ordering else ()
+
+    node = nodes.get(identifier)
+    if node is None:
+        node = _ResolvedMiddlewareNode(
+            instance=instance,
+            id=identifier,
+            order_index=origin_index,
+            insertion_seq=insertion_counter[0],
+            priority_value=priority_value,
+            priority_raw=priority_raw,
+            tags=tags_tuple,
+        )
+        insertion_counter[0] += 1
+        node.before.update(ordering_before)
+        node.after.update(ordering_after)
+        nodes[identifier] = node
+        return node, True, False
+
+    node.order_index = min(node.order_index, origin_index)
+    existing_tags = node.tags
+    replaced = False
+
+    if merge_strategy == "error" and node.instance is not instance:
+        msg = (
+            f"Duplicate middleware id '{identifier}' encountered without a merge strategy. "
+            "Set merge_strategy to 'first_wins' or 'last_wins', or provide a unique id."
+        )
+        raise ValueError(msg)
+
+    if merge_strategy == "last_wins" and node.instance is not instance:
+        node.instance = instance
+        node.priority_value = priority_value
+        node.priority_raw = priority_raw
+        node.processed = False
+        replaced = True
+    elif merge_strategy in {"first_wins", "error"}:
+        pass
+    else:  # pragma: no cover - guarded by Literal typing but keeps runtime safe
+        msg = f"Unknown merge strategy '{merge_strategy}' for middleware '{identifier}'."
+        raise ValueError(msg)
+
+    node.tags = _merge_tags(existing_tags, tags_tuple)
+    node.before.update(ordering_before)
+    node.after.update(ordering_after)
+
+    return node, False, replaced
+
+
+def _resolve_order_targets(
+    token: str,
+    source_id: str,
+    tag_map: dict[str, set[str]],
+    nodes: dict[str, _ResolvedMiddlewareNode],
+) -> set[str]:
+    if token.startswith("tag:"):
+        tag = token[4:]
+        targets = set(tag_map.get(tag, set()))
+        if not targets:
+            msg = f"Ordering constraint on middleware '{source_id}' references unknown tag '{tag}'."
+            raise ValueError(msg)
+        targets.discard(source_id)
+        if not targets:
+            msg = (
+                "Ordering constraint on middleware "
+                f"'{source_id}' cannot target itself via tag '{tag}'."
+            )
+            raise ValueError(msg)
+        return targets
+
+    if token not in nodes:
+        msg = (
+            "Ordering constraint on middleware "
+            f"'{source_id}' references unknown middleware id '{token}'."
+        )
+        raise ValueError(msg)
+
+    if token == source_id:
+        msg = f"Ordering constraint on middleware '{source_id}' cannot reference itself."
+        raise ValueError(msg)
+
+    return {token}
+
+
+def _collect_middleware_edges(nodes: dict[str, _ResolvedMiddlewareNode]) -> set[tuple[str, str]]:
+    edges: set[tuple[str, str]] = set()
+    tag_map: dict[str, set[str]] = {}
+
+    for identifier, node in nodes.items():
+        for dependency in node.requires_before:
+            edges.add((dependency, identifier))
+
+        for tag in node.tags:
+            tag_map.setdefault(tag, set()).add(identifier)
+
+    for identifier, node in nodes.items():
+        for target in node.before:
+            for resolved in _resolve_order_targets(target, identifier, tag_map, nodes):
+                edges.add((identifier, resolved))
+
+        for target in node.after:
+            for resolved in _resolve_order_targets(target, identifier, tag_map, nodes):
+                edges.add((resolved, identifier))
+
+    return edges
+
+
+def _find_cycle(adjacency: dict[str, set[str]]) -> list[str] | None:
+    visited: set[str] = set()
+    stack: set[str] = set()
+    path: list[str] = []
+
+    def dfs(node_id: str) -> list[str] | None:
+        visited.add(node_id)
+        stack.add(node_id)
+        path.append(node_id)
+
+        for neighbour in adjacency[node_id]:
+            if neighbour not in visited:
+                result = dfs(neighbour)
+                if result:
+                    return result
+            elif neighbour in stack:
+                cycle_start = path.index(neighbour)
+                return [*path[cycle_start:], neighbour]
+
+        stack.remove(node_id)
+        path.pop()
+        return None
+
+    for identifier in adjacency:
+        if identifier not in visited:
+            result = dfs(identifier)
+            if result:
+                return result
+    return None
+
+
+def _topologically_sort_middleware(
+    nodes: dict[str, _ResolvedMiddlewareNode],
+    edges: set[tuple[str, str]],
+) -> list[str]:
+    adjacency: dict[str, set[str]] = {identifier: set() for identifier in nodes}
+    indegree = cast("dict[str, int]", dict.fromkeys(nodes, 0))
+
+    for source, target in edges:
+        if source not in adjacency:
+            msg = f"Ordering constraint references unknown middleware id '{source}'."
+            raise ValueError(msg)
+        if target not in adjacency:
+            msg = f"Ordering constraint references unknown middleware id '{target}'."
+            raise ValueError(msg)
+        if source == target:
+            msg = f"Detected cycle in middleware ordering: '{source}' depends on itself."
+            raise MiddlewareOrderCycleError(msg)
+        if target not in adjacency[source]:
+            adjacency[source].add(target)
+            indegree[target] += 1
+
+    heap: list[tuple[int, float, int, str]] = []
+    for identifier, node in nodes.items():
+        if indegree[identifier] == 0:
+            heapq.heappush(
+                heap,
+                (node.order_index, -node.priority_value, node.insertion_seq, identifier),
+            )
+
+    ordered: list[str] = []
+    while heap:
+        _, _, _, identifier = heapq.heappop(heap)
+        ordered.append(identifier)
+        for target in adjacency[identifier]:
+            indegree[target] -= 1
+            if indegree[target] == 0:
+                node = nodes[target]
+                heapq.heappush(
+                    heap,
+                    (node.order_index, -node.priority_value, node.insertion_seq, target),
+                )
+
+    if len(ordered) != len(nodes):
+        cycle = _find_cycle(adjacency)
+        cycle_path = " -> ".join(cycle) if cycle else "unknown cycle"
+        msg = f"Detected cycle in middleware ordering: {cycle_path}"
+        raise MiddlewareOrderCycleError(msg)
+
+    return ordered
+
+
+def _resolve_middleware(
+    middleware: Sequence[AgentMiddleware[StateT_co, ContextT]],
+) -> list[AgentMiddleware[StateT_co, ContextT]]:
+    nodes: dict[str, _ResolvedMiddlewareNode] = {}
+    queue: deque[str] = deque()
+    insertion_counter = [0]
+    id_generator = _MiddlewareIdGenerator()
+
+    for index, instance in enumerate(middleware):
+        node, created, replaced = _register_middleware_node(
+            instance=instance,
+            origin_index=index,
+            merge_strategy="error",
+            ordering=None,
+            nodes=nodes,
+            insertion_counter=insertion_counter,
+            id_generator=id_generator,
+        )
+        if created or replaced or not node.processed:
+            queue.append(node.id)
+
+    while queue:
+        node_id = queue.popleft()
+        node = nodes[node_id]
+        if node.processed:
+            continue
+
+        node.processed = True
+        node.requires_before.clear()
+
+        dependencies = node.instance.requires() or ()
+        for spec in dependencies:
+            instance, ordering, merge_strategy = _prepare_spec_instance(spec)
+            dep_node, created, replaced = _register_middleware_node(
+                instance=instance,
+                origin_index=node.order_index,
+                merge_strategy=merge_strategy,
+                ordering=ordering,
+                nodes=nodes,
+                insertion_counter=insertion_counter,
+                id_generator=id_generator,
+            )
+            node.requires_before.add(dep_node.id)
+
+            if created or replaced or not dep_node.processed:
+                queue.append(dep_node.id)
+
+    edges = _collect_middleware_edges(nodes)
+    ordered_ids = _topologically_sort_middleware(nodes, edges)
+
+    resolved: list[AgentMiddleware[StateT_co, ContextT]] = []
+    for identifier in ordered_ids:
+        node = nodes[identifier]
+        node.instance.id = node.id
+        node.instance.tags = node.tags
+        node.instance.priority = node.priority_raw
+        resolved.append(node.instance)
+
+    return resolved
+
+
 def create_agent(  # noqa: PLR0915
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
@@ -722,6 +1090,8 @@ def create_agent(  # noqa: PLR0915
         for response_schema in tool_strategy_for_setup.schema_specs:
             structured_tool_info = OutputToolBinding.from_schema_spec(response_schema)
             structured_output_tools[structured_tool_info.tool.name] = structured_tool_info
+    middleware = _resolve_middleware(list(middleware))
+
     middleware_tools = [t for m in middleware for t in getattr(m, "tools", [])]
 
     # Collect middleware with wrap_tool_call or awrap_tool_call hooks
