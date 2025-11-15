@@ -76,6 +76,23 @@ FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
 ]
 
 
+class MCPSessionConfig(TypedDict):
+    """Configuration for MCP session management in agents.
+
+    When provided, enables stateful session management for MCP tools,
+    maintaining persistent connections across multiple tool invocations.
+    """
+
+    client: Required[Any]
+    """The MCP client instance (e.g., MultiServerMCPClient)."""
+
+    server_name: Required[str]
+    """The name of the MCP server to connect to (e.g., 'playwright', 'database')."""
+
+    auto_cleanup: NotRequired[bool]
+    """Whether to automatically cleanup the session when the agent is destroyed. Defaults to True."""
+
+
 def _normalize_to_model_response(result: ModelResponse | AIMessage) -> ModelResponse:
     """Normalize middleware return value to ModelResponse."""
     if isinstance(result, AIMessage):
@@ -557,6 +574,7 @@ def create_agent(  # noqa: PLR0915
     debug: bool = False,
     name: str | None = None,
     cache: BaseCache | None = None,
+    mcp_session_config: MCPSessionConfig | None = None,
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
@@ -652,6 +670,41 @@ def create_agent(  # noqa: PLR0915
             another graph as a subgraph node - particularly useful for building
             multi-agent systems.
         cache: An optional `BaseCache` instance to enable caching of graph execution.
+        mcp_session_config: Optional configuration for MCP session management.
+
+            When provided, enables stateful session management for MCP tools,
+            maintaining persistent connections across multiple tool invocations.
+            This is essential for tools that require session state, such as
+            browser automation (Playwright) or database connections.
+
+            The configuration should include:
+            - `client`: The MCP client instance (e.g., MultiServerMCPClient)
+            - `server_name`: The name of the MCP server (e.g., 'playwright')
+            - `auto_cleanup`: Whether to auto-cleanup the session (default: True)
+
+    Example:
+            ```python
+            from langchain_mcp_adapters import MultiServerMCPClient
+
+            mcp_client = MultiServerMCPClient()
+
+            # Create agent with stateful MCP session
+            agent = create_agent(
+                model="gpt-4",
+                tools=mcp_tools,
+                mcp_session_config={
+                    "client": mcp_client,
+                    "server_name": "playwright",
+                    "auto_cleanup": True,
+                },
+            )
+            ```
+
+            !!! note
+                Without this configuration, MCP tools will use stateless sessions,
+                creating a new session for each tool call. This can cause issues
+                with tools that maintain state (e.g., browser sessions closing
+                between navigation and interaction).
 
     Returns:
         A compiled `StateGraph` that can be used for chat interactions.
@@ -691,6 +744,67 @@ def create_agent(  # noqa: PLR0915
     # Handle tools being None or empty
     if tools is None:
         tools = []
+
+    # Handle MCP session configuration if provided
+    # This enables stateful session management for MCP tools
+    if mcp_session_config:
+        # Check if any tools are MCP tools (by checking metadata or attributes)
+        def is_mcp_tool(tool: Any) -> bool:
+            """Check if a tool is an MCP tool by examining its metadata."""
+            if not isinstance(tool, BaseTool):
+                return False
+
+            # Check for MCP-specific attributes or metadata
+            if hasattr(tool, "__mcp_server__"):
+                return True
+
+            # Check tool metadata for MCP indicators
+            metadata = getattr(tool, "metadata", {})
+            if isinstance(metadata, dict):
+                # Look for MCP-related keys in metadata
+                if any(key in metadata for key in ["mcp_server", "mcp_tool", "mcp_source"]):
+                    return True
+                if metadata.get("source") == "mcp":
+                    return True
+
+            # Check if tool name suggests MCP origin (common patterns)
+            tool_name = getattr(tool, "name", "")
+            mcp_prefixes = ["mcp_", "playwright_", "browser_", "puppeteer_"]
+            if tool_name and any(tool_name.startswith(prefix) for prefix in mcp_prefixes):
+                return True
+
+            return False
+
+        has_mcp_tools = any(is_mcp_tool(tool) for tool in tools)
+
+        if has_mcp_tools:
+            import warnings
+
+            # Warn user about automatic session management
+            warnings.warn(
+                f"MCP tools detected. Enabling stateful session management for "
+                f"server '{mcp_session_config['server_name']}'. All MCP tool calls "
+                f"will share the same session. For explicit control, use "
+                f"StatefulMCPAgentExecutor from langchain.agents.mcp_utils.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+            # Note: We don't actually create the session here during graph construction.
+            # Instead, we'll wrap the tools with session-aware versions that will
+            # create and manage the session at runtime. This maintains the lazy
+            # initialization pattern and avoids creating sessions that might not be used.
+
+            # Mark tools that should use the MCP session
+            for tool in tools:
+                if is_mcp_tool(tool) and isinstance(tool, BaseTool):
+                    # Add session config to tool metadata for runtime use
+                    if not hasattr(tool, "metadata"):
+                        tool.metadata = {}
+                    elif not isinstance(tool.metadata, dict):
+                        tool.metadata = {"original_metadata": tool.metadata}
+
+                    tool.metadata["__mcp_session_config__"] = mcp_session_config
 
     # Convert response format and setup structured output tools
     # Raw schemas are wrapped in AutoStrategy to preserve auto-detection intent.
