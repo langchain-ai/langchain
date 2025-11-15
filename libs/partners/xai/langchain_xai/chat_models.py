@@ -458,6 +458,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     - `{"type": "code_execution"}`: Enables autonomous code execution
 
     !!! note
+
         This replaces the deprecated `search_parameters`. Set this to enable
         x.ai's new agentic tool calling API.
     """
