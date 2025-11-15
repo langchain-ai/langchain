@@ -1,10 +1,9 @@
-from collections.abc import AsyncIterator, Callable, Iterator, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from typing import (
     Any,
 )
 
 import pytest
-from pydantic import BaseModel
 from syrupy.assertion import SnapshotAssertion
 from typing_extensions import override
 
@@ -335,15 +334,15 @@ class FakeStructuredOutputModel(BaseChatModel):
     @override
     def bind_tools(
         self,
-        tools: Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
+        tools: Sequence[Mapping[str, Any] | type | Callable | BaseTool],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         return self.bind(tools=tools)
 
     @override
     def with_structured_output(
-        self, schema: dict | type[BaseModel], **kwargs: Any
-    ) -> Runnable[LanguageModelInput, dict | BaseModel]:
+        self, schema: Mapping | type, **kwargs: Any
+    ) -> Runnable[LanguageModelInput, Any]:
         return RunnableLambda(lambda _: {"foo": self.foo})
 
     @property
@@ -368,7 +367,7 @@ class FakeModel(BaseChatModel):
     @override
     def bind_tools(
         self,
-        tools: Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
+        tools: Sequence[Mapping[str, Any] | type | Callable | BaseTool],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         return self.bind(tools=tools)
