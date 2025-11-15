@@ -266,7 +266,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     @classmethod
     def set_verbose(
         cls,
-        verbose: bool | None,  # noqa: FBT001
+        verbose: bool | None,
     ) -> bool:
         """Set the chain verbosity.
 

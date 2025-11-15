@@ -73,7 +73,7 @@ class VectorStore(ABC):
             # an implementation of the upsert method.
             # The existing add_texts
             texts_: Sequence[str] = (
-                texts if isinstance(texts, (list, tuple)) else list(texts)
+                texts if isinstance(texts, list | tuple) else list(texts)
             )
             if metadatas and len(metadatas) != len(texts_):
                 msg = (
@@ -212,7 +212,7 @@ class VectorStore(ABC):
             # an implementation of the upsert method.
             # The existing add_texts
             texts_: Sequence[str] = (
-                texts if isinstance(texts, (list, tuple)) else list(texts)
+                texts if isinstance(texts, list | tuple) else list(texts)
             )
             if metadatas and len(metadatas) != len(texts_):
                 msg = (

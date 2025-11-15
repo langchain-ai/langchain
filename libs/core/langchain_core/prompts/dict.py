@@ -102,7 +102,7 @@ def _get_input_variables(
             input_variables += get_template_variables(v, template_format)
         elif isinstance(v, dict):
             input_variables += _get_input_variables(v, template_format)
-        elif isinstance(v, (list, tuple)):
+        elif isinstance(v, list | tuple):
             for x in v:
                 if isinstance(x, str):
                     input_variables += get_template_variables(x, template_format)
@@ -131,7 +131,7 @@ def _insert_input_variables(
                 )
                 warnings.warn(msg, stacklevel=2)
             formatted[k] = _insert_input_variables(v, inputs, template_format)
-        elif isinstance(v, (list, tuple)):
+        elif isinstance(v, list | tuple):
             formatted_v = []
             for x in v:
                 if isinstance(x, str):

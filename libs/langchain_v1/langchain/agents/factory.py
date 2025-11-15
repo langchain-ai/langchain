@@ -699,7 +699,7 @@ def create_agent(  # noqa: PLR0915
     initial_response_format: ToolStrategy | ProviderStrategy | AutoStrategy | None
     if response_format is None:
         initial_response_format = None
-    elif isinstance(response_format, (ToolStrategy, ProviderStrategy)):
+    elif isinstance(response_format, ToolStrategy | ProviderStrategy):
         # Preserve explicitly requested strategies
         initial_response_format = response_format
     elif isinstance(response_format, AutoStrategy):

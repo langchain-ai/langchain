@@ -9,15 +9,11 @@ from typing import Any
 
 from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.tools import (
-    BaseTool as BaseTool,
+    BaseTool,
+    StructuredTool,
+    Tool,
 )
-from langchain_core.tools import (
-    StructuredTool as StructuredTool,
-)
-from langchain_core.tools import (
-    Tool as Tool,
-)
-from langchain_core.tools.convert import tool as tool
+from langchain_core.tools.convert import tool
 
 from langchain_classic._api.interactive_env import is_interactive_env
 

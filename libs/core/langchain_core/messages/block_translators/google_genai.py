@@ -377,7 +377,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                             }
 
                             try:
-                                import filetype  # type: ignore[import-not-found] # noqa: PLC0415
+                                import filetype  # type: ignore[import-not-found]
 
                                 # Guess MIME type based on file bytes
                                 mime_type = None
@@ -522,7 +522,7 @@ def _register_google_genai_translator() -> None:
 
     Run automatically when the module is imported.
     """
-    from langchain_core.messages.block_translators import (  # noqa: PLC0415
+    from langchain_core.messages.block_translators import (
         register_translator,
     )
 

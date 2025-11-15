@@ -18,7 +18,7 @@ def create_openai_tools_agent(
     llm: BaseLanguageModel,
     tools: Sequence[BaseTool],
     prompt: ChatPromptTemplate,
-    strict: bool | None = None,  # noqa: FBT001
+    strict: bool | None = None,
 ) -> Runnable:
     """Create an agent that uses OpenAI tools.
 

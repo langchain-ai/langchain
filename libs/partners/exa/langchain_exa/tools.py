@@ -102,20 +102,20 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
         self,
         query: str,
         num_results: int = 10,
-        text_contents_options: TextContentsOptions  # noqa: FBT001
+        text_contents_options: TextContentsOptions
         | dict[str, Any]
         | bool
         | None = None,
-        highlights: HighlightsContentsOptions | bool | None = None,  # noqa: FBT001
+        highlights: HighlightsContentsOptions | bool | None = None,
         include_domains: list[str] | None = None,
         exclude_domains: list[str] | None = None,
         start_crawl_date: str | None = None,
         end_crawl_date: str | None = None,
         start_published_date: str | None = None,
         end_published_date: str | None = None,
-        use_autoprompt: bool | None = None,  # noqa: FBT001
+        use_autoprompt: bool | None = None,
         livecrawl: Literal["always", "fallback", "never"] | None = None,
-        summary: bool | dict[str, str] | None = None,  # noqa: FBT001
+        summary: bool | dict[str, str] | None = None,
         type: Literal["neural", "keyword", "auto"] | None = None,  # noqa: A002
         run_manager: CallbackManagerForToolRun | None = None,
     ) -> list[dict] | str:
@@ -184,21 +184,21 @@ class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
         self,
         url: str,
         num_results: int = 10,
-        text_contents_options: TextContentsOptions  # noqa: FBT001
+        text_contents_options: TextContentsOptions
         | dict[str, Any]
         | bool
         | None = None,
-        highlights: HighlightsContentsOptions | bool | None = None,  # noqa: FBT001
+        highlights: HighlightsContentsOptions | bool | None = None,
         include_domains: list[str] | None = None,
         exclude_domains: list[str] | None = None,
         start_crawl_date: str | None = None,
         end_crawl_date: str | None = None,
         start_published_date: str | None = None,
         end_published_date: str | None = None,
-        exclude_source_domain: bool | None = None,  # noqa: FBT001
+        exclude_source_domain: bool | None = None,
         category: str | None = None,
         livecrawl: Literal["always", "fallback", "never"] | None = None,
-        summary: bool | dict[str, str] | None = None,  # noqa: FBT001
+        summary: bool | dict[str, str] | None = None,
         run_manager: CallbackManagerForToolRun | None = None,
     ) -> list[dict] | str:
         """Use the tool.

@@ -66,38 +66,38 @@ class ToolDescription(TypedDict):
     """The function description."""
 
 
-def _rm_titles(kv: dict, prev_key: str = "") -> dict:
-    """Recursively removes "title" fields from a JSON schema dictionary.
+def _rm_titles(kv: dict) -> dict:
+    """Recursively removes all "title" fields from a JSON schema dictionary.
 
-    Remove "title" fields from the input JSON schema dictionary,
-    except when a "title" appears within a property definition under "properties".
-
-    Args:
-        kv: The input JSON schema as a dictionary.
-        prev_key: The key from the parent dictionary, used to identify context.
-
-    Returns:
-        A new dictionary with appropriate "title" fields removed.
+    This is used to remove extraneous Pydantic schema titles. It is intelligent
+    enough to preserve fields that are legitimately named "title" within an
+    object's properties.
     """
-    new_kv = {}
 
-    for k, v in kv.items():
-        if k == "title":
-            # If the value is a nested dict and part of a property under "properties",
-            # preserve the title but continue recursion
-            if isinstance(v, dict) and prev_key == "properties":
-                new_kv[k] = _rm_titles(v, k)
-            else:
-                # Otherwise, remove this "title" key
-                continue
-        elif isinstance(v, dict):
-            # Recurse into nested dictionaries
-            new_kv[k] = _rm_titles(v, k)
-        else:
-            # Leave non-dict values untouched
-            new_kv[k] = v
+    def inner(obj: Any, *, in_properties: bool = False) -> Any:
+        if isinstance(obj, dict):
+            if in_properties:
+                # We are inside a 'properties' block. Keys here are valid
+                # field names (e.g., "title") and should be kept. We
+                # recurse on the values, resetting the flag.
+                return {k: inner(v, in_properties=False) for k, v in obj.items()}
 
-    return new_kv
+            # We are at a schema level. The 'title' key is metadata and should be
+            # removed.
+            out = {}
+            for k, v in obj.items():
+                if k == "title":
+                    continue
+                # Recurse, setting the flag only if the key is 'properties'.
+                out[k] = inner(v, in_properties=(k == "properties"))
+            return out
+        if isinstance(obj, list):
+            # Recurse on items in a list.
+            return [inner(item, in_properties=in_properties) for item in obj]
+        # Return non-dict, non-list values as is.
+        return obj
+
+    return inner(kv)
 
 
 def _convert_json_schema_to_openai_function(
@@ -218,6 +218,65 @@ def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescript
 _MAX_TYPED_DICT_RECURSION = 25
 
 
+def _parse_google_docstring(
+    docstring: str | None,
+    args: list[str],
+    *,
+    error_on_invalid_docstring: bool = False,
+) -> tuple[str, dict]:
+    """Parse the function and argument descriptions from the docstring of a function.
+
+    Assumes the function docstring follows Google Python style guide.
+    """
+    if docstring:
+        docstring_blocks = docstring.split("\n\n")
+        if error_on_invalid_docstring:
+            filtered_annotations = {
+                arg for arg in args if arg not in {"run_manager", "callbacks", "return"}
+            }
+            if filtered_annotations and (
+                len(docstring_blocks) < 2
+                or not any(block.startswith("Args:") for block in docstring_blocks[1:])
+            ):
+                msg = "Found invalid Google-Style docstring."
+                raise ValueError(msg)
+        descriptors = []
+        args_block = None
+        past_descriptors = False
+        for block in docstring_blocks:
+            if block.startswith("Args:"):
+                args_block = block
+                break
+            if block.startswith(("Returns:", "Example:")):
+                # Don't break in case Args come after
+                past_descriptors = True
+            elif not past_descriptors:
+                descriptors.append(block)
+            else:
+                continue
+        description = " ".join(descriptors)
+    else:
+        if error_on_invalid_docstring:
+            msg = "Found invalid Google-Style docstring."
+            raise ValueError(msg)
+        description = ""
+        args_block = None
+    arg_descriptions = {}
+    if args_block:
+        arg = None
+        for line in args_block.split("\n")[1:]:
+            if ":" in line:
+                arg, desc = line.split(":", maxsplit=1)
+                arg = arg.strip()
+                arg_name, _, annotations_ = arg.partition(" ")
+                if annotations_.startswith("(") and annotations_.endswith(")"):
+                    arg = arg_name
+                arg_descriptions[arg] = desc.strip()
+            elif arg:
+                arg_descriptions[arg] += " " + line.strip()
+    return description, arg_descriptions
+
+
 def _convert_any_typed_dicts_to_pydantic(
     type_: type,
     *,
@@ -237,25 +296,34 @@ def _convert_any_typed_dicts_to_pydantic(
         )
         fields: dict = {}
         for arg, arg_type in annotations_.items():
+            field_kwargs: dict[str, Any]
             if get_origin(arg_type) is Annotated:  # type: ignore[comparison-overlap]
                 annotated_args = get_args(arg_type)
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     annotated_args[0], depth=depth + 1, visited=visited
                 )
-                field_kwargs = dict(
-                    zip(("default", "description"), annotated_args[1:], strict=False)
-                )
+                field_kwargs = {}
+                metadata = annotated_args[1:]
+                if len(metadata) == 1 and isinstance(metadata[0], str):
+                    # Case: Annotated[int, "a description"]
+                    field_kwargs["description"] = metadata[0]
+                elif len(metadata) > 0:
+                    # Case: Annotated[int, default_val, "a description"]
+                    field_kwargs["default"] = metadata[0]
+                    if len(metadata) > 1 and isinstance(metadata[1], str):
+                        field_kwargs["description"] = metadata[1]
+
                 if (field_desc := field_kwargs.get("description")) and not isinstance(
                     field_desc, str
                 ):
                     msg = (
-                        f"Invalid annotation for field {arg}. Third argument to "
-                        f"Annotated must be a string description, received value of "
-                        f"type {type(field_desc)}."
+                        f"Invalid annotation for field {arg}. "
+                        "Description must be a string."
                     )
                     raise ValueError(msg)
                 if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
+
                 fields[arg] = (new_arg_type, Field_v1(**field_kwargs))
             else:
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
@@ -279,6 +347,25 @@ def _convert_any_typed_dicts_to_pydantic(
     return type_
 
 
+def _py_38_safe_origin(origin: type) -> type:
+    origin_union_type_map: dict[type, Any] = (
+        {types.UnionType: Union} if hasattr(types, "UnionType") else {}
+    )
+
+    origin_map: dict[type, Any] = {
+        dict: dict,
+        list: list,
+        tuple: tuple,
+        set: set,
+        collections.abc.Iterable: typing.Iterable,
+        collections.abc.Mapping: typing.Mapping,
+        collections.abc.Sequence: typing.Sequence,
+        collections.abc.MutableMapping: typing.MutableMapping,
+        **origin_union_type_map,
+    }
+    return cast("type", origin_map.get(origin, origin))
+
+
 def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     """Format tool into the OpenAI function API.
 
@@ -299,7 +386,7 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
             return _convert_json_schema_to_openai_function(
                 tool.tool_call_schema, name=tool.name, description=tool.description
             )
-        if issubclass(tool.tool_call_schema, (BaseModel, BaseModelV1)):
+        if issubclass(tool.tool_call_schema, BaseModel | BaseModelV1):
             return _convert_pydantic_to_openai_function(
                 tool.tool_call_schema, name=tool.name, description=tool.description
             )
@@ -489,7 +576,7 @@ def convert_to_openai_tool(
         Added support for OpenAI's image generation built-in tool.
     """
     # Import locally to prevent circular import
-    from langchain_core.tools import Tool  # noqa: PLC0415
+    from langchain_core.tools import Tool
 
     if isinstance(tool, dict):
         if tool.get("type") in _WellKnownOpenAITools:

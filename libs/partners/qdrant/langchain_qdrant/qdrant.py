@@ -348,7 +348,7 @@ class QdrantVectorStore(VectorStore):
         port: int | None = 6333,
         grpc_port: int = 6334,
         prefer_grpc: bool = False,  # noqa: FBT001, FBT002
-        https: bool | None = None,  # noqa: FBT001
+        https: bool | None = None,
         api_key: str | None = None,
         prefix: str | None = None,
         timeout: int | None = None,
@@ -441,7 +441,7 @@ class QdrantVectorStore(VectorStore):
         port: int | None = 6333,
         grpc_port: int = 6334,
         prefer_grpc: bool = False,  # noqa: FBT001, FBT002
-        https: bool | None = None,  # noqa: FBT001
+        https: bool | None = None,
         api_key: str | None = None,
         prefix: str | None = None,
         timeout: int | None = None,

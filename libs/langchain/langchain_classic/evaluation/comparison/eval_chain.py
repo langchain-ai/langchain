@@ -78,7 +78,7 @@ def resolve_pairwise_criteria(
             criteria_ = {criteria: ""}
     elif isinstance(criteria, ConstitutionalPrinciple):
         criteria_ = {criteria.name: criteria.critique_request}
-    elif isinstance(criteria, (list, tuple)):
+    elif isinstance(criteria, list | tuple):
         criteria_ = {
             k: v
             for criterion in criteria

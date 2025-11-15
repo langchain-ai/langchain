@@ -21,7 +21,7 @@ def replace_all_of_with_ref(schema: Any) -> None:
         else:
             # Recursively process nested schemas
             for value in schema.values():
-                if isinstance(value, (dict, list)):
+                if isinstance(value, dict | list):
                     replace_all_of_with_ref(value)
     elif isinstance(schema, list):
         for item in schema:

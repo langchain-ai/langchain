@@ -1398,7 +1398,7 @@ def test_web_fetch() -> None:
         [input_message, full, next_message],
     )
     # Should work without issues since URL was already in context
-    assert isinstance(follow_up_response.content, (list, str))
+    assert isinstance(follow_up_response.content, list | str)
 
     # Error handling - test with an invalid URL format
     error_message = {
@@ -1408,7 +1408,7 @@ def test_web_fetch() -> None:
     error_response = llm_with_tools.invoke([error_message])
 
     # Should handle the error gracefully
-    assert isinstance(error_response.content, (list, str))
+    assert isinstance(error_response.content, list | str)
 
     # PDF document fetching
     pdf_message = {

@@ -246,7 +246,7 @@ def _load_refine_chain(
 def load_qa_chain(
     llm: BaseLanguageModel,
     chain_type: str = "stuff",
-    verbose: bool | None = None,  # noqa: FBT001
+    verbose: bool | None = None,
     callback_manager: BaseCallbackManager | None = None,
     **kwargs: Any,
 ) -> BaseCombineDocumentsChain:

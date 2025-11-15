@@ -154,7 +154,7 @@ class BaseLanguageModel(
     )
 
     @field_validator("verbose", mode="before")
-    def set_verbose(cls, verbose: bool | None) -> bool:  # noqa: FBT001
+    def set_verbose(cls, verbose: bool | None) -> bool:
         """If verbose is `None`, set it.
 
         This allows users to pass in `None` as verbose to access the global setting.

@@ -460,7 +460,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         if isinstance(input_val, BaseMessage):
             return [input_val]
         # If value is a list or tuple...
-        if isinstance(input_val, (list, tuple)):
+        if isinstance(input_val, list | tuple):
             # Handle empty case
             if len(input_val) == 0:
                 return list(input_val)
@@ -501,7 +501,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         # If value is a single message, convert to a list
         if isinstance(output_val, BaseMessage):
             return [output_val]
-        if isinstance(output_val, (list, tuple)):
+        if isinstance(output_val, list | tuple):
             return list(output_val)
         msg = (
             f"Expected str, BaseMessage, list[BaseMessage], or tuple[BaseMessage]. "

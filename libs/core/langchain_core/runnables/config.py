@@ -234,7 +234,7 @@ def ensure_config(config: RunnableConfig | None = None) -> RunnableConfig:
     for key, value in empty.get("configurable", {}).items():
         if (
             not key.startswith("__")
-            and isinstance(value, (str, int, float, bool))
+            and isinstance(value, str | int | float | bool)
             and key not in empty["metadata"]
             and key != "api_key"
         ):

@@ -243,7 +243,7 @@ class AIMessage(BaseMessage):
 
         model_provider = self.response_metadata.get("model_provider")
         if model_provider:
-            from langchain_core.messages.block_translators import (  # noqa: PLC0415
+            from langchain_core.messages.block_translators import (
                 get_translator,
             )
 
@@ -412,7 +412,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
         model_provider = self.response_metadata.get("model_provider")
         if model_provider:
-            from langchain_core.messages.block_translators import (  # noqa: PLC0415
+            from langchain_core.messages.block_translators import (
                 get_translator,
             )
 
@@ -591,7 +591,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     def __add__(self, other: Any) -> BaseMessageChunk:
         if isinstance(other, AIMessageChunk):
             return add_ai_message_chunks(self, other)
-        if isinstance(other, (list, tuple)) and all(
+        if isinstance(other, list | tuple) and all(
             isinstance(o, AIMessageChunk) for o in other
         ):
             return add_ai_message_chunks(self, *other)

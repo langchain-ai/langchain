@@ -593,7 +593,7 @@ def render(
 
             # If the scope is a sequence, an iterator or generator but not
             # derived from a string
-            elif isinstance(scope, (Sequence, Iterator)) and not isinstance(scope, str):
+            elif isinstance(scope, Sequence | Iterator) and not isinstance(scope, str):
                 # Then we need to do some looping
 
                 # Gather up all the tags inside the section

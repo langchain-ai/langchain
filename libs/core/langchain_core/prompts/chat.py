@@ -959,7 +959,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 partial_vars[_message.variable_name] = []
                 optional_variables.add(_message.variable_name)
             elif isinstance(
-                _message, (BaseChatPromptTemplate, BaseMessagePromptTemplate)
+                _message, BaseChatPromptTemplate | BaseMessagePromptTemplate
             ):
                 input_vars.update(_message.input_variables)
 
@@ -1002,12 +1002,12 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 **partials
             )
         if isinstance(
-            other, (BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate)
+            other, BaseMessagePromptTemplate | BaseMessage | BaseChatPromptTemplate
         ):
             return ChatPromptTemplate(messages=[*self.messages, other]).partial(
                 **partials
             )
-        if isinstance(other, (list, tuple)):
+        if isinstance(other, list | tuple):
             other_ = ChatPromptTemplate.from_messages(other)
             return ChatPromptTemplate(messages=self.messages + other_.messages).partial(
                 **partials
@@ -1042,7 +1042,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         optional_variables = set()
         input_types: dict[str, Any] = values.get("input_types", {})
         for message in messages:
-            if isinstance(message, (BaseMessagePromptTemplate, BaseChatPromptTemplate)):
+            if isinstance(message, BaseMessagePromptTemplate | BaseChatPromptTemplate):
                 input_vars.update(message.input_variables)
             if isinstance(message, MessagesPlaceholder):
                 if "partial_variables" not in values:
@@ -1162,7 +1162,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             if isinstance(message_template, BaseMessage):
                 result.extend([message_template])
             elif isinstance(
-                message_template, (BaseMessagePromptTemplate, BaseChatPromptTemplate)
+                message_template, BaseMessagePromptTemplate | BaseChatPromptTemplate
             ):
                 message = message_template.format_messages(**kwargs)
                 result.extend(message)
@@ -1190,7 +1190,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             if isinstance(message_template, BaseMessage):
                 result.extend([message_template])
             elif isinstance(
-                message_template, (BaseMessagePromptTemplate, BaseChatPromptTemplate)
+                message_template, BaseMessagePromptTemplate | BaseChatPromptTemplate
             ):
                 message = await message_template.aformat_messages(**kwargs)
                 result.extend(message)
@@ -1405,7 +1405,7 @@ def _convert_to_message_template(
         ValueError: If unexpected message type.
         ValueError: If 2-tuple does not have 2 elements.
     """
-    if isinstance(message, (BaseMessagePromptTemplate, BaseChatPromptTemplate)):
+    if isinstance(message, BaseMessagePromptTemplate | BaseChatPromptTemplate):
         message_: BaseMessage | BaseMessagePromptTemplate | BaseChatPromptTemplate = (
             message
         )
@@ -1415,7 +1415,7 @@ def _convert_to_message_template(
         message_ = _create_template_from_message_type(
             "human", message, template_format=template_format
         )
-    elif isinstance(message, (tuple, dict)):
+    elif isinstance(message, tuple | dict):
         if isinstance(message, dict):
             if set(message.keys()) != {"content", "role"}:
                 msg = (

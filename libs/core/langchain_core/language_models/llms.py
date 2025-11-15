@@ -153,7 +153,7 @@ def _resolve_cache(*, cache: BaseCache | bool | None) -> BaseCache | None:
 def get_prompts(
     params: dict[str, Any],
     prompts: list[str],
-    cache: BaseCache | bool | None = None,  # noqa: FBT001
+    cache: BaseCache | bool | None = None,
 ) -> tuple[dict[int, list], str, list[int], list[str]]:
     """Get prompts that are already cached.
 
@@ -189,7 +189,7 @@ def get_prompts(
 async def aget_prompts(
     params: dict[str, Any],
     prompts: list[str],
-    cache: BaseCache | bool | None = None,  # noqa: FBT001
+    cache: BaseCache | bool | None = None,
 ) -> tuple[dict[int, list], str, list[int], list[str]]:
     """Get prompts that are already cached. Async version.
 
@@ -222,7 +222,7 @@ async def aget_prompts(
 
 
 def update_cache(
-    cache: BaseCache | bool | None,  # noqa: FBT001
+    cache: BaseCache | bool | None,
     existing_prompts: dict[int, list],
     llm_string: str,
     missing_prompt_idxs: list[int],
@@ -255,7 +255,7 @@ def update_cache(
 
 
 async def aupdate_cache(
-    cache: BaseCache | bool | None,  # noqa: FBT001
+    cache: BaseCache | bool | None,
     existing_prompts: dict[int, list],
     llm_string: str,
     missing_prompt_idxs: list[int],
@@ -912,7 +912,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             isinstance(callbacks, list)
             and callbacks
             and (
-                isinstance(callbacks[0], (list, BaseCallbackManager))
+                isinstance(callbacks[0], list | BaseCallbackManager)
                 or callbacks[0] is None
             )
         ):
@@ -1177,7 +1177,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             }
         # Create callback managers
         if isinstance(callbacks, list) and (
-            isinstance(callbacks[0], (list, BaseCallbackManager))
+            isinstance(callbacks[0], list | BaseCallbackManager)
             or callbacks[0] is None
         ):
             # We've received a list of callbacks args to apply to each input

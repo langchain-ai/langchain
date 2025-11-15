@@ -196,7 +196,7 @@ def _load_refine_chain(
 def load_summarize_chain(
     llm: BaseLanguageModel,
     chain_type: str = "stuff",
-    verbose: bool | None = None,  # noqa: FBT001
+    verbose: bool | None = None,
     **kwargs: Any,
 ) -> BaseCombineDocumentsChain:
     """Load summarizing chain.
