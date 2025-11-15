@@ -465,6 +465,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     """Parameters for search requests. Example: `{"mode": "auto"}`.
 
     !!! warning "Deprecated"
+
         The Live Search API will be deprecated by December 15, 2025.
         Use `server_tools` instead with the new agentic tool calling API.
 
