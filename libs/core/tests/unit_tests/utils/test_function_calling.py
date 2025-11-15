@@ -1168,3 +1168,51 @@ def test_convert_to_openai_function_strict_required() -> None:
     func = convert_to_openai_function(MyModel, strict=True)
     actual = func["parameters"]["required"]
     assert actual == expected
+
+
+def test_pydantic_fieldinfo_serialization() -> None:
+    """Test that FieldInfo objects are properly serialized in Pydantic v2 schemas.
+
+    This test ensures that using mode='serialization' prevents FieldInfo objects
+    from appearing in the generated JSON schema, which would cause serialization
+    errors in integrations.
+    """
+
+    class MyModel(BaseModel):
+        """Test model with various field configurations."""
+
+        required_field: str = Field(..., description="A required field")
+        optional_field: str | None = Field(None, description="An optional field")
+        default_field: int = Field(default=42, description="A field with default")
+
+    result = convert_to_openai_function(MyModel)
+
+    expected = {
+        "name": "MyModel",
+        "description": "Test model with various field configurations.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "required_field": {
+                    "type": "string",
+                    "description": "A required field",
+                },
+                "optional_field": {
+                    "anyOf": [
+                        {"type": "string"},
+                        {"type": "null"},
+                    ],
+                    "default": None,
+                    "description": "An optional field",
+                },
+                "default_field": {
+                    "type": "integer",
+                    "default": 42,
+                    "description": "A field with default",
+                },
+            },
+            "required": ["required_field"],
+        },
+    }
+
+    assert result == expected
