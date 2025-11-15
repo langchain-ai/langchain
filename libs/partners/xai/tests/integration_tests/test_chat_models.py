@@ -153,7 +153,7 @@ def test_server_tools_code_execution() -> None:
 
 
 def test_server_tools_multiple() -> None:
-    """Test new agentic tool calling API with multiple server tools."""
+    """Test agentic tool calling API with multiple server tools."""
     llm = ChatXAI(
         model=MODEL_NAME,
         server_tools=[
