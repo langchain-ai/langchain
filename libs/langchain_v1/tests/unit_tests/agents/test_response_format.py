@@ -790,7 +790,7 @@ class TestDynamicModelWithResponseFormat:
         # Track which model is checked for provider strategy support
         calls = []
 
-        def mock_supports_provider_strategy(model) -> bool:
+        def mock_supports_provider_strategy(model, tools) -> bool:
             """Track which model is checked and return True for ProviderStrategy."""
             calls.append(model)
             return True

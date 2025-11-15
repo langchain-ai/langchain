@@ -299,6 +299,9 @@ class BaseLanguageModel(
 
         Useful for checking if an input fits in a model's context window.
 
+        This should be overridden by model-specific implementations to provide accurate
+        token counts via model-specific tokenizers.
+
         Args:
             text: The string input to tokenize.
 
@@ -317,9 +320,17 @@ class BaseLanguageModel(
 
         Useful for checking if an input fits in a model's context window.
 
+        This should be overridden by model-specific implementations to provide accurate
+        token counts via model-specific tokenizers.
+
         !!! note
-            The base implementation of `get_num_tokens_from_messages` ignores tool
-            schemas.
+
+            * The base implementation of `get_num_tokens_from_messages` ignores tool
+                schemas.
+            * The base implementation of `get_num_tokens_from_messages` adds additional
+                prefixes to messages in represent user roles, which will add to the
+                overall token count. Model-specific implementations may choose to
+                handle this differently.
 
         Args:
             messages: The message inputs to tokenize.

@@ -28,6 +28,7 @@ from langchain_tests.integration_tests.chat_models import (
     magic_function,
 )
 from pydantic import BaseModel, Field, field_validator
+from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -1146,17 +1147,33 @@ def test_multi_party_conversation() -> None:
     assert "Bob" in response.content
 
 
-def test_structured_output_and_tools() -> None:
-    class ResponseFormat(BaseModel):
-        response: str
-        explanation: str
+class ResponseFormat(BaseModel):
+    response: str
+    explanation: str
 
-    llm = ChatOpenAI(model="gpt-5-nano").bind_tools(
-        [GenerateUsername], strict=True, response_format=ResponseFormat
+
+class ResponseFormatDict(TypedDict):
+    response: str
+    explanation: str
+
+
+@pytest.mark.parametrize(
+    "schema", [ResponseFormat, ResponseFormat.model_json_schema(), ResponseFormatDict]
+)
+def test_structured_output_and_tools(schema: Any) -> None:
+    llm = ChatOpenAI(model="gpt-5-nano", verbosity="low").bind_tools(
+        [GenerateUsername], strict=True, response_format=schema
     )
 
     response = llm.invoke("What weighs more, a pound of feathers or a pound of gold?")
-    assert isinstance(response.additional_kwargs["parsed"], ResponseFormat)
+    if schema == ResponseFormat:
+        parsed = response.additional_kwargs["parsed"]
+        assert isinstance(parsed, ResponseFormat)
+    else:
+        parsed = json.loads(response.text)
+        assert isinstance(parsed, dict)
+        assert parsed["response"]
+        assert parsed["explanation"]
 
     # Test streaming tool calls
     full: BaseMessageChunk | None = None
@@ -1172,10 +1189,6 @@ def test_structured_output_and_tools() -> None:
 
 
 def test_tools_and_structured_output() -> None:
-    class ResponseFormat(BaseModel):
-        response: str
-        explanation: str
-
     llm = ChatOpenAI(model="gpt-5-nano").with_structured_output(
         ResponseFormat, strict=True, include_raw=True, tools=[GenerateUsername]
     )

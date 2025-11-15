@@ -4,6 +4,7 @@ from .context_editing import (
     ClearToolUsesEdit,
     ContextEditingMiddleware,
 )
+from .file_search import FilesystemFileSearchMiddleware
 from .human_in_the_loop import (
     HumanInTheLoopMiddleware,
     InterruptOnConfig,
@@ -46,6 +47,7 @@ __all__ = [
     "CodexSandboxExecutionPolicy",
     "ContextEditingMiddleware",
     "DockerExecutionPolicy",
+    "FilesystemFileSearchMiddleware",
     "HostExecutionPolicy",
     "HumanInTheLoopMiddleware",
     "InterruptOnConfig",

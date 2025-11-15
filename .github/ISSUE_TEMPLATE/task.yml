@@ -25,13 +25,13 @@ body:
       label: Task Description
       description: |
         Provide a clear and detailed description of the task.
-        
+
         What needs to be done? Be specific about the scope and requirements.
       placeholder: |
         This task involves...
-        
+
         The goal is to...
-        
+
         Specific requirements:
         - ...
         - ...
@@ -43,7 +43,7 @@ body:
       label: Acceptance Criteria
       description: |
         Define the criteria that must be met for this task to be considered complete.
-        
+
         What are the specific deliverables or outcomes expected?
       placeholder: |
         This task will be complete when:
@@ -58,15 +58,15 @@ body:
       label: Context and Background
       description: |
         Provide any relevant context, background information, or links to related issues/PRs.
-        
+
         Why is this task needed? What problem does it solve?
       placeholder: |
         Background:
         - ...
-        
+
         Related issues/PRs:
         - #...
-        
+
         Additional context:
         - ...
     validations:
@@ -77,15 +77,45 @@ body:
       label: Dependencies
       description: |
         List any dependencies or blockers for this task.
-        
+
         Are there other tasks, issues, or external factors that need to be completed first?
       placeholder: |
         This task depends on:
         - [ ] Issue #...
         - [ ] PR #...
         - [ ] External dependency: ...
-        
+
         Blocked by:
         - ...
     validations:
       required: false
+  - type: checkboxes
+    id: package
+    attributes:
+      label: Package (Required)
+      description: |
+        Please select package(s) that this task is related to.
+      options:
+        - label: langchain
+        - label: langchain-openai
+        - label: langchain-anthropic
+        - label: langchain-classic
+        - label: langchain-core
+        - label: langchain-cli
+        - label: langchain-model-profiles
+        - label: langchain-tests
+        - label: langchain-text-splitters
+        - label: langchain-chroma
+        - label: langchain-deepseek
+        - label: langchain-exa
+        - label: langchain-fireworks
+        - label: langchain-groq
+        - label: langchain-huggingface
+        - label: langchain-mistralai
+        - label: langchain-nomic
+        - label: langchain-ollama
+        - label: langchain-perplexity
+        - label: langchain-prompty
+        - label: langchain-qdrant
+        - label: langchain-xai
+        - label: Other / not sure / general

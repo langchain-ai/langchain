@@ -57,6 +57,7 @@ test = [
     "pytest-mock",
     "syrupy>=4.0.2,<5.0.0",
     "toml>=0.10.2,<1.0.0",
+    "langchain-model-profiles",
     "langchain-tests",
     "langchain-openai",
 ]
@@ -75,6 +76,7 @@ test_integration = [
     "cassio>=0.1.0,<1.0.0",
     "langchainhub>=0.1.16,<1.0.0",
     "langchain-core",
+    "langchain-model-profiles",
     "langchain-text-splitters",
 ]
 
@@ -83,6 +85,7 @@ prerelease = "allow"
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
+langchain-model-profiles = { path = "../model-profiles", editable = true }
 langchain-tests = { path = "../standard-tests", editable = true }
 langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }

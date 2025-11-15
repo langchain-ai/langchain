@@ -13,11 +13,11 @@ body:
         Relevant links to check before filing a feature request to see if your request has already been made or
         if there's another way to achieve what you want:
 
-        * [LangChain Forum](https://forum.langchain.com/),
-        * [LangChain documentation with the integrated search](https://docs.langchain.com/oss/python/langchain/overview),
-        * [API Reference](https://reference.langchain.com/python/),
+        * [Documentation](https://docs.langchain.com/oss/python/langchain/overview),
+        * [API Reference Documentation](https://reference.langchain.com/python/),
         * [LangChain ChatBot](https://chat.langchain.com/)
         * [GitHub search](https://github.com/langchain-ai/langchain),
+        * [LangChain Forum](https://forum.langchain.com/),
   - type: checkboxes
     id: checks
     attributes:
@@ -34,6 +34,40 @@ body:
           required: true
         - label: This is not related to the langchain-community package.
           required: true
+  - type: checkboxes
+    id: package
+    attributes:
+      label: Package (Required)
+      description: |
+        Which `langchain` package(s) is this request related to? Select at least one.
+
+        Note that if the package you are requesting for is not listed here, it is not in this repository (e.g. `langchain-google-genai` is in `langchain-ai/langchain`).
+
+        Please submit feature requests for other packages to their respective repositories.
+      options:
+        - label: langchain
+        - label: langchain-openai
+        - label: langchain-anthropic
+        - label: langchain-classic
+        - label: langchain-core
+        - label: langchain-cli
+        - label: langchain-model-profiles
+        - label: langchain-tests
+        - label: langchain-text-splitters
+        - label: langchain-chroma
+        - label: langchain-deepseek
+        - label: langchain-exa
+        - label: langchain-fireworks
+        - label: langchain-groq
+        - label: langchain-huggingface
+        - label: langchain-mistralai
+        - label: langchain-nomic
+        - label: langchain-ollama
+        - label: langchain-perplexity
+        - label: langchain-prompty
+        - label: langchain-qdrant
+        - label: langchain-xai
+        - label: Other / not sure / general
   - type: textarea
     id: feature-description
     validations:
