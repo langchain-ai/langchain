@@ -442,8 +442,26 @@ def _init_chat_model_helper(
         _check_pkg("langchain_huggingface")
         from langchain_huggingface import ChatHuggingFace, HuggingFacePipeline
 
-        llm = HuggingFacePipeline.from_model_id(model_id=model, **kwargs)
+    # ------------------------------------------------------
+    # Add default task for decoder-only HuggingFace models.
+    # ------------------------------------------------------
+        if "task" not in kwargs:
+            kwargs["task"] = "text-generation"
+
+    # ------------------------------------------------------
+    # Filter out non-HuggingFacePipeline parameters.
+        # ------------------------------------------------------
+        allowed_keys = {"task", "model_kwargs", "device"}
+        hf_kwargs = {k: v for k, v in kwargs.items() if k in allowed_keys}
+
+        llm = HuggingFacePipeline.from_model_id(
+            model_id=model,
+            **hf_kwargs
+        )
+
         return ChatHuggingFace(llm=llm)
+
+
 
     if model_provider == "groq":
         _check_pkg("langchain_groq")
