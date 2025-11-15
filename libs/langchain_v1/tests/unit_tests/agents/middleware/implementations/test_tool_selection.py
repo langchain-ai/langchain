@@ -1,22 +1,22 @@
 """Unit tests for LLM tool selection middleware."""
 
 import typing
-from typing import Union, Any, Literal
-
 from itertools import cycle
+from typing import Any, Literal, Union
+
+import pytest
 from pydantic import BaseModel
 
 from langchain.agents import create_agent
-from langchain.agents.middleware import AgentState, ModelRequest, wrap_model_call
-from langchain.agents.middleware import LLMToolSelectorMiddleware
+from langchain.agents.middleware import LLMToolSelectorMiddleware, ModelRequest, wrap_model_call
+from langchain.agents.middleware.tool_selection import _create_tool_selection_response
+from langchain.agents.middleware.types import AgentState
 from langchain.messages import AIMessage
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import BaseMessage
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.runnables import Runnable
-from langchain_core.tools import BaseTool
-from langchain_core.tools import tool
+from langchain_core.tools import BaseTool, tool
 
 
 @tool
@@ -596,3 +596,12 @@ class TestDuplicateAndInvalidTools:
             assert len(tool_names) == 2
             assert "get_weather" in tool_names
             assert "search_web" in tool_names
+
+
+class TestEdgeCases:
+    """Test edge cases and error handling."""
+
+    def test_empty_tools_list_raises_error(self) -> None:
+        """Test that empty tools list raises an error in schema creation."""
+        with pytest.raises(AssertionError, match="tools must be non-empty"):
+            _create_tool_selection_response([])
