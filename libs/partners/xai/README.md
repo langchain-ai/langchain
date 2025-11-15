@@ -23,7 +23,7 @@ For full documentation, see the [API reference](https://reference.langchain.com/
 
 ## ⚠️ Important: API Migration
 
-X.AI's Live Search API is being deprecated by **December 15, 2025**. Please migrate to the new agentic tool calling API:
+xAI's Live Search API is being deprecated by **December 15, 2025**. Please migrate to the new agentic tool calling API:
 
 ```python
 # Old (deprecated)
