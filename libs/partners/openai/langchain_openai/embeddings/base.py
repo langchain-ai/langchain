@@ -421,7 +421,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     def _tokenize(
         self, texts: list[str], chunk_size: int
-    ) -> tuple[Iterable[int], list[list[int] | str], list[int]]:
+    ) -> tuple[Iterable[int], list[list[int] | str], list[int], list[int]]:
         """Tokenize and batch input texts.
 
         Splits texts based on `embedding_ctx_length` and groups them into batches
@@ -438,9 +438,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     HuggingFace).
                 3. An iterable mapping each token array to the index of the original
                     text. Same length as the token list.
+                4. A list of token counts for each tokenized text.
         """
         tokens: list[list[int] | str] = []
         indices: list[int] = []
+        token_counts: list[int] = []
         model_name = self.tiktoken_model_name or self.model
 
         # If tiktoken flag set to False
@@ -472,6 +474,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     chunk_text: str = tokenizer.decode(token_chunk)
                     tokens.append(chunk_text)
                     indices.append(i)
+                    token_counts.append(len(token_chunk))
         else:
             try:
                 encoding = tiktoken.encoding_for_model(model_name)
@@ -501,6 +504,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 for j in range(0, len(token), self.embedding_ctx_length):
                     tokens.append(token[j : j + self.embedding_ctx_length])
                     indices.append(i)
+                    token_counts.append(len(token[j : j + self.embedding_ctx_length]))
 
         if self.show_progress_bar:
             try:
@@ -511,7 +515,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 _iter = range(0, len(tokens), chunk_size)
         else:
             _iter = range(0, len(tokens), chunk_size)
-        return _iter, tokens, indices
+        return _iter, tokens, indices, token_counts
 
     # please refer to
     # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
@@ -539,12 +543,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         _chunk_size = chunk_size or self.chunk_size
         client_kwargs = {**self._invocation_params, **kwargs}
-        _iter, tokens, indices = self._tokenize(texts, _chunk_size)
+        _iter, tokens, indices, token_counts = self._tokenize(texts, _chunk_size)
         batched_embeddings: list[list[float]] = []
-        # Calculate token counts per chunk
-        token_counts = [
-            len(t) if isinstance(t, list) else len(t.split()) for t in tokens
-        ]
 
         # Process in batches respecting the token limit
         i = 0
@@ -615,14 +615,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         _chunk_size = chunk_size or self.chunk_size
         client_kwargs = {**self._invocation_params, **kwargs}
-        _iter, tokens, indices = await run_in_executor(
+        _iter, tokens, indices, token_counts = await run_in_executor(
             None, self._tokenize, texts, _chunk_size
         )
         batched_embeddings: list[list[float]] = []
-        # Calculate token counts per chunk
-        token_counts = [
-            len(t) if isinstance(t, list) else len(t.split()) for t in tokens
-        ]
 
         # Process in batches respecting the token limit
         i = 0
