@@ -99,7 +99,7 @@ def test_web_search() -> None:
 
 
 def test_server_tools_web_search() -> None:
-    """Test new agentic tool calling API with web_search."""
+    """Test agentic tool calling API with web_search."""
     llm = ChatXAI(
         model=MODEL_NAME,
         server_tools=[{"type": "web_search"}],
