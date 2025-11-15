@@ -133,7 +133,7 @@ def test_server_tools_x_search() -> None:
 
 
 def test_server_tools_code_execution() -> None:
-    """Test new agentic tool calling API with code_execution."""
+    """Test agentic tool calling API with code_execution."""
     llm = ChatXAI(
         model=MODEL_NAME,
         server_tools=[{"type": "code_execution"}],
