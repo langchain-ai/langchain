@@ -33,7 +33,7 @@ model = ChatXAI(search_parameters={"mode": "on"})
 model = ChatXAI(server_tools=[{"type": "web_search"}])
 ```
 
-See [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) for detailed migration instructions and [examples/agentic_tools_example.py](./examples/agentic_tools_example.py) for code examples.
+For more details, see the [X.AI Agentic Tools documentation](https://docs.x.ai/docs/guides/tools/overview).
 
 ## 📕 Releases & Versioning
 
