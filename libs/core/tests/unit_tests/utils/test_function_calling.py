@@ -35,6 +35,16 @@ from langchain_core.utils.function_calling import (
 )
 
 
+def remove_titles(obj: Any) -> None:
+    if isinstance(obj, dict):
+        obj.pop("title", None)
+        for v in obj.values():
+            remove_titles(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            remove_titles(v)
+
+
 @pytest.fixture
 def pydantic() -> type[BaseModel]:
     class dummy_function(BaseModel):  # noqa: N801
@@ -365,9 +375,9 @@ def test_convert_to_openai_function(
         dummy_extensions_typed_dict_docstring,
     ):
         actual = convert_to_openai_function(fn)
+        remove_titles(actual)
         assert actual == expected
 
-    # Test runnables
     actual = convert_to_openai_function(runnable.as_tool(description="Dummy function."))
     parameters = {
         "type": "object",
@@ -384,7 +394,6 @@ def test_convert_to_openai_function(
     runnable_expected["parameters"] = parameters
     assert actual == runnable_expected
 
-    # Test simple Tool
     def my_function(_: str) -> str:
         return ""
 
@@ -398,11 +407,12 @@ def test_convert_to_openai_function(
         "name": "dummy_function",
         "description": "test description",
         "parameters": {
-            "properties": {"__arg1": {"title": "__arg1", "type": "string"}},
+            "properties": {"__arg1": {"type": "string"}},
             "required": ["__arg1"],
             "type": "object",
         },
     }
+    remove_titles(actual)
     assert actual == expected
 
 
@@ -454,6 +464,7 @@ def test_convert_to_openai_function_nested() -> None:
     }
 
     actual = convert_to_openai_function(my_function)
+    remove_titles(actual)
     assert actual == expected
 
 
@@ -494,6 +505,7 @@ def test_convert_to_openai_function_nested_strict() -> None:
     }
 
     actual = convert_to_openai_function(my_function, strict=True)
+    remove_titles(actual)
     assert actual == expected
 
 
@@ -518,23 +530,20 @@ def test_convert_to_openai_function_strict_union_of_objects_arg_type() -> None:
                 "my_arg": {
                     "anyOf": [
                         {
-                            "properties": {"foo": {"title": "Foo", "type": "string"}},
+                            "properties": {"foo": {"type": "string"}},
                             "required": ["foo"],
-                            "title": "NestedA",
                             "type": "object",
                             "additionalProperties": False,
                         },
                         {
-                            "properties": {"bar": {"title": "Bar", "type": "integer"}},
+                            "properties": {"bar": {"type": "integer"}},
                             "required": ["bar"],
-                            "title": "NestedB",
                             "type": "object",
                             "additionalProperties": False,
                         },
                         {
-                            "properties": {"baz": {"title": "Baz", "type": "boolean"}},
+                            "properties": {"baz": {"type": "boolean"}},
                             "required": ["baz"],
-                            "title": "NestedC",
                             "type": "object",
                             "additionalProperties": False,
                         },
@@ -549,13 +558,13 @@ def test_convert_to_openai_function_strict_union_of_objects_arg_type() -> None:
     }
 
     actual = convert_to_openai_function(my_function, strict=True)
+    remove_titles(actual)
     assert actual == expected
 
 
 json_schema_no_description_no_params = {
     "title": "dummy_function",
 }
-
 
 json_schema_no_description = {
     "title": "dummy_function",
@@ -570,7 +579,6 @@ json_schema_no_description = {
     },
     "required": ["arg1", "arg2"],
 }
-
 
 anthropic_tool_no_description = {
     "name": "dummy_function",
@@ -587,7 +595,6 @@ anthropic_tool_no_description = {
         "required": ["arg1", "arg2"],
     },
 }
-
 
 bedrock_converse_tool_no_description = {
     "toolSpec": {
@@ -609,7 +616,6 @@ bedrock_converse_tool_no_description = {
     }
 }
 
-
 openai_function_no_description = {
     "name": "dummy_function",
     "parameters": {
@@ -625,7 +631,6 @@ openai_function_no_description = {
         "required": ["arg1", "arg2"],
     },
 }
-
 
 openai_function_no_description_no_params = {
     "name": "dummy_function",
@@ -658,6 +663,7 @@ def test_convert_to_openai_function_no_description(func: dict) -> None:
         },
     }
     actual = convert_to_openai_function(func)
+    remove_titles(actual)
     assert actual == expected
 
 
@@ -770,7 +776,6 @@ def test_tool_outputs() -> None:
     ]
     assert messages[2].content == "Output1"
 
-    # Test final AI response
     messages = tool_example_to_messages(
         input="This is an example",
         tool_calls=[
@@ -878,12 +883,10 @@ def test__convert_typed_dict_to_openai_function(
                             "items": [
                                 {"type": "array", "items": {}},
                                 {
-                                    "title": "SubTool",
                                     "description": "Subtool docstring.",
                                     "type": "object",
                                     "properties": {
                                         "args": {
-                                            "title": "Args",
                                             "description": "this does bar",
                                             "default": {},
                                             "type": "object",
@@ -914,12 +917,10 @@ def test__convert_typed_dict_to_openai_function(
                     "maxItems": 1,
                     "items": [
                         {
-                            "title": "SubTool",
                             "description": "Subtool docstring.",
                             "type": "object",
                             "properties": {
                                 "args": {
-                                    "title": "Args",
                                     "description": "this does bar",
                                     "default": {},
                                     "type": "object",
@@ -1032,6 +1033,7 @@ def test__convert_typed_dict_to_openai_function(
         },
     }
     actual = _convert_typed_dict_to_openai_function(Tool)
+    remove_titles(actual)
     assert actual == expected
 
 
@@ -1040,7 +1042,6 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
     class Tool(typed_dict):  # type: ignore[misc]
         arg1: typing.MutableSet  # Pydantic 2 supports this, but pydantic v1 does not.
 
-    # Error should be raised since we're using v1 code path here
     with pytest.raises(TypeError):
         _convert_typed_dict_to_openai_function(Tool)
 

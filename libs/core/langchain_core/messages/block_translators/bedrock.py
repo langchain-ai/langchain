@@ -84,7 +84,7 @@ def _register_bedrock_translator() -> None:
 
     Run automatically when the module is imported.
     """
-    from langchain_core.messages.block_translators import (  # noqa: PLC0415
+    from langchain_core.messages.block_translators import (
         register_translator,
     )
 

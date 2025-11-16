@@ -511,7 +511,7 @@ class Graph:
             The ASCII art string.
         """
         # Import locally to prevent circular import
-        from langchain_core.runnables.graph_ascii import draw_ascii  # noqa: PLC0415
+        from langchain_core.runnables.graph_ascii import draw_ascii
 
         return draw_ascii(
             {node.id: node.name for node in self.nodes.values()},
@@ -557,7 +557,7 @@ class Graph:
             The PNG image as bytes if output_file_path is None, None otherwise.
         """
         # Import locally to prevent circular import
-        from langchain_core.runnables.graph_png import PngDrawer  # noqa: PLC0415
+        from langchain_core.runnables.graph_png import PngDrawer
 
         default_node_labels = {node.id: node.name for node in self.nodes.values()}
 
@@ -609,7 +609,7 @@ class Graph:
             The Mermaid syntax string.
         """
         # Import locally to prevent circular import
-        from langchain_core.runnables.graph_mermaid import draw_mermaid  # noqa: PLC0415
+        from langchain_core.runnables.graph_mermaid import draw_mermaid
 
         graph = self.reid()
         first_node = graph.first_node()
@@ -680,7 +680,7 @@ class Graph:
 
         """
         # Import locally to prevent circular import
-        from langchain_core.runnables.graph_mermaid import (  # noqa: PLC0415
+        from langchain_core.runnables.graph_mermaid import (
             draw_mermaid_png,
         )
 

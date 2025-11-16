@@ -1201,7 +1201,7 @@ class Qdrant(VectorStore):
         port: int | None = 6333,
         grpc_port: int = 6334,
         prefer_grpc: bool = False,  # noqa: FBT001, FBT002
-        https: bool | None = None,  # noqa: FBT001
+        https: bool | None = None,
         api_key: str | None = None,
         prefix: str | None = None,
         timeout: int | None = None,
@@ -1216,13 +1216,13 @@ class Qdrant(VectorStore):
         shard_number: int | None = None,
         replication_factor: int | None = None,
         write_consistency_factor: int | None = None,
-        on_disk_payload: bool | None = None,  # noqa: FBT001
+        on_disk_payload: bool | None = None,
         hnsw_config: models.HnswConfigDiff | None = None,
         optimizers_config: models.OptimizersConfigDiff | None = None,
         wal_config: models.WalConfigDiff | None = None,
         quantization_config: models.QuantizationConfig | None = None,
         init_from: models.InitFrom | None = None,
-        on_disk: bool | None = None,  # noqa: FBT001
+        on_disk: bool | None = None,
         force_recreate: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> Qdrant:
@@ -1380,7 +1380,7 @@ class Qdrant(VectorStore):
         port: int | None = 6333,
         grpc_port: int = 6334,
         prefer_grpc: bool = False,  # noqa: FBT001, FBT002
-        https: bool | None = None,  # noqa: FBT001
+        https: bool | None = None,
         api_key: str | None = None,
         prefix: str | None = None,
         timeout: int | None = None,
@@ -1438,7 +1438,7 @@ class Qdrant(VectorStore):
         port: int | None = 6333,
         grpc_port: int = 6334,
         prefer_grpc: bool = False,  # noqa: FBT001, FBT002
-        https: bool | None = None,  # noqa: FBT001
+        https: bool | None = None,
         api_key: str | None = None,
         prefix: str | None = None,
         timeout: int | None = None,
@@ -1453,13 +1453,13 @@ class Qdrant(VectorStore):
         shard_number: int | None = None,
         replication_factor: int | None = None,
         write_consistency_factor: int | None = None,
-        on_disk_payload: bool | None = None,  # noqa: FBT001
+        on_disk_payload: bool | None = None,
         hnsw_config: models.HnswConfigDiff | None = None,
         optimizers_config: models.OptimizersConfigDiff | None = None,
         wal_config: models.WalConfigDiff | None = None,
         quantization_config: models.QuantizationConfig | None = None,
         init_from: models.InitFrom | None = None,
-        on_disk: bool | None = None,  # noqa: FBT001
+        on_disk: bool | None = None,
         force_recreate: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> Qdrant:
@@ -1620,7 +1620,7 @@ class Qdrant(VectorStore):
         port: int | None = 6333,
         grpc_port: int = 6334,
         prefer_grpc: bool = False,  # noqa: FBT001, FBT002
-        https: bool | None = None,  # noqa: FBT001
+        https: bool | None = None,
         api_key: str | None = None,
         prefix: str | None = None,
         timeout: int | None = None,
@@ -1634,13 +1634,13 @@ class Qdrant(VectorStore):
         shard_number: int | None = None,
         replication_factor: int | None = None,
         write_consistency_factor: int | None = None,
-        on_disk_payload: bool | None = None,  # noqa: FBT001
+        on_disk_payload: bool | None = None,
         hnsw_config: models.HnswConfigDiff | None = None,
         optimizers_config: models.OptimizersConfigDiff | None = None,
         wal_config: models.WalConfigDiff | None = None,
         quantization_config: models.QuantizationConfig | None = None,
         init_from: models.InitFrom | None = None,
-        on_disk: bool | None = None,  # noqa: FBT001
+        on_disk: bool | None = None,
         force_recreate: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> Qdrant:
@@ -1785,7 +1785,7 @@ class Qdrant(VectorStore):
         port: int | None = 6333,
         grpc_port: int = 6334,
         prefer_grpc: bool = False,  # noqa: FBT001, FBT002
-        https: bool | None = None,  # noqa: FBT001
+        https: bool | None = None,
         api_key: str | None = None,
         prefix: str | None = None,
         timeout: int | None = None,
@@ -1799,13 +1799,13 @@ class Qdrant(VectorStore):
         shard_number: int | None = None,
         replication_factor: int | None = None,
         write_consistency_factor: int | None = None,
-        on_disk_payload: bool | None = None,  # noqa: FBT001
+        on_disk_payload: bool | None = None,
         hnsw_config: models.HnswConfigDiff | None = None,
         optimizers_config: models.OptimizersConfigDiff | None = None,
         wal_config: models.WalConfigDiff | None = None,
         quantization_config: models.QuantizationConfig | None = None,
         init_from: models.InitFrom | None = None,
-        on_disk: bool | None = None,  # noqa: FBT001
+        on_disk: bool | None = None,
         force_recreate: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> Qdrant:
@@ -2281,7 +2281,7 @@ class Qdrant(VectorStore):
         port: int | None = 6333,
         grpc_port: int = 6334,
         prefer_grpc: bool = False,  # noqa: FBT001, FBT002
-        https: bool | None = None,  # noqa: FBT001
+        https: bool | None = None,
         api_key: str | None = None,
         prefix: str | None = None,
         timeout: int | None = None,

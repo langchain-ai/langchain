@@ -377,7 +377,7 @@ def convert_to_messages(
 
     """
     # Import here to avoid circular imports
-    from langchain_core.prompt_values import PromptValue  # noqa: PLC0415
+    from langchain_core.prompt_values import PromptValue
 
     if isinstance(messages, PromptValue):
         return messages.to_messages()
@@ -403,7 +403,7 @@ def _runnable_support(func: Callable) -> Callable:
         | Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]]
     ):
         # Import locally to prevent circular import.
-        from langchain_core.runnables.base import RunnableLambda  # noqa: PLC0415
+        from langchain_core.runnables.base import RunnableLambda
 
         if messages is not None:
             return func(messages, **kwargs)
@@ -514,7 +514,7 @@ def filter_messages(
         ):
             continue
 
-        if isinstance(exclude_tool_calls, (list, tuple, set)):
+        if isinstance(exclude_tool_calls, list | tuple | set):
             if isinstance(msg, AIMessage) and msg.tool_calls:
                 tool_calls = [
                     tool_call
@@ -1110,7 +1110,7 @@ def convert_to_openai_messages(
 
     oai_messages: list = []
 
-    if is_single := isinstance(messages, (BaseMessage, dict, str)):
+    if is_single := isinstance(messages, BaseMessage | dict | str):
         messages = [messages]
 
     messages = convert_to_messages(messages)
@@ -1623,7 +1623,7 @@ def _is_message_type(
     message: BaseMessage,
     type_: str | type[BaseMessage] | Sequence[str | type[BaseMessage]],
 ) -> bool:
-    types = [type_] if isinstance(type_, (str, type)) else type_
+    types = [type_] if isinstance(type_, str | type) else type_
     types_str = [t for t in types if isinstance(t, str)]
     types_types = tuple(t for t in types if isinstance(t, type))
 

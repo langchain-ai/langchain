@@ -47,7 +47,7 @@ class FastEmbedSparse(SparseEmbeddings):
             ValueError: If the `model_name` is not supported in `SparseTextEmbedding`.
         """
         try:
-            from fastembed import (  # type: ignore[import-not-found] # noqa: PLC0415
+            from fastembed import (  # type: ignore[import-not-found]
                 SparseTextEmbedding,
             )
         except ImportError as err:

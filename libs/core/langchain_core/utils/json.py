@@ -33,7 +33,7 @@ def _custom_parser(multiline_string: str | bytes | bytearray) -> str:
     Returns:
         The modified string with escaped newlines, tabs and quotes.
     """
-    if isinstance(multiline_string, (bytes, bytearray)):
+    if isinstance(multiline_string, bytes | bytearray):
         multiline_string = multiline_string.decode()
 
     return re.sub(

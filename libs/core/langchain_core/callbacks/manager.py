@@ -2569,7 +2569,7 @@ async def adispatch_custom_event(
         behalf.
     """
     # Import locally to prevent circular imports.
-    from langchain_core.runnables.config import (  # noqa: PLC0415
+    from langchain_core.runnables.config import (
         ensure_config,
         get_async_callback_manager_for_config,
     )
@@ -2641,7 +2641,7 @@ def dispatch_custom_event(
         ```
     """
     # Import locally to prevent circular imports.
-    from langchain_core.runnables.config import (  # noqa: PLC0415
+    from langchain_core.runnables.config import (
         ensure_config,
         get_callback_manager_for_config,
     )

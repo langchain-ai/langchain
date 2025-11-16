@@ -498,7 +498,7 @@ class ChatFireworks(BaseChatModel):
         messages: list[BaseMessage],
         stop: list[str] | None = None,
         run_manager: CallbackManagerForLLMRun | None = None,
-        stream: bool | None = None,  # noqa: FBT001
+        stream: bool | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
@@ -596,7 +596,7 @@ class ChatFireworks(BaseChatModel):
         messages: list[BaseMessage],
         stop: list[str] | None = None,
         run_manager: AsyncCallbackManagerForLLMRun | None = None,
-        stream: bool | None = None,  # noqa: FBT001
+        stream: bool | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming

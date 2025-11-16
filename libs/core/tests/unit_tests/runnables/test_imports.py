@@ -40,6 +40,6 @@ def test_all_imports() -> None:
 def test_imports_for_specific_funcs() -> None:
     """Test that a few specific imports in more internal namespaces."""
     # create_model implementation has been moved to langchain_core.utils.pydantic
-    from langchain_core.runnables.utils import (  # type: ignore[attr-defined] # noqa: F401,PLC0415
+    from langchain_core.runnables.utils import (  # type: ignore[attr-defined] # noqa: F401
         create_model,
     )

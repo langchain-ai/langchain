@@ -1703,7 +1703,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             A `ModelProfile` object containing profiling information for the model.
         """
         try:
-            from langchain_model_profiles import get_model_profile  # noqa: PLC0415
+            from langchain_model_profiles import get_model_profile
         except ImportError as err:
             informative_error_message = (
                 "To access model profiling information, please install the "

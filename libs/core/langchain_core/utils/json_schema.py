@@ -53,7 +53,7 @@ def _process_dict_properties(
         if key in skip_keys:
             # Skip recursion for specified keys, just copy the value as-is
             result[key] = deepcopy(value)
-        elif isinstance(value, (dict, list)):
+        elif isinstance(value, dict | list):
             # Recursively process nested objects and arrays
             result[key] = _dereference_refs_helper(
                 value, full_schema, processed_refs, skip_keys, shallow_refs

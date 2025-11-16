@@ -43,7 +43,7 @@ if TYPE_CHECKING:
     from vcr.cassette import Cassette
 
 
-def _get_joke_class(  # noqa: RET503
+def _get_joke_class(
     schema_type: Literal["pydantic", "typeddict", "json_schema"],
 ) -> Any:
     class Joke(BaseModel):
@@ -72,6 +72,7 @@ def _get_joke_class(  # noqa: RET503
 
     if schema_type == "json_schema":
         return Joke.model_json_schema(), validate_joke_dict
+    return None
 
 
 class _TestCallbackHandler(BaseCallbackHandler):
@@ -2314,8 +2315,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.supports_json_mode:
             pytest.skip("Test requires json mode support.")
 
-        from pydantic import BaseModel as BaseModelProper  # noqa: PLC0415
-        from pydantic import Field as FieldProper  # noqa: PLC0415
+        from pydantic import BaseModel as BaseModelProper
+        from pydantic import Field as FieldProper
 
         class Joke(BaseModelProper):
             """Joke to tell user."""
