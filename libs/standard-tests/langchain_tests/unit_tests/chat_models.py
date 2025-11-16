@@ -13,34 +13,15 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.load import dumpd, load
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool, tool
-from pydantic import BaseModel, Field, SecretStr
-from pydantic.v1 import BaseModel as BaseModelV1
-from pydantic.v1 import Field as FieldV1
-from pydantic.v1 import ValidationError as ValidationErrorV1
+from pydantic import BaseModel, Field, SecretStr, ValidationError
 
 from langchain_tests.base import BaseStandardTests
-from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 if TYPE_CHECKING:
     from pytest_benchmark.fixture import (  # type: ignore[import-untyped]
         BenchmarkFixture,
     )
     from syrupy.assertion import SnapshotAssertion
-
-
-def generate_schema_pydantic_v1_from_2() -> Any:
-    """Use to generate a schema from v1 namespace in pydantic 2."""
-    if PYDANTIC_MAJOR_VERSION != 2:
-        msg = "This function is only compatible with Pydantic v2."
-        raise AssertionError(msg)
-
-    class PersonB(BaseModelV1):
-        """Record attributes of a person."""
-
-        name: str = FieldV1(..., description="The name of the person.")
-        age: int = FieldV1(..., description="The age of the person.")
-
-    return PersonB
 
 
 def generate_schema_pydantic() -> Any:
@@ -56,9 +37,6 @@ def generate_schema_pydantic() -> Any:
 
 
 TEST_PYDANTIC_MODELS = [generate_schema_pydantic()]
-
-if PYDANTIC_MAJOR_VERSION == 2:
-    TEST_PYDANTIC_MODELS.append(generate_schema_pydantic_v1_from_2())
 
 
 class ChatModelTests(BaseStandardTests):
@@ -1023,18 +1001,18 @@ class ChatModelUnitTests(ChatModelTests):
             (e.g., `ChatProviderName`).
         """
 
-        class ExpectedParams(BaseModelV1):
+        class ExpectedParams(BaseModel):
             ls_provider: str
             ls_model_name: str
             ls_model_type: Literal["chat"]
-            ls_temperature: float | None
-            ls_max_tokens: int | None
-            ls_stop: list[str] | None
+            ls_temperature: float | None = None
+            ls_max_tokens: int | None = None
+            ls_stop: list[str] | None = None
 
         ls_params = model._get_ls_params()
         try:
-            ExpectedParams(**ls_params)  # type: ignore[arg-type]
-        except ValidationErrorV1 as e:
+            ExpectedParams(**ls_params)
+        except ValidationError as e:
             pytest.fail(f"Validation error: {e}")
 
         # Test optional params
@@ -1045,8 +1023,8 @@ class ChatModelUnitTests(ChatModelTests):
         )
         ls_params = model._get_ls_params()
         try:
-            ExpectedParams(**ls_params)  # type: ignore[arg-type]
-        except ValidationErrorV1 as e:
+            ExpectedParams(**ls_params)
+        except ValidationError as e:
             pytest.fail(f"Validation error: {e}")
 
     def test_serdes(self, model: BaseChatModel, snapshot: SnapshotAssertion) -> None:
