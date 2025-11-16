@@ -1439,11 +1439,17 @@ def _convert_to_message_template(
                 message_type_str, template, template_format=template_format
             )
         else:
-            message_ = message_type_str(
-                prompt=PromptTemplate.from_template(
-                    cast("str", template), template_format=template_format
+            if "type" in message_type_str.model_fields:
+                message_type = message_type_str.model_fields["type"].default
+                message_ = _create_template_from_message_type(
+                    message_type, template, template_format=template_format
                 )
-            )
+            else:
+                message_ = message_type_str(
+                    prompt=PromptTemplate.from_template(
+                        cast("str", template), template_format=template_format
+                    )
+                )
     else:
         msg = f"Unsupported message type: {type(message)}"
         raise NotImplementedError(msg)
