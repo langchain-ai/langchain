@@ -26,96 +26,96 @@ class ToolRetryMiddleware(AgentMiddleware):
     Supports retrying on specific exceptions and exponential backoff.
 
     Examples:
-        Basic usage with default settings (2 retries, exponential backoff):
+        !!! example "Basic usage with default settings (2 retries, exponential backoff)"
 
-        ```python
-        from langchain.agents import create_agent
-        from langchain.agents.middleware import ToolRetryMiddleware
+            ```python
+            from langchain.agents import create_agent
+            from langchain.agents.middleware import ToolRetryMiddleware
 
-        agent = create_agent(model, tools=[search_tool], middleware=[ToolRetryMiddleware()])
-        ```
+            agent = create_agent(model, tools=[search_tool], middleware=[ToolRetryMiddleware()])
+            ```
 
-        Retry specific exceptions only:
+        !!! example "Retry specific exceptions only"
 
-        ```python
-        from requests.exceptions import RequestException, Timeout
+            ```python
+            from requests.exceptions import RequestException, Timeout
 
-        retry = ToolRetryMiddleware(
-            max_retries=4,
-            retry_on=(RequestException, Timeout),
-            backoff_factor=1.5,
-        )
-        ```
+            retry = ToolRetryMiddleware(
+                max_retries=4,
+                retry_on=(RequestException, Timeout),
+                backoff_factor=1.5,
+            )
+            ```
 
-        Custom exception filtering:
+        !!! example "Custom exception filtering"
 
-        ```python
-        from requests.exceptions import HTTPError
-
-
-        def should_retry(exc: Exception) -> bool:
-            # Only retry on 5xx errors
-            if isinstance(exc, HTTPError):
-                return 500 <= exc.status_code < 600
-            return False
+            ```python
+            from requests.exceptions import HTTPError
 
 
-        retry = ToolRetryMiddleware(
-            max_retries=3,
-            retry_on=should_retry,
-        )
-        ```
-
-        Apply to specific tools with custom error handling:
-
-        ```python
-        def format_error(exc: Exception) -> str:
-            return "Database temporarily unavailable. Please try again later."
+            def should_retry(exc: Exception) -> bool:
+                # Only retry on 5xx errors
+                if isinstance(exc, HTTPError):
+                    return 500 <= exc.status_code < 600
+                return False
 
 
-        retry = ToolRetryMiddleware(
-            max_retries=4,
-            tools=["search_database"],
-            on_failure=format_error,
-        )
-        ```
+            retry = ToolRetryMiddleware(
+                max_retries=3,
+                retry_on=should_retry,
+            )
+            ```
 
-        Apply to specific tools using BaseTool instances:
+        !!! example "Apply to specific tools with custom error handling"
 
-        ```python
-        from langchain_core.tools import tool
-
-
-        @tool
-        def search_database(query: str) -> str:
-            '''Search the database.'''
-            return results
+            ```python
+            def format_error(exc: Exception) -> str:
+                return "Database temporarily unavailable. Please try again later."
 
 
-        retry = ToolRetryMiddleware(
-            max_retries=4,
-            tools=[search_database],  # Pass BaseTool instance
-        )
-        ```
+            retry = ToolRetryMiddleware(
+                max_retries=4,
+                tools=["search_database"],
+                on_failure=format_error,
+            )
+            ```
 
-        Constant backoff (no exponential growth):
+        !!! example "Apply to specific tools using `BaseTool` instances"
 
-        ```python
-        retry = ToolRetryMiddleware(
-            max_retries=5,
-            backoff_factor=0.0,  # No exponential growth
-            initial_delay=2.0,  # Always wait 2 seconds
-        )
-        ```
+            ```python
+            from langchain_core.tools import tool
 
-        Raise exception on failure:
 
-        ```python
-        retry = ToolRetryMiddleware(
-            max_retries=2,
-            on_failure="raise",  # Re-raise exception instead of returning message
-        )
-        ```
+            @tool
+            def search_database(query: str) -> str:
+                '''Search the database.'''
+                return results
+
+
+            retry = ToolRetryMiddleware(
+                max_retries=4,
+                tools=[search_database],  # Pass BaseTool instance
+            )
+            ```
+
+        !!! example "Constant backoff (no exponential growth)"
+
+            ```python
+            retry = ToolRetryMiddleware(
+                max_retries=5,
+                backoff_factor=0.0,  # No exponential growth
+                initial_delay=2.0,  # Always wait 2 seconds
+            )
+            ```
+
+        !!! example "Raise exception on failure"
+
+            ```python
+            retry = ToolRetryMiddleware(
+                max_retries=2,
+                on_failure="raise",  # Re-raise exception instead of returning message
+            )
+            ```
     """
 
     def __init__(
@@ -136,7 +136,10 @@ class ToolRetryMiddleware(AgentMiddleware):
 
         Args:
             max_retries: Maximum number of retry attempts after the initial call.
-                Default is `2` retries (`3` total attempts). Must be `>= 0`.
+
+                Default is `2` retries (`3` total attempts).
+
+                Must be `>= 0`.
             tools: Optional list of tools or tool names to apply retry logic to.
 
                 Can be a list of `BaseTool` instances or tool name strings.
@@ -146,12 +149,14 @@ class ToolRetryMiddleware(AgentMiddleware):
                 that takes an exception and returns `True` if it should be retried.
 
                 Default is to retry on all exceptions.
-            on_failure: Behavior when all retries are exhausted. Options:
+            on_failure: Behavior when all retries are exhausted.
+
+                Options:
 
                 - `'return_message'`: Return a `ToolMessage` with error details,
                     allowing the LLM to handle the failure and potentially recover.
                 - `'raise'`: Re-raise the exception, stopping agent execution.
-                - Custom callable: Function that takes the exception and returns a
+                - **Custom callable:** Function that takes the exception and returns a
                     string for the `ToolMessage` content, allowing custom error
                     formatting.
             backoff_factor: Multiplier for exponential backoff.

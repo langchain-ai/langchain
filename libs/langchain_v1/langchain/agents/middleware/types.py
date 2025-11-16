@@ -118,13 +118,17 @@ class ModelRequest:
             New `ModelRequest` instance with specified overrides applied.
 
         Examples:
-            ```python title="Create a new request with different model"
-            new_request = request.override(model=different_model)
-            ```
+            !!! example "Create a new request with different model"
 
-            ```python title="Override multiple attributes"
-            new_request = request.override(system_prompt="New instructions", tool_choice="auto")
-            ```
+                ```python
+                new_request = request.override(model=different_model)
+                ```
+
+            !!! example "Override multiple attributes"
+
+                ```python
+                new_request = request.override(system_prompt="New instructions", tool_choice="auto")
+                ```
         """
         return replace(self, **overrides)
 
@@ -224,7 +228,10 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         return self.__class__.__name__
 
     def before_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
-        """Logic to run before the agent execution starts."""
+        """Logic to run before the agent execution starts.
+
+        Async version is `abefore_agent`
+        """
 
     async def abefore_agent(
         self, state: StateT, runtime: Runtime[ContextT]
@@ -232,7 +239,10 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         """Async logic to run before the agent execution starts."""
 
     def before_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
-        """Logic to run before the model is called."""
+        """Logic to run before the model is called.
+
+        Async version is `abefore_model`
+        """
 
     async def abefore_model(
         self, state: StateT, runtime: Runtime[ContextT]
@@ -240,7 +250,10 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         """Async logic to run before the model is called."""
 
     def after_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
-        """Logic to run after the model is called."""
+        """Logic to run after the model is called.
+
+        Async version is `aafter_model`
+        """
 
     async def aafter_model(
         self, state: StateT, runtime: Runtime[ContextT]
@@ -253,6 +266,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
         """Intercept and control model execution via handler callback.
+
+        Async version is `awrap_model_call`
 
         The handler callback executes the model request and returns a `ModelResponse`.
         Middleware can call the handler multiple times for retry logic, skip calling
@@ -274,49 +289,59 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             `ModelCallResult`
 
         Examples:
-            ```python title="Retry on error"
-            def wrap_model_call(self, request, handler):
-                for attempt in range(3):
+            !!! example "Retry on error"
+
+                ```python
+                def wrap_model_call(self, request, handler):
+                    for attempt in range(3):
+                        try:
+                            return handler(request)
+                        except Exception:
+                            if attempt == 2:
+                                raise
+                ```
+
+            !!! example "Rewrite response"
+
+                ```python
+                def wrap_model_call(self, request, handler):
+                    response = handler(request)
+                    ai_msg = response.result[0]
+                    return ModelResponse(
+                        result=[AIMessage(content=f"[{ai_msg.content}]")],
+                        structured_response=response.structured_response,
+                    )
+                ```
+
+            !!! example "Error to fallback"
+
+                ```python
+                def wrap_model_call(self, request, handler):
                     try:
                         return handler(request)
                     except Exception:
-                        if attempt == 2:
-                            raise
-            ```
+                        return ModelResponse(result=[AIMessage(content="Service unavailable")])
+                ```
 
-            ```python title="Rewrite response"
-            def wrap_model_call(self, request, handler):
-                response = handler(request)
-                ai_msg = response.result[0]
-                return ModelResponse(
-                    result=[AIMessage(content=f"[{ai_msg.content}]")],
-                    structured_response=response.structured_response,
-                )
-            ```
+            !!! example "Cache/short-circuit"
 
-            ```python title="Error to fallback"
-            def wrap_model_call(self, request, handler):
-                try:
-                    return handler(request)
-                except Exception:
-                    return ModelResponse(result=[AIMessage(content="Service unavailable")])
-            ```
+                ```python
+                def wrap_model_call(self, request, handler):
+                    if cached := get_cache(request):
+                        return cached  # Short-circuit with cached result
+                    response = handler(request)
+                    save_cache(request, response)
+                    return response
+                ```
 
-            ```python title="Cache/short-circuit"
-            def wrap_model_call(self, request, handler):
-                if cached := get_cache(request):
-                    return cached  # Short-circuit with cached result
-                response = handler(request)
-                save_cache(request, response)
-                return response
-            ```
+            !!! example "Simple `AIMessage` return (converted automatically)"
 
-            ```python title="Simple `AIMessage` return (converted automatically)"
-            def wrap_model_call(self, request, handler):
-                response = handler(request)
-                # Can return AIMessage directly for simple cases
-                return AIMessage(content="Simplified response")
-            ```
+                ```python
+                def wrap_model_call(self, request, handler):
+                    response = handler(request)
+                    # Can return AIMessage directly for simple cases
+                    return AIMessage(content="Simplified response")
+                ```
         """
         msg = (
             "Synchronous implementation of wrap_model_call is not available. "
@@ -358,15 +383,17 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             `ModelCallResult`
 
         Examples:
-            ```python title="Retry on error"
-            async def awrap_model_call(self, request, handler):
-                for attempt in range(3):
-                    try:
-                        return await handler(request)
-                    except Exception:
-                        if attempt == 2:
-                            raise
-            ```
+            !!! example "Retry on error"
+
+                ```python
+                async def awrap_model_call(self, request, handler):
+                    for attempt in range(3):
+                        try:
+                            return await handler(request)
+                        except Exception:
+                            if attempt == 2:
+                                raise
+                ```
         """
         msg = (
             "Asynchronous implementation of awrap_model_call is not available. "
@@ -395,6 +422,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     ) -> ToolMessage | Command:
         """Intercept tool execution for retries, monitoring, or modification.
 
+        Async version is `awrap_tool_call`
+
         Multiple middleware compose automatically (first defined = outermost).
 
         Exceptions propagate unless `handle_tool_errors` is configured on `ToolNode`.
@@ -413,35 +442,41 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         Each call to handler is independent and stateless.
 
         Examples:
-            ```python title="Modify request before execution"
-            def wrap_tool_call(self, request, handler):
-                request.tool_call["args"]["value"] *= 2
-                return handler(request)
-            ```
+            !!! example "Modify request before execution"
 
-            ```python title="Retry on error (call handler multiple times)"
-            def wrap_tool_call(self, request, handler):
-                for attempt in range(3):
-                    try:
-                        result = handler(request)
-                        if is_valid(result):
-                            return result
-                    except Exception:
-                        if attempt == 2:
-                            raise
-                return result
-            ```
+                ```python
+                def wrap_tool_call(self, request, handler):
+                    request.tool_call["args"]["value"] *= 2
+                    return handler(request)
+                ```
 
-            ```python title="Conditional retry based on response"
-            def wrap_tool_call(self, request, handler):
-                for attempt in range(3):
-                    result = handler(request)
-                    if isinstance(result, ToolMessage) and result.status != "error":
-                        return result
-                    if attempt < 2:
-                        continue
+            !!! example "Retry on error (call handler multiple times)"
+
+                ```python
+                def wrap_tool_call(self, request, handler):
+                    for attempt in range(3):
+                        try:
+                            result = handler(request)
+                            if is_valid(result):
+                                return result
+                        except Exception:
+                            if attempt == 2:
+                                raise
                     return result
-            ```
+                ```
+
+            !!! example "Conditional retry based on response"
+
+                ```python
+                def wrap_tool_call(self, request, handler):
+                    for attempt in range(3):
+                        result = handler(request)
+                        if isinstance(result, ToolMessage) and result.status != "error":
+                            return result
+                        if attempt < 2:
+                            continue
+                        return result
+                ```
         """
         msg = (
             "Synchronous implementation of wrap_tool_call is not available. "
@@ -488,27 +523,29 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         Each call to handler is independent and stateless.
 
         Examples:
-            ```python title="Async retry on error"
-            async def awrap_tool_call(self, request, handler):
-                for attempt in range(3):
-                    try:
-                        result = await handler(request)
-                        if is_valid(result):
-                            return result
-                    except Exception:
-                        if attempt == 2:
-                            raise
-                return result
-            ```
+            !!! example "Async retry on error"
 
-            ```python
-            async def awrap_tool_call(self, request, handler):
-                if cached := await get_cache_async(request):
-                    return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
-                result = await handler(request)
-                await save_cache_async(request, result)
-                return result
-            ```
+                ```python
+                async def awrap_tool_call(self, request, handler):
+                    for attempt in range(3):
+                        try:
+                            result = await handler(request)
+                            if is_valid(result):
+                                return result
+                        except Exception:
+                            if attempt == 2:
+                                raise
+                    return result
+                ```
+
+                ```python
+                async def awrap_tool_call(self, request, handler):
+                    if cached := await get_cache_async(request):
+                        return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
+                    result = await handler(request)
+                    await save_cache_async(request, result)
+                    return result
+                ```
         """
         msg = (
             "Asynchronous implementation of awrap_tool_call is not available. "
@@ -599,16 +636,16 @@ def hook_config(
         Decorator function that marks the method with configuration metadata.
 
     Examples:
-        Using decorator on a class method:
+        !!! example "Using decorator on a class method"
 
-        ```python
-        class MyMiddleware(AgentMiddleware):
-            @hook_config(can_jump_to=["end", "model"])
-            def before_model(self, state: AgentState) -> dict[str, Any] | None:
-                if some_condition(state):
-                    return {"jump_to": "end"}
-                return None
-        ```
+            ```python
+            class MyMiddleware(AgentMiddleware):
+                @hook_config(can_jump_to=["end", "model"])
+                def before_model(self, state: AgentState) -> dict[str, Any] | None:
+                    if some_condition(state):
+                        return {"jump_to": "end"}
+                    return None
+            ```
 
         Alternative: Use the `can_jump_to` parameter in `before_model`/`after_model`
         decorators:
@@ -689,25 +726,33 @@ def before_model(
     - `None` - No state updates or flow control
 
     Examples:
-        ```python title="Basic usage"
-        @before_model
-        def log_before_model(state: AgentState, runtime: Runtime) -> None:
-            print(f"About to call model with {len(state['messages'])} messages")
-        ```
+        !!! example "Basic usage"
 
-        ```python title="With conditional jumping"
-        @before_model(can_jump_to=["end"])
-        def conditional_before_model(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-            if some_condition(state):
-                return {"jump_to": "end"}
-            return None
-        ```
+            ```python
+            @before_model
+            def log_before_model(state: AgentState, runtime: Runtime) -> None:
+                print(f"About to call model with {len(state['messages'])} messages")
+            ```
 
-        ```python title="With custom state schema"
-        @before_model(state_schema=MyCustomState)
-        def custom_before_model(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
-            return {"custom_field": "updated_value"}
-        ```
+        !!! example "With conditional jumping"
+
+            ```python
+            @before_model(can_jump_to=["end"])
+            def conditional_before_model(
+                state: AgentState, runtime: Runtime
+            ) -> dict[str, Any] | None:
+                if some_condition(state):
+                    return {"jump_to": "end"}
+                return None
+            ```
+
+        !!! example "With custom state schema"
+
+            ```python
+            @before_model(state_schema=MyCustomState)
+            def custom_before_model(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
+                return {"custom_field": "updated_value"}
+            ```
     """
 
     def decorator(
@@ -834,17 +879,21 @@ def after_model(
     - `None` - No state updates or flow control
 
     Examples:
-        ```python title="Basic usage for logging model responses"
-        @after_model
-        def log_latest_message(state: AgentState, runtime: Runtime) -> None:
-            print(state["messages"][-1].content)
-        ```
+        !!! example "Basic usage for logging model responses"
 
-        ```python title="With custom state schema"
-        @after_model(state_schema=MyCustomState, name="MyAfterModelMiddleware")
-        def custom_after_model(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
-            return {"custom_field": "updated_after_model"}
-        ```
+            ```python
+            @after_model
+            def log_latest_message(state: AgentState, runtime: Runtime) -> None:
+                print(state["messages"][-1].content)
+            ```
+
+        !!! example "With custom state schema"
+
+            ```python
+            @after_model(state_schema=MyCustomState, name="MyAfterModelMiddleware")
+            def custom_after_model(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
+                return {"custom_field": "updated_after_model"}
+            ```
     """
 
     def decorator(
@@ -969,25 +1018,33 @@ def before_agent(
     - `None` - No state updates or flow control
 
     Examples:
-        ```python title="Basic usage"
-        @before_agent
-        def log_before_agent(state: AgentState, runtime: Runtime) -> None:
-            print(f"Starting agent with {len(state['messages'])} messages")
-        ```
+        !!! example "Basic usage"
 
-        ```python title="With conditional jumping"
-        @before_agent(can_jump_to=["end"])
-        def conditional_before_agent(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-            if some_condition(state):
-                return {"jump_to": "end"}
-            return None
-        ```
+            ```python
+            @before_agent
+            def log_before_agent(state: AgentState, runtime: Runtime) -> None:
+                print(f"Starting agent with {len(state['messages'])} messages")
+            ```
 
-        ```python title="With custom state schema"
-        @before_agent(state_schema=MyCustomState)
-        def custom_before_agent(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
-            return {"custom_field": "initialized_value"}
-        ```
+        !!! example "With conditional jumping"
+
+            ```python
+            @before_agent(can_jump_to=["end"])
+            def conditional_before_agent(
+                state: AgentState, runtime: Runtime
+            ) -> dict[str, Any] | None:
+                if some_condition(state):
+                    return {"jump_to": "end"}
+                return None
+            ```
+
+        !!! example "With custom state schema"
+
+            ```python
+            @before_agent(state_schema=MyCustomState)
+            def custom_before_agent(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
+                return {"custom_field": "initialized_value"}
+            ```
     """
 
     def decorator(
@@ -1087,6 +1144,8 @@ def after_agent(
 ):
     """Decorator used to dynamically create a middleware with the `after_agent` hook.
 
+    Async version is `aafter_agent`.
+
     Args:
         func: The function to be decorated.
 
@@ -1114,17 +1173,21 @@ def after_agent(
     - `None` - No state updates or flow control
 
     Examples:
-        ```python title="Basic usage for logging agent completion"
-        @after_agent
-        def log_completion(state: AgentState, runtime: Runtime) -> None:
-            print(f"Agent completed with {len(state['messages'])} messages")
-        ```
+        !!! example "Basic usage for logging agent completion"
 
-        ```python title="With custom state schema"
-        @after_agent(state_schema=MyCustomState, name="MyAfterAgentMiddleware")
-        def custom_after_agent(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
-            return {"custom_field": "finalized_value"}
-        ```
+            ```python
+            @after_agent
+            def log_completion(state: AgentState, runtime: Runtime) -> None:
+                print(f"Agent completed with {len(state['messages'])} messages")
+            ```
+
+        !!! example "With custom state schema"
+
+            ```python
+            @after_agent(state_schema=MyCustomState, name="MyAfterAgentMiddleware")
+            def custom_after_agent(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
+                return {"custom_field": "finalized_value"}
+            ```
     """
 
     def decorator(
@@ -1380,49 +1443,57 @@ def wrap_model_call(
         `AgentMiddleware` instance if func provided, otherwise a decorator.
 
     Examples:
-        ```python title="Basic retry logic"
-        @wrap_model_call
-        def retry_on_error(request, handler):
-            max_retries = 3
-            for attempt in range(max_retries):
+        !!! example "Basic retry logic"
+
+            ```python
+            @wrap_model_call
+            def retry_on_error(request, handler):
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        return handler(request)
+                    except Exception:
+                        if attempt == max_retries - 1:
+                            raise
+            ```
+
+        !!! example "Model fallback"
+
+            ```python
+            @wrap_model_call
+            def fallback_model(request, handler):
+                # Try primary model
                 try:
                     return handler(request)
                 except Exception:
-                    if attempt == max_retries - 1:
-                        raise
-        ```
+                    pass
 
-        ```python title="Model fallback"
-        @wrap_model_call
-        def fallback_model(request, handler):
-            # Try primary model
-            try:
+                # Try fallback model
+                request.model = fallback_model_instance
                 return handler(request)
-            except Exception:
-                pass
+            ```
 
-            # Try fallback model
-            request.model = fallback_model_instance
-            return handler(request)
-        ```
+        !!! example "Rewrite response content (full `ModelResponse`)"
 
-        ```python title="Rewrite response content (full `ModelResponse`)"
-        @wrap_model_call
-        def uppercase_responses(request, handler):
-            response = handler(request)
-            ai_msg = response.result[0]
-            return ModelResponse(
-                result=[AIMessage(content=ai_msg.content.upper())],
-                structured_response=response.structured_response,
-            )
-        ```
+            ```python
+            @wrap_model_call
+            def uppercase_responses(request, handler):
+                response = handler(request)
+                ai_msg = response.result[0]
+                return ModelResponse(
+                    result=[AIMessage(content=ai_msg.content.upper())],
+                    structured_response=response.structured_response,
+                )
+            ```
 
-        ```python title="Simple `AIMessage` return (converted automatically)"
-        @wrap_model_call
-        def simple_response(request, handler):
-            # AIMessage is automatically converted to ModelResponse
-            return AIMessage(content="Simple response")
-        ```
+        !!! example "Simple `AIMessage` return (converted automatically)"
+
+            ```python
+            @wrap_model_call
+            def simple_response(request, handler):
+                # AIMessage is automatically converted to ModelResponse
+                return AIMessage(content="Simple response")
+            ```
     """
 
     def decorator(
@@ -1509,6 +1580,8 @@ def wrap_tool_call(
 ):
     """Create middleware with `wrap_tool_call` hook from a function.
 
+    Async version is `awrap_tool_call`.
+
     Converts a function with handler callback into middleware that can intercept
     tool calls, implement retry logic, monitor execution, and modify responses.
 
@@ -1527,45 +1600,53 @@ def wrap_tool_call(
         `AgentMiddleware` instance if func provided, otherwise a decorator.
 
     Examples:
-        ```python title="Retry logic"
-        @wrap_tool_call
-        def retry_on_error(request, handler):
-            max_retries = 3
-            for attempt in range(max_retries):
-                try:
-                    return handler(request)
-                except Exception:
-                    if attempt == max_retries - 1:
-                        raise
-        ```
+        !!! example "Retry logic"
 
-        ```python title="Async retry logic"
-        @wrap_tool_call
-        async def async_retry(request, handler):
-            for attempt in range(3):
-                try:
-                    return await handler(request)
-                except Exception:
-                    if attempt == 2:
-                        raise
-        ```
+            ```python
+            @wrap_tool_call
+            def retry_on_error(request, handler):
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        return handler(request)
+                    except Exception:
+                        if attempt == max_retries - 1:
+                            raise
+            ```
 
-        ```python title="Modify request"
-        @wrap_tool_call
-        def modify_args(request, handler):
-            request.tool_call["args"]["value"] *= 2
-            return handler(request)
-        ```
+        !!! example "Async retry logic"
 
-        ```python title="Short-circuit with cached result"
-        @wrap_tool_call
-        def with_cache(request, handler):
-            if cached := get_cache(request):
-                return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
-            result = handler(request)
-            save_cache(request, result)
-            return result
-        ```
+            ```python
+            @wrap_tool_call
+            async def async_retry(request, handler):
+                for attempt in range(3):
+                    try:
+                        return await handler(request)
+                    except Exception:
+                        if attempt == 2:
+                            raise
+            ```
+
+        !!! example "Modify request"
+
+            ```python
+            @wrap_tool_call
+            def modify_args(request, handler):
+                request.tool_call["args"]["value"] *= 2
+                return handler(request)
+            ```
+
+        !!! example "Short-circuit with cached result"
+
+            ```python
+            @wrap_tool_call
+            def with_cache(request, handler):
+                if cached := get_cache(request):
+                    return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
+                result = handler(request)
+                save_cache(request, result)
+                return result
+            ```
     """
 
     def decorator(

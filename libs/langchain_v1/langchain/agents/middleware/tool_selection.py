@@ -93,21 +93,25 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
     and helps the main model focus on the right tools.
 
     Examples:
-        ```python title="Limit to 3 tools"
-        from langchain.agents.middleware import LLMToolSelectorMiddleware
+        !!! example "Limit to 3 tools"
 
-        middleware = LLMToolSelectorMiddleware(max_tools=3)
+            ```python
+            from langchain.agents.middleware import LLMToolSelectorMiddleware
 
-        agent = create_agent(
-            model="openai:gpt-4o",
-            tools=[tool1, tool2, tool3, tool4, tool5],
-            middleware=[middleware],
-        )
-        ```
+            middleware = LLMToolSelectorMiddleware(max_tools=3)
 
-        ```python title="Use a smaller model for selection"
-        middleware = LLMToolSelectorMiddleware(model="openai:gpt-4o-mini", max_tools=2)
-        ```
+            agent = create_agent(
+                model="openai:gpt-4o",
+                tools=[tool1, tool2, tool3, tool4, tool5],
+                middleware=[middleware],
+            )
+            ```
+
+        !!! example "Use a smaller model for selection"
+
+            ```python
+            middleware = LLMToolSelectorMiddleware(model="openai:gpt-4o-mini", max_tools=2)
+            ```
     """
 
     def __init__(
@@ -131,7 +135,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
 
                 If the model selects more, only the first `max_tools` will be used.
 
-                No limit if not specified.
+                If not specified, there is no limit.
             always_include: Tool names to always include regardless of selection.
 
                 These do not count against the `max_tools` limit.

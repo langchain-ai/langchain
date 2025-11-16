@@ -389,7 +389,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         shell_command: Sequence[str] | str | None = None,
         env: Mapping[str, Any] | None = None,
     ) -> None:
-        """Initialize the middleware.
+        """Initialize an instance of `ShellToolMiddleware`.
 
         Args:
             workspace_root: Base directory for the shell session.

@@ -150,10 +150,6 @@ class TodoListMiddleware(AgentMiddleware):
 
         print(result["todos"])  # Array of todo items with status tracking
         ```
-
-    Args:
-        system_prompt: Custom system prompt to guide the agent on using the todo tool.
-        tool_description: Custom description for the write_todos tool.
     """
 
     state_schema = PlanningState

@@ -1190,7 +1190,7 @@ class ChatAnthropic(BaseChatModel):
             See [Claude documentation](https://docs.claude.com/en/docs/build-with-claude/prompt-caching#1-hour-cache-duration-beta)
             for detail.
 
-    !!! note title="Extended context windows (beta)"
+    !!! note "Extended context windows (beta)"
 
         Claude Sonnet 4 supports a 1-million token context window, available in beta for
         organizations in usage tier 4 and organizations with custom rate limits.
@@ -1226,7 +1226,7 @@ class ChatAnthropic(BaseChatModel):
         for detail.
 
 
-    !!! note title="Token-efficient tool use (beta)"
+    !!! note "Token-efficient tool use (beta)"
 
         See LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic)
         for more detail.
@@ -1263,7 +1263,7 @@ class ChatAnthropic(BaseChatModel):
         Total tokens: 408
         ```
 
-    !!! note title="Context management"
+    !!! note "Context management"
 
         Anthropic supports a context editing feature that will automatically manage the
         model's context window (e.g., by clearing tool results).
@@ -1283,7 +1283,7 @@ class ChatAnthropic(BaseChatModel):
         response = model_with_tools.invoke("Search for recent developments in AI")
         ```
 
-    !!! note title="Built-in tools"
+    !!! note "Built-in tools"
 
         See LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#built-in-tools)
         for more detail.
@@ -1410,7 +1410,7 @@ class ChatAnthropic(BaseChatModel):
             response = model_with_tools.invoke("What are my interests?")
             ```
 
-    !!! note title="Response metadata"
+    !!! note "Response metadata"
 
         ```python
         ai_msg = model.invoke(messages)
