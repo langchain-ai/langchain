@@ -170,7 +170,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         allowed_path_prefixes: Sequence[str] | None = None,
         system_prompt: str | None = None,
     ) -> None:
-        """Initialize the middleware.
+        """Initialize.
 
         Args:
             tool_type: Tool type identifier.
@@ -651,7 +651,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         max_file_size_mb: int = 10,
         system_prompt: str | None = None,
     ) -> None:
-        """Initialize the middleware.
+        """Initialize.
 
         Args:
             tool_type: Tool type identifier.
