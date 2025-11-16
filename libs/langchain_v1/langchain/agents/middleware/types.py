@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field, replace
 from inspect import iscoroutinefunction
 from typing import (
@@ -46,9 +46,12 @@ __all__ = [
     "AgentMiddleware",
     "AgentState",
     "ContextT",
+    "MiddlewareOrderCycleError",
+    "MiddlewareSpec",
     "ModelRequest",
     "ModelResponse",
     "OmitFromSchema",
+    "OrderingConstraints",
     "ResponseT",
     "StateT_co",
     "ToolCallRequest",
@@ -59,6 +62,7 @@ __all__ = [
     "before_model",
     "dynamic_prompt",
     "hook_config",
+    "wrap_model_call",
     "wrap_tool_call",
 ]
 
@@ -219,6 +223,15 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     tools: list[BaseTool]
     """Additional tools registered by the middleware."""
 
+    id: str | None = None
+    """Optional unique identifier used for deduplication and ordering."""
+
+    priority: float | int | None = None
+    """Optional priority used as a tie-breaker when ordering middleware."""
+
+    tags: tuple[str, ...] = ()
+    """Tags that can be referenced by ordering constraints."""
+
     @property
     def name(self) -> str:
         """The name of the middleware instance.
@@ -226,6 +239,10 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         Defaults to the class name, but can be overridden for custom naming.
         """
         return self.__class__.__name__
+
+    def requires(self) -> Sequence[MiddlewareSpec[StateT, ContextT]]:
+        """Return additional middleware specifications required by this instance."""
+        return ()
 
     def before_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run before the agent execution starts.
@@ -558,6 +575,64 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             "(3) invoke your agent synchronously using `stream()` or `invoke()`."
         )
         raise NotImplementedError(msg)
+
+
+MergeStrategy = Literal["first_wins", "last_wins", "error"]
+
+
+@dataclass(slots=True)
+class OrderingConstraints:
+    """Ordering rules for middleware resolution."""
+
+    before: tuple[str, ...] = field(default_factory=tuple)
+    """Identifiers or tag references that must execute after this middleware."""
+
+    after: tuple[str, ...] = field(default_factory=tuple)
+    """Identifiers or tag references that must execute before this middleware."""
+
+    def __post_init__(self) -> None:
+        """Normalize incoming ordering tokens to tuples."""
+        self.before = tuple(self.before)
+        self.after = tuple(self.after)
+
+
+@dataclass(slots=True)
+class MiddlewareSpec(Generic[StateT, ContextT]):
+    """Specification describing middleware dependencies."""
+
+    factory: Callable[[], AgentMiddleware[StateT, ContextT]] | None = None
+    """Factory used to instantiate the middleware dependency."""
+
+    middleware: AgentMiddleware[StateT, ContextT] | None = None
+    """Pre-instantiated middleware instance."""
+
+    id: str | None = None
+    """Optional identifier override for the dependency."""
+
+    priority: float | int | None = None
+    """Optional priority override for tie-breaking."""
+
+    tags: Sequence[str] | None = None
+    """Optional tag override for the dependency."""
+
+    ordering: OrderingConstraints | None = None
+    """Additional ordering constraints for the dependency."""
+
+    merge_strategy: MergeStrategy = "first_wins"
+    """Strategy for handling duplicate middleware identifiers."""
+
+    def __post_init__(self) -> None:
+        """Validate spec inputs and normalize metadata."""
+        if self.factory is None and self.middleware is None:
+            msg = "MiddlewareSpec requires either 'factory' or 'middleware'."
+            raise ValueError(msg)
+
+        if self.tags is not None:
+            self.tags = tuple(self.tags)
+
+
+class MiddlewareOrderCycleError(ValueError):
+    """Raised when middleware ordering introduces a cycle."""
 
 
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
