@@ -317,6 +317,30 @@ def test_chat_prompt_template_from_messages_jinja2() -> None:
     ]
 
 
+def test_chat_prompt_template_from_messages_using_message_classes() -> None:
+    """Test creating a chat prompt template using message class tuples."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            (SystemMessage, "You are a helpful AI bot. Your name is {name}."),
+            (HumanMessage, "Hello, how are you doing?"),
+            (AIMessage, "I'm doing well, thanks!"),
+            (HumanMessage, "{user_input}"),
+        ]
+    )
+
+    expected = [
+        SystemMessage(
+            content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
+        ),
+        HumanMessage(content="Hello, how are you doing?", additional_kwargs={}),
+        AIMessage(content="I'm doing well, thanks!", additional_kwargs={}),
+        HumanMessage(content="What is your name?", additional_kwargs={}),
+    ]
+
+    messages = template.format_messages(name="Bob", user_input="What is your name?")
+    assert messages == expected
+
+
 @pytest.mark.requires("jinja2")
 @pytest.mark.parametrize(
     ("template_format", "image_type_placeholder", "image_data_placeholder"),
