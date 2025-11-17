@@ -12,6 +12,8 @@ import httpx
 import pytest
 import requests
 from anthropic import BadRequestError
+from langchain.agents import create_agent
+from langchain.agents.structured_output import ProviderStrategy
 from langchain_core.callbacks import CallbackManager
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import (
@@ -27,6 +29,7 @@ from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
+from typing_extensions import TypedDict
 
 from langchain_anthropic import ChatAnthropic
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
@@ -661,6 +664,74 @@ def test_with_structured_output() -> None:
     response = structured_llm.invoke("what's the weather in san francisco, ca")
     assert isinstance(response, dict)
     assert response["location"]
+
+
+class Person(BaseModel):
+    """Person data."""
+
+    name: str
+    age: int
+    nicknames: list[str] | None
+
+
+class PersonDict(TypedDict):
+    """Person data as a TypedDict."""
+
+    name: str
+    age: int
+    nicknames: list[str] | None
+
+
+@pytest.mark.parametrize("schema", [Person, Person.model_json_schema(), PersonDict])
+def test_response_format(schema: dict | type) -> None:
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-5",  # type: ignore[call-arg]
+        betas=["structured-outputs-2025-11-13"],
+    )
+    query = "Chester (a.k.a. Chet) is 100 years old."
+
+    response = llm.invoke(query, response_format=schema)
+    parsed = json.loads(response.text)
+    if isinstance(schema, type) and issubclass(schema, BaseModel):
+        schema.model_validate(parsed)
+    else:
+        assert isinstance(parsed, dict)
+        assert parsed["name"]
+        assert parsed["age"]
+
+
+def test_response_format_in_agent() -> None:
+    class Weather(BaseModel):
+        temperature: float
+        units: str
+
+    # no tools
+    agent = create_agent(
+        "anthropic:claude-sonnet-4-5", response_format=ProviderStrategy(Weather)
+    )
+    result = agent.invoke({"messages": [{"role": "user", "content": "75 degrees F."}]})
+    assert len(result["messages"]) == 2
+    parsed = json.loads(result["messages"][-1].text)
+    assert Weather(**parsed) == result["structured_response"]
+
+    # with tools
+
+    def get_weather(location: str) -> str:
+        """Get the weather at a location."""
+        return "75 degrees Fahrenheit."
+
+    agent = create_agent(
+        "anthropic:claude-sonnet-4-5",
+        tools=[get_weather],
+        response_format=ProviderStrategy(Weather),
+    )
+    result = agent.invoke(
+        {"messages": [{"role": "user", "content": "What's the weather in SF?"}]},
+    )
+    assert len(result["messages"]) == 4
+    assert result["messages"][1].tool_calls
+    parsed = json.loads(result["messages"][-1].text)
+    assert Weather(**parsed) == result["structured_response"]
 
 
 def test_get_num_tokens_from_messages() -> None:

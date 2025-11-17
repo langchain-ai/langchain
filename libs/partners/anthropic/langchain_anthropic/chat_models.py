@@ -1731,6 +1731,20 @@ class ChatAnthropic(BaseChatModel):
         if self.thinking is not None:
             payload["thinking"] = self.thinking
 
+        if "response_format" in payload:
+            response_format = payload.pop("response_format")
+            if (
+                isinstance(response_format, dict)
+                and response_format.get("type") == "json_schema"
+                and "schema" in response_format.get("json_schema", {})
+            ):
+                # compat with langchain.agents.create_agent response_format, which is
+                # an approximation of OpenAI format
+                response_format = cast(dict, response_format["json_schema"]["schema"])
+            payload["output_format"] = _convert_to_anthropic_output_format(
+                response_format
+            )
+
         if "output_format" in payload and not payload["betas"]:
             payload["betas"] = ["structured-outputs-2025-11-13"]
 
