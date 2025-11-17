@@ -1099,6 +1099,15 @@ def create_agent(  # noqa: PLR0915
         # Handle model output to get messages and structured_response
         handled_output = _handle_model_output(output, effective_response_format)
         messages_list = handled_output["messages"]
+
+        # Propagate agent name to AIMessage objects when missing to preserve
+        # backward-compatible behavior where the agent's `name` is present on
+        # returned messages. The variable `name` is the optional name passed
+        # into `create_agent`.
+        if name is not None:
+            for m in messages_list:
+                if isinstance(m, AIMessage) and not getattr(m, "name", None):
+                    m.name = name
         structured_response = handled_output.get("structured_response")
 
         return ModelResponse(
@@ -1152,6 +1161,12 @@ def create_agent(  # noqa: PLR0915
         # Handle model output to get messages and structured_response
         handled_output = _handle_model_output(output, effective_response_format)
         messages_list = handled_output["messages"]
+
+        # Propagate agent name to AIMessage objects when missing (async path).
+        if name is not None:
+            for m in messages_list:
+                if isinstance(m, AIMessage) and not getattr(m, "name", None):
+                    m.name = name
         structured_response = handled_output.get("structured_response")
 
         return ModelResponse(
