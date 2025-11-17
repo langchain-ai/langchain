@@ -1581,3 +1581,19 @@ def test_streaming_cache_token_reporting() -> None:
     assert delta_chunk.usage_metadata["input_tokens"] == 135
     assert delta_chunk.usage_metadata["output_tokens"] == 50
     assert delta_chunk.usage_metadata["total_tokens"] == 185
+
+
+def test_strict_tool_use() -> None:
+    model = ChatAnthropic(
+        model="claude-sonnet-4-5",  # type: ignore[call-arg]
+        betas=["structured-outputs-2025-11-13"],
+    )
+
+    def get_weather(location: str, unit: Literal["C", "F"]) -> str:
+        """Get the weather at a location."""
+        return "75 degrees Fahrenheit."
+
+    model_with_tools = model.bind_tools([get_weather], strict=True)
+
+    tool_definition = model_with_tools.kwargs["tools"][0]  # type: ignore[attr-defined]
+    assert tool_definition["strict"] is True
