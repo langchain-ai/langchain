@@ -133,6 +133,7 @@ class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, Any]):
 
                 `None` means no limit.
             exit_behavior: What to do when limits are exceeded.
+
                 - `'end'`: Jump to the end of the agent execution and
                     inject an artificial AI message indicating that the limit was
                     exceeded.

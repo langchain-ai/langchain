@@ -32,7 +32,7 @@ def test_executes_command_and_persists_state(tmp_path: Path) -> None:
         updates = middleware.before_agent(state, None)
         if updates:
             state.update(updates)
-        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
         middleware._run_shell_tool(resources, {"command": "cd /"}, tool_call_id=None)
         result = middleware._run_shell_tool(resources, {"command": "pwd"}, tool_call_id=None)
@@ -55,14 +55,14 @@ def test_restart_resets_session_environment(tmp_path: Path) -> None:
         updates = middleware.before_agent(state, None)
         if updates:
             state.update(updates)
-        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
         middleware._run_shell_tool(resources, {"command": "export FOO=bar"}, tool_call_id=None)
         restart_message = middleware._run_shell_tool(
             resources, {"restart": True}, tool_call_id=None
         )
         assert "restarted" in restart_message.lower()
-        resources = middleware._ensure_resources(state)  # reacquire after restart
+        resources = middleware._get_or_create_resources(state)  # reacquire after restart
         result = middleware._run_shell_tool(
             resources, {"command": "echo ${FOO:-unset}"}, tool_call_id=None
         )
@@ -81,7 +81,7 @@ def test_truncation_indicator_present(tmp_path: Path) -> None:
         updates = middleware.before_agent(state, None)
         if updates:
             state.update(updates)
-        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
         result = middleware._run_shell_tool(resources, {"command": "seq 1 20"}, tool_call_id=None)
         assert "Output truncated" in result
     finally:
@@ -98,7 +98,7 @@ def test_timeout_returns_error(tmp_path: Path) -> None:
         updates = middleware.before_agent(state, None)
         if updates:
             state.update(updates)
-        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
         start = time.monotonic()
         result = middleware._run_shell_tool(resources, {"command": "sleep 2"}, tool_call_id=None)
         elapsed = time.monotonic() - start
@@ -120,7 +120,7 @@ def test_redaction_policy_applies(tmp_path: Path) -> None:
         updates = middleware.before_agent(state, None)
         if updates:
             state.update(updates)
-        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
         message = middleware._run_shell_tool(
             resources,
             {"command": "printf 'Contact: user@example.com\\n'"},
@@ -222,7 +222,7 @@ def test_normalize_env_coercion(tmp_path: Path) -> None:
         updates = middleware.before_agent(state, None)
         if updates:
             state.update(updates)
-        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
         result = middleware._run_shell_tool(
             resources, {"command": "echo $NUM $BOOL"}, tool_call_id=None
         )
@@ -242,7 +242,7 @@ def test_shell_tool_missing_command_string(tmp_path: Path) -> None:
         updates = middleware.before_agent(state, None)
         if updates:
             state.update(updates)
-        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
         with pytest.raises(ToolException, match="expects a 'command' string"):
             middleware._run_shell_tool(resources, {"command": None}, tool_call_id=None)
@@ -267,7 +267,7 @@ def test_tool_message_formatting_with_id(tmp_path: Path) -> None:
         updates = middleware.before_agent(state, None)
         if updates:
             state.update(updates)
-        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
         result = middleware._run_shell_tool(
             resources, {"command": "echo test"}, tool_call_id="test-id-123"
@@ -292,7 +292,7 @@ def test_nonzero_exit_code_returns_error(tmp_path: Path) -> None:
         updates = middleware.before_agent(state, None)
         if updates:
             state.update(updates)
-        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
         result = middleware._run_shell_tool(
             resources,
@@ -319,7 +319,7 @@ def test_truncation_by_bytes(tmp_path: Path) -> None:
         updates = middleware.before_agent(state, None)
         if updates:
             state.update(updates)
-        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
         result = middleware._run_shell_tool(
             resources, {"command": "python3 -c 'print(\"x\" * 100)'"}, tool_call_id=None
@@ -379,15 +379,6 @@ def test_shutdown_command_timeout_logged(tmp_path: Path) -> None:
         middleware.after_agent(state, None)
 
 
-def test_ensure_resources_missing_state(tmp_path: Path) -> None:
-    """Test that _ensure_resources raises when resources are missing."""
-    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
-    state: AgentState = _empty_state()
-
-    with pytest.raises(ToolException, match="Shell session resources are unavailable"):
-        middleware._ensure_resources(state)  # type: ignore[attr-defined]
-
-
 def test_empty_output_replaced_with_no_output(tmp_path: Path) -> None:
     """Test that empty command output is replaced with '<no output>'."""
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
@@ -396,7 +387,7 @@ def test_empty_output_replaced_with_no_output(tmp_path: Path) -> None:
         updates = middleware.before_agent(state, None)
         if updates:
             state.update(updates)
-        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
         result = middleware._run_shell_tool(
             resources,
@@ -419,7 +410,7 @@ def test_stderr_output_labeling(tmp_path: Path) -> None:
         updates = middleware.before_agent(state, None)
         if updates:
             state.update(updates)
-        resources = middleware._ensure_resources(state)  # type: ignore[attr-defined]
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
         result = middleware._run_shell_tool(
             resources, {"command": "echo error >&2"}, tool_call_id=None
@@ -468,3 +459,98 @@ def test_async_methods_delegate_to_sync(tmp_path: Path) -> None:
         asyncio.run(middleware.aafter_agent(state, None))
     finally:
         pass
+
+
+def test_shell_middleware_resumable_after_interrupt(tmp_path: Path) -> None:
+    """Test that shell middleware is resumable after an interrupt.
+
+    This test simulates a scenario where:
+    1. The middleware creates a shell session
+    2. A command is executed
+    3. The agent is interrupted (state is preserved)
+    4. The agent resumes with the same state
+    5. The shell session is reused (not recreated)
+    """
+    workspace = tmp_path / "workspace"
+    middleware = ShellToolMiddleware(workspace_root=workspace)
+
+    # Simulate first execution (before interrupt)
+    state: AgentState = _empty_state()
+    updates = middleware.before_agent(state, None)
+    if updates:
+        state.update(updates)
+
+    # Get the resources and verify they exist
+    resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
+    initial_session = resources.session
+    initial_tempdir = resources.tempdir
+
+    # Execute a command to set state
+    middleware._run_shell_tool(resources, {"command": "export TEST_VAR=hello"}, tool_call_id=None)
+
+    # Simulate interrupt - state is preserved, but we don't call after_agent
+    # In a real scenario, the state would be checkpointed here
+
+    # Simulate resumption - call before_agent again with same state
+    # This should reuse existing resources, not create new ones
+    updates = middleware.before_agent(state, None)
+    if updates:
+        state.update(updates)
+
+    # Get resources again - should be the same session
+    resumed_resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
+
+    # Verify the session was reused (same object reference)
+    assert resumed_resources.session is initial_session
+    assert resumed_resources.tempdir is initial_tempdir
+
+    # Verify the session state persisted (environment variable still set)
+    result = middleware._run_shell_tool(
+        resumed_resources, {"command": "echo ${TEST_VAR:-unset}"}, tool_call_id=None
+    )
+    assert "hello" in result
+    assert "unset" not in result
+
+    # Clean up
+    middleware.after_agent(state, None)
+
+
+def test_get_or_create_resources_creates_when_missing(tmp_path: Path) -> None:
+    """Test that _get_or_create_resources creates resources when they don't exist."""
+    workspace = tmp_path / "workspace"
+    middleware = ShellToolMiddleware(workspace_root=workspace)
+
+    state: AgentState = _empty_state()
+
+    # State has no resources initially
+    assert "shell_session_resources" not in state
+
+    # Call _get_or_create_resources - should create new resources
+    resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
+
+    assert isinstance(resources, _SessionResources)
+    assert resources.session is not None
+    assert state.get("shell_session_resources") is resources
+
+    # Clean up
+    resources._finalizer()
+
+
+def test_get_or_create_resources_reuses_existing(tmp_path: Path) -> None:
+    """Test that _get_or_create_resources reuses existing resources."""
+    workspace = tmp_path / "workspace"
+    middleware = ShellToolMiddleware(workspace_root=workspace)
+
+    state: AgentState = _empty_state()
+
+    # Create resources first time
+    resources1 = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
+
+    # Call again - should return the same resources
+    resources2 = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
+
+    assert resources1 is resources2
+    assert resources1.session is resources2.session
+
+    # Clean up
+    resources1._finalizer()

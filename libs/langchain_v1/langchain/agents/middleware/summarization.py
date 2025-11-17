@@ -106,14 +106,20 @@ class SummarizationMiddleware(AgentMiddleware):
                   within the top-level list
                 - Mixed AND/OR: `[("messages", 10), [("tokens", 500), ("fraction", 0.8)]]`
                   (triggers when messages >= 10 OR (tokens >= 500 AND fraction >= 0.8))
-            keep: Context retention policy applied after summarization. Provide a
-                `ContextSize` tuple to specify how much history to preserve. Defaults to
-                keeping the most recent 20 messages. Examples: `("messages", 20)`,
-                `("tokens", 3000)`, or `("fraction", 0.3)`.
+            keep: Context retention policy applied after summarization.
+
+                Provide a `ContextSize` tuple to specify how much history to preserve.
+
+                Defaults to keeping the most recent 20 messages.
+
+                Examples: `("messages", 20)`, `("tokens", 3000)`, or
+                    `("fraction", 0.3)`.
             token_counter: Function to count tokens in messages.
             summary_prompt: Prompt template for generating summaries.
-            trim_tokens_to_summarize: Maximum tokens to keep when preparing messages for the
-                summarization call. Pass `None` to skip trimming entirely.
+            trim_tokens_to_summarize: Maximum tokens to keep when preparing messages for
+                the summarization call.
+
+                Pass `None` to skip trimming entirely.
         """
         # Handle deprecated parameters
         if "max_tokens_before_summary" in deprecated_kwargs:
@@ -438,7 +444,7 @@ class SummarizationMiddleware(AgentMiddleware):
         """Find safe cutoff point that preserves AI/Tool message pairs.
 
         Returns the index where messages can be safely cut without separating
-        related AI and Tool messages. Returns 0 if no safe cutoff is found.
+        related AI and Tool messages. Returns `0` if no safe cutoff is found.
         """
         if len(messages) <= messages_to_keep:
             return 0
