@@ -9,7 +9,7 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.0.4"
+version = "1.1.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "anthropic>=0.73.0,<1.0.0",
