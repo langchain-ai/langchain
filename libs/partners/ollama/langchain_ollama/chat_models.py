@@ -1121,7 +1121,7 @@ class ChatOllama(BaseChatModel):
                     generation_info = None
 
                 # Strip reasoning tags when reasoning=False
-                # Some models (e.g., qwen3:4b) may output reasoning tags even when think=False
+                # Some models (e.g., qwen3:4b) output tags even when reasoning=False.
                 if reasoning is False:
                     content = _strip_reasoning_tags(content)
 
@@ -1203,7 +1203,7 @@ class ChatOllama(BaseChatModel):
                     generation_info = None
 
                 # Strip reasoning tags when reasoning=False
-                # Some models (e.g., qwen3:4b) may output reasoning tags even when think=False
+                # Some models (e.g., qwen3:4b) output tags even when reasoning=False.
                 if reasoning is False:
                     content = _strip_reasoning_tags(content)
 
