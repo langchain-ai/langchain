@@ -6,7 +6,7 @@ import operator
 from collections.abc import Sequence
 from typing import Any, Literal, cast, overload
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
 
 from langchain_core.messages import content as types
@@ -173,7 +173,10 @@ class AIMessage(BaseMessage):
     type: Literal["ai"] = "ai"
     """The type of the message (used for deserialization)."""
 
-    raw_response: dict[str, Any] | list[dict[str, Any]] | None = None
+    raw_response: dict[str, Any] | list[dict[str, Any]] | None = Field(
+        default=None,
+        exclude=True,  # Exclude from serialization by default
+    )
     """Optional raw model response data, as returned directly by the LLM provider."""
 
     @overload
@@ -413,7 +416,10 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     `tool_call_chunks` in message content will be parsed into `tool_calls`.
     """
 
-    raw_response: dict[str, Any] | None = None
+    raw_response: dict[str, Any] | None = Field(
+        default=None,
+        exclude=True,  # Exclude from serialization by default
+    )
     """The raw chunk response from the model, as returned directly by the provider."""
 
     @property
