@@ -569,6 +569,14 @@ class ChildTool(BaseTool):
             self.name, full_schema, fields, fn_description=self.description
         )
 
+    @functools.cached_property
+    def _injected_args_keys(self) -> frozenset[str]:
+        return frozenset(
+            k
+            for k, v in get_all_basemodel_annotations(self.args_schema).items()
+            if _is_injected_arg_type(v)
+        )
+
     # --- Runnable ---
 
     @override
@@ -646,6 +654,7 @@ class ChildTool(BaseTool):
                     raise TypeError(msg)
             return tool_input
         if input_args is not None:
+            injected_args = {}
             if isinstance(input_args, dict):
                 return tool_input
             if issubclass(input_args, BaseModel):
@@ -661,6 +670,7 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
+                        injected_args[k] = tool_call_id
                 result = input_args.model_validate(tool_input)
                 result_dict = result.model_dump()
             elif issubclass(input_args, BaseModelV1):
@@ -676,6 +686,7 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
+                        injected_args[k] = tool_call_id
                 result = input_args.parse_obj(tool_input)
                 result_dict = result.dict()
             else:
@@ -683,9 +694,19 @@ class ChildTool(BaseTool):
                     f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"
                 )
                 raise NotImplementedError(msg)
-            return {
-                k: getattr(result, k) for k, v in result_dict.items() if k in tool_input
+            validated_input = {
+                k: getattr(result, k) for k in result_dict if k in tool_input
             }
+            for k in self._injected_args_keys:
+                if k not in result_dict and k in tool_input:
+                    injected_val = tool_input[k]
+                    validated_input[k] = injected_val
+                    if isinstance(
+                        injected_val,
+                        (InjectedToolArg, InjectedToolCallId, _DirectlyInjectedToolArg),
+                    ):
+                        validated_input[k] = injected_val
+            return validated_input
         return tool_input
 
     @abstractmethod

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import textwrap
 from collections.abc import Awaitable, Callable
 from inspect import signature
@@ -25,12 +26,16 @@ from langchain_core.tools.base import (
     ArgsSchema,
     BaseTool,
     _get_runnable_config_param,
+    _is_injected_arg_type,
     create_schema_from_function,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.messages import ToolCall
+
+
+_EMPTY_SET: frozenset[str] = frozenset()
 
 
 class StructuredTool(BaseTool):
@@ -239,6 +244,17 @@ class StructuredTool(BaseTool):
             return_direct=return_direct,
             response_format=response_format,
             **kwargs,
+        )
+
+    @functools.cached_property
+    def _injected_args_keys(self) -> frozenset[str]:
+        fn = self.func or self.coroutine
+        if fn is None:
+            return _EMPTY_SET
+        return frozenset(
+            k
+            for k, v in signature(fn).parameters.items()
+            if _is_injected_arg_type(v.annotation)
         )
 
 
