@@ -44,6 +44,7 @@ from __future__ import annotations
 import ast
 import json
 import logging
+import re
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import Any, Literal, cast
@@ -93,6 +94,46 @@ from langchain_ollama._compat import _convert_from_v1_to_ollama
 from ._utils import merge_auth_headers, parse_url_with_auth, validate_model
 
 log = logging.getLogger(__name__)
+
+# Compiled regex patterns for reasoning tag stripping (performance optimization)
+_REASONING_TAG_PATTERN = re.compile(
+    r"<(?:think|redacted_reasoning)[^>]*>.*?</(?:think|redacted_reasoning)>",
+    flags=re.DOTALL | re.IGNORECASE,
+)
+_REASONING_CLOSING_TAG_PATTERN = re.compile(
+    r"</(?:think|redacted_reasoning)>",
+    flags=re.IGNORECASE,
+)
+
+
+def _strip_reasoning_tags(content: str) -> str:
+    """Strip reasoning tags from content when reasoning=False.
+
+    Handles two cases:
+    1. Complete reasoning blocks with opening and closing tags
+    2. Standalone closing tags (e.g., qwen3:4b outputs only closing tags)
+
+    Args:
+        content: The content string that may contain reasoning tags.
+
+    Returns:
+        The content with reasoning tags and their contents removed.
+        Leading/trailing whitespace is preserved, but content is stripped.
+    """
+    if not content:
+        return content
+
+    # First, remove complete reasoning blocks (opening + closing tags with content)
+    content = _REASONING_TAG_PATTERN.sub("", content)
+
+    # Handle case where only closing tag exists (e.g., qwen3:4b)
+    # Remove everything from start up to and including the closing tag
+    match = _REASONING_CLOSING_TAG_PATTERN.search(content)
+    if match:
+        # Remove everything up to and including the closing tag
+        content = content[match.end() :].lstrip()
+
+    return content
 
 
 def _get_usage_metadata_from_generation_info(
@@ -1079,6 +1120,11 @@ class ChatOllama(BaseChatModel):
                 else:
                     generation_info = None
 
+                # Strip reasoning tags when reasoning=False
+                # Some models (e.g., qwen3:4b) may output reasoning tags even when think=False
+                if reasoning is False:
+                    content = _strip_reasoning_tags(content)
+
                 additional_kwargs = {}
                 if (
                     reasoning
@@ -1155,6 +1201,11 @@ class ChatOllama(BaseChatModel):
                     _ = generation_info.pop("message", None)
                 else:
                     generation_info = None
+
+                # Strip reasoning tags when reasoning=False
+                # Some models (e.g., qwen3:4b) may output reasoning tags even when think=False
+                if reasoning is False:
+                    content = _strip_reasoning_tags(content)
 
                 additional_kwargs = {}
                 if (
