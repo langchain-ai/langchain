@@ -2785,26 +2785,32 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         To use custom parameters specific to these providers, use the `extra_body` parameter.
 
-        ```python title="LM Studio example with TTL (auto-eviction)"
-        from langchain_openai import ChatOpenAI
+        !!! example "LM Studio example with TTL (auto-eviction)"
 
-        model = ChatOpenAI(
-            base_url="http://localhost:1234/v1",
-            api_key="lm-studio",  # Can be any string
-            model="mlx-community/QwQ-32B-4bit",
-            temperature=0,
-            extra_body={"ttl": 300},  # Auto-evict model after 5 minutes of inactivity
-        )
-        ```
+            ```python
+            from langchain_openai import ChatOpenAI
 
-        ```python title="vLLM example with custom parameters"
-        model = ChatOpenAI(
-            base_url="http://localhost:8000/v1",
-            api_key="EMPTY",
-            model="meta-llama/Llama-2-7b-chat-hf",
-            extra_body={"use_beam_search": True, "best_of": 4},
-        )
-        ```
+            model = ChatOpenAI(
+                base_url="http://localhost:1234/v1",
+                api_key="lm-studio",  # Can be any string
+                model="mlx-community/QwQ-32B-4bit",
+                temperature=0,
+                extra_body={
+                    "ttl": 300
+                },  # Auto-evict model after 5 minutes of inactivity
+            )
+            ```
+
+        !!! example "vLLM example with custom parameters"
+
+            ```python
+            model = ChatOpenAI(
+                base_url="http://localhost:8000/v1",
+                api_key="EMPTY",
+                model="meta-llama/Llama-2-7b-chat-hf",
+                extra_body={"use_beam_search": True, "best_of": 4},
+            )
+            ```
 
     ??? info "`model_kwargs` vs `extra_body`"
 
