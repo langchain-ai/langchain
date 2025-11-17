@@ -495,6 +495,24 @@
                   'default': None,
                   'title': 'Name',
                 }),
+                'raw_response': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'object',
+                    }),
+                    dict({
+                      'items': dict({
+                        'type': 'object',
+                      }),
+                      'type': 'array',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Raw Response',
+                }),
                 'response_metadata': dict({
                   'title': 'Response Metadata',
                   'type': 'object',
@@ -605,6 +623,18 @@
                   ]),
                   'default': None,
                   'title': 'Name',
+                }),
+                'raw_response': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'object',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Raw Response',
                 }),
                 'response_metadata': dict({
                   'title': 'Response Metadata',
