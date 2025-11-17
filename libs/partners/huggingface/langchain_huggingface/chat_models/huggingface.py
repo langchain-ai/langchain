@@ -1077,13 +1077,11 @@ class ChatHuggingFace(BaseChatModel):
                     "schema": schema,
                 },
             )
-
+            # Use PydanticOutputParser for Pydantic models, JsonOutputParser otherwise
             if is_pydantic_schema:
-                output_parser: Union[  # type: ignore[no-redef]
-                    JsonOutputKeyToolsParser, JsonOutputParser, PydanticOutputParser
-                ] = JsonOutputParser()  # type: ignore[arg-type]
+                output_parser = PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
             else:
-                output_parser = JsonOutputParser()
+                output_parser = JsonOutputParser()  # type: ignore[arg-type]
 
         elif method == "json_mode":
             llm = self.bind(
