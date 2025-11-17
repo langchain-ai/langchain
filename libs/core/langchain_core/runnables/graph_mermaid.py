@@ -294,7 +294,7 @@ def draw_mermaid_png(
         max_retries: Maximum number of retries (MermaidDrawMethod.API).
         retry_delay: Delay between retries (MermaidDrawMethod.API).
         base_url: Base URL for the Mermaid.ink API.
-        proxies: HTTP/HTTPS proxies for requests (e.g. {"http": "http://127.0.0.1:7890"}).
+        proxies: HTTP/HTTPS proxies for requests (e.g. `{"http": "http://127.0.0.1:7890"}`).
 
     Returns:
         PNG image bytes.
