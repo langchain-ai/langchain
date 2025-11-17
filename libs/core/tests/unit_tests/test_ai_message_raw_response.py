@@ -26,8 +26,7 @@ def test_add_ai_message_chunks_merges_raw_response(base_chunk: AIMessageChunk) -
     """Test merging of AIMessageChunk objects combines raw_response correctly."""
     chunk1: AIMessageChunk = base_chunk
     chunk2: AIMessageChunk = AIMessageChunk(
-        content=" world",
-        raw_response={"delta": " world"}
+        content=" world", raw_response={"delta": " world"}
     )
     merged: AIMessageChunk = add_ai_message_chunks(chunk1, chunk2)
     assert merged.content == "hello world"
@@ -45,9 +44,10 @@ def test_add_ai_message_chunks_handles_missing_raw_response() -> None:
 
 
 def test_message_chunk_to_message_transfers_raw_response(
-        base_chunk: AIMessageChunk) -> None:
+    base_chunk: AIMessageChunk,
+) -> None:
     """Test that message_chunk_to_message preserves raw_response."""
-    msg: AIMessage = message_chunk_to_message(base_chunk)
+    msg = message_chunk_to_message(base_chunk)
     assert isinstance(msg, AIMessage)
     # raw_response should be preserved
     assert msg.raw_response == {"delta": "hello"}
@@ -56,7 +56,7 @@ def test_message_chunk_to_message_transfers_raw_response(
 def test_message_chunk_to_message_ignores_non_chunk_input() -> None:
     """Test that message_chunk_to_message passes through non-chunk inputs."""
     raw: AIMessage = AIMessage(content="hi", raw_response={"data": 1})
-    result: AIMessage = message_chunk_to_message(raw)
+    result = message_chunk_to_message(raw)
     # Should simply pass through
     assert result is raw
 

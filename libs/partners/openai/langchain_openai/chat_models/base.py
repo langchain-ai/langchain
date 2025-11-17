@@ -1270,9 +1270,9 @@ class BaseChatOpenAI(BaseChatModel):
                     if generation_chunk is None:
                         continue
                     if (
-                        generation_chunk.message.chunk_position == "last"
+                        isinstance(generation_chunk.message, AIMessageChunk)
+                        and generation_chunk.message.chunk_position == "last"
                         and self.include_raw_response
-                        and isinstance(generation_chunk.message, AIMessageChunk)
                     ):
                         generation_chunk.message.raw_response = chunk
 
@@ -1525,9 +1525,9 @@ class BaseChatOpenAI(BaseChatModel):
                         continue
 
                     if (
-                        generation_chunk.message.chunk_position == "last"
+                        isinstance(generation_chunk.message, AIMessageChunk)
+                        and generation_chunk.message.chunk_position == "last"
                         and self.include_raw_response
-                        and isinstance(generation_chunk.message, AIMessageChunk)
                     ):
                         generation_chunk.message.raw_response = chunk
 

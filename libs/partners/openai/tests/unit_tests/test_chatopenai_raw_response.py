@@ -2,6 +2,7 @@ from langchain_core.messages import (
     AIMessageChunk,
     add_ai_message_chunks,
 )
+from pydantic import SecretStr
 
 from langchain_openai.chat_models.base import ChatOpenAI
 
@@ -10,16 +11,16 @@ def test_chat_openai_has_include_raw_response_field() -> None:
     """Test that ChatOpenAI has include_raw_response field."""
 
     model_true = ChatOpenAI(
-        model="gpt-4", include_raw_response=True, api_key="fake-key"
+        model="gpt-4", include_raw_response=True, api_key=SecretStr("fake-key")
     )
     assert model_true.include_raw_response is True
 
     model_false = ChatOpenAI(
-        model="gpt-4", include_raw_response=False, api_key="fake-key"
+        model="gpt-4", include_raw_response=False, api_key=SecretStr("fake-key")
     )
     assert model_false.include_raw_response is False
 
-    model_default = ChatOpenAI(model="gpt-4", api_key="fake-key")
+    model_default = ChatOpenAI(model="gpt-4", api_key=SecretStr("fake-key"))
     assert model_default.include_raw_response is False
 
 
