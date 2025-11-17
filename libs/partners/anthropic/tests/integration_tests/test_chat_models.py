@@ -684,13 +684,13 @@ class PersonDict(TypedDict):
 
 @pytest.mark.parametrize("schema", [Person, Person.model_json_schema(), PersonDict])
 def test_response_format(schema: dict | type) -> None:
-    llm = ChatAnthropic(
+    model = ChatAnthropic(
         model="claude-sonnet-4-5",  # type: ignore[call-arg]
         betas=["structured-outputs-2025-11-13"],
     )
     query = "Chester (a.k.a. Chet) is 100 years old."
 
-    response = llm.invoke(query, response_format=schema)
+    response = model.invoke(query, response_format=schema)
     parsed = json.loads(response.text)
     if isinstance(schema, type) and issubclass(schema, BaseModel):
         schema.model_validate(parsed)
@@ -715,7 +715,6 @@ def test_response_format_in_agent() -> None:
     assert Weather(**parsed) == result["structured_response"]
 
     # with tools
-
     def get_weather(location: str) -> str:
         """Get the weather at a location."""
         return "75 degrees Fahrenheit."
@@ -732,6 +731,23 @@ def test_response_format_in_agent() -> None:
     assert result["messages"][1].tool_calls
     parsed = json.loads(result["messages"][-1].text)
     assert Weather(**parsed) == result["structured_response"]
+
+
+@pytest.mark.vcr
+def test_strict_tool_use() -> None:
+    model = ChatAnthropic(
+        model="claude-sonnet-4-5",  # type: ignore[call-arg]
+        betas=["structured-outputs-2025-11-13"],
+    )
+
+    def get_weather(location: str, unit: Literal["C", "F"]) -> str:
+        """Get the weather at a location."""
+        return "75 degrees Fahrenheit."
+
+    model_with_tools = model.bind_tools([get_weather], strict=True)
+
+    response = model_with_tools.invoke("What's the weather in Boston, in Celsius?")
+    assert response.tool_calls
 
 
 def test_get_num_tokens_from_messages() -> None:

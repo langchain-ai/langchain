@@ -104,6 +104,8 @@ class AnthropicTool(TypedDict):
 
     description: NotRequired[str]
 
+    strict: NotRequired[bool]
+
     cache_control: NotRequired[dict[str, str]]
 
 
@@ -1944,6 +1946,7 @@ class ChatAnthropic(BaseChatModel):
         *,
         tool_choice: dict[str, str] | str | None = None,
         parallel_tool_calls: bool | None = None,
+        strict: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         r"""Bind tool-like objects to this chat model.
@@ -1961,6 +1964,8 @@ class ChatAnthropic(BaseChatModel):
                 Defaults to `None` (no specification, which allows parallel tool use).
 
                 !!! version-added "Added in `langchain-anthropic` 0.3.2"
+            strict: If `True`, Claude's schema adherence is applied to tool calls.
+                See: [Anthropic docs](https://docs.claude.com/en/docs/build-with-claude/structured-outputs#when-to-use-json-outputs-vs-strict-tool-use).
             kwargs: Any additional parameters are passed directly to `bind`.
 
         Example:
@@ -2174,7 +2179,9 @@ class ChatAnthropic(BaseChatModel):
         ```
         """  # noqa: E501
         formatted_tools = [
-            tool if _is_builtin_tool(tool) else convert_to_anthropic_tool(tool)
+            tool
+            if _is_builtin_tool(tool)
+            else convert_to_anthropic_tool(tool, strict=strict)
             for tool in tools
         ]
         if not tool_choice:
@@ -2509,6 +2516,8 @@ class ChatAnthropic(BaseChatModel):
 
 def convert_to_anthropic_tool(
     tool: dict[str, Any] | type | Callable | BaseTool,
+    *,
+    strict: bool | None = None,
 ) -> AnthropicTool:
     """Convert a tool-like object to an Anthropic tool definition."""
     # already in Anthropic tool format
@@ -2517,13 +2526,15 @@ def convert_to_anthropic_tool(
     ):
         anthropic_formatted = AnthropicTool(tool)  # type: ignore[misc]
     else:
-        oai_formatted = convert_to_openai_tool(tool)["function"]
+        oai_formatted = convert_to_openai_tool(tool, strict=strict)["function"]
         anthropic_formatted = AnthropicTool(
             name=oai_formatted["name"],
             input_schema=oai_formatted["parameters"],
         )
         if "description" in oai_formatted:
             anthropic_formatted["description"] = oai_formatted["description"]
+        if "strict" in oai_formatted and isinstance(strict, bool):
+            anthropic_formatted["strict"] = oai_formatted["strict"]
     return anthropic_formatted
 
 
