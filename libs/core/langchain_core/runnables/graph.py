@@ -674,7 +674,7 @@ class Graph:
                 }
                 ```
             base_url: The base URL of the Mermaid server for rendering via API.
-            proxies: HTTP/HTTPS proxies for requests (e.g. {"http": "http://127.0.0.1:7890"}).
+            proxies: HTTP/HTTPS proxies for requests (e.g. `{"http": "http://127.0.0.1:7890"}`).
 
         Returns:
             The PNG image as bytes.
