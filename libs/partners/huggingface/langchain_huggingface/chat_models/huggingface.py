@@ -233,7 +233,7 @@ def _convert_chunk_to_message_chunk(
     chunk: Mapping[str, Any], default_class: type[BaseMessageChunk]
 ) -> BaseMessageChunk:
 
-    if hasattr(chunk, 'choices'):
+    if hasattr(chunk, "choices"):
         choice_obj = chunk.choices[0]
         delta_obj = choice_obj.delta
         reasoning_content_value = getattr(delta_obj, "reasoning_content", None)
