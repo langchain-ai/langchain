@@ -258,6 +258,10 @@ def _convert_chunk_to_message_chunk(
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     if role == "assistant" or default_class == AIMessageChunk:
+
+        reasoning = cast(str, _dict.get("reasoning") or "")
+        additional_kwargs["reasoning_content"] = reasoning
+
         if usage := chunk.get("usage"):
             input_tokens = usage.get("prompt_tokens", 0)
             output_tokens = usage.get("completion_tokens", 0)
