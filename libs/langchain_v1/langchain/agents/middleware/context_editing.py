@@ -17,7 +17,6 @@ from typing import Any, Literal
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
-    BaseMessage,
     SystemMessage,
     ToolMessage,
 )
@@ -442,15 +441,13 @@ class ContextEditingMiddleware(AgentMiddleware):
             return await handler(request)
 
         if self.token_count_method == "approximate":  # noqa: S105
-
-            def count_tokens(messages: Sequence[BaseMessage]) -> int:
-                return count_tokens_approximately(messages)
+            count_tokens: TokenCounter = count_tokens_approximately
         else:
             system_msg = (
                 [SystemMessage(content=request.system_prompt)] if request.system_prompt else []
             )
 
-            def count_tokens(messages: Sequence[BaseMessage]) -> int:
+            def count_tokens(messages: Iterable[Any]) -> int:
                 return request.model.get_num_tokens_from_messages(
                     system_msg + list(messages), request.tools
                 )
