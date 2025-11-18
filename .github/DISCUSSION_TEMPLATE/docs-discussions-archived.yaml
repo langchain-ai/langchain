@@ -1,0 +1,25 @@
+body:
+- type: markdown
+  attributes:
+    value: |
+      Hi everyone! :wave:
+
+      To better support the community and keep conversations in one place, we're consolidating all discussions across the *LangChain* and *LangGraph* ecosystems — including both Python* and JavaScript versions — on the [LangChain Forum](https://forum.langchain.com/).
+
+      The Forum is the best place to:
+
+      * Ask technical questions
+      * Share ideas, feedback, and projects
+      * Connect with others building with LangChain and LangGraph tools
+
+      By centralizing discussions, we're making it easier to collaborate and grow as a unified community.
+
+      :point_right: [Join the Forum](https://forum.langchain.com/)
+- type: dropdown
+  id: download
+  attributes:
+    label: "​"
+    options: []
+    default: 0
+  validations:
+    required: true
