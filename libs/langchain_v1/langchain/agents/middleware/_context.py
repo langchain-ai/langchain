@@ -8,10 +8,9 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Callable, Sequence
-from typing import Literal
+from typing import Literal, TypeAlias
 
 from langchain_core.messages import BaseMessage
-from typing_extensions import TypeAlias
 
 # Type aliases for context size specifications
 ContextFraction: TypeAlias = tuple[Literal["fraction"], float]
@@ -138,11 +137,10 @@ def validate_context_size(
             if value < min_value:
                 msg = f"{parameter_name} thresholds must be >= {min_value}, got {value}."
                 raise ValueError(msg)
-        else:
-            # Summarization keep must be > 0
-            if value <= 0:
-                msg = f"{parameter_name} thresholds must be >= 1, got {value}."
-                raise ValueError(msg)
+        # Summarization keep must be > 0
+        elif value <= 0:
+            msg = f"{parameter_name} thresholds must be >= 1, got {value}."
+            raise ValueError(msg)
     else:
         msg = f"Unsupported context size type {kind} for {parameter_name}."
         raise ValueError(msg)
@@ -150,16 +148,16 @@ def validate_context_size(
 
 
 __all__ = [
+    "DEFAULT_FALLBACK_MESSAGE_COUNT",
+    "DEFAULT_MESSAGES_TO_KEEP",
+    "DEFAULT_TOOL_PLACEHOLDER",
+    "DEFAULT_TRIM_TOKEN_LIMIT",
+    "SEARCH_RANGE_FOR_TOOL_PAIRS",
     "ContextFraction",
     "ContextMessages",
     "ContextSize",
     "ContextTokens",
     "TokenCounter",
-    "DEFAULT_TOOL_PLACEHOLDER",
-    "DEFAULT_MESSAGES_TO_KEEP",
-    "DEFAULT_TRIM_TOKEN_LIMIT",
-    "DEFAULT_FALLBACK_MESSAGE_COUNT",
-    "SEARCH_RANGE_FOR_TOOL_PAIRS",
     "coerce_to_context_size",
     "validate_context_size",
 ]

@@ -3,7 +3,7 @@
 import uuid
 import warnings
 from collections.abc import Callable, Iterable, Mapping
-from typing import Any, Literal, cast
+from typing import Any, cast
 
 from langchain_core.messages import (
     AIMessage,
@@ -24,10 +24,9 @@ from langchain.agents.middleware._context import (
     DEFAULT_MESSAGES_TO_KEEP,
     DEFAULT_TRIM_TOKEN_LIMIT,
     SEARCH_RANGE_FOR_TOOL_PAIRS,
-    ContextFraction,
-    ContextMessages,
     ContextSize,
-    ContextTokens,
+)
+from langchain.agents.middleware._context import (
     validate_context_size as _validate_context_size_base,
 )
 from langchain.agents.middleware.types import AgentMiddleware, AgentState
@@ -326,9 +325,7 @@ class SummarizationMiddleware(AgentMiddleware):
     def _validate_context_size(self, context: ContextSize, parameter_name: str) -> ContextSize:
         """Validate context configuration tuples."""
         # For summarization, we don't allow zero values for keep
-        return _validate_context_size_base(
-            context, parameter_name, allow_zero_for_keep=False
-        )
+        return _validate_context_size_base(context, parameter_name, allow_zero_for_keep=False)
 
     def _build_new_messages(self, summary: str) -> list[HumanMessage]:
         return [

@@ -31,7 +31,11 @@ from langchain.agents.middleware._context import (
     ContextSize,
     ContextTokens,
     TokenCounter,
+)
+from langchain.agents.middleware._context import (
     coerce_to_context_size as _coerce_to_context_size,
+)
+from langchain.agents.middleware._context import (
     validate_context_size as _validate_context_size_base,
 )
 from langchain.agents.middleware.types import (
@@ -169,9 +173,7 @@ class ClearToolUsesEdit(ContextEdit):
 
     def _validate_context_size(self, context: ContextSize, parameter_name: str) -> ContextSize:
         """Validate context configuration tuples."""
-        return _validate_context_size_base(
-            context, parameter_name, allow_zero_for_keep=True
-        )
+        return _validate_context_size_base(context, parameter_name, allow_zero_for_keep=True)
 
     def apply(
         self,
