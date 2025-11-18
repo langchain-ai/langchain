@@ -452,8 +452,11 @@ def _init_chat_model_helper(
     # Filter out non-HuggingFacePipeline parameters.
         # ------------------------------------------------------
         pipeline_allowed_params = {"task", "model_kwargs", "device"}
-        pipeline_kwargs = {k: v for k, v in kwargs.items() if k in pipeline_allowed_params}
-
+        pipeline_kwargs = {
+            k: v
+            for k, v in kwargs.items()
+            if k in pipeline_allowed_params
+}
         llm = HuggingFacePipeline.from_model_id(
             model_id=model,
             **pipeline_kwargs
