@@ -61,14 +61,21 @@ def _coerce_to_context_size(
     """
     if isinstance(value, int):
         # trigger uses tokens, keep uses messages (backwards compat with old API)
-        context_type = "tokens" if kind == "trigger" else "messages"
+        if kind == "trigger":
+            warnings.warn(
+                f"{param_name}={value} (int) is deprecated. "
+                f"Use {param_name}=('tokens', {value}) instead.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+            return ("tokens", value)
         warnings.warn(
             f"{param_name}={value} (int) is deprecated. "
-            f"Use {param_name}=('{context_type}', {value}) instead.",
+            f"Use {param_name}=('messages', {value}) instead.",
             DeprecationWarning,
             stacklevel=3,
         )
-        return (context_type, value)
+        return ("messages", value)
     return value
 
 
@@ -86,52 +93,88 @@ class ContextEdit(Protocol):
         ...
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, init=False)
 class ClearToolUsesEdit(ContextEdit):
     """Configuration for clearing tool outputs when token limits are exceeded."""
 
-    trigger: int | ContextSize | list[int | ContextSize] = ("tokens", 100_000)
+    trigger: ContextSize | list[ContextSize]
     """One or more thresholds that trigger the edit.
 
     Provide a single `ContextSize` tuple or a list of tuples, in which case
     the edit runs when any threshold is breached.
 
-    For backwards compatibility, integers are interpreted as token counts.
-
-    Examples: `("messages", 50)`, `("tokens", 100_000)`, `100_000`,
+    Examples: `("messages", 50)`, `("tokens", 100_000)`,
         `[("fraction", 0.8), ("messages", 100)]`.
     """
 
-    clear_at_least: int = 0
-    """Minimum number of tokens to reclaim when the edit runs."""
-
-    keep: int | ContextSize = ("messages", 3)
+    keep: ContextSize
     """Context retention policy for tool results.
 
     Provide a `ContextSize` tuple to specify how many tool results to preserve.
 
-    For backwards compatibility, integers are interpreted as message counts.
-
     Defaults to keeping the most recent 3 tool results.
 
-    Examples: `("messages", 3)`, `3`, `("tokens", 3000)`, or `("fraction", 0.3)`.
+    Examples: `("messages", 3)`, `("tokens", 3000)`, or `("fraction", 0.3)`.
     """
 
-    clear_tool_inputs: bool = False
+    clear_tool_inputs: bool
     """Whether to clear the originating tool call parameters on the AI message."""
 
-    exclude_tools: Sequence[str] = ()
+    exclude_tools: Sequence[str]
     """List of tool names to exclude from clearing."""
 
-    placeholder: str = DEFAULT_TOOL_PLACEHOLDER
+    placeholder: str
     """Placeholder text inserted for cleared tool outputs."""
 
-    def __post_init__(self) -> None:
-        """Validate and normalize configuration values."""
+    def __init__(
+        self,
+        *,
+        trigger: ContextSize | list[ContextSize] | int | list[int] = ("tokens", 100_000),
+        keep: ContextSize | int = ("messages", 3),
+        clear_tool_inputs: bool = False,
+        exclude_tools: Sequence[str] = (),
+        placeholder: str = DEFAULT_TOOL_PLACEHOLDER,
+        **deprecated_kwargs: Any,
+    ) -> None:
+        """Initialize the clear tool uses edit configuration.
+
+        Args:
+            trigger: One or more thresholds that trigger the edit.
+
+                Provide a single `ContextSize` tuple or a list of tuples, in which case
+                the edit runs when any threshold is breached.
+
+                For backwards compatibility, integers are interpreted as token counts.
+
+                Examples: `("messages", 50)`, `("tokens", 100_000)`, `100_000`,
+                    `[("fraction", 0.8), ("messages", 100)]`.
+            keep: Context retention policy for tool results.
+
+                Provide a `ContextSize` tuple to specify how many tool results to preserve.
+
+                For backwards compatibility, integers are interpreted as message counts.
+
+                Defaults to keeping the most recent 3 tool results.
+
+                Examples: `("messages", 3)`, `3`, `("tokens", 3000)`, or `("fraction", 0.3)`.
+            clear_tool_inputs: Whether to clear the originating tool call parameters
+                on the AI message.
+            exclude_tools: List of tool names to exclude from clearing.
+            placeholder: Placeholder text inserted for cleared tool outputs.
+        """
+        # Handle deprecated clear_at_least parameter
+        if "clear_at_least" in deprecated_kwargs:
+            warnings.warn(
+                "clear_at_least is deprecated and will be ignored. "
+                "Use keep=('tokens', value) to control token retention instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         # Coerce and validate trigger
-        if isinstance(self.trigger, list):
+        if isinstance(trigger, list):
             coerced_list = []
-            for idx, item in enumerate(self.trigger):
+            for idx, item in enumerate(trigger):
                 if isinstance(item, int):
                     coerced = _coerce_to_context_size(
                         item, kind="trigger", param_name=f"trigger[{idx}]"
@@ -140,24 +183,26 @@ class ClearToolUsesEdit(ContextEdit):
                     coerced = item
                 validated = self._validate_context_size(coerced, "trigger")
                 coerced_list.append(validated)
-            object.__setattr__(self, "trigger", coerced_list)
+            self.trigger = coerced_list
         else:
-            if isinstance(self.trigger, int):
-                coerced = _coerce_to_context_size(
-                    self.trigger, kind="trigger", param_name="trigger"
-                )
+            if isinstance(trigger, int):
+                coerced = _coerce_to_context_size(trigger, kind="trigger", param_name="trigger")
             else:
-                coerced = self.trigger
+                coerced = trigger
             validated = self._validate_context_size(coerced, "trigger")
-            object.__setattr__(self, "trigger", validated)
+            self.trigger = validated
 
         # Coerce and validate keep
-        if isinstance(self.keep, int):
-            coerced_keep = _coerce_to_context_size(self.keep, kind="keep", param_name="keep")
+        if isinstance(keep, int):
+            coerced_keep = _coerce_to_context_size(keep, kind="keep", param_name="keep")
         else:
-            coerced_keep = self.keep
+            coerced_keep = keep
         validated_keep = self._validate_context_size(coerced_keep, "keep")
-        object.__setattr__(self, "keep", validated_keep)
+        self.keep = validated_keep
+
+        self.clear_tool_inputs = clear_tool_inputs
+        self.exclude_tools = exclude_tools
+        self.placeholder = placeholder
 
     def _validate_context_size(self, context: ContextSize, parameter_name: str) -> ContextSize:
         """Validate context configuration tuples."""
@@ -203,7 +248,6 @@ class ClearToolUsesEdit(ContextEdit):
         elif keep_count > 0:
             candidates = candidates[:-keep_count]
 
-        cleared_tokens = 0
         excluded_tools = set(self.exclude_tools)
 
         for idx, tool_message in candidates:
@@ -252,12 +296,6 @@ class ClearToolUsesEdit(ContextEdit):
                     tool_message.tool_call_id,
                 )
 
-            if self.clear_at_least > 0:
-                new_token_count = count_tokens(messages)
-                cleared_tokens = max(0, tokens - new_token_count)
-                if cleared_tokens >= self.clear_at_least:
-                    break
-
         return
 
     def _should_trigger(
@@ -267,9 +305,12 @@ class ClearToolUsesEdit(ContextEdit):
         model_profile: Mapping[str, Any] | None,
     ) -> bool:
         """Determine whether the edit should run for the current context usage."""
-        trigger_conditions = self.trigger if isinstance(self.trigger, list) else [self.trigger]
+        trigger_conditions: list[ContextSize] = (
+            self.trigger if isinstance(self.trigger, list) else [self.trigger]
+        )
 
-        for kind, value in trigger_conditions:
+        for condition in trigger_conditions:
+            kind, value = condition
             if kind == "messages" and len(messages) >= value:
                 return True
             if kind == "tokens" and total_tokens >= value:
@@ -291,7 +332,8 @@ class ClearToolUsesEdit(ContextEdit):
         model_profile: Mapping[str, Any] | None,
     ) -> int:
         """Calculate how many tool results to keep based on retention policy."""
-        kind, value = self.keep
+        keep_policy: ContextSize = self.keep
+        kind, value = keep_policy
         if kind == "messages":
             return int(value)
         if kind == "tokens":
@@ -392,14 +434,15 @@ class ContextEditingMiddleware(AgentMiddleware):
         requires_profile = False
         for edit in self.edits:
             if isinstance(edit, ClearToolUsesEdit):
-                trigger_conditions = (
+                trigger_conditions: list[ContextSize] = (
                     edit.trigger if isinstance(edit.trigger, list) else [edit.trigger]
                 )
                 for condition in trigger_conditions:
                     if condition[0] == "fraction":
                         requires_profile = True
                         break
-                if edit.keep[0] == "fraction":
+                keep_policy: ContextSize = edit.keep
+                if keep_policy[0] == "fraction":
                     requires_profile = True
 
         if requires_profile:
