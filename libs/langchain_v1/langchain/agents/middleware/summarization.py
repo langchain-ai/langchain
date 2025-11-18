@@ -2,13 +2,12 @@
 
 import uuid
 import warnings
-from collections.abc import Callable, Iterable, Mapping
-from typing import Any, Literal, cast
+from collections.abc import Mapping
+from typing import Any, cast
 
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
-    MessageLikeRepresentation,
     RemoveMessage,
     ToolMessage,
 )
@@ -19,10 +18,24 @@ from langgraph.graph.message import (
 )
 from langgraph.runtime import Runtime
 
+from langchain.agents.middleware._context import ContextSize, TokenCounter
+from langchain.agents.middleware._context import (
+    validate_context_size as _validate_context_size_base,
+)
 from langchain.agents.middleware.types import AgentMiddleware, AgentState
 from langchain.chat_models import BaseChatModel, init_chat_model
 
-TokenCounter = Callable[[Iterable[MessageLikeRepresentation]], int]
+_DEFAULT_MESSAGES_TO_KEEP = 20
+"""Default number of messages to keep after summarization."""
+
+_DEFAULT_TRIM_TOKEN_LIMIT = 4000
+"""Default token limit when trimming messages for summarization."""
+
+_DEFAULT_FALLBACK_MESSAGE_COUNT = 15
+"""Default fallback message count when trimming fails."""
+
+_SEARCH_RANGE_FOR_TOOL_PAIRS = 5
+"""Range to search for AI/Tool message pairs when determining safe cutoff points."""
 
 DEFAULT_SUMMARY_PROMPT = """<role>
 Context Extraction Assistant
@@ -51,17 +64,6 @@ Respond ONLY with the extracted context. Do not include any additional informati
 Messages to summarize:
 {messages}
 </messages>"""  # noqa: E501
-
-_DEFAULT_MESSAGES_TO_KEEP = 20
-_DEFAULT_TRIM_TOKEN_LIMIT = 4000
-_DEFAULT_FALLBACK_MESSAGE_COUNT = 15
-_SEARCH_RANGE_FOR_TOOL_PAIRS = 5
-
-ContextFraction = tuple[Literal["fraction"], float]
-ContextTokens = tuple[Literal["tokens"], int]
-ContextMessages = tuple[Literal["messages"], int]
-
-ContextSize = ContextFraction | ContextTokens | ContextMessages
 
 
 class SummarizationMiddleware(AgentMiddleware):
@@ -323,19 +325,8 @@ class SummarizationMiddleware(AgentMiddleware):
 
     def _validate_context_size(self, context: ContextSize, parameter_name: str) -> ContextSize:
         """Validate context configuration tuples."""
-        kind, value = context
-        if kind == "fraction":
-            if not 0 < value <= 1:
-                msg = f"Fractional {parameter_name} values must be between 0 and 1, got {value}."
-                raise ValueError(msg)
-        elif kind in {"tokens", "messages"}:
-            if value <= 0:
-                msg = f"{parameter_name} thresholds must be greater than 0, got {value}."
-                raise ValueError(msg)
-        else:
-            msg = f"Unsupported context size type {kind} for {parameter_name}."
-            raise ValueError(msg)
-        return context
+        # For summarization, we don't allow zero values for keep
+        return _validate_context_size_base(context, parameter_name, allow_zero_for_keep=False)
 
     def _build_new_messages(self, summary: str) -> list[HumanMessage]:
         return [

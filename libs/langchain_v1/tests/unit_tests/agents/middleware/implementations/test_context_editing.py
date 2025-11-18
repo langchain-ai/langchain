@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Iterable, cast
 
+import pytest
+
 from langchain.agents.middleware.context_editing import (
     ClearToolUsesEdit,
     ContextEditingMiddleware,
@@ -399,3 +401,105 @@ async def test_exclude_tools_prevents_clearing_async() -> None:
 
     assert isinstance(calc_tool, ToolMessage)
     assert calc_tool.content == "[cleared]"
+
+
+def test_new_api_with_context_size_tuples() -> None:
+    """Test the new API with ContextSize tuples."""
+    tool_call_id = "call-1"
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[{"id": tool_call_id, "name": "search", "args": {}}],
+    )
+    tool_message = ToolMessage(content="x" * 200, tool_call_id=tool_call_id)
+
+    state, request = _make_state_and_request([ai_message, tool_message])
+
+    # Test with messages-based trigger and keep
+    edit = ClearToolUsesEdit(
+        trigger=("messages", 2),
+        keep=("messages", 0),
+        placeholder="[cleared]",
+    )
+    middleware = ContextEditingMiddleware(edits=[edit])
+
+    def mock_handler(req: ModelRequest) -> AIMessage:
+        return AIMessage(content="mock response")
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    cleared_tool = request.messages[1]
+    assert isinstance(cleared_tool, ToolMessage)
+    assert cleared_tool.content == "[cleared]"
+
+
+def test_multiple_trigger_conditions() -> None:
+    """Test multiple trigger conditions (OR logic)."""
+    tool_call_id = "call-1"
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[{"id": tool_call_id, "name": "search", "args": {}}],
+    )
+    tool_message = ToolMessage(content="x" * 200, tool_call_id=tool_call_id)
+
+    state, request = _make_state_and_request([ai_message, tool_message])
+
+    # Multiple triggers - should trigger if ANY condition is met
+    edit = ClearToolUsesEdit(
+        trigger=[("messages", 10), ("tokens", 50)],  # Token count will trigger
+        keep=("messages", 0),
+        placeholder="[cleared]",
+    )
+    middleware = ContextEditingMiddleware(edits=[edit])
+
+    def mock_handler(req: ModelRequest) -> AIMessage:
+        return AIMessage(content="mock response")
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    cleared_tool = request.messages[1]
+    assert isinstance(cleared_tool, ToolMessage)
+    assert cleared_tool.content == "[cleared]"
+
+
+def test_backwards_compatibility_deprecation_warnings() -> None:
+    """Test that integer parameters raise deprecation warnings."""
+    import warnings
+
+    # Test trigger deprecation
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        edit = ClearToolUsesEdit(trigger=100_000)
+        assert len(w) == 1
+        assert issubclass(w[0].category, DeprecationWarning)
+        assert "trigger=100000 (int) is deprecated" in str(w[0].message)
+        assert edit.trigger == ("tokens", 100_000)
+
+    # Test keep deprecation
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        edit = ClearToolUsesEdit(keep=5)
+        assert len(w) == 1
+        assert issubclass(w[0].category, DeprecationWarning)
+        assert "keep=5 (int) is deprecated" in str(w[0].message)
+        assert edit.keep == ("messages", 5)
+
+
+@pytest.mark.parametrize(
+    ("param_name", "param_value", "expected_error"),
+    [
+        ("trigger", ("fraction", 1.5), "Fractional trigger values must be between 0 and 1"),
+        ("trigger", ("fraction", 0.0), "Fractional trigger values must be between 0 and 1"),
+        ("trigger", ("tokens", 0), "trigger thresholds must be >= 1"),
+        ("trigger", ("messages", -5), "trigger thresholds must be >= 1"),
+        ("keep", ("messages", -1), "keep thresholds must be >= 0"),
+        ("keep", ("fraction", -0.1), "Fractional keep values must be between 0 and 1"),
+        ("trigger", ("invalid", 100), "Unsupported context size type"),
+        ("keep", ("invalid", 100), "Unsupported context size type"),
+    ],
+)
+def test_validation_errors(
+    param_name: str, param_value: tuple[str, float | int], expected_error: str
+) -> None:
+    """Test validation of ContextSize parameters."""
+    with pytest.raises(ValueError, match=expected_error):
+        ClearToolUsesEdit(**{param_name: param_value})  # type: ignore[arg-type]
