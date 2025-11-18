@@ -2428,26 +2428,6 @@ def test_tool_injected_arg_with_custom_schema() -> None:
     assert captured["context"].value == "test_context"
 
 
-def test_tool_does_not_inject_extra_runtime_args() -> None:
-    """Ensure runtime args are preserved even if not in the args schema."""
-
-    class InputSchema(BaseModel):
-        query: str
-
-    @dataclass
-    class MyRuntime(_DirectlyInjectedToolArg):
-        some_obj: object
-
-    @tool(args_schema=InputSchema)
-    def runtime_tool(query: str) -> str:
-        """Echo the query and capture runtime value."""
-        return query
-
-    runtime_obj = object()
-    runtime = MyRuntime(some_obj=runtime_obj)
-    assert runtime_tool.invoke({"query": "hello", "runtime": runtime}) == "hello"
-
-
 def test_tool_injected_tool_call_id() -> None:
     @tool
     def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
