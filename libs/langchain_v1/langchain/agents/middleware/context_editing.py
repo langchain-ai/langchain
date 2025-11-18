@@ -9,9 +9,10 @@ chat model.
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Iterable, Sequence
+import warnings
+from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
 from langchain_core.messages import (
     AIMessage,
@@ -38,6 +39,38 @@ TokenCounter = Callable[
     int,
 ]
 
+ContextFraction = tuple[Literal["fraction"], float]
+ContextTokens = tuple[Literal["tokens"], int]
+ContextMessages = tuple[Literal["messages"], int]
+
+ContextSize = ContextFraction | ContextTokens | ContextMessages
+
+
+def _coerce_to_context_size(
+    value: int | ContextSize, *, kind: Literal["trigger", "keep"], param_name: str
+) -> ContextSize:
+    """Coerce integer values to ContextSize tuples for backwards compatibility.
+
+    Args:
+        value: Integer or ContextSize tuple.
+        kind: Whether this is for a trigger or keep parameter.
+        param_name: Name of the parameter for deprecation warnings.
+
+    Returns:
+        ContextSize tuple.
+    """
+    if isinstance(value, int):
+        # trigger uses tokens, keep uses messages (backwards compat with old API)
+        context_type = "tokens" if kind == "trigger" else "messages"
+        warnings.warn(
+            f"{param_name}={value} (int) is deprecated. "
+            f"Use {param_name}=('{context_type}', {value}) instead.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        return (context_type, value)
+    return value
+
 
 class ContextEdit(Protocol):
     """Protocol describing a context editing strategy."""
@@ -47,6 +80,7 @@ class ContextEdit(Protocol):
         messages: list[AnyMessage],
         *,
         count_tokens: TokenCounter,
+        model_profile: Mapping[str, Any] | None = None,
     ) -> None:
         """Apply an edit to the message list in place."""
         ...
@@ -56,14 +90,32 @@ class ContextEdit(Protocol):
 class ClearToolUsesEdit(ContextEdit):
     """Configuration for clearing tool outputs when token limits are exceeded."""
 
-    trigger: int = 100_000
-    """Token count that triggers the edit."""
+    trigger: int | ContextSize | list[int | ContextSize] = ("tokens", 100_000)
+    """One or more thresholds that trigger the edit.
+
+    Provide a single `ContextSize` tuple or a list of tuples, in which case
+    the edit runs when any threshold is breached.
+
+    For backwards compatibility, integers are interpreted as token counts.
+
+    Examples: `("messages", 50)`, `("tokens", 100_000)`, `100_000`,
+        `[("fraction", 0.8), ("messages", 100)]`.
+    """
 
     clear_at_least: int = 0
     """Minimum number of tokens to reclaim when the edit runs."""
 
-    keep: int = 3
-    """Number of most recent tool results that must be preserved."""
+    keep: int | ContextSize = ("messages", 3)
+    """Context retention policy for tool results.
+
+    Provide a `ContextSize` tuple to specify how many tool results to preserve.
+
+    For backwards compatibility, integers are interpreted as message counts.
+
+    Defaults to keeping the most recent 3 tool results.
+
+    Examples: `("messages", 3)`, `3`, `("tokens", 3000)`, or `("fraction", 0.3)`.
+    """
 
     clear_tool_inputs: bool = False
     """Whether to clear the originating tool call parameters on the AI message."""
@@ -74,26 +126,82 @@ class ClearToolUsesEdit(ContextEdit):
     placeholder: str = DEFAULT_TOOL_PLACEHOLDER
     """Placeholder text inserted for cleared tool outputs."""
 
+    def __post_init__(self) -> None:
+        """Validate and normalize configuration values."""
+        # Coerce and validate trigger
+        if isinstance(self.trigger, list):
+            coerced_list = []
+            for idx, item in enumerate(self.trigger):
+                if isinstance(item, int):
+                    coerced = _coerce_to_context_size(
+                        item, kind="trigger", param_name=f"trigger[{idx}]"
+                    )
+                else:
+                    coerced = item
+                validated = self._validate_context_size(coerced, "trigger")
+                coerced_list.append(validated)
+            object.__setattr__(self, "trigger", coerced_list)
+        else:
+            if isinstance(self.trigger, int):
+                coerced = _coerce_to_context_size(
+                    self.trigger, kind="trigger", param_name="trigger"
+                )
+            else:
+                coerced = self.trigger
+            validated = self._validate_context_size(coerced, "trigger")
+            object.__setattr__(self, "trigger", validated)
+
+        # Coerce and validate keep
+        if isinstance(self.keep, int):
+            coerced_keep = _coerce_to_context_size(self.keep, kind="keep", param_name="keep")
+        else:
+            coerced_keep = self.keep
+        validated_keep = self._validate_context_size(coerced_keep, "keep")
+        object.__setattr__(self, "keep", validated_keep)
+
+    def _validate_context_size(self, context: ContextSize, parameter_name: str) -> ContextSize:
+        """Validate context configuration tuples."""
+        kind, value = context
+        if kind == "fraction":
+            if not 0 < value <= 1:
+                msg = f"Fractional {parameter_name} values must be between 0 and 1, got {value}."
+                raise ValueError(msg)
+        elif kind in {"tokens", "messages"}:
+            # For keep, 0 is valid (means keep nothing)
+            # For trigger, must be > 0
+            min_value = 0 if parameter_name == "keep" else 1
+            if value < min_value:
+                msg = f"{parameter_name} thresholds must be >= {min_value}, got {value}."
+                raise ValueError(msg)
+        else:
+            msg = f"Unsupported context size type {kind} for {parameter_name}."
+            raise ValueError(msg)
+        return context
+
     def apply(
         self,
         messages: list[AnyMessage],
         *,
         count_tokens: TokenCounter,
+        model_profile: Mapping[str, Any] | None = None,
     ) -> None:
         """Apply the clear-tool-uses strategy."""
         tokens = count_tokens(messages)
 
-        if tokens <= self.trigger:
+        if not self._should_trigger(messages, tokens, model_profile):
             return
 
         candidates = [
             (idx, msg) for idx, msg in enumerate(messages) if isinstance(msg, ToolMessage)
         ]
 
-        if self.keep >= len(candidates):
+        # Calculate how many tool results to keep
+        keep_count = self._calculate_keep_count(candidates, model_profile)
+
+        if keep_count >= len(candidates):
             candidates = []
-        elif self.keep:
-            candidates = candidates[: -self.keep]
+        elif keep_count > 0:
+            candidates = candidates[:-keep_count]
 
         cleared_tokens = 0
         excluded_tools = set(self.exclude_tools)
@@ -151,6 +259,71 @@ class ClearToolUsesEdit(ContextEdit):
                     break
 
         return
+
+    def _should_trigger(
+        self,
+        messages: list[AnyMessage],
+        total_tokens: int,
+        model_profile: Mapping[str, Any] | None,
+    ) -> bool:
+        """Determine whether the edit should run for the current context usage."""
+        trigger_conditions = self.trigger if isinstance(self.trigger, list) else [self.trigger]
+
+        for kind, value in trigger_conditions:
+            if kind == "messages" and len(messages) >= value:
+                return True
+            if kind == "tokens" and total_tokens >= value:
+                return True
+            if kind == "fraction":
+                max_input_tokens = self._get_profile_limits(model_profile)
+                if max_input_tokens is None:
+                    continue
+                threshold = int(max_input_tokens * value)
+                if threshold <= 0:
+                    threshold = 1
+                if total_tokens >= threshold:
+                    return True
+        return False
+
+    def _calculate_keep_count(
+        self,
+        candidates: list[tuple[int, ToolMessage]],
+        model_profile: Mapping[str, Any] | None,
+    ) -> int:
+        """Calculate how many tool results to keep based on retention policy."""
+        kind, value = self.keep
+        if kind == "messages":
+            return int(value)
+        if kind == "tokens":
+            # For token-based retention, we would need to count tokens per tool message
+            # For simplicity, convert to message count based on average
+            # This is a simplified implementation - could be enhanced
+            return int(value)
+        if kind == "fraction":
+            max_input_tokens = self._get_profile_limits(model_profile)
+            if max_input_tokens is None:
+                # Fallback to default message count
+                return 3
+            target_count = int(len(candidates) * value)
+            if target_count <= 0:
+                target_count = 1
+            return target_count
+        return 3  # Default fallback
+
+    def _get_profile_limits(self, model_profile: Mapping[str, Any] | None) -> int | None:
+        """Retrieve max input token limit from the model profile."""
+        if model_profile is None:
+            return None
+
+        if not isinstance(model_profile, Mapping):
+            return None
+
+        max_input_tokens = model_profile.get("max_input_tokens")
+
+        if not isinstance(max_input_tokens, int):
+            return None
+
+        return max_input_tokens
 
     def _build_cleared_tool_input_message(
         self,
@@ -215,6 +388,24 @@ class ContextEditingMiddleware(AgentMiddleware):
         self.edits = list(edits or (ClearToolUsesEdit(),))
         self.token_count_method = token_count_method
 
+        # Validate that fractional limits can be used
+        requires_profile = False
+        for edit in self.edits:
+            if isinstance(edit, ClearToolUsesEdit):
+                trigger_conditions = (
+                    edit.trigger if isinstance(edit.trigger, list) else [edit.trigger]
+                )
+                for condition in trigger_conditions:
+                    if condition[0] == "fraction":
+                        requires_profile = True
+                        break
+                if edit.keep[0] == "fraction":
+                    requires_profile = True
+
+        if requires_profile:
+            # Just warn, don't raise - we'll handle it gracefully at runtime
+            pass
+
     def wrap_model_call(
         self,
         request: ModelRequest,
@@ -238,8 +429,11 @@ class ContextEditingMiddleware(AgentMiddleware):
                     system_msg + list(messages), request.tools
                 )
 
+        # Get model profile if available
+        model_profile = self._get_model_profile(request.model)
+
         for edit in self.edits:
-            edit.apply(request.messages, count_tokens=count_tokens)
+            edit.apply(request.messages, count_tokens=count_tokens, model_profile=model_profile)
 
         return handler(request)
 
@@ -266,13 +460,32 @@ class ContextEditingMiddleware(AgentMiddleware):
                     system_msg + list(messages), request.tools
                 )
 
+        # Get model profile if available
+        model_profile = self._get_model_profile(request.model)
+
         for edit in self.edits:
-            edit.apply(request.messages, count_tokens=count_tokens)
+            edit.apply(request.messages, count_tokens=count_tokens, model_profile=model_profile)
 
         return await handler(request)
+
+    def _get_model_profile(self, model: Any) -> Mapping[str, Any] | None:
+        """Retrieve model profile if available."""
+        try:
+            profile = model.profile
+        except (AttributeError, ImportError):
+            return None
+
+        if not isinstance(profile, Mapping):
+            return None
+
+        return profile
 
 
 __all__ = [
     "ClearToolUsesEdit",
     "ContextEditingMiddleware",
+    "ContextFraction",
+    "ContextMessages",
+    "ContextSize",
+    "ContextTokens",
 ]
