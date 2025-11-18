@@ -232,8 +232,17 @@ def _is_huggingface_hub(llm: Any) -> bool:
 def _convert_chunk_to_message_chunk(
     chunk: Mapping[str, Any], default_class: type[BaseMessageChunk]
 ) -> BaseMessageChunk:
+
+    if hasattr(chunk, 'choices'):
+        choice_obj = chunk.choices[0]
+        delta_obj = choice_obj.delta
+        reasoning_content_value = getattr(delta_obj, "reasoning_content", None)
+    else:
+        reasoning_content_value = None
+
     choice = chunk["choices"][0]
     _dict = choice["delta"]
+
     role = cast(str, _dict.get("role"))
     content = cast(str, _dict.get("content") or "")
     additional_kwargs: dict = {}
@@ -259,7 +268,7 @@ def _convert_chunk_to_message_chunk(
         return HumanMessageChunk(content=content)
     if role == "assistant" or default_class == AIMessageChunk:
 
-        reasoning = cast(str, _dict.get("reasoning") or "")
+        reasoning = _dict.get("reasoning") or reasoning_content_value
         additional_kwargs["reasoning_content"] = reasoning
 
         if usage := chunk.get("usage"):
