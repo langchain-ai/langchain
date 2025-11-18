@@ -701,11 +701,6 @@ class ChildTool(BaseTool):
                 if k not in result_dict and k in tool_input:
                     injected_val = tool_input[k]
                     validated_input[k] = injected_val
-                    if isinstance(
-                        injected_val,
-                        (InjectedToolArg, InjectedToolCallId, _DirectlyInjectedToolArg),
-                    ):
-                        validated_input[k] = injected_val
             return validated_input
         return tool_input
 
