@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Iterable, cast
 
+import pytest
+
 from langchain.agents.middleware.context_editing import (
     ClearToolUsesEdit,
     ContextEditingMiddleware,
@@ -482,26 +484,22 @@ def test_backwards_compatibility_deprecation_warnings() -> None:
         assert edit.keep == ("messages", 5)
 
 
-def test_validation_errors() -> None:
+@pytest.mark.parametrize(
+    ("param_name", "param_value", "expected_error"),
+    [
+        ("trigger", ("fraction", 1.5), "Fractional trigger values must be between 0 and 1"),
+        ("trigger", ("fraction", 0.0), "Fractional trigger values must be between 0 and 1"),
+        ("trigger", ("tokens", 0), "trigger thresholds must be >= 1"),
+        ("trigger", ("messages", -5), "trigger thresholds must be >= 1"),
+        ("keep", ("messages", -1), "keep thresholds must be >= 0"),
+        ("keep", ("fraction", -0.1), "Fractional keep values must be between 0 and 1"),
+        ("trigger", ("invalid", 100), "Unsupported context size type"),
+        ("keep", ("invalid", 100), "Unsupported context size type"),
+    ],
+)
+def test_validation_errors(
+    param_name: str, param_value: tuple[str, float | int], expected_error: str
+) -> None:
     """Test validation of ContextSize parameters."""
-    import pytest
-
-    # Invalid fraction > 1
-    with pytest.raises(ValueError, match="Fractional trigger values must be between 0 and 1"):
-        ClearToolUsesEdit(trigger=("fraction", 1.5))
-
-    # Invalid fraction <= 0
-    with pytest.raises(ValueError, match="Fractional trigger values must be between 0 and 1"):
-        ClearToolUsesEdit(trigger=("fraction", 0.0))
-
-    # Invalid token count
-    with pytest.raises(ValueError, match="trigger thresholds must be >= 1"):
-        ClearToolUsesEdit(trigger=("tokens", 0))
-
-    # Negative keep count (not allowed)
-    with pytest.raises(ValueError, match="keep thresholds must be >= 0"):
-        ClearToolUsesEdit(keep=("messages", -1))
-
-    # Invalid context type
-    with pytest.raises(ValueError, match="Unsupported context size type"):
-        ClearToolUsesEdit(trigger=("invalid", 100))  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match=expected_error):
+        ClearToolUsesEdit(**{param_name: param_value})  # type: ignore[arg-type]
