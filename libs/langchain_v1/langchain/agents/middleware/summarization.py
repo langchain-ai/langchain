@@ -2,13 +2,12 @@
 
 import uuid
 import warnings
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Mapping
 from typing import Any, cast
 
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
-    MessageLikeRepresentation,
     RemoveMessage,
     ToolMessage,
 )
@@ -19,22 +18,24 @@ from langgraph.graph.message import (
 )
 from langgraph.runtime import Runtime
 
-from langchain.agents.middleware._context import (
-    DEFAULT_FALLBACK_MESSAGE_COUNT,
-    DEFAULT_MESSAGES_TO_KEEP,
-    DEFAULT_TRIM_TOKEN_LIMIT,
-    SEARCH_RANGE_FOR_TOOL_PAIRS,
-    ContextSize,
-)
+from langchain.agents.middleware._context import ContextSize, TokenCounter
 from langchain.agents.middleware._context import (
     validate_context_size as _validate_context_size_base,
 )
 from langchain.agents.middleware.types import AgentMiddleware, AgentState
 from langchain.chat_models import BaseChatModel, init_chat_model
 
-# Note: Summarization uses a different TokenCounter signature that accepts MessageLikeRepresentation
-# instead of just BaseMessage, so we define it separately here
-TokenCounter = Callable[[Iterable[MessageLikeRepresentation]], int]
+_DEFAULT_MESSAGES_TO_KEEP = 20
+"""Default number of messages to keep after summarization."""
+
+_DEFAULT_TRIM_TOKEN_LIMIT = 4000
+"""Default token limit when trimming messages for summarization."""
+
+_DEFAULT_FALLBACK_MESSAGE_COUNT = 15
+"""Default fallback message count when trimming fails."""
+
+_SEARCH_RANGE_FOR_TOOL_PAIRS = 5
+"""Range to search for AI/Tool message pairs when determining safe cutoff points."""
 
 DEFAULT_SUMMARY_PROMPT = """<role>
 Context Extraction Assistant
@@ -78,10 +79,10 @@ class SummarizationMiddleware(AgentMiddleware):
         model: str | BaseChatModel,
         *,
         trigger: ContextSize | list[ContextSize] | None = None,
-        keep: ContextSize = ("messages", DEFAULT_MESSAGES_TO_KEEP),
+        keep: ContextSize = ("messages", _DEFAULT_MESSAGES_TO_KEEP),
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
-        trim_tokens_to_summarize: int | None = DEFAULT_TRIM_TOKEN_LIMIT,
+        trim_tokens_to_summarize: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
         **deprecated_kwargs: Any,
     ) -> None:
         """Initialize summarization middleware.
@@ -128,7 +129,7 @@ class SummarizationMiddleware(AgentMiddleware):
                 DeprecationWarning,
                 stacklevel=2,
             )
-            if keep == ("messages", DEFAULT_MESSAGES_TO_KEEP):
+            if keep == ("messages", _DEFAULT_MESSAGES_TO_KEEP):
                 keep = ("messages", value)
 
         super().__init__()
@@ -250,7 +251,7 @@ class SummarizationMiddleware(AgentMiddleware):
                 return token_based_cutoff
             # None cutoff -> model profile data not available (caught in __init__ but
             # here for safety), fallback to message count
-            return self._find_safe_cutoff(messages, DEFAULT_MESSAGES_TO_KEEP)
+            return self._find_safe_cutoff(messages, _DEFAULT_MESSAGES_TO_KEEP)
         return self._find_safe_cutoff(messages, cast("int", value))
 
     def _find_token_based_cutoff(self, messages: list[AnyMessage]) -> int | None:
@@ -371,8 +372,8 @@ class SummarizationMiddleware(AgentMiddleware):
         if cutoff_index >= len(messages):
             return True
 
-        search_start = max(0, cutoff_index - SEARCH_RANGE_FOR_TOOL_PAIRS)
-        search_end = min(len(messages), cutoff_index + SEARCH_RANGE_FOR_TOOL_PAIRS)
+        search_start = max(0, cutoff_index - _SEARCH_RANGE_FOR_TOOL_PAIRS)
+        search_end = min(len(messages), cutoff_index + _SEARCH_RANGE_FOR_TOOL_PAIRS)
 
         for i in range(search_start, search_end):
             if not self._has_tool_calls(messages[i]):
@@ -463,4 +464,4 @@ class SummarizationMiddleware(AgentMiddleware):
                 include_system=True,
             )
         except Exception:  # noqa: BLE001
-            return messages[-DEFAULT_FALLBACK_MESSAGE_COUNT:]
+            return messages[-_DEFAULT_FALLBACK_MESSAGE_COUNT:]

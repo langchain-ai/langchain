@@ -7,10 +7,10 @@ context editing and summarization middleware implementations.
 from __future__ import annotations
 
 import warnings
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable
 from typing import Literal, TypeAlias
 
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import MessageLikeRepresentation
 
 # Type aliases for context size specifications
 ContextFraction: TypeAlias = tuple[Literal["fraction"], float]
@@ -42,26 +42,13 @@ Provides type-safe representation of context size thresholds using one of:
 
 # Token counter callable type
 TokenCounter: TypeAlias = Callable[
-    [Sequence[BaseMessage]],
+    [Iterable[MessageLikeRepresentation]],
     int,
 ]
-"""Callable that counts tokens in a sequence of messages."""
+"""Callable that counts tokens in messages.
 
-# Constants
-DEFAULT_TOOL_PLACEHOLDER = "[cleared]"
-"""Default placeholder text for cleared tool outputs."""
-
-DEFAULT_MESSAGES_TO_KEEP = 20
-"""Default number of messages to keep after summarization."""
-
-DEFAULT_TRIM_TOKEN_LIMIT = 4000
-"""Default token limit when trimming messages for summarization."""
-
-DEFAULT_FALLBACK_MESSAGE_COUNT = 15
-"""Default fallback message count when trimming fails."""
-
-SEARCH_RANGE_FOR_TOOL_PAIRS = 5
-"""Range to search for AI/Tool message pairs when determining safe cutoff points."""
+Accepts either `Sequence[BaseMessage]` or `Iterable[MessageLikeRepresentation]`.
+"""
 
 
 def coerce_to_context_size(
@@ -148,11 +135,6 @@ def validate_context_size(
 
 
 __all__ = [
-    "DEFAULT_FALLBACK_MESSAGE_COUNT",
-    "DEFAULT_MESSAGES_TO_KEEP",
-    "DEFAULT_TOOL_PLACEHOLDER",
-    "DEFAULT_TRIM_TOKEN_LIMIT",
-    "SEARCH_RANGE_FOR_TOOL_PAIRS",
     "ContextFraction",
     "ContextMessages",
     "ContextSize",

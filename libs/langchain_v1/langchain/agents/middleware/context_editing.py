@@ -25,7 +25,6 @@ from langchain_core.messages.utils import count_tokens_approximately
 from typing_extensions import Protocol
 
 from langchain.agents.middleware._context import (
-    DEFAULT_TOOL_PLACEHOLDER,
     ContextFraction,
     ContextMessages,
     ContextSize,
@@ -44,6 +43,9 @@ from langchain.agents.middleware.types import (
     ModelRequest,
     ModelResponse,
 )
+
+_DEFAULT_TOOL_PLACEHOLDER = "[cleared]"
+"""Default placeholder text for cleared tool outputs."""
 
 
 class ContextEdit(Protocol):
@@ -100,7 +102,7 @@ class ClearToolUsesEdit(ContextEdit):
         keep: ContextSize | int = ("messages", 3),
         clear_tool_inputs: bool = False,
         exclude_tools: Sequence[str] = (),
-        placeholder: str = DEFAULT_TOOL_PLACEHOLDER,
+        placeholder: str = _DEFAULT_TOOL_PLACEHOLDER,
         **deprecated_kwargs: Any,
     ) -> None:
         """Initialize the clear tool uses edit configuration.
@@ -411,15 +413,13 @@ class ContextEditingMiddleware(AgentMiddleware):
             return handler(request)
 
         if self.token_count_method == "approximate":  # noqa: S105
-
-            def count_tokens(messages: Sequence[BaseMessage]) -> int:
-                return count_tokens_approximately(messages)
+            count_tokens: TokenCounter = count_tokens_approximately
         else:
             system_msg = (
                 [SystemMessage(content=request.system_prompt)] if request.system_prompt else []
             )
 
-            def count_tokens(messages: Sequence[BaseMessage]) -> int:
+            def count_tokens(messages: Iterable[Any]) -> int:
                 return request.model.get_num_tokens_from_messages(
                     system_msg + list(messages), request.tools
                 )
