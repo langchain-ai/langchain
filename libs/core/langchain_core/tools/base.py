@@ -386,6 +386,8 @@ class ToolException(Exception):  # noqa: N818
 
 ArgsSchema = TypeBaseModel | dict[str, Any]
 
+_EMPTY_SET: frozenset[str] = frozenset()
+
 
 class BaseTool(RunnableSerializable[str | dict | ToolCall, Any]):
     """Base class for all LangChain tools.
@@ -571,11 +573,8 @@ class ChildTool(BaseTool):
 
     @functools.cached_property
     def _injected_args_keys(self) -> frozenset[str]:
-        return frozenset(
-            k
-            for k, v in get_all_basemodel_annotations(self.args_schema).items()
-            if _is_injected_arg_type(v)
-        )
+        # base implementation doesn't manage injected args
+        return _EMPTY_SET
 
     # --- Runnable ---
 
@@ -654,10 +653,10 @@ class ChildTool(BaseTool):
                     raise TypeError(msg)
             return tool_input
         if input_args is not None:
-            injected_args = {}
             if isinstance(input_args, dict):
                 return tool_input
             if issubclass(input_args, BaseModel):
+                # Check args_schema for InjectedToolCallId
                 for k, v in get_all_basemodel_annotations(input_args).items():
                     if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
                         if tool_call_id is None:
@@ -670,10 +669,10 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
-                        injected_args[k] = tool_call_id
                 result = input_args.model_validate(tool_input)
                 result_dict = result.model_dump()
             elif issubclass(input_args, BaseModelV1):
+                # Check args_schema for InjectedToolCallId
                 for k, v in get_all_basemodel_annotations(input_args).items():
                     if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
                         if tool_call_id is None:
@@ -686,7 +685,6 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
-                        injected_args[k] = tool_call_id
                 result = input_args.parse_obj(tool_input)
                 result_dict = result.dict()
             else:
@@ -698,7 +696,18 @@ class ChildTool(BaseTool):
                 k: getattr(result, k) for k in result_dict if k in tool_input
             }
             for k in self._injected_args_keys:
-                if k not in result_dict and k in tool_input:
+                if k == "tool_call_id":
+                    if tool_call_id is None:
+                        msg = (
+                            "When tool includes an InjectedToolCallId "
+                            "argument, tool must always be invoked with a full "
+                            "model ToolCall of the form: {'args': {...}, "
+                            "'name': '...', 'type': 'tool_call', "
+                            "'tool_call_id': '...'}"
+                        )
+                        raise ValueError(msg)
+                    validated_input[k] = tool_call_id
+                if k in tool_input:
                     injected_val = tool_input[k]
                     validated_input[k] = injected_val
             return validated_input

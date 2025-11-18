@@ -22,9 +22,11 @@ from langchain_core.callbacks import (
 )
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
+    _EMPTY_SET,
     FILTERED_ARGS,
     ArgsSchema,
     BaseTool,
+    InjectedToolCallId,
     _get_runnable_config_param,
     _is_injected_arg_type,
     create_schema_from_function,
@@ -33,9 +35,6 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.messages import ToolCall
-
-
-_EMPTY_SET: frozenset[str] = frozenset()
 
 
 class StructuredTool(BaseTool):
@@ -255,6 +254,21 @@ class StructuredTool(BaseTool):
             k
             for k, v in signature(fn).parameters.items()
             if _is_injected_arg_type(v.annotation)
+        )
+
+    def _get_injected_tool_call_id_keys(self) -> frozenset[str]:
+        """Get parameter names that are annotated with InjectedToolCallId.
+
+        Returns:
+            Set of parameter names with `InjectedToolCallId` annotation.
+        """
+        fn = self.func or self.coroutine
+        if fn is None:
+            return _EMPTY_SET
+        return frozenset(
+            k
+            for k, v in signature(fn).parameters.items()
+            if _is_injected_arg_type(v.annotation, injected_type=InjectedToolCallId)
         )
 
 
