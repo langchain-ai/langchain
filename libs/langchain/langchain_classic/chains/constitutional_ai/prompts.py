@@ -93,7 +93,7 @@ examples = [
         "explained?",
         "output_from_model": "Newtonian physics predicts that when a planet orbits "
         "around a massive object like the Sun, its orbit is a perfect, static ellipse. "
-        "However, in reality, the orbit of Mercury precesses slowly over time, "
+        "However, in reality, the orbit of Mercury processes slowly over time, "
         "which had been known via astronomical measurements since the 1600's. "
         "It's explained by general relativity, whereby the Schwarzschild solution "
         "predicts an additional term to the Sun's gravitational field that scales as "
@@ -125,7 +125,7 @@ examples = [
         "then do not make any changes.",
         "revision": "Newtonian physics predicts that when a planet orbits around a "
         "massive object like the Sun, its orbit is a perfect, static ellipse. "
-        "However, in reality, the orbit of Mercury precesses slowly over time, "
+        "However, in reality, the orbit of Mercury processes slowly over time, "
         "which had been known via astronomical measurements for at least a century. "
         "The precession is partially explained by purely Newtonian effects, "
         "but is also partially explained by general relativity, "
