@@ -55,7 +55,6 @@ class ContextEdit(Protocol):
         messages: list[AnyMessage],
         *,
         count_tokens: TokenCounter,
-        model_profile: Mapping[str, Any] | None = None,
     ) -> None:
         """Apply an edit to the message list in place."""
         ...
@@ -93,6 +92,9 @@ class ClearToolUsesEdit(ContextEdit):
 
     placeholder: str
     """Placeholder text inserted for cleared tool outputs."""
+
+    _model: Any
+    """Reference to the model for accessing profile information."""
 
     def __init__(
         self,
@@ -171,6 +173,7 @@ class ClearToolUsesEdit(ContextEdit):
         self.clear_tool_inputs = clear_tool_inputs
         self.exclude_tools = exclude_tools
         self.placeholder = placeholder
+        self._model = None  # Will be set by middleware
 
     def _validate_context_size(self, context: ContextSize, parameter_name: str) -> ContextSize:
         """Validate context configuration tuples."""
@@ -181,12 +184,11 @@ class ClearToolUsesEdit(ContextEdit):
         messages: list[AnyMessage],
         *,
         count_tokens: TokenCounter,
-        model_profile: Mapping[str, Any] | None = None,
     ) -> None:
         """Apply the clear-tool-uses strategy."""
         tokens = count_tokens(messages)
 
-        if not self._should_trigger(messages, tokens, model_profile):
+        if not self._should_trigger(messages, tokens):
             return
 
         candidates = [
@@ -194,7 +196,7 @@ class ClearToolUsesEdit(ContextEdit):
         ]
 
         # Calculate how many tool results to keep
-        keep_count = self._calculate_keep_count(candidates, model_profile)
+        keep_count = self._calculate_keep_count(candidates)
 
         if keep_count >= len(candidates):
             candidates = []
@@ -255,7 +257,6 @@ class ClearToolUsesEdit(ContextEdit):
         self,
         messages: list[AnyMessage],
         total_tokens: int,
-        model_profile: Mapping[str, Any] | None,
     ) -> bool:
         """Determine whether the edit should run for the current context usage."""
         trigger_conditions: list[ContextSize] = (
@@ -269,7 +270,7 @@ class ClearToolUsesEdit(ContextEdit):
             if kind == "tokens" and total_tokens >= value:
                 return True
             if kind == "fraction":
-                max_input_tokens = self._get_profile_limits(model_profile)
+                max_input_tokens = self._get_profile_limits()
                 if max_input_tokens is None:
                     continue
                 threshold = int(max_input_tokens * value)
@@ -282,7 +283,6 @@ class ClearToolUsesEdit(ContextEdit):
     def _calculate_keep_count(
         self,
         candidates: list[tuple[int, ToolMessage]],
-        model_profile: Mapping[str, Any] | None,
     ) -> int:
         """Calculate how many tool results to keep based on retention policy."""
         keep_policy: ContextSize = self.keep
@@ -295,7 +295,7 @@ class ClearToolUsesEdit(ContextEdit):
             # This is a simplified implementation - could be enhanced
             return int(value)
         if kind == "fraction":
-            max_input_tokens = self._get_profile_limits(model_profile)
+            max_input_tokens = self._get_profile_limits()
             if max_input_tokens is None:
                 # Fallback to default message count
                 return 3
@@ -305,15 +305,20 @@ class ClearToolUsesEdit(ContextEdit):
             return target_count
         return 3  # Default fallback
 
-    def _get_profile_limits(self, model_profile: Mapping[str, Any] | None) -> int | None:
+    def _get_profile_limits(self) -> int | None:
         """Retrieve max input token limit from the model profile."""
-        if model_profile is None:
+        if self._model is None:
             return None
 
-        if not isinstance(model_profile, Mapping):
+        try:
+            profile = self._model.profile
+        except (AttributeError, ImportError):
             return None
 
-        max_input_tokens = model_profile.get("max_input_tokens")
+        if not isinstance(profile, Mapping):
+            return None
+
+        max_input_tokens = profile.get("max_input_tokens")
 
         if not isinstance(max_input_tokens, int):
             return None
@@ -423,11 +428,11 @@ class ContextEditingMiddleware(AgentMiddleware):
                     system_msg + list(messages), request.tools
                 )
 
-        # Get model profile if available
-        model_profile = self._get_model_profile(request.model)
-
+        # Set model reference on edits that need it
         for edit in self.edits:
-            edit.apply(request.messages, count_tokens=count_tokens, model_profile=model_profile)
+            if isinstance(edit, ClearToolUsesEdit):
+                edit._model = request.model
+            edit.apply(request.messages, count_tokens=count_tokens)
 
         return handler(request)
 
@@ -452,25 +457,13 @@ class ContextEditingMiddleware(AgentMiddleware):
                     system_msg + list(messages), request.tools
                 )
 
-        # Get model profile if available
-        model_profile = self._get_model_profile(request.model)
-
+        # Set model reference on edits that need it
         for edit in self.edits:
-            edit.apply(request.messages, count_tokens=count_tokens, model_profile=model_profile)
+            if isinstance(edit, ClearToolUsesEdit):
+                edit._model = request.model
+            edit.apply(request.messages, count_tokens=count_tokens)
 
         return await handler(request)
-
-    def _get_model_profile(self, model: Any) -> Mapping[str, Any] | None:
-        """Retrieve model profile if available."""
-        try:
-            profile = model.profile
-        except (AttributeError, ImportError):
-            return None
-
-        if not isinstance(profile, Mapping):
-            return None
-
-        return profile
 
 
 __all__ = [
