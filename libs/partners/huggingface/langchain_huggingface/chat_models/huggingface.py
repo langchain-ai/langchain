@@ -232,7 +232,6 @@ def _is_huggingface_hub(llm: Any) -> bool:
 def _convert_chunk_to_message_chunk(
     chunk: Mapping[str, Any], default_class: type[BaseMessageChunk]
 ) -> BaseMessageChunk:
-
     if hasattr(chunk, "choices"):
         choice_obj = chunk.choices[0]
         delta_obj = choice_obj.delta
@@ -267,7 +266,6 @@ def _convert_chunk_to_message_chunk(
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     if role == "assistant" or default_class == AIMessageChunk:
-
         reasoning = _dict.get("reasoning") or reasoning_content_value
         additional_kwargs["reasoning_content"] = reasoning
 
