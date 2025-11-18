@@ -811,14 +811,15 @@ class BaseChatOpenAI(BaseChatModel):
             (Defaults to 1)
         """
         model = values.get("model_name") or values.get("model") or ""
+        model_lower = model.lower()
 
         # For o1 models, set temperature=1 if not provided
-        if model.startswith("o1") and "temperature" not in values:
+        if model_lower.startswith("o1") and "temperature" not in values:
             values["temperature"] = 1
 
         # For gpt-5 models, handle temperature restrictions
         # Note that gpt-5-chat models do support temperature
-        if model.startswith("gpt-5") and "chat" not in model:
+        if model_lower.startswith("gpt-5") and "chat" not in model_lower:
             temperature = values.get("temperature")
             if temperature is not None and temperature != 1:
                 # For gpt-5 (non-chat), only temperature=1 is supported
@@ -1649,12 +1650,9 @@ class BaseChatOpenAI(BaseChatModel):
         try:
             encoding = tiktoken.encoding_for_model(model)
         except KeyError:
+            model_lower = self.model_name.lower()
             encoder = "cl100k_base"
-            if (
-                self.model_name.startswith("gpt-4o")
-                or self.model_name.startswith("gpt-4.1")
-                or self.model_name.startswith("gpt-5")
-            ):
+            if model_lower.startswith(("gpt-4o", "gpt-4.1", "gpt-5")):
                 encoder = "o200k_base"
             encoding = tiktoken.get_encoding(encoder)
         return model, encoding

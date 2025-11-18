@@ -3002,3 +3002,33 @@ def test_gpt_5_temperature(use_responses_api: bool) -> None:
     messages = [HumanMessage(content="Hello")]
     payload = llm._get_request_payload(messages)
     assert payload["temperature"] == 0.5  # gpt-5-chat is exception
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+@pytest.mark.parametrize(
+    "model_name",
+    [
+        "GPT-5-NANO",
+        "GPT-5-2025-01-01",
+        "Gpt-5-Turbo",
+        "gPt-5-mini",
+    ],
+)
+def test_gpt_5_temperature_case_insensitive(
+    use_responses_api: bool, model_name: str
+) -> None:
+    llm = ChatOpenAI(
+        model=model_name, temperature=0.5, use_responses_api=use_responses_api
+    )
+
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+    for chat_model in ["GPT-5-CHAT", "Gpt-5-Chat", "gpt-5-chat"]:
+        llm = ChatOpenAI(
+            model=chat_model, temperature=0.7, use_responses_api=use_responses_api
+        )
+        messages = [HumanMessage(content="Hello")]
+        payload = llm._get_request_payload(messages)
+        assert payload["temperature"] == 0.7
