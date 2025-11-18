@@ -24,59 +24,22 @@ from langchain_core.messages import (
 from langchain_core.messages.utils import count_tokens_approximately
 from typing_extensions import Protocol
 
+from langchain.agents.middleware._context import (
+    DEFAULT_TOOL_PLACEHOLDER,
+    ContextFraction,
+    ContextMessages,
+    ContextSize,
+    ContextTokens,
+    TokenCounter,
+    coerce_to_context_size as _coerce_to_context_size,
+    validate_context_size as _validate_context_size_base,
+)
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     ModelCallResult,
     ModelRequest,
     ModelResponse,
 )
-
-DEFAULT_TOOL_PLACEHOLDER = "[cleared]"
-
-
-TokenCounter = Callable[
-    [Sequence[BaseMessage]],
-    int,
-]
-
-ContextFraction = tuple[Literal["fraction"], float]
-ContextTokens = tuple[Literal["tokens"], int]
-ContextMessages = tuple[Literal["messages"], int]
-
-ContextSize = ContextFraction | ContextTokens | ContextMessages
-
-
-def _coerce_to_context_size(
-    value: int | ContextSize, *, kind: Literal["trigger", "keep"], param_name: str
-) -> ContextSize:
-    """Coerce integer values to ContextSize tuples for backwards compatibility.
-
-    Args:
-        value: Integer or ContextSize tuple.
-        kind: Whether this is for a trigger or keep parameter.
-        param_name: Name of the parameter for deprecation warnings.
-
-    Returns:
-        ContextSize tuple.
-    """
-    if isinstance(value, int):
-        # trigger uses tokens, keep uses messages (backwards compat with old API)
-        if kind == "trigger":
-            warnings.warn(
-                f"{param_name}={value} (int) is deprecated. "
-                f"Use {param_name}=('tokens', {value}) instead.",
-                DeprecationWarning,
-                stacklevel=3,
-            )
-            return ("tokens", value)
-        warnings.warn(
-            f"{param_name}={value} (int) is deprecated. "
-            f"Use {param_name}=('messages', {value}) instead.",
-            DeprecationWarning,
-            stacklevel=3,
-        )
-        return ("messages", value)
-    return value
 
 
 class ContextEdit(Protocol):
@@ -206,22 +169,9 @@ class ClearToolUsesEdit(ContextEdit):
 
     def _validate_context_size(self, context: ContextSize, parameter_name: str) -> ContextSize:
         """Validate context configuration tuples."""
-        kind, value = context
-        if kind == "fraction":
-            if not 0 < value <= 1:
-                msg = f"Fractional {parameter_name} values must be between 0 and 1, got {value}."
-                raise ValueError(msg)
-        elif kind in {"tokens", "messages"}:
-            # For keep, 0 is valid (means keep nothing)
-            # For trigger, must be > 0
-            min_value = 0 if parameter_name == "keep" else 1
-            if value < min_value:
-                msg = f"{parameter_name} thresholds must be >= {min_value}, got {value}."
-                raise ValueError(msg)
-        else:
-            msg = f"Unsupported context size type {kind} for {parameter_name}."
-            raise ValueError(msg)
-        return context
+        return _validate_context_size_base(
+            context, parameter_name, allow_zero_for_keep=True
+        )
 
     def apply(
         self,

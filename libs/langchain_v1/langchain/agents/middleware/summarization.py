@@ -19,9 +19,22 @@ from langgraph.graph.message import (
 )
 from langgraph.runtime import Runtime
 
+from langchain.agents.middleware._context import (
+    DEFAULT_FALLBACK_MESSAGE_COUNT,
+    DEFAULT_MESSAGES_TO_KEEP,
+    DEFAULT_TRIM_TOKEN_LIMIT,
+    SEARCH_RANGE_FOR_TOOL_PAIRS,
+    ContextFraction,
+    ContextMessages,
+    ContextSize,
+    ContextTokens,
+    validate_context_size as _validate_context_size_base,
+)
 from langchain.agents.middleware.types import AgentMiddleware, AgentState
 from langchain.chat_models import BaseChatModel, init_chat_model
 
+# Note: Summarization uses a different TokenCounter signature that accepts MessageLikeRepresentation
+# instead of just BaseMessage, so we define it separately here
 TokenCounter = Callable[[Iterable[MessageLikeRepresentation]], int]
 
 DEFAULT_SUMMARY_PROMPT = """<role>
@@ -52,17 +65,6 @@ Messages to summarize:
 {messages}
 </messages>"""  # noqa: E501
 
-_DEFAULT_MESSAGES_TO_KEEP = 20
-_DEFAULT_TRIM_TOKEN_LIMIT = 4000
-_DEFAULT_FALLBACK_MESSAGE_COUNT = 15
-_SEARCH_RANGE_FOR_TOOL_PAIRS = 5
-
-ContextFraction = tuple[Literal["fraction"], float]
-ContextTokens = tuple[Literal["tokens"], int]
-ContextMessages = tuple[Literal["messages"], int]
-
-ContextSize = ContextFraction | ContextTokens | ContextMessages
-
 
 class SummarizationMiddleware(AgentMiddleware):
     """Summarizes conversation history when token limits are approached.
@@ -77,10 +79,10 @@ class SummarizationMiddleware(AgentMiddleware):
         model: str | BaseChatModel,
         *,
         trigger: ContextSize | list[ContextSize] | None = None,
-        keep: ContextSize = ("messages", _DEFAULT_MESSAGES_TO_KEEP),
+        keep: ContextSize = ("messages", DEFAULT_MESSAGES_TO_KEEP),
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
-        trim_tokens_to_summarize: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
+        trim_tokens_to_summarize: int | None = DEFAULT_TRIM_TOKEN_LIMIT,
         **deprecated_kwargs: Any,
     ) -> None:
         """Initialize summarization middleware.
@@ -127,7 +129,7 @@ class SummarizationMiddleware(AgentMiddleware):
                 DeprecationWarning,
                 stacklevel=2,
             )
-            if keep == ("messages", _DEFAULT_MESSAGES_TO_KEEP):
+            if keep == ("messages", DEFAULT_MESSAGES_TO_KEEP):
                 keep = ("messages", value)
 
         super().__init__()
@@ -249,7 +251,7 @@ class SummarizationMiddleware(AgentMiddleware):
                 return token_based_cutoff
             # None cutoff -> model profile data not available (caught in __init__ but
             # here for safety), fallback to message count
-            return self._find_safe_cutoff(messages, _DEFAULT_MESSAGES_TO_KEEP)
+            return self._find_safe_cutoff(messages, DEFAULT_MESSAGES_TO_KEEP)
         return self._find_safe_cutoff(messages, cast("int", value))
 
     def _find_token_based_cutoff(self, messages: list[AnyMessage]) -> int | None:
@@ -323,19 +325,10 @@ class SummarizationMiddleware(AgentMiddleware):
 
     def _validate_context_size(self, context: ContextSize, parameter_name: str) -> ContextSize:
         """Validate context configuration tuples."""
-        kind, value = context
-        if kind == "fraction":
-            if not 0 < value <= 1:
-                msg = f"Fractional {parameter_name} values must be between 0 and 1, got {value}."
-                raise ValueError(msg)
-        elif kind in {"tokens", "messages"}:
-            if value <= 0:
-                msg = f"{parameter_name} thresholds must be greater than 0, got {value}."
-                raise ValueError(msg)
-        else:
-            msg = f"Unsupported context size type {kind} for {parameter_name}."
-            raise ValueError(msg)
-        return context
+        # For summarization, we don't allow zero values for keep
+        return _validate_context_size_base(
+            context, parameter_name, allow_zero_for_keep=False
+        )
 
     def _build_new_messages(self, summary: str) -> list[HumanMessage]:
         return [
@@ -381,8 +374,8 @@ class SummarizationMiddleware(AgentMiddleware):
         if cutoff_index >= len(messages):
             return True
 
-        search_start = max(0, cutoff_index - _SEARCH_RANGE_FOR_TOOL_PAIRS)
-        search_end = min(len(messages), cutoff_index + _SEARCH_RANGE_FOR_TOOL_PAIRS)
+        search_start = max(0, cutoff_index - SEARCH_RANGE_FOR_TOOL_PAIRS)
+        search_end = min(len(messages), cutoff_index + SEARCH_RANGE_FOR_TOOL_PAIRS)
 
         for i in range(search_start, search_end):
             if not self._has_tool_calls(messages[i]):
@@ -473,4 +466,4 @@ class SummarizationMiddleware(AgentMiddleware):
                 include_system=True,
             )
         except Exception:  # noqa: BLE001
-            return messages[-_DEFAULT_FALLBACK_MESSAGE_COUNT:]
+            return messages[-DEFAULT_FALLBACK_MESSAGE_COUNT:]

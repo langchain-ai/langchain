@@ -1,5 +1,11 @@
 """Entrypoint to using [middleware](https://docs.langchain.com/oss/python/langchain/middleware) plugins with [Agents](https://docs.langchain.com/oss/python/langchain/agents)."""  # noqa: E501
 
+from ._context import (
+    ContextFraction,
+    ContextMessages,
+    ContextSize,
+    ContextTokens,
+)
 from .context_editing import (
     ClearToolUsesEdit,
     ContextEditingMiddleware,
@@ -46,6 +52,10 @@ __all__ = [
     "ClearToolUsesEdit",
     "CodexSandboxExecutionPolicy",
     "ContextEditingMiddleware",
+    "ContextFraction",
+    "ContextMessages",
+    "ContextSize",
+    "ContextTokens",
     "DockerExecutionPolicy",
     "FilesystemFileSearchMiddleware",
     "HostExecutionPolicy",
