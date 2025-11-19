@@ -288,27 +288,22 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             return None
 
         # Separate tool calls that need interrupts from those that don't
-        interrupt_tool_calls: list[ToolCall] = []
-        auto_approved_tool_calls = []
+        # Track indices to preserve original order
+        interrupt_tool_calls: list[tuple[int, ToolCall]] = []
 
-        for tool_call in last_ai_msg.tool_calls:
-            interrupt_tool_calls.append(tool_call) if tool_call[
-                "name"
-            ] in self.interrupt_on else auto_approved_tool_calls.append(tool_call)
+        for idx, tool_call in enumerate(last_ai_msg.tool_calls):
+            if tool_call["name"] in self.interrupt_on:
+                interrupt_tool_calls.append((idx, tool_call))
 
         # If no interrupts needed, return early
         if not interrupt_tool_calls:
             return None
 
-        # Process all tool calls that require interrupts
-        revised_tool_calls: list[ToolCall] = auto_approved_tool_calls.copy()
-        artificial_tool_messages: list[ToolMessage] = []
-
         # Create action requests and review configs for all tools that need approval
         action_requests: list[ActionRequest] = []
         review_configs: list[ReviewConfig] = []
 
-        for tool_call in interrupt_tool_calls:
+        for _, tool_call in interrupt_tool_calls:
             config = self.interrupt_on[tool_call["name"]]
 
             # Create ActionRequest and ReviewConfig using helper method
@@ -338,16 +333,30 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             )
             raise ValueError(msg)
 
-        # Process each decision using helper method
+        # Process decisions and build a mapping of index to processed result
+        decision_results: dict[int, tuple[ToolCall | None, ToolMessage | None]] = {}
+        artificial_tool_messages: list[ToolMessage] = []
+
         for i, decision in enumerate(decisions):
-            tool_call = interrupt_tool_calls[i]
+            idx, tool_call = interrupt_tool_calls[i]
             config = self.interrupt_on[tool_call["name"]]
 
             revised_tool_call, tool_message = self._process_decision(decision, tool_call, config)
-            if revised_tool_call:
-                revised_tool_calls.append(revised_tool_call)
+            decision_results[idx] = (revised_tool_call, tool_message)
             if tool_message:
                 artificial_tool_messages.append(tool_message)
+
+        # Rebuild tool calls in original order
+        revised_tool_calls: list[ToolCall] = []
+        for idx, tool_call in enumerate(last_ai_msg.tool_calls):
+            if idx in decision_results:
+                # This was an interrupt tool call - use processed result
+                revised_tool_call, _ = decision_results[idx]
+                if revised_tool_call:
+                    revised_tool_calls.append(revised_tool_call)
+            else:
+                # This was auto-approved - keep original
+                revised_tool_calls.append(tool_call)
 
         # Update the AI message to only include approved tool calls
         last_ai_msg.tool_calls = revised_tool_calls
