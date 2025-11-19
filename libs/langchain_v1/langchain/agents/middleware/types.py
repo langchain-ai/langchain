@@ -45,12 +45,16 @@ if TYPE_CHECKING:
 __all__ = [
     "AgentMiddleware",
     "AgentState",
+    "AsyncModelCallHandler",
+    "AsyncToolCallHandler",
     "ContextT",
+    "ModelCallHandler",
     "ModelRequest",
     "ModelResponse",
     "OmitFromSchema",
     "ResponseT",
     "StateT_co",
+    "ToolCallHandler",
     "ToolCallRequest",
     "ToolCallWrapper",
     "after_agent",
@@ -81,8 +85,11 @@ class _ModelRequestOverrides(TypedDict, total=False):
 
 
 @dataclass
-class ModelRequest:
-    """Model request information for the agent."""
+class ModelRequest(Generic[ContextT]):
+    """Model request information for the agent.
+
+    Generic over `ContextT` for better type inference of the runtime context.
+    """
 
     model: BaseChatModel
     system_prompt: str | None
@@ -91,7 +98,7 @@ class ModelRequest:
     tools: list[BaseTool | dict]
     response_format: ResponseFormat | None
     state: AgentState
-    runtime: Runtime[ContextT]  # type: ignore[valid-type]
+    runtime: Runtime[ContextT]
     model_settings: dict[str, Any] = field(default_factory=dict)
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -119,7 +126,7 @@ class ModelRequest:
             )
             object.__setattr__(self, name, value)
 
-    def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest:
+    def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest[ContextT]:
         """Replace the request with a new request with the given overrides.
 
         Returns a new `ModelRequest` instance with the specified attributes replaced.
@@ -181,6 +188,36 @@ Middleware can return either:
 
 - `ModelResponse`: Full response with messages and optional structured output
 - `AIMessage`: Simplified return for simple use cases
+"""
+
+# Type aliases for model call handlers
+ModelCallHandler: TypeAlias = "Callable[[ModelRequest[ContextT]], ModelResponse]"
+"""`TypeAlias` for synchronous model call handler callback.
+
+This is the handler function passed to `wrap_model_call` middleware that executes
+the model request and returns a `ModelResponse`.
+"""
+
+AsyncModelCallHandler: TypeAlias = "Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]"
+"""`TypeAlias` for asynchronous model call handler callback.
+
+This is the handler function passed to `awrap_model_call` middleware that executes
+the model request and returns an awaitable `ModelResponse`.
+"""
+
+# Type aliases for tool call handlers
+ToolCallHandler: TypeAlias = "Callable[[ToolCallRequest], ToolMessage | Command]"
+"""`TypeAlias` for synchronous tool call handler callback.
+
+This is the handler function passed to `wrap_tool_call` middleware that executes
+the tool call and returns a `ToolMessage` or `Command`.
+"""
+
+AsyncToolCallHandler: TypeAlias = "Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]"
+"""`TypeAlias` for asynchronous tool call handler callback.
+
+This is the handler function passed to `awrap_tool_call` middleware that executes
+the tool call and returns an awaitable `ToolMessage` or `Command`.
 """
 
 
@@ -287,8 +324,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
     def wrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
+        request: ModelRequest[ContextT],
+        handler: ModelCallHandler[ContextT],
     ) -> ModelCallResult:
         """Intercept and control model execution via handler callback.
 
@@ -382,8 +419,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
     async def awrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+        request: ModelRequest[ContextT],
+        handler: AsyncModelCallHandler[ContextT],
     ) -> ModelCallResult:
         """Intercept and control async model execution via handler callback.
 
@@ -443,7 +480,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     def wrap_tool_call(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], ToolMessage | Command],
+        handler: ToolCallHandler,
     ) -> ToolMessage | Command:
         """Intercept tool execution for retries, monitoring, or modification.
 
@@ -525,7 +562,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     async def awrap_tool_call(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
+        handler: AsyncToolCallHandler,
     ) -> ToolMessage | Command:
         """Intercept and control async tool execution via handler callback.
 
@@ -605,7 +642,7 @@ class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
 class _CallableReturningPromptString(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
     """Callable that returns a prompt string given `ModelRequest` (contains state and runtime)."""
 
-    def __call__(self, request: ModelRequest) -> str | Awaitable[str]:
+    def __call__(self, request: ModelRequest[ContextT]) -> str | Awaitable[str]:
         """Generate a system prompt string based on the request."""
         ...
 
@@ -619,8 +656,8 @@ class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):  # typ
 
     def __call__(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
+        request: ModelRequest[ContextT],
+        handler: ModelCallHandler[ContextT],
     ) -> ModelCallResult:
         """Intercept model execution via handler callback."""
         ...
@@ -636,7 +673,7 @@ class _CallableReturningToolResponse(Protocol):
     def __call__(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], ToolMessage | Command],
+        handler: ToolCallHandler,
     ) -> ToolMessage | Command:
         """Intercept tool execution via handler callback."""
         ...
@@ -1365,8 +1402,8 @@ def dynamic_prompt(
 
             async def async_wrapped(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
-                request: ModelRequest,
-                handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+                request: ModelRequest[ContextT],
+                handler: AsyncModelCallHandler[ContextT],
             ) -> ModelCallResult:
                 prompt = await func(request)  # type: ignore[misc]
                 request = request.override(system_prompt=prompt)
@@ -1386,8 +1423,8 @@ def dynamic_prompt(
 
         def wrapped(
             self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
+            request: ModelRequest[ContextT],
+            handler: ModelCallHandler[ContextT],
         ) -> ModelCallResult:
             prompt = cast("str", func(request))
             request = request.override(system_prompt=prompt)
@@ -1395,8 +1432,8 @@ def dynamic_prompt(
 
         async def async_wrapped_from_sync(
             self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+            request: ModelRequest[ContextT],
+            handler: AsyncModelCallHandler[ContextT],
         ) -> ModelCallResult:
             # Delegate to sync function
             prompt = cast("str", func(request))
@@ -1537,8 +1574,8 @@ def wrap_model_call(
 
             async def async_wrapped(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
-                request: ModelRequest,
-                handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+                request: ModelRequest[ContextT],
+                handler: AsyncModelCallHandler[ContextT],
             ) -> ModelCallResult:
                 return await func(request, handler)  # type: ignore[misc, arg-type]
 
@@ -1558,8 +1595,8 @@ def wrap_model_call(
 
         def wrapped(
             self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
+            request: ModelRequest[ContextT],
+            handler: ModelCallHandler[ContextT],
         ) -> ModelCallResult:
             return func(request, handler)
 
@@ -1698,7 +1735,7 @@ def wrap_tool_call(
             async def async_wrapped(
                 self: AgentMiddleware,  # noqa: ARG001
                 request: ToolCallRequest,
-                handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
+                handler: AsyncToolCallHandler,
             ) -> ToolMessage | Command:
                 return await func(request, handler)  # type: ignore[arg-type,misc]
 
@@ -1719,7 +1756,7 @@ def wrap_tool_call(
         def wrapped(
             self: AgentMiddleware,  # noqa: ARG001
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: ToolCallHandler,
         ) -> ToolMessage | Command:
             return func(request, handler)
 
