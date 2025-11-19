@@ -15,7 +15,7 @@ RetryOn = tuple[type[Exception], ...] | Callable[[Exception], bool]
 """Type for specifying which exceptions to retry on.
 
 Can be either:
-- A tuple of exception types to retry on
+- A tuple of exception types to retry on (based on `isinstance` checks)
 - A callable that takes an exception and returns `True` if it should be retried
 """
 
@@ -24,6 +24,10 @@ OnFailure = Literal["error", "continue"] | Callable[[Exception], str]
 
 Can be either:
 - A literal action string (`'error'` or `'continue'`)
+    - `'error'`: Re-raise the exception, stopping agent execution.
+    - `'continue'`: Inject a message with the error details, allowing the agent to continue.
+       For tool retries, a `ToolMessage` with the error details will be injected.
+       For model retries, an `AIMessage` with the error details will be returned.
 - A callable that takes an exception and returns a string for error message content
 """
 
