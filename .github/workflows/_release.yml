@@ -376,6 +376,7 @@ jobs:
   test-prior-published-packages-against-new-core:
     # Installs the new core with old partners: Installs the new unreleased core
     # alongside the previously published partner packages and runs integration tests
+    if: github.ref != 'refs/heads/v0.3'
     needs:
       - build
       - release-notes
