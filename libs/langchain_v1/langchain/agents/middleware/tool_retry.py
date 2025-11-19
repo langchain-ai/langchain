@@ -31,8 +31,8 @@ if TYPE_CHECKING:
     from langchain.agents.middleware.types import ToolCallRequest
     from langchain.tools import BaseTool
 
-# Type alias that includes both new and deprecated values for backwards compatibility
-ToolOnFailure = Literal["error", "continue", "raise", "return_message"] | OnFailure[str]
+# Type alias for tool retry callback that includes deprecated values for backwards compatibility
+OnRetry = Literal["error", "continue", "raise", "return_message"] | OnFailure[str]
 
 
 class ToolRetryMiddleware(AgentMiddleware):
@@ -139,7 +139,7 @@ class ToolRetryMiddleware(AgentMiddleware):
         max_retries: int = DEFAULT_MAX_RETRIES,
         tools: list[BaseTool | str] | None = None,
         retry_on: RetryOn = (Exception,),
-        on_failure: ToolOnFailure = "continue",
+        on_failure: OnRetry = "continue",
         backoff_factor: float = DEFAULT_BACKOFF_FACTOR,
         initial_delay: float = DEFAULT_INITIAL_DELAY,
         max_delay: float = DEFAULT_MAX_DELAY,
