@@ -10,6 +10,7 @@ chat model.
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Iterable, Sequence
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Literal
 
@@ -238,8 +239,7 @@ class ContextEditingMiddleware(AgentMiddleware):
                     system_msg + list(messages), request.tools
                 )
 
-        # Create a mutable copy of messages for editing
-        edited_messages = list(request.messages)
+        edited_messages = deepcopy(list(request.messages))
         for edit in self.edits:
             edit.apply(edited_messages, count_tokens=count_tokens)
 
@@ -268,8 +268,7 @@ class ContextEditingMiddleware(AgentMiddleware):
                     system_msg + list(messages), request.tools
                 )
 
-        # Create a mutable copy of messages for editing
-        edited_messages = list(request.messages)
+        edited_messages = deepcopy(list(request.messages))
         for edit in self.edits:
             edit.apply(edited_messages, count_tokens=count_tokens)
 
