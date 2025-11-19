@@ -80,6 +80,10 @@ class ModelProfile(TypedDict, total=False):
     feature"""
 
 
+ModelProfileRegistry = dict[str, ModelProfile]
+"""Registry mapping model identifiers or names to their ModelProfile."""
+
+
 _lc_type_to_provider_id = {
     "openai-chat": "openai",
     "azure-openai-chat": "azure",

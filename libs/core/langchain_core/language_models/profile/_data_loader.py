@@ -96,7 +96,7 @@ class _DataLoader:
                 try:
                     with self._base_data_path.open("r") as base_f:
                         base_data = json.load(base_f)
-                        for provider_id in base_data.keys():
+                        for provider_id in base_data:
                             augmentations[provider_id] = data["profile"]
                 except (OSError, json.JSONDecodeError):
                     pass
@@ -131,14 +131,11 @@ class _DataLoader:
 
         return augmentations
 
-    def get_profile_data(
-        self, provider_id: str, model_id: str
-    ) -> dict[str, Any] | None:
-        """Get merged profile data for a specific model.
+    def get_profile_data(self, provider_id: str) -> dict[str, Any] | None:
+        """Get merged profile data for all models.
 
         Args:
             provider_id: The provider identifier.
-            model_id: The model identifier.
 
         Returns:
             Merged model data `dict` or `None` if not found.
@@ -147,5 +144,4 @@ class _DataLoader:
         if provider is None:
             return None
 
-        models = provider.get("models", {})
-        return models.get(model_id)
+        return provider.get("models", {})

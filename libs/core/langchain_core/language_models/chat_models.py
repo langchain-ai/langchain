@@ -15,7 +15,6 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import override
 
-from langchain_core._api.beta_decorator import beta
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -34,6 +33,7 @@ from langchain_core.language_models.base import (
     LangSmithParams,
     LanguageModelInput,
 )
+from langchain_core.language_models.profile import ModelProfile
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
     AIMessage,
@@ -76,7 +76,6 @@ from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 if TYPE_CHECKING:
     import uuid
 
-    from langchain_core.language_models.profile import ModelProfile
     from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tools import BaseTool
@@ -336,6 +335,16 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     !!! version-added "Added in `langchain-core` 1.0"
 
+    """
+
+    profile: ModelProfile | None = Field(default=None, exclude=True)
+    """Return profiling information for the model.
+
+    Profile data includes model capabilities such as context window sizes and
+    supported features. Data is automatically loaded from the provider package
+    if available.
+
+    Assign this attribute to override what the `profile` property returns.
     """
 
     model_config = ConfigDict(
@@ -1686,23 +1695,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
-
-    @property
-    @beta()
-    def profile(self) -> ModelProfile:
-        """Return profiling information for the model.
-
-        Profile data includes model capabilities such as context window sizes and
-        supported features. Data is automatically loaded from the provider package
-        if available.
-
-        Override this property in subclasses to provide profile data.
-
-        Returns:
-            A `ModelProfile` object containing profiling information for the model.
-                Returns an empty dict if profile data is not available.
-        """
-        return {}
 
 
 class SimpleChatModel(BaseChatModel):
