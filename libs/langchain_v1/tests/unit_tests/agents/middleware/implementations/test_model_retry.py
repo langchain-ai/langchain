@@ -86,7 +86,7 @@ def test_model_retry_initialization_defaults() -> None:
 
     assert retry.max_retries == 2
     assert retry.tools == []
-    assert retry.on_failure == "return_message"
+    assert retry.on_failure == "continue"
     assert retry.backoff_factor == 2.0
     assert retry.initial_delay == 1.0
     assert retry.max_delay == 60.0
@@ -98,7 +98,7 @@ def test_model_retry_initialization_custom() -> None:
     retry = ModelRetryMiddleware(
         max_retries=5,
         retry_on=(ValueError, RuntimeError),
-        on_failure="raise",
+        on_failure="error",
         backoff_factor=1.5,
         initial_delay=0.5,
         max_delay=30.0,
@@ -108,7 +108,7 @@ def test_model_retry_initialization_custom() -> None:
     assert retry.max_retries == 5
     assert retry.tools == []
     assert retry.retry_on == (ValueError, RuntimeError)
-    assert retry.on_failure == "raise"
+    assert retry.on_failure == "error"
     assert retry.backoff_factor == 1.5
     assert retry.initial_delay == 0.5
     assert retry.max_delay == 30.0
@@ -170,7 +170,7 @@ def test_model_retry_failing_model_returns_message() -> None:
         max_retries=2,
         initial_delay=0.01,
         jitter=False,
-        on_failure="return_message",
+        on_failure="continue",
     )
 
     agent = create_agent(
@@ -194,14 +194,14 @@ def test_model_retry_failing_model_returns_message() -> None:
 
 
 def test_model_retry_failing_model_raises() -> None:
-    """Test ModelRetryMiddleware with on_failure='raise' re-raises exception."""
+    """Test ModelRetryMiddleware with on_failure='error' re-raises exception."""
     model = AlwaysFailingModel(error_message="Model error", error_type=ValueError)
 
     retry = ModelRetryMiddleware(
         max_retries=2,
         initial_delay=0.01,
         jitter=False,
-        on_failure="raise",
+        on_failure="error",
     )
 
     agent = create_agent(
@@ -291,7 +291,7 @@ def test_model_retry_specific_exceptions() -> None:
         retry_on=(ValueError,),
         initial_delay=0.01,
         jitter=False,
-        on_failure="return_message",
+        on_failure="continue",
     )
 
     agent = create_agent(
@@ -366,7 +366,7 @@ def test_model_retry_custom_exception_filter() -> None:
         retry_on=should_retry,
         initial_delay=0.01,
         jitter=False,
-        on_failure="return_message",
+        on_failure="continue",
     )
 
     agent = create_agent(
@@ -528,7 +528,7 @@ async def test_model_retry_async_failing_model() -> None:
         max_retries=2,
         initial_delay=0.01,
         jitter=False,
-        on_failure="return_message",
+        on_failure="continue",
     )
 
     agent = create_agent(
@@ -617,7 +617,7 @@ def test_model_retry_zero_retries() -> None:
 
     retry = ModelRetryMiddleware(
         max_retries=0,  # No retries
-        on_failure="return_message",
+        on_failure="continue",
     )
 
     agent = create_agent(

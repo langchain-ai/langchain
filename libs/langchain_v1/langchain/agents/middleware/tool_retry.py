@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import TYPE_CHECKING
+import warnings
+from typing import TYPE_CHECKING, Literal
 
 from langchain_core.messages import ToolMessage
 
@@ -29,6 +30,9 @@ if TYPE_CHECKING:
 
     from langchain.agents.middleware.types import ToolCallRequest
     from langchain.tools import BaseTool
+
+# Type alias that includes both new and deprecated values for backwards compatibility
+ToolOnFailure = Literal["error", "continue", "raise", "return_message"] | OnFailure[str]
 
 
 class ToolRetryMiddleware(AgentMiddleware):
@@ -124,7 +128,7 @@ class ToolRetryMiddleware(AgentMiddleware):
             ```python
             retry = ToolRetryMiddleware(
                 max_retries=2,
-                on_failure="raise",  # Re-raise exception instead of returning message
+                on_failure="error",  # Re-raise exception instead of returning message
             )
             ```
     """
@@ -135,7 +139,7 @@ class ToolRetryMiddleware(AgentMiddleware):
         max_retries: int = DEFAULT_MAX_RETRIES,
         tools: list[BaseTool | str] | None = None,
         retry_on: RetryOn = (Exception,),
-        on_failure: OnFailure[str] = "return_message",
+        on_failure: ToolOnFailure = "continue",
         backoff_factor: float = DEFAULT_BACKOFF_FACTOR,
         initial_delay: float = DEFAULT_INITIAL_DELAY,
         max_delay: float = DEFAULT_MAX_DELAY,
@@ -160,12 +164,17 @@ class ToolRetryMiddleware(AgentMiddleware):
 
                 Options:
 
-                - `'return_message'`: Return a `ToolMessage` with error details,
+                - `'continue'`: Return a `ToolMessage` with error details,
                     allowing the LLM to handle the failure and potentially recover.
-                - `'raise'`: Re-raise the exception, stopping agent execution.
+                - `'error'`: Re-raise the exception, stopping agent execution.
                 - **Custom callable:** Function that takes the exception and returns a
                     string for the `ToolMessage` content, allowing custom error
                     formatting.
+
+                **Deprecated values** (for backwards compatibility):
+
+                - `'return_message'`: Use `'continue'` instead.
+                - `'raise'`: Use `'error'` instead.
             backoff_factor: Multiplier for exponential backoff.
 
                 Each retry waits `initial_delay * (backoff_factor ** retry_number)`
@@ -185,6 +194,22 @@ class ToolRetryMiddleware(AgentMiddleware):
 
         # Validate parameters
         validate_retry_params(max_retries, initial_delay, max_delay, backoff_factor)
+
+        # Handle backwards compatibility for deprecated on_failure values
+        if on_failure == "raise":
+            msg = (
+                "on_failure='raise' is deprecated and will be removed in a future version. "
+                "Use on_failure='error' instead."
+            )
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+            on_failure = "error"
+        elif on_failure == "return_message":
+            msg = (
+                "on_failure='return_message' is deprecated and will be removed "
+                "in a future version. Use on_failure='continue' instead."
+            )
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+            on_failure = "continue"
 
         self.max_retries = max_retries
 
@@ -274,9 +299,9 @@ class ToolRetryMiddleware(AgentMiddleware):
             `ToolMessage` with error details.
 
         Raises:
-            Exception: If `on_failure` is `'raise'`, re-raises the exception.
+            Exception: If `on_failure` is `'error'`, re-raises the exception.
         """
-        if self.on_failure == "raise":
+        if self.on_failure == "error":
             raise exc
 
         if callable(self.on_failure):

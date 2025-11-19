@@ -103,7 +103,7 @@ class ModelRetryMiddleware(AgentMiddleware):
             ```python
             retry = ModelRetryMiddleware(
                 max_retries=2,
-                on_failure="raise",  # Re-raise exception instead of returning message
+                on_failure="error",  # Re-raise exception instead of returning message
             )
             ```
     """
@@ -113,7 +113,7 @@ class ModelRetryMiddleware(AgentMiddleware):
         *,
         max_retries: int = DEFAULT_MAX_RETRIES,
         retry_on: RetryOn = (Exception,),
-        on_failure: OnFailure[AIMessage] = "return_message",
+        on_failure: OnFailure[AIMessage] = "continue",
         backoff_factor: float = DEFAULT_BACKOFF_FACTOR,
         initial_delay: float = DEFAULT_INITIAL_DELAY,
         max_delay: float = DEFAULT_MAX_DELAY,
@@ -133,9 +133,9 @@ class ModelRetryMiddleware(AgentMiddleware):
 
                 Options:
 
-                - `'return_message'`: Return an `AIMessage` with error details,
+                - `'continue'`: Return an `AIMessage` with error details,
                     allowing the agent to continue with an error response.
-                - `'raise'`: Re-raise the exception, stopping agent execution.
+                - `'error'`: Re-raise the exception, stopping agent execution.
                 - **Custom callable:** Function that takes the exception and returns an
                     `AIMessage`, allowing custom error formatting.
             backoff_factor: Multiplier for exponential backoff.
@@ -221,9 +221,9 @@ class ModelRetryMiddleware(AgentMiddleware):
             `ModelResponse` with error details.
 
         Raises:
-            Exception: If `on_failure` is `'raise'`, re-raises the exception.
+            Exception: If `on_failure` is `'error'`, re-raises the exception.
         """
-        if self.on_failure == "raise":
+        if self.on_failure == "error":
             raise exc
 
         if callable(self.on_failure):

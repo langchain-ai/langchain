@@ -20,11 +20,11 @@ Can be either:
 """
 
 T = TypeVar("T")
-OnFailure = Literal["raise", "return_message"] | Callable[[Exception], T]
+OnFailure = Literal["error", "continue"] | Callable[[Exception], T]
 """Generic type for specifying failure handling behavior.
 
 Can be either:
-- A literal action string (`'raise'` or `'return_message'`)
+- A literal action string (`'error'` or `'continue'`)
 - A callable that takes an exception and returns a custom error response
 """
 
