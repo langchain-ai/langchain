@@ -9,9 +9,11 @@ import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import Any, Final, Literal, cast
+from pathlib import Path
+from typing import Any, Final, Literal, cast, TYPE_CHECKING
 
 import anthropic
+from langchain_core._api.beta_decorator import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -19,6 +21,9 @@ from langchain_core.callbacks import (
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
+from langchain_core.language_models.profile._loader_utils import (
+    load_profile_from_data_dir,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -58,6 +63,9 @@ from langchain_anthropic._client_utils import (
 )
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
 from langchain_anthropic.output_parsers import extract_tool_calls
+
+if TYPE_CHECKING:
+    from langchain_core.language_models.profile import ModelProfile
 
 _message_type_lookups = {
     "human": "user",
@@ -1655,6 +1663,22 @@ class ChatAnthropic(BaseChatModel):
             "http_client": http_client,
         }
         return anthropic.AsyncClient(**params)
+
+    @cached_property
+    @beta()
+    def profile(self) -> ModelProfile:
+        """Return profiling information for the model.
+
+        Profile data includes model capabilities such as context window sizes and
+        supported features. Data is automatically loaded from the provider package
+        if available.
+
+        Returns:
+            A `ModelProfile` object containing profiling information for the model.
+                Returns an empty dict if profile data is not available.
+        """
+        data_dir = Path(__file__).parent / "data"
+        return load_profile_from_data_dir(data_dir, "anthropic", self.model) or {}
 
     def _get_request_payload(
         self,

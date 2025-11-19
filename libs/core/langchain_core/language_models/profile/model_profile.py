@@ -103,6 +103,7 @@ _lc_type_to_provider_id = {
 }
 
 
+# TODO: delete this function
 def _translate_provider_and_model_id(provider: str, model: str) -> tuple[str, str]:
     """Translate LangChain provider and model to models.dev equivalents.
 

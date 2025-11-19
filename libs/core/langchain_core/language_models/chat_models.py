@@ -10,7 +10,6 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from functools import cached_property
 from operator import itemgetter
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -34,12 +33,6 @@ from langchain_core.language_models.base import (
     BaseLanguageModel,
     LangSmithParams,
     LanguageModelInput,
-)
-from langchain_core.language_models.profile._loader_utils import (
-    load_profile_from_data_dir,
-)
-from langchain_core.language_models.profile.model_profile import (
-    _translate_provider_and_model_id,
 )
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
@@ -1703,34 +1696,13 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         supported features. Data is automatically loaded from the provider package
         if available.
 
+        Override this property in subclasses to provide profile data.
+
         Returns:
             A `ModelProfile` object containing profiling information for the model.
                 Returns an empty dict if profile data is not available.
         """
-        model_name = (
-            getattr(self, "model", None)
-            or getattr(self, "model_name", None)
-            or getattr(self, "model_id", "")
-        )
-
-        if not model_name:
-            return {}
-
-        provider_id, model_id = _translate_provider_and_model_id(
-            self._llm_type, model_name
-        )
-
-        try:
-            class_file = inspect.getfile(self.__class__)
-            package_dir = Path(class_file).parent
-            data_dir = package_dir / "data"
-
-            if not data_dir.exists():
-                return {}
-
-            return load_profile_from_data_dir(data_dir, provider_id, model_id) or {}
-        except (TypeError, OSError):
-            return {}
+        return {}
 
 
 class SimpleChatModel(BaseChatModel):
