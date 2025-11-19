@@ -9,6 +9,8 @@ on:
     paths:
       - "libs/core/pyproject.toml"
       - "libs/core/langchain_core/version.py"
+      - "libs/langchain_v1/pyproject.toml"
+      - "libs/langchain_v1/langchain/__init__.py"
 
 permissions:
   contents: read
@@ -20,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: "✅ Verify pyproject.toml & version.py Match"
+      - name: "✅ Verify pyproject.toml & version files Match"
         run: |
           # Check core versions
           CORE_PYPROJECT_VERSION=$(grep -Po '(?<=^version = ")[^"]*' libs/core/pyproject.toml)
