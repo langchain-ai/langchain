@@ -457,36 +457,28 @@ def test_model_retry_constant_backoff() -> None:
 
 
 def test_model_retry_max_delay_cap() -> None:
-    """Test ModelRetryMiddleware caps delay at max_delay."""
-    retry = ModelRetryMiddleware(
-        max_retries=5,
-        initial_delay=1.0,
-        backoff_factor=10.0,  # Very aggressive backoff
-        max_delay=2.0,  # Cap at 2 seconds
-        jitter=False,
-    )
-
-    # Test delay calculation
+    """Test calculate_delay caps delay at max_delay."""
+    # Test delay calculation with aggressive backoff and max_delay cap
     delay_0 = calculate_delay(
         0,
-        backoff_factor=retry.backoff_factor,
-        initial_delay=retry.initial_delay,
-        max_delay=retry.max_delay,
-        jitter=retry.jitter,
+        backoff_factor=10.0,  # Very aggressive backoff
+        initial_delay=1.0,
+        max_delay=2.0,  # Cap at 2 seconds
+        jitter=False,
     )  # 1.0
     delay_1 = calculate_delay(
         1,
-        backoff_factor=retry.backoff_factor,
-        initial_delay=retry.initial_delay,
-        max_delay=retry.max_delay,
-        jitter=retry.jitter,
+        backoff_factor=10.0,
+        initial_delay=1.0,
+        max_delay=2.0,
+        jitter=False,
     )  # 10.0 -> capped to 2.0
     delay_2 = calculate_delay(
         2,
-        backoff_factor=retry.backoff_factor,
-        initial_delay=retry.initial_delay,
-        max_delay=retry.max_delay,
-        jitter=retry.jitter,
+        backoff_factor=10.0,
+        initial_delay=1.0,
+        max_delay=2.0,
+        jitter=False,
     )  # 100.0 -> capped to 2.0
 
     assert delay_0 == 1.0
@@ -495,22 +487,15 @@ def test_model_retry_max_delay_cap() -> None:
 
 
 def test_model_retry_jitter_variation() -> None:
-    """Test ModelRetryMiddleware adds jitter to delays."""
-    retry = ModelRetryMiddleware(
-        max_retries=1,
-        initial_delay=1.0,
-        backoff_factor=1.0,
-        jitter=True,
-    )
-
+    """Test calculate_delay adds jitter to delays."""
     # Generate multiple delays and ensure they vary
     delays = [
         calculate_delay(
             0,
-            backoff_factor=retry.backoff_factor,
-            initial_delay=retry.initial_delay,
-            max_delay=retry.max_delay,
-            jitter=retry.jitter,
+            backoff_factor=1.0,
+            initial_delay=1.0,
+            max_delay=60.0,
+            jitter=True,
         )
         for _ in range(10)
     ]

@@ -174,8 +174,11 @@ class ModelRetryMiddleware(AgentMiddleware):
             `AIMessage` with formatted error message.
         """
         exc_type = type(exc).__name__
+        exc_msg = str(exc)
         attempt_word = "attempt" if attempts_made == 1 else "attempts"
-        content = f"Model call failed after {attempts_made} {attempt_word} with {exc_type}"
+        content = (
+            f"Model call failed after {attempts_made} {attempt_word} with {exc_type}: {exc_msg}"
+        )
         return AIMessage(content=content)
 
     def _handle_failure(self, exc: Exception, attempts_made: int) -> ModelResponse:

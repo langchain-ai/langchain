@@ -31,8 +31,6 @@ Can be either:
 - A callable that takes an exception and returns a string for error message content
 """
 
-JITTER_PERCENTAGE = 0.25  # ±25% jitter
-
 
 def validate_retry_params(
     max_retries: int,
@@ -117,7 +115,7 @@ def calculate_delay(
     delay = min(delay, max_delay)
 
     if jitter and delay > 0:
-        jitter_amount = delay * JITTER_PERCENTAGE
+        jitter_amount = delay * 0.25  # ±25% jitter
         delay = delay + random.uniform(-jitter_amount, jitter_amount)  # noqa: S311
         # Ensure delay is not negative after jitter
         delay = max(0, delay)

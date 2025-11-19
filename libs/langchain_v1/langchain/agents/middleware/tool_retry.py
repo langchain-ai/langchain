@@ -245,8 +245,12 @@ class ToolRetryMiddleware(AgentMiddleware):
             Formatted error message string.
         """
         exc_type = type(exc).__name__
+        exc_msg = str(exc)
         attempt_word = "attempt" if attempts_made == 1 else "attempts"
-        return f"Tool '{tool_name}' failed after {attempts_made} {attempt_word} with {exc_type}"
+        return (
+            f"Tool '{tool_name}' failed after {attempts_made} {attempt_word} "
+            f"with {exc_type}: {exc_msg}. Please try again."
+        )
 
     def _handle_failure(
         self, tool_name: str, tool_call_id: str | None, exc: Exception, attempts_made: int
