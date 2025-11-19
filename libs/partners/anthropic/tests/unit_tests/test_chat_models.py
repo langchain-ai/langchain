@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 import anthropic
 import pytest
 from anthropic.types import Message, TextBlock, Usage
+from blockbuster import blockbuster_ctx
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
@@ -1597,3 +1598,19 @@ def test_strict_tool_use() -> None:
 
     tool_definition = model_with_tools.kwargs["tools"][0]  # type: ignore[attr-defined]
     assert tool_definition["strict"] is True
+
+
+def test_profile() -> None:
+    model = ChatAnthropic(model="claude-sonnet-4-5")
+    assert model.profile
+    assert model.profile["tool_calling"]
+
+    model = ChatAnthropic(model="claude-sonnet-4-5", profile={"tool_calling": False})
+    assert model.profile
+    assert not model.profile["tool_calling"]
+
+
+async def test_model_profile_not_blocking() -> None:
+    with blockbuster_ctx():
+        model = ChatAnthropic(model="claude-sonnet-4-5")
+        _ = model.profile

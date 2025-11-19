@@ -10,10 +10,9 @@ from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
 from pathlib import Path
-from typing import Any, Final, Literal, cast, TYPE_CHECKING
+from typing import Any, Final, Literal, cast
 
 import anthropic
-from langchain_core._api.beta_decorator import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -21,8 +20,9 @@ from langchain_core.callbacks import (
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
+from langchain_core.language_models.profile import ModelProfileRegistry
 from langchain_core.language_models.profile._loader_utils import (
-    load_profile_from_data_dir,
+    load_profiles_from_data_dir,
 )
 from langchain_core.messages import (
     AIMessage,
@@ -55,7 +55,7 @@ from langchain_core.utils.function_calling import (
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired, Self, TypedDict
 
 from langchain_anthropic._client_utils import (
     _get_default_async_httpx_client,
@@ -64,15 +64,17 @@ from langchain_anthropic._client_utils import (
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
 from langchain_anthropic.output_parsers import extract_tool_calls
 
-if TYPE_CHECKING:
-    from langchain_core.language_models.profile import ModelProfile
-
 _message_type_lookups = {
     "human": "user",
     "ai": "assistant",
     "AIMessageChunk": "assistant",
     "HumanMessageChunk": "user",
 }
+
+MODEL_PROFILES = cast(
+    ModelProfileRegistry,
+    load_profiles_from_data_dir(Path(__file__).parent / "data", "anthropic"),
+)
 
 
 _MODEL_DEFAULT_MAX_OUTPUT_TOKENS: Final[dict[str, int]] = {
@@ -1618,6 +1620,14 @@ class ChatAnthropic(BaseChatModel):
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
 
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if not self.profile:
+            self.profile = MODEL_PROFILES.get(self.model)
+
+        return self
+
     @cached_property
     def _client_params(self) -> dict[str, Any]:
         client_params: dict[str, Any] = {
@@ -1663,22 +1673,6 @@ class ChatAnthropic(BaseChatModel):
             "http_client": http_client,
         }
         return anthropic.AsyncClient(**params)
-
-    @cached_property
-    @beta()
-    def profile(self) -> ModelProfile:
-        """Return profiling information for the model.
-
-        Profile data includes model capabilities such as context window sizes and
-        supported features. Data is automatically loaded from the provider package
-        if available.
-
-        Returns:
-            A `ModelProfile` object containing profiling information for the model.
-                Returns an empty dict if profile data is not available.
-        """
-        data_dir = Path(__file__).parent / "data"
-        return load_profile_from_data_dir(data_dir, "anthropic", self.model) or {}
 
     def _get_request_payload(
         self,
