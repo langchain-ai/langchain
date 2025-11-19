@@ -19,6 +19,7 @@ dependencies = [
     "typing-extensions>=4.7.0,<5.0.0",
     "packaging>=23.2.0,<26.0.0",
     "pydantic>=2.7.4,<3.0.0",
+    "tomli>=2.0.0,<3.0.0; python_version < '3.11'",
 ]
 
 [project.urls]

@@ -969,6 +969,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "tenacity" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "typing-extensions" },
 ]
 
@@ -1017,6 +1018,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
     { name = "pyyaml", specifier = ">=5.3.0,<7.0.0" },
     { name = "tenacity", specifier = ">=8.1.0,!=8.4.0,<10.0.0" },
+    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0,<3.0.0" },
     { name = "typing-extensions", specifier = ">=4.7.0,<5.0.0" },
 ]
 
@@ -1060,18 +1062,20 @@ name = "langchain-model-profiles"
 version = "0.0.4"
 source = { directory = "../model-profiles" }
 dependencies = [
+    { name = "httpx" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "typing-extensions" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "httpx", specifier = ">=0.23.0,<1" },
     { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0,<3.0.0" },
     { name = "typing-extensions", specifier = ">=4.7.0,<5.0.0" },
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "httpx", specifier = ">=0.23.0,<1" }]
+dev = []
 lint = [
     { name = "langchain", editable = "../langchain_v1" },
     { name = "ruff", specifier = ">=0.12.2,<0.13.0" },
