@@ -314,18 +314,26 @@ def test_model_request_is_frozen() -> None:
     new_model = GenericFakeChatModel(messages=iter([AIMessage(content="new model")]))
 
     # Direct attribute assignment should raise DeprecationWarning but still work
-    with pytest.warns(DeprecationWarning, match="Direct attribute assignment to ModelRequest.model is deprecated"):
+    with pytest.warns(
+        DeprecationWarning, match="Direct attribute assignment to ModelRequest.model is deprecated"
+    ):
         request.model = new_model  # type: ignore[misc]
 
     # Verify the assignment actually worked
     assert request.model == new_model
 
-    with pytest.warns(DeprecationWarning, match="Direct attribute assignment to ModelRequest.system_prompt is deprecated"):
+    with pytest.warns(
+        DeprecationWarning,
+        match="Direct attribute assignment to ModelRequest.system_prompt is deprecated",
+    ):
         request.system_prompt = "new prompt"  # type: ignore[misc]
 
     assert request.system_prompt == "new prompt"
 
-    with pytest.warns(DeprecationWarning, match="Direct attribute assignment to ModelRequest.messages is deprecated"):
+    with pytest.warns(
+        DeprecationWarning,
+        match="Direct attribute assignment to ModelRequest.messages is deprecated",
+    ):
         request.messages = []  # type: ignore[misc]
 
     assert request.messages == []
