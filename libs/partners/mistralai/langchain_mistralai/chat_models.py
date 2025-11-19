@@ -847,6 +847,7 @@ class ChatMistralAI(BaseChatModel):
                     desired schema into the model call.
 
                 !!! warning "Behavior changed in `langchain-mistralai` 0.2.5"
+
                     Added method="json_schema"
 
             include_raw:

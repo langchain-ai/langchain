@@ -319,9 +319,11 @@ def init_chat_model(
         ```
 
     !!! warning "Behavior changed in `langchain` 0.2.8"
+
         Support for `configurable_fields` and `config_prefix` added.
 
     !!! warning "Behavior changed in `langchain` 0.2.12"
+
         Support for Ollama via langchain-ollama package added
         (`langchain_ollama.ChatOllama`). Previously,
         the now-deprecated langchain-community version of Ollama was imported
@@ -331,9 +333,11 @@ def init_chat_model(
         (`model_provider="bedrock_converse"`).
 
     !!! warning "Behavior changed in `langchain` 0.3.5"
+
         Out of beta.
 
     !!! warning "Behavior changed in `langchain` 0.3.19"
+
         Support for Deepseek, IBM, Nvidia, and xAI models added.
 
     """  # noqa: E501
