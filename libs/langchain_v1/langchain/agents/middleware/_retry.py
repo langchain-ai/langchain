@@ -27,13 +27,6 @@ Can be either:
 - A callable that takes an exception and returns a string for error message content
 """
 
-
-# Constants
-DEFAULT_MAX_RETRIES = 2
-DEFAULT_BACKOFF_FACTOR = 2.0
-DEFAULT_INITIAL_DELAY = 1.0
-DEFAULT_MAX_DELAY = 60.0
-DEFAULT_JITTER = True
 JITTER_PERCENTAGE = 0.25  # ±25% jitter
 
 

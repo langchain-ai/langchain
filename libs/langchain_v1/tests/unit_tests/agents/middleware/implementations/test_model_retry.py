@@ -12,6 +12,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from pydantic import Field
 
 from langchain.agents.factory import create_agent
+from langchain.agents.middleware._retry import calculate_delay
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
@@ -466,9 +467,27 @@ def test_model_retry_max_delay_cap() -> None:
     )
 
     # Test delay calculation
-    delay_0 = retry._calculate_delay(0)  # 1.0
-    delay_1 = retry._calculate_delay(1)  # 10.0 -> capped to 2.0
-    delay_2 = retry._calculate_delay(2)  # 100.0 -> capped to 2.0
+    delay_0 = calculate_delay(
+        0,
+        backoff_factor=retry.backoff_factor,
+        initial_delay=retry.initial_delay,
+        max_delay=retry.max_delay,
+        jitter=retry.jitter,
+    )  # 1.0
+    delay_1 = calculate_delay(
+        1,
+        backoff_factor=retry.backoff_factor,
+        initial_delay=retry.initial_delay,
+        max_delay=retry.max_delay,
+        jitter=retry.jitter,
+    )  # 10.0 -> capped to 2.0
+    delay_2 = calculate_delay(
+        2,
+        backoff_factor=retry.backoff_factor,
+        initial_delay=retry.initial_delay,
+        max_delay=retry.max_delay,
+        jitter=retry.jitter,
+    )  # 100.0 -> capped to 2.0
 
     assert delay_0 == 1.0
     assert delay_1 == 2.0
@@ -485,7 +504,16 @@ def test_model_retry_jitter_variation() -> None:
     )
 
     # Generate multiple delays and ensure they vary
-    delays = [retry._calculate_delay(0) for _ in range(10)]
+    delays = [
+        calculate_delay(
+            0,
+            backoff_factor=retry.backoff_factor,
+            initial_delay=retry.initial_delay,
+            max_delay=retry.max_delay,
+            jitter=retry.jitter,
+        )
+        for _ in range(10)
+    ]
 
     # All delays should be within ±25% of 1.0 (i.e., between 0.75 and 1.25)
     for delay in delays:

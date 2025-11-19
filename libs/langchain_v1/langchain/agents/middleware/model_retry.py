@@ -9,11 +9,6 @@ from typing import TYPE_CHECKING
 from langchain_core.messages import AIMessage
 
 from langchain.agents.middleware._retry import (
-    DEFAULT_BACKOFF_FACTOR,
-    DEFAULT_INITIAL_DELAY,
-    DEFAULT_JITTER,
-    DEFAULT_MAX_DELAY,
-    DEFAULT_MAX_RETRIES,
     OnFailure,
     RetryOn,
     calculate_delay,
@@ -111,13 +106,13 @@ class ModelRetryMiddleware(AgentMiddleware):
     def __init__(
         self,
         *,
-        max_retries: int = DEFAULT_MAX_RETRIES,
+        max_retries: int = 2,
         retry_on: RetryOn = (Exception,),
         on_failure: OnFailure = "continue",
-        backoff_factor: float = DEFAULT_BACKOFF_FACTOR,
-        initial_delay: float = DEFAULT_INITIAL_DELAY,
-        max_delay: float = DEFAULT_MAX_DELAY,
-        jitter: bool = DEFAULT_JITTER,
+        backoff_factor: float = 2.0,
+        initial_delay: float = 1.0,
+        max_delay: float = 60.0,
+        jitter: bool = True,
     ) -> None:
         """Initialize `ModelRetryMiddleware`.
 
@@ -167,34 +162,6 @@ class ModelRetryMiddleware(AgentMiddleware):
         self.initial_delay = initial_delay
         self.max_delay = max_delay
         self.jitter = jitter
-
-    def _should_retry_exception(self, exc: Exception) -> bool:
-        """Check if the exception should trigger a retry.
-
-        Args:
-            exc: The exception that occurred.
-
-        Returns:
-            `True` if the exception should be retried, `False` otherwise.
-        """
-        return should_retry_exception(exc, self.retry_on)
-
-    def _calculate_delay(self, retry_number: int) -> float:
-        """Calculate delay for the given retry attempt.
-
-        Args:
-            retry_number: The retry attempt number (0-indexed).
-
-        Returns:
-            Delay in seconds before next retry.
-        """
-        return calculate_delay(
-            retry_number,
-            backoff_factor=self.backoff_factor,
-            initial_delay=self.initial_delay,
-            max_delay=self.max_delay,
-            jitter=self.jitter,
-        )
 
     def _format_failure_message(self, exc: Exception, attempts_made: int) -> AIMessage:
         """Format the failure message when retries are exhausted.
@@ -257,14 +224,20 @@ class ModelRetryMiddleware(AgentMiddleware):
                 attempts_made = attempt + 1  # attempt is 0-indexed
 
                 # Check if we should retry this exception
-                if not self._should_retry_exception(exc):
+                if not should_retry_exception(exc, self.retry_on):
                     # Exception is not retryable, handle failure immediately
                     return self._handle_failure(exc, attempts_made)
 
                 # Check if we have more retries left
                 if attempt < self.max_retries:
                     # Calculate and apply backoff delay
-                    delay = self._calculate_delay(attempt)
+                    delay = calculate_delay(
+                        attempt,
+                        backoff_factor=self.backoff_factor,
+                        initial_delay=self.initial_delay,
+                        max_delay=self.max_delay,
+                        jitter=self.jitter,
+                    )
                     if delay > 0:
                         time.sleep(delay)
                     # Continue to next retry
@@ -298,14 +271,20 @@ class ModelRetryMiddleware(AgentMiddleware):
                 attempts_made = attempt + 1  # attempt is 0-indexed
 
                 # Check if we should retry this exception
-                if not self._should_retry_exception(exc):
+                if not should_retry_exception(exc, self.retry_on):
                     # Exception is not retryable, handle failure immediately
                     return self._handle_failure(exc, attempts_made)
 
                 # Check if we have more retries left
                 if attempt < self.max_retries:
                     # Calculate and apply backoff delay
-                    delay = self._calculate_delay(attempt)
+                    delay = calculate_delay(
+                        attempt,
+                        backoff_factor=self.backoff_factor,
+                        initial_delay=self.initial_delay,
+                        max_delay=self.max_delay,
+                        jitter=self.jitter,
+                    )
                     if delay > 0:
                         await asyncio.sleep(delay)
                     # Continue to next retry
