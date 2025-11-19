@@ -72,7 +72,7 @@ class _ModelRequestOverrides(TypedDict, total=False):
     """Possible overrides for `ModelRequest.override()` method."""
 
     model: BaseChatModel
-    system_prompt: str | None
+    system_prompt: str | BaseMessage | None
     messages: list[AnyMessage]
     tool_choice: Any | None
     tools: list[BaseTool | dict]
@@ -85,7 +85,7 @@ class ModelRequest:
     """Model request information for the agent."""
 
     model: BaseChatModel
-    system_prompt: str | None
+    system_prompt: BaseMessage | None
     messages: list[AnyMessage]  # excluding system prompt
     tool_choice: Any | None
     tools: list[BaseTool | dict]
@@ -93,6 +93,24 @@ class ModelRequest:
     state: AgentState
     runtime: Runtime[ContextT]  # type: ignore[valid-type]
     model_settings: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        """Validate and coerce system_prompt to SystemMessage with deprecation warning."""
+        import warnings
+
+        from langchain_core.messages import SystemMessage
+
+        if isinstance(self.system_prompt, str):
+            warnings.warn(
+                "Passing a string for `system_prompt` in `ModelRequest` is deprecated. "
+                "Please use a `SystemMessage` instance instead. "
+                "String values will be automatically converted to `SystemMessage`, "
+                "but this behavior will be removed in a future version.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+            # Coerce string to SystemMessage for backward compatibility
+            object.__setattr__(self, "system_prompt", SystemMessage(content=self.system_prompt))
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Set an attribute with a deprecation warning.
@@ -132,7 +150,7 @@ class ModelRequest:
                 Supported keys:
 
                 - `model`: `BaseChatModel` instance
-                - `system_prompt`: Optional system prompt string
+                - `system_prompt`: Optional system prompt (`SystemMessage` or `str`)
                 - `messages`: `list` of messages
                 - `tool_choice`: Tool choice configuration
                 - `tools`: `list` of available tools

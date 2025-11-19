@@ -545,7 +545,7 @@ def create_agent(  # noqa: PLR0915
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
     *,
-    system_prompt: str | None = None,
+    system_prompt: str | SystemMessage | None = None,
     middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
     response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
     state_schema: type[AgentState[ResponseT]] | None = None,
@@ -591,9 +591,9 @@ def create_agent(  # noqa: PLR0915
                 docs for more information.
         system_prompt: An optional system prompt for the LLM.
 
-            Prompts are converted to a
-            [`SystemMessage`][langchain.messages.SystemMessage] and added to the
-            beginning of the message list.
+            Can be either a string or a [`SystemMessage`][langchain.messages.SystemMessage].
+            String prompts are converted to a `SystemMessage` and added to the beginning
+            of the message list.
         middleware: A sequence of middleware instances to apply to the agent.
 
             Middleware can intercept and modify agent behavior at various stages.
@@ -687,6 +687,13 @@ def create_agent(  # noqa: PLR0915
     # init chat model
     if isinstance(model, str):
         model = init_chat_model(model)
+
+    # Convert system_prompt to SystemMessage if it's a string
+    normalized_system_prompt: SystemMessage | None = None
+    if isinstance(system_prompt, str):
+        normalized_system_prompt = SystemMessage(content=system_prompt)
+    elif isinstance(system_prompt, SystemMessage):
+        normalized_system_prompt = system_prompt
 
     # Handle tools being None or empty
     if tools is None:
@@ -1092,7 +1099,7 @@ def create_agent(  # noqa: PLR0915
         model_, effective_response_format = _get_bound_model(request)
         messages = request.messages
         if request.system_prompt:
-            messages = [SystemMessage(request.system_prompt), *messages]
+            messages = [request.system_prompt, *messages]
 
         output = model_.invoke(messages)
 
@@ -1111,7 +1118,7 @@ def create_agent(  # noqa: PLR0915
         request = ModelRequest(
             model=model,
             tools=default_tools,
-            system_prompt=system_prompt,
+            system_prompt=normalized_system_prompt,
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
@@ -1145,7 +1152,7 @@ def create_agent(  # noqa: PLR0915
         model_, effective_response_format = _get_bound_model(request)
         messages = request.messages
         if request.system_prompt:
-            messages = [SystemMessage(request.system_prompt), *messages]
+            messages = [request.system_prompt, *messages]
 
         output = await model_.ainvoke(messages)
 
@@ -1164,7 +1171,7 @@ def create_agent(  # noqa: PLR0915
         request = ModelRequest(
             model=model,
             tools=default_tools,
-            system_prompt=system_prompt,
+            system_prompt=normalized_system_prompt,
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,

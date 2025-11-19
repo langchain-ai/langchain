@@ -95,7 +95,7 @@ def test_adds_system_prompt_when_none_exists() -> None:
     # System prompt should be set in the modified request passed to handler
     assert captured_request is not None
     assert captured_request.system_prompt is not None
-    assert "write_todos" in captured_request.system_prompt
+    assert "write_todos" in captured_request.system_prompt.content
     # Original request should be unchanged
     assert request.system_prompt is None
 
@@ -118,11 +118,11 @@ def test_appends_to_existing_system_prompt() -> None:
     # System prompt should contain both in the modified request passed to handler
     assert captured_request is not None
     assert captured_request.system_prompt is not None
-    assert existing_prompt in captured_request.system_prompt
-    assert "write_todos" in captured_request.system_prompt
-    assert captured_request.system_prompt.startswith(existing_prompt)
+    assert existing_prompt in captured_request.system_prompt.content
+    assert "write_todos" in captured_request.system_prompt.content
+    assert captured_request.system_prompt.content.startswith(existing_prompt)
     # Original request should be unchanged
-    assert request.system_prompt == existing_prompt
+    assert request.system_prompt.content == existing_prompt
 
 
 @pytest.mark.parametrize(
@@ -162,9 +162,12 @@ def test_todo_middleware_on_model_call(original_prompt, expected_prompt_prefix) 
     middleware.wrap_model_call(request, mock_handler)
     # Check that the modified request passed to handler has the expected prompt
     assert captured_request is not None
-    assert captured_request.system_prompt.startswith(expected_prompt_prefix)
-    # Original request should be unchanged
-    assert request.system_prompt == original_prompt
+    assert captured_request.system_prompt.content.startswith(expected_prompt_prefix)
+    # Original request should be unchanged (it's now a SystemMessage)
+    if original_prompt is None:
+        assert request.system_prompt is None
+    else:
+        assert request.system_prompt.content == original_prompt
 
 
 def test_custom_system_prompt() -> None:
@@ -184,7 +187,7 @@ def test_custom_system_prompt() -> None:
 
     # Should use custom prompt in the modified request passed to handler
     assert captured_request is not None
-    assert captured_request.system_prompt == custom_prompt
+    assert captured_request.system_prompt.content == custom_prompt
     # Original request should be unchanged
     assert request.system_prompt is None
 
@@ -220,9 +223,9 @@ def test_todo_middleware_custom_system_prompt() -> None:
     middleware.wrap_model_call(request, mock_handler)
     # Check that the modified request passed to handler has the expected prompt
     assert captured_request is not None
-    assert captured_request.system_prompt == f"Original prompt\n\n{custom_system_prompt}"
-    # Original request should be unchanged
-    assert request.system_prompt == "Original prompt"
+    assert captured_request.system_prompt.content == f"Original prompt\n\n{custom_system_prompt}"
+    # Original request should be unchanged (it's now a SystemMessage)
+    assert request.system_prompt.content == "Original prompt"
 
 
 def test_custom_tool_description() -> None:
@@ -281,7 +284,7 @@ def test_todo_middleware_custom_system_prompt_and_tool_description() -> None:
     middleware.wrap_model_call(request, mock_handler)
     # Check that the modified request passed to handler has the expected prompt
     assert captured_request is not None
-    assert captured_request.system_prompt == custom_system_prompt
+    assert captured_request.system_prompt.content == custom_system_prompt
     # Original request should be unchanged
     assert request.system_prompt is None
 
@@ -444,7 +447,7 @@ async def test_adds_system_prompt_when_none_exists_async() -> None:
     # System prompt should be set in the modified request passed to handler
     assert captured_request is not None
     assert captured_request.system_prompt is not None
-    assert "write_todos" in captured_request.system_prompt
+    assert "write_todos" in captured_request.system_prompt.content
     # Original request should be unchanged
     assert request.system_prompt is None
 
@@ -467,11 +470,11 @@ async def test_appends_to_existing_system_prompt_async() -> None:
     # System prompt should contain both in the modified request passed to handler
     assert captured_request is not None
     assert captured_request.system_prompt is not None
-    assert existing_prompt in captured_request.system_prompt
-    assert "write_todos" in captured_request.system_prompt
-    assert captured_request.system_prompt.startswith(existing_prompt)
+    assert existing_prompt in captured_request.system_prompt.content
+    assert "write_todos" in captured_request.system_prompt.content
+    assert captured_request.system_prompt.content.startswith(existing_prompt)
     # Original request should be unchanged
-    assert request.system_prompt == existing_prompt
+    assert request.system_prompt.content == existing_prompt
 
 
 async def test_custom_system_prompt_async() -> None:
@@ -491,7 +494,7 @@ async def test_custom_system_prompt_async() -> None:
 
     # Should use custom prompt in the modified request passed to handler
     assert captured_request is not None
-    assert captured_request.system_prompt == custom_prompt
+    assert captured_request.system_prompt.content == custom_prompt
     # Original request should be unchanged
     assert request.system_prompt is None
 
@@ -512,5 +515,5 @@ async def test_handler_called_with_modified_request_async() -> None:
 
     assert handler_called["value"]
     assert received_prompt["value"] is not None
-    assert "Original" in received_prompt["value"]
-    assert "write_todos" in received_prompt["value"]
+    assert "Original" in received_prompt["value"].content
+    assert "write_todos" in received_prompt["value"].content

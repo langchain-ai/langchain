@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Annotated, Literal
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-from langchain_core.messages import ToolMessage
+from langchain_core.messages import SystemMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
@@ -194,11 +194,11 @@ class TodoListMiddleware(AgentMiddleware):
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
         """Update the system prompt to include the todo system prompt."""
-        new_system_prompt = (
-            request.system_prompt + "\n\n" + self.system_prompt
-            if request.system_prompt
-            else self.system_prompt
-        )
+        if request.system_prompt:
+            new_content = request.system_prompt.content + "\n\n" + self.system_prompt
+            new_system_prompt = SystemMessage(content=new_content)
+        else:
+            new_system_prompt = SystemMessage(content=self.system_prompt)
         return handler(request.override(system_prompt=new_system_prompt))
 
     async def awrap_model_call(
@@ -207,9 +207,9 @@ class TodoListMiddleware(AgentMiddleware):
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
         """Update the system prompt to include the todo system prompt (async version)."""
-        new_system_prompt = (
-            request.system_prompt + "\n\n" + self.system_prompt
-            if request.system_prompt
-            else self.system_prompt
-        )
+        if request.system_prompt:
+            new_content = request.system_prompt.content + "\n\n" + self.system_prompt
+            new_system_prompt = SystemMessage(content=new_content)
+        else:
+            new_system_prompt = SystemMessage(content=self.system_prompt)
         return await handler(request.override(system_prompt=new_system_prompt))
