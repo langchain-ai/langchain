@@ -557,6 +557,7 @@ def create_agent(  # noqa: PLR0915
     debug: bool = False,
     name: str | None = None,
     cache: BaseCache | None = None,
+    model_settings: dict[str, Any] | None = None,
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
@@ -652,6 +653,13 @@ def create_agent(  # noqa: PLR0915
             another graph as a subgraph node - particularly useful for building
             multi-agent systems.
         cache: An optional `BaseCache` instance to enable caching of graph execution.
+        model_settings: Additional settings to pass to the model when binding tools.
+
+            This `dict` is unpacked and passed as keyword arguments when calling
+            `bind_tools()` or `bind()` on the model. Common use cases include
+            setting `temperature`, `max_tokens`, or other model-specific parameters.
+
+            Example values: `{"temperature": 0.7, "max_tokens": 1000}`
 
     Returns:
         A compiled `StateGraph` that can be used for chat interactions.
@@ -691,6 +699,10 @@ def create_agent(  # noqa: PLR0915
     # Handle tools being None or empty
     if tools is None:
         tools = []
+
+    # Handle model_settings being None
+    if model_settings is None:
+        model_settings = {}
 
     # Convert response format and setup structured output tools
     # Raw schemas are wrapped in AutoStrategy to preserve auto-detection intent.
@@ -1117,6 +1129,7 @@ def create_agent(  # noqa: PLR0915
             tool_choice=None,
             state=state,
             runtime=runtime,
+            model_settings=model_settings,
         )
 
         if wrap_model_call_handler is None:
@@ -1170,6 +1183,7 @@ def create_agent(  # noqa: PLR0915
             tool_choice=None,
             state=state,
             runtime=runtime,
+            model_settings=model_settings,
         )
 
         if awrap_model_call_handler is None:
