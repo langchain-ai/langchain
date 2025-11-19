@@ -135,5 +135,9 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         if not self._should_apply_caching(request):
             return await handler(request)
 
-        self._apply_cache_control(request)
-        return await handler(request)
+        model_settings = request.model_settings
+        new_model_settings = {
+            **model_settings,
+            "cache_control": {"type": self.type, "ttl": self.ttl},
+        }
+        return await handler(request.override(model_settings=new_model_settings))
