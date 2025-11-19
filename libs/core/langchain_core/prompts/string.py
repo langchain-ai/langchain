@@ -17,8 +17,65 @@ from langchain_core.utils.formatting import formatter
 from langchain_core.utils.interactive_env import is_interactive_env
 
 try:
-    from jinja2 import Environment, meta
+    from jinja2 import meta
+    from jinja2.exceptions import SecurityError
     from jinja2.sandbox import SandboxedEnvironment
+
+    class _RestrictedSandboxedEnvironment(SandboxedEnvironment):
+        """A more restrictive Jinja2 sandbox that blocks all attribute/method access.
+
+        This sandbox only allows simple variable lookups, no attribute or method access.
+        This prevents template injection attacks via methods like parse_raw().
+        """
+
+        def is_safe_attribute(self, _obj: Any, _attr: str, _value: Any) -> bool:
+            """Block ALL attribute access for security.
+
+            Only allow accessing variables directly from the context dict,
+            no attribute access on those objects.
+
+            Args:
+                _obj: The object being accessed (unused, always blocked).
+                _attr: The attribute name (unused, always blocked).
+                _value: The attribute value (unused, always blocked).
+
+            Returns:
+                False - all attribute access is blocked.
+            """
+            # Block all attribute access
+            return False
+
+        def is_safe_callable(self, _obj: Any) -> bool:
+            """Block all method calls for security.
+
+            Args:
+                _obj: The object being checked (unused, always blocked).
+
+            Returns:
+                False - all callables are blocked.
+            """
+            return False
+
+        def getattr(self, obj: Any, attribute: str) -> Any:
+            """Override getattr to block all attribute access.
+
+            Args:
+                obj: The object.
+                attribute: The attribute name.
+
+            Returns:
+                Never returns.
+
+            Raises:
+                SecurityError: Always, to block attribute access.
+            """
+            msg = (
+                f"Access to attributes is not allowed in templates. "
+                f"Attempted to access '{attribute}' on {type(obj).__name__}. "
+                f"Use only simple variable names like {{{{variable}}}} "
+                f"without dots or methods."
+            )
+            raise SecurityError(msg)
 
     _HAS_JINJA2 = True
 except ImportError:
@@ -59,14 +116,10 @@ def jinja2_formatter(template: str, /, **kwargs: Any) -> str:
         )
         raise ImportError(msg)
 
-    # This uses a sandboxed environment to prevent arbitrary code execution.
-    # Jinja2 uses an opt-out rather than opt-in approach for sand-boxing.
-    # Please treat this sand-boxing as a best-effort approach rather than
-    # a guarantee of security.
-    # We recommend to never use jinja2 templates with untrusted inputs.
-    # https://jinja.palletsprojects.com/en/3.1.x/sandbox/
-    # approach not a guarantee of security.
-    return SandboxedEnvironment().from_string(template).render(**kwargs)
+    # Use a restricted sandbox that blocks ALL attribute/method access
+    # Only simple variable lookups like {{variable}} are allowed
+    # Attribute access like {{variable.attr}} or {{variable.method()}} is blocked
+    return _RestrictedSandboxedEnvironment().from_string(template).render(**kwargs)
 
 
 def validate_jinja2(template: str, input_variables: list[str]) -> None:
@@ -101,7 +154,7 @@ def _get_jinja2_variables_from_template(template: str) -> set[str]:
             "Please install it with `pip install jinja2`."
         )
         raise ImportError(msg)
-    env = Environment()  # noqa: S701
+    env = _RestrictedSandboxedEnvironment()
     ast = env.parse(template)
     return meta.find_undeclared_variables(ast)
 
@@ -267,6 +320,30 @@ def get_template_variables(template: str, template_format: str) -> list[str]:
     else:
         msg = f"Unsupported template format: {template_format}"
         raise ValueError(msg)
+
+    # For f-strings, block attribute access and indexing syntax
+    # This prevents template injection attacks via accessing dangerous attributes
+    if template_format == "f-string":
+        for var in input_variables:
+            # Formatter().parse() returns field names with dots/brackets if present
+            # e.g., "obj.attr" or "obj[0]" - we need to block these
+            if "." in var or "[" in var or "]" in var:
+                msg = (
+                    f"Invalid variable name {var!r} in f-string template. "
+                    f"Variable names cannot contain attribute "
+                    f"access (.) or indexing ([])."
+                )
+                raise ValueError(msg)
+
+            # Block variable names that are all digits (e.g., "0", "100")
+            # These are interpreted as positional arguments, not keyword arguments
+            if var.isdigit():
+                msg = (
+                    f"Invalid variable name {var!r} in f-string template. "
+                    f"Variable names cannot be all digits as they are interpreted "
+                    f"as positional arguments."
+                )
+                raise ValueError(msg)
 
     return sorted(input_variables)
 
