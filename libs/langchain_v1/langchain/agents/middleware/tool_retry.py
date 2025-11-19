@@ -3,12 +3,23 @@
 from __future__ import annotations
 
 import asyncio
-import random
 import time
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from langchain_core.messages import ToolMessage
 
+from langchain.agents.middleware._retry import (
+    DEFAULT_BACKOFF_FACTOR,
+    DEFAULT_INITIAL_DELAY,
+    DEFAULT_JITTER,
+    DEFAULT_MAX_DELAY,
+    DEFAULT_MAX_RETRIES,
+    OnFailure,
+    RetryOn,
+    calculate_delay,
+    should_retry_exception,
+    validate_retry_params,
+)
 from langchain.agents.middleware.types import AgentMiddleware
 
 if TYPE_CHECKING:
@@ -121,23 +132,19 @@ class ToolRetryMiddleware(AgentMiddleware):
     def __init__(
         self,
         *,
-        max_retries: int = 2,
+        max_retries: int = DEFAULT_MAX_RETRIES,
         tools: list[BaseTool | str] | None = None,
-        retry_on: tuple[type[Exception], ...] | Callable[[Exception], bool] = (Exception,),
-        on_failure: (
-            Literal["raise", "return_message"] | Callable[[Exception], str]
-        ) = "return_message",
-        backoff_factor: float = 2.0,
-        initial_delay: float = 1.0,
-        max_delay: float = 60.0,
-        jitter: bool = True,
+        retry_on: RetryOn = (Exception,),
+        on_failure: OnFailure[str] = "return_message",
+        backoff_factor: float = DEFAULT_BACKOFF_FACTOR,
+        initial_delay: float = DEFAULT_INITIAL_DELAY,
+        max_delay: float = DEFAULT_MAX_DELAY,
+        jitter: bool = DEFAULT_JITTER,
     ) -> None:
         """Initialize `ToolRetryMiddleware`.
 
         Args:
             max_retries: Maximum number of retry attempts after the initial call.
-
-                Default is `2` retries (`3` total attempts).
 
                 Must be `>= 0`.
             tools: Optional list of tools or tool names to apply retry logic to.
@@ -177,18 +184,7 @@ class ToolRetryMiddleware(AgentMiddleware):
         super().__init__()
 
         # Validate parameters
-        if max_retries < 0:
-            msg = "max_retries must be >= 0"
-            raise ValueError(msg)
-        if initial_delay < 0:
-            msg = "initial_delay must be >= 0"
-            raise ValueError(msg)
-        if max_delay < 0:
-            msg = "max_delay must be >= 0"
-            raise ValueError(msg)
-        if backoff_factor < 0:
-            msg = "backoff_factor must be >= 0"
-            raise ValueError(msg)
+        validate_retry_params(max_retries, initial_delay, max_delay, backoff_factor)
 
         self.max_retries = max_retries
 
@@ -229,9 +225,7 @@ class ToolRetryMiddleware(AgentMiddleware):
         Returns:
             `True` if the exception should be retried, `False` otherwise.
         """
-        if callable(self.retry_on):
-            return self.retry_on(exc)
-        return isinstance(exc, self.retry_on)
+        return should_retry_exception(exc, self.retry_on)
 
     def _calculate_delay(self, retry_number: int) -> float:
         """Calculate delay for the given retry attempt.
@@ -242,21 +236,13 @@ class ToolRetryMiddleware(AgentMiddleware):
         Returns:
             Delay in seconds before next retry.
         """
-        if self.backoff_factor == 0.0:
-            delay = self.initial_delay
-        else:
-            delay = self.initial_delay * (self.backoff_factor**retry_number)
-
-        # Cap at max_delay
-        delay = min(delay, self.max_delay)
-
-        if self.jitter and delay > 0:
-            jitter_amount = delay * 0.25
-            delay = delay + random.uniform(-jitter_amount, jitter_amount)  # noqa: S311
-            # Ensure delay is not negative after jitter
-            delay = max(0, delay)
-
-        return delay
+        return calculate_delay(
+            retry_number,
+            backoff_factor=self.backoff_factor,
+            initial_delay=self.initial_delay,
+            max_delay=self.max_delay,
+            jitter=self.jitter,
+        )
 
     def _format_failure_message(self, tool_name: str, exc: Exception, attempts_made: int) -> str:
         """Format the failure message when retries are exhausted.
