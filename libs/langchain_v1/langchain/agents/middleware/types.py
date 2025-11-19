@@ -109,17 +109,15 @@ class ModelRequest:
         # Allow setting attributes during __init__ (when object is being constructed)
         if not hasattr(self, "__dataclass_fields__") or not hasattr(self, name):
             object.__setattr__(self, name, value)
-            return
-
-        # Warn for post-initialization attribute changes
-        warnings.warn(
-            f"Direct attribute assignment to ModelRequest.{name} is deprecated. "
-            f"Use request.override({name}=...) instead to create a new request "
-            f"with the modified attribute.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        object.__setattr__(self, name, value)
+        else:
+            warnings.warn(
+                f"Direct attribute assignment to ModelRequest.{name} is deprecated. "
+                f"Use request.override({name}=...) instead to create a new request "
+                f"with the modified attribute.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            object.__setattr__(self, name, value)
 
     def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest:
         """Replace the request with a new request with the given overrides.
