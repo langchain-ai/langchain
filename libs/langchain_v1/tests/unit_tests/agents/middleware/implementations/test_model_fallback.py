@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import cast
 
 import pytest
@@ -308,24 +309,35 @@ def test_model_fallback_middleware_initialization() -> None:
 
 
 def test_model_request_is_frozen() -> None:
-    """Test that ModelRequest is frozen and does not allow direct attribute assignment."""
+    """Test that ModelRequest raises deprecation warning on direct attribute assignment."""
     request = _make_request()
     new_model = GenericFakeChatModel(messages=iter([AIMessage(content="new model")]))
 
-    # Direct attribute assignment should raise FrozenInstanceError
-    with pytest.raises(Exception):  # dataclasses.FrozenInstanceError
+    # Direct attribute assignment should raise DeprecationWarning but still work
+    with pytest.warns(DeprecationWarning, match="Direct attribute assignment to ModelRequest.model is deprecated"):
         request.model = new_model  # type: ignore[misc]
 
-    with pytest.raises(Exception):  # dataclasses.FrozenInstanceError
+    # Verify the assignment actually worked
+    assert request.model == new_model
+
+    with pytest.warns(DeprecationWarning, match="Direct attribute assignment to ModelRequest.system_prompt is deprecated"):
         request.system_prompt = "new prompt"  # type: ignore[misc]
 
-    with pytest.raises(Exception):  # dataclasses.FrozenInstanceError
+    assert request.system_prompt == "new prompt"
+
+    with pytest.warns(DeprecationWarning, match="Direct attribute assignment to ModelRequest.messages is deprecated"):
         request.messages = []  # type: ignore[misc]
 
-    # Using override method should work
-    new_request = request.override(model=new_model, system_prompt="new prompt")
+    assert request.messages == []
+
+    # Using override method should work without warnings
+    request2 = _make_request()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # Turn warnings into errors
+        new_request = request2.override(model=new_model, system_prompt="override prompt")
+
     assert new_request.model == new_model
-    assert new_request.system_prompt == "new prompt"
+    assert new_request.system_prompt == "override prompt"
     # Original request should be unchanged
-    assert request.model != new_model
-    assert request.system_prompt != "new prompt"
+    assert request2.model != new_model
+    assert request2.system_prompt != "override prompt"

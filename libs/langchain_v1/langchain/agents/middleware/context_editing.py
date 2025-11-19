@@ -238,10 +238,12 @@ class ContextEditingMiddleware(AgentMiddleware):
                     system_msg + list(messages), request.tools
                 )
 
+        # Create a mutable copy of messages for editing
+        edited_messages = list(request.messages)
         for edit in self.edits:
-            edit.apply(request.messages, count_tokens=count_tokens)
+            edit.apply(edited_messages, count_tokens=count_tokens)
 
-        return handler(request)
+        return handler(request.override(messages=edited_messages))
 
     async def awrap_model_call(
         self,
@@ -266,10 +268,12 @@ class ContextEditingMiddleware(AgentMiddleware):
                     system_msg + list(messages), request.tools
                 )
 
+        # Create a mutable copy of messages for editing
+        edited_messages = list(request.messages)
         for edit in self.edits:
-            edit.apply(request.messages, count_tokens=count_tokens)
+            edit.apply(edited_messages, count_tokens=count_tokens)
 
-        return await handler(request)
+        return await handler(request.override(messages=edited_messages))
 
 
 __all__ = [

@@ -80,7 +80,7 @@ class _ModelRequestOverrides(TypedDict, total=False):
     model_settings: dict[str, Any]
 
 
-@dataclass(frozen=True)
+@dataclass
 class ModelRequest:
     """Model request information for the agent."""
 
@@ -93,6 +93,33 @@ class ModelRequest:
     state: AgentState
     runtime: Runtime[ContextT]  # type: ignore[valid-type]
     model_settings: dict[str, Any] = field(default_factory=dict)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Set an attribute with a deprecation warning.
+
+        Direct attribute assignment on `ModelRequest` is deprecated. Use the
+        `override()` method instead to create a new request with modified attributes.
+
+        Args:
+            name: Attribute name.
+            value: Attribute value.
+        """
+        import warnings
+
+        # Allow setting attributes during __init__ (when object is being constructed)
+        if not hasattr(self, "__dataclass_fields__") or not hasattr(self, name):
+            object.__setattr__(self, name, value)
+            return
+
+        # Warn for post-initialization attribute changes
+        warnings.warn(
+            f"Direct attribute assignment to ModelRequest.{name} is deprecated. "
+            f"Use request.override({name}=...) instead to create a new request "
+            f"with the modified attribute.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        object.__setattr__(self, name, value)
 
     def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest:
         """Replace the request with a new request with the given overrides.
