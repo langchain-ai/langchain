@@ -222,8 +222,8 @@ def test_model_retry_failing_model_raises() -> None:
 def test_model_retry_custom_failure_formatter() -> None:
     """Test ModelRetryMiddleware with custom failure message formatter."""
 
-    def custom_formatter(exc: Exception) -> AIMessage:
-        return AIMessage(content=f"Custom error: {type(exc).__name__}")
+    def custom_formatter(exc: Exception) -> str:
+        return f"Custom error: {type(exc).__name__}"
 
     model = AlwaysFailingModel(error_message="Model error", error_type=ValueError)
 

@@ -78,8 +78,8 @@ class ModelRetryMiddleware(AgentMiddleware):
         !!! example "Custom error handling"
 
             ```python
-            def format_error(exc: Exception) -> AIMessage:
-                return AIMessage(content="Model temporarily unavailable. Please try again later.")
+            def format_error(exc: Exception) -> str:
+                return "Model temporarily unavailable. Please try again later."
 
 
             retry = ModelRetryMiddleware(
@@ -113,7 +113,7 @@ class ModelRetryMiddleware(AgentMiddleware):
         *,
         max_retries: int = DEFAULT_MAX_RETRIES,
         retry_on: RetryOn = (Exception,),
-        on_failure: OnFailure[AIMessage] = "continue",
+        on_failure: OnFailure = "continue",
         backoff_factor: float = DEFAULT_BACKOFF_FACTOR,
         initial_delay: float = DEFAULT_INITIAL_DELAY,
         max_delay: float = DEFAULT_MAX_DELAY,
@@ -136,8 +136,9 @@ class ModelRetryMiddleware(AgentMiddleware):
                 - `'continue'`: Return an `AIMessage` with error details,
                     allowing the agent to continue with an error response.
                 - `'error'`: Re-raise the exception, stopping agent execution.
-                - **Custom callable:** Function that takes the exception and returns an
-                    `AIMessage`, allowing custom error formatting.
+                - **Custom callable:** Function that takes the exception and returns a
+                    string for the `AIMessage` content, allowing custom error
+                    formatting.
             backoff_factor: Multiplier for exponential backoff.
 
                 Each retry waits `initial_delay * (backoff_factor ** retry_number)`
@@ -227,7 +228,8 @@ class ModelRetryMiddleware(AgentMiddleware):
             raise exc
 
         if callable(self.on_failure):
-            ai_msg = self.on_failure(exc)
+            content = self.on_failure(exc)
+            ai_msg = AIMessage(content=content)
         else:
             ai_msg = self._format_failure_message(exc, attempts_made)
 

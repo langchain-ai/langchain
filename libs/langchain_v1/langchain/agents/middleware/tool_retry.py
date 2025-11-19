@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import time
 import warnings
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from langchain_core.messages import ToolMessage
 
@@ -136,7 +136,7 @@ class ToolRetryMiddleware(AgentMiddleware):
         max_retries: int = DEFAULT_MAX_RETRIES,
         tools: list[BaseTool | str] | None = None,
         retry_on: RetryOn = (Exception,),
-        on_failure: OnFailure[str] = "continue",
+        on_failure: OnFailure = "continue",
         backoff_factor: float = DEFAULT_BACKOFF_FACTOR,
         initial_delay: float = DEFAULT_INITIAL_DELAY,
         max_delay: float = DEFAULT_MAX_DELAY,
@@ -193,14 +193,14 @@ class ToolRetryMiddleware(AgentMiddleware):
         validate_retry_params(max_retries, initial_delay, max_delay, backoff_factor)
 
         # Handle backwards compatibility for deprecated on_failure values
-        if on_failure == "raise":
+        if on_failure == "raise":  # type: ignore[comparison-overlap]
             msg = (
                 "on_failure='raise' is deprecated and will be removed in a future version. "
                 "Use on_failure='error' instead."
             )
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
             on_failure = "error"
-        elif on_failure == "return_message":
+        elif on_failure == "return_message":  # type: ignore[comparison-overlap]
             msg = (
                 "on_failure='return_message' is deprecated and will be removed "
                 "in a future version. Use on_failure='continue' instead."

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import random
 from collections.abc import Callable
-from typing import Literal, TypeVar
+from typing import Literal
 
 # Type aliases
 RetryOn = tuple[type[Exception], ...] | Callable[[Exception], bool]
@@ -19,13 +19,12 @@ Can be either:
 - A callable that takes an exception and returns `True` if it should be retried
 """
 
-T = TypeVar("T")
-OnFailure = Literal["error", "continue"] | Callable[[Exception], T]
-"""Generic type for specifying failure handling behavior.
+OnFailure = Literal["error", "continue"] | Callable[[Exception], str]
+"""Type for specifying failure handling behavior.
 
 Can be either:
 - A literal action string (`'error'` or `'continue'`)
-- A callable that takes an exception and returns a custom error response
+- A callable that takes an exception and returns a string for error message content
 """
 
 
