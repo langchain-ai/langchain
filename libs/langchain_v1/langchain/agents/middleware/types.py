@@ -446,7 +446,13 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
                 ```python
                 def wrap_tool_call(self, request, handler):
-                    modified_call = {**request.tool_call, "args": {**request.tool_call["args"], "value": request.tool_call["args"]["value"] * 2}}
+                    modified_call = {
+                        **request.tool_call,
+                        "args": {
+                            **request.tool_call["args"],
+                            "value": request.tool_call["args"]["value"] * 2,
+                        },
+                    }
                     request = request.override(tool_call=modified_call)
                     return handler(request)
                 ```
@@ -1633,7 +1639,13 @@ def wrap_tool_call(
             ```python
             @wrap_tool_call
             def modify_args(request, handler):
-                modified_call = {**request.tool_call, "args": {**request.tool_call["args"], "value": request.tool_call["args"]["value"] * 2}}
+                modified_call = {
+                    **request.tool_call,
+                    "args": {
+                        **request.tool_call["args"],
+                        "value": request.tool_call["args"]["value"] * 2,
+                    },
+                }
                 request = request.override(tool_call=modified_call)
                 return handler(request)
             ```
