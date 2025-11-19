@@ -71,7 +71,7 @@ _message_type_lookups = {
     "HumanMessageChunk": "user",
 }
 
-MODEL_PROFILES = cast(
+_MODEL_PROFILES = cast(
     ModelProfileRegistry,
     load_profiles_from_data_dir(Path(__file__).parent / "data", "anthropic"),
 )
@@ -1624,7 +1624,9 @@ class ChatAnthropic(BaseChatModel):
     def _set_model_profile(self) -> Self:
         """Set model profile if not overridden."""
         if not self.profile:
-            self.profile = MODEL_PROFILES.get(self.model)
+            self.profile = _MODEL_PROFILES.get(self.model)
+            if isinstance(self.profile, dict):
+                self.profile = self.profile.copy()
 
         return self
 
