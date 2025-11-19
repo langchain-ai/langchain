@@ -486,7 +486,7 @@ requires-dist = [
     { name = "langchain-groq", marker = "extra == 'groq'" },
     { name = "langchain-huggingface", marker = "extra == 'huggingface'" },
     { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
-    { name = "langchain-model-profiles", marker = "extra == 'model-profiles'" },
+    { name = "langchain-model-profiles", marker = "extra == 'model-profiles'", editable = "." },
     { name = "langchain-ollama", marker = "extra == 'ollama'" },
     { name = "langchain-openai", marker = "extra == 'openai'", editable = "../partners/openai" },
     { name = "langchain-perplexity", marker = "extra == 'perplexity'" },
@@ -500,6 +500,7 @@ provides-extras = ["model-profiles", "community", "anthropic", "openai", "azure-
 [package.metadata.requires-dev]
 lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
 test = [
+    { name = "langchain-model-profiles", editable = "." },
     { name = "langchain-openai", editable = "../partners/openai" },
     { name = "langchain-tests", editable = "../standard-tests" },
     { name = "pytest", specifier = ">=8.0.0,<9.0.0" },
@@ -515,6 +516,7 @@ test = [
 test-integration = [
     { name = "cassio", specifier = ">=0.1.0,<1.0.0" },
     { name = "langchain-core", editable = "../core" },
+    { name = "langchain-model-profiles", editable = "." },
     { name = "langchain-text-splitters", editable = "../text-splitters" },
     { name = "langchainhub", specifier = ">=0.1.16,<1.0.0" },
     { name = "python-dotenv", specifier = ">=1.0.0,<2.0.0" },
@@ -528,7 +530,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.4"
+version = "1.0.5"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -591,14 +593,12 @@ name = "langchain-model-profiles"
 version = "0.0.4"
 source = { editable = "." }
 dependencies = [
+    { name = "httpx" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "typing-extensions" },
 ]
 
 [package.dev-dependencies]
-dev = [
-    { name = "httpx" },
-]
 lint = [
     { name = "langchain" },
     { name = "ruff" },
@@ -626,12 +626,13 @@ typing = [
 
 [package.metadata]
 requires-dist = [
+    { name = "httpx", specifier = ">=0.23.0,<1" },
     { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0,<3.0.0" },
     { name = "typing-extensions", specifier = ">=4.7.0,<5.0.0" },
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "httpx", specifier = ">=0.23.0,<1" }]
+dev = []
 lint = [
     { name = "langchain", editable = "../langchain_v1" },
     { name = "ruff", specifier = ">=0.12.2,<0.13.0" },
@@ -657,7 +658,7 @@ typing = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.0.2"
+version = "1.0.3"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },
