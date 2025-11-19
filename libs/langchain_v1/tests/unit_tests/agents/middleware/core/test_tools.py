@@ -80,8 +80,7 @@ def test_middleware_can_modify_tools() -> None:
         ) -> AIMessage:
             # Only allow tool_a and tool_b
             filtered_tools = [t for t in request.tools if t.name in ["tool_a", "tool_b"]]
-            request = request.override(tools=filtered_tools)
-            return handler(request)
+            return handler(request.override(tools=filtered_tools))
 
     # Model will try to call tool_a
     model = FakeToolCallingModel(
@@ -124,8 +123,7 @@ def test_unknown_tool_raises_error() -> None:
             handler: Callable[[ModelRequest], AIMessage],
         ) -> AIMessage:
             # Add an unknown tool
-            request = request.override(tools=request.tools + [unknown_tool])
-            return handler(request)
+            return handler(request.override(tools=request.tools + [unknown_tool]))
 
     agent = create_agent(
         model=FakeToolCallingModel(),
