@@ -1478,6 +1478,22 @@ def test_cache_control_kwarg() -> None:
     ]
 
 
+def test_cache_control_kwarg_skips_empty_messages() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    messages = [HumanMessage("foo"), AIMessage(content=[])]
+    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
+    assert payload["messages"] == [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}}
+            ],
+        },
+        {"role": "assistant", "content": []},
+    ]
+
+
 def test_context_management_in_payload() -> None:
     llm = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]

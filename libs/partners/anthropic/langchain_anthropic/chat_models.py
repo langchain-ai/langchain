@@ -1693,27 +1693,29 @@ class ChatAnthropic(BaseChatModel):
 
         system, formatted_messages = _format_messages(messages)
 
-        # If cache_control is provided in kwargs, add it to last message
-        # and content block.
-        if "cache_control" in kwargs and formatted_messages:
-            if isinstance(formatted_messages[-1]["content"], list):
-                formatted_messages[-1]["content"][-1]["cache_control"] = kwargs.pop(
-                    "cache_control"
-                )
-            elif isinstance(formatted_messages[-1]["content"], str):
-                formatted_messages[-1]["content"] = [
-                    {
-                        "type": "text",
-                        "text": formatted_messages[-1]["content"],
-                        "cache_control": kwargs.pop("cache_control"),
-                    }
-                ]
-            else:
-                pass
-
-        # If cache_control remains in kwargs, it would be passed as a top-level param
-        # to the API, but Anthropic expects it nested within a message
-        _ = kwargs.pop("cache_control", None)
+        # If cache_control is provided in kwargs, add it to the last message with
+        # content (Anthropic requires cache_control to be nested within a message
+        # block).
+        cache_control = kwargs.pop("cache_control", None)
+        if cache_control and formatted_messages:
+            for formatted_message in reversed(formatted_messages):
+                content = formatted_message.get("content")
+                if isinstance(content, list):
+                    if content:
+                        content[-1]["cache_control"] = cache_control
+                        break
+                    continue
+                if isinstance(content, str):
+                    formatted_message["content"] = [
+                        {
+                            "type": "text",
+                            "text": content,
+                            "cache_control": cache_control,
+                        }
+                    ]
+                    break
+            # If we didn't find a message with content we silently drop the control.
+            # Anthropic would reject a payload with empty content blocks.
 
         payload = {
             "model": self.model,
