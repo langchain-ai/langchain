@@ -334,7 +334,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             raise ValueError(msg)
 
         # Process decisions and build a mapping of index to processed result
-        decision_results: dict[int, tuple[ToolCall | None, ToolMessage | None]] = {}
+        decision_results: dict[int, ToolCall | None] = {}
         artificial_tool_messages: list[ToolMessage] = []
 
         for i, decision in enumerate(decisions):
@@ -342,7 +342,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             config = self.interrupt_on[tool_call["name"]]
 
             revised_tool_call, tool_message = self._process_decision(decision, tool_call, config)
-            decision_results[idx] = (revised_tool_call, tool_message)
+            decision_results[idx] = revised_tool_call
             if tool_message:
                 artificial_tool_messages.append(tool_message)
 
@@ -351,8 +351,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         for idx, tool_call in enumerate(last_ai_msg.tool_calls):
             if idx in decision_results:
                 # This was an interrupt tool call - use processed result
-                revised_tool_call, _ = decision_results[idx]
-                if revised_tool_call:
+                if (revised_tool_call := decision_results.get(idx)) is not None:
                     revised_tool_calls.append(revised_tool_call)
             else:
                 # This was auto-approved - keep original
