@@ -90,7 +90,7 @@ def test_on_model_call_decorator() -> None:
 
     @wrap_model_call(state_schema=CustomState, tools=[test_tool], name="CustomOnModelCall")
     def custom_on_model_call(request, handler):
-        request.system_prompt = "Modified"
+        request = request.override(system_prompt="Modified")
         return handler(request)
 
     # Verify all options were applied

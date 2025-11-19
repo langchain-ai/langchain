@@ -45,7 +45,7 @@ def test_primary_model_succeeds() -> None:
 
     middleware = ModelFallbackMiddleware(fallback_model)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     def mock_handler(req: ModelRequest) -> ModelResponse:
         # Simulate successful model call
@@ -70,7 +70,7 @@ def test_fallback_on_primary_failure() -> None:
 
     middleware = ModelFallbackMiddleware(fallback_model)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     def mock_handler(req: ModelRequest) -> ModelResponse:
         result = req.model.invoke([])
@@ -95,7 +95,7 @@ def test_multiple_fallbacks() -> None:
 
     middleware = ModelFallbackMiddleware(fallback1, fallback2)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     def mock_handler(req: ModelRequest) -> ModelResponse:
         result = req.model.invoke([])
@@ -119,7 +119,7 @@ def test_all_models_fail() -> None:
 
     middleware = ModelFallbackMiddleware(fallback_model)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     def mock_handler(req: ModelRequest) -> ModelResponse:
         result = req.model.invoke([])
@@ -136,7 +136,7 @@ async def test_primary_model_succeeds_async() -> None:
 
     middleware = ModelFallbackMiddleware(fallback_model)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     async def mock_handler(req: ModelRequest) -> ModelResponse:
         # Simulate successful async model call
@@ -161,7 +161,7 @@ async def test_fallback_on_primary_failure_async() -> None:
 
     middleware = ModelFallbackMiddleware(fallback_model)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     async def mock_handler(req: ModelRequest) -> ModelResponse:
         result = await req.model.ainvoke([])
@@ -186,7 +186,7 @@ async def test_multiple_fallbacks_async() -> None:
 
     middleware = ModelFallbackMiddleware(fallback1, fallback2)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     async def mock_handler(req: ModelRequest) -> ModelResponse:
         result = await req.model.ainvoke([])
@@ -210,7 +210,7 @@ async def test_all_models_fail_async() -> None:
 
     middleware = ModelFallbackMiddleware(fallback_model)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     async def mock_handler(req: ModelRequest) -> ModelResponse:
         result = await req.model.ainvoke([])
@@ -305,3 +305,27 @@ def test_model_fallback_middleware_initialization() -> None:
     # Test with multiple fallback models
     middleware = ModelFallbackMiddleware(FakeToolCallingModel(), FakeToolCallingModel())
     assert len(middleware.models) == 2
+
+
+def test_model_request_is_frozen() -> None:
+    """Test that ModelRequest is frozen and does not allow direct attribute assignment."""
+    request = _make_request()
+    new_model = GenericFakeChatModel(messages=iter([AIMessage(content="new model")]))
+
+    # Direct attribute assignment should raise FrozenInstanceError
+    with pytest.raises(Exception):  # dataclasses.FrozenInstanceError
+        request.model = new_model  # type: ignore[misc]
+
+    with pytest.raises(Exception):  # dataclasses.FrozenInstanceError
+        request.system_prompt = "new prompt"  # type: ignore[misc]
+
+    with pytest.raises(Exception):  # dataclasses.FrozenInstanceError
+        request.messages = []  # type: ignore[misc]
+
+    # Using override method should work
+    new_request = request.override(model=new_model, system_prompt="new prompt")
+    assert new_request.model == new_model
+    assert new_request.system_prompt == "new prompt"
+    # Original request should be unchanged
+    assert request.model != new_model
+    assert request.system_prompt != "new prompt"

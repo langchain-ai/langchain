@@ -784,7 +784,7 @@ class TestDynamicModelWithResponseFormat:
                 handler: Callable[[ModelRequest], CoreAIMessage],
             ) -> CoreAIMessage:
                 # Replace the model with our custom test model
-                request.model = model
+                request = request.override(model=model)
                 return handler(request)
 
         # Track which model is checked for provider strategy support

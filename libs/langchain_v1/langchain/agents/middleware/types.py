@@ -80,7 +80,7 @@ class _ModelRequestOverrides(TypedDict, total=False):
     model_settings: dict[str, Any]
 
 
-@dataclass
+@dataclass(frozen=True)
 class ModelRequest:
     """Model request information for the agent."""
 
@@ -446,7 +446,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
                 ```python
                 def wrap_tool_call(self, request, handler):
-                    request.tool_call["args"]["value"] *= 2
+                    modified_call = {**request.tool_call, "args": {**request.tool_call["args"], "value": request.tool_call["args"]["value"] * 2}}
+                    request = request.override(tool_call=modified_call)
                     return handler(request)
                 ```
 
@@ -1337,7 +1338,7 @@ def dynamic_prompt(
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
             ) -> ModelCallResult:
                 prompt = await func(request)  # type: ignore[misc]
-                request.system_prompt = prompt
+                request = request.override(system_prompt=prompt)
                 return await handler(request)
 
             middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
@@ -1358,7 +1359,7 @@ def dynamic_prompt(
             handler: Callable[[ModelRequest], ModelResponse],
         ) -> ModelCallResult:
             prompt = cast("str", func(request))
-            request.system_prompt = prompt
+            request = request.override(system_prompt=prompt)
             return handler(request)
 
         async def async_wrapped_from_sync(
@@ -1368,7 +1369,7 @@ def dynamic_prompt(
         ) -> ModelCallResult:
             # Delegate to sync function
             prompt = cast("str", func(request))
-            request.system_prompt = prompt
+            request = request.override(system_prompt=prompt)
             return await handler(request)
 
         middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
@@ -1469,7 +1470,7 @@ def wrap_model_call(
                     pass
 
                 # Try fallback model
-                request.model = fallback_model_instance
+                request = request.override(model=fallback_model_instance)
                 return handler(request)
             ```
 
@@ -1632,7 +1633,8 @@ def wrap_tool_call(
             ```python
             @wrap_tool_call
             def modify_args(request, handler):
-                request.tool_call["args"]["value"] *= 2
+                modified_call = {**request.tool_call, "args": {**request.tool_call["args"], "value": request.tool_call["args"]["value"] * 2}}
+                request = request.override(tool_call=modified_call)
                 return handler(request)
             ```
 
