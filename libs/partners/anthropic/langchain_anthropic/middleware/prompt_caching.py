@@ -94,14 +94,6 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         )
         return messages_count >= self.min_messages_to_cache
 
-    def _apply_cache_control(self, request: ModelRequest) -> None:
-        """Apply cache control settings to the request.
-
-        Args:
-            request: The model request to modify.
-        """
-        request.model_settings["cache_control"] = {"type": self.type, "ttl": self.ttl}
-
     def wrap_model_call(
         self,
         request: ModelRequest,
@@ -119,8 +111,12 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         if not self._should_apply_caching(request):
             return handler(request)
 
-        self._apply_cache_control(request)
-        return handler(request)
+        model_settings = request.model_settings
+        new_model_settings = {
+            **model_settings,
+            "cache_control": {"type": self.type, "ttl": self.ttl},
+        }
+        return handler(request.override(model_settings=new_model_settings))
 
     async def awrap_model_call(
         self,
@@ -139,5 +135,9 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         if not self._should_apply_caching(request):
             return await handler(request)
 
-        self._apply_cache_control(request)
-        return await handler(request)
+        model_settings = request.model_settings
+        new_model_settings = {
+            **model_settings,
+            "cache_control": {"type": self.type, "ttl": self.ttl},
+        }
+        return await handler(request.override(model_settings=new_model_settings))
