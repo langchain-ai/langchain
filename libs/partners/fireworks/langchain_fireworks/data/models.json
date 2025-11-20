@@ -1,0 +1,319 @@
+{
+  "fireworks-ai": {
+    "api": "https://api.fireworks.ai/inference/v1/",
+    "doc": "https://fireworks.ai/docs/",
+    "env": [
+      "FIREWORKS_API_KEY"
+    ],
+    "id": "fireworks-ai",
+    "models": {
+      "accounts/fireworks/models/deepseek-r1-0528": {
+        "attachment": false,
+        "cost": {
+          "input": 3,
+          "output": 8
+        },
+        "id": "accounts/fireworks/models/deepseek-r1-0528",
+        "knowledge": "2025-05",
+        "last_updated": "2025-05-28",
+        "limit": {
+          "context": 160000,
+          "output": 16384
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Deepseek R1 05/28",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-05-28",
+        "temperature": true,
+        "tool_call": true
+      },
+      "accounts/fireworks/models/deepseek-v3-0324": {
+        "attachment": false,
+        "cost": {
+          "input": 0.9,
+          "output": 0.9
+        },
+        "id": "accounts/fireworks/models/deepseek-v3-0324",
+        "knowledge": "2024-10",
+        "last_updated": "2025-03-24",
+        "limit": {
+          "context": 160000,
+          "output": 16384
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Deepseek V3 03-24",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2025-03-24",
+        "temperature": true,
+        "tool_call": true
+      },
+      "accounts/fireworks/models/deepseek-v3p1": {
+        "attachment": false,
+        "cost": {
+          "input": 0.56,
+          "output": 1.68
+        },
+        "id": "accounts/fireworks/models/deepseek-v3p1",
+        "knowledge": "2025-07",
+        "last_updated": "2025-08-21",
+        "limit": {
+          "context": 163840,
+          "output": 163840
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "DeepSeek V3.1",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-08-21",
+        "temperature": true,
+        "tool_call": true
+      },
+      "accounts/fireworks/models/glm-4p5": {
+        "attachment": false,
+        "cost": {
+          "input": 0.55,
+          "output": 2.19
+        },
+        "id": "accounts/fireworks/models/glm-4p5",
+        "knowledge": "2025-04",
+        "last_updated": "2025-07-29",
+        "limit": {
+          "context": 131072,
+          "output": 131072
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "GLM 4.5",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-07-29",
+        "temperature": true,
+        "tool_call": true
+      },
+      "accounts/fireworks/models/glm-4p5-air": {
+        "attachment": false,
+        "cost": {
+          "input": 0.22,
+          "output": 0.88
+        },
+        "id": "accounts/fireworks/models/glm-4p5-air",
+        "knowledge": "2025-04",
+        "last_updated": "2025-08-01",
+        "limit": {
+          "context": 131072,
+          "output": 131072
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "GLM 4.5 Air",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-08-01",
+        "temperature": true,
+        "tool_call": true
+      },
+      "accounts/fireworks/models/gpt-oss-120b": {
+        "attachment": false,
+        "cost": {
+          "input": 0.15,
+          "output": 0.6
+        },
+        "id": "accounts/fireworks/models/gpt-oss-120b",
+        "last_updated": "2025-08-05",
+        "limit": {
+          "context": 131072,
+          "output": 32768
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "GPT OSS 120B",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-08-05",
+        "temperature": true,
+        "tool_call": true
+      },
+      "accounts/fireworks/models/gpt-oss-20b": {
+        "attachment": false,
+        "cost": {
+          "input": 0.05,
+          "output": 0.2
+        },
+        "id": "accounts/fireworks/models/gpt-oss-20b",
+        "last_updated": "2025-08-05",
+        "limit": {
+          "context": 131072,
+          "output": 32768
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "GPT OSS 20B",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-08-05",
+        "temperature": true,
+        "tool_call": true
+      },
+      "accounts/fireworks/models/kimi-k2-instruct": {
+        "attachment": false,
+        "cost": {
+          "input": 1,
+          "output": 3
+        },
+        "id": "accounts/fireworks/models/kimi-k2-instruct",
+        "knowledge": "2024-10",
+        "last_updated": "2025-07-11",
+        "limit": {
+          "context": 128000,
+          "output": 16384
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Kimi K2 Instruct",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2025-07-11",
+        "temperature": true,
+        "tool_call": true
+      },
+      "accounts/fireworks/models/minimax-m2": {
+        "attachment": false,
+        "cost": {
+          "input": 0.3,
+          "output": 1.2
+        },
+        "id": "accounts/fireworks/models/minimax-m2",
+        "knowledge": "2024-11",
+        "last_updated": "2025-10-27",
+        "limit": {
+          "context": 128000,
+          "output": 16384
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "MiniMax-M2",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-10-27",
+        "temperature": true,
+        "tool_call": true
+      },
+      "accounts/fireworks/models/qwen3-235b-a22b": {
+        "attachment": false,
+        "cost": {
+          "input": 0.22,
+          "output": 0.88
+        },
+        "id": "accounts/fireworks/models/qwen3-235b-a22b",
+        "knowledge": "2025-04",
+        "last_updated": "2025-04-29",
+        "limit": {
+          "context": 128000,
+          "output": 16384
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Qwen3 235B-A22B",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-04-29",
+        "temperature": true,
+        "tool_call": true
+      },
+      "accounts/fireworks/models/qwen3-coder-480b-a35b-instruct": {
+        "attachment": false,
+        "cost": {
+          "input": 0.45,
+          "output": 1.8
+        },
+        "id": "accounts/fireworks/models/qwen3-coder-480b-a35b-instruct",
+        "last_updated": "2025-07-22",
+        "limit": {
+          "context": 256000,
+          "output": 32768
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Qwen3 Coder 480B A35B Instruct",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2025-07-22",
+        "temperature": true,
+        "tool_call": true
+      }
+    },
+    "name": "Fireworks AI",
+    "npm": "@ai-sdk/openai-compatible"
+  }
+}

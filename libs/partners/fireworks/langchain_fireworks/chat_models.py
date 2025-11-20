@@ -7,6 +7,7 @@ import json
 import logging
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
+from pathlib import Path
 from typing import (
     Any,
     Literal,
@@ -24,6 +25,10 @@ from langchain_core.language_models.chat_models import (
     LangSmithParams,
     agenerate_from_stream,
     generate_from_stream,
+)
+from langchain_core.language_models.profile import ModelProfile, ModelProfileRegistry
+from langchain_core.language_models.profile._loader_utils import (
+    load_profiles_from_data_dir,
 )
 from langchain_core.messages import (
     AIMessage,
@@ -81,6 +86,17 @@ from typing_extensions import Self
 from langchain_fireworks._compat import _convert_from_v1_to_chat_completions
 
 logger = logging.getLogger(__name__)
+
+
+_MODEL_PROFILES = cast(
+    "ModelProfileRegistry",
+    load_profiles_from_data_dir(Path(__file__).parent / "data", "fireworks-ai"),
+)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -402,6 +418,13 @@ class ChatFireworks(BaseChatModel):
         if self.max_retries:
             self.client._max_retries = self.max_retries
             self.async_client._max_retries = self.max_retries
+        return self
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model_name)
         return self
 
     @property
