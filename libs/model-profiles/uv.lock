@@ -486,7 +486,6 @@ requires-dist = [
     { name = "langchain-groq", marker = "extra == 'groq'" },
     { name = "langchain-huggingface", marker = "extra == 'huggingface'" },
     { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
-    { name = "langchain-model-profiles", marker = "extra == 'model-profiles'", editable = "." },
     { name = "langchain-ollama", marker = "extra == 'ollama'" },
     { name = "langchain-openai", marker = "extra == 'openai'", editable = "../partners/openai" },
     { name = "langchain-perplexity", marker = "extra == 'perplexity'" },
@@ -495,12 +494,11 @@ requires-dist = [
     { name = "langgraph", specifier = ">=1.0.2,<1.1.0" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
-provides-extras = ["model-profiles", "community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
+provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
 lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
 test = [
-    { name = "langchain-model-profiles", editable = "." },
     { name = "langchain-openai", editable = "../partners/openai" },
     { name = "langchain-tests", editable = "../standard-tests" },
     { name = "pytest", specifier = ">=8.0.0,<9.0.0" },
@@ -516,7 +514,6 @@ test = [
 test-integration = [
     { name = "cassio", specifier = ">=0.1.0,<1.0.0" },
     { name = "langchain-core", editable = "../core" },
-    { name = "langchain-model-profiles", editable = "." },
     { name = "langchain-text-splitters", editable = "../text-splitters" },
     { name = "langchainhub", specifier = ">=0.1.16,<1.0.0" },
     { name = "python-dotenv", specifier = ">=1.0.0,<2.0.0" },
@@ -530,7 +527,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.5"
+version = "1.0.7"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -564,7 +561,6 @@ test = [
     { name = "blockbuster", specifier = ">=1.5.18,<1.6.0" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
     { name = "grandalf", specifier = ">=0.8.0,<1.0.0" },
-    { name = "langchain-model-profiles", directory = "." },
     { name = "langchain-tests", directory = "../standard-tests" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
@@ -581,7 +577,6 @@ test = [
 ]
 test-integration = []
 typing = [
-    { name = "langchain-model-profiles", directory = "." },
     { name = "langchain-text-splitters", directory = "../text-splitters" },
     { name = "mypy", specifier = ">=1.18.1,<1.19.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },

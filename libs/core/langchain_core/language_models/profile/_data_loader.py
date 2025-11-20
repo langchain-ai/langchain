@@ -48,8 +48,10 @@ class _DataLoader:
         Merging order:
 
         1. Base data from `models.json`
-        2. Provider-level augmentations from `[overrides]` in `profile_augmentations.toml`
-        3. Model-level augmentations from `[overrides."model-name"]` in `profile_augmentations.toml`
+        2. Provider-level augmentations from `[overrides]` in
+            `profile_augmentations.toml`
+        3. Model-level augmentations from `[overrides."model-name"]` in
+            `profile_augmentations.toml`
 
         Returns:
             Fully merged provider data with all augmentations applied.
@@ -62,7 +64,7 @@ class _DataLoader:
         provider_aug, model_augs = self._load_augmentations()
 
         # Merge augmentations into data
-        for provider_id, provider_data in data.items():
+        for provider_data in data.values():
             models = provider_data.get("models", {})
 
             for model_id, model_data in models.items():
@@ -84,7 +86,8 @@ class _DataLoader:
         Returns:
             Tuple of (provider_augmentations, model_augmentations) where:
             - provider_augmentations: dict of fields to apply to all models
-            - model_augmentations: dict mapping model IDs to their specific augmentations
+            - model_augmentations: dict mapping model IDs to their specific
+                augmentations
         """
         if not self._augmentations_file.exists():
             return {}, {}
