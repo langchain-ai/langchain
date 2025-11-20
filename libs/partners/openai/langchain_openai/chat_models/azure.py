@@ -17,7 +17,7 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, SecretStr, model_validator
 from typing_extensions import Self
 
-from langchain_openai.chat_models.base import BaseChatOpenAI
+from langchain_openai.chat_models.base import BaseChatOpenAI, _get_default_model_profile
 
 logger = logging.getLogger(__name__)
 
@@ -699,6 +699,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 **async_specific,  # type: ignore[arg-type]
             )
             self.async_client = self.root_async_client.chat.completions
+        return self
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None and self.deployment_name is not None:
+            self.profile = _get_default_model_profile(self.deployment_name)
         return self
 
     @property
