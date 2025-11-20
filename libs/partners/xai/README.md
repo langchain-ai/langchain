@@ -21,6 +21,20 @@ This package contains the LangChain integrations for [xAI](https://x.ai/) throug
 
 For full documentation, see the [API reference](https://reference.langchain.com/python/integrations/langchain_xai/). For conceptual guides, tutorials, and examples on using these classes, see the [LangChain Docs](https://docs.langchain.com/oss/python/integrations/providers/xai).
 
+## ⚠️ Important: API Migration
+
+xAI's Live Search API is being deprecated by **December 15, 2025**. Please migrate to the new agentic tool calling API:
+
+```python
+# Old (deprecated)
+model = ChatXAI(search_parameters={"mode": "on"})
+
+# New (recommended)
+model = ChatXAI(server_tools=[{"type": "web_search"}])
+```
+
+For more details, see the [X.AI Agentic Tools documentation](https://docs.x.ai/docs/guides/tools/overview).
+
 ## 📕 Releases & Versioning
 
 See our [Releases](https://docs.langchain.com/oss/python/release-policy) and [Versioning](https://docs.langchain.com/oss/python/versioning) policies.
