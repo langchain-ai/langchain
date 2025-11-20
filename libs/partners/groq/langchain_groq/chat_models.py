@@ -6,6 +6,7 @@ import json
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
+from pathlib import Path
 from typing import Any, Literal, cast
 
 from langchain_core.callbacks import (
@@ -18,6 +19,10 @@ from langchain_core.language_models.chat_models import (
     LangSmithParams,
     agenerate_from_stream,
     generate_from_stream,
+)
+from langchain_core.language_models.profile import ModelProfile, ModelProfileRegistry
+from langchain_core.language_models.profile._loader_utils import (
+    load_profiles_from_data_dir,
 )
 from langchain_core.messages import (
     AIMessage,
@@ -64,6 +69,16 @@ from typing_extensions import Self
 
 from langchain_groq._compat import _convert_from_v1_to_groq
 from langchain_groq.version import __version__
+
+_MODEL_PROFILES = cast(
+    "ModelProfileRegistry",
+    load_profiles_from_data_dir(Path(__file__).parent / "data", "groq"),
+)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 class ChatGroq(BaseChatModel):
@@ -488,6 +503,13 @@ class ChatGroq(BaseChatModel):
                 "Please install it with `pip install groq`."
             )
             raise ImportError(msg) from exc
+        return self
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model_name)
         return self
 
     #
