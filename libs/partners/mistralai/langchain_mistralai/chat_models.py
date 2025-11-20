@@ -9,6 +9,7 @@ import ssl
 import uuid
 from collections.abc import Callable  # noqa: TC003
 from operator import itemgetter
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -26,6 +27,10 @@ from langchain_core.callbacks import (
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.language_models.llms import create_base_retry_decorator
+from langchain_core.language_models.profile import ModelProfile, ModelProfileRegistry
+from langchain_core.language_models.profile._loader_utils import (
+    load_profiles_from_data_dir,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -84,6 +89,17 @@ TOOL_CALL_ID_PATTERN = re.compile(r"^[a-zA-Z0-9]{9}$")
 # This SSL context is equivalent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
+
+
+_MODEL_PROFILES = cast(
+    "ModelProfileRegistry",
+    load_profiles_from_data_dir(Path(__file__).parent / "data", "mistral"),
+)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 def _create_retry_decorator(
@@ -630,6 +646,13 @@ class ChatMistralAI(BaseChatModel):
             msg = "top_p must be in the range [0.0, 1.0]"
             raise ValueError(msg)
 
+        return self
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model)
         return self
 
     def _generate(
