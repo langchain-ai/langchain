@@ -1623,11 +1623,10 @@ class ChatAnthropic(BaseChatModel):
     @model_validator(mode="after")
     def _set_model_profile(self) -> Self:
         """Set model profile if not overridden."""
-        if not self.profile:
-            self.profile = _MODEL_PROFILES.get(self.model)
-            if isinstance(self.profile, dict):
-                self.profile = self.profile.copy()
-
+        if self.profile is None:
+            default = _MODEL_PROFILES.get(self.model)
+            if default is not None:
+                self.profile = default.copy()
         return self
 
     @cached_property
