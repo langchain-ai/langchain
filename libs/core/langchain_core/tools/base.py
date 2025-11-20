@@ -1360,13 +1360,28 @@ def _is_directly_injected_arg_type(type_: Any) -> bool:
 
     Ex: `ToolRuntime` or `ToolRuntime[ContextT, StateT]` would both return `True`.
     """
-    return (
-        isinstance(type_, type) and issubclass(type_, _DirectlyInjectedToolArg)
-    ) or (
-        (origin := get_origin(type_)) is not None
+    # Check if type_ is a direct subclass of _DirectlyInjectedToolArg
+    if isinstance(type_, type) and issubclass(type_, _DirectlyInjectedToolArg):
+        return True
+
+    # Check if the origin is a subclass of _DirectlyInjectedToolArg
+    origin = get_origin(type_)
+    if (
+        origin is not None
         and isinstance(origin, type)
         and issubclass(origin, _DirectlyInjectedToolArg)
-    )
+    ):
+        return True
+
+    # Fallback: check if type name is "ToolRuntime"
+    # This handles cases where ToolRuntime is from a different package (e.g., langgraph)
+    # and may not inherit from _DirectlyInjectedToolArg due to package boundaries.
+    type_name = getattr(type_, "__name__", None)
+    if type_name == "ToolRuntime":
+        return True
+
+    origin_name = getattr(origin, "__name__", None) if origin else None
+    return origin_name == "ToolRuntime"
 
 
 def _is_injected_arg_type(
