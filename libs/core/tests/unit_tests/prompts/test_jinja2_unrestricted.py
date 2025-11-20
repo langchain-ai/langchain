@@ -15,6 +15,8 @@ from langchain_core.prompts import (
 from langchain_core.prompts.few_shot_with_templates import FewShotPromptWithTemplates
 from langchain_core.prompts.image import ImagePromptTemplate
 
+jinja2 = pytest.importorskip("jinja2")
+
 
 @pytest.mark.requires("jinja2")
 class TestPromptTemplateJinja2Unrestricted:
@@ -54,8 +56,6 @@ class TestPromptTemplateJinja2Unrestricted:
 
     def test_dangerous_patterns_blocked(self) -> None:
         """Test that dangerous patterns are still blocked by SandboxedEnvironment."""
-        import jinja2
-
         # Test blocking access to __class__.__bases__
         template = "{{ ''.__class__.__bases__[0] }}"
         prompt = PromptTemplate.from_template(
@@ -84,7 +84,8 @@ class TestPromptTemplateJinja2Unrestricted:
             template, template_format="jinja2_unrestricted"
         )
         result = prompt.format(items=["apple", "banana", "cherry"])
-        # Jinja2 preserves the newlines in the template, including the one after each item
+        # Jinja2 preserves the newlines in the template,
+        # including the one after each item
         expected = "\n- APPLE\n\n- BANANA\n\n- CHERRY\n"
         assert result == expected
 
@@ -319,8 +320,6 @@ class TestChatPromptTemplateJinja2Unrestricted:
 
     def test_dangerous_patterns_blocked(self) -> None:
         """Test that dangerous patterns are blocked in chat templates."""
-        import jinja2
-
         prompt = ChatPromptTemplate.from_messages(
             [("human", "{{ ''.__class__.__bases__ }}")],
             template_format="jinja2_unrestricted",
@@ -463,8 +462,6 @@ class TestJinja2UnrestrictedComparison:
 
     def test_jinja2_blocks_attributes_unrestricted_allows(self) -> None:
         """Test that jinja2 blocks attributes but jinja2_unrestricted allows them."""
-        import jinja2
-
         # jinja2 (restricted) blocks attribute access
         restricted_prompt = PromptTemplate.from_template(
             "{{ text.upper() }}", template_format="jinja2"
@@ -481,8 +478,6 @@ class TestJinja2UnrestrictedComparison:
 
     def test_both_block_dangerous_patterns(self) -> None:
         """Test that both formats block dangerous patterns."""
-        import jinja2
-
         dangerous_template = "{{ ''.__class__.__bases__ }}"
 
         # jinja2 blocks it
@@ -537,4 +532,3 @@ class TestJinja2UnrestrictedValidation:
             validate_template=True,
         )
         assert prompt.input_variables == ["foo"]
-
