@@ -23,6 +23,7 @@ from io import BytesIO
 from json import JSONDecodeError
 from math import ceil
 from operator import itemgetter
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -44,6 +45,10 @@ from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     LangSmithParams,
+)
+from langchain_core.language_models.profile import ModelProfileRegistry
+from langchain_core.language_models.profile._loader_utils import (
+    load_profiles_from_data_dir,
 )
 from langchain_core.messages import (
     AIMessage,
@@ -125,6 +130,7 @@ from langchain_openai.chat_models._compat import (
 )
 
 if TYPE_CHECKING:
+    from langchain_core.language_models.profile import ModelProfile
     from openai.types.responses import Response
 
 logger = logging.getLogger(__name__)
@@ -132,6 +138,17 @@ logger = logging.getLogger(__name__)
 # This SSL context is equivelent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
+
+_MODEL_PROFILES = cast(
+    ModelProfileRegistry,
+    load_profiles_from_data_dir(Path(__file__).parent.parent / "data", "openai"),
+)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
+
 
 WellKnownTools = (
     "file_search",
@@ -950,6 +967,13 @@ class BaseChatOpenAI(BaseChatModel):
                 **async_specific,  # type: ignore[arg-type]
             )
             self.async_client = self.root_async_client.chat.completions
+        return self
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model_name)
         return self
 
     @property
