@@ -1,0 +1,407 @@
+{
+  "huggingface": {
+    "api": "https://router.huggingface.co/v1",
+    "doc": "https://huggingface.co/docs/inference-providers",
+    "env": [
+      "HF_TOKEN"
+    ],
+    "id": "huggingface",
+    "models": {
+      "MiniMaxAI/MiniMax-M2": {
+        "attachment": false,
+        "cost": {
+          "input": 0.3,
+          "output": 1.2
+        },
+        "id": "MiniMaxAI/MiniMax-M2",
+        "knowledge": "2025-10",
+        "last_updated": "2025-10-27",
+        "limit": {
+          "context": 204800,
+          "output": 204800
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "MiniMax-M2",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-10-27",
+        "temperature": true,
+        "tool_call": true
+      },
+      "Qwen/Qwen3-235B-A22B-Thinking-2507": {
+        "attachment": false,
+        "cost": {
+          "input": 0.3,
+          "output": 3
+        },
+        "id": "Qwen/Qwen3-235B-A22B-Thinking-2507",
+        "knowledge": "2025-04",
+        "last_updated": "2025-07-25",
+        "limit": {
+          "context": 262144,
+          "output": 131072
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Qwen3-235B-A22B-Thinking-2507",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-07-25",
+        "temperature": true,
+        "tool_call": true
+      },
+      "Qwen/Qwen3-Coder-480B-A35B-Instruct": {
+        "attachment": false,
+        "cost": {
+          "input": 2,
+          "output": 2
+        },
+        "id": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+        "knowledge": "2025-04",
+        "last_updated": "2025-07-23",
+        "limit": {
+          "context": 262144,
+          "output": 66536
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Qwen3-Coder-480B-A35B-Instruct",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2025-07-23",
+        "temperature": true,
+        "tool_call": true
+      },
+      "Qwen/Qwen3-Embedding-4B": {
+        "attachment": false,
+        "cost": {
+          "input": 0.01,
+          "output": 0
+        },
+        "id": "Qwen/Qwen3-Embedding-4B",
+        "knowledge": "2024-12",
+        "last_updated": "2025-01-01",
+        "limit": {
+          "context": 32000,
+          "output": 2048
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Qwen 3 Embedding 4B",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2025-01-01",
+        "temperature": false,
+        "tool_call": false
+      },
+      "Qwen/Qwen3-Embedding-8B": {
+        "attachment": false,
+        "cost": {
+          "input": 0.01,
+          "output": 0
+        },
+        "id": "Qwen/Qwen3-Embedding-8B",
+        "knowledge": "2024-12",
+        "last_updated": "2025-01-01",
+        "limit": {
+          "context": 32000,
+          "output": 4096
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Qwen 3 Embedding 4B",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2025-01-01",
+        "temperature": false,
+        "tool_call": false
+      },
+      "Qwen/Qwen3-Next-80B-A3B-Instruct": {
+        "attachment": false,
+        "cost": {
+          "input": 0.25,
+          "output": 1
+        },
+        "id": "Qwen/Qwen3-Next-80B-A3B-Instruct",
+        "knowledge": "2025-04",
+        "last_updated": "2025-09-11",
+        "limit": {
+          "context": 262144,
+          "output": 66536
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Qwen3-Next-80B-A3B-Instruct",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2025-09-11",
+        "temperature": true,
+        "tool_call": true
+      },
+      "Qwen/Qwen3-Next-80B-A3B-Thinking": {
+        "attachment": false,
+        "cost": {
+          "input": 0.3,
+          "output": 2
+        },
+        "id": "Qwen/Qwen3-Next-80B-A3B-Thinking",
+        "knowledge": "2025-04",
+        "last_updated": "2025-09-11",
+        "limit": {
+          "context": 262144,
+          "output": 131072
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Qwen3-Next-80B-A3B-Thinking",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2025-09-11",
+        "temperature": true,
+        "tool_call": true
+      },
+      "deepseek-ai/DeepSeek-R1-0528": {
+        "attachment": false,
+        "cost": {
+          "input": 3,
+          "output": 5
+        },
+        "id": "deepseek-ai/DeepSeek-R1-0528",
+        "knowledge": "2025-05",
+        "last_updated": "2025-05-28",
+        "limit": {
+          "context": 163840,
+          "output": 163840
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "DeepSeek-R1-0528",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-05-28",
+        "temperature": true,
+        "tool_call": true
+      },
+      "deepseek-ai/Deepseek-V3-0324": {
+        "attachment": false,
+        "cost": {
+          "input": 1.25,
+          "output": 1.25
+        },
+        "id": "deepseek-ai/Deepseek-V3-0324",
+        "knowledge": "2024-10",
+        "last_updated": "2025-03-24",
+        "limit": {
+          "context": 16384,
+          "output": 8192
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "DeepSeek-V3-0324",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2025-03-24",
+        "temperature": true,
+        "tool_call": true
+      },
+      "moonshotai/Kimi-K2-Instruct": {
+        "attachment": false,
+        "cost": {
+          "input": 1,
+          "output": 3
+        },
+        "id": "moonshotai/Kimi-K2-Instruct",
+        "knowledge": "2024-10",
+        "last_updated": "2025-07-14",
+        "limit": {
+          "context": 131072,
+          "output": 16384
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Kimi-K2-Instruct",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2025-07-14",
+        "temperature": true,
+        "tool_call": true
+      },
+      "moonshotai/Kimi-K2-Instruct-0905": {
+        "attachment": false,
+        "cost": {
+          "input": 1,
+          "output": 3
+        },
+        "id": "moonshotai/Kimi-K2-Instruct-0905",
+        "knowledge": "2024-10",
+        "last_updated": "2025-09-04",
+        "limit": {
+          "context": 262144,
+          "output": 16384
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Kimi-K2-Instruct-0905",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2025-09-04",
+        "temperature": true,
+        "tool_call": true
+      },
+      "zai-org/GLM-4.5": {
+        "attachment": false,
+        "cost": {
+          "input": 0.6,
+          "output": 2.2
+        },
+        "id": "zai-org/GLM-4.5",
+        "knowledge": "2025-04",
+        "last_updated": "2025-07-28",
+        "limit": {
+          "context": 131072,
+          "output": 98304
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "GLM-4.5",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-07-28",
+        "temperature": true,
+        "tool_call": true
+      },
+      "zai-org/GLM-4.5-Air": {
+        "attachment": false,
+        "cost": {
+          "input": 0.2,
+          "output": 1.1
+        },
+        "id": "zai-org/GLM-4.5-Air",
+        "knowledge": "2025-04",
+        "last_updated": "2025-07-28",
+        "limit": {
+          "context": 128000,
+          "output": 96000
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "GLM-4.5-Air",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-07-28",
+        "temperature": true,
+        "tool_call": true
+      },
+      "zai-org/GLM-4.6": {
+        "attachment": false,
+        "cost": {
+          "cache_read": 0.11,
+          "input": 0.6,
+          "output": 2.2
+        },
+        "id": "zai-org/GLM-4.6",
+        "knowledge": "2025-04",
+        "last_updated": "2025-09-30",
+        "limit": {
+          "context": 200000,
+          "output": 128000
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "GLM-4.6",
+        "open_weights": true,
+        "reasoning": true,
+        "release_date": "2025-09-30",
+        "temperature": true,
+        "tool_call": true
+      }
+    },
+    "name": "Hugging Face",
+    "npm": "@ai-sdk/openai-compatible"
+  }
+}
