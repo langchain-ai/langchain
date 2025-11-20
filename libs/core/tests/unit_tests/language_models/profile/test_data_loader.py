@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from langchain_model_profiles._data_loader import _DataLoader
+from langchain_core.language_models.profile._data_loader import _DataLoader
 
 
 @pytest.fixture
@@ -43,15 +43,15 @@ def temp_data_dir(tmp_path: Path) -> Path:
 
 def test_load_base_data_only(temp_data_dir: Path) -> None:
     """Test loading base data without augmentations."""
-    loader = _DataLoader()
-    # Patch before any property access
-    loader._data_dir = temp_data_dir
-    result = loader.get_profile_data("test-provider", "test-model")
+    loader = _DataLoader(temp_data_dir)
+    result = loader.get_profile_data("test-provider")
 
     assert result is not None
-    assert result["id"] == "test-model"
-    assert result["name"] == "Test Model"
-    assert result["tool_call"] is True
+    assert len(result) == 1
+    model = result["test-model"]
+    assert model["id"] == "test-model"
+    assert model["name"] == "Test Model"
+    assert model["tool_call"] is True
 
 
 def test_provider_level_augmentation(temp_data_dir: Path) -> None:
