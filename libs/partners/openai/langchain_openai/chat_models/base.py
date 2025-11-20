@@ -334,7 +334,7 @@ def _convert_message_to_dict(
             )
         if audio:
             message_dict["audio"] = audio
-        # add reasoning and thinking blocks from additional_kwargs from LiteLLM proxy for thiking models
+        # add reasoning and thinking blocks for LiteLLM thiking models
         if reasoning_content := message.additional_kwargs.get("reasoning_content"):
             message_dict["reasoning_content"] = reasoning_content
         if thinking_blocks := message.additional_kwargs.get("thinking_blocks"):
