@@ -1,0 +1,127 @@
+{
+  "perplexity": {
+    "doc": "https://docs.perplexity.ai",
+    "env": [
+      "PERPLEXITY_API_KEY"
+    ],
+    "id": "perplexity",
+    "models": {
+      "sonar": {
+        "attachment": false,
+        "cost": {
+          "input": 1,
+          "output": 1
+        },
+        "id": "sonar",
+        "knowledge": "2025-09-01",
+        "last_updated": "2025-09-01",
+        "limit": {
+          "context": 128000,
+          "output": 4096
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Sonar",
+        "open_weights": false,
+        "reasoning": false,
+        "release_date": "2024-01-01",
+        "temperature": true,
+        "tool_call": false
+      },
+      "sonar-pro": {
+        "attachment": true,
+        "cost": {
+          "input": 3,
+          "output": 15
+        },
+        "id": "sonar-pro",
+        "knowledge": "2025-09-01",
+        "last_updated": "2025-09-01",
+        "limit": {
+          "context": 200000,
+          "output": 8192
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Sonar Pro",
+        "open_weights": false,
+        "reasoning": false,
+        "release_date": "2024-01-01",
+        "temperature": true,
+        "tool_call": false
+      },
+      "sonar-reasoning": {
+        "attachment": false,
+        "cost": {
+          "input": 1,
+          "output": 5
+        },
+        "id": "sonar-reasoning",
+        "knowledge": "2025-09-01",
+        "last_updated": "2025-09-01",
+        "limit": {
+          "context": 128000,
+          "output": 4096
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Sonar Reasoning",
+        "open_weights": false,
+        "reasoning": true,
+        "release_date": "2024-01-01",
+        "temperature": true,
+        "tool_call": false
+      },
+      "sonar-reasoning-pro": {
+        "attachment": true,
+        "cost": {
+          "input": 2,
+          "output": 8
+        },
+        "id": "sonar-reasoning-pro",
+        "knowledge": "2025-09-01",
+        "last_updated": "2025-09-01",
+        "limit": {
+          "context": 128000,
+          "output": 4096
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Sonar Reasoning Pro",
+        "open_weights": false,
+        "reasoning": true,
+        "release_date": "2024-01-01",
+        "temperature": true,
+        "tool_call": false
+      }
+    },
+    "name": "Perplexity",
+    "npm": "@ai-sdk/perplexity"
+  }
+}

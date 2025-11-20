@@ -5,7 +5,8 @@ from __future__ import annotations
 import logging
 from collections.abc import Iterator, Mapping
 from operator import itemgetter
-from typing import Any, Literal, TypeAlias
+from pathlib import Path
+from typing import Any, Literal, TypeAlias, cast
 
 import openai
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -13,6 +14,10 @@ from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     generate_from_stream,
+)
+from langchain_core.language_models.profile import ModelProfile, ModelProfileRegistry
+from langchain_core.language_models.profile._loader_utils import (
+    load_profiles_from_data_dir,
 )
 from langchain_core.messages import (
     AIMessage,
@@ -50,6 +55,17 @@ _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[BaseModel]
 _DictOrPydantic: TypeAlias = dict | BaseModel
 
 logger = logging.getLogger(__name__)
+
+
+_MODEL_PROFILES = cast(
+    "ModelProfileRegistry",
+    load_profiles_from_data_dir(Path(__file__).parent / "data", "perplexity"),
+)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 def _is_pydantic_class(obj: Any) -> bool:
@@ -247,6 +263,13 @@ class ChatPerplexity(BaseChatModel):
                 "due to an old version of the openai package. Try upgrading it "
                 "with `pip install --upgrade openai`."
             )
+        return self
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model)
         return self
 
     @property
