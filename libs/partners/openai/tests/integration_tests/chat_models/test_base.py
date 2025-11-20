@@ -1322,6 +1322,7 @@ async def test_schema_parsing_failures_responses_api_async() -> None:
         raise AssertionError
 
 
+# Integration test to verify that reasoning blocks are returned from the model when using thinking models with LiteLLM proxy
 @pytest.mark.scheduled
 def test_chat_reasoning_blocks() -> None:
     """Test ChatOpenAI wrapper."""
@@ -1333,7 +1334,7 @@ def test_chat_reasoning_blocks() -> None:
         max_retries=3,
         http_client=httpx.Client(verify=False),
     )
-    print(chat.model_dump_json())
+    # Using a prompt that will trigger reasoning
     message = HumanMessage(content="please reason and think critically about how to explain the reason about our life in this world")
     response = chat.invoke([message])
     print(response)
