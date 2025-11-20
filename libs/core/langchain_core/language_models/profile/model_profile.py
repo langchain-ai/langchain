@@ -1,6 +1,5 @@
 """Model profile types and utilities."""
 
-import re
 from typing import Any
 
 from typing_extensions import TypedDict
@@ -82,54 +81,6 @@ class ModelProfile(TypedDict, total=False):
 
 ModelProfileRegistry = dict[str, ModelProfile]
 """Registry mapping model identifiers or names to their ModelProfile."""
-
-
-_lc_type_to_provider_id = {
-    "openai-chat": "openai",
-    "azure-openai-chat": "azure",
-    "anthropic-chat": "anthropic",
-    "chat-google-generative-ai": "google",
-    "vertexai": "google-vertex",
-    "anthropic-chat-vertexai": "google-vertex-anthropic",
-    "amazon_bedrock_chat": "amazon-bedrock",
-    "amazon_bedrock_converse_chat": "amazon-bedrock",
-    "chat-ai21": "ai21",
-    "chat-deepseek": "deepseek",
-    "fireworks-chat": "fireworks-ai",
-    "groq-chat": "groq",
-    "huggingface-chat-wrapper": "huggingface",
-    "mistralai-chat": "mistral",
-    "chat-ollama": "ollama",
-    "perplexitychat": "perplexity",
-    "together-chat": "togetherai",
-    "upstage-chat": "upstage",
-    "xai-chat": "xai",
-}
-
-
-# TODO: delete this function
-def _translate_provider_and_model_id(provider: str, model: str) -> tuple[str, str]:
-    """Translate LangChain provider and model to models.dev equivalents.
-
-    Args:
-        provider: LangChain provider ID.
-        model: LangChain model ID.
-
-    Returns:
-        A tuple containing the models.dev provider ID and model ID.
-    """
-    provider_id = _lc_type_to_provider_id.get(provider, provider)
-
-    if provider_id in ("google", "google-vertex"):
-        # convert models/gemini-2.0-flash-001 to gemini-2.0-flash
-        model_id = re.sub(r"-\d{3}$", "", model.replace("models/", ""))
-    elif provider_id == "amazon-bedrock":
-        # strip region prefixes like "us."
-        model_id = re.sub(r"^[A-Za-z]{2}\.", "", model)
-    else:
-        model_id = model
-
-    return provider_id, model_id
 
 
 def map_raw_data_to_profile(data: dict[str, Any]) -> ModelProfile:
