@@ -338,13 +338,13 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     """
 
     profile: ModelProfile | None = Field(default=None, exclude=True)
-    """Return profiling information for the model.
+    """Profile detailing model capabilities.
 
-    Profile data includes model capabilities such as context window sizes and
-    supported features. Data is automatically loaded from the provider package
-    if available.
+    If not specified, automatically loaded from the provider package on initialization
+    if data is available.
 
-    Assign this attribute to override what the `profile` property returns.
+    Example profile data includes context window sizes, supported modalities, or support
+    for tool calling, structured output, and other features.
     """
 
     model_config = ConfigDict(
