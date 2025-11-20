@@ -1328,8 +1328,8 @@ def test_chat_reasoning_blocks() -> None:
     chat = ChatOpenAI(
         model="claude-sonnet-4-5-20250929",
         reasoning_effort="medium",
-        base_url=os.environ["OPENAI_BASE_URL"],
-        api_key=os.environ["OPENAI_API_KEY"],
+        base_url=os.environ["REASONING_BASE_URL"],
+        api_key=os.environ["REASONING_API_KEY"],
         max_retries=3,
         http_client=httpx.Client(verify=False),
     )
