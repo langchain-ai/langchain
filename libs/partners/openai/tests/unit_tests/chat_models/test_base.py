@@ -280,6 +280,21 @@ def test__convert_dict_to_message_tool_call() -> None:
     )
     assert reverted_message_dict == message
 
+def test__convert_dict_to_message_reasoning_blocks() -> None:
+    message = {"role": "assistant", "content": "foo", "reasoning_content": "bar", "thinking_blocks": {
+                "type": "thinking",
+                "thinking": "thinking...",
+                "signature": "sig..."
+            }}
+    result = _convert_dict_to_message(message)
+    expected_output = AIMessage(content="foo", additional_kwargs={"reasoning_content": "bar", "thinking_blocks": {
+                "type": "thinking",
+                "thinking": "thinking...",
+                "signature": "sig..."
+            }})
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
 
 class MockAsyncContextManager:
     def __init__(self, chunk_list: list) -> None:
