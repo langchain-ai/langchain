@@ -1,0 +1,664 @@
+{
+  "xai": {
+    "doc": "https://docs.x.ai/docs/models",
+    "env": [
+      "XAI_API_KEY"
+    ],
+    "id": "xai",
+    "models": {
+      "grok-2": {
+        "attachment": false,
+        "cost": {
+          "cache_read": 2,
+          "input": 2,
+          "output": 10
+        },
+        "id": "grok-2",
+        "knowledge": "2024-08",
+        "last_updated": "2024-08-20",
+        "limit": {
+          "context": 131072,
+          "output": 8192
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 2",
+        "open_weights": false,
+        "reasoning": false,
+        "release_date": "2024-08-20",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-2-1212": {
+        "attachment": false,
+        "cost": {
+          "cache_read": 2,
+          "input": 2,
+          "output": 10
+        },
+        "id": "grok-2-1212",
+        "knowledge": "2024-08",
+        "last_updated": "2024-12-12",
+        "limit": {
+          "context": 131072,
+          "output": 8192
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 2 (1212)",
+        "open_weights": false,
+        "reasoning": false,
+        "release_date": "2024-12-12",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-2-latest": {
+        "attachment": false,
+        "cost": {
+          "cache_read": 2,
+          "input": 2,
+          "output": 10
+        },
+        "id": "grok-2-latest",
+        "knowledge": "2024-08",
+        "last_updated": "2024-12-12",
+        "limit": {
+          "context": 131072,
+          "output": 8192
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 2 Latest",
+        "open_weights": false,
+        "reasoning": false,
+        "release_date": "2024-08-20",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-2-vision": {
+        "attachment": true,
+        "cost": {
+          "cache_read": 2,
+          "input": 2,
+          "output": 10
+        },
+        "id": "grok-2-vision",
+        "knowledge": "2024-08",
+        "last_updated": "2024-08-20",
+        "limit": {
+          "context": 8192,
+          "output": 4096
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 2 Vision",
+        "open_weights": false,
+        "reasoning": false,
+        "release_date": "2024-08-20",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-2-vision-1212": {
+        "attachment": true,
+        "cost": {
+          "cache_read": 2,
+          "input": 2,
+          "output": 10
+        },
+        "id": "grok-2-vision-1212",
+        "knowledge": "2024-08",
+        "last_updated": "2024-12-12",
+        "limit": {
+          "context": 8192,
+          "output": 4096
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 2 Vision (1212)",
+        "open_weights": false,
+        "reasoning": false,
+        "release_date": "2024-08-20",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-2-vision-latest": {
+        "attachment": true,
+        "cost": {
+          "cache_read": 2,
+          "input": 2,
+          "output": 10
+        },
+        "id": "grok-2-vision-latest",
+        "knowledge": "2024-08",
+        "last_updated": "2024-12-12",
+        "limit": {
+          "context": 8192,
+          "output": 4096
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 2 Vision Latest",
+        "open_weights": false,
+        "reasoning": false,
+        "release_date": "2024-08-20",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-3": {
+        "attachment": false,
+        "cost": {
+          "cache_read": 0.75,
+          "input": 3,
+          "output": 15
+        },
+        "id": "grok-3",
+        "knowledge": "2024-11",
+        "last_updated": "2025-02-17",
+        "limit": {
+          "context": 131072,
+          "output": 8192
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 3",
+        "open_weights": false,
+        "reasoning": false,
+        "release_date": "2025-02-17",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-3-fast": {
+        "attachment": false,
+        "cost": {
+          "cache_read": 1.25,
+          "input": 5,
+          "output": 25
+        },
+        "id": "grok-3-fast",
+        "knowledge": "2024-11",
+        "last_updated": "2025-02-17",
+        "limit": {
+          "context": 131072,
+          "output": 8192
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 3 Fast",
+        "open_weights": false,
+        "reasoning": false,
+        "release_date": "2025-02-17",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-3-fast-latest": {
+        "attachment": false,
+        "cost": {
+          "cache_read": 1.25,
+          "input": 5,
+          "output": 25
+        },
+        "id": "grok-3-fast-latest",
+        "knowledge": "2024-11",
+        "last_updated": "2025-02-17",
+        "limit": {
+          "context": 131072,
+          "output": 8192
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 3 Fast Latest",
+        "open_weights": false,
+        "reasoning": false,
+        "release_date": "2025-02-17",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-3-latest": {
+        "attachment": false,
+        "cost": {
+          "cache_read": 0.75,
+          "input": 3,
+          "output": 15
+        },
+        "id": "grok-3-latest",
+        "knowledge": "2024-11",
+        "last_updated": "2025-02-17",
+        "limit": {
+          "context": 131072,
+          "output": 8192
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 3 Latest",
+        "open_weights": false,
+        "reasoning": false,
+        "release_date": "2025-02-17",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-3-mini": {
+        "attachment": false,
+        "cost": {
+          "cache_read": 0.075,
+          "input": 0.3,
+          "output": 0.5,
+          "reasoning": 0.5
+        },
+        "id": "grok-3-mini",
+        "knowledge": "2024-11",
+        "last_updated": "2025-02-17",
+        "limit": {
+          "context": 131072,
+          "output": 8192
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 3 Mini",
+        "open_weights": false,
+        "reasoning": true,
+        "release_date": "2025-02-17",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-3-mini-fast": {
+        "attachment": false,
+        "cost": {
+          "cache_read": 0.15,
+          "input": 0.6,
+          "output": 4,
+          "reasoning": 4
+        },
+        "id": "grok-3-mini-fast",
+        "knowledge": "2024-11",
+        "last_updated": "2025-02-17",
+        "limit": {
+          "context": 131072,
+          "output": 8192
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 3 Mini Fast",
+        "open_weights": false,
+        "reasoning": true,
+        "release_date": "2025-02-17",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-3-mini-fast-latest": {
+        "attachment": false,
+        "cost": {
+          "cache_read": 0.15,
+          "input": 0.6,
+          "output": 4,
+          "reasoning": 4
+        },
+        "id": "grok-3-mini-fast-latest",
+        "knowledge": "2024-11",
+        "last_updated": "2025-02-17",
+        "limit": {
+          "context": 131072,
+          "output": 8192
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 3 Mini Fast Latest",
+        "open_weights": false,
+        "reasoning": true,
+        "release_date": "2025-02-17",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-3-mini-latest": {
+        "attachment": false,
+        "cost": {
+          "cache_read": 0.075,
+          "input": 0.3,
+          "output": 0.5,
+          "reasoning": 0.5
+        },
+        "id": "grok-3-mini-latest",
+        "knowledge": "2024-11",
+        "last_updated": "2025-02-17",
+        "limit": {
+          "context": 131072,
+          "output": 8192
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 3 Mini Latest",
+        "open_weights": false,
+        "reasoning": true,
+        "release_date": "2025-02-17",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-4": {
+        "attachment": false,
+        "cost": {
+          "cache_read": 0.75,
+          "input": 3,
+          "output": 15,
+          "reasoning": 15
+        },
+        "id": "grok-4",
+        "knowledge": "2025-07",
+        "last_updated": "2025-07-09",
+        "limit": {
+          "context": 256000,
+          "output": 64000
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 4",
+        "open_weights": false,
+        "reasoning": true,
+        "release_date": "2025-07-09",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-4-1-fast": {
+        "attachment": true,
+        "cost": {
+          "cache_read": 0.05,
+          "input": 0.2,
+          "output": 0.5
+        },
+        "id": "grok-4-1-fast",
+        "knowledge": "2025-07",
+        "last_updated": "2025-11-19",
+        "limit": {
+          "context": 2000000,
+          "output": 30000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 4.1 Fast",
+        "open_weights": false,
+        "reasoning": true,
+        "release_date": "2025-11-19",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-4-1-fast-non-reasoning": {
+        "attachment": true,
+        "cost": {
+          "cache_read": 0.05,
+          "input": 0.2,
+          "output": 0.5
+        },
+        "id": "grok-4-1-fast-non-reasoning",
+        "knowledge": "2025-07",
+        "last_updated": "2025-11-19",
+        "limit": {
+          "context": 2000000,
+          "output": 30000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 4.1 Fast (Non-Reasoning)",
+        "open_weights": false,
+        "reasoning": false,
+        "release_date": "2025-11-19",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-4-fast": {
+        "attachment": true,
+        "cost": {
+          "cache_read": 0.05,
+          "input": 0.2,
+          "output": 0.5
+        },
+        "id": "grok-4-fast",
+        "knowledge": "2025-07",
+        "last_updated": "2025-09-19",
+        "limit": {
+          "context": 2000000,
+          "output": 30000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 4 Fast",
+        "open_weights": false,
+        "reasoning": true,
+        "release_date": "2025-09-19",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-4-fast-non-reasoning": {
+        "attachment": true,
+        "cost": {
+          "cache_read": 0.05,
+          "input": 0.2,
+          "output": 0.5
+        },
+        "id": "grok-4-fast-non-reasoning",
+        "knowledge": "2025-07",
+        "last_updated": "2025-09-19",
+        "limit": {
+          "context": 2000000,
+          "output": 30000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 4 Fast (Non-Reasoning)",
+        "open_weights": false,
+        "reasoning": false,
+        "release_date": "2025-09-19",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-beta": {
+        "attachment": false,
+        "cost": {
+          "cache_read": 5,
+          "input": 5,
+          "output": 15
+        },
+        "id": "grok-beta",
+        "knowledge": "2024-08",
+        "last_updated": "2024-11-01",
+        "limit": {
+          "context": 131072,
+          "output": 4096
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok Beta",
+        "open_weights": false,
+        "reasoning": false,
+        "release_date": "2024-11-01",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-code-fast-1": {
+        "attachment": false,
+        "cost": {
+          "cache_read": 0.02,
+          "input": 0.2,
+          "output": 1.5
+        },
+        "id": "grok-code-fast-1",
+        "knowledge": "2023-10",
+        "last_updated": "2025-08-28",
+        "limit": {
+          "context": 256000,
+          "output": 10000
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok Code Fast 1",
+        "open_weights": false,
+        "reasoning": true,
+        "release_date": "2025-08-28",
+        "temperature": true,
+        "tool_call": true
+      },
+      "grok-vision-beta": {
+        "attachment": true,
+        "cost": {
+          "cache_read": 5,
+          "input": 5,
+          "output": 15
+        },
+        "id": "grok-vision-beta",
+        "knowledge": "2024-08",
+        "last_updated": "2024-11-01",
+        "limit": {
+          "context": 8192,
+          "output": 4096
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok Vision Beta",
+        "open_weights": false,
+        "reasoning": false,
+        "release_date": "2024-11-01",
+        "temperature": true,
+        "tool_call": true
+      }
+    },
+    "name": "xAI",
+    "npm": "@ai-sdk/xai"
+  }
+}

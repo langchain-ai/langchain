@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 import openai
+from langchain_core.language_models.profile._loader_utils import (
+    load_profiles_from_data_dir,
+)
 from langchain_core.messages import AIMessageChunk
 from langchain_core.utils import secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
@@ -16,11 +20,26 @@ if TYPE_CHECKING:
         LangSmithParams,
         LanguageModelInput,
     )
+    from langchain_core.language_models.profile import (
+        ModelProfile,
+        ModelProfileRegistry,
+    )
     from langchain_core.outputs import ChatGenerationChunk, ChatResult
     from langchain_core.runnables import Runnable
 
 _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[BaseModel] | type
 _DictOrPydantic: TypeAlias = dict | BaseModel
+
+
+_MODEL_PROFILES = cast(
+    "ModelProfileRegistry",
+    load_profiles_from_data_dir(Path(__file__).parent / "data", "xai"),
+)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
@@ -512,6 +531,13 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 **client_params,
                 **async_specific,
             )
+        return self
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model_name)
         return self
 
     @property
