@@ -5,13 +5,18 @@ from __future__ import annotations
 import json
 from collections.abc import Callable, Iterator, Sequence
 from json import JSONDecodeError
-from typing import Any, Literal, TypeAlias
+from pathlib import Path
+from typing import Any, Literal, TypeAlias, cast
 
 import openai
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import LangSmithParams, LanguageModelInput
+from langchain_core.language_models.profile import ModelProfile, ModelProfileRegistry
+from langchain_core.language_models.profile._loader_utils import (
+    load_profiles_from_data_dir,
+)
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
@@ -26,6 +31,17 @@ DEFAULT_BETA_API_BASE = "https://api.deepseek.com/beta"
 
 _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[BaseModel]
 _DictOrPydantic: TypeAlias = dict[str, Any] | BaseModel
+
+
+_MODEL_PROFILES = cast(
+    "ModelProfileRegistry",
+    load_profiles_from_data_dir(Path(__file__).parent / "data", "deepseek"),
+)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 class ChatDeepSeek(BaseChatOpenAI):
@@ -230,6 +246,13 @@ class ChatDeepSeek(BaseChatOpenAI):
                 **async_specific,
             )
             self.async_client = self.root_async_client.chat.completions
+        return self
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model_name)
         return self
 
     def _get_request_payload(
