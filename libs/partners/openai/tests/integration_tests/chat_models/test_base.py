@@ -1320,3 +1320,29 @@ async def test_schema_parsing_failures_responses_api_async() -> None:
         assert e.response is not None  # type: ignore[attr-defined]
     else:
         raise AssertionError
+
+
+@pytest.mark.scheduled
+def test_chat_reasoning_blocks() -> None:
+    """Test ChatOpenAI wrapper."""
+    chat = ChatOpenAI(
+        model="claude-sonnet-4-5-20250929",
+        reasoning_effort="medium",
+        base_url=os.environ["OPENAI_BASE_URL"],
+        api_key=os.environ["OPENAI_API_KEY"],
+        max_retries=3,
+        http_client=httpx.Client(verify=False),
+    )
+    print(chat.model_dump_json())
+    message = HumanMessage(content="please reason and think critically about how to explain the reason about our life in this world")
+    response = chat.invoke([message])
+    print(response)
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+    # Assert that reasoning_content and thinking_blocks are in additional_kwargs
+    assert "reasoning_content" in response.additional_kwargs
+    assert "thinking_blocks" in response.additional_kwargs
+    # Optionally assert they have values
+    assert response.additional_kwargs["reasoning_content"] is not None
+    assert response.additional_kwargs["thinking_blocks"] is not None
+
