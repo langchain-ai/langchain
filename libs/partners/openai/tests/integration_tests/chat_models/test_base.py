@@ -1323,7 +1323,8 @@ async def test_schema_parsing_failures_responses_api_async() -> None:
 
 
 # Integration test to verify that reasoning blocks are returned from the model when using thinking models with LiteLLM proxy
-@pytest.mark.scheduled
+@pytest.mark.scheduled()
+@pytest.mark.skipif(os.environ.get("REASONING_BASE_URL") is None or os.environ.get("REASONING_API_KEY") is None, reason="REASONING_BASE_URL or REASONING_API_KEY is not set")
 def test_chat_reasoning_blocks() -> None:
     """Test ChatOpenAI wrapper."""
     chat = ChatOpenAI(
