@@ -44,6 +44,7 @@ test = [
     "langchain",
     "langchain-core",
     "langchain-tests",
+    "httpx>=0.28.1",
 ]
 lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core"]
