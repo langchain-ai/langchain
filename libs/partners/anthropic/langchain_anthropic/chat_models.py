@@ -20,7 +20,7 @@ from langchain_core.callbacks import (
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
-from langchain_core.language_models.profile import ModelProfileRegistry
+from langchain_core.language_models.profile import ModelProfile, ModelProfileRegistry
 from langchain_core.language_models.profile._loader_utils import (
     load_profiles_from_data_dir,
 )
@@ -75,6 +75,11 @@ _MODEL_PROFILES = cast(
     ModelProfileRegistry,
     load_profiles_from_data_dir(Path(__file__).parent / "data", "anthropic"),
 )
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 _MODEL_DEFAULT_MAX_OUTPUT_TOKENS: Final[dict[str, int]] = {
@@ -1624,9 +1629,7 @@ class ChatAnthropic(BaseChatModel):
     def _set_model_profile(self) -> Self:
         """Set model profile if not overridden."""
         if self.profile is None:
-            default = _MODEL_PROFILES.get(self.model)
-            if default is not None:
-                self.profile = default.copy()
+            self.profile = _get_default_model_profile(self.model)
         return self
 
     @cached_property
