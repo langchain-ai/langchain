@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable
 
 # Needed as top level import for Pydantic schema generation on AgentState
+import warnings
 from typing import TypeAlias
 
 from langchain_core.messages import (
@@ -131,18 +132,17 @@ class ModelRequest:
         if system_prompt is not None:
             system_message = SystemMessage(content=system_prompt)
 
-        # Use object.__setattr__ to bypass deprecation warnings during init
-        object.__setattr__(self, "model", model)
-        object.__setattr__(self, "messages", messages)
-        object.__setattr__(self, "system_message", system_message)
-        object.__setattr__(self, "tool_choice", tool_choice)
-        object.__setattr__(self, "tools", tools if tools is not None else [])
-        object.__setattr__(self, "response_format", response_format)
-        object.__setattr__(self, "state", state if state is not None else {"messages": []})
-        object.__setattr__(self, "runtime", runtime)  # type: ignore[assignment]
-        object.__setattr__(
-            self, "model_settings", model_settings if model_settings is not None else {}
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            self.model = model
+            self.messages = messages
+            self.system_message = system_message
+            self.tool_choice = tool_choice
+            self.tools = tools if tools is not None else []
+            self.response_format = response_format
+            self.state = state if state is not None else {"messages": []}
+            self.runtime = runtime  # type: ignore[assignment]
+            self.model_settings = model_settings if model_settings is not None else {}
 
     @property
     def system_prompt(self) -> str | None:
@@ -165,8 +165,6 @@ class ModelRequest:
             name: Attribute name.
             value: Attribute value.
         """
-        import warnings
-
         # Special handling for system_prompt - convert to system_message
         if name == "system_prompt":
             warnings.warn(
@@ -182,18 +180,14 @@ class ModelRequest:
                 object.__setattr__(self, "system_message", SystemMessage(content=value))
             return
 
-        # Allow setting attributes during __init__ (when object is being constructed)
-        if not hasattr(self, "__dataclass_fields__") or not hasattr(self, name):
-            object.__setattr__(self, name, value)
-        else:
-            warnings.warn(
-                f"Direct attribute assignment to ModelRequest.{name} is deprecated. "
-                f"Use request.override({name}=...) instead to create a new request "
-                f"with the modified attribute.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            object.__setattr__(self, name, value)
+        warnings.warn(
+            f"Direct attribute assignment to ModelRequest.{name} is deprecated. "
+            f"Use request.override({name}=...) instead to create a new request "
+            f"with the modified attribute.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        object.__setattr__(self, name, value)
 
     def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest:
         """Replace the request with a new request with the given overrides.
