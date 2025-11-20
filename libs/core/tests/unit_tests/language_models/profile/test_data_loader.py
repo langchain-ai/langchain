@@ -25,18 +25,20 @@ def temp_data_dir(tmp_path: Path) -> Path:
                     "tool_call": True,
                     "limit": {"context": 8000, "output": 4000},
                     "modalities": {"input": ["text"], "output": ["text"]},
-                }
+                },
+                "test-model-2": {
+                    "id": "test-model-2",
+                    "name": "Test Model 2",
+                    "tool_call": True,
+                    "limit": {"context": 16000, "output": 8000},
+                    "modalities": {"input": ["text"], "output": ["text"]},
+                },
             },
         }
     }
 
     with (data_dir / "models.json").open("w") as f:
         json.dump(base_data, f)
-
-    # Create augmentations directories
-    aug_dir = data_dir / "augmentations"
-    (aug_dir / "providers").mkdir(parents=True)
-    (aug_dir / "models" / "test-provider").mkdir(parents=True)
 
     return data_dir
 
@@ -47,7 +49,7 @@ def test_load_base_data_only(temp_data_dir: Path) -> None:
     result = loader.get_profile_data("test-provider")
 
     assert result is not None
-    assert len(result) == 1
+    assert len(result) == 2
     model = result["test-model"]
     assert model["id"] == "test-model"
     assert model["name"] == "Test Model"
@@ -56,86 +58,79 @@ def test_load_base_data_only(temp_data_dir: Path) -> None:
 
 def test_provider_level_augmentation(temp_data_dir: Path) -> None:
     """Test provider-level augmentations are applied."""
-    # Add provider augmentation
-    provider_toml = temp_data_dir / "augmentations" / "providers" / "test-provider.toml"
-    provider_toml.write_text("""
-[profile]
+    # Add provider augmentation using new format
+    aug_file = temp_data_dir / "profile_augmentations.toml"
+    aug_file.write_text("""
+provider = "test-provider"
+
+[overrides]
 image_url_inputs = true
 pdf_inputs = true
 """)
 
-    loader = _DataLoader()
-    loader._data_dir = temp_data_dir
-    result = loader.get_profile_data("test-provider", "test-model")
+    loader = _DataLoader(temp_data_dir)
+    result = loader.get_profile_data("test-provider")
 
     assert result is not None
-    assert result["image_url_inputs"] is True
-    assert result["pdf_inputs"] is True
+    model = result["test-model"]
+    assert model["image_url_inputs"] is True
+    assert model["pdf_inputs"] is True
     # Base data should still be present
-    assert result["tool_call"] is True
+    assert model["tool_call"] is True
 
 
 def test_model_level_augmentation_overrides_provider(temp_data_dir: Path) -> None:
     """Test model-level augmentations override provider augmentations."""
-    # Add provider augmentation
-    provider_toml = temp_data_dir / "augmentations" / "providers" / "test-provider.toml"
-    provider_toml.write_text("""
-[profile]
+    # Add both provider and model augmentations using new format
+    aug_file = temp_data_dir / "profile_augmentations.toml"
+    aug_file.write_text("""
+provider = "test-provider"
+
+[overrides]
 image_url_inputs = true
 pdf_inputs = false
-""")
 
-    # Add model augmentation that overrides
-    model_toml = (
-        temp_data_dir / "augmentations" / "models" / "test-provider" / "test-model.toml"
-    )
-    model_toml.write_text("""
-[profile]
+[overrides."test-model"]
 pdf_inputs = true
 reasoning_output = true
 """)
 
-    loader = _DataLoader()
-    loader._data_dir = temp_data_dir
-    result = loader.get_profile_data("test-provider", "test-model")
+    loader = _DataLoader(temp_data_dir)
+    result = loader.get_profile_data("test-provider")
 
     assert result is not None
+    model = result["test-model"]
     # From provider
-    assert result["image_url_inputs"] is True
+    assert model["image_url_inputs"] is True
     # Overridden by model
-    assert result["pdf_inputs"] is True
+    assert model["pdf_inputs"] is True
     # From model only
-    assert result["reasoning_output"] is True
+    assert model["reasoning_output"] is True
     # From base
-    assert result["tool_call"] is True
+    assert model["tool_call"] is True
+
+    # Check that model-2 only has provider-level augmentations
+    model2 = result["test-model-2"]
+    assert model2["image_url_inputs"] is True
+    assert model2["pdf_inputs"] is False
+    assert "reasoning_output" not in model2
 
 
 def test_missing_provider(temp_data_dir: Path) -> None:
     """Test returns None for missing provider."""
-    loader = _DataLoader()
-    loader._data_dir = temp_data_dir
-    result = loader.get_profile_data("nonexistent-provider", "test-model")
-
-    assert result is None
-
-
-def test_missing_model(temp_data_dir: Path) -> None:
-    """Test returns None for missing model."""
-    loader = _DataLoader()
-    loader._data_dir = temp_data_dir
-    result = loader.get_profile_data("test-provider", "nonexistent-model")
+    loader = _DataLoader(temp_data_dir)
+    result = loader.get_profile_data("nonexistent-provider")
 
     assert result is None
 
 
 def test_merged_data_is_cached(temp_data_dir: Path) -> None:
     """Test that merged data is cached after first access."""
-    loader = _DataLoader()
-    loader._data_dir = temp_data_dir
+    loader = _DataLoader(temp_data_dir)
     # First access
-    result1 = loader.get_profile_data("test-provider", "test-model")
+    result1 = loader.get_profile_data("test-provider")
     # Second access should use cached data
-    result2 = loader.get_profile_data("test-provider", "test-model")
+    result2 = loader.get_profile_data("test-provider")
 
     assert result1 == result2
     # Verify it's using the cached property by checking _merged_data was accessed

@@ -37,9 +37,9 @@ class _DataLoader:
         return self._data_dir / "models.json"
 
     @property
-    def _augmentations_dir(self) -> Path:
-        """Get path to augmentations directory."""
-        return self._data_dir / "augmentations"
+    def _augmentations_file(self) -> Path:
+        """Get path to profile augmentations file."""
+        return self._data_dir / "profile_augmentations.toml"
 
     @cached_property
     def _merged_data(self) -> dict[str, Any]:
@@ -48,8 +48,8 @@ class _DataLoader:
         Merging order:
 
         1. Base data from `models.json`
-        2. Provider-level augmentations from `augmentations/providers/{provider}.toml`
-        3. Model-level augmentations from `augmentations/models/{provider}/{model}.toml`
+        2. Provider-level augmentations from `[overrides]` in `profile_augmentations.toml`
+        3. Model-level augmentations from `[overrides."model-name"]` in `profile_augmentations.toml`
 
         Returns:
             Fully merged provider data with all augmentations applied.
@@ -58,78 +58,56 @@ class _DataLoader:
         with self._base_data_path.open("r") as f:
             data = json.load(f)
 
-        provider_augmentations = self._load_provider_augmentations()
-        model_augmentations = self._load_model_augmentations()
+        # Load augmentations from profile_augmentations.toml
+        provider_aug, model_augs = self._load_augmentations()
 
-        # Merge contents
+        # Merge augmentations into data
         for provider_id, provider_data in data.items():
             models = provider_data.get("models", {})
-            provider_aug = provider_augmentations.get(provider_id, {})
 
             for model_id, model_data in models.items():
+                # Apply provider-level augmentations
                 if provider_aug:
                     model_data.update(provider_aug)
 
                 # Apply model-level augmentations (highest priority)
-                model_aug = model_augmentations.get(provider_id, {}).get(model_id, {})
-                if model_aug:
-                    model_data.update(model_aug)
+                if model_id in model_augs:
+                    model_data.update(model_augs[model_id])
 
         return data
 
-    def _load_provider_augmentations(self) -> dict[str, dict[str, Any]]:
-        """Load provider-level augmentations from profiles.toml.
+    def _load_augmentations(
+        self,
+    ) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+        """Load augmentations from profile_augmentations.toml.
 
         Returns:
-            `dict` mapping provider IDs to their augmentation data.
+            Tuple of (provider_augmentations, model_augmentations) where:
+            - provider_augmentations: dict of fields to apply to all models
+            - model_augmentations: dict mapping model IDs to their specific augmentations
         """
-        augmentations: dict[str, dict[str, Any]] = {}
-        profiles_file = self._augmentations_dir / "profiles.toml"
+        if not self._augmentations_file.exists():
+            return {}, {}
 
-        if not profiles_file.exists():
-            return augmentations
-
-        with profiles_file.open("rb") as f:
+        with self._augmentations_file.open("rb") as f:
             data = tomllib.load(f)
-            if "profile" in data:
-                # Load all provider IDs from base data and apply augmentation to all
-                try:
-                    with self._base_data_path.open("r") as base_f:
-                        base_data = json.load(base_f)
-                        for provider_id in base_data:
-                            augmentations[provider_id] = data["profile"]
-                except (OSError, json.JSONDecodeError):
-                    pass
 
-        return augmentations
+        overrides = data.get("overrides", {})
 
-    def _load_model_augmentations(self) -> dict[str, dict[str, dict[str, Any]]]:
-        """Load all model-level augmentations.
+        # Separate provider-level augmentations from model-specific ones
+        # Model-specific overrides are nested dicts, while provider-level are primitives
+        provider_aug: dict[str, Any] = {}
+        model_augs: dict[str, dict[str, Any]] = {}
 
-        Returns:
-            Nested `dict`: `provider_id` -> `model_id` -> augmentation data.
-        """
-        augmentations: dict[str, dict[str, dict[str, Any]]] = {}
-        models_dir = self._augmentations_dir / "models"
+        for key, value in overrides.items():
+            if isinstance(value, dict):
+                # This is a model-specific override like [overrides."claude-sonnet-4-5"]
+                model_augs[key] = value
+            else:
+                # This is a provider-level field
+                provider_aug[key] = value
 
-        if not models_dir.exists():
-            return augmentations
-
-        for provider_dir in models_dir.iterdir():
-            if not provider_dir.is_dir():
-                continue
-
-            provider_id = provider_dir.name
-            augmentations[provider_id] = {}
-
-            for toml_file in provider_dir.glob("*.toml"):
-                model_id = toml_file.stem
-                with toml_file.open("rb") as f:
-                    data = tomllib.load(f)
-                    if "profile" in data:
-                        augmentations[provider_id][model_id] = data["profile"]
-
-        return augmentations
+        return provider_aug, model_augs
 
     def get_profile_data(self, provider_id: str) -> dict[str, Any] | None:
         """Get merged profile data for all models.

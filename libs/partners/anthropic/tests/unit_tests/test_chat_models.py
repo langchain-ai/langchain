@@ -1601,8 +1601,13 @@ def test_strict_tool_use() -> None:
 
 
 def test_profile() -> None:
+    model = ChatAnthropic(model="claude-sonnet-4-20250514")
+    assert model.profile
+    assert not model.profile["structured_output"]
+
     model = ChatAnthropic(model="claude-sonnet-4-5")
     assert model.profile
+    assert model.profile["structured_output"]
     assert model.profile["tool_calling"]
 
     # Test overwriting a field
