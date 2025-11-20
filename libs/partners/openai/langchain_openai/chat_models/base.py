@@ -163,6 +163,12 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         # Also OpenAI returns None for tool invocations
         content = _dict.get("content", "") or ""
         additional_kwargs: dict = {}
+        # add reasoning and thinking blocks from litellm to additional_kwargs
+        if reasoning_content := _dict.get("reasoning_content"):
+            additional_kwargs["reasoning_content"] = reasoning_content
+        if thinking_blocks := _dict.get("thinking_blocks"):
+            additional_kwargs["thinking_blocks"] = thinking_blocks
+        # add function call to additional_kwargs
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
         tool_calls = []
