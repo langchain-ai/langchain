@@ -7,7 +7,7 @@ from uuid import UUID
 
 from typing_extensions import override
 
-from langchain_core.callbacks.base import AsyncCallbackHandler
+from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
 from langchain_core.language_models import (
     FakeListChatModel,
     FakeMessagesListChatModel,
@@ -15,7 +15,7 @@ from langchain_core.language_models import (
     ParrotFakeChatModel,
 )
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage, HumanMessage
-from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
+from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
 from tests.unit_tests.stubs import (
     _any_id_ai_message,
     _any_id_ai_message_chunk,
@@ -253,3 +253,43 @@ def test_fake_messages_list_chat_model_sleep_delay() -> None:
     elapsed = time.time() - start
 
     assert elapsed >= sleep_time
+
+
+def test_stream_llm_result_contains_llm_output() -> None:
+    """Test that streaming mode includes llm_output in LLMResult."""
+
+    class LLMResultCaptureHandler(BaseCallbackHandler):
+        """Callback handler that captures LLMResult from on_llm_end."""
+
+        def __init__(self) -> None:
+            self.llm_results: list[LLMResult] = []
+
+        @override
+        def on_llm_end(
+            self,
+            response: LLMResult,
+            *,
+            run_id: UUID,
+            parent_run_id: UUID | None = None,
+            **kwargs: Any,
+        ) -> None:
+            """Capture the LLMResult."""
+            self.llm_results.append(response)
+
+    model = GenericFakeChatModel(messages=cycle([AIMessage(content="hello world")]))
+    handler = LLMResultCaptureHandler()
+
+    # Consume the stream to trigger on_llm_end
+    chunks = list(model.stream("test", config={"callbacks": [handler]}))
+
+    # Verify we got chunks
+    assert len(chunks) > 0
+
+    # Verify on_llm_end was called
+    assert len(handler.llm_results) == 1
+
+    # Verify llm_output field exists in the LLMResult
+    llm_result = handler.llm_results[0]
+    assert hasattr(llm_result, "llm_output")
+    assert llm_result.llm_output is not None
+    assert isinstance(llm_result.llm_output, dict)

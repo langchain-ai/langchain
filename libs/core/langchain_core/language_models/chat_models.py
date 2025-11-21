@@ -583,7 +583,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 run_manager.on_llm_error(err, response=LLMResult(generations=[]))
                 raise err
 
-            run_manager.on_llm_end(LLMResult(generations=[[generation]]))
+            run_manager.on_llm_end(LLMResult(generations=[[generation]], llm_output={}))
 
     @override
     async def astream(
@@ -712,7 +712,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             raise err
 
         await run_manager.on_llm_end(
-            LLMResult(generations=[[generation]]),
+            LLMResult(generations=[[generation]], llm_output={}),
         )
 
     # --- Custom methods ---

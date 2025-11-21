@@ -564,7 +564,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 run_manager.on_llm_error(err, response=LLMResult(generations=[]))
                 raise err
 
-            run_manager.on_llm_end(LLMResult(generations=[[generation]]))
+            run_manager.on_llm_end(LLMResult(generations=[[generation]], llm_output={}))
 
     @override
     async def astream(
@@ -635,7 +635,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             await run_manager.on_llm_error(err, response=LLMResult(generations=[]))
             raise err
 
-        await run_manager.on_llm_end(LLMResult(generations=[[generation]]))
+        await run_manager.on_llm_end(
+            LLMResult(generations=[[generation]], llm_output={})
+        )
 
     # --- Custom methods ---
 
