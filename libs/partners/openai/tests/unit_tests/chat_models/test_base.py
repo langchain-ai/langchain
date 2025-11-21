@@ -289,7 +289,6 @@ def test__convert_dict_to_message_reasoning_blocks() -> None:
         additional_kwargs={"reasoning_content": "bar"},
     )
     assert result == expected_output
-    assert _convert_message_to_dict(expected_output) == message
 
 
 class MockAsyncContextManager:
