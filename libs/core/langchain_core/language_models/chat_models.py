@@ -340,11 +340,16 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     profile: ModelProfile | None = Field(default=None, exclude=True)
     """Profile detailing model capabilities.
 
+    !!! warning "Beta feature"
+        This is a beta feature. The format of model profiles is subject to change.
+
     If not specified, automatically loaded from the provider package on initialization
     if data is available.
 
     Example profile data includes context window sizes, supported modalities, or support
     for tool calling, structured output, and other features.
+
+    !!! version-added "Added in `langchain-core` 1.1"
     """
 
     model_config = ConfigDict(

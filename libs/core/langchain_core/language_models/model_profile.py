@@ -6,6 +6,9 @@ from typing_extensions import TypedDict
 class ModelProfile(TypedDict, total=False):
     """Model profile.
 
+    !!! warning "Beta feature"
+        This is a beta feature. The format of model profiles is subject to change.
+
     Provides information about chat model capabilities, such as context window sizes
     and supported features.
     """

@@ -20,7 +20,7 @@ pip install langchain-model-profiles
 
 `langchain-model-profiles` is a CLI tool for fetching and updating model capability data from [models.dev](https://github.com/sst/models.dev) for use in LangChain integration packages.
 
-LangChain chat models expose a `.profile` property that provides programmatic access to model capabilities such as context window sizes, supported modalities, tool calling, structured output, and more. This CLI tool helps maintainers keep that data up-to-date.
+LangChain chat models expose a `.profile` field that provides programmatic access to model capabilities such as context window sizes, supported modalities, tool calling, structured output, and more. This CLI tool helps maintainers keep that data up-to-date.
 
 ## Data sources
 
