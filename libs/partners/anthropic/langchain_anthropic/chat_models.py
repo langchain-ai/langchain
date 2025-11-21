@@ -61,7 +61,7 @@ from langchain_anthropic._client_utils import (
     _get_default_httpx_client,
 )
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
-from langchain_anthropic.data.profiles import _PROFILES
+from langchain_anthropic.data._profiles import _PROFILES
 from langchain_anthropic.output_parsers import extract_tool_calls
 
 _message_type_lookups = {

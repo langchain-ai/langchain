@@ -303,7 +303,7 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
         sys.exit(1)
 
     # Write as Python module
-    output_file = data_dir / "profiles.py"
+    output_file = data_dir / "_profiles.py"
     print(f"Writing to {output_file}...")
     module_content = [f'"""{MODULE_ADMONITION}"""\n', "from typing import Any\n\n"]
     module_content.append("_PROFILES: dict[str, dict[str, Any]] = ")

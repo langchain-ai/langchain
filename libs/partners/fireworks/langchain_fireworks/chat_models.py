@@ -83,7 +83,7 @@ from pydantic import (
 from typing_extensions import Self
 
 from langchain_fireworks._compat import _convert_from_v1_to_chat_completions
-from langchain_fireworks.data.profiles import _PROFILES
+from langchain_fireworks.data._profiles import _PROFILES
 
 logger = logging.getLogger(__name__)
 

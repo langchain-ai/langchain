@@ -52,7 +52,7 @@ def mock_models_dev_response() -> dict:
 def test_refresh_generates_profiles_file(
     tmp_path: Path, mock_models_dev_response: dict
 ) -> None:
-    """Test that refresh command generates profiles.py with merged data."""
+    """Test that refresh command generates _profiles.py with merged data."""
     data_dir = tmp_path / "data"
     data_dir.mkdir()
 
@@ -77,8 +77,8 @@ pdf_inputs = true
     ):
         refresh("anthropic", data_dir)
 
-    # Verify profiles.py was created
-    profiles_file = data_dir / "profiles.py"
+    # Verify _profiles.py was created
+    profiles_file = data_dir / "_profiles.py"
     assert profiles_file.exists()
 
     # Import and verify content
@@ -115,7 +115,7 @@ def test_refresh_raises_error_for_missing_provider(
         assert exc_info.value.code == 1
 
     # Output file should not be created
-    profiles_file = data_dir / "profiles.py"
+    profiles_file = data_dir / "_profiles.py"
     assert not profiles_file.exists()
 
 
@@ -137,8 +137,8 @@ def test_refresh_works_without_augmentations(
     ):
         refresh("anthropic", data_dir)
 
-    # Verify profiles.py was created
-    profiles_file = data_dir / "profiles.py"
+    # Verify _profiles.py was created
+    profiles_file = data_dir / "_profiles.py"
     assert profiles_file.exists()
     assert profiles_file.stat().st_size > 0
 
@@ -164,8 +164,8 @@ def test_refresh_aborts_when_user_declines_external_directory(
 
         assert exc_info.value.code == 1
 
-    # Verify profiles.py was NOT created
-    profiles_file = data_dir / "profiles.py"
+    # Verify _profiles.py was NOT created
+    profiles_file = data_dir / "_profiles.py"
     assert not profiles_file.exists()
 
 
@@ -196,7 +196,7 @@ max_input_tokens = 123
     ):
         refresh("anthropic", data_dir)
 
-    profiles_file = data_dir / "profiles.py"
+    profiles_file = data_dir / "_profiles.py"
     assert profiles_file.exists()
 
     spec = importlib.util.spec_from_file_location(

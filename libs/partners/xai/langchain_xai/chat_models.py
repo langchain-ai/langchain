@@ -11,7 +11,7 @@ from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
-from langchain_xai.data.profiles import _PROFILES
+from langchain_xai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
     from langchain_core.language_models import (

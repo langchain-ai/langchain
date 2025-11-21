@@ -74,7 +74,7 @@ from pydantic import (
 from typing_extensions import Self
 
 from langchain_mistralai._compat import _convert_from_v1_to_mistral
-from langchain_mistralai.data.profiles import _PROFILES
+from langchain_mistralai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence

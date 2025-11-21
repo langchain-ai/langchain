@@ -126,7 +126,7 @@ from langchain_openai.chat_models._compat import (
     _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
 )
-from langchain_openai.data.profiles import _PROFILES
+from langchain_openai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
     from langchain_core.language_models import ModelProfile
