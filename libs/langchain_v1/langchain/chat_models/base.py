@@ -298,7 +298,7 @@ def init_chat_model(
         # Use Sonnet 4.5
         ```
 
-    """  # noqa: E501,RUF002
+    """  # noqa: E501
     if not model and not configurable_fields:
         configurable_fields = ("model", "model_provider")
     config_prefix = config_prefix or ""

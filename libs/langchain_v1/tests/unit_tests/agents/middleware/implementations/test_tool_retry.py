@@ -939,7 +939,7 @@ def test_tool_retry_deprecated_raise_behavior() -> None:
     """Test ToolRetryMiddleware with deprecated 'raise' forwards to 'error' behavior."""
     model = FakeToolCallingModel(
         tool_calls=[
-            [ToolCall(name="failing_tool", args={"input": "test"}, id="1")],
+            [ToolCall(name="failing_tool", args={"value": "test"}, id="1")],
             [],
         ]
     )
@@ -971,7 +971,7 @@ def test_tool_retry_deprecated_return_message_behavior() -> None:
     """Test ToolRetryMiddleware with deprecated 'return_message' forwards to 'continue' behavior."""
     model = FakeToolCallingModel(
         tool_calls=[
-            [ToolCall(name="failing_tool", args={"input": "test"}, id="1")],
+            [ToolCall(name="failing_tool", args={"value": "test"}, id="1")],
             [],
         ]
     )

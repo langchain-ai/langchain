@@ -533,7 +533,7 @@ def test_get_or_create_resources_creates_when_missing(tmp_path: Path) -> None:
     assert state.get("shell_session_resources") is resources
 
     # Clean up
-    resources._finalizer()
+    resources.finalizer()
 
 
 def test_get_or_create_resources_reuses_existing(tmp_path: Path) -> None:
@@ -553,4 +553,4 @@ def test_get_or_create_resources_reuses_existing(tmp_path: Path) -> None:
     assert resources1.session is resources2.session
 
     # Clean up
-    resources1._finalizer()
+    resources1.finalizer()

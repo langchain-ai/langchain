@@ -91,7 +91,6 @@ langchain-openai = { path = "../partners/openai", editable = true }
 
 [tool.ruff]
 line-length = 100
-output-format = "concise"
 
 [tool.mypy]
 strict = true
