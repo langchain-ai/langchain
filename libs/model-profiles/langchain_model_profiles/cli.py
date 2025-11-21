@@ -10,7 +10,7 @@ from typing import Any
 import httpx
 
 try:
-    import tomllib  # Python 3.11+
+    import tomllib  # type: ignore[import-not-found]  # Python 3.11+
 except ImportError:
     import tomli as tomllib  # type: ignore[import-not-found,no-redef]
 
