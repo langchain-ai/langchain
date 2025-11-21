@@ -7,22 +7,21 @@ import json
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from operator import itemgetter
-from pathlib import Path
 from typing import Any, Literal, cast
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models import (
+    LanguageModelInput,
+    ModelProfile,
+    ModelProfileRegistry,
+)
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     agenerate_from_stream,
     generate_from_stream,
-)
-from langchain_core.language_models.profile import ModelProfile, ModelProfileRegistry
-from langchain_core.language_models.profile._loader_utils import (
-    load_profiles_from_data_dir,
 )
 from langchain_core.messages import (
     AIMessage,
@@ -66,13 +65,11 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Self
 
+from langchain_huggingface.data.profiles import _PROFILES
 from langchain_huggingface.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain_huggingface.llms.huggingface_pipeline import HuggingFacePipeline
 
-_MODEL_PROFILES = cast(
-    "ModelProfileRegistry",
-    load_profiles_from_data_dir(Path(__file__).parent.parent / "data", "huggingface"),
-)
+_MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:

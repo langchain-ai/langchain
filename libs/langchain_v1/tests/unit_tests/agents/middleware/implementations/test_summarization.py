@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
+from langchain_core.language_models import ModelProfile
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.language_models.profile import ModelProfile
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, RemoveMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
