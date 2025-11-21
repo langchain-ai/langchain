@@ -33,7 +33,7 @@ from langchain_core.language_models.base import (
     LangSmithParams,
     LanguageModelInput,
 )
-from langchain_core.language_models.profile import ModelProfile
+from langchain_core.language_models.model_profile import ModelProfile
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
     AIMessage,

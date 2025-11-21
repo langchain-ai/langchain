@@ -23,7 +23,6 @@ from io import BytesIO
 from json import JSONDecodeError
 from math import ceil
 from operator import itemgetter
-from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -46,10 +45,7 @@ from langchain_core.language_models.chat_models import (
     BaseChatModel,
     LangSmithParams,
 )
-from langchain_core.language_models.profile import ModelProfileRegistry
-from langchain_core.language_models.profile._loader_utils import (
-    load_profiles_from_data_dir,
-)
+from langchain_core.language_models.model_profile import ModelProfileRegistry
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -128,9 +124,10 @@ from langchain_openai.chat_models._compat import (
     _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
 )
+from langchain_openai.data.profiles import _PROFILES
 
 if TYPE_CHECKING:
-    from langchain_core.language_models.profile import ModelProfile
+    from langchain_core.language_models.model_profile import ModelProfile
     from openai.types.responses import Response
 
 logger = logging.getLogger(__name__)
@@ -139,10 +136,7 @@ logger = logging.getLogger(__name__)
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
-_MODEL_PROFILES = cast(
-    ModelProfileRegistry,
-    load_profiles_from_data_dir(Path(__file__).parent.parent / "data", "openai"),
-)
+_MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:

@@ -82,6 +82,7 @@ ignore = [
     "FIX002",
     "TD002",
     "TD003",
+    "T201",  # Allow print statements (CLI tool)
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 

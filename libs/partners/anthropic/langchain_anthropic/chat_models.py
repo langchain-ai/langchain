@@ -9,7 +9,6 @@ import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from pathlib import Path
 from typing import Any, Final, Literal, cast
 
 import anthropic
@@ -20,9 +19,9 @@ from langchain_core.callbacks import (
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
-from langchain_core.language_models.profile import ModelProfile, ModelProfileRegistry
-from langchain_core.language_models.profile._loader_utils import (
-    load_profiles_from_data_dir,
+from langchain_core.language_models.model_profile import (
+    ModelProfile,
+    ModelProfileRegistry,
 )
 from langchain_core.messages import (
     AIMessage,
@@ -62,6 +61,7 @@ from langchain_anthropic._client_utils import (
     _get_default_httpx_client,
 )
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
+from langchain_anthropic.data.profiles import _PROFILES
 from langchain_anthropic.output_parsers import extract_tool_calls
 
 _message_type_lookups = {
@@ -71,10 +71,7 @@ _message_type_lookups = {
     "HumanMessageChunk": "user",
 }
 
-_MODEL_PROFILES = cast(
-    ModelProfileRegistry,
-    load_profiles_from_data_dir(Path(__file__).parent / "data", "anthropic"),
-)
+_MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:

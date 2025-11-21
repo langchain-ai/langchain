@@ -1,7 +1,5 @@
 """Model profile types and utilities."""
 
-from typing import Any
-
 from typing_extensions import TypedDict
 
 
@@ -81,40 +79,3 @@ class ModelProfile(TypedDict, total=False):
 
 ModelProfileRegistry = dict[str, ModelProfile]
 """Registry mapping model identifiers or names to their ModelProfile."""
-
-
-def map_raw_data_to_profile(data: dict[str, Any]) -> ModelProfile:
-    """Map raw model data to ModelProfile format.
-
-    This function is used by provider packages to convert raw data from models.dev
-    and augmentations into the standardized ModelProfile format.
-
-    Args:
-        data: Raw model data from models.dev and augmentations.
-
-    Returns:
-        ModelProfile with standardized fields.
-    """
-    # Map models.dev & augmentation fields -> ModelProfile fields
-    # See schema reference: https://github.com/sst/models.dev?tab=readme-ov-file#schema-reference
-    profile = {
-        "max_input_tokens": data.get("limit", {}).get("context"),
-        "image_inputs": "image" in data.get("modalities", {}).get("input", []),
-        "image_url_inputs": data.get("image_url_inputs"),
-        "image_tool_message": data.get("image_tool_message"),
-        "audio_inputs": "audio" in data.get("modalities", {}).get("input", []),
-        "pdf_inputs": "pdf" in data.get("modalities", {}).get("input", [])
-        or data.get("pdf_inputs"),
-        "pdf_tool_message": data.get("pdf_tool_message"),
-        "video_inputs": "video" in data.get("modalities", {}).get("input", []),
-        "max_output_tokens": data.get("limit", {}).get("output"),
-        "reasoning_output": data.get("reasoning"),
-        "image_outputs": "image" in data.get("modalities", {}).get("output", []),
-        "audio_outputs": "audio" in data.get("modalities", {}).get("output", []),
-        "video_outputs": "video" in data.get("modalities", {}).get("output", []),
-        "tool_calling": data.get("tool_call"),
-        "tool_choice": data.get("tool_choice"),
-        "structured_output": data.get("structured_output"),
-    }
-
-    return ModelProfile(**{k: v for k, v in profile.items() if v is not None})  # type: ignore[typeddict-item]
