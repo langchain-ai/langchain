@@ -1,5 +1,6 @@
 """Tests for CLI functionality."""
 
+import importlib.util
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -166,3 +167,50 @@ def test_refresh_aborts_when_user_declines_external_directory(
     # Verify profiles.py was NOT created
     profiles_file = data_dir / "profiles.py"
     assert not profiles_file.exists()
+
+
+def test_refresh_includes_models_defined_only_in_augmentations(
+    tmp_path: Path, mock_models_dev_response: dict
+) -> None:
+    """Ensure models that only exist in augmentations are emitted."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    aug_file = data_dir / "profile_augmentations.toml"
+    aug_file.write_text("""
+provider = "anthropic"
+
+[overrides."custom-offline-model"]
+structured_output = true
+pdf_inputs = true
+max_input_tokens = 123
+""")
+
+    mock_response = Mock()
+    mock_response.json.return_value = mock_models_dev_response
+    mock_response.raise_for_status = Mock()
+
+    with (
+        patch("langchain_model_profiles.cli.httpx.get", return_value=mock_response),
+        patch("builtins.input", return_value="y"),
+    ):
+        refresh("anthropic", data_dir)
+
+    profiles_file = data_dir / "profiles.py"
+    assert profiles_file.exists()
+
+    spec = importlib.util.spec_from_file_location(
+        "generated_profiles_aug_only", profiles_file
+    )
+    assert spec
+    assert spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)  # type: ignore[union-attr]
+
+    assert "custom-offline-model" in module._PROFILES  # type: ignore[attr-defined]
+    assert (
+        module._PROFILES["custom-offline-model"]["structured_output"] is True  # type: ignore[index]
+    )
+    assert (
+        module._PROFILES["custom-offline-model"]["max_input_tokens"] == 123  # type: ignore[index]
+    )

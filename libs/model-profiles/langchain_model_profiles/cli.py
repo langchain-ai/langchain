@@ -97,36 +97,47 @@ def _load_augmentations(
     return provider_aug, model_augs
 
 
-def _map_raw_data_to_profile(data: dict[str, Any]) -> dict[str, Any]:
-    """Map raw model data to profile format.
+def _model_data_to_profile(model_data: dict[str, Any]) -> dict[str, Any]:
+    """Convert raw models.dev data into the canonical profile structure."""
+    limit = model_data.get("limit") or {}
+    modalities = model_data.get("modalities") or {}
+    input_modalities = modalities.get("input") or []
+    output_modalities = modalities.get("output") or []
 
-    Args:
-        data: Raw model data from models.dev and augmentations.
-
-    Returns:
-        Profile dict with standardized fields.
-    """
     profile = {
-        "max_input_tokens": data.get("limit", {}).get("context"),
-        "image_inputs": "image" in data.get("modalities", {}).get("input", []),
-        "image_url_inputs": data.get("image_url_inputs"),
-        "image_tool_message": data.get("image_tool_message"),
-        "audio_inputs": "audio" in data.get("modalities", {}).get("input", []),
-        "pdf_inputs": "pdf" in data.get("modalities", {}).get("input", [])
-        or data.get("pdf_inputs"),
-        "pdf_tool_message": data.get("pdf_tool_message"),
-        "video_inputs": "video" in data.get("modalities", {}).get("input", []),
-        "max_output_tokens": data.get("limit", {}).get("output"),
-        "reasoning_output": data.get("reasoning"),
-        "image_outputs": "image" in data.get("modalities", {}).get("output", []),
-        "audio_outputs": "audio" in data.get("modalities", {}).get("output", []),
-        "video_outputs": "video" in data.get("modalities", {}).get("output", []),
-        "tool_calling": data.get("tool_call"),
-        "tool_choice": data.get("tool_choice"),
-        "structured_output": data.get("structured_output"),
+        "max_input_tokens": limit.get("context"),
+        "max_output_tokens": limit.get("output"),
+        "image_inputs": "image" in input_modalities,
+        "audio_inputs": "audio" in input_modalities,
+        "pdf_inputs": "pdf" in input_modalities or model_data.get("pdf_inputs"),
+        "video_inputs": "video" in input_modalities,
+        "image_outputs": "image" in output_modalities,
+        "audio_outputs": "audio" in output_modalities,
+        "video_outputs": "video" in output_modalities,
+        "reasoning_output": model_data.get("reasoning"),
+        "tool_calling": model_data.get("tool_call"),
+        "tool_choice": model_data.get("tool_choice"),
+        "structured_output": model_data.get("structured_output"),
+        "image_url_inputs": model_data.get("image_url_inputs"),
+        "image_tool_message": model_data.get("image_tool_message"),
+        "pdf_tool_message": model_data.get("pdf_tool_message"),
     }
 
     return {k: v for k, v in profile.items() if v is not None}
+
+
+def _apply_overrides(
+    profile: dict[str, Any], *overrides: dict[str, Any] | None
+) -> dict[str, Any]:
+    """Merge provider and model overrides onto the canonical profile."""
+    merged = dict(profile)
+    for override in overrides:
+        if not override:
+            continue
+        for key, value in override.items():
+            if value is not None:
+                merged[key] = value  # noqa: PERF403
+    return merged
 
 
 def _ensure_safe_output_path(base_dir: Path, output_file: Path) -> None:
@@ -192,26 +203,9 @@ It contains data derived from the models.dev project.
 Source: https://github.com/sst/models.dev
 License: MIT License
 
-These data are augmented with additional fields from profile_augmentations.toml
-for purposes of use with LangChain.
+To update these data, refer to the instructions here:
 
-To update these data, update the source at https://github.com/sst/models.dev. You can
-also override or add data in profile_augmentations.toml located in this package's data.
-
-Then run:
-    pip install langchain-model-profiles
-
-    langchain-profiles refresh --provider <provider> --data-dir <data_dir>
-
-That command will:
-- Download the latest data for <provider> from models.dev
-- Merge in augmentations from profile_augmentations.toml in <data_dir>
-- Write the merged profiles to profiles.py in <data_dir>
-
-You can also override the data on any chat model object directly:
-```python
-model = MyChatModel(..., profile={...})
-```
+https://docs.langchain.com/oss/python/langchain/models#updating-or-overwriting-profile-data
 """
 
 
@@ -282,19 +276,19 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     provider_aug, model_augs = _load_augmentations(data_dir)
 
     # Merge and convert to profiles
-    profiles = {}
+    profiles: dict[str, dict[str, Any]] = {}
     for model_id, model_data in models.items():
-        # Apply provider-level augmentations
-        merged_data = {**model_data}
-        if provider_aug:
-            merged_data.update(provider_aug)
+        base_profile = _model_data_to_profile(model_data)
+        profiles[model_id] = _apply_overrides(
+            base_profile, provider_aug, model_augs.get(model_id)
+        )
 
-        # Apply model-level augmentations
-        if model_id in model_augs:
-            merged_data.update(model_augs[model_id])
-
-        # Convert to profile format
-        profiles[model_id] = _map_raw_data_to_profile(merged_data)
+    # Include new models defined purely via augmentations
+    extra_models = set(model_augs) - set(models)
+    if extra_models:
+        print(f"Adding {len(extra_models)} models from augmentations only...")
+    for model_id in sorted(extra_models):
+        profiles[model_id] = _apply_overrides({}, provider_aug, model_augs[model_id])
 
     # Ensure directory exists
     try:
