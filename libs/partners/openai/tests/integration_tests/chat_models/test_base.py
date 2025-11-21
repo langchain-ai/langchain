@@ -1343,7 +1343,6 @@ def test_with_reasoning_proxy() -> None:
     # Using a prompt that will trigger reasoning
     message = HumanMessage(content="Reason and think about the meaning of life")
     response = chat.invoke([message])
-    response: AIMessage = response
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
     # Assert that reasoning_content and thinking_blocks are in additional_kwargs

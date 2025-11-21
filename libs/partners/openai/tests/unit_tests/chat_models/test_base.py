@@ -282,17 +282,11 @@ def test__convert_dict_to_message_tool_call() -> None:
 
 
 def test__convert_dict_to_message_reasoning_blocks() -> None:
-    message = {
-        "role": "assistant",
-        "content": "foo",
-        "reasoning_content": "bar"
-    }
+    message = {"role": "assistant", "content": "foo", "reasoning_content": "bar"}
     result = _convert_dict_to_message(message)
     expected_output = AIMessage(
         content="foo",
-        additional_kwargs={
-            "reasoning_content": "bar"
-        },
+        additional_kwargs={"reasoning_content": "bar"},
     )
     assert result == expected_output
     assert _convert_message_to_dict(expected_output) == message
