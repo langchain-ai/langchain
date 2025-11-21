@@ -72,99 +72,6 @@ JumpTo = Literal["tools", "model", "end"]
 ResponseT = TypeVar("ResponseT")
 
 
-class _ModelRequestOverrides(TypedDict, total=False):
-    """Possible overrides for `ModelRequest.override()` method."""
-
-    model: BaseChatModel
-    system_prompt: str | None
-    messages: list[AnyMessage]
-    tool_choice: Any | None
-    tools: list[BaseTool | dict]
-    response_format: ResponseFormat | None
-    model_settings: dict[str, Any]
-
-
-@dataclass
-class ModelRequest(Generic[ContextT]):
-    """Model request information for the agent.
-
-    Generic over `ContextT` for better type inference of the runtime context.
-    """
-
-    model: BaseChatModel
-    system_prompt: str | None
-    messages: list[AnyMessage]  # excluding system prompt
-    tool_choice: Any | None
-    tools: list[BaseTool | dict]
-    response_format: ResponseFormat | None
-    state: AgentState
-    runtime: Runtime[ContextT]
-    model_settings: dict[str, Any] = field(default_factory=dict)
-
-    def __setattr__(self, name: str, value: Any) -> None:
-        """Set an attribute with a deprecation warning.
-
-        Direct attribute assignment on `ModelRequest` is deprecated. Use the
-        `override()` method instead to create a new request with modified attributes.
-
-        Args:
-            name: Attribute name.
-            value: Attribute value.
-        """
-        import warnings
-
-        # Allow setting attributes during __init__ (when object is being constructed)
-        if not hasattr(self, "__dataclass_fields__") or not hasattr(self, name):
-            object.__setattr__(self, name, value)
-        else:
-            warnings.warn(
-                f"Direct attribute assignment to ModelRequest.{name} is deprecated. "
-                f"Use request.override({name}=...) instead to create a new request "
-                f"with the modified attribute.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            object.__setattr__(self, name, value)
-
-    def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest[ContextT]:
-        """Replace the request with a new request with the given overrides.
-
-        Returns a new `ModelRequest` instance with the specified attributes replaced.
-
-        This follows an immutable pattern, leaving the original request unchanged.
-
-        Args:
-            **overrides: Keyword arguments for attributes to override.
-
-                Supported keys:
-
-                - `model`: `BaseChatModel` instance
-                - `system_prompt`: Optional system prompt string
-                - `messages`: `list` of messages
-                - `tool_choice`: Tool choice configuration
-                - `tools`: `list` of available tools
-                - `response_format`: Response format specification
-                - `model_settings`: Additional model settings
-
-        Returns:
-            New `ModelRequest` instance with specified overrides applied.
-
-        Examples:
-            !!! example "Create a new request with different model"
-
-                ```python
-                new_request = request.override(model=different_model)
-                ```
-
-            !!! example "Override multiple attributes"
-
-                ```python
-                new_request = request.override(system_prompt="New instructions", tool_choice="auto")
-                ```
-        """
-        return replace(self, **overrides)
-
-
 @dataclass
 class ModelResponse:
     """Response from model execution including messages and optional structured output.
@@ -191,14 +98,16 @@ Middleware can return either:
 """
 
 # Type aliases for model call handlers
-ModelCallHandler: TypeAlias = "Callable[[ModelRequest[ContextT]], ModelResponse]"
+ModelCallHandler: TypeAlias = "Callable[[ModelRequest[StateT, ContextT]], ModelResponse]"
 """`TypeAlias` for synchronous model call handler callback.
 
 This is the handler function passed to `wrap_model_call` middleware that executes
 the model request and returns a `ModelResponse`.
 """
 
-AsyncModelCallHandler: TypeAlias = "Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]"
+AsyncModelCallHandler: TypeAlias = (
+    "Callable[[ModelRequest[StateT, ContextT]], Awaitable[ModelResponse]]"
+)
 """`TypeAlias` for asynchronous model call handler callback.
 
 This is the handler function passed to `awrap_model_call` middleware that executes
@@ -268,6 +177,101 @@ StateT_co = TypeVar("StateT_co", bound=AgentState, default=AgentState, covariant
 StateT_contra = TypeVar("StateT_contra", bound=AgentState, contravariant=True)
 
 
+class _ModelRequestOverrides(TypedDict, total=False):
+    """Possible overrides for `ModelRequest.override()` method."""
+
+    model: BaseChatModel
+    system_prompt: str | None
+    messages: list[AnyMessage]
+    tool_choice: Any | None
+    tools: list[BaseTool | dict]
+    response_format: ResponseFormat | None
+    model_settings: dict[str, Any]
+
+
+@dataclass
+class ModelRequest(Generic[StateT, ContextT]):
+    """Model request information for the agent.
+
+    Generic over `ContextT` for better type inference of the runtime context.
+    """
+
+    model: BaseChatModel
+    system_prompt: str | None
+    messages: list[AnyMessage]  # excluding system prompt
+    tool_choice: Any | None
+    tools: list[BaseTool | dict]
+    response_format: ResponseFormat | None
+    state: StateT
+    runtime: Runtime[ContextT]
+    model_settings: dict[str, Any] = field(default_factory=dict)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Set an attribute with a deprecation warning.
+
+        Direct attribute assignment on `ModelRequest` is deprecated. Use the
+        `override()` method instead to create a new request with modified attributes.
+
+        Args:
+            name: Attribute name.
+            value: Attribute value.
+        """
+        import warnings
+
+        # Allow setting attributes during __init__ (when object is being constructed)
+        if not hasattr(self, "__dataclass_fields__") or not hasattr(self, name):
+            object.__setattr__(self, name, value)
+        else:
+            warnings.warn(
+                f"Direct attribute assignment to ModelRequest.{name} is deprecated. "
+                f"Use request.override({name}=...) instead to create a new request "
+                f"with the modified attribute.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            object.__setattr__(self, name, value)
+
+    def override(
+        self, **overrides: Unpack[_ModelRequestOverrides]
+    ) -> ModelRequest[StateT, ContextT]:
+        """Replace the request with a new request with the given overrides.
+
+        Returns a new `ModelRequest` instance with the specified attributes replaced.
+
+        This follows an immutable pattern, leaving the original request unchanged.
+
+        Args:
+            **overrides: Keyword arguments for attributes to override.
+
+                Supported keys:
+
+                - `model`: `BaseChatModel` instance
+                - `system_prompt`: Optional system prompt string
+                - `messages`: `list` of messages
+                - `tool_choice`: Tool choice configuration
+                - `tools`: `list` of available tools
+                - `response_format`: Response format specification
+                - `model_settings`: Additional model settings
+
+        Returns:
+            New `ModelRequest` instance with specified overrides applied.
+
+        Examples:
+            !!! example "Create a new request with different model"
+
+                ```python
+                new_request = request.override(model=different_model)
+                ```
+
+            !!! example "Override multiple attributes"
+
+                ```python
+                new_request = request.override(system_prompt="New instructions", tool_choice="auto")
+                ```
+        """
+        return replace(self, **overrides)
+
+
 class AgentMiddleware(Generic[StateT, ContextT]):
     """Base middleware class for an agent.
 
@@ -324,8 +328,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
     def wrap_model_call(
         self,
-        request: ModelRequest[ContextT],
-        handler: ModelCallHandler[ContextT],
+        request: ModelRequest[StateT, ContextT],
+        handler: ModelCallHandler[StateT, ContextT],
     ) -> ModelCallResult:
         """Intercept and control model execution via handler callback.
 
@@ -419,8 +423,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
     async def awrap_model_call(
         self,
-        request: ModelRequest[ContextT],
-        handler: AsyncModelCallHandler[ContextT],
+        request: ModelRequest[StateT, ContextT],
+        handler: AsyncModelCallHandler[StateT, ContextT],
     ) -> ModelCallResult:
         """Intercept and control async model execution via handler callback.
 
@@ -642,7 +646,7 @@ class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
 class _CallableReturningPromptString(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
     """Callable that returns a prompt string given `ModelRequest` (contains state and runtime)."""
 
-    def __call__(self, request: ModelRequest[ContextT]) -> str | Awaitable[str]:
+    def __call__(self, request: ModelRequest[StateT_contra, ContextT]) -> str | Awaitable[str]:
         """Generate a system prompt string based on the request."""
         ...
 
@@ -656,8 +660,8 @@ class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):  # typ
 
     def __call__(
         self,
-        request: ModelRequest[ContextT],
-        handler: ModelCallHandler[ContextT],
+        request: ModelRequest[StateT_contra, ContextT],
+        handler: ModelCallHandler[StateT_contra, ContextT],
     ) -> ModelCallResult:
         """Intercept model execution via handler callback."""
         ...
@@ -1402,8 +1406,8 @@ def dynamic_prompt(
 
             async def async_wrapped(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
-                request: ModelRequest[ContextT],
-                handler: AsyncModelCallHandler[ContextT],
+                request: ModelRequest[StateT, ContextT],
+                handler: AsyncModelCallHandler[StateT, ContextT],
             ) -> ModelCallResult:
                 prompt = await func(request)  # type: ignore[misc]
                 request = request.override(system_prompt=prompt)
@@ -1423,8 +1427,8 @@ def dynamic_prompt(
 
         def wrapped(
             self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
-            request: ModelRequest[ContextT],
-            handler: ModelCallHandler[ContextT],
+            request: ModelRequest[StateT, ContextT],
+            handler: ModelCallHandler[StateT, ContextT],
         ) -> ModelCallResult:
             prompt = cast("str", func(request))
             request = request.override(system_prompt=prompt)
@@ -1432,8 +1436,8 @@ def dynamic_prompt(
 
         async def async_wrapped_from_sync(
             self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
-            request: ModelRequest[ContextT],
-            handler: AsyncModelCallHandler[ContextT],
+            request: ModelRequest[StateT, ContextT],
+            handler: AsyncModelCallHandler[StateT, ContextT],
         ) -> ModelCallResult:
             # Delegate to sync function
             prompt = cast("str", func(request))
@@ -1574,8 +1578,8 @@ def wrap_model_call(
 
             async def async_wrapped(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
-                request: ModelRequest[ContextT],
-                handler: AsyncModelCallHandler[ContextT],
+                request: ModelRequest[StateT, ContextT],
+                handler: AsyncModelCallHandler[StateT, ContextT],
             ) -> ModelCallResult:
                 return await func(request, handler)  # type: ignore[misc, arg-type]
 
@@ -1595,8 +1599,8 @@ def wrap_model_call(
 
         def wrapped(
             self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
-            request: ModelRequest[ContextT],
-            handler: ModelCallHandler[ContextT],
+            request: ModelRequest[StateT, ContextT],
+            handler: ModelCallHandler[StateT, ContextT],
         ) -> ModelCallResult:
             return func(request, handler)
 
