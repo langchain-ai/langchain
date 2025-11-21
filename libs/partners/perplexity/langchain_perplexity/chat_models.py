@@ -5,19 +5,18 @@ from __future__ import annotations
 import logging
 from collections.abc import Iterator, Mapping
 from operator import itemgetter
-from pathlib import Path
 from typing import Any, Literal, TypeAlias, cast
 
 import openai
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models import (
+    LanguageModelInput,
+    ModelProfile,
+    ModelProfileRegistry,
+)
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     generate_from_stream,
-)
-from langchain_core.language_models.profile import ModelProfile, ModelProfileRegistry
-from langchain_core.language_models.profile._loader_utils import (
-    load_profiles_from_data_dir,
 )
 from langchain_core.messages import (
     AIMessage,
@@ -46,6 +45,7 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_perplexity.data.profiles import _PROFILES
 from langchain_perplexity.output_parsers import (
     ReasoningJsonOutputParser,
     ReasoningStructuredOutputParser,
@@ -57,10 +57,7 @@ _DictOrPydantic: TypeAlias = dict | BaseModel
 logger = logging.getLogger(__name__)
 
 
-_MODEL_PROFILES = cast(
-    "ModelProfileRegistry",
-    load_profiles_from_data_dir(Path(__file__).parent / "data", "perplexity"),
-)
+_MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
