@@ -9,8 +9,10 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.outputs import ChatResult
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
     ChatHuggingFace,
@@ -325,3 +327,66 @@ def test_inheritance_with_empty_llm() -> None:
         # relevant attrs
         assert chat.max_tokens is None
         assert chat.temperature is None
+
+
+class SimpleTestModel(BaseModel):
+    """Simple Pydantic model for testing."""
+
+    name: str
+    value: int
+
+
+def test_pydantic_model_uses_pydantic_output_parser() -> None:
+    """Verify that PydanticOutputParser is instantiated when using Pydantic models."""
+    mock_llm = Mock(spec=HuggingFaceEndpoint)
+    mock_llm.repo_id = "test-model"
+    mock_llm.model = "test-model"
+
+    chat = ChatHuggingFace(llm=mock_llm)
+
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.PydanticOutputParser"
+    ) as mock_pydantic_parser:
+        mock_parser_instance = Mock(spec=PydanticOutputParser)
+        mock_pydantic_parser.return_value = mock_parser_instance
+        chat.with_structured_output(schema=SimpleTestModel, method="json_schema")
+
+        # Verify PydanticOutputParser was instantiated with the correct Pydantic model
+        mock_pydantic_parser.assert_called_once()
+        call_kwargs = mock_pydantic_parser.call_args.kwargs
+        assert "pydantic_object" in call_kwargs
+        assert call_kwargs["pydantic_object"] == SimpleTestModel
+
+
+def test_pydantic_output_returns_pydantic_instance_not_dict() -> None:
+    """Verify that with_structured_output returns Pydantic instances, not dict."""
+    parser = PydanticOutputParser(pydantic_object=SimpleTestModel)
+    json_output = '{"name": "Alice", "value": 42}'
+
+    result = parser.parse(json_output)
+
+    assert isinstance(result, SimpleTestModel), (
+        f"Expected SimpleTestModel instance, got {type(result)}"
+    )
+    assert not isinstance(result, dict), (
+        "Result should be a Pydantic instance, not a plain dict!"
+    )
+
+    assert result.name == "Alice", "Pydantic attribute 'name' should be accessible"
+    assert result.value == 42, "Pydantic attribute 'value' should be accessible"
+    assert hasattr(result, "model_dump"), "Should have Pydantic model_dump method"
+    assert hasattr(result, "model_json_schema"), (
+        "Should have Pydantic model_json_schema method"
+    )
+
+
+def test_function_calling_pydantic_still_not_supported() -> None:
+    """Test that function_calling with Pydantic still raises NotImplementedError."""
+    mock_llm = Mock(spec=HuggingFaceEndpoint)
+    mock_llm.repo_id = "test-model"
+    mock_llm.model = "test-model"
+
+    chat = ChatHuggingFace(llm=mock_llm)
+
+    with pytest.raises(NotImplementedError, match="Pydantic schema is not supported"):
+        chat.with_structured_output(schema=SimpleTestModel, method="function_calling")
