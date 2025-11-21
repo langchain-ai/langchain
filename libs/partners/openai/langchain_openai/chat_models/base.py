@@ -163,11 +163,9 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         # Also OpenAI returns None for tool invocations
         content = _dict.get("content", "") or ""
         additional_kwargs: dict = {}
-        # add reasoning and thinking blocks from litellm to additional_kwargs
+        # add reasoning blocks if available
         if reasoning_content := _dict.get("reasoning_content"):
             additional_kwargs["reasoning_content"] = reasoning_content
-        if thinking_blocks := _dict.get("thinking_blocks"):
-            additional_kwargs["thinking_blocks"] = thinking_blocks
         # add function call to additional_kwargs
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
@@ -334,11 +332,9 @@ def _convert_message_to_dict(
             )
         if audio:
             message_dict["audio"] = audio
-        # add reasoning and thinking blocks for LiteLLM thiking models
+        # add reasoning blocks if available
         if reasoning_content := message.additional_kwargs.get("reasoning_content"):
             message_dict["reasoning_content"] = reasoning_content
-        if thinking_blocks := message.additional_kwargs.get("thinking_blocks"):
-            message_dict["thinking_blocks"] = thinking_blocks
     elif isinstance(message, SystemMessage):
         message_dict["role"] = message.additional_kwargs.get(
             "__openai_role__", "system"
@@ -390,8 +386,6 @@ def _convert_delta_to_message_chunk(
     if role == "assistant" or default_class == AIMessageChunk:
         if reasoning_content := _dict.get("reasoning_content"):
             additional_kwargs["reasoning_content"] = reasoning_content
-        if thinking_blocks := _dict.get("thinking_blocks"):
-            additional_kwargs["thinking_blocks"] = thinking_blocks
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -1032,11 +1026,9 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> ChatGenerationChunk | None:
         if chunk.get("type") == "content.delta":  # From beta.chat.completions.stream
             return None
-        # add reasoning and thinking blocks for LiteLLM thiking models
+        # add reasoning blocks if available
         if reasoning_content := chunk.get("reasoning_content"):
             chunk["additional_kwargs"]["reasoning_content"] = reasoning_content
-        if thinking_blocks := chunk.get("thinking_blocks"):
-            chunk["additional_kwargs"]["thinking_blocks"] = thinking_blocks
         token_usage = chunk.get("usage")
         choices = (
             chunk.get("choices", [])

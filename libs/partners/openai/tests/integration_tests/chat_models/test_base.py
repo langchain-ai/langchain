@@ -1325,17 +1325,17 @@ async def test_schema_parsing_failures_responses_api_async() -> None:
 # Test thinking models with LiteLLM proxy
 @pytest.mark.scheduled
 @pytest.mark.skipif(
-    os.environ.get("LITELLM_BASE_URL") is None
-    or os.environ.get("LITELLM_API_KEY") is None,
-    reason="LITELLM_BASE_URL or LITELLM_API_KEY is not set",
+    os.environ.get("REASONING_BASE_URL") is None
+    or os.environ.get("REASONING_API_KEY") is None,
+    reason="REASONING_BASE_URL or REASONING_API_KEY is not set",
 )
-def test_thinking_models_with_lite_llm() -> None:
-    """Test thinking models with LiteLLM proxy."""
+def test_with_reasoning_proxy() -> None:
+    """Test reasoning models with proxy."""
     chat = ChatOpenAI(
         model="claude-sonnet-4-5-20250929",
         reasoning_effort="medium",
-        base_url=os.environ["LITELLM_BASE_URL"],
-        api_key=SecretStr(os.environ["LITELLM_API_KEY"]),
+        base_url=os.environ["REASONING_BASE_URL"],
+        api_key=SecretStr(os.environ["REASONING_API_KEY"]),
         max_retries=3,
         # Disable SSL verification for self-signed certificates
         http_client=httpx.Client(verify=False),  # noqa: S501
@@ -1343,8 +1343,8 @@ def test_thinking_models_with_lite_llm() -> None:
     # Using a prompt that will trigger reasoning
     message = HumanMessage(content="Reason and think about the meaning of life")
     response = chat.invoke([message])
+    response: AIMessage = response
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
     # Assert that reasoning_content and thinking_blocks are in additional_kwargs
     assert "reasoning_content" in response.additional_kwargs
-    assert "thinking_blocks" in response.additional_kwargs
