@@ -293,8 +293,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         interrupt_indices: list[int] = []
 
         for idx, tool_call in enumerate(last_ai_msg.tool_calls):
-            if tool_call["name"] in self.interrupt_on:
-                config = self.interrupt_on[tool_call["name"]]
+            if (config := self.interrupt_on.get(tool_call["name"])) is not None:
                 action_request, review_config = self._create_action_and_config(
                     tool_call, config, state, runtime
                 )
@@ -313,8 +312,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         )
 
         # Send interrupt and get response
-        hitl_response: HITLResponse = interrupt(hitl_request)
-        decisions = hitl_response["decisions"]
+        decisions = interrupt(hitl_request)["decisions"]
 
         # Validate that the number of decisions matches the number of interrupt tool calls
         if (decisions_len := len(decisions)) != (interrupt_count := len(interrupt_indices)):
