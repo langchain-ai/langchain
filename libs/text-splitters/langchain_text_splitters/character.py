@@ -779,7 +779,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\nDESC ",
                 "\ndescribe ",
                 "\nDESCRIBE ",
-                # split along Control and procedural code
+                # Split along Control and procedural code
                 "\nbegin",
                 "\nBEGIN",
                 "\nloop ",
@@ -796,7 +796,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\nREPEAT ",
                 "\nhandler ",
                 "\nHANDLER ",
-                # split along data manipulation
+                # Split along data manipulation
                 "\nselect ",
                 "\nSELECT ",
                 "\ninsert ",
@@ -815,7 +815,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\nEXPLAIN ",
                 "\ncall ",
                 "\nCALL ",
-                # aplit along permissions and transactions
+                # Split along permissions and transactions
                 "\ngrant ",
                 "\nGRANT ",
                 "\nrevoke ",
