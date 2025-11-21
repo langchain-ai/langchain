@@ -2,27 +2,25 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 import openai
-from langchain_core.language_models.profile._loader_utils import (
-    load_profiles_from_data_dir,
-)
 from langchain_core.messages import AIMessageChunk
 from langchain_core.utils import secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_xai.data.profiles import _PROFILES
+
 if TYPE_CHECKING:
+    from langchain_core.language_models import (
+        ModelProfile,
+        ModelProfileRegistry,
+    )
     from langchain_core.language_models.chat_models import (
         LangSmithParams,
         LanguageModelInput,
-    )
-    from langchain_core.language_models.profile import (
-        ModelProfile,
-        ModelProfileRegistry,
     )
     from langchain_core.outputs import ChatGenerationChunk, ChatResult
     from langchain_core.runnables import Runnable
@@ -31,10 +29,7 @@ _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[BaseModel] | type
 _DictOrPydantic: TypeAlias = dict | BaseModel
 
 
-_MODEL_PROFILES = cast(
-    "ModelProfileRegistry",
-    load_profiles_from_data_dir(Path(__file__).parent / "data", "xai"),
-)
+_MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
