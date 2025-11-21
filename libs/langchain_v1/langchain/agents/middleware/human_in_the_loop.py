@@ -287,31 +287,24 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         if not last_ai_msg or not last_ai_msg.tool_calls:
             return None
 
-        # Separate tool calls that need interrupts from those that don't
-        # Track indices to preserve original order
-        interrupt_tool_calls: list[tuple[int, ToolCall]] = []
+        # Create action requests and review configs for tools that need approval
+        action_requests: list[ActionRequest] = []
+        review_configs: list[ReviewConfig] = []
+        interrupt_indices: list[int] = []
 
         for idx, tool_call in enumerate(last_ai_msg.tool_calls):
             if tool_call["name"] in self.interrupt_on:
-                interrupt_tool_calls.append((idx, tool_call))
+                config = self.interrupt_on[tool_call["name"]]
+                action_request, review_config = self._create_action_and_config(
+                    tool_call, config, state, runtime
+                )
+                action_requests.append(action_request)
+                review_configs.append(review_config)
+                interrupt_indices.append(idx)
 
         # If no interrupts needed, return early
-        if not interrupt_tool_calls:
+        if not action_requests:
             return None
-
-        # Create action requests and review configs for all tools that need approval
-        action_requests: list[ActionRequest] = []
-        review_configs: list[ReviewConfig] = []
-
-        for _, tool_call in interrupt_tool_calls:
-            config = self.interrupt_on[tool_call["name"]]
-
-            # Create ActionRequest and ReviewConfig using helper method
-            action_request, review_config = self._create_action_and_config(
-                tool_call, config, state, runtime
-            )
-            action_requests.append(action_request)
-            review_configs.append(review_config)
 
         # Create single HITLRequest with all actions and configs
         hitl_request = HITLRequest(
@@ -324,35 +317,32 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         decisions = hitl_response["decisions"]
 
         # Validate that the number of decisions matches the number of interrupt tool calls
-        if (decisions_len := len(decisions)) != (
-            interrupt_tool_calls_len := len(interrupt_tool_calls)
-        ):
+        if (decisions_len := len(decisions)) != (interrupt_count := len(interrupt_indices)):
             msg = (
                 f"Number of human decisions ({decisions_len}) does not match "
-                f"number of hanging tool calls ({interrupt_tool_calls_len})."
+                f"number of hanging tool calls ({interrupt_count})."
             )
             raise ValueError(msg)
 
-        # Process decisions and build a mapping of index to processed result
-        decision_results: dict[int, ToolCall | None] = {}
-        artificial_tool_messages: list[ToolMessage] = []
-
-        for i, decision in enumerate(decisions):
-            idx, tool_call = interrupt_tool_calls[i]
-            config = self.interrupt_on[tool_call["name"]]
-
-            revised_tool_call, tool_message = self._process_decision(decision, tool_call, config)
-            decision_results[idx] = revised_tool_call
-            if tool_message:
-                artificial_tool_messages.append(tool_message)
-
-        # Rebuild tool calls in original order
+        # Process decisions and rebuild tool calls in original order
         revised_tool_calls: list[ToolCall] = []
+        artificial_tool_messages: list[ToolMessage] = []
+        decision_idx = 0
+
         for idx, tool_call in enumerate(last_ai_msg.tool_calls):
-            if idx in decision_results:
-                # This was an interrupt tool call - use processed result
-                if (revised_tool_call := decision_results.get(idx)) is not None:
+            if idx in interrupt_indices:
+                # This was an interrupt tool call - process the decision
+                config = self.interrupt_on[tool_call["name"]]
+                decision = decisions[decision_idx]
+                decision_idx += 1
+
+                revised_tool_call, tool_message = self._process_decision(
+                    decision, tool_call, config
+                )
+                if revised_tool_call is not None:
                     revised_tool_calls.append(revised_tool_call)
+                if tool_message:
+                    artificial_tool_messages.append(tool_message)
             else:
                 # This was auto-approved - keep original
                 revised_tool_calls.append(tool_call)
