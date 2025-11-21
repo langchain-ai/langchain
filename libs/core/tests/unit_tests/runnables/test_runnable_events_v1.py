@@ -1809,7 +1809,7 @@ async def test_with_llm() -> None:
                                 }
                             ]
                         ],
-                        "llm_output": None,
+                        "llm_output": {},
                         "run": None,
                         "type": "LLMResult",
                     },
