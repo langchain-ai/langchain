@@ -388,6 +388,10 @@ def _convert_delta_to_message_chunk(
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content, id=id_)
     if role == "assistant" or default_class == AIMessageChunk:
+        if reasoning_content := _dict.get("reasoning_content"):
+            additional_kwargs["reasoning_content"] = reasoning_content
+        if thinking_blocks := _dict.get("thinking_blocks"):
+            additional_kwargs["thinking_blocks"] = thinking_blocks
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -1028,6 +1032,11 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> ChatGenerationChunk | None:
         if chunk.get("type") == "content.delta":  # From beta.chat.completions.stream
             return None
+        # add reasoning and thinking blocks for LiteLLM thiking models
+        if reasoning_content := chunk.get("reasoning_content"):
+            chunk["additional_kwargs"]["reasoning_content"] = reasoning_content
+        if thinking_blocks := chunk.get("thinking_blocks"):
+            chunk["additional_kwargs"]["thinking_blocks"] = thinking_blocks
         token_usage = chunk.get("usage")
         choices = (
             chunk.get("choices", [])
