@@ -40,12 +40,14 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models import (
+    LanguageModelInput,
+    ModelProfileRegistry,
+)
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     LangSmithParams,
 )
-from langchain_core.language_models.model_profile import ModelProfileRegistry
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -127,7 +129,7 @@ from langchain_openai.chat_models._compat import (
 from langchain_openai.data.profiles import _PROFILES
 
 if TYPE_CHECKING:
-    from langchain_core.language_models.model_profile import ModelProfile
+    from langchain_core.language_models import ModelProfile
     from openai.types.responses import Response
 
 logger = logging.getLogger(__name__)

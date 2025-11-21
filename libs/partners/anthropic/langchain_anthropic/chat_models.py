@@ -17,12 +17,12 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.exceptions import OutputParserException
-from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
-from langchain_core.language_models.model_profile import (
+from langchain_core.language_models import (
+    LanguageModelInput,
     ModelProfile,
     ModelProfileRegistry,
 )
+from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
