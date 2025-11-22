@@ -269,6 +269,30 @@ def get_template_variables(template: str, template_format: str) -> list[str]:
         msg = f"Unsupported template format: {template_format}"
         raise ValueError(msg)
 
+    # For f-strings, block attribute access and indexing syntax
+    # This prevents template injection attacks via accessing dangerous attributes
+    if template_format == "f-string":
+        for var in input_variables:
+            # Formatter().parse() returns field names with dots/brackets if present
+            # e.g., "obj.attr" or "obj[0]" - we need to block these
+            if "." in var or "[" in var or "]" in var:
+                msg = (
+                    f"Invalid variable name {var!r} in f-string template. "
+                    f"Variable names cannot contain attribute "
+                    f"access (.) or indexing ([])."
+                )
+                raise ValueError(msg)
+
+            # Block variable names that are all digits (e.g., "0", "100")
+            # These are interpreted as positional arguments, not keyword arguments
+            if var.isdigit():
+                msg = (
+                    f"Invalid variable name {var!r} in f-string template. "
+                    f"Variable names cannot be all digits as they are interpreted "
+                    f"as positional arguments."
+                )
+                raise ValueError(msg)
+
     return sorted(input_variables)
 
 
