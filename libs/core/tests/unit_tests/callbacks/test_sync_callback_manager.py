@@ -1,5 +1,3 @@
-import pytest
-
 from langchain_core.callbacks.base import BaseCallbackHandler, BaseCallbackManager
 
 
@@ -17,9 +15,6 @@ def test_remove_handler() -> None:
     manager.remove_handler(handler2)
 
 
-@pytest.mark.xfail(
-    reason="TODO: #32028 merge() incorrectly mixes handlers and inheritable_handlers"
-)
 def test_merge_preserves_handler_distinction() -> None:
     """Test that merging managers preserves the distinction between handlers.
 
