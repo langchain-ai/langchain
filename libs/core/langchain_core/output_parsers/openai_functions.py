@@ -228,7 +228,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_schema(cls, values: dict) -> Any:
+    def validate_schema(cls, values: dict[str, Any]) -> Any:
         """Validate the Pydantic schema.
 
         Args:
