@@ -27,7 +27,7 @@ from langchain_tests.integration_tests.chat_models import (
     _validate_tool_call_message,
     magic_function,
 )
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, SecretStr, field_validator
 from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
@@ -1320,3 +1320,30 @@ async def test_schema_parsing_failures_responses_api_async() -> None:
         assert e.response is not None  # type: ignore[attr-defined]
     else:
         raise AssertionError
+
+
+# Test thinking models with LiteLLM proxy
+@pytest.mark.scheduled
+@pytest.mark.skipif(
+    os.environ.get("REASONING_BASE_URL") is None
+    or os.environ.get("REASONING_API_KEY") is None,
+    reason="REASONING_BASE_URL or REASONING_API_KEY is not set",
+)
+def test_with_reasoning_proxy() -> None:
+    """Test reasoning models with proxy."""
+    chat = ChatOpenAI(
+        model="claude-sonnet-4-5-20250929",
+        reasoning_effort="medium",
+        base_url=os.environ["REASONING_BASE_URL"],
+        api_key=SecretStr(os.environ["REASONING_API_KEY"]),
+        max_retries=3,
+        # Disable SSL verification for self-signed certificates
+        http_client=httpx.Client(verify=False),  # noqa: S501
+    )
+    # Using a prompt that will trigger reasoning
+    message = HumanMessage(content="Reason and think about the meaning of life")
+    response = chat.invoke([message])
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+    # Assert that reasoning_content and thinking_blocks are in additional_kwargs
+    assert "reasoning_content" in response.additional_kwargs

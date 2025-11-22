@@ -687,6 +687,7 @@ lint = [
 ]
 test = [
     { name = "freezegun" },
+    { name = "httpx" },
     { name = "langchain" },
     { name = "langchain-core" },
     { name = "langchain-tests" },
@@ -727,6 +728,7 @@ dev = [{ name = "langchain-core", editable = "../../core" }]
 lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "langchain", editable = "../../langchain_v1" },
     { name = "langchain-core", editable = "../../core" },
     { name = "langchain-tests", editable = "../../standard-tests" },
