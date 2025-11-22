@@ -1660,6 +1660,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         ```
 
         !!! warning "Behavior changed in `langchain-core` 0.2.26"
+
             Added support for `TypedDict` class.
 
         """  # noqa: E501
