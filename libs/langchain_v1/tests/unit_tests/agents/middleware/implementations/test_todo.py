@@ -11,19 +11,18 @@ from langgraph.runtime import Runtime
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.todo import (
-    PlanningState,
-    TodoListMiddleware,
     WRITE_TODOS_SYSTEM_PROMPT,
     WRITE_TODOS_TOOL_DESCRIPTION,
+    PlanningState,
+    TodoListMiddleware,
     write_todos,
 )
-from langchain.agents.middleware.types import ModelRequest, ModelResponse
-
-from ...model import FakeToolCallingModel
+from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 def _fake_runtime() -> Runtime:
-    return cast(Runtime, object())
+    return cast("Runtime", object())
 
 
 def _make_request(system_prompt: str | None = None) -> ModelRequest:
@@ -36,7 +35,7 @@ def _make_request(system_prompt: str | None = None) -> ModelRequest:
         tool_choice=None,
         tools=[],
         response_format=None,
-        state=cast("AgentState", {}),  # type: ignore[name-defined]
+        state=AgentState(messages=[]),
         runtime=_fake_runtime(),
         model_settings={},
     )
@@ -147,7 +146,7 @@ def test_todo_middleware_on_model_call(original_prompt, expected_prompt_prefix) 
         tools=[],
         response_format=None,
         state=state,
-        runtime=cast(Runtime, object()),
+        runtime=cast("Runtime", object()),
         model_settings={},
     )
 
@@ -206,7 +205,7 @@ def test_todo_middleware_custom_system_prompt() -> None:
         response_format=None,
         model_settings={},
         state=state,
-        runtime=cast(Runtime, object()),
+        runtime=cast("Runtime", object()),
     )
 
     captured_request = None
@@ -266,7 +265,7 @@ def test_todo_middleware_custom_system_prompt_and_tool_description() -> None:
         tools=[],
         response_format=None,
         state=state,
-        runtime=cast(Runtime, object()),
+        runtime=cast("Runtime", object()),
         model_settings={},
     )
 
@@ -304,7 +303,9 @@ def test_todo_middleware_custom_system_prompt_and_tool_description() -> None:
                 {"content": "Task 1", "status": "pending"},
                 {"content": "Task 2", "status": "in_progress"},
             ],
-            "Updated todo list to [{'content': 'Task 1', 'status': 'pending'}, {'content': 'Task 2', 'status': 'in_progress'}]",
+            "Updated todo list to ["
+            "{'content': 'Task 1', 'status': 'pending'}, "
+            "{'content': 'Task 2', 'status': 'in_progress'}]",
         ),
         (
             [
@@ -312,7 +313,10 @@ def test_todo_middleware_custom_system_prompt_and_tool_description() -> None:
                 {"content": "Task 2", "status": "in_progress"},
                 {"content": "Task 3", "status": "completed"},
             ],
-            "Updated todo list to [{'content': 'Task 1', 'status': 'pending'}, {'content': 'Task 2', 'status': 'in_progress'}, {'content': 'Task 3', 'status': 'completed'}]",
+            "Updated todo list to ["
+            "{'content': 'Task 1', 'status': 'pending'}, "
+            "{'content': 'Task 2', 'status': 'in_progress'}, "
+            "{'content': 'Task 3', 'status': 'completed'}]",
         ),
     ],
 )
@@ -344,7 +348,7 @@ def test_todo_middleware_write_todos_tool_validation_errors(invalid_todos) -> No
         "type": "tool_call",
         "id": "test_call",
     }
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError, match="1 validation error for write_todos"):
         write_todos.invoke(tool_call)
 
 
