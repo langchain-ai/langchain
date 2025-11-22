@@ -760,6 +760,28 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        if language == Language.R:
+            return [
+                # Split along function definitions
+                "\n<- function",
+                "\n= function",
+                # Split along package loading
+                r"\nlibrary\(",
+                r"\nrequire\(",
+                # Split along control flow statements
+                r"\nif \(",
+                r"\nfor \(",
+                r"\nwhile \(",
+                r"\nswitch\(",
+                # Split along data structure creation
+                r"\ndata\.frame\(",
+                r"\nlist\(",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
 
         if language in Language._value2member_map_:
             msg = f"Language {language} is not implemented yet!"
