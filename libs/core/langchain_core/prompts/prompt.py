@@ -78,7 +78,7 @@ class PromptTemplate(StringPromptTemplate):
 
     template_format: PromptTemplateFormat = "f-string"
     """The format of the prompt template.
-    Options are: 'f-string', 'mustache', 'jinja2'."""
+    Options are: 'f-string', 'mustache', 'jinja2', 'jinja2_unrestricted'."""
 
     validate_template: bool = False
     """Whether or not to try validating the template."""

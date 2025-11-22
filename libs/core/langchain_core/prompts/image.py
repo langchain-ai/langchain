@@ -20,7 +20,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
     """Template for the prompt."""
     template_format: PromptTemplateFormat = "f-string"
     """The format of the prompt template.
-    Options are: 'f-string', 'mustache', 'jinja2'."""
+    Options are: 'f-string', 'mustache', 'jinja2', 'jinja2_unrestricted'."""
 
     def __init__(self, **kwargs: Any) -> None:
         """Create an image prompt template.

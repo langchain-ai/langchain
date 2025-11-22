@@ -135,8 +135,9 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
     prefix: str = ""
     """A prompt template string to put before the examples."""
 
-    template_format: Literal["f-string", "jinja2"] = "f-string"
-    """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
+    template_format: Literal["f-string", "jinja2", "jinja2_unrestricted"] = "f-string"
+    """The format of the prompt template. Options are: 'f-string', 'jinja2',
+    'jinja2_unrestricted'."""
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the few shot prompt template."""
