@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
 try:
-    from jinja2 import Environment, meta
+    from jinja2 import meta
     from jinja2.sandbox import SandboxedEnvironment
 
     _HAS_JINJA2 = True
