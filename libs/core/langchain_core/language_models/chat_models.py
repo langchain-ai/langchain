@@ -15,7 +15,6 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import override
 
-from langchain_core._api.beta_decorator import beta
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -34,6 +33,7 @@ from langchain_core.language_models.base import (
     LangSmithParams,
     LanguageModelInput,
 )
+from langchain_core.language_models.model_profile import ModelProfile
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
     AIMessage,
@@ -75,8 +75,6 @@ from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 
 if TYPE_CHECKING:
     import uuid
-
-    from langchain_model_profiles import ModelProfile  # type: ignore[import-untyped]
 
     from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.runnables import Runnable, RunnableConfig
@@ -337,6 +335,21 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     !!! version-added "Added in `langchain-core` 1.0"
 
+    """
+
+    profile: ModelProfile | None = Field(default=None, exclude=True)
+    """Profile detailing model capabilities.
+
+    !!! warning "Beta feature"
+        This is a beta feature. The format of model profiles is subject to change.
+
+    If not specified, automatically loaded from the provider package on initialization
+    if data is available.
+
+    Example profile data includes context window sizes, supported modalities, or support
+    for tool calling, structured output, and other features.
+
+    !!! version-added "Added in `langchain-core` 1.1"
     """
 
     model_config = ConfigDict(
@@ -1688,40 +1701,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
-
-    @property
-    @beta()
-    def profile(self) -> ModelProfile:
-        """Return profiling information for the model.
-
-        This property relies on the `langchain-model-profiles` package to retrieve chat
-        model capabilities, such as context window sizes and supported features.
-
-        Raises:
-            ImportError: If `langchain-model-profiles` is not installed.
-
-        Returns:
-            A `ModelProfile` object containing profiling information for the model.
-        """
-        try:
-            from langchain_model_profiles import get_model_profile  # noqa: PLC0415
-        except ImportError as err:
-            informative_error_message = (
-                "To access model profiling information, please install the "
-                "`langchain-model-profiles` package: "
-                "`pip install langchain-model-profiles`."
-            )
-            raise ImportError(informative_error_message) from err
-
-        provider_id = self._llm_type
-        model_name = (
-            # Model name is not standardized across integrations. New integrations
-            # should prefer `model`.
-            getattr(self, "model", None)
-            or getattr(self, "model_name", None)
-            or getattr(self, "model_id", "")
-        )
-        return get_model_profile(provider_id, model_name) or {}
 
 
 class SimpleChatModel(BaseChatModel):

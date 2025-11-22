@@ -23,7 +23,11 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models import (
+    LanguageModelInput,
+    ModelProfile,
+    ModelProfileRegistry,
+)
 from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import (
@@ -70,6 +74,7 @@ from pydantic import (
 from typing_extensions import Self
 
 from langchain_mistralai._compat import _convert_from_v1_to_mistral
+from langchain_mistralai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
@@ -84,6 +89,14 @@ TOOL_CALL_ID_PATTERN = re.compile(r"^[a-zA-Z0-9]{9}$")
 # This SSL context is equivalent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
+
+
+_MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 def _create_retry_decorator(
@@ -630,6 +643,13 @@ class ChatMistralAI(BaseChatModel):
             msg = "top_p must be in the range [0.0, 1.0]"
             raise ValueError(msg)
 
+        return self
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model)
         return self
 
     def _generate(
