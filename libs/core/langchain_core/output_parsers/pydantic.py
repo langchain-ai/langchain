@@ -37,7 +37,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     def _parser_exception(
         self, e: Exception, json_object: dict
     ) -> OutputParserException:
-        json_string = json.dumps(json_object)
+        json_string = json.dumps(json_object, ensure_ascii=False)
         name = self.pydantic_object.__name__
         msg = f"Failed to parse {name} from completion {json_string}. Got: {e}"
         return OutputParserException(msg, llm_output=json_string)
