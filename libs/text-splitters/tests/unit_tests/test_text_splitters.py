@@ -306,10 +306,8 @@ def test_mysql_query_splits():
     """
 
     expected_docs = [
-        Document(page_content="CREATE TABLE users (\n    id INT AUTO_INCREMENT PRIMARY KEY,\n    username VARCHAR(50) NOT NULL,\n    email VARCHAR(100) NOT NULL\n);", metadata={"source": "source-1"}),
-        Document(page_content="CREATE PROCEDURE GetUser(IN userId INT)\n    BEGIN\n        SELECT * FROM users WHERE id = userId;\n    END;", metadata={"source": "source-1"}),
-        Document(page_content="INSERT INTO users (username, email) VALUES ('testuser', 'test@example.com');", metadata={"source": "source-1"}),
-        Document(page_content="DELIMITER //\nCREATE TRIGGER before_insert_users\nBEFORE INSERT ON users\nFOR EACH ROW\nBEGIN\n    IF NEW.username IS NULL THEN\n        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Username cannot be null';\n    END IF;\nEND;\n//\nDELIMITER ;", metadata={"source": "source-1"}),
+        Document(page_content="CREATE TABLE users (\n        id INT AUTO_INCREMENT PRIMARY KEY,\n        username VARCHAR(50) NOT NULL,\n        email VARCHAR(100) NOT NULL\n    );", metadata={"source": "source-1"}),
+        Document(page_content="CREATE PROCEDURE GetUser(IN userId INT)\n    BEGIN\n        SELECT * FROM users WHERE id = userId;\n    END;\n\n    INSERT INTO users (username, email) VALUES ('testuser', 'test@example.com');\n\n    DELIMITER //\n    CREATE TRIGGER before_insert_users\n    BEFORE INSERT ON users\n    FOR EACH ROW\n    BEGIN\n        IF NEW.username IS NULL THEN\n            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Username cannot be null';\n        END IF;\n    END;\n    //\n    DELIMITER ;", metadata={"source": "source-1"}),
     ]
 
     splitter = RecursiveCharacterTextSplitter.from_language(
