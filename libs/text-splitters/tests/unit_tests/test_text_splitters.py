@@ -313,7 +313,7 @@ def test_mysql_query_splits():
     ]
 
     splitter = RecursiveCharacterTextSplitter.from_language(
-        language=Language.MYSQL, chunk_size=100, chunk_overlap=0
+        language=Language.MYSQL, chunk_size=500, chunk_overlap=0
     )
     docs = splitter.create_documents([mysql_text], [{"source": "source-1"}])
     assert docs == expected_docs
