@@ -275,12 +275,17 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            system_message_content = (
-                request.system_message.content + "\n\n" + self.system_prompt
-                if request.system_message
-                else self.system_prompt
+            if request.system_message is not None:
+                new_system_content = [
+                    *request.system_message.content_blocks,
+                    {"type": "text", "text": f"\n\n{self.system_prompt}"},
+                ]
+            else:
+                new_system_content = [{"type": "text", "text": self.system_prompt}]
+            new_system_message = SystemMessage(
+                content=cast("list[str | dict[str, str]]", new_system_content)
             )
-            overrides["system_message"] = SystemMessage(system_message_content)
+            overrides["system_message"] = new_system_message
 
         return handler(request.override(**overrides))
 
@@ -300,12 +305,17 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            system_message_content = (
-                request.system_message.content + "\n\n" + self.system_prompt
-                if request.system_message
-                else self.system_prompt
+            if request.system_message is not None:
+                new_system_content = [
+                    *request.system_message.content_blocks,
+                    {"type": "text", "text": f"\n\n{self.system_prompt}"},
+                ]
+            else:
+                new_system_content = [{"type": "text", "text": self.system_prompt}]
+            new_system_message = SystemMessage(
+                content=cast("list[str | dict[str, str]]", new_system_content)
             )
-            overrides["system_message"] = SystemMessage(system_message_content)
+            overrides["system_message"] = new_system_message
 
         return await handler(request.override(**overrides))
 
@@ -753,12 +763,17 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            system_message_content = (
-                request.system_message.content + "\n\n" + self.system_prompt
-                if request.system_message
-                else self.system_prompt
+            if request.system_message is not None:
+                new_system_content = [
+                    *request.system_message.content_blocks,
+                    {"type": "text", "text": f"\n\n{self.system_prompt}"},
+                ]
+            else:
+                new_system_content = [{"type": "text", "text": self.system_prompt}]
+            new_system_message = SystemMessage(
+                content=cast("list[str | dict[str, str]]", new_system_content)
             )
-            overrides["system_message"] = SystemMessage(system_message_content)
+            overrides["system_message"] = new_system_message
 
         return handler(request.override(**overrides))
 
@@ -778,12 +793,17 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            system_message_content = (
-                request.system_message.content + "\n\n" + self.system_prompt
-                if request.system_message
-                else self.system_prompt
+            if request.system_message is not None:
+                new_system_content = [
+                    *request.system_message.content_blocks,
+                    {"type": "text", "text": f"\n\n{self.system_prompt}"},
+                ]
+            else:
+                new_system_content = [{"type": "text", "text": self.system_prompt}]
+            new_system_message = SystemMessage(
+                content=cast("list[str | dict[str, str]]", new_system_content)
             )
-            overrides["system_message"] = SystemMessage(system_message_content)
+            overrides["system_message"] = new_system_message
 
         return await handler(request.override(**overrides))
 
