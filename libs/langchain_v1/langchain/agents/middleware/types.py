@@ -230,10 +230,13 @@ class ModelRequest:
                 )
                 ```
 
-            !!! example "Override system prompt (backward compatible)"
+            !!! example "Override multiple attributes"
 
                 ```python
-                new_request = request.override(system_prompt="New instructions")
+                new_request = request.override(
+                    model=ChatOpenAI(model="gpt-4o"),
+                    system_message=SystemMessage(content="New instructions"),
+                )
                 ```
         """
         # Handle system_prompt/system_message conversion
@@ -695,7 +698,7 @@ class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
         ...
 
 
-class _CallableReturningPromptString(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
+class _CallableReturningSystemMessage(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
     """Callable that returns a prompt string or SystemMessage given `ModelRequest`."""
 
     def __call__(
@@ -1382,7 +1385,7 @@ def after_agent(
 
 @overload
 def dynamic_prompt(
-    func: _CallableReturningPromptString[StateT, ContextT],
+    func: _CallableReturningSystemMessage[StateT, ContextT],
 ) -> AgentMiddleware[StateT, ContextT]: ...
 
 
@@ -1390,16 +1393,16 @@ def dynamic_prompt(
 def dynamic_prompt(
     func: None = None,
 ) -> Callable[
-    [_CallableReturningPromptString[StateT, ContextT]],
+    [_CallableReturningSystemMessage[StateT, ContextT]],
     AgentMiddleware[StateT, ContextT],
 ]: ...
 
 
 def dynamic_prompt(
-    func: _CallableReturningPromptString[StateT, ContextT] | None = None,
+    func: _CallableReturningSystemMessage[StateT, ContextT] | None = None,
 ) -> (
     Callable[
-        [_CallableReturningPromptString[StateT, ContextT]],
+        [_CallableReturningSystemMessage[StateT, ContextT]],
         AgentMiddleware[StateT, ContextT],
     ]
     | AgentMiddleware[StateT, ContextT]
@@ -1453,7 +1456,7 @@ def dynamic_prompt(
     """
 
     def decorator(
-        func: _CallableReturningPromptString[StateT, ContextT],
+        func: _CallableReturningSystemMessage[StateT, ContextT],
     ) -> AgentMiddleware[StateT, ContextT]:
         is_async = iscoroutinefunction(func)
 
@@ -1488,7 +1491,7 @@ def dynamic_prompt(
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
         ) -> ModelCallResult:
-            prompt = func(request)
+            prompt = cast("Callable[[ModelRequest], SystemMessage | str]", func)(request)
             if isinstance(prompt, SystemMessage):
                 request = request.override(system_message=prompt)
             else:
@@ -1501,7 +1504,7 @@ def dynamic_prompt(
             handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
         ) -> ModelCallResult:
             # Delegate to sync function
-            prompt = func(request)
+            prompt = cast("Callable[[ModelRequest], SystemMessage | str]", func)(request)
             if isinstance(prompt, SystemMessage):
                 request = request.override(system_message=prompt)
             else:
