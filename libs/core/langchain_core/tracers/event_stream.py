@@ -486,13 +486,23 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
         if run_info["run_type"] == "chat_model":
             generations = cast("list[list[ChatGenerationChunk]]", response.generations)
-            for gen in generations:
-                if output != {}:
-                    break
-                for chunk in gen:
-                    output = chunk.message
-                    break
-
+            output = {
+                "generations": [
+                    [
+                        {
+                            "text": chunk.text,
+                            "generation_info": chunk.generation_info,
+                            "type": chunk.type,
+                            "message": chunk.message,
+                        }
+                        for chunk in gen
+                    ]
+                    for gen in generations
+                ],
+                "llm_output": response.llm_output,
+                "run": None,
+                "type": "LLMResult",
+            }
             event = "on_chat_model_end"
         elif run_info["run_type"] == "llm":
             generations = cast("list[list[GenerationChunk]]", response.generations)

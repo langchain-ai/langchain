@@ -564,7 +564,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 run_manager.on_llm_error(err, response=LLMResult(generations=[]))
                 raise err
 
-            run_manager.on_llm_end(LLMResult(generations=[[generation]]))
+            run_manager.on_llm_end(LLMResult(generations=[[generation]], llm_output={}))
 
     @override
     async def astream(
@@ -635,7 +635,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             await run_manager.on_llm_error(err, response=LLMResult(generations=[]))
             raise err
 
-        await run_manager.on_llm_end(LLMResult(generations=[[generation]]))
+        await run_manager.on_llm_end(
+            LLMResult(generations=[[generation]], llm_output={})
+        )
 
     # --- Custom methods ---
 
@@ -1502,7 +1504,7 @@ class LLM(BaseLLM):
                 else self._call(prompt, stop=stop, **kwargs)
             )
             generations.append([Generation(text=text)])
-        return LLMResult(generations=generations)
+        return LLMResult(generations=generations, llm_output={})
 
     async def _agenerate(
         self,
@@ -1520,4 +1522,4 @@ class LLM(BaseLLM):
                 else await self._acall(prompt, stop=stop, **kwargs)
             )
             generations.append([Generation(text=text)])
-        return LLMResult(generations=generations)
+        return LLMResult(generations=generations, llm_output={})
