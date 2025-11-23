@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from functools import partial
 from inspect import isclass
 from typing import Any, cast
@@ -17,8 +18,8 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 
 
 def _fake_runnable(
-    _: Any, *, schema: dict | type[BaseModel], value: Any = 42, **_kwargs: Any
-) -> BaseModel | dict:
+    _: Any, *, schema: Mapping | type, value: Any = 42, **_kwargs: Any
+) -> Any:
     if isclass(schema) and is_basemodel_subclass(schema):
         return schema(name="yo", value=value)
     params = cast("dict", schema)["parameters"]
@@ -29,9 +30,7 @@ class FakeStructuredChatModel(FakeListChatModel):
     """Fake chat model for testing purposes."""
 
     @override
-    def with_structured_output(
-        self, schema: dict | type[BaseModel], **kwargs: Any
-    ) -> Runnable:
+    def with_structured_output(self, schema: Mapping | type, **kwargs: Any) -> Runnable:
         return RunnableLambda(partial(_fake_runnable, schema=schema, **kwargs))
 
     @property
