@@ -17,7 +17,7 @@ from langchain_text_splitters import (
     TextSplitter,
     Tokenizer,
 )
-from langchain_text_splitters.base import split_text_on_tokens
+from langchain_text_splitters.base import split_text_on_tokens, Language
 from langchain_text_splitters.character import CharacterTextSplitter
 from langchain_text_splitters.html import (
     HTMLHeaderTextSplitter,
@@ -275,6 +275,48 @@ def test_create_documents_with_metadata() -> None:
     ]
     assert docs == expected_docs
 
+
+def test_mysql_query_splits():
+    """Test splitting by MySQL language."""
+    mysql_text = """
+    CREATE TABLE users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(50) NOT NULL,
+        email VARCHAR(100) NOT NULL
+    );
+
+    CREATE PROCEDURE GetUser(IN userId INT)
+    BEGIN
+        SELECT * FROM users WHERE id = userId;
+    END;
+
+    INSERT INTO users (username, email) VALUES ('testuser', 'test@example.com');
+
+    DELIMITER //
+    CREATE TRIGGER before_insert_users
+    BEFORE INSERT ON users
+    FOR EACH ROW
+    BEGIN
+        IF NEW.username IS NULL THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Username cannot be null';
+        END IF;
+    END;
+    //
+    DELIMITER ;
+    """
+
+    expected_docs = [
+        Document(page_content="CREATE TABLE users (\n    id INT AUTO_INCREMENT PRIMARY KEY,\n    username VARCHAR(50) NOT NULL,\n    email VARCHAR(100) NOT NULL\n);", metadata={"source": "source-1"}),
+        Document(page_content="CREATE PROCEDURE GetUser(IN userId INT)\n    BEGIN\n        SELECT * FROM users WHERE id = userId;\n    END;", metadata={"source": "source-1"}),
+        Document(page_content="INSERT INTO users (username, email) VALUES ('testuser', 'test@example.com');", metadata={"source": "source-1"}),
+        Document(page_content="DELIMITER //\nCREATE TRIGGER before_insert_users\nBEFORE INSERT ON users\nFOR EACH ROW\nBEGIN\n    IF NEW.username IS NULL THEN\n        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Username cannot be null';\n    END IF;\nEND;\n//\nDELIMITER ;", metadata={"source": "source-1"}),
+    ]
+
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        language=Language.MYSQL, chunk_size=100, chunk_overlap=0
+    )
+    docs = splitter.create_documents([mysql_text], [{"source": "source-1"}])
+    assert docs == expected_docs
 
 @pytest.mark.parametrize(
     ("splitter", "text", "expected_docs"),

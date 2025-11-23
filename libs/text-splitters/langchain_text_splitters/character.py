@@ -480,6 +480,42 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        if language == Language.MYSQL:
+            return [
+                # Split along DDL statements
+                "\nCREATE TABLE ",
+                "\nCREATE VIEW ",
+                "\nCREATE PROCEDURE ",
+                "\nCREATE FUNCTION ",
+                "\nCREATE TRIGGER ",
+                "\nCREATE INDEX ",
+                "\nALTER TABLE ",
+                "\nDROP TABLE ",
+                "\nDROP VIEW ",
+                "\nTRUNCATE TABLE ",
+                # Split along DML statements
+                "\nINSERT INTO ",
+                "\nUPDATE ",
+                "\nDELETE ",
+                # Split along control flow statements
+                "\nDECLARE ",
+                "\nBEGIN ",
+                "\nEND ",
+                "\nIF ",
+                "\nCASE ",
+                "\nLOOP ",
+                "\nWHILE ",
+                "\nREPEAT ",
+                "\nLEAVE ",
+                "\nITERATE ",
+                # Split along other statements
+                "\nDELIMITER ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
         if language == Language.MARKDOWN:
             return [
                 # First, try to split along Markdown headings (starting with level 2)
