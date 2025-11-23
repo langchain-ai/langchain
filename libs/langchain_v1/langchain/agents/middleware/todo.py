@@ -197,7 +197,7 @@ class TodoListMiddleware(AgentMiddleware):
         if request.system_message is not None:
             new_system_content = [
                 *request.system_message.content_blocks,
-                {"type": "text", "text": self.system_prompt},
+                {"type": "text", "text": f"\n\n{self.system_prompt}"},
             ]
         else:
             new_system_content = [{"type": "text", "text": self.system_prompt}]
@@ -215,7 +215,7 @@ class TodoListMiddleware(AgentMiddleware):
         if request.system_message is not None:
             new_system_content = [
                 *request.system_message.content_blocks,
-                {"type": "text", "text": self.system_prompt},
+                {"type": "text", "text": f"\n\n{self.system_prompt}"},
             ]
         else:
             new_system_content = [{"type": "text", "text": self.system_prompt}]
