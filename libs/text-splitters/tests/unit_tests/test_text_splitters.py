@@ -1135,6 +1135,7 @@ b = 2
     chunks = splitter.split_text(code)
     assert chunks == ["harry", "***\nbabylon is"]
 
+
 def test_latex_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.LATEX, chunk_size=CHUNK_SIZE, chunk_overlap=0
@@ -1338,66 +1339,6 @@ def test_md_header_text_splitter_preserve_headers_1() -> None:
         ),
     ]
     assert output == expected_output
-
-
-def test_mysql_query_splits() -> None:
-    """Test splitting by MySQL language."""
-    mysql_text = """CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL,
-    email VARCHAR(100) NOT NULL
-);
-
-CREATE PROCEDURE GetUser(IN userId INT)
-BEGIN
-    SELECT * FROM users WHERE id = userId;
-END;
-
-INSERT INTO users (username, email) VALUES ('testuser', 'test@example.com');
-
-DELIMITER //
-CREATE TRIGGER before_insert_users
-BEFORE INSERT ON users
-FOR EACH ROW
-BEGIN
-    IF NEW.username IS NULL THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Username cannot be null';
-    END IF;
-END;
-//
-DELIMITER ;"""
-
-    expected_docs = [
-        Document(
-            page_content=(
-                "CREATE TABLE users (\n    id INT AUTO_INCREMENT PRIMARY KEY,\n"
-                "    username VARCHAR(50) NOT NULL,\n"
-                "    email VARCHAR(100) NOT NULL\n);"
-            ),
-            metadata={"source": "source-1"},
-        ),
-        Document(
-            page_content=(
-                "CREATE PROCEDURE GetUser(IN userId INT)\nBEGIN\n"
-                "    SELECT * FROM users WHERE id = userId;\nEND;\n\n"
-                "INSERT INTO users (username, email) VALUES "
-                "('testuser', 'test@example.com');\n\n"
-                "DELIMITER //\nCREATE TRIGGER before_insert_users\n"
-                "BEFORE INSERT ON users\nFOR EACH ROW\nBEGIN\n"
-                "    IF NEW.username IS NULL THEN\n"
-                "        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "
-                "'Username cannot be null';\n"
-                "    END IF;\nEND;\n//\nDELIMITER ;"
-            ),
-            metadata={"source": "source-1"},
-        ),
-    ]
-
-    splitter = RecursiveCharacterTextSplitter.from_language(
-        language=Language.MYSQL, chunk_size=500, chunk_overlap=0
-    )
-    docs = splitter.create_documents([mysql_text], [{"source": "source-1"}])
-    assert docs == expected_docs
 
 
 def test_md_header_text_splitter_preserve_headers_2() -> None:
@@ -2319,6 +2260,64 @@ def test_experimental_markdown_syntax_text_splitter_header_config_on_multi_files
     ]
 
     assert output == expected_output
+
+
+def test_mysql_query_text_splitter() -> None:
+    """Test splitting by MySQL language."""
+    mysql_text = """CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL
+);
+
+CREATE PROCEDURE GetUser(IN userId INT)
+BEGIN
+    SELECT * FROM users WHERE id = userId;
+END;
+
+INSERT INTO users (username, email) VALUES ('testuser', 'test@example.com');
+
+DELIMITER //
+CREATE TRIGGER before_insert_users
+BEFORE INSERT ON users
+FOR EACH ROW
+BEGIN
+    IF NEW.username IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Username cannot be null';
+    END IF;
+END;
+//
+DELIMITER ;"""
+    expected_docs = [
+        Document(
+            page_content=(
+                "CREATE TABLE users (\n    id INT AUTO_INCREMENT PRIMARY KEY,\n"
+                "    username VARCHAR(50) NOT NULL,\n"
+                "    email VARCHAR(100) NOT NULL\n);"
+            ),
+            metadata={"source": "source-1"},
+        ),
+        Document(
+            page_content=(
+                "CREATE PROCEDURE GetUser(IN userId INT)\nBEGIN\n"
+                "    SELECT * FROM users WHERE id = userId;\nEND;\n\n"
+                "INSERT INTO users (username, email) VALUES "
+                "('testuser', 'test@example.com');\n\n"
+                "DELIMITER //\nCREATE TRIGGER before_insert_users\n"
+                "BEFORE INSERT ON users\nFOR EACH ROW\nBEGIN\n"
+                "    IF NEW.username IS NULL THEN\n"
+                "        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "
+                "'Username cannot be null';\n"
+                "    END IF;\nEND;\n//\nDELIMITER ;"
+            ),
+            metadata={"source": "source-1"},
+        ),
+    ]
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        language=Language.MYSQL, chunk_size=500, chunk_overlap=0
+    )
+    docs = splitter.create_documents([mysql_text], [{"source": "source-1"}])
+    assert docs == expected_docs
 
 
 def test_solidity_code_splitter() -> None:
