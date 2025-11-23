@@ -386,7 +386,9 @@ class ParrotFakeChatModel(BaseChatModel):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
-        return ChatResult(generations=[ChatGeneration(message=messages[-1])], llm_output={})
+        return ChatResult(
+            generations=[ChatGeneration(message=messages[-1])], llm_output={}
+        )
 
     @property
     def _llm_type(self) -> str:
