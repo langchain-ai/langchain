@@ -1378,19 +1378,9 @@ DELIMITER ;"""
         Document(
             page_content=(
                 "CREATE PROCEDURE GetUser(IN userId INT)\nBEGIN\n"
-                "    SELECT * FROM users WHERE id = userId;\nEND;"
-            ),
-            metadata={"source": "source-1"},
-        ),
-        Document(
-            page_content=(
+                "    SELECT * FROM users WHERE id = userId;\nEND;\n\n"
                 "INSERT INTO users (username, email) VALUES "
-                "('testuser', 'test@example.com');"
-            ),
-            metadata={"source": "source-1"},
-        ),
-        Document(
-            page_content=(
+                "('testuser', 'test@example.com');\n\n"
                 "DELIMITER //\nCREATE TRIGGER before_insert_users\n"
                 "BEFORE INSERT ON users\nFOR EACH ROW\nBEGIN\n"
                 "    IF NEW.username IS NULL THEN\n"
