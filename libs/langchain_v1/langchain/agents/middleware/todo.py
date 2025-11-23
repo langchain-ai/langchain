@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Literal
+from typing import TYPE_CHECKING, Annotated, Literal, cast
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -194,12 +194,16 @@ class TodoListMiddleware(AgentMiddleware):
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
         """Update the system message to include the todo system prompt."""
-        new_system_content = (
-            request.system_message.content + "\n\n" + self.system_prompt
-            if request.system_message
-            else self.system_prompt
+        if request.system_message is not None:
+            new_system_content = [
+                *request.system_message.content_blocks,
+                {"type": "text", "text": self.system_prompt},
+            ]
+        else:
+            new_system_content = [{"type": "text", "text": self.system_prompt}]
+        new_system_message = SystemMessage(
+            content=cast("list[str | dict[str, str]]", new_system_content)
         )
-        new_system_message = SystemMessage(content=new_system_content)
         return handler(request.override(system_message=new_system_message))
 
     async def awrap_model_call(
@@ -208,10 +212,14 @@ class TodoListMiddleware(AgentMiddleware):
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
         """Update the system message to include the todo system prompt (async version)."""
-        new_system_content = (
-            request.system_message.content + "\n\n" + self.system_prompt
-            if request.system_message
-            else self.system_prompt
+        if request.system_message is not None:
+            new_system_content = [
+                *request.system_message.content_blocks,
+                {"type": "text", "text": self.system_prompt},
+            ]
+        else:
+            new_system_content = [{"type": "text", "text": self.system_prompt}]
+        new_system_message = SystemMessage(
+            content=cast("list[str | dict[str, str]]", new_system_content)
         )
-        new_system_message = SystemMessage(content=new_system_content)
         return await handler(request.override(system_message=new_system_message))

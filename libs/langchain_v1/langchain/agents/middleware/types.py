@@ -242,13 +242,11 @@ class ModelRequest:
             raise ValueError(msg)
 
         if "system_prompt" in overrides:
-            system_prompt = overrides["system_prompt"]
+            system_prompt = cast("str", overrides.pop("system_prompt"))  # type: ignore[typeddict-item]
             if system_prompt is None:
                 overrides["system_message"] = None
             else:
                 overrides["system_message"] = SystemMessage(content=system_prompt)
-            # Remove system_prompt from overrides to avoid conflict
-            overrides = {k: v for k, v in overrides.items() if k != "system_prompt"}
 
         return replace(self, **overrides)
 
