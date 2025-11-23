@@ -12,6 +12,7 @@ if TYPE_CHECKING:
         InputTokenDetails,
         OutputTokenDetails,
         UsageMetadata,
+        add_ai_message_chunks,
     )
     from langchain_core.messages.base import (
         BaseMessage,
@@ -112,6 +113,7 @@ __all__ = (
     "UsageMetadata",
     "VideoContentBlock",
     "_message_from_dict",
+    "add_ai_message_chunks",
     "convert_to_messages",
     "convert_to_openai_data_block",
     "convert_to_openai_image_block",
@@ -184,6 +186,7 @@ _dynamic_imports = {
     "message_chunk_to_message": "utils",
     "messages_from_dict": "utils",
     "trim_messages": "utils",
+    "add_ai_message_chunks": "ai",
 }
 
 
