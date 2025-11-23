@@ -1339,6 +1339,7 @@ def test_md_header_text_splitter_preserve_headers_1() -> None:
     ]
     assert output == expected_output
 
+
 def test_mysql_query_splits() -> None:
     """Test splitting by MySQL language."""
     mysql_text = """CREATE TABLE users (
@@ -1397,6 +1398,7 @@ DELIMITER ;"""
     )
     docs = splitter.create_documents([mysql_text], [{"source": "source-1"}])
     assert docs == expected_docs
+
 
 def test_md_header_text_splitter_preserve_headers_2() -> None:
     """Test markdown splitter by header: Preserve Headers."""
