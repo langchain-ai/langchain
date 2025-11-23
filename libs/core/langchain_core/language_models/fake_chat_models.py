@@ -44,7 +44,7 @@ class FakeMessagesListChatModel(BaseChatModel):
         else:
             self.i = 0
         generation = ChatGeneration(message=response)
-        return ChatResult(generations=[generation])
+        return ChatResult(generations=[generation], llm_output={})
 
     @property
     @override
@@ -261,7 +261,7 @@ class GenericFakeChatModel(BaseChatModel):
         message = next(self.messages)
         message_ = AIMessage(content=message) if isinstance(message, str) else message
         generation = ChatGeneration(message=message_)
-        return ChatResult(generations=[generation])
+        return ChatResult(generations=[generation], llm_output={})
 
     def _stream(
         self,
@@ -386,7 +386,7 @@ class ParrotFakeChatModel(BaseChatModel):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
-        return ChatResult(generations=[ChatGeneration(message=messages[-1])])
+        return ChatResult(generations=[ChatGeneration(message=messages[-1])], llm_output={})
 
     @property
     def _llm_type(self) -> str:

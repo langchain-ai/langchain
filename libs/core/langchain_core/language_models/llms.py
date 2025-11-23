@@ -1504,7 +1504,7 @@ class LLM(BaseLLM):
                 else self._call(prompt, stop=stop, **kwargs)
             )
             generations.append([Generation(text=text)])
-        return LLMResult(generations=generations)
+        return LLMResult(generations=generations, llm_output={})
 
     async def _agenerate(
         self,
@@ -1522,4 +1522,4 @@ class LLM(BaseLLM):
                 else await self._acall(prompt, stop=stop, **kwargs)
             )
             generations.append([Generation(text=text)])
-        return LLMResult(generations=generations)
+        return LLMResult(generations=generations, llm_output={})
