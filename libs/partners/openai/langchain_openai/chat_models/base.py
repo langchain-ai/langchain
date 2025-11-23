@@ -3005,6 +3005,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         method: Literal["function_calling", "json_mode", "json_schema"] = "json_schema",
         include_raw: bool = False,
         strict: bool | None = None,
+        tools: list | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         r"""Model wrapper that returns outputs formatted to match the given schema.
@@ -3398,7 +3399,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         """  # noqa: E501
         return super().with_structured_output(
-            schema, method=method, include_raw=include_raw, strict=strict, **kwargs
+            schema,
+            method=method,
+            include_raw=include_raw,
+            strict=strict,
+            tools=tools,
+            **kwargs,
         )
 
 
