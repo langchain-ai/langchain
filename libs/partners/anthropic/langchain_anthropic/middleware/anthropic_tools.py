@@ -20,7 +20,7 @@ from langchain.agents.middleware.types import (
     _ModelRequestOverrides,
 )
 from langchain.tools import ToolRuntime, tool
-from langchain_core.messages import ToolMessage
+from langchain_core.messages import SystemMessage, ToolMessage
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
 
@@ -275,11 +275,12 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            overrides["system_prompt"] = (
+            system_prompt = (
                 request.system_prompt + "\n\n" + self.system_prompt
                 if request.system_prompt
                 else self.system_prompt
             )
+            overrides["system_message"] = SystemMessage(system_prompt)
 
         return handler(request.override(**overrides))
 
@@ -299,11 +300,12 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            overrides["system_prompt"] = (
+            system_prompt = (
                 request.system_prompt + "\n\n" + self.system_prompt
                 if request.system_prompt
                 else self.system_prompt
             )
+            overrides["system_message"] = SystemMessage(system_prompt)
 
         return await handler(request.override(**overrides))
 
@@ -751,11 +753,12 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            overrides["system_prompt"] = (
+            system_prompt = (
                 request.system_prompt + "\n\n" + self.system_prompt
                 if request.system_prompt
                 else self.system_prompt
             )
+            overrides["system_message"] = SystemMessage(system_prompt)
 
         return handler(request.override(**overrides))
 
@@ -775,11 +778,12 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            overrides["system_prompt"] = (
+            system_prompt = (
                 request.system_prompt + "\n\n" + self.system_prompt
                 if request.system_prompt
                 else self.system_prompt
             )
+            overrides["system_message"] = SystemMessage(system_prompt)
 
         return await handler(request.override(**overrides))
 

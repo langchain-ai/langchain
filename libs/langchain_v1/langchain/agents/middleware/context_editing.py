@@ -18,7 +18,6 @@ from langchain_core.messages import (
     AIMessage,
     AnyMessage,
     BaseMessage,
-    SystemMessage,
     ToolMessage,
 )
 from langchain_core.messages.utils import count_tokens_approximately
@@ -230,9 +229,7 @@ class ContextEditingMiddleware(AgentMiddleware):
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return count_tokens_approximately(messages)
         else:
-            system_msg = (
-                [SystemMessage(content=request.system_prompt)] if request.system_prompt else []
-            )
+            system_msg = [request.system_message] if request.system_message else []
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return request.model.get_num_tokens_from_messages(
@@ -259,9 +256,7 @@ class ContextEditingMiddleware(AgentMiddleware):
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return count_tokens_approximately(messages)
         else:
-            system_msg = (
-                [SystemMessage(content=request.system_prompt)] if request.system_prompt else []
-            )
+            system_msg = [request.system_message] if request.system_message else []
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return request.model.get_num_tokens_from_messages(

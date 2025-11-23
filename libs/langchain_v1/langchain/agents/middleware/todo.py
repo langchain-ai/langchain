@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Annotated, Literal
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-from langchain_core.messages import ToolMessage
+from langchain_core.messages import SystemMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
@@ -193,23 +193,25 @@ class TodoListMiddleware(AgentMiddleware):
         request: ModelRequest,
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
-        """Update the system prompt to include the todo system prompt."""
-        new_system_prompt = (
-            request.system_prompt + "\n\n" + self.system_prompt
-            if request.system_prompt
+        """Update the system message to include the todo system prompt."""
+        new_system_content = (
+            request.system_message.content + "\n\n" + self.system_prompt
+            if request.system_message
             else self.system_prompt
         )
-        return handler(request.override(system_prompt=new_system_prompt))
+        new_system_message = SystemMessage(content=new_system_content)
+        return handler(request.override(system_message=new_system_message))
 
     async def awrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
-        """Update the system prompt to include the todo system prompt (async version)."""
-        new_system_prompt = (
-            request.system_prompt + "\n\n" + self.system_prompt
-            if request.system_prompt
+        """Update the system message to include the todo system prompt (async version)."""
+        new_system_content = (
+            request.system_message.content + "\n\n" + self.system_prompt
+            if request.system_message
             else self.system_prompt
         )
-        return await handler(request.override(system_prompt=new_system_prompt))
+        new_system_message = SystemMessage(content=new_system_content)
+        return await handler(request.override(system_message=new_system_message))
