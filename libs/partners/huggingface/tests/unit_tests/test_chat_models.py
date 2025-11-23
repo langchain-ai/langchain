@@ -325,3 +325,15 @@ def test_inheritance_with_empty_llm() -> None:
         # relevant attrs
         assert chat.max_tokens is None
         assert chat.temperature is None
+
+
+def test_profile() -> None:
+    empty_llm = Mock(spec=HuggingFaceEndpoint)
+    empty_llm.repo_id = "test/model"
+    empty_llm.model = "test/model"
+
+    model = ChatHuggingFace(
+        model_id="moonshotai/Kimi-K2-Instruct-0905",
+        llm=empty_llm,
+    )
+    assert model.profile

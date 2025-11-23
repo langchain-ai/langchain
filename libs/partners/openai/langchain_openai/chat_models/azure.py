@@ -17,7 +17,7 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, SecretStr, model_validator
 from typing_extensions import Self
 
-from langchain_openai.chat_models.base import BaseChatOpenAI
+from langchain_openai.chat_models.base import BaseChatOpenAI, _get_default_model_profile
 
 logger = logging.getLogger(__name__)
 
@@ -701,6 +701,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
             self.async_client = self.root_async_client.chat.completions
         return self
 
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None and self.deployment_name is not None:
+            self.profile = _get_default_model_profile(self.deployment_name)
+        return self
+
     @property
     def _identifying_params(self) -> dict[str, Any]:
         """Get the identifying parameters."""
@@ -960,12 +967,15 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 - `'parsing_error'`: `BaseException | None`
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.0"
+
             `method` default changed from "function_calling" to "json_schema".
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.12"
+
             Support for `tools` added.
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.21"
+
             Pass `kwargs` through to the model.
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`, `strict=True`"
