@@ -18,6 +18,7 @@ from typing import (
     Protocol,
     TypeGuard,
     TypeVar,
+    Dict
 )
 
 from typing_extensions import override
@@ -36,7 +37,9 @@ if TYPE_CHECKING:
     )
     from contextvars import Context
 
+    from langchain_core.runnables import RunnableLambda
     from langchain_core.runnables.schema import StreamEvent
+    from langchain_core.messages import BaseMessage, HumanMessage
 
 Input = TypeVar("Input", contravariant=True)  # noqa: PLC0105
 # Output type should implement __concat__, as eg str, list, dict do
@@ -147,6 +150,48 @@ def coro_with_context(
     if create_task:
         return asyncio.create_task(coro)  # type: ignore[arg-type]
     return coro
+
+
+def to_message_state(obj: Any) -> Dict[str, list[BaseMessage]]:
+    """Convert any supported input into a message-state dict: {'messages': [BaseMessage, ...]}.
+
+    Args:
+        obj: The input to convert.
+
+    Returns:
+        A dictionary with a 'messages' key containing a list of BaseMessages.
+    """
+    # None
+    if obj is None:
+        return {"messages": []}
+    # String → assume HumanMessage
+    if isinstance(obj, str):
+        return {"messages": [HumanMessage(content=obj)]}
+    # Already a BaseMessage (could be HumanMessage, AIMessage, SystemMessage, etc.)
+    if isinstance(obj, BaseMessage):
+        return {"messages": [obj]}
+    # List of items → flatten convert each
+    if isinstance(obj, list):
+        msgs: list[BaseMessage] = []
+        for item in obj:
+            state = to_message_state(item)
+            msgs.extend(state["messages"])
+        return {"messages": msgs}
+    # Already a dict in message state shape
+    if isinstance(obj, dict) and "messages" in obj:
+        # Optionally: validate that each element is a BaseMessage
+        return obj
+    # Unsupported type
+    raise TypeError(f"Unsupported type for to_message_state: {type(obj)}")
+
+
+def as_message_state() -> RunnableLambda:
+    """Runnable that normalizes output to message-state structure.
+
+    Returns:
+        A Runnable Lambda that normalizes output to message-state structure.
+    """
+    return RunnableLambda(lambda x: to_message_state(x))
 
 
 class IsLocalDict(ast.NodeVisitor):
