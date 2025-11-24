@@ -3,6 +3,7 @@
 import uuid
 import warnings
 from collections.abc import Callable, Iterable, Mapping
+from functools import cache
 from typing import Any, Literal, cast
 
 from langchain_core.messages import (
@@ -259,6 +260,10 @@ class SummarizationMiddleware(AgentMiddleware):
         if not messages:
             return 0
 
+        @cache
+        def suffix_token_count(start_index: int) -> int:
+            return self.token_counter(messages[start_index:])
+
         kind, value = self.keep
         if kind == "fraction":
             max_input_tokens = self._get_profile_limits()
@@ -273,7 +278,7 @@ class SummarizationMiddleware(AgentMiddleware):
         if target_token_count <= 0:
             target_token_count = 1
 
-        if self.token_counter(messages) <= target_token_count:
+        if suffix_token_count(0) <= target_token_count:
             return 0
 
         # Use binary search to identify the earliest message index that keeps the
@@ -286,7 +291,7 @@ class SummarizationMiddleware(AgentMiddleware):
                 break
 
             mid = (left + right) // 2
-            if self.token_counter(messages[mid:]) <= target_token_count:
+            if suffix_token_count(mid) <= target_token_count:
                 cutoff_candidate = mid
                 right = mid
             else:
@@ -300,8 +305,11 @@ class SummarizationMiddleware(AgentMiddleware):
                 return 0
             cutoff_candidate = len(messages) - 1
 
-        for i in range(cutoff_candidate, -1, -1):
-            if self._is_safe_cutoff_point(messages, i):
+        for i in range(cutoff_candidate, len(messages) + 1):
+            if (
+                self._is_safe_cutoff_point(messages, i)
+                and suffix_token_count(i) <= target_token_count
+            ):
                 return i
 
         return 0
