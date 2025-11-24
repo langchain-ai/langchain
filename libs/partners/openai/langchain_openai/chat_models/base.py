@@ -1647,10 +1647,11 @@ class BaseChatOpenAI(BaseChatModel):
             model = self.tiktoken_model_name
         else:
             model = self.model_name
+
         try:
             encoding = tiktoken.encoding_for_model(model)
         except KeyError:
-            model_lower = self.model_name.lower()
+            model_lower = model.lower()
             encoder = "cl100k_base"
             if model_lower.startswith(("gpt-4o", "gpt-4.1", "gpt-5")):
                 encoder = "o200k_base"
