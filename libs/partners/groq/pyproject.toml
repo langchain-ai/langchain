@@ -9,10 +9,10 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.0.1"
+version = "1.1.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.2,<2.0.0",
+    "langchain-core>=1.1.0,<2.0.0",
     "groq>=0.30.0,<1.0.0"
 ]
 
