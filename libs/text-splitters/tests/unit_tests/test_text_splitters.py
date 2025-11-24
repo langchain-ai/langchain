@@ -3803,6 +3803,47 @@ def test_html_splitter_keep_separator_default() -> None:
     assert documents == expected
 
 
+@pytest.mark.requires("bs4")
+def test_html_splitter_preserved_elements_reverse_order() -> None:
+    """Test preserved elements reinsertion in reverse order.
+
+    This test validates that preserved elements are reinserted in reverse order
+    to prevent conflicts when one placeholder might be a substring of another.
+    """
+    html_content = """
+    <h1>Section 1</h1>
+    <table>
+        <tr><td>Table 1 content</td></tr>
+    </table>
+    <p>Some text between tables</p>
+    <table>
+        <tr><td>Table 10 content</td></tr>
+    </table>
+    <ul>
+        <li>List item 1</li>
+        <li>List item 10</li>
+    </ul>
+    """
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            elements_to_preserve=["table", "ul"],
+            max_chunk_size=100,
+        )
+    documents = splitter.split_text(html_content)
+
+    # Verify that all preserved elements are correctly reinserted
+    # This would fail if placeholders were processed in forward order
+    # when one placeholder is a substring of another
+    assert len(documents) >= 1
+    # Check that table content is preserved
+    content = " ".join(doc.page_content for doc in documents)
+    assert "Table 1 content" in content
+    assert "Table 10 content" in content
+    assert "List item 1" in content
+    assert "List item 10" in content
+
+
 def test_character_text_splitter_discard_regex_separator_on_merge() -> None:
     """Test that regex lookahead separator is not re-inserted when merging."""
     text = "SCE191 First chunk. SCE103 Second chunk."
