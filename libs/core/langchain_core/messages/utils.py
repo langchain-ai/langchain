@@ -14,12 +14,13 @@ import inspect
 import json
 import logging
 import math
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Iterable, Sequence
 from functools import partial
 from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    Callable,
     Literal,
     cast,
     overload,
@@ -1794,7 +1795,7 @@ def to_message_state(obj: Any) -> dict[str, list[BaseMessage]]:
     raise TypeError(msg)
 
 
-def as_message_state() -> callable:
+def as_message_state() -> Callable[[Any], dict[str, list[BaseMessage]]]:
     """Return an LCEL-friendly wrapper that normalizes outputs into message state.
 
     Returns:
