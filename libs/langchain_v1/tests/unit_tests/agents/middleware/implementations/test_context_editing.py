@@ -82,16 +82,23 @@ def test_no_edit_when_below_trigger() -> None:
         edits=[ClearToolUsesEdit(trigger=50)],
     )
 
+    modified_request = None
+
     def mock_handler(req: ModelRequest) -> AIMessage:
+        nonlocal modified_request
+        modified_request = req
         return AIMessage(content="mock response")
 
-    # Call wrap_model_call which modifies the request
+    # Call wrap_model_call which creates a new request
     middleware.wrap_model_call(request, mock_handler)
 
-    # The request should have been modified in place
+    # The modified request passed to handler should be the same since no edits applied
+    assert modified_request is not None
+    assert modified_request.messages[0].content == ""
+    assert modified_request.messages[1].content == "12345"
+    # Original request should be unchanged
     assert request.messages[0].content == ""
     assert request.messages[1].content == "12345"
-    assert state["messages"] == request.messages
 
 
 def test_clear_tool_outputs_and_inputs() -> None:
@@ -115,14 +122,19 @@ def test_clear_tool_outputs_and_inputs() -> None:
     )
     middleware = ContextEditingMiddleware(edits=[edit])
 
+    modified_request = None
+
     def mock_handler(req: ModelRequest) -> AIMessage:
+        nonlocal modified_request
+        modified_request = req
         return AIMessage(content="mock response")
 
-    # Call wrap_model_call which modifies the request
+    # Call wrap_model_call which creates a new request with edits
     middleware.wrap_model_call(request, mock_handler)
 
-    cleared_ai = request.messages[0]
-    cleared_tool = request.messages[1]
+    assert modified_request is not None
+    cleared_ai = modified_request.messages[0]
+    cleared_tool = modified_request.messages[1]
 
     assert isinstance(cleared_tool, ToolMessage)
     assert cleared_tool.content == "[cleared output]"
@@ -134,7 +146,9 @@ def test_clear_tool_outputs_and_inputs() -> None:
     assert context_meta is not None
     assert context_meta["cleared_tool_inputs"] == [tool_call_id]
 
-    assert state["messages"] == request.messages
+    # Original request should be unchanged
+    assert request.messages[0].tool_calls[0]["args"] == {"query": "foo"}
+    assert request.messages[1].content == "x" * 200
 
 
 def test_respects_keep_last_tool_results() -> None:
@@ -167,21 +181,26 @@ def test_respects_keep_last_tool_results() -> None:
         token_count_method="model",
     )
 
+    modified_request = None
+
     def mock_handler(req: ModelRequest) -> AIMessage:
+        nonlocal modified_request
+        modified_request = req
         return AIMessage(content="mock response")
 
-    # Call wrap_model_call which modifies the request
+    # Call wrap_model_call which creates a new request with edits
     middleware.wrap_model_call(request, mock_handler)
 
+    assert modified_request is not None
     cleared_messages = [
         msg
-        for msg in request.messages
+        for msg in modified_request.messages
         if isinstance(msg, ToolMessage) and msg.content == "[cleared]"
     ]
 
     assert len(cleared_messages) == 2
-    assert isinstance(request.messages[-1], ToolMessage)
-    assert request.messages[-1].content != "[cleared]"
+    assert isinstance(modified_request.messages[-1], ToolMessage)
+    assert modified_request.messages[-1].content != "[cleared]"
 
 
 def test_exclude_tools_prevents_clearing() -> None:
@@ -215,14 +234,19 @@ def test_exclude_tools_prevents_clearing() -> None:
         ],
     )
 
+    modified_request = None
+
     def mock_handler(req: ModelRequest) -> AIMessage:
+        nonlocal modified_request
+        modified_request = req
         return AIMessage(content="mock response")
 
-    # Call wrap_model_call which modifies the request
+    # Call wrap_model_call which creates a new request with edits
     middleware.wrap_model_call(request, mock_handler)
 
-    search_tool = request.messages[1]
-    calc_tool = request.messages[3]
+    assert modified_request is not None
+    search_tool = modified_request.messages[1]
+    calc_tool = modified_request.messages[3]
 
     assert isinstance(search_tool, ToolMessage)
     assert search_tool.content == "search-results" * 20
@@ -249,16 +273,23 @@ async def test_no_edit_when_below_trigger_async() -> None:
         edits=[ClearToolUsesEdit(trigger=50)],
     )
 
+    modified_request = None
+
     async def mock_handler(req: ModelRequest) -> AIMessage:
+        nonlocal modified_request
+        modified_request = req
         return AIMessage(content="mock response")
 
-    # Call awrap_model_call which modifies the request
+    # Call awrap_model_call which creates a new request
     await middleware.awrap_model_call(request, mock_handler)
 
-    # The request should have been modified in place
+    # The modified request passed to handler should be the same since no edits applied
+    assert modified_request is not None
+    assert modified_request.messages[0].content == ""
+    assert modified_request.messages[1].content == "12345"
+    # Original request should be unchanged
     assert request.messages[0].content == ""
     assert request.messages[1].content == "12345"
-    assert state["messages"] == request.messages
 
 
 async def test_clear_tool_outputs_and_inputs_async() -> None:
@@ -283,14 +314,19 @@ async def test_clear_tool_outputs_and_inputs_async() -> None:
     )
     middleware = ContextEditingMiddleware(edits=[edit])
 
+    modified_request = None
+
     async def mock_handler(req: ModelRequest) -> AIMessage:
+        nonlocal modified_request
+        modified_request = req
         return AIMessage(content="mock response")
 
-    # Call awrap_model_call which modifies the request
+    # Call awrap_model_call which creates a new request with edits
     await middleware.awrap_model_call(request, mock_handler)
 
-    cleared_ai = request.messages[0]
-    cleared_tool = request.messages[1]
+    assert modified_request is not None
+    cleared_ai = modified_request.messages[0]
+    cleared_tool = modified_request.messages[1]
 
     assert isinstance(cleared_tool, ToolMessage)
     assert cleared_tool.content == "[cleared output]"
@@ -302,7 +338,9 @@ async def test_clear_tool_outputs_and_inputs_async() -> None:
     assert context_meta is not None
     assert context_meta["cleared_tool_inputs"] == [tool_call_id]
 
-    assert state["messages"] == request.messages
+    # Original request should be unchanged
+    assert request.messages[0].tool_calls[0]["args"] == {"query": "foo"}
+    assert request.messages[1].content == "x" * 200
 
 
 async def test_respects_keep_last_tool_results_async() -> None:
@@ -336,21 +374,26 @@ async def test_respects_keep_last_tool_results_async() -> None:
         token_count_method="model",
     )
 
+    modified_request = None
+
     async def mock_handler(req: ModelRequest) -> AIMessage:
+        nonlocal modified_request
+        modified_request = req
         return AIMessage(content="mock response")
 
-    # Call awrap_model_call which modifies the request
+    # Call awrap_model_call which creates a new request with edits
     await middleware.awrap_model_call(request, mock_handler)
 
+    assert modified_request is not None
     cleared_messages = [
         msg
-        for msg in request.messages
+        for msg in modified_request.messages
         if isinstance(msg, ToolMessage) and msg.content == "[cleared]"
     ]
 
     assert len(cleared_messages) == 2
-    assert isinstance(request.messages[-1], ToolMessage)
-    assert request.messages[-1].content != "[cleared]"
+    assert isinstance(modified_request.messages[-1], ToolMessage)
+    assert modified_request.messages[-1].content != "[cleared]"
 
 
 async def test_exclude_tools_prevents_clearing_async() -> None:
@@ -385,14 +428,19 @@ async def test_exclude_tools_prevents_clearing_async() -> None:
         ],
     )
 
+    modified_request = None
+
     async def mock_handler(req: ModelRequest) -> AIMessage:
+        nonlocal modified_request
+        modified_request = req
         return AIMessage(content="mock response")
 
-    # Call awrap_model_call which modifies the request
+    # Call awrap_model_call which creates a new request with edits
     await middleware.awrap_model_call(request, mock_handler)
 
-    search_tool = request.messages[1]
-    calc_tool = request.messages[3]
+    assert modified_request is not None
+    search_tool = modified_request.messages[1]
+    calc_tool = modified_request.messages[3]
 
     assert isinstance(search_tool, ToolMessage)
     assert search_tool.content == "search-results" * 20

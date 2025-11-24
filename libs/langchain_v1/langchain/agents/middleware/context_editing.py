@@ -10,6 +10,7 @@ chat model.
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Iterable, Sequence
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Literal
 
@@ -238,10 +239,11 @@ class ContextEditingMiddleware(AgentMiddleware):
                     system_msg + list(messages), request.tools
                 )
 
+        edited_messages = deepcopy(list(request.messages))
         for edit in self.edits:
-            edit.apply(request.messages, count_tokens=count_tokens)
+            edit.apply(edited_messages, count_tokens=count_tokens)
 
-        return handler(request)
+        return handler(request.override(messages=edited_messages))
 
     async def awrap_model_call(
         self,
@@ -266,10 +268,11 @@ class ContextEditingMiddleware(AgentMiddleware):
                     system_msg + list(messages), request.tools
                 )
 
+        edited_messages = deepcopy(list(request.messages))
         for edit in self.edits:
-            edit.apply(request.messages, count_tokens=count_tokens)
+            edit.apply(edited_messages, count_tokens=count_tokens)
 
-        return await handler(request)
+        return await handler(request.override(messages=edited_messages))
 
 
 __all__ = [

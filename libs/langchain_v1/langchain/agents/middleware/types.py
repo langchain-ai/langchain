@@ -94,6 +94,31 @@ class ModelRequest:
     runtime: Runtime[ContextT]  # type: ignore[valid-type]
     model_settings: dict[str, Any] = field(default_factory=dict)
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Set an attribute with a deprecation warning.
+
+        Direct attribute assignment on `ModelRequest` is deprecated. Use the
+        `override()` method instead to create a new request with modified attributes.
+
+        Args:
+            name: Attribute name.
+            value: Attribute value.
+        """
+        import warnings
+
+        # Allow setting attributes during __init__ (when object is being constructed)
+        if not hasattr(self, "__dataclass_fields__") or not hasattr(self, name):
+            object.__setattr__(self, name, value)
+        else:
+            warnings.warn(
+                f"Direct attribute assignment to ModelRequest.{name} is deprecated. "
+                f"Use request.override({name}=...) instead to create a new request "
+                f"with the modified attribute.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            object.__setattr__(self, name, value)
+
     def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest:
         """Replace the request with a new request with the given overrides.
 
@@ -446,7 +471,14 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
                 ```python
                 def wrap_tool_call(self, request, handler):
-                    request.tool_call["args"]["value"] *= 2
+                    modified_call = {
+                        **request.tool_call,
+                        "args": {
+                            **request.tool_call["args"],
+                            "value": request.tool_call["args"]["value"] * 2,
+                        },
+                    }
+                    request = request.override(tool_call=modified_call)
                     return handler(request)
                 ```
 
@@ -1337,7 +1369,7 @@ def dynamic_prompt(
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
             ) -> ModelCallResult:
                 prompt = await func(request)  # type: ignore[misc]
-                request.system_prompt = prompt
+                request = request.override(system_prompt=prompt)
                 return await handler(request)
 
             middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
@@ -1358,7 +1390,7 @@ def dynamic_prompt(
             handler: Callable[[ModelRequest], ModelResponse],
         ) -> ModelCallResult:
             prompt = cast("str", func(request))
-            request.system_prompt = prompt
+            request = request.override(system_prompt=prompt)
             return handler(request)
 
         async def async_wrapped_from_sync(
@@ -1368,7 +1400,7 @@ def dynamic_prompt(
         ) -> ModelCallResult:
             # Delegate to sync function
             prompt = cast("str", func(request))
-            request.system_prompt = prompt
+            request = request.override(system_prompt=prompt)
             return await handler(request)
 
         middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
@@ -1469,7 +1501,7 @@ def wrap_model_call(
                     pass
 
                 # Try fallback model
-                request.model = fallback_model_instance
+                request = request.override(model=fallback_model_instance)
                 return handler(request)
             ```
 
@@ -1632,7 +1664,14 @@ def wrap_tool_call(
             ```python
             @wrap_tool_call
             def modify_args(request, handler):
-                request.tool_call["args"]["value"] *= 2
+                modified_call = {
+                    **request.tool_call,
+                    "args": {
+                        **request.tool_call["args"],
+                        "value": request.tool_call["args"]["value"] * 2,
+                    },
+                }
+                request = request.override(tool_call=modified_call)
                 return handler(request)
             ```
 
