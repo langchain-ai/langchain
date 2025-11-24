@@ -3805,7 +3805,7 @@ def test_html_splitter_keep_separator_default() -> None:
 
 @pytest.mark.requires("bs4")
 def test_html_splitter_preserved_elements_reverse_order() -> None:
-    """Test HTML splitter with preserved elements that could have conflicting placeholders.
+    """Test HTML splitter with preserved elements and conflicting placeholders.
 
     This test validates that preserved elements are reinserted in reverse order
     to prevent conflicts when one placeholder might be a substring of another.
