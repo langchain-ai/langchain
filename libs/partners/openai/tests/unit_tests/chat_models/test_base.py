@@ -120,6 +120,30 @@ def test_openai_client_caching() -> None:
     assert llm1.root_client._client is not llm7.root_client._client
 
 
+def test_profile() -> None:
+    model = ChatOpenAI(model="gpt-4")
+    assert model.profile
+    assert not model.profile["structured_output"]
+
+    model = ChatOpenAI(model="gpt-5")
+    assert model.profile
+    assert model.profile["structured_output"]
+    assert model.profile["tool_calling"]
+
+    # Test overwriting a field
+    model.profile["tool_calling"] = False
+    assert not model.profile["tool_calling"]
+
+    # Test we didn't mutate
+    model = ChatOpenAI(model="gpt-5")
+    assert model.profile
+    assert model.profile["tool_calling"]
+
+    # Test passing in profile
+    model = ChatOpenAI(model="gpt-5", profile={"tool_calling": False})
+    assert model.profile == {"tool_calling": False}
+
+
 def test_openai_o1_temperature() -> None:
     llm = ChatOpenAI(model="o1-preview")
     assert llm.temperature == 1

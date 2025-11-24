@@ -40,7 +40,10 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models import (
+    LanguageModelInput,
+    ModelProfileRegistry,
+)
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     LangSmithParams,
@@ -123,8 +126,10 @@ from langchain_openai.chat_models._compat import (
     _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
 )
+from langchain_openai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
+    from langchain_core.language_models import ModelProfile
     from openai.types.responses import Response
 
 logger = logging.getLogger(__name__)
@@ -132,6 +137,14 @@ logger = logging.getLogger(__name__)
 # This SSL context is equivelent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
+
+_MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
+
 
 WellKnownTools = (
     "file_search",
@@ -560,6 +573,7 @@ class BaseChatOpenAI(BaseChatModel):
     !!! version-added "Added in `langchain-openai` 0.3.9"
 
     !!! warning "Behavior changed in `langchain-openai` 0.3.35"
+
         Enabled for default base URL and client.
     """
 
@@ -790,6 +804,7 @@ class BaseChatOpenAI(BaseChatModel):
     - `'v1'`: v1 of LangChain cross-provider standard.
 
     !!! warning "Behavior changed in `langchain-openai` 1.0.0"
+
         Default updated to `"responses/v1"`.
     """
 
@@ -950,6 +965,13 @@ class BaseChatOpenAI(BaseChatModel):
                 **async_specific,  # type: ignore[arg-type]
             )
             self.async_client = self.root_async_client.chat.completions
+        return self
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model_name)
         return self
 
     @property
@@ -1987,9 +2009,11 @@ class BaseChatOpenAI(BaseChatModel):
                 - `'parsing_error'`: `BaseException | None`
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.12"
+
             Support for `tools` added.
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.21"
+
             Pass `kwargs` through to the model.
         """
         if strict is not None and method == "json_mode":
@@ -3109,12 +3133,15 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 - `'parsing_error'`: `BaseException | None`
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.0"
+
             `method` default changed from `"function_calling"` to `"json_schema"`.
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.12"
+
             Support for `tools` added.
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.21"
+
             Pass `kwargs` through to the model.
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`, `strict=True`"
