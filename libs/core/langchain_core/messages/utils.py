@@ -1745,3 +1745,63 @@ def count_tokens_approximately(
 
     # round up once more time in case extra_tokens_per_message is a float
     return math.ceil(token_count)
+
+
+def to_message_state(obj: Any) -> dict[str, list[BaseMessage]]:
+    """Normalize various inputs into a canonical message state.
+
+    Supported inputs:
+    - str                       -> HumanMessage
+    - BaseMessage               -> preserved
+    - list[str|BaseMessage]     -> flattened and normalized
+    - dict with "messages" key  -> returned as-is
+    - None                      -> empty list
+
+    Returns:
+        {"messages": [BaseMessage, ...]}
+    """
+    # None -> empty message list
+    if obj is None:
+        return {"messages": []}
+
+    # Already message-state
+    if isinstance(obj, dict) and "messages" in obj:
+        return obj
+
+    # A single BaseMessage
+    if isinstance(obj, BaseMessage):
+        return {"messages": [obj]}
+
+    # A single string -> HumanMessage
+    if isinstance(obj, str):
+        return {"messages": [HumanMessage(content=obj)]}
+
+    # A list of items -> normalize each element
+    if isinstance(obj, list):
+        msgs: list[BaseMessage] = []
+        for item in obj:
+            if isinstance(item, BaseMessage):
+                msgs.append(item)
+            elif isinstance(item, str):
+                msgs.append(HumanMessage(content=item))
+            else:
+                msg = f"Unsupported element in list for to_message_state: {type(item)}"
+                raise TypeError(msg)
+        return {"messages": msgs}
+
+    # Unsupported type
+    msg = f"Unsupported type for to_message_state: {type(obj)}"
+    raise TypeError(msg)
+
+
+def as_message_state() -> callable:
+    """Return an LCEL-friendly wrapper that normalizes outputs into message state.
+
+    Returns:
+        callable that transforms any LCEL output into {"messages": [...]}
+    """
+
+    def _inner(x: Any) -> dict[str, list[BaseMessage]]:
+        return to_message_state(x)
+
+    return _inner
