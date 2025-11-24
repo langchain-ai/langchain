@@ -159,9 +159,11 @@ class SummarizationMiddleware(AgentMiddleware):
             requires_profile = True
         if requires_profile and self._get_profile_limits() is None:
             msg = (
-                "Model profile information is required to use fractional token limits. "
-                'pip install "langchain[model-profiles]" or use absolute token counts '
-                "instead."
+                "Model profile information is required to use fractional token limits, "
+                "and is unavailable for the specified model. Please use absolute token "
+                "counts instead, or pass "
+                '`\n\nChatModel(..., profile={"max_input_tokens": ...})`.\n\n'
+                "with a desired integer value of the model's maximum input tokens."
             )
             raise ValueError(msg)
 
@@ -308,7 +310,7 @@ class SummarizationMiddleware(AgentMiddleware):
         """Retrieve max input token limit from the model profile."""
         try:
             profile = self.model.profile
-        except (AttributeError, ImportError):
+        except AttributeError:
             return None
 
         if not isinstance(profile, Mapping):

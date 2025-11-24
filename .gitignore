@@ -163,3 +163,6 @@ node_modules
 
 prof
 virtualenv/
+scratch/
+
+.langgraph_api/

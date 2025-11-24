@@ -20,7 +20,7 @@ from langchain.agents.middleware.types import (
     _ModelRequestOverrides,
 )
 from langchain.tools import ToolRuntime, tool
-from langchain_core.messages import ToolMessage
+from langchain_core.messages import SystemMessage, ToolMessage
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
 
@@ -275,11 +275,17 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            overrides["system_prompt"] = (
-                request.system_prompt + "\n\n" + self.system_prompt
-                if request.system_prompt
-                else self.system_prompt
+            if request.system_message is not None:
+                new_system_content = [
+                    *request.system_message.content_blocks,
+                    {"type": "text", "text": f"\n\n{self.system_prompt}"},
+                ]
+            else:
+                new_system_content = [{"type": "text", "text": self.system_prompt}]
+            new_system_message = SystemMessage(
+                content=cast("list[str | dict[str, str]]", new_system_content)
             )
+            overrides["system_message"] = new_system_message
 
         return handler(request.override(**overrides))
 
@@ -299,11 +305,17 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            overrides["system_prompt"] = (
-                request.system_prompt + "\n\n" + self.system_prompt
-                if request.system_prompt
-                else self.system_prompt
+            if request.system_message is not None:
+                new_system_content = [
+                    *request.system_message.content_blocks,
+                    {"type": "text", "text": f"\n\n{self.system_prompt}"},
+                ]
+            else:
+                new_system_content = [{"type": "text", "text": self.system_prompt}]
+            new_system_message = SystemMessage(
+                content=cast("list[str | dict[str, str]]", new_system_content)
             )
+            overrides["system_message"] = new_system_message
 
         return await handler(request.override(**overrides))
 
@@ -751,11 +763,17 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            overrides["system_prompt"] = (
-                request.system_prompt + "\n\n" + self.system_prompt
-                if request.system_prompt
-                else self.system_prompt
+            if request.system_message is not None:
+                new_system_content = [
+                    *request.system_message.content_blocks,
+                    {"type": "text", "text": f"\n\n{self.system_prompt}"},
+                ]
+            else:
+                new_system_content = [{"type": "text", "text": self.system_prompt}]
+            new_system_message = SystemMessage(
+                content=cast("list[str | dict[str, str]]", new_system_content)
             )
+            overrides["system_message"] = new_system_message
 
         return handler(request.override(**overrides))
 
@@ -775,11 +793,17 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            overrides["system_prompt"] = (
-                request.system_prompt + "\n\n" + self.system_prompt
-                if request.system_prompt
-                else self.system_prompt
+            if request.system_message is not None:
+                new_system_content = [
+                    *request.system_message.content_blocks,
+                    {"type": "text", "text": f"\n\n{self.system_prompt}"},
+                ]
+            else:
+                new_system_content = [{"type": "text", "text": self.system_prompt}]
+            new_system_message = SystemMessage(
+                content=cast("list[str | dict[str, str]]", new_system_content)
             )
+            overrides["system_message"] = new_system_message
 
         return await handler(request.override(**overrides))
 

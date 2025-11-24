@@ -124,9 +124,11 @@ class UsageMetadata(TypedDict):
         ```
 
     !!! warning "Behavior changed in `langchain-core` 0.3.9"
+
         Added `input_token_details` and `output_token_details`.
 
     !!! note "LangSmith SDK"
+
         The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
         LangSmith's `UsageMetadata` has additional fields to capture cost information
         used by the LangSmith platform.

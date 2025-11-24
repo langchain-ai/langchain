@@ -230,9 +230,7 @@ class TestChainModelCallHandlers:
         test_runtime = {"test": "runtime"}
 
         # Create request with state and runtime
-        test_request = create_test_request()
-        test_request.state = test_state
-        test_request.runtime = test_runtime
+        test_request = create_test_request(state=test_state, runtime=test_runtime)
         result = composed(test_request, create_mock_base_handler())
 
         # Both handlers should see same state and runtime

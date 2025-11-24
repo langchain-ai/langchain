@@ -20,9 +20,7 @@ _MODEL = "accounts/fireworks/models/llama-v3p1-8b-instruct"
 
 def test_tool_choice_bool() -> None:
     """Test that tool choice is respected just passing in True."""
-    llm = ChatFireworks(
-        model="accounts/fireworks/models/llama-v3p1-70b-instruct", temperature=0
-    )
+    llm = ChatFireworks(model="fireworks/kimi-k2-instruct-0905")
 
     class MyTool(BaseModel):
         name: str

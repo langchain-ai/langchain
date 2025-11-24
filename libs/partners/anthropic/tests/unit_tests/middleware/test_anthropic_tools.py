@@ -1,7 +1,9 @@
 """Unit tests for Anthropic text editor and memory tool middleware."""
 
+from unittest.mock import MagicMock
+
 import pytest
-from langchain_core.messages import ToolMessage
+from langchain_core.messages import SystemMessage, ToolMessage
 from langgraph.types import Command
 
 from langchain_anthropic.middleware.anthropic_tools import (
@@ -279,3 +281,171 @@ class TestFileOperations:
         # New path has the file data
         assert files.get("/memories/new.txt") is not None
         assert files["/memories/new.txt"]["content"] == ["line1"]
+
+
+class TestSystemMessageHandling:
+    """Test system message handling in wrap_model_call."""
+
+    def test_text_editor_no_system_message(self) -> None:
+        """Test text editor middleware without system message."""
+        from langchain.agents.middleware.types import ModelRequest
+
+        middleware = StateClaudeTextEditorMiddleware()
+
+        request = ModelRequest(
+            model=MagicMock(),
+            messages=[],
+            system_message=None,
+            tool_choice=None,
+            tools=[],
+            response_format=None,
+            state={"messages": []},
+            runtime=MagicMock(),
+        )
+
+        captured_request = None
+
+        def handler(req: ModelRequest) -> MagicMock:
+            nonlocal captured_request
+            captured_request = req
+            return MagicMock()
+
+        middleware.wrap_model_call(request, handler)
+
+        # No system message should be added for text editor
+        assert captured_request is not None
+        assert captured_request.system_message is None
+
+    def test_memory_middleware_adds_system_message(self) -> None:
+        """Test memory middleware adds system message when none exists."""
+        from langchain.agents.middleware.types import ModelRequest
+
+        middleware = StateClaudeMemoryMiddleware()
+
+        request = ModelRequest(
+            model=MagicMock(),
+            messages=[],
+            system_message=None,
+            tool_choice=None,
+            tools=[],
+            response_format=None,
+            state={"messages": []},
+            runtime=MagicMock(),
+        )
+
+        captured_request = None
+
+        def handler(req: ModelRequest) -> MagicMock:
+            nonlocal captured_request
+            captured_request = req
+            return MagicMock()
+
+        middleware.wrap_model_call(request, handler)
+
+        # System message should be added
+        assert captured_request is not None
+        assert captured_request.system_message is not None
+        assert isinstance(captured_request.system_message, SystemMessage)
+        assert "MEMORY PROTOCOL" in captured_request.system_message.text
+
+    def test_memory_middleware_merges_system_message(self) -> None:
+        """Test memory middleware merges with existing system message."""
+        from langchain.agents.middleware.types import ModelRequest
+
+        middleware = StateClaudeMemoryMiddleware()
+
+        existing_message = SystemMessage("You are a helpful assistant.")
+        request = ModelRequest(
+            model=MagicMock(),
+            messages=[],
+            system_message=existing_message,
+            tool_choice=None,
+            tools=[],
+            response_format=None,
+            state={"messages": []},
+            runtime=MagicMock(),
+        )
+
+        captured_request = None
+
+        def handler(req: ModelRequest) -> MagicMock:
+            nonlocal captured_request
+            captured_request = req
+            return MagicMock()
+
+        middleware.wrap_model_call(request, handler)
+
+        # System message should be merged
+        assert captured_request is not None
+        assert captured_request.system_message is not None
+        assert isinstance(captured_request.system_message, SystemMessage)
+        assert "You are a helpful assistant." in captured_request.system_message.text
+        assert "MEMORY PROTOCOL" in captured_request.system_message.text
+
+    async def test_async_memory_middleware_merges_system_message(self) -> None:
+        """Test async memory middleware merges with existing system message."""
+        from langchain.agents.middleware.types import ModelRequest
+
+        middleware = StateClaudeMemoryMiddleware()
+
+        existing_message = SystemMessage("You are a helpful assistant.")
+        request = ModelRequest(
+            model=MagicMock(),
+            messages=[],
+            system_message=existing_message,
+            tool_choice=None,
+            tools=[],
+            response_format=None,
+            state={"messages": []},
+            runtime=MagicMock(),
+        )
+
+        captured_request = None
+
+        async def handler(req: ModelRequest) -> MagicMock:
+            nonlocal captured_request
+            captured_request = req
+            return MagicMock()
+
+        await middleware.awrap_model_call(request, handler)
+
+        # System message should be merged
+        assert captured_request is not None
+        assert captured_request.system_message is not None
+        assert isinstance(captured_request.system_message, SystemMessage)
+        assert "You are a helpful assistant." in captured_request.system_message.text
+        assert "MEMORY PROTOCOL" in captured_request.system_message.text
+
+    def test_custom_system_prompt_merges_correctly(self) -> None:
+        """Test custom system prompt merges with existing system message."""
+        from langchain.agents.middleware.types import ModelRequest
+
+        custom_prompt = "Custom instructions for memory tool."
+        middleware = StateClaudeMemoryMiddleware(system_prompt=custom_prompt)
+
+        existing_message = SystemMessage("Existing instructions.")
+        request = ModelRequest(
+            model=MagicMock(),
+            messages=[],
+            system_message=existing_message,
+            tool_choice=None,
+            tools=[],
+            response_format=None,
+            state={"messages": []},
+            runtime=MagicMock(),
+        )
+
+        captured_request = None
+
+        def handler(req: ModelRequest) -> MagicMock:
+            nonlocal captured_request
+            captured_request = req
+            return MagicMock()
+
+        middleware.wrap_model_call(request, handler)
+
+        # Both prompts should be in the final message
+        assert captured_request is not None
+        assert captured_request.system_message is not None
+        assert "Existing instructions." in captured_request.system_message.text
+        assert custom_prompt in captured_request.system_message.text

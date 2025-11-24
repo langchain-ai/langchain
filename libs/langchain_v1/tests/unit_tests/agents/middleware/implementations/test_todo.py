@@ -83,14 +83,21 @@ def test_adds_system_prompt_when_none_exists() -> None:
     middleware = TodoListMiddleware()
     request = _make_request(system_prompt=None)
 
+    captured_request = None
+
     def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
         return ModelResponse(result=[AIMessage(content="response")])
 
     middleware.wrap_model_call(request, mock_handler)
 
-    # System prompt should be set
-    assert request.system_prompt is not None
-    assert "write_todos" in request.system_prompt
+    # System prompt should be set in the modified request passed to handler
+    assert captured_request is not None
+    assert captured_request.system_prompt is not None
+    assert "write_todos" in captured_request.system_prompt
+    # Original request should be unchanged
+    assert request.system_prompt is None
 
 
 def test_appends_to_existing_system_prompt() -> None:
@@ -99,16 +106,23 @@ def test_appends_to_existing_system_prompt() -> None:
     middleware = TodoListMiddleware()
     request = _make_request(system_prompt=existing_prompt)
 
+    captured_request = None
+
     def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
         return ModelResponse(result=[AIMessage(content="response")])
 
     middleware.wrap_model_call(request, mock_handler)
 
-    # System prompt should contain both
-    assert request.system_prompt is not None
-    assert existing_prompt in request.system_prompt
-    assert "write_todos" in request.system_prompt
-    assert request.system_prompt.startswith(existing_prompt)
+    # System prompt should contain both in the modified request passed to handler
+    assert captured_request is not None
+    assert captured_request.system_prompt is not None
+    assert existing_prompt in captured_request.system_prompt
+    assert "write_todos" in captured_request.system_prompt
+    assert captured_request.system_prompt.startswith(existing_prompt)
+    # Original request should be unchanged
+    assert request.system_prompt == existing_prompt
 
 
 @pytest.mark.parametrize(
@@ -137,13 +151,20 @@ def test_todo_middleware_on_model_call(original_prompt, expected_prompt_prefix) 
         model_settings={},
     )
 
+    captured_request = None
+
     def mock_handler(req: ModelRequest) -> AIMessage:
+        nonlocal captured_request
+        captured_request = req
         return AIMessage(content="mock response")
 
     # Call wrap_model_call to trigger the middleware logic
     middleware.wrap_model_call(request, mock_handler)
-    # Check that the request was modified in place
-    assert request.system_prompt.startswith(expected_prompt_prefix)
+    # Check that the modified request passed to handler has the expected prompt
+    assert captured_request is not None
+    assert captured_request.system_prompt.startswith(expected_prompt_prefix)
+    # Original request should be unchanged
+    assert request.system_prompt == original_prompt
 
 
 def test_custom_system_prompt() -> None:
@@ -152,13 +173,20 @@ def test_custom_system_prompt() -> None:
     middleware = TodoListMiddleware(system_prompt=custom_prompt)
     request = _make_request(system_prompt=None)
 
+    captured_request = None
+
     def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
         return ModelResponse(result=[AIMessage(content="response")])
 
     middleware.wrap_model_call(request, mock_handler)
 
-    # Should use custom prompt
-    assert request.system_prompt == custom_prompt
+    # Should use custom prompt in the modified request passed to handler
+    assert captured_request is not None
+    assert captured_request.system_prompt == custom_prompt
+    # Original request should be unchanged
+    assert request.system_prompt is None
 
 
 def test_todo_middleware_custom_system_prompt() -> None:
@@ -181,13 +209,20 @@ def test_todo_middleware_custom_system_prompt() -> None:
         runtime=cast(Runtime, object()),
     )
 
+    captured_request = None
+
     def mock_handler(req: ModelRequest) -> AIMessage:
+        nonlocal captured_request
+        captured_request = req
         return AIMessage(content="mock response")
 
     # Call wrap_model_call to trigger the middleware logic
     middleware.wrap_model_call(request, mock_handler)
-    # Check that the request was modified in place
-    assert request.system_prompt == f"Original prompt\n\n{custom_system_prompt}"
+    # Check that the modified request passed to handler has the expected prompt
+    assert captured_request is not None
+    assert captured_request.system_prompt == f"Original prompt\n\n{custom_system_prompt}"
+    # Original request should be unchanged
+    assert request.system_prompt == "Original prompt"
 
 
 def test_custom_tool_description() -> None:
@@ -235,13 +270,20 @@ def test_todo_middleware_custom_system_prompt_and_tool_description() -> None:
         model_settings={},
     )
 
+    captured_request = None
+
     def mock_handler(req: ModelRequest) -> AIMessage:
+        nonlocal captured_request
+        captured_request = req
         return AIMessage(content="mock response")
 
     # Call wrap_model_call to trigger the middleware logic
     middleware.wrap_model_call(request, mock_handler)
-    # Check that the request was modified in place
-    assert request.system_prompt == custom_system_prompt
+    # Check that the modified request passed to handler has the expected prompt
+    assert captured_request is not None
+    assert captured_request.system_prompt == custom_system_prompt
+    # Original request should be unchanged
+    assert request.system_prompt is None
 
     # Verify tool description
     assert len(middleware.tools) == 1
@@ -390,14 +432,21 @@ async def test_adds_system_prompt_when_none_exists_async() -> None:
     middleware = TodoListMiddleware()
     request = _make_request(system_prompt=None)
 
+    captured_request = None
+
     async def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
         return ModelResponse(result=[AIMessage(content="response")])
 
     await middleware.awrap_model_call(request, mock_handler)
 
-    # System prompt should be set
-    assert request.system_prompt is not None
-    assert "write_todos" in request.system_prompt
+    # System prompt should be set in the modified request passed to handler
+    assert captured_request is not None
+    assert captured_request.system_prompt is not None
+    assert "write_todos" in captured_request.system_prompt
+    # Original request should be unchanged
+    assert request.system_prompt is None
 
 
 async def test_appends_to_existing_system_prompt_async() -> None:
@@ -406,16 +455,23 @@ async def test_appends_to_existing_system_prompt_async() -> None:
     middleware = TodoListMiddleware()
     request = _make_request(system_prompt=existing_prompt)
 
+    captured_request = None
+
     async def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
         return ModelResponse(result=[AIMessage(content="response")])
 
     await middleware.awrap_model_call(request, mock_handler)
 
-    # System prompt should contain both
-    assert request.system_prompt is not None
-    assert existing_prompt in request.system_prompt
-    assert "write_todos" in request.system_prompt
-    assert request.system_prompt.startswith(existing_prompt)
+    # System prompt should contain both in the modified request passed to handler
+    assert captured_request is not None
+    assert captured_request.system_prompt is not None
+    assert existing_prompt in captured_request.system_prompt
+    assert "write_todos" in captured_request.system_prompt
+    assert captured_request.system_prompt.startswith(existing_prompt)
+    # Original request should be unchanged
+    assert request.system_prompt == existing_prompt
 
 
 async def test_custom_system_prompt_async() -> None:
@@ -424,13 +480,20 @@ async def test_custom_system_prompt_async() -> None:
     middleware = TodoListMiddleware(system_prompt=custom_prompt)
     request = _make_request(system_prompt=None)
 
+    captured_request = None
+
     async def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
         return ModelResponse(result=[AIMessage(content="response")])
 
     await middleware.awrap_model_call(request, mock_handler)
 
-    # Should use custom prompt
-    assert request.system_prompt == custom_prompt
+    # Should use custom prompt in the modified request passed to handler
+    assert captured_request is not None
+    assert captured_request.system_prompt == custom_prompt
+    # Original request should be unchanged
+    assert request.system_prompt is None
 
 
 async def test_handler_called_with_modified_request_async() -> None:

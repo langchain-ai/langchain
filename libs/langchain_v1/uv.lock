@@ -1925,7 +1925,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.0.5"
+version = "1.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -1967,9 +1967,6 @@ huggingface = [
 mistralai = [
     { name = "langchain-mistralai" },
 ]
-model-profiles = [
-    { name = "langchain-model-profiles" },
-]
 ollama = [
     { name = "langchain-ollama" },
 ]
@@ -1991,7 +1988,6 @@ lint = [
     { name = "ruff" },
 ]
 test = [
-    { name = "langchain-model-profiles" },
     { name = "langchain-openai" },
     { name = "langchain-tests" },
     { name = "pytest" },
@@ -2007,7 +2003,6 @@ test = [
 test-integration = [
     { name = "cassio" },
     { name = "langchain-core" },
-    { name = "langchain-model-profiles" },
     { name = "langchain-text-splitters" },
     { name = "langchainhub" },
     { name = "python-dotenv" },
@@ -2033,7 +2028,6 @@ requires-dist = [
     { name = "langchain-groq", marker = "extra == 'groq'" },
     { name = "langchain-huggingface", marker = "extra == 'huggingface'" },
     { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
-    { name = "langchain-model-profiles", marker = "extra == 'model-profiles'", editable = "../model-profiles" },
     { name = "langchain-ollama", marker = "extra == 'ollama'" },
     { name = "langchain-openai", marker = "extra == 'openai'", editable = "../partners/openai" },
     { name = "langchain-perplexity", marker = "extra == 'perplexity'" },
@@ -2042,12 +2036,11 @@ requires-dist = [
     { name = "langgraph", specifier = ">=1.0.2,<1.1.0" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
-provides-extras = ["model-profiles", "community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
+provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
 lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
 test = [
-    { name = "langchain-model-profiles", editable = "../model-profiles" },
     { name = "langchain-openai", editable = "../partners/openai" },
     { name = "langchain-tests", editable = "../standard-tests" },
     { name = "pytest", specifier = ">=8.0.0,<9.0.0" },
@@ -2063,7 +2056,6 @@ test = [
 test-integration = [
     { name = "cassio", specifier = ">=0.1.0,<1.0.0" },
     { name = "langchain-core", editable = "../core" },
-    { name = "langchain-model-profiles", editable = "../model-profiles" },
     { name = "langchain-text-splitters", editable = "../text-splitters" },
     { name = "langchainhub", specifier = ">=0.1.16,<1.0.0" },
     { name = "python-dotenv", specifier = ">=1.0.0,<2.0.0" },
@@ -2174,7 +2166,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.5"
+version = "1.1.0"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -2208,7 +2200,6 @@ test = [
     { name = "blockbuster", specifier = ">=1.5.18,<1.6.0" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
     { name = "grandalf", specifier = ">=0.8.0,<1.0.0" },
-    { name = "langchain-model-profiles", directory = "../model-profiles" },
     { name = "langchain-tests", directory = "../standard-tests" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
@@ -2225,7 +2216,6 @@ test = [
 ]
 test-integration = []
 typing = [
-    { name = "langchain-model-profiles", directory = "../model-profiles" },
     { name = "langchain-text-splitters", directory = "../text-splitters" },
     { name = "mypy", specifier = ">=1.18.1,<1.19.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
@@ -2341,46 +2331,6 @@ wheels = [
 ]
 
 [[package]]
-name = "langchain-model-profiles"
-version = "0.0.4"
-source = { editable = "../model-profiles" }
-dependencies = [
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-    { name = "typing-extensions" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0,<3.0.0" },
-    { name = "typing-extensions", specifier = ">=4.7.0,<5.0.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "httpx", specifier = ">=0.23.0,<1" }]
-lint = [
-    { name = "langchain", editable = "." },
-    { name = "ruff", specifier = ">=0.12.2,<0.13.0" },
-]
-test = [
-    { name = "langchain", extras = ["openai"], editable = "." },
-    { name = "langchain-core", editable = "../core" },
-    { name = "pytest", specifier = ">=8.0.0,<9.0.0" },
-    { name = "pytest-asyncio", specifier = ">=0.23.2,<2.0.0" },
-    { name = "pytest-cov", specifier = ">=4.0.0,<8.0.0" },
-    { name = "pytest-mock" },
-    { name = "pytest-socket", specifier = ">=0.6.0,<1.0.0" },
-    { name = "pytest-watcher", specifier = ">=0.2.6,<1.0.0" },
-    { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
-    { name = "syrupy", specifier = ">=4.0.2,<5.0.0" },
-    { name = "toml", specifier = ">=0.10.2,<1.0.0" },
-]
-test-integration = [{ name = "langchain-core", editable = "../core" }]
-typing = [
-    { name = "mypy", specifier = ">=1.18.1,<1.19.0" },
-    { name = "types-toml", specifier = ">=0.10.8.20240310,<1.0.0.0" },
-]
-
-[[package]]
 name = "langchain-ollama"
 version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2395,7 +2345,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.0.2"
+version = "1.1.0"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },
@@ -2458,7 +2408,7 @@ wheels = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.0.1"
+version = "1.0.2"
 source = { editable = "../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -2626,15 +2576,15 @@ wheels = [
 
 [[package]]
 name = "langgraph-prebuilt"
-version = "1.0.4"
+version = "1.0.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph-checkpoint" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/84/08/45857c7c65f696307834af13946a72293e6cc49141de887f0957c2eb2c46/langgraph_prebuilt-1.0.4.tar.gz", hash = "sha256:7b4f9e97a146d2d625695c3549bdb432974b80817165139ec2ec869721e72c0f", size = 142470, upload-time = "2025-11-13T19:02:14.807Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/46/f9/54f8891b32159e4542236817aea2ee83de0de18bce28e9bdba08c7f93001/langgraph_prebuilt-1.0.5.tar.gz", hash = "sha256:85802675ad778cc7240fd02d47db1e0b59c0c86d8369447d77ce47623845db2d", size = 144453, upload-time = "2025-11-20T16:47:39.23Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/69/14/a83e50129f66df783a68acb89e7b3e9c39b5c128a8748e961bc2b187f003/langgraph_prebuilt-1.0.4-py3-none-any.whl", hash = "sha256:50b1aa2b434783b6da30785568cf7155136b484750cc2ec695c0d4255db08262", size = 34414, upload-time = "2025-11-13T19:02:13.416Z" },
+    { url = "https://files.pythonhosted.org/packages/87/5e/aeba4a5b39fe6e874e0dd003a82da71c7153e671312671a8dacc5cb7c1af/langgraph_prebuilt-1.0.5-py3-none-any.whl", hash = "sha256:22369563e1848862ace53fbc11b027c28dd04a9ac39314633bb95f2a7e258496", size = 35072, upload-time = "2025-11-20T16:47:38.187Z" },
 ]
 
 [[package]]

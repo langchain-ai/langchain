@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
+from langchain_core.language_models import ModelProfile
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, RemoveMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
@@ -10,9 +11,6 @@ from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langchain.agents.middleware.summarization import SummarizationMiddleware
 
 from ...model import FakeToolCallingModel
-
-if TYPE_CHECKING:
-    from langchain_model_profiles import ModelProfile
 
 
 class MockChatModel(BaseChatModel):
@@ -35,13 +33,11 @@ class ProfileChatModel(BaseChatModel):
     def _generate(self, messages, **kwargs):  # type: ignore[no-untyped-def]
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
+    profile: ModelProfile | None = {"max_input_tokens": 1000}
+
     @property
     def _llm_type(self) -> str:
         return "mock"
-
-    @property
-    def profile(self) -> "ModelProfile":
-        return {"max_input_tokens": 1000}
 
 
 def test_summarization_middleware_initialization() -> None:

@@ -92,9 +92,8 @@ class ModelFallbackMiddleware(AgentMiddleware):
 
         # Try fallback models
         for fallback_model in self.models:
-            request.model = fallback_model
             try:
-                return handler(request)
+                return handler(request.override(model=fallback_model))
             except Exception as e:  # noqa: BLE001
                 last_exception = e
                 continue
@@ -127,9 +126,8 @@ class ModelFallbackMiddleware(AgentMiddleware):
 
         # Try fallback models
         for fallback_model in self.models:
-            request.model = fallback_model
             try:
-                return await handler(request)
+                return await handler(request.override(model=fallback_model))
             except Exception as e:  # noqa: BLE001
                 last_exception = e
                 continue

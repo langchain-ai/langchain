@@ -19,6 +19,15 @@ DEPLOYMENT_NAME = os.environ.get(
     os.environ.get("AZURE_OPENAI_LLM_DEPLOYMENT_NAME", ""),
 )
 
+pytestmark = pytest.mark.skipif(
+    True,
+    reason=(
+        "This entire module is skipped as all Azure OpenAI models supporting text "
+        "completions are retired. See: "
+        "https://learn.microsoft.com/en-us/azure/ai-foundry/openai/concepts/legacy-models"
+    ),
+)
+
 
 def _get_llm(**kwargs: Any) -> AzureOpenAI:
     return AzureOpenAI(  # type: ignore[call-arg, call-arg, call-arg]

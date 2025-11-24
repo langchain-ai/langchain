@@ -255,8 +255,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         # Also preserve any provider-specific tool dicts from the original request
         provider_tools = [tool for tool in request.tools if isinstance(tool, dict)]
 
-        request.tools = [*selected_tools, *provider_tools]
-        return request
+        return request.override(tools=[*selected_tools, *provider_tools])
 
     def wrap_model_call(
         self,

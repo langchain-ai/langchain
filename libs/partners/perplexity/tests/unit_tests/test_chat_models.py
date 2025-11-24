@@ -523,3 +523,8 @@ def test_perplexity_stream_includes_num_search_queries(mocker: MockerFixture) ->
     assert usage_chunk.usage_metadata["output_token_details"]["citation_tokens"] == 3  # type: ignore[typeddict-item]
 
     patcher.assert_called_once()
+
+
+def test_profile() -> None:
+    model = ChatPerplexity(model="sonar")
+    assert model.profile
