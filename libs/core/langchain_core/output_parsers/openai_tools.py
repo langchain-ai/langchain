@@ -4,7 +4,6 @@ import copy
 import json
 import logging
 from json import JSONDecodeError
-from mailbox import Message
 from typing import Annotated, Any
 
 from pydantic import SkipValidation, ValidationError
