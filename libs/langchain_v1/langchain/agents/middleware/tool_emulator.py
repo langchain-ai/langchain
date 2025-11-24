@@ -25,34 +25,42 @@ class LLMToolEmulator(AgentMiddleware):
     This middleware allows selective emulation of tools for testing purposes.
 
     By default (when `tools=None`), all tools are emulated. You can specify which
-    tools to emulate by passing a list of tool names or BaseTool instances.
+    tools to emulate by passing a list of tool names or `BaseTool` instances.
 
     Examples:
-        ```python title="Emulate all tools (default behavior)"
-        from langchain.agents.middleware import LLMToolEmulator
+        !!! example "Emulate all tools (default behavior)"
 
-        middleware = LLMToolEmulator()
+            ```python
+            from langchain.agents.middleware import LLMToolEmulator
 
-        agent = create_agent(
-            model="openai:gpt-4o",
-            tools=[get_weather, get_user_location, calculator],
-            middleware=[middleware],
-        )
-        ```
+            middleware = LLMToolEmulator()
 
-        ```python title="Emulate specific tools by name"
-        middleware = LLMToolEmulator(tools=["get_weather", "get_user_location"])
-        ```
+            agent = create_agent(
+                model="openai:gpt-4o",
+                tools=[get_weather, get_user_location, calculator],
+                middleware=[middleware],
+            )
+            ```
 
-        ```python title="Use a custom model for emulation"
-        middleware = LLMToolEmulator(
-            tools=["get_weather"], model="anthropic:claude-sonnet-4-5-20250929"
-        )
-        ```
+        !!! example "Emulate specific tools by name"
 
-        ```python title="Emulate specific tools by passing tool instances"
-        middleware = LLMToolEmulator(tools=[get_weather, get_user_location])
-        ```
+            ```python
+            middleware = LLMToolEmulator(tools=["get_weather", "get_user_location"])
+            ```
+
+        !!! example "Use a custom model for emulation"
+
+            ```python
+            middleware = LLMToolEmulator(
+                tools=["get_weather"], model="anthropic:claude-sonnet-4-5-20250929"
+            )
+            ```
+
+        !!! example "Emulate specific tools by passing tool instances"
+
+            ```python
+            middleware = LLMToolEmulator(tools=[get_weather, get_user_location])
+            ```
     """
 
     def __init__(

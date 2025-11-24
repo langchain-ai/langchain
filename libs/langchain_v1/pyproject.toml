@@ -18,7 +18,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-model-profiles = ["langchain-model-profiles"]
 community = ["langchain-community"]
 anthropic = ["langchain-anthropic"]
 openai = ["langchain-openai"]

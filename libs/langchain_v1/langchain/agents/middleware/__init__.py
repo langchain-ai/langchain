@@ -11,6 +11,7 @@ from .human_in_the_loop import (
 )
 from .model_call_limit import ModelCallLimitMiddleware
 from .model_fallback import ModelFallbackMiddleware
+from .model_retry import ModelRetryMiddleware
 from .pii import PIIDetectionError, PIIMiddleware
 from .shell_tool import (
     CodexSandboxExecutionPolicy,
@@ -57,6 +58,7 @@ __all__ = [
     "ModelFallbackMiddleware",
     "ModelRequest",
     "ModelResponse",
+    "ModelRetryMiddleware",
     "PIIDetectionError",
     "PIIMiddleware",
     "RedactionRule",

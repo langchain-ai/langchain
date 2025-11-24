@@ -18,7 +18,11 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models import (
+    LanguageModelInput,
+    ModelProfile,
+    ModelProfileRegistry,
+)
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     LangSmithParams,
@@ -79,8 +83,17 @@ from pydantic import (
 from typing_extensions import Self
 
 from langchain_fireworks._compat import _convert_from_v1_to_chat_completions
+from langchain_fireworks.data._profiles import _PROFILES
 
 logger = logging.getLogger(__name__)
+
+
+_MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -404,6 +417,13 @@ class ChatFireworks(BaseChatModel):
             self.async_client._max_retries = self.max_retries
         return self
 
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model_name)
+        return self
+
     @property
     def _default_params(self) -> dict[str, Any]:
         """Get the default parameters for calling Fireworks API."""
@@ -722,6 +742,7 @@ class ChatFireworks(BaseChatModel):
                     Uses Fireworks's [JSON mode feature](https://docs.fireworks.ai/structured-responses/structured-response-formatting).
 
                 !!! warning "Behavior changed in `langchain-fireworks` 0.2.8"
+
                     Added support for `'json_schema'`.
 
             include_raw:

@@ -1540,3 +1540,164 @@ def test_rendering_prompt_with_conditionals_no_empty_text_blocks() -> None:
     assert not [
         block for block in content if block["type"] == "text" and block["text"] == ""
     ]
+
+
+def test_fstring_rejects_invalid_identifier_variable_names() -> None:
+    """Test that f-string templates block attribute access, indexing.
+
+    This validation prevents template injection attacks by blocking:
+    - Attribute access like {msg.__class__}
+    - Indexing like {msg[0]}
+    - All-digit variable names like {0} or {100} (interpreted as positional args)
+
+    While allowing any other field names that Python's Formatter accepts.
+    """
+    # Test that attribute access and indexing are blocked (security issue)
+    invalid_templates = [
+        "{msg.__class__}",  # Attribute access with dunder
+        "{msg.__class__.__name__}",  # Multiple dunders
+        "{msg.content}",  # Attribute access
+        "{msg[0]}",  # Item access
+        "{0}",  # All-digit variable name (positional argument)
+        "{100}",  # All-digit variable name (positional argument)
+        "{42}",  # All-digit variable name (positional argument)
+    ]
+
+    for template_str in invalid_templates:
+        with pytest.raises(ValueError, match="Invalid variable name") as exc_info:
+            ChatPromptTemplate.from_messages(
+                [("human", template_str)],
+                template_format="f-string",
+            )
+
+        error_msg = str(exc_info.value)
+        assert "Invalid variable name" in error_msg
+        # Check for any of the expected error message parts
+        assert (
+            "attribute access" in error_msg
+            or "indexing" in error_msg
+            or "positional arguments" in error_msg
+        )
+
+    # Valid templates - Python's Formatter accepts non-identifier field names
+    valid_templates = [
+        (
+            "Hello {name} and {user_id}",
+            {"name": "Alice", "user_id": "123"},
+            "Hello Alice and 123",
+        ),
+        ("User: {user-name}", {"user-name": "Bob"}, "User: Bob"),  # Hyphen allowed
+        (
+            "Value: {2fast}",
+            {"2fast": "Charlie"},
+            "Value: Charlie",
+        ),  # Starts with digit allowed
+        ("Data: {my var}", {"my var": "Dave"}, "Data: Dave"),  # Space allowed
+    ]
+
+    for template_str, kwargs, expected in valid_templates:
+        template = ChatPromptTemplate.from_messages(
+            [("human", template_str)],
+            template_format="f-string",
+        )
+        result = template.invoke(kwargs)
+        assert result.messages[0].content == expected  # type: ignore[attr-defined]
+
+
+def test_mustache_template_attribute_access_vulnerability() -> None:
+    """Test that Mustache template injection is blocked.
+
+    Verify the fix for security vulnerability GHSA-6qv9-48xg-fc7f
+
+    Previously, Mustache used getattr() as a fallback, allowing access to
+    dangerous attributes like __class__, __globals__, etc.
+
+    The fix adds isinstance checks that reject non-dict/list types.
+    When templates try to traverse Python objects, they get empty string
+    per Mustache spec (better than the previous behavior of exposing internals).
+    """
+    msg = HumanMessage("howdy")
+
+    # Template tries to access attributes on a Python object
+    prompt = ChatPromptTemplate.from_messages(
+        [("human", "{{question.__class__.__name__}}")],
+        template_format="mustache",
+    )
+
+    # After the fix: returns empty string (attack blocked!)
+    # Previously would return "HumanMessage" via getattr()
+    result = prompt.invoke({"question": msg})
+    assert result.messages[0].content == ""  # type: ignore[attr-defined]
+
+    # Mustache still works correctly with actual dicts
+    prompt_dict = ChatPromptTemplate.from_messages(
+        [("human", "{{person.name}}")],
+        template_format="mustache",
+    )
+    result_dict = prompt_dict.invoke({"person": {"name": "Alice"}})
+    assert result_dict.messages[0].content == "Alice"  # type: ignore[attr-defined]
+
+
+@pytest.mark.requires("jinja2")
+def test_jinja2_template_attribute_access_is_blocked() -> None:
+    """Test that Jinja2 SandboxedEnvironment blocks dangerous attribute access.
+
+    This test verifies that Jinja2's sandbox successfully blocks access to
+    dangerous dunder attributes like __class__, unlike Mustache.
+
+    GOOD: Jinja2 SandboxedEnvironment raises SecurityError when attempting
+    to access __class__, __globals__, etc. This is expected behavior.
+    """
+    msg = HumanMessage("howdy")
+
+    # Create a Jinja2 template that attempts to access __class__.__name__
+    prompt = ChatPromptTemplate.from_messages(
+        [("human", "{{question.__class__.__name__}}")],
+        template_format="jinja2",
+    )
+
+    # Jinja2 sandbox should block this with SecurityError
+    with pytest.raises(Exception, match="attribute") as exc_info:
+        prompt.invoke(
+            {"question": msg, "question.__class__.__name__": "safe_placeholder"}
+        )
+
+    # Verify it's a SecurityError from Jinja2 blocking __class__ access
+    error_msg = str(exc_info.value)
+    assert (
+        "SecurityError" in str(type(exc_info.value))
+        or "access to attribute '__class__'" in error_msg
+    ), f"Expected SecurityError blocking __class__, got: {error_msg}"
+
+
+@pytest.mark.requires("jinja2")
+def test_jinja2_blocks_all_attribute_access() -> None:
+    """Test that Jinja2 now blocks ALL attribute/method access for security.
+
+    After the fix, Jinja2 uses _RestrictedSandboxedEnvironment which blocks
+    ALL attribute access, not just dunder attributes. This prevents the
+    parse_raw() vulnerability.
+    """
+    msg = HumanMessage("test content")
+
+    # Test 1: Simple variable access should still work
+    prompt_simple = ChatPromptTemplate.from_messages(
+        [("human", "Message: {{message}}")],
+        template_format="jinja2",
+    )
+    result = prompt_simple.invoke({"message": "hello world"})
+    assert "hello world" in result.messages[0].content  # type: ignore[attr-defined]
+
+    # Test 2: Attribute access should now be blocked (including safe attributes)
+    prompt_attr = ChatPromptTemplate.from_messages(
+        [("human", "Content: {{msg.content}}")],
+        template_format="jinja2",
+    )
+    with pytest.raises(Exception, match="attribute") as exc_info:
+        prompt_attr.invoke({"msg": msg})
+
+    error_msg = str(exc_info.value)
+    assert (
+        "SecurityError" in str(type(exc_info.value))
+        or "Access to attributes is not allowed" in error_msg
+    ), f"Expected SecurityError blocking attribute access, got: {error_msg}"

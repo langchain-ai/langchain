@@ -37,6 +37,7 @@ test = [
     "pytest-watcher>=0.3.4,<1.0.0",
     "pytest-asyncio>=0.21.1,<1.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
+    "pytest-xdist>=3.8.0,<4.0.0",
     "langchain-core",
     "langchain-tests",
 ]

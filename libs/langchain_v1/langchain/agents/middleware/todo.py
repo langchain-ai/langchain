@@ -150,10 +150,6 @@ class TodoListMiddleware(AgentMiddleware):
 
         print(result["todos"])  # Array of todo items with status tracking
         ```
-
-    Args:
-        system_prompt: Custom system prompt to guide the agent on using the todo tool.
-        tool_description: Custom description for the write_todos tool.
     """
 
     state_schema = PlanningState
@@ -198,12 +194,12 @@ class TodoListMiddleware(AgentMiddleware):
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
         """Update the system prompt to include the todo system prompt."""
-        request.system_prompt = (
+        new_system_prompt = (
             request.system_prompt + "\n\n" + self.system_prompt
             if request.system_prompt
             else self.system_prompt
         )
-        return handler(request)
+        return handler(request.override(system_prompt=new_system_prompt))
 
     async def awrap_model_call(
         self,
@@ -211,9 +207,9 @@ class TodoListMiddleware(AgentMiddleware):
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
         """Update the system prompt to include the todo system prompt (async version)."""
-        request.system_prompt = (
+        new_system_prompt = (
             request.system_prompt + "\n\n" + self.system_prompt
             if request.system_prompt
             else self.system_prompt
         )
-        return await handler(request)
+        return await handler(request.override(system_prompt=new_system_prompt))

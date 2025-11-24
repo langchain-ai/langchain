@@ -9,7 +9,7 @@ license = {text = "MIT"}
 readme = "README.md"
 authors = []
 
-version = "1.0.4"
+version = "1.1.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langsmith>=0.3.45,<1.0.0",
@@ -36,7 +36,6 @@ typing = [
     "mypy>=1.18.1,<1.19.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
     "types-requests>=2.28.11.5,<3.0.0.0",
-    "langchain-model-profiles",
     "langchain-text-splitters",
 ]
 dev = [
@@ -58,7 +57,6 @@ test = [
     "blockbuster>=1.5.18,<1.6.0",
     "numpy>=1.26.4; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
-    "langchain-model-profiles",
     "langchain-tests",
     "pytest-benchmark",
     "pytest-codspeed",
@@ -66,7 +64,6 @@ test = [
 test_integration = []
 
 [tool.uv.sources]
-langchain-model-profiles = { path = "../model-profiles" }
 langchain-tests = { path = "../standard-tests" }
 langchain-text-splitters = { path = "../text-splitters" }
 

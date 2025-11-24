@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Sync package labels
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           script: |
             const body = context.payload.issue.body || "";

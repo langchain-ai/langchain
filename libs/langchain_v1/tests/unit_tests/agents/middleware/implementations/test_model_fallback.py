@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import cast
 
 import pytest
@@ -45,7 +46,7 @@ def test_primary_model_succeeds() -> None:
 
     middleware = ModelFallbackMiddleware(fallback_model)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     def mock_handler(req: ModelRequest) -> ModelResponse:
         # Simulate successful model call
@@ -70,7 +71,7 @@ def test_fallback_on_primary_failure() -> None:
 
     middleware = ModelFallbackMiddleware(fallback_model)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     def mock_handler(req: ModelRequest) -> ModelResponse:
         result = req.model.invoke([])
@@ -95,7 +96,7 @@ def test_multiple_fallbacks() -> None:
 
     middleware = ModelFallbackMiddleware(fallback1, fallback2)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     def mock_handler(req: ModelRequest) -> ModelResponse:
         result = req.model.invoke([])
@@ -119,7 +120,7 @@ def test_all_models_fail() -> None:
 
     middleware = ModelFallbackMiddleware(fallback_model)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     def mock_handler(req: ModelRequest) -> ModelResponse:
         result = req.model.invoke([])
@@ -136,7 +137,7 @@ async def test_primary_model_succeeds_async() -> None:
 
     middleware = ModelFallbackMiddleware(fallback_model)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     async def mock_handler(req: ModelRequest) -> ModelResponse:
         # Simulate successful async model call
@@ -161,7 +162,7 @@ async def test_fallback_on_primary_failure_async() -> None:
 
     middleware = ModelFallbackMiddleware(fallback_model)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     async def mock_handler(req: ModelRequest) -> ModelResponse:
         result = await req.model.ainvoke([])
@@ -186,7 +187,7 @@ async def test_multiple_fallbacks_async() -> None:
 
     middleware = ModelFallbackMiddleware(fallback1, fallback2)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     async def mock_handler(req: ModelRequest) -> ModelResponse:
         result = await req.model.ainvoke([])
@@ -210,7 +211,7 @@ async def test_all_models_fail_async() -> None:
 
     middleware = ModelFallbackMiddleware(fallback_model)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     async def mock_handler(req: ModelRequest) -> ModelResponse:
         result = await req.model.ainvoke([])
@@ -305,3 +306,46 @@ def test_model_fallback_middleware_initialization() -> None:
     # Test with multiple fallback models
     middleware = ModelFallbackMiddleware(FakeToolCallingModel(), FakeToolCallingModel())
     assert len(middleware.models) == 2
+
+
+def test_model_request_is_frozen() -> None:
+    """Test that ModelRequest raises deprecation warning on direct attribute assignment."""
+    request = _make_request()
+    new_model = GenericFakeChatModel(messages=iter([AIMessage(content="new model")]))
+
+    # Direct attribute assignment should raise DeprecationWarning but still work
+    with pytest.warns(
+        DeprecationWarning, match="Direct attribute assignment to ModelRequest.model is deprecated"
+    ):
+        request.model = new_model  # type: ignore[misc]
+
+    # Verify the assignment actually worked
+    assert request.model == new_model
+
+    with pytest.warns(
+        DeprecationWarning,
+        match="Direct attribute assignment to ModelRequest.system_prompt is deprecated",
+    ):
+        request.system_prompt = "new prompt"  # type: ignore[misc]
+
+    assert request.system_prompt == "new prompt"
+
+    with pytest.warns(
+        DeprecationWarning,
+        match="Direct attribute assignment to ModelRequest.messages is deprecated",
+    ):
+        request.messages = []  # type: ignore[misc]
+
+    assert request.messages == []
+
+    # Using override method should work without warnings
+    request2 = _make_request()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # Turn warnings into errors
+        new_request = request2.override(model=new_model, system_prompt="override prompt")
+
+    assert new_request.model == new_model
+    assert new_request.system_prompt == "override prompt"
+    # Original request should be unchanged
+    assert request2.model != new_model
+    assert request2.system_prompt != "override prompt"

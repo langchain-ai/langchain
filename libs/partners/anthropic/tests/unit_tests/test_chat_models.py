@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 import anthropic
 import pytest
 from anthropic.types import Message, TextBlock, Usage
+from blockbuster import blockbuster_ctx
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
@@ -1581,3 +1582,49 @@ def test_streaming_cache_token_reporting() -> None:
     assert delta_chunk.usage_metadata["input_tokens"] == 135
     assert delta_chunk.usage_metadata["output_tokens"] == 50
     assert delta_chunk.usage_metadata["total_tokens"] == 185
+
+
+def test_strict_tool_use() -> None:
+    model = ChatAnthropic(
+        model="claude-sonnet-4-5",  # type: ignore[call-arg]
+        betas=["structured-outputs-2025-11-13"],
+    )
+
+    def get_weather(location: str, unit: Literal["C", "F"]) -> str:
+        """Get the weather at a location."""
+        return "75 degrees Fahrenheit."
+
+    model_with_tools = model.bind_tools([get_weather], strict=True)
+
+    tool_definition = model_with_tools.kwargs["tools"][0]  # type: ignore[attr-defined]
+    assert tool_definition["strict"] is True
+
+
+def test_profile() -> None:
+    model = ChatAnthropic(model="claude-sonnet-4-20250514")
+    assert model.profile
+    assert not model.profile["structured_output"]
+
+    model = ChatAnthropic(model="claude-sonnet-4-5")
+    assert model.profile
+    assert model.profile["structured_output"]
+    assert model.profile["tool_calling"]
+
+    # Test overwriting a field
+    model.profile["tool_calling"] = False
+    assert not model.profile["tool_calling"]
+
+    # Test we didn't mutate
+    model = ChatAnthropic(model="claude-sonnet-4-5")
+    assert model.profile
+    assert model.profile["tool_calling"]
+
+    # Test passing in profile
+    model = ChatAnthropic(model="claude-sonnet-4-5", profile={"tool_calling": False})
+    assert model.profile == {"tool_calling": False}
+
+
+async def test_model_profile_not_blocking() -> None:
+    with blockbuster_ctx():
+        model = ChatAnthropic(model="claude-sonnet-4-5")
+        _ = model.profile

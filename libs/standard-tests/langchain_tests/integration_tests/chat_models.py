@@ -998,6 +998,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         usage metadata (see configuration below).
 
         !!! warning "Behavior changed in `langchain-tests` 0.3.17"
+
             Additionally check for the presence of `model_name` in the response
             metadata, which is needed for usage tracking in callback handlers.
 
@@ -1172,6 +1173,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         Test to verify that the model returns correct usage metadata in streaming mode.
 
         !!! warning "Behavior changed in `langchain-tests` 0.3.17"
+
             Additionally check for the presence of `model_name` in the response
             metadata, which is needed for usage tracking in callback handlers.
 

@@ -303,7 +303,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         Args:
             input: The input to the `Runnable`.
-            config: The configuration for the Runna`ble.
+            config: The configuration for the `Runnable`.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
         Yields:

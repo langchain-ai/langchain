@@ -13,7 +13,11 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models import (
+    LanguageModelInput,
+    ModelProfile,
+    ModelProfileRegistry,
+)
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     agenerate_from_stream,
@@ -61,8 +65,16 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Self
 
+from langchain_huggingface.data._profiles import _PROFILES
 from langchain_huggingface.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain_huggingface.llms.huggingface_pipeline import HuggingFacePipeline
+
+_MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 @dataclass
@@ -578,6 +590,13 @@ class ChatHuggingFace(BaseChatModel):
                 f"received {type(self.llm)}"
             )
             raise TypeError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None and self.model_id:
+            self.profile = _get_default_model_profile(self.model_id)
         return self
 
     def _create_chat_result(self, response: dict) -> ChatResult:

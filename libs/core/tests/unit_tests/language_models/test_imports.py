@@ -18,6 +18,8 @@ EXPECTED_ALL = [
     "FakeStreamingListLLM",
     "FakeListLLM",
     "ParrotFakeChatModel",
+    "ModelProfile",
+    "ModelProfileRegistry",
     "is_openai_data_block",
 ]
 

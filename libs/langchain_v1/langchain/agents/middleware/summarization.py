@@ -87,18 +87,27 @@ class SummarizationMiddleware(AgentMiddleware):
 
         Args:
             model: The language model to use for generating summaries.
-            trigger: One or more thresholds that trigger summarization. Provide a single
-                `ContextSize` tuple or a list of tuples, in which case summarization runs
-                when any threshold is breached. Examples: `("messages", 50)`, `("tokens", 3000)`,
-                `[("fraction", 0.8), ("messages", 100)]`.
-            keep: Context retention policy applied after summarization. Provide a
-                `ContextSize` tuple to specify how much history to preserve. Defaults to
-                keeping the most recent 20 messages. Examples: `("messages", 20)`,
-                `("tokens", 3000)`, or `("fraction", 0.3)`.
+            trigger: One or more thresholds that trigger summarization.
+
+                Provide a single `ContextSize` tuple or a list of tuples, in which case
+                summarization runs when any threshold is breached.
+
+                Examples: `("messages", 50)`, `("tokens", 3000)`, `[("fraction", 0.8),
+                    ("messages", 100)]`.
+            keep: Context retention policy applied after summarization.
+
+                Provide a `ContextSize` tuple to specify how much history to preserve.
+
+                Defaults to keeping the most recent 20 messages.
+
+                Examples: `("messages", 20)`, `("tokens", 3000)`, or
+                    `("fraction", 0.3)`.
             token_counter: Function to count tokens in messages.
             summary_prompt: Prompt template for generating summaries.
-            trim_tokens_to_summarize: Maximum tokens to keep when preparing messages for the
-                summarization call. Pass `None` to skip trimming entirely.
+            trim_tokens_to_summarize: Maximum tokens to keep when preparing messages for
+                the summarization call.
+
+                Pass `None` to skip trimming entirely.
         """
         # Handle deprecated parameters
         if "max_tokens_before_summary" in deprecated_kwargs:
@@ -150,9 +159,11 @@ class SummarizationMiddleware(AgentMiddleware):
             requires_profile = True
         if requires_profile and self._get_profile_limits() is None:
             msg = (
-                "Model profile information is required to use fractional token limits. "
-                'pip install "langchain[model-profiles]" or use absolute token counts '
-                "instead."
+                "Model profile information is required to use fractional token limits, "
+                "and is unavailable for the specified model. Please use absolute token "
+                "counts instead, or pass "
+                '`\n\nChatModel(..., profile={"max_input_tokens": ...})`.\n\n'
+                "with a desired integer value of the model's maximum input tokens."
             )
             raise ValueError(msg)
 
@@ -299,7 +310,7 @@ class SummarizationMiddleware(AgentMiddleware):
         """Retrieve max input token limit from the model profile."""
         try:
             profile = self.model.profile
-        except (AttributeError, ImportError):
+        except AttributeError:
             return None
 
         if not isinstance(profile, Mapping):
@@ -354,7 +365,7 @@ class SummarizationMiddleware(AgentMiddleware):
         """Find safe cutoff point that preserves AI/Tool message pairs.
 
         Returns the index where messages can be safely cut without separating
-        related AI and Tool messages. Returns 0 if no safe cutoff is found.
+        related AI and Tool messages. Returns `0` if no safe cutoff is found.
         """
         if len(messages) <= messages_to_keep:
             return 0

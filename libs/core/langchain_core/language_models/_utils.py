@@ -140,6 +140,7 @@ def _normalize_messages(
     - LangChain v0 standard content blocks for backward compatibility
 
     !!! warning "Behavior changed in `langchain-core` 1.0.0"
+
         In previous versions, this function returned messages in LangChain v0 format.
         Now, it returns messages in LangChain v1 format, which upgraded chat models now
         expect to receive when passing back in message history. For backward

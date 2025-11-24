@@ -17,7 +17,9 @@ from langchain.agents.middleware.types import (
     AgentState,
     ModelRequest,
     ModelResponse,
+    _ModelRequestOverrides,
 )
+from langchain.tools import ToolRuntime, tool
 from langchain_core.messages import ToolMessage
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
@@ -25,7 +27,6 @@ from typing_extensions import NotRequired, TypedDict
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
 
-    from langchain.agents.middleware.types import ToolCallRequest
 
 # Tool type constants
 TEXT_EDITOR_TOOL_TYPE = "text_editor_20250728"
@@ -169,7 +170,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         allowed_path_prefixes: Sequence[str] | None = None,
         system_prompt: str | None = None,
     ) -> None:
-        """Initialize the middleware.
+        """Initialize.
 
         Args:
             tool_type: Tool type identifier.
@@ -184,149 +185,127 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         self.allowed_prefixes = allowed_path_prefixes
         self.system_prompt = system_prompt
 
+        # Create tool that will be executed by the tool node
+        @tool(tool_name)
+        def file_tool(
+            runtime: ToolRuntime[None, AnthropicToolsState],
+            command: str,
+            path: str,
+            file_text: str | None = None,
+            old_str: str | None = None,
+            new_str: str | None = None,
+            insert_line: int | None = None,
+            new_path: str | None = None,
+            view_range: list[int] | None = None,
+        ) -> Command | str:
+            """Execute file operations on virtual file system.
+
+            Args:
+                runtime: Tool runtime providing access to state.
+                command: Operation to perform.
+                path: File path to operate on.
+                file_text: Full file content for create command.
+                old_str: String to replace for str_replace command.
+                new_str: Replacement string for str_replace command.
+                insert_line: Line number for insert command.
+                new_path: New path for rename command.
+                view_range: Line range [start, end] for view command.
+
+            Returns:
+                Command for state update or string result.
+            """
+            # Build args dict for handler methods
+            args: dict[str, Any] = {"path": path}
+            if file_text is not None:
+                args["file_text"] = file_text
+            if old_str is not None:
+                args["old_str"] = old_str
+            if new_str is not None:
+                args["new_str"] = new_str
+            if insert_line is not None:
+                args["insert_line"] = insert_line
+            if new_path is not None:
+                args["new_path"] = new_path
+            if view_range is not None:
+                args["view_range"] = view_range
+
+            # Route to appropriate handler based on command
+            try:
+                if command == "view":
+                    return self._handle_view(args, runtime.state, runtime.tool_call_id)
+                if command == "create":
+                    return self._handle_create(
+                        args, runtime.state, runtime.tool_call_id
+                    )
+                if command == "str_replace":
+                    return self._handle_str_replace(
+                        args, runtime.state, runtime.tool_call_id
+                    )
+                if command == "insert":
+                    return self._handle_insert(
+                        args, runtime.state, runtime.tool_call_id
+                    )
+                if command == "delete":
+                    return self._handle_delete(
+                        args, runtime.state, runtime.tool_call_id
+                    )
+                if command == "rename":
+                    return self._handle_rename(
+                        args, runtime.state, runtime.tool_call_id
+                    )
+                return f"Unknown command: {command}"
+            except (ValueError, FileNotFoundError) as e:
+                return str(e)
+
+        self.tools = [file_tool]
+
     def wrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelResponse:
-        """Inject tool and optional system prompt."""
-        # Add tool
-        tools = list(request.tools or [])
-        tools.append(
-            {
-                "type": self.tool_type,
-                "name": self.tool_name,
-            }
-        )
-        request.tools = tools
+        """Inject Anthropic tool descriptor and optional system prompt."""
+        # Replace our BaseTool with Anthropic's native tool descriptor
+        tools = [
+            t
+            for t in (request.tools or [])
+            if getattr(t, "name", None) != self.tool_name
+        ] + [{"type": self.tool_type, "name": self.tool_name}]
 
         # Inject system prompt if provided
+        overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            request.system_prompt = (
+            overrides["system_prompt"] = (
                 request.system_prompt + "\n\n" + self.system_prompt
                 if request.system_prompt
                 else self.system_prompt
             )
 
-        return handler(request)
+        return handler(request.override(**overrides))
 
     async def awrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelResponse:
-        """Inject tool and optional system prompt (async version)."""
-        # Add tool
-        tools = list(request.tools or [])
-        tools.append(
-            {
-                "type": self.tool_type,
-                "name": self.tool_name,
-            }
-        )
-        request.tools = tools
+        """Inject Anthropic tool descriptor and optional system prompt."""
+        # Replace our BaseTool with Anthropic's native tool descriptor
+        tools = [
+            t
+            for t in (request.tools or [])
+            if getattr(t, "name", None) != self.tool_name
+        ] + [{"type": self.tool_type, "name": self.tool_name}]
 
         # Inject system prompt if provided
+        overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            request.system_prompt = (
+            overrides["system_prompt"] = (
                 request.system_prompt + "\n\n" + self.system_prompt
                 if request.system_prompt
                 else self.system_prompt
             )
 
-        return await handler(request)
-
-    def wrap_tool_call(
-        self,
-        request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], ToolMessage | Command],
-    ) -> ToolMessage | Command:
-        """Intercept tool calls."""
-        tool_call = request.tool_call
-        tool_name = tool_call.get("name")
-
-        if tool_name != self.tool_name:
-            return handler(request)
-
-        # Handle tool call
-        try:
-            args = tool_call.get("args", {})
-            command = args.get("command")
-            state = request.state
-
-            if command == "view":
-                return self._handle_view(args, state, tool_call["id"])
-            if command == "create":
-                return self._handle_create(args, state, tool_call["id"])
-            if command == "str_replace":
-                return self._handle_str_replace(args, state, tool_call["id"])
-            if command == "insert":
-                return self._handle_insert(args, state, tool_call["id"])
-            if command == "delete":
-                return self._handle_delete(args, state, tool_call["id"])
-            if command == "rename":
-                return self._handle_rename(args, state, tool_call["id"])
-
-            msg = f"Unknown command: {command}"
-            return ToolMessage(
-                content=msg,
-                tool_call_id=tool_call["id"],
-                name=tool_name,
-                status="error",
-            )
-        except (ValueError, FileNotFoundError) as e:
-            return ToolMessage(
-                content=str(e),
-                tool_call_id=tool_call["id"],
-                name=tool_name,
-                status="error",
-            )
-
-    async def awrap_tool_call(
-        self,
-        request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
-    ) -> ToolMessage | Command:
-        """Intercept tool calls (async version)."""
-        tool_call = request.tool_call
-        tool_name = tool_call.get("name")
-
-        if tool_name != self.tool_name:
-            return await handler(request)
-
-        # Handle tool call
-        try:
-            args = tool_call.get("args", {})
-            command = args.get("command")
-            state = request.state
-
-            if command == "view":
-                return self._handle_view(args, state, tool_call["id"])
-            if command == "create":
-                return self._handle_create(args, state, tool_call["id"])
-            if command == "str_replace":
-                return self._handle_str_replace(args, state, tool_call["id"])
-            if command == "insert":
-                return self._handle_insert(args, state, tool_call["id"])
-            if command == "delete":
-                return self._handle_delete(args, state, tool_call["id"])
-            if command == "rename":
-                return self._handle_rename(args, state, tool_call["id"])
-
-            msg = f"Unknown command: {command}"
-            return ToolMessage(
-                content=msg,
-                tool_call_id=tool_call["id"],
-                name=tool_name,
-                status="error",
-            )
-        except (ValueError, FileNotFoundError) as e:
-            return ToolMessage(
-                content=str(e),
-                tool_call_id=tool_call["id"],
-                name=tool_name,
-                status="error",
-            )
+        return await handler(request.override(**overrides))
 
     def _handle_view(
         self, args: dict, state: AnthropicToolsState, tool_call_id: str | None
@@ -672,7 +651,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         max_file_size_mb: int = 10,
         system_prompt: str | None = None,
     ) -> None:
-        """Initialize the middleware.
+        """Initialize.
 
         Args:
             tool_type: Tool type identifier.
@@ -692,146 +671,117 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         # Create root directory if it doesn't exist
         self.root_path.mkdir(parents=True, exist_ok=True)
 
+        # Create tool that will be executed by the tool node
+        @tool(tool_name)
+        def file_tool(
+            runtime: ToolRuntime,
+            command: str,
+            path: str,
+            file_text: str | None = None,
+            old_str: str | None = None,
+            new_str: str | None = None,
+            insert_line: int | None = None,
+            new_path: str | None = None,
+            view_range: list[int] | None = None,
+        ) -> Command | str:
+            """Execute file operations on filesystem.
+
+            Args:
+                runtime: Tool runtime providing tool_call_id.
+                command: Operation to perform.
+                path: File path to operate on.
+                file_text: Full file content for create command.
+                old_str: String to replace for str_replace command.
+                new_str: Replacement string for str_replace command.
+                insert_line: Line number for insert command.
+                new_path: New path for rename command.
+                view_range: Line range [start, end] for view command.
+
+            Returns:
+                Command for message update or string result.
+            """
+            # Build args dict for handler methods
+            args: dict[str, Any] = {"path": path}
+            if file_text is not None:
+                args["file_text"] = file_text
+            if old_str is not None:
+                args["old_str"] = old_str
+            if new_str is not None:
+                args["new_str"] = new_str
+            if insert_line is not None:
+                args["insert_line"] = insert_line
+            if new_path is not None:
+                args["new_path"] = new_path
+            if view_range is not None:
+                args["view_range"] = view_range
+
+            # Route to appropriate handler based on command
+            try:
+                if command == "view":
+                    return self._handle_view(args, runtime.tool_call_id)
+                if command == "create":
+                    return self._handle_create(args, runtime.tool_call_id)
+                if command == "str_replace":
+                    return self._handle_str_replace(args, runtime.tool_call_id)
+                if command == "insert":
+                    return self._handle_insert(args, runtime.tool_call_id)
+                if command == "delete":
+                    return self._handle_delete(args, runtime.tool_call_id)
+                if command == "rename":
+                    return self._handle_rename(args, runtime.tool_call_id)
+                return f"Unknown command: {command}"
+            except (ValueError, FileNotFoundError, PermissionError) as e:
+                return str(e)
+
+        self.tools = [file_tool]
+
     def wrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelResponse:
-        """Inject tool and optional system prompt."""
-        # Add tool
-        tools = list(request.tools or [])
-        tools.append(
-            {
-                "type": self.tool_type,
-                "name": self.tool_name,
-            }
-        )
-        request.tools = tools
+        """Inject Anthropic tool descriptor and optional system prompt."""
+        # Replace our BaseTool with Anthropic's native tool descriptor
+        tools = [
+            t
+            for t in (request.tools or [])
+            if getattr(t, "name", None) != self.tool_name
+        ] + [{"type": self.tool_type, "name": self.tool_name}]
 
         # Inject system prompt if provided
+        overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            request.system_prompt = (
+            overrides["system_prompt"] = (
                 request.system_prompt + "\n\n" + self.system_prompt
                 if request.system_prompt
                 else self.system_prompt
             )
-        return handler(request)
+
+        return handler(request.override(**overrides))
 
     async def awrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelResponse:
-        """Inject tool and optional system prompt (async version)."""
-        # Add tool
-        tools = list(request.tools or [])
-        tools.append(
-            {
-                "type": self.tool_type,
-                "name": self.tool_name,
-            }
-        )
-        request.tools = tools
+        """Inject Anthropic tool descriptor and optional system prompt."""
+        # Replace our BaseTool with Anthropic's native tool descriptor
+        tools = [
+            t
+            for t in (request.tools or [])
+            if getattr(t, "name", None) != self.tool_name
+        ] + [{"type": self.tool_type, "name": self.tool_name}]
 
         # Inject system prompt if provided
+        overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            request.system_prompt = (
+            overrides["system_prompt"] = (
                 request.system_prompt + "\n\n" + self.system_prompt
                 if request.system_prompt
                 else self.system_prompt
             )
 
-        return await handler(request)
-
-    def wrap_tool_call(
-        self,
-        request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], ToolMessage | Command],
-    ) -> ToolMessage | Command:
-        """Intercept tool calls."""
-        tool_call = request.tool_call
-        tool_name = tool_call.get("name")
-
-        if tool_name != self.tool_name:
-            return handler(request)
-
-        # Handle tool call
-        try:
-            args = tool_call.get("args", {})
-            command = args.get("command")
-
-            if command == "view":
-                return self._handle_view(args, tool_call["id"])
-            if command == "create":
-                return self._handle_create(args, tool_call["id"])
-            if command == "str_replace":
-                return self._handle_str_replace(args, tool_call["id"])
-            if command == "insert":
-                return self._handle_insert(args, tool_call["id"])
-            if command == "delete":
-                return self._handle_delete(args, tool_call["id"])
-            if command == "rename":
-                return self._handle_rename(args, tool_call["id"])
-
-            msg = f"Unknown command: {command}"
-            return ToolMessage(
-                content=msg,
-                tool_call_id=tool_call["id"],
-                name=tool_name,
-                status="error",
-            )
-        except (ValueError, FileNotFoundError) as e:
-            return ToolMessage(
-                content=str(e),
-                tool_call_id=tool_call["id"],
-                name=tool_name,
-                status="error",
-            )
-
-    async def awrap_tool_call(
-        self,
-        request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
-    ) -> ToolMessage | Command:
-        """Intercept tool calls (async version)."""
-        tool_call = request.tool_call
-        tool_name = tool_call.get("name")
-
-        if tool_name != self.tool_name:
-            return await handler(request)
-
-        # Handle tool call
-        try:
-            args = tool_call.get("args", {})
-            command = args.get("command")
-
-            if command == "view":
-                return self._handle_view(args, tool_call["id"])
-            if command == "create":
-                return self._handle_create(args, tool_call["id"])
-            if command == "str_replace":
-                return self._handle_str_replace(args, tool_call["id"])
-            if command == "insert":
-                return self._handle_insert(args, tool_call["id"])
-            if command == "delete":
-                return self._handle_delete(args, tool_call["id"])
-            if command == "rename":
-                return self._handle_rename(args, tool_call["id"])
-
-            msg = f"Unknown command: {command}"
-            return ToolMessage(
-                content=msg,
-                tool_call_id=tool_call["id"],
-                name=tool_name,
-                status="error",
-            )
-        except (ValueError, FileNotFoundError) as e:
-            return ToolMessage(
-                content=str(e),
-                tool_call_id=tool_call["id"],
-                name=tool_name,
-                status="error",
-            )
+        return await handler(request.override(**overrides))
 
     def _validate_and_resolve_path(self, path: str) -> Path:
         """Validate and resolve a virtual path to filesystem path.

@@ -738,8 +738,10 @@ def trim_messages(
             Set to `len` to count the number of **messages** in the chat history.
 
             !!! note
+
                 Use `count_tokens_approximately` to get fast, approximate token
                 counts.
+
                 This is recommended for using `trim_messages` on the hot path, where
                 exact token counting is not necessary.
 
