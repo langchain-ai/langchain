@@ -89,7 +89,7 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
 
         messages_count = (
             len(request.messages) + 1
-            if request.system_prompt
+            if request.system_message
             else len(request.messages)
         )
         return messages_count >= self.min_messages_to_cache
