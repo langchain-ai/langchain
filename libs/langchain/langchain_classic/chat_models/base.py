@@ -551,13 +551,17 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
 
 
 def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
-    if (
-        not model_provider
-        and ":" in model
-        and model.split(":")[0] in _SUPPORTED_PROVIDERS
-    ):
-        model_provider = model.split(":")[0]
-        model = ":".join(model.split(":")[1:])
+    if not model_provider and ":" in model:
+        prefix, suffix = model.split(":", 1)
+        if prefix in _SUPPORTED_PROVIDERS:
+            model_provider = prefix
+            model = suffix
+        else:
+            inferred = _attempt_infer_model_provider(prefix)
+            if inferred:
+                model_provider = inferred
+                model = suffix
+
     model_provider = model_provider or _attempt_infer_model_provider(model)
     if not model_provider:
         msg = (
