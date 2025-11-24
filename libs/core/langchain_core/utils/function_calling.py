@@ -19,7 +19,6 @@ from typing import (
     get_origin,
 )
 
-from httpcore import Origin
 from pydantic import BaseModel
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as Field_v1
