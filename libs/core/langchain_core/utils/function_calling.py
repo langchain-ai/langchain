@@ -238,8 +238,8 @@ def _convert_any_typed_dicts_to_pydantic(
         fields: dict = {}
         for arg, arg_type in annotations_.items():
             origin = get_origin(arg_type)
-            is_not_required = origin is NotRequired
-            if origin in {NotRequired, Required}:
+            is_not_required = origin is NotRequired  # type: ignore[comparison-overlap]
+            if origin in {NotRequired, Required}:  # type: ignore[comparison-overlap]
                 inner_arg_type = get_args(arg_type)[0]
             else:
                 inner_arg_type = arg_type
@@ -280,10 +280,10 @@ def _convert_any_typed_dicts_to_pydantic(
         visited[typed_dict] = model
         return model
 
-    if (origin := get_origin(type_)) and origin in {NotRequired, Required}:
+    if (origin := get_origin(type_)) and origin in {NotRequired, Required}:  # type: ignore[assignment]
         return type_
 
-    if (origin := get_origin(type_)) and (type_args := get_args(type_)):
+    if (origin := get_origin(type_)) and (type_args := get_args(type_)):  # type: ignore[assignment]
         subscriptable_origin = _py_38_safe_origin(origin)
         type_args = tuple(
             _convert_any_typed_dicts_to_pydantic(arg, depth=depth + 1, visited=visited)
