@@ -244,7 +244,7 @@ def _convert_any_typed_dicts_to_pydantic(
             else:
                 inner_arg_type = arg_type
 
-            if get_origin(inner_arg_type) is Annotated:  # type: ignore[comparison-overlap]
+            if get_origin(inner_arg_type) is Annotated:
                 annotated_args = get_args(inner_arg_type)
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     annotated_args[0], depth=depth + 1, visited=visited
