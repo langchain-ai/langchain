@@ -64,7 +64,7 @@ if TYPE_CHECKING:
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
 FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
-    # if langchain-model-profiles is not installed, these models are assumed to support
+    # if model profile data are not available, these models are assumed to support
     # structured output
     "grok",
     "gpt-5",
@@ -381,18 +381,15 @@ def _supports_provider_strategy(model: str | BaseChatModel, tools: list | None =
             or getattr(model, "model", None)
             or getattr(model, "model_id", "")
         )
-        try:
-            model_profile = model.profile
-        except ImportError:
-            pass
-        else:
-            if (
-                model_profile.get("structured_output")
-                # We make an exception for Gemini models, which currently do not support
-                # simultaneous tool use with structured output
-                and not (tools and isinstance(model_name, str) and "gemini" in model_name.lower())
-            ):
-                return True
+        model_profile = model.profile
+        if (
+            model_profile is not None
+            and model_profile.get("structured_output")
+            # We make an exception for Gemini models, which currently do not support
+            # simultaneous tool use with structured output
+            and not (tools and isinstance(model_name, str) and "gemini" in model_name.lower())
+        ):
+            return True
 
     return (
         any(part in model_name.lower() for part in FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT)
