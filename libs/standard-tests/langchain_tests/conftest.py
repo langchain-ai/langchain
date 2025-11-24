@@ -116,7 +116,7 @@ def base_vcr_config() -> dict:
 
 
 @pytest.fixture(scope="session")
-@deprecated("1.0.1", alternative="base_vcr_config", removal="2.0")
+@deprecated("1.0.3", alternative="base_vcr_config", removal="2.0")
 def _base_vcr_config() -> dict:
     return base_vcr_config()
 
