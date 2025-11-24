@@ -3805,10 +3805,11 @@ def test_html_splitter_keep_separator_default() -> None:
 
 @pytest.mark.requires("bs4")
 def test_html_splitter_preserved_elements_reverse_order() -> None:
-    """Test preserved elements reinsertion in reverse order.
+    """Test preserved elements reinsertion order.
 
-    This test validates that preserved elements are reinserted in reverse order
-    to prevent conflicts when one placeholder might be a substring of another.
+    This test validates that preserved elements are reinserted in reverse
+    order to prevent conflicts when one placeholder might be a substring
+    of another.
     """
     html_content = """
     <h1>Section 1</h1>
