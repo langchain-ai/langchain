@@ -102,6 +102,7 @@ jobs:
             qdrant
             xai
             infra
+            deps
           requireScope: false
           disallowScopes: |
             release
