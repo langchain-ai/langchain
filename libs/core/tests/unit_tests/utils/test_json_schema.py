@@ -451,6 +451,7 @@ def test_dereference_refs_list_index() -> None:
     actual_dict_key = dereference_refs(schema_dict_key)
     assert actual_dict_key == expected_dict_key
 
+
 def test_dereference_refs_list_index_items_ref_mcp_like() -> None:
     """Regression test: MCP-style list index ref into array items."""
     schema = {
@@ -473,20 +474,15 @@ def test_dereference_refs_list_index_items_ref_mcp_like() -> None:
                                                 "emailAddress": {
                                                     "type": "object",
                                                     "properties": {
-                                                        "address": {
-                                                            "type": "string"
-                                                        },
-                                                        "name": {
-                                                            "type": "string"
-                                                        },
+                                                        "address": {"type": "string"},
+                                                        "name": {"type": "string"},
                                                     },
                                                     "required": ["address"],
                                                 }
                                             },
                                         },
                                         "description": (
-                                            "The Bcc: recipients for the "
-                                            "message."
+                                            "The Bcc: recipients for the message."
                                         ),
                                     },
                                     "ccRecipients": {
@@ -499,8 +495,7 @@ def test_dereference_refs_list_index_items_ref_mcp_like() -> None:
                                             )
                                         },
                                         "description": (
-                                            "The Cc: recipients for "
-                                            "the message."
+                                            "The Cc: recipients for the message."
                                         ),
                                     },
                                 },
@@ -522,9 +517,9 @@ def test_dereference_refs_list_index_items_ref_mcp_like() -> None:
 
     resolved = dereference_refs(schema)
 
-    message_props = resolved["properties"]["body"]["anyOf"][1]["properties"][
-        "Message"
-    ]["properties"]
+    message_props = resolved["properties"]["body"]["anyOf"][1]["properties"]["Message"][
+        "properties"
+    ]
 
     bcc_items = message_props["bccRecipients"]["items"]
     cc_items = message_props["ccRecipients"]["items"]
@@ -533,6 +528,7 @@ def test_dereference_refs_list_index_items_ref_mcp_like() -> None:
     assert "$ref" not in cc_items
     # And ccRecipients.items should match bccRecipients.items
     assert cc_items == bcc_items
+
 
 def test_dereference_refs_mixed_ref_with_properties() -> None:
     """Test dereferencing refs that have $ref plus other properties."""
