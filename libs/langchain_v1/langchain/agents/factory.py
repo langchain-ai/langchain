@@ -1043,8 +1043,8 @@ def create_agent(  # noqa: PLR0915
 
         # Bind model based on effective response format
         if isinstance(effective_response_format, ProviderStrategy):
-            # (Backward compatibility) Use OpenAI format structured output
-            kwargs = effective_response_format.to_model_kwargs()
+            # Pass model to to_model_kwargs for model-specific format conversion
+            kwargs = effective_response_format.to_model_kwargs(model=request.model)
             return (
                 request.model.bind_tools(
                     final_tools, strict=True, **kwargs, **request.model_settings

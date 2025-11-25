@@ -16,6 +16,7 @@ from typing import (
     get_origin,
 )
 
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.tools import BaseTool, StructuredTool
 from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self, is_typeddict
@@ -260,9 +261,31 @@ class ProviderStrategy(Generic[SchemaT]):
         self.schema = schema
         self.schema_spec = _SchemaSpec(schema)
 
-    def to_model_kwargs(self) -> dict[str, Any]:
-        """Convert to kwargs to bind to a model to force structured output."""
-        # OpenAI:
+    def to_model_kwargs(self, model: BaseChatModel | None = None) -> dict[str, Any]:
+        """Convert to kwargs to bind to a model to force structured output.
+        
+        Args:
+            model: Optional model instance to detect provider-specific formats.
+                If None, defaults to OpenAI format.
+        
+        Returns:
+            Dictionary of kwargs to pass to model.bind() or model.bind_tools().
+            For Gemini models, returns `response_schema` and `response_mime_type`.
+            For other models, returns OpenAI-compatible `response_format`.
+        """
+        # Check if this is a Gemini model (Google VertexAI)
+        if model is not None:
+            model_name = (getattr(model, "model_name", None))
+            if model_name and "gemini" in str(model_name).lower():
+                # Gemini format: response_schema requires response_mime_type
+                # For JSON schemas, we use "application/json"
+                # See: https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output
+                return {
+                    "response_schema": self.schema_spec.json_schema,
+                    "response_mime_type": "application/json",
+                }
+        
+        # Default OpenAI format:
         # - see https://platform.openai.com/docs/guides/structured-outputs
         response_format = {
             "type": "json_schema",
