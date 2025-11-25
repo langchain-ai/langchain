@@ -10,7 +10,6 @@ When building such applications, developers should remember to follow good secur
 * **Anticipate Potential Misuse**: Just as humans can err, so can Large Language Models (LLMs). Always assume that any system access or credentials may be used in any way allowed by the permissions they are assigned. For example, if a pair of database credentials allows deleting data, it's safest to assume that any LLM able to use those credentials may in fact delete data.
 * [**Defense in Depth**](https://en.wikipedia.org/wiki/Defense_in_depth_(computing)): No security technique is perfect. Fine-tuning and good chain design can reduce, but not eliminate, the odds that a Large Language Model (LLM) may make a mistake. It's best to combine multiple layered security approaches rather than relying on any single layer of defense to ensure security. For example: use both read-only permissions and sandboxing to ensure that LLMs are only able to access data that is explicitly meant for them to use.
 * **Input Validation and Sanitization**: Implement strict validation and sanitization of all user inputs to prevent prompt injection attacks. Consider using input filtering, output encoding, and other techniques to guard against malicious inputs.
-* **Auditing and Logging**: Maintain detailed logs of LLM decision processes, tool usage, and system access. Regularly audit these logs to detect anomalous behavior.
 
 Risks of not doing so include, but are not limited to:
 
