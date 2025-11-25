@@ -413,7 +413,7 @@ def test_explicit_options_dict_preserved() -> None:
 
 
 def test_reasoning_param_passed_to_client() -> None:
-    """Test that the reasoning parameter is correctly passed to the Ollama client as 'think'."""
+    """Test that the reasoning parameter is correctly passed to the Ollama client."""
     with patch("langchain_ollama.chat_models.Client") as mock_client_class:
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
