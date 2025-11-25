@@ -13,34 +13,7 @@ from langchain.agents.middleware.types import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
-
-
-class _ConditionBuilder:
-    """Builder for fluent API: middleware.when(condition).use(settings)."""
-
-    def __init__(
-        self,
-        middleware: ConditionalModelSettingsMiddleware,
-        condition: Callable[[ModelRequest], bool | Awaitable[bool]],
-    ) -> None:
-        self._middleware = middleware
-        self._condition = condition
-
-    def use(
-        self,
-        settings: dict[str, Any] | Callable[[ModelRequest], dict[str, Any]],
-    ) -> ConditionalModelSettingsMiddleware:
-        """Apply settings when condition is met.
-
-        Args:
-            settings: Dict of model settings or callable returning settings dict.
-
-        Returns:
-            Parent middleware instance for chaining.
-        """
-        self._middleware._conditions.append((self._condition, settings))
-        return self._middleware
+    from collections.abc import Awaitable, Callable, Sequence
 
 
 class ConditionalModelSettingsMiddleware(AgentMiddleware):
@@ -63,8 +36,9 @@ class ConditionalModelSettingsMiddleware(AgentMiddleware):
             from langchain.agents.middleware import ConditionalModelSettingsMiddleware
 
             # Disable parallel tool calls for long conversations
-            middleware = ConditionalModelSettingsMiddleware()
-            middleware.when(lambda req: len(req.messages) > 10).use({"parallel_tool_calls": False})
+            middleware = ConditionalModelSettingsMiddleware(
+                conditions={lambda req: len(req.messages) > 10: {"parallel_tool_calls": False}}
+            )
 
             agent = create_agent(
                 model="openai:gpt-4o",
@@ -81,8 +55,9 @@ class ConditionalModelSettingsMiddleware(AgentMiddleware):
                 return req.state.get("execution_mode") == "sequential"
 
 
-            middleware = ConditionalModelSettingsMiddleware()
-            middleware.when(needs_sequential_execution).use({"parallel_tool_calls": False})
+            middleware = ConditionalModelSettingsMiddleware(
+                conditions={needs_sequential_execution: {"parallel_tool_calls": False}}
+            )
 
             agent = create_agent(
                 model="openai:gpt-4o",
@@ -94,13 +69,14 @@ class ConditionalModelSettingsMiddleware(AgentMiddleware):
         !!! example "Multiple conditions with cumulative application"
 
             ```python
-            middleware = ConditionalModelSettingsMiddleware()
-
-            # Base setting: all long conversations
-            middleware.when(lambda req: len(req.messages) > 10).use({"parallel_tool_calls": False})
-
-            # Additional setting: emergency mode (applied on top if both match)
-            middleware.when(lambda req: req.state.get("emergency")).use({"strict": True})
+            middleware = ConditionalModelSettingsMiddleware(
+                conditions={
+                    # Base setting: all long conversations
+                    lambda req: len(req.messages) > 10: {"parallel_tool_calls": False},
+                    # Additional setting: emergency mode (applied on top if both match)
+                    lambda req: req.state.get("emergency"): {"strict": True},
+                }
+            )
 
             agent = create_agent(
                 model="openai:gpt-4o",
@@ -123,8 +99,27 @@ class ConditionalModelSettingsMiddleware(AgentMiddleware):
                 return {"parallel_tool_calls": False}
 
 
-            middleware = ConditionalModelSettingsMiddleware()
-            middleware.when(lambda req: True).use(compute_settings)
+            middleware = ConditionalModelSettingsMiddleware(
+                conditions={lambda req: True: compute_settings}
+            )
+
+            agent = create_agent(
+                model="openai:gpt-4o",
+                tools=[tool1, tool2],
+                middleware=[middleware],
+            )
+            ```
+
+        !!! example "Using list of tuples for ordered conditions"
+
+            ```python
+            # Use list of tuples when order matters or when using unhashable lambdas
+            middleware = ConditionalModelSettingsMiddleware(
+                conditions=[
+                    (lambda req: len(req.messages) > 10, {"parallel_tool_calls": False}),
+                    (lambda req: req.state.get("emergency"), {"strict": True}),
+                ]
+            )
 
             agent = create_agent(
                 model="openai:gpt-4o",
@@ -134,38 +129,50 @@ class ConditionalModelSettingsMiddleware(AgentMiddleware):
             ```
     """
 
-    def __init__(self) -> None:
-        """Initialize middleware. Settings are merged with existing model_settings."""
-        super().__init__()
-        self._conditions: list[
-            tuple[
+    def __init__(
+        self,
+        conditions: (
+            dict[
                 Callable[[ModelRequest], bool | Awaitable[bool]],
                 dict[str, Any] | Callable[[ModelRequest], dict[str, Any]],
             ]
-        ] = []
-
-    def when(
-        self,
-        condition: Callable[[ModelRequest], bool | Awaitable[bool]],
-    ) -> _ConditionBuilder:
-        """Register condition for applying settings.
+            | Sequence[
+                tuple[
+                    Callable[[ModelRequest], bool | Awaitable[bool]],
+                    dict[str, Any] | Callable[[ModelRequest], dict[str, Any]],
+                ]
+            ]
+            | None
+        ) = None,
+    ) -> None:
+        """Initialize middleware with conditions and settings.
 
         Args:
-            condition: Callable taking ModelRequest and returning bool (sync or async).
-
-        Returns:
-            Builder object with .use() method.
+            conditions: Either a dict mapping condition functions to settings dicts,
+                or a sequence of (condition, settings) tuples. Settings are merged
+                with existing model_settings. If None, no conditions are registered.
         """
-        return _ConditionBuilder(self, condition)
+        super().__init__()
+        if conditions is None:
+            self._conditions: list[
+                tuple[
+                    Callable[[ModelRequest], bool | Awaitable[bool]],
+                    dict[str, Any] | Callable[[ModelRequest], dict[str, Any]],
+                ]
+            ] = []
+        elif isinstance(conditions, dict):
+            self._conditions = list(conditions.items())
+        else:
+            self._conditions = list(conditions)
 
-    def _apply_settings(
+    def _merge_settings(
         self,
         request: ModelRequest,
         settings: dict[str, Any] | Callable[[ModelRequest], dict[str, Any]],
-    ) -> None:
-        """Apply settings to request."""
+    ) -> dict[str, Any]:
+        """Merge settings with existing model_settings and return merged dict."""
         resolved_settings = settings(request) if callable(settings) else settings
-        request.model_settings = {**request.model_settings, **resolved_settings}
+        return {**request.model_settings, **resolved_settings}
 
     def wrap_model_call(
         self,
@@ -173,6 +180,8 @@ class ConditionalModelSettingsMiddleware(AgentMiddleware):
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
         """Apply conditional settings before calling model."""
+        merged_settings = request.model_settings
+
         for condition, settings in self._conditions:
             if iscoroutinefunction(condition):
                 msg = (
@@ -182,7 +191,11 @@ class ConditionalModelSettingsMiddleware(AgentMiddleware):
                 raise RuntimeError(msg)
 
             if condition(request):
-                self._apply_settings(request, settings)
+                resolved_settings = settings(request) if callable(settings) else settings
+                merged_settings = {**merged_settings, **resolved_settings}
+
+        if merged_settings != request.model_settings:
+            request = request.override(model_settings=merged_settings)
 
         return handler(request)
 
@@ -192,6 +205,8 @@ class ConditionalModelSettingsMiddleware(AgentMiddleware):
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
         """Apply conditional settings before calling model (async)."""
+        merged_settings = request.model_settings
+
         for condition, settings in self._conditions:
             if iscoroutinefunction(condition):
                 result = await condition(request)
@@ -199,6 +214,10 @@ class ConditionalModelSettingsMiddleware(AgentMiddleware):
                 result = condition(request)
 
             if result:
-                self._apply_settings(request, settings)
+                resolved_settings = settings(request) if callable(settings) else settings
+                merged_settings = {**merged_settings, **resolved_settings}
+
+        if merged_settings != request.model_settings:
+            request = request.override(model_settings=merged_settings)
 
         return await handler(request)
