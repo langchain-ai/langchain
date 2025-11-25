@@ -473,14 +473,21 @@ def test_dereference_refs_list_index_items_ref_mcp_like() -> None:
                                                 "emailAddress": {
                                                     "type": "object",
                                                     "properties": {
-                                                        "address": {"type": "string"},
-                                                        "name": {"type": "string"},
+                                                        "address": {
+                                                            "type": "string"
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        },
                                                     },
                                                     "required": ["address"],
                                                 }
                                             },
                                         },
-                                        "description": "The Bcc: recipients for the message.",
+                                        "description": (
+                                            "The Bcc: recipients for the "
+                                            "message."
+                                        ),
                                     },
                                     "ccRecipients": {
                                         "type": "array",
@@ -491,7 +498,10 @@ def test_dereference_refs_list_index_items_ref_mcp_like() -> None:
                                                 "bccRecipients/items"
                                             )
                                         },
-                                        "description": "The Cc: recipients for the message.",
+                                        "description": (
+                                            "The Cc: recipients for "
+                                            "the message."
+                                        ),
                                     },
                                 },
                                 "additionalProperties": False,
@@ -512,9 +522,9 @@ def test_dereference_refs_list_index_items_ref_mcp_like() -> None:
 
     resolved = dereference_refs(schema)
 
-    message_props = (
-        resolved["properties"]["body"]["anyOf"][1]["properties"]["Message"]["properties"]
-    )
+    message_props = resolved["properties"]["body"]["anyOf"][1]["properties"][
+        "Message"
+    ]["properties"]
 
     bcc_items = message_props["bccRecipients"]["items"]
     cc_items = message_props["ccRecipients"]["items"]
@@ -523,82 +533,6 @@ def test_dereference_refs_list_index_items_ref_mcp_like() -> None:
     assert "$ref" not in cc_items
     # And ccRecipients.items should match bccRecipients.items
     assert cc_items == bcc_items
-
-
-def test_dereference_refs_list_index_items_ref() -> None:
-    """Regression test: list index ref into array items (MCP-style schema)."""
-    schema = {
-        "type": "object",
-        "properties": {
-            "body": {
-                "anyOf": [
-                    {"type": "string"},
-                    {
-                        "type": "object",
-                        "properties": {
-                            "Message": {
-                                "type": "object",
-                                "properties": {
-                                    "bccRecipients": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "object",
-                                            "properties": {
-                                                "emailAddress": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "address": {"type": "string"},
-                                                        "name": {"type": "string"},
-                                                    },
-                                                    "required": ["address"],
-                                                }
-                                            },
-                                        },
-                                        "description": "The Bcc: recipients for the message.",
-                                    },
-                                    "ccRecipients": {
-                                        "type": "array",
-                                        "items": {
-                                            "$ref": (
-                                                "#/properties/body/anyOf/1/"
-                                                "properties/Message/properties/"
-                                                "bccRecipients/items"
-                                            )
-                                        },
-                                        "description": "The Cc: recipients for the message.",
-                                    },
-                                },
-                                "additionalProperties": False,
-                            },
-                            "SaveToSentItems": {
-                                "type": ["boolean", "null"],
-                                "default": False,
-                            },
-                        },
-                        "additionalProperties": False,
-                    },
-                ]
-            }
-        },
-        "required": ["body"],
-        "additionalProperties": False,
-    }
-
-    resolved = dereference_refs(schema)
-
-    message_props = (
-        resolved["properties"]["body"]["anyOf"][1]["properties"]["Message"]["properties"]
-    )
-
-    bcc_items = message_props["bccRecipients"]["items"]
-    cc_items = message_props["ccRecipients"]["items"]
-
-    # $ref should be fully resolved in ccRecipients.items
-    assert "$ref" not in cc_items
-    # And ccRecipients.items should match bccRecipients.items
-    assert cc_items == bcc_items
-
-
 
 def test_dereference_refs_mixed_ref_with_properties() -> None:
     """Test dereferencing refs that have $ref plus other properties."""
