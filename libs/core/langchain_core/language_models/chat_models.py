@@ -1632,7 +1632,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         # }
         ```
 
-        Example: `dict` schema (`include_raw=False`):
+        Example: Dictionary schema (`include_raw=False`):
 
         ```python
         from pydantic import BaseModel
