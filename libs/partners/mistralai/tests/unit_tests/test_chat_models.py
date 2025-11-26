@@ -350,3 +350,8 @@ def test_no_duplicate_tool_calls_when_multiple_tools() -> None:
     ids = [tc.get("id") for tc in tool_calls if isinstance(tc, dict)]
     assert len(ids) == 2
     assert len(set(ids)) == 2, f"Duplicate tool call IDs found: {ids}"
+
+
+def test_profile() -> None:
+    model = ChatMistralAI(model="mistral-large-latest")  # type: ignore[call-arg]
+    assert model.profile

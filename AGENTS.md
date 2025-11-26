@@ -324,3 +324,9 @@ Before submitting code changes:
 - [ ] **Code Quality**: `make lint` and `make format` pass
 - [ ] **Architecture**: Suggested improvements where applicable
 - [ ] **Commit Message**: Follows Conventional Commits format
+
+## Pull request guidelines
+
+- Describe the "why" of the changes, why the proposed solution is the right one.
+- Highlight areas of the proposed changes that require careful review.
+- Always add a disclaimer to the PR description mentioning how AI agents are involved with the contribution.

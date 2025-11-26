@@ -20,12 +20,14 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable
 
 # Needed as top level import for Pydantic schema generation on AgentState
+import warnings
 from typing import TypeAlias
 
-from langchain_core.messages import (  # noqa: TC002
+from langchain_core.messages import (
     AIMessage,
     AnyMessage,
     BaseMessage,
+    SystemMessage,
     ToolMessage,
 )
 from langgraph.channels.ephemeral_value import EphemeralValue
@@ -72,7 +74,7 @@ class _ModelRequestOverrides(TypedDict, total=False):
     """Possible overrides for `ModelRequest.override()` method."""
 
     model: BaseChatModel
-    system_prompt: str | None
+    system_message: SystemMessage | None
     messages: list[AnyMessage]
     tool_choice: Any | None
     tools: list[BaseTool | dict]
@@ -80,19 +82,112 @@ class _ModelRequestOverrides(TypedDict, total=False):
     model_settings: dict[str, Any]
 
 
-@dataclass
+@dataclass(init=False)
 class ModelRequest:
     """Model request information for the agent."""
 
     model: BaseChatModel
-    system_prompt: str | None
-    messages: list[AnyMessage]  # excluding system prompt
+    messages: list[AnyMessage]  # excluding system message
+    system_message: SystemMessage | None
     tool_choice: Any | None
     tools: list[BaseTool | dict]
     response_format: ResponseFormat | None
     state: AgentState
     runtime: Runtime[ContextT]  # type: ignore[valid-type]
     model_settings: dict[str, Any] = field(default_factory=dict)
+
+    def __init__(
+        self,
+        *,
+        model: BaseChatModel,
+        messages: list[AnyMessage],
+        system_message: SystemMessage | None = None,
+        system_prompt: str | None = None,
+        tool_choice: Any | None = None,
+        tools: list[BaseTool | dict] | None = None,
+        response_format: ResponseFormat | None = None,
+        state: AgentState | None = None,
+        runtime: Runtime[ContextT] | None = None,
+        model_settings: dict[str, Any] | None = None,
+    ) -> None:
+        """Initialize ModelRequest with backward compatibility for system_prompt.
+
+        Args:
+            model: The chat model to use.
+            messages: List of messages (excluding system prompt).
+            tool_choice: Tool choice configuration.
+            tools: List of available tools.
+            response_format: Response format specification.
+            state: Agent state.
+            runtime: Runtime context.
+            model_settings: Additional model settings.
+            system_message: System message instance (preferred).
+            system_prompt: System prompt string (deprecated, converted to SystemMessage).
+        """
+        # Handle system_prompt/system_message conversion and validation
+        if system_prompt is not None and system_message is not None:
+            msg = "Cannot specify both system_prompt and system_message"
+            raise ValueError(msg)
+
+        if system_prompt is not None:
+            system_message = SystemMessage(content=system_prompt)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            self.model = model
+            self.messages = messages
+            self.system_message = system_message
+            self.tool_choice = tool_choice
+            self.tools = tools if tools is not None else []
+            self.response_format = response_format
+            self.state = state if state is not None else {"messages": []}
+            self.runtime = runtime  # type: ignore[assignment]
+            self.model_settings = model_settings if model_settings is not None else {}
+
+    @property
+    def system_prompt(self) -> str | None:
+        """Get system prompt text from system_message.
+
+        Returns:
+            The content of the system message if present, otherwise `None`.
+        """
+        if self.system_message is None:
+            return None
+        return self.system_message.text
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Set an attribute with a deprecation warning.
+
+        Direct attribute assignment on `ModelRequest` is deprecated. Use the
+        `override()` method instead to create a new request with modified attributes.
+
+        Args:
+            name: Attribute name.
+            value: Attribute value.
+        """
+        # Special handling for system_prompt - convert to system_message
+        if name == "system_prompt":
+            warnings.warn(
+                "Direct attribute assignment to ModelRequest.system_prompt is deprecated. "
+                "Use request.override(system_message=SystemMessage(...)) instead to create "
+                "a new request with the modified system message.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if value is None:
+                object.__setattr__(self, "system_message", None)
+            else:
+                object.__setattr__(self, "system_message", SystemMessage(content=value))
+            return
+
+        warnings.warn(
+            f"Direct attribute assignment to ModelRequest.{name} is deprecated. "
+            f"Use request.override({name}=...) instead to create a new request "
+            f"with the modified attribute.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        object.__setattr__(self, name, value)
 
     def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest:
         """Replace the request with a new request with the given overrides.
@@ -107,7 +202,8 @@ class ModelRequest:
                 Supported keys:
 
                 - `model`: `BaseChatModel` instance
-                - `system_prompt`: Optional system prompt string
+                - `system_prompt`: deprecated, use `system_message` instead
+                - `system_message`: `SystemMessage` instance
                 - `messages`: `list` of messages
                 - `tool_choice`: Tool choice configuration
                 - `tools`: `list` of available tools
@@ -124,12 +220,37 @@ class ModelRequest:
                 new_request = request.override(model=different_model)
                 ```
 
+            !!! example "Override system message (preferred)"
+
+                ```python
+                from langchain_core.messages import SystemMessage
+
+                new_request = request.override(
+                    system_message=SystemMessage(content="New instructions")
+                )
+                ```
+
             !!! example "Override multiple attributes"
 
                 ```python
-                new_request = request.override(system_prompt="New instructions", tool_choice="auto")
+                new_request = request.override(
+                    model=ChatOpenAI(model="gpt-4o"),
+                    system_message=SystemMessage(content="New instructions"),
+                )
                 ```
         """
+        # Handle system_prompt/system_message conversion
+        if "system_prompt" in overrides and "system_message" in overrides:
+            msg = "Cannot specify both system_prompt and system_message"
+            raise ValueError(msg)
+
+        if "system_prompt" in overrides:
+            system_prompt = cast("str", overrides.pop("system_prompt"))  # type: ignore[typeddict-item]
+            if system_prompt is None:
+                overrides["system_message"] = None
+            else:
+                overrides["system_message"] = SystemMessage(content=system_prompt)
+
         return replace(self, **overrides)
 
 
@@ -446,7 +567,14 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
                 ```python
                 def wrap_tool_call(self, request, handler):
-                    request.tool_call["args"]["value"] *= 2
+                    modified_call = {
+                        **request.tool_call,
+                        "args": {
+                            **request.tool_call["args"],
+                            "value": request.tool_call["args"]["value"] * 2,
+                        },
+                    }
+                    request = request.override(tool_call=modified_call)
                     return handler(request)
                 ```
 
@@ -570,11 +698,13 @@ class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
         ...
 
 
-class _CallableReturningPromptString(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
-    """Callable that returns a prompt string given `ModelRequest` (contains state and runtime)."""
+class _CallableReturningSystemMessage(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
+    """Callable that returns a prompt string or SystemMessage given `ModelRequest`."""
 
-    def __call__(self, request: ModelRequest) -> str | Awaitable[str]:
-        """Generate a system prompt string based on the request."""
+    def __call__(
+        self, request: ModelRequest
+    ) -> str | SystemMessage | Awaitable[str | SystemMessage]:
+        """Generate a system prompt string or SystemMessage based on the request."""
         ...
 
 
@@ -1255,7 +1385,7 @@ def after_agent(
 
 @overload
 def dynamic_prompt(
-    func: _CallableReturningPromptString[StateT, ContextT],
+    func: _CallableReturningSystemMessage[StateT, ContextT],
 ) -> AgentMiddleware[StateT, ContextT]: ...
 
 
@@ -1263,16 +1393,16 @@ def dynamic_prompt(
 def dynamic_prompt(
     func: None = None,
 ) -> Callable[
-    [_CallableReturningPromptString[StateT, ContextT]],
+    [_CallableReturningSystemMessage[StateT, ContextT]],
     AgentMiddleware[StateT, ContextT],
 ]: ...
 
 
 def dynamic_prompt(
-    func: _CallableReturningPromptString[StateT, ContextT] | None = None,
+    func: _CallableReturningSystemMessage[StateT, ContextT] | None = None,
 ) -> (
     Callable[
-        [_CallableReturningPromptString[StateT, ContextT]],
+        [_CallableReturningSystemMessage[StateT, ContextT]],
         AgentMiddleware[StateT, ContextT],
     ]
     | AgentMiddleware[StateT, ContextT]
@@ -1294,7 +1424,8 @@ def dynamic_prompt(
             function that can be applied to a function.
 
     The decorated function should return:
-        - `str` – The system prompt to use for the model request
+        - `str` – The system prompt string to use for the model request
+        - `SystemMessage` – A complete system message to use for the model request
 
     Examples:
         Basic usage with dynamic content:
@@ -1325,7 +1456,7 @@ def dynamic_prompt(
     """
 
     def decorator(
-        func: _CallableReturningPromptString[StateT, ContextT],
+        func: _CallableReturningSystemMessage[StateT, ContextT],
     ) -> AgentMiddleware[StateT, ContextT]:
         is_async = iscoroutinefunction(func)
 
@@ -1337,7 +1468,10 @@ def dynamic_prompt(
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
             ) -> ModelCallResult:
                 prompt = await func(request)  # type: ignore[misc]
-                request.system_prompt = prompt
+                if isinstance(prompt, SystemMessage):
+                    request = request.override(system_message=prompt)
+                else:
+                    request = request.override(system_message=SystemMessage(content=prompt))
                 return await handler(request)
 
             middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
@@ -1357,8 +1491,11 @@ def dynamic_prompt(
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
         ) -> ModelCallResult:
-            prompt = cast("str", func(request))
-            request.system_prompt = prompt
+            prompt = cast("Callable[[ModelRequest], SystemMessage | str]", func)(request)
+            if isinstance(prompt, SystemMessage):
+                request = request.override(system_message=prompt)
+            else:
+                request = request.override(system_message=SystemMessage(content=prompt))
             return handler(request)
 
         async def async_wrapped_from_sync(
@@ -1367,8 +1504,11 @@ def dynamic_prompt(
             handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
         ) -> ModelCallResult:
             # Delegate to sync function
-            prompt = cast("str", func(request))
-            request.system_prompt = prompt
+            prompt = cast("Callable[[ModelRequest], SystemMessage | str]", func)(request)
+            if isinstance(prompt, SystemMessage):
+                request = request.override(system_message=prompt)
+            else:
+                request = request.override(system_message=SystemMessage(content=prompt))
             return await handler(request)
 
         middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
@@ -1469,7 +1609,7 @@ def wrap_model_call(
                     pass
 
                 # Try fallback model
-                request.model = fallback_model_instance
+                request = request.override(model=fallback_model_instance)
                 return handler(request)
             ```
 
@@ -1632,7 +1772,14 @@ def wrap_tool_call(
             ```python
             @wrap_tool_call
             def modify_args(request, handler):
-                request.tool_call["args"]["value"] *= 2
+                modified_call = {
+                    **request.tool_call,
+                    "args": {
+                        **request.tool_call["args"],
+                        "value": request.tool_call["args"]["value"] * 2,
+                    },
+                }
+                request = request.override(tool_call=modified_call)
                 return handler(request)
             ```
 

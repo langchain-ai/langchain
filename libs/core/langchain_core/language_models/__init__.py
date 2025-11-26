@@ -53,6 +53,10 @@ if TYPE_CHECKING:
         ParrotFakeChatModel,
     )
     from langchain_core.language_models.llms import LLM, BaseLLM
+    from langchain_core.language_models.model_profile import (
+        ModelProfile,
+        ModelProfileRegistry,
+    )
 
 __all__ = (
     "LLM",
@@ -68,6 +72,8 @@ __all__ = (
     "LanguageModelInput",
     "LanguageModelLike",
     "LanguageModelOutput",
+    "ModelProfile",
+    "ModelProfileRegistry",
     "ParrotFakeChatModel",
     "SimpleChatModel",
     "get_tokenizer",
@@ -90,6 +96,8 @@ _dynamic_imports = {
     "GenericFakeChatModel": "fake_chat_models",
     "ParrotFakeChatModel": "fake_chat_models",
     "LLM": "llms",
+    "ModelProfile": "model_profile",
+    "ModelProfileRegistry": "model_profile",
     "BaseLLM": "llms",
     "is_openai_data_block": "_utils",
 }
