@@ -536,7 +536,7 @@ def test_tool_use() -> None:
     assert content_blocks[1]["args"]
 
     # Testing token-efficient tools
-    # https://docs.claude.com/en/docs/agents-and-tools/tool-use/token-efficient-tool-use
+    # https://platform.claude.com/docs/en/agents-and-tools/tool-use/token-efficient-tool-use
     assert gathered.usage_metadata
     assert response.usage_metadata
     assert (
@@ -1598,7 +1598,7 @@ def test_code_execution_old(output_version: Literal["v0", "v1"]) -> None:
     See the `test_code_execution` test below to test the current
     `code_execution_20250825` tool.
 
-    Migration guide: https://docs.claude.com/en/docs/agents-and-tools/tool-use/code-execution-tool#upgrade-to-latest-tool-version
+    Migration guide: https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool#upgrade-to-latest-tool-version
     """
     llm = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]
