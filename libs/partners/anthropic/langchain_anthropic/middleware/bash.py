@@ -34,6 +34,7 @@ class ClaudeBashToolMiddleware(ShellToolMiddleware):
 
         Args:
             workspace_root: Base directory for the shell session.
+
                 If omitted, a temporary directory is created.
             startup_commands: Optional commands executed after the session starts.
             shutdown_commands: Optional commands executed before session shutdown.

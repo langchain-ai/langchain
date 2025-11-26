@@ -23,12 +23,12 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: v0.3
           path: langchain
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           repository: langchain-ai/langchain-api-docs-html
           path: langchain-api-docs-html

@@ -294,8 +294,9 @@ class VectorStore(ABC):
 
         Args:
             query: Input text.
-            search_type: Type of search to perform. Can be `'similarity'`, `'mmr'`, or
-                `'similarity_score_threshold'`.
+            search_type: Type of search to perform.
+
+                Can be `'similarity'`, `'mmr'`, or `'similarity_score_threshold'`.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -328,8 +329,9 @@ class VectorStore(ABC):
 
         Args:
             query: Input text.
-            search_type: Type of search to perform. Can be `'similarity'`, `'mmr'`, or
-                `'similarity_score_threshold'`.
+            search_type: Type of search to perform.
+
+                Can be `'similarity'`, `'mmr'`, or `'similarity_score_threshold'`.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -460,9 +462,10 @@ class VectorStore(ABC):
         Args:
             query: Input text.
             k: Number of `Document` objects to return.
-            **kwargs: kwargs to be passed to similarity search. Should include
-                `score_threshold`, An optional floating point value between `0` to `1`
-                to filter the resulting set of retrieved docs
+            **kwargs: Kwargs to be passed to similarity search.
+
+                Should include `score_threshold`, an optional floating point value
+                between `0` to `1` to filter the resulting set of retrieved docs.
 
         Returns:
             List of tuples of `(doc, similarity_score)`
@@ -487,9 +490,10 @@ class VectorStore(ABC):
         Args:
             query: Input text.
             k: Number of `Document` objects to return.
-            **kwargs: kwargs to be passed to similarity search. Should include
-                `score_threshold`, An optional floating point value between `0` to `1`
-                to filter the resulting set of retrieved docs
+            **kwargs: Kwargs to be passed to similarity search.
+
+                Should include `score_threshold`, an optional floating point value
+                between `0` to `1` to filter the resulting set of retrieved docs.
 
         Returns:
             List of tuples of `(doc, similarity_score)`
@@ -511,9 +515,10 @@ class VectorStore(ABC):
         Args:
             query: Input text.
             k: Number of `Document` objects to return.
-            **kwargs: kwargs to be passed to similarity search. Should include
-                `score_threshold`, An optional floating point value between `0` to `1`
-                to filter the resulting set of retrieved docs
+            **kwargs: Kwargs to be passed to similarity search.
+
+                Should include `score_threshold`, an optional floating point value
+                between `0` to `1` to filter the resulting set of retrieved docs.
 
         Returns:
             List of tuples of `(doc, similarity_score)`.
@@ -560,9 +565,10 @@ class VectorStore(ABC):
         Args:
             query: Input text.
             k: Number of `Document` objects to return.
-            **kwargs: kwargs to be passed to similarity search. Should include
-                `score_threshold`, An optional floating point value between `0` to `1`
-                to filter the resulting set of retrieved docs
+            **kwargs: Kwargs to be passed to similarity search.
+
+                Should include `score_threshold`, an optional floating point value
+                between `0` to `1` to filter the resulting set of retrieved docs.
 
         Returns:
             List of tuples of `(doc, similarity_score)`
@@ -900,13 +906,15 @@ class VectorStore(ABC):
 
         Args:
             **kwargs: Keyword arguments to pass to the search function.
+
                 Can include:
 
                 * `search_type`: Defines the type of search that the Retriever should
                     perform. Can be `'similarity'` (default), `'mmr'`, or
                     `'similarity_score_threshold'`.
-                * `search_kwargs`: Keyword arguments to pass to the search function. Can
-                    include things like:
+                * `search_kwargs`: Keyword arguments to pass to the search function.
+
+                    Can include things like:
 
                     * `k`: Amount of documents to return (Default: `4`)
                     * `score_threshold`: Minimum relevance threshold

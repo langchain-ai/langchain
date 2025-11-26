@@ -654,7 +654,7 @@ class PlainTextContentBlock(TypedDict):
 
     !!! note
         Title and context are optional fields that may be passed to the model. See
-        Anthropic [example](https://docs.claude.com/en/docs/build-with-claude/citations#citable-vs-non-citable-content).
+        Anthropic [example](https://platform.claude.com/docs/en/build-with-claude/citations#citable-vs-non-citable-content).
 
     !!! note "Factory function"
         `create_plaintext_block` may also be used as a factory to create a

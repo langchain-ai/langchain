@@ -47,7 +47,7 @@ jobs:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci-ignore') }}
     steps:
       - name: "📋 Checkout Code"
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: "🐍 Setup Python 3.11"
         uses: actions/setup-python@v6
         with:
@@ -141,7 +141,7 @@ jobs:
       run:
         working-directory: ${{ matrix.job-configs.working-directory }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: "🐍 Set up Python ${{ matrix.job-configs.python-version }} + UV"
         uses: "./.github/actions/uv_setup"
@@ -182,7 +182,7 @@ jobs:
         job-configs: ${{ fromJson(needs.build.outputs.codspeed) }}
       fail-fast: false
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: "📦 Install UV Package Manager"
         uses: astral-sh/setup-uv@v7

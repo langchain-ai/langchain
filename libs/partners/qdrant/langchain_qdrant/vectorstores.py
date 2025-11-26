@@ -1980,9 +1980,10 @@ class Qdrant(VectorStore):
         Args:
             query: input text
             k: Number of Documents to return.
-            **kwargs: kwargs to be passed to similarity search. Should include
-                `score_threshold`, An optional floating point value between `0` to `1`
-                to filter the resulting set of retrieved docs
+            **kwargs: Kwargs to be passed to similarity search.
+
+                Should include `score_threshold`, an optional floating point value
+                between `0` to `1` to filter the resulting set of retrieved docs.
 
         Returns:
             List of tuples of `(doc, similarity_score)`
@@ -2004,9 +2005,10 @@ class Qdrant(VectorStore):
         Args:
             query: input text
             k: Number of Documents to return.
-            **kwargs: kwargs to be passed to similarity search. Should include
-                `score_threshold`, An optional floating point value between `0` to `1`
-                to filter the resulting set of retrieved docs
+            **kwargs: Kwargs to be passed to similarity search.
+
+                Should include `score_threshold`, an optional floating point value
+                between `0` to `1` to filter the resulting set of retrieved docs.
 
         Returns:
             List of tuples of `(doc, similarity_score)`

@@ -125,7 +125,9 @@ def test_structured_prompt_kwargs() -> None:
 
 def test_structured_prompt_template_format() -> None:
     prompt = StructuredPrompt(
-        [("human", "hi {{person.name}}")], schema={}, template_format="mustache"
+        [("human", "hi {{person.name}}")],
+        schema={"type": "object", "properties": {}, "title": "foo"},
+        template_format="mustache",
     )
     assert prompt.messages[0].prompt.template_format == "mustache"  # type: ignore[union-attr, union-attr]
     assert prompt.input_variables == ["person"]
@@ -136,4 +138,8 @@ def test_structured_prompt_template_format() -> None:
 
 def test_structured_prompt_template_empty_vars() -> None:
     with pytest.raises(ChevronError, match="empty tag"):
-        StructuredPrompt([("human", "hi {{}}")], schema={}, template_format="mustache")
+        StructuredPrompt(
+            [("human", "hi {{}}")],
+            schema={"type": "object", "properties": {}, "title": "foo"},
+            template_format="mustache",
+        )
