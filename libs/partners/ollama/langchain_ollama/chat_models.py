@@ -1319,9 +1319,11 @@ class ChatOllama(BaseChatModel):
                 - `'parsing_error'`: `BaseException | None`
 
         !!! warning "Behavior changed in `langchain-ollama` 0.2.2"
+
             Added support for structured output API via `format` parameter.
 
         !!! warning "Behavior changed in `langchain-ollama` 0.3.0"
+
             Updated default `method` to `'json_schema'`.
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`"
