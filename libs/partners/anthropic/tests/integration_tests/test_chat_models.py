@@ -2163,6 +2163,90 @@ def test_tool_search_with_deferred_tools() -> None:
     assert calculator_tool.get("defer_loading") is True
 
 
+def test_tool_search_with_langchain_tools_extras() -> None:
+    """Test tool search with LangChain tools using extras parameter."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"defer_loading": True})
+    def get_weather(location: str, unit: str = "fahrenheit") -> str:
+        """Get the current weather for a location.
+
+        Args:
+            location: City name
+            unit: Temperature unit (celsius or fahrenheit)
+        """
+        return f"The weather in {location} is sunny and 72°{unit[0].upper()}"
+
+    @tool(extras={"defer_loading": True})
+    def search_files(query: str) -> str:
+        """Search through files in the workspace.
+
+        Args:
+            query: Search query
+        """
+        return f"Found 3 files matching '{query}'"
+
+    llm = ChatAnthropic(
+        model="claude-opus-4-5-20251101",  # type: ignore[call-arg]
+    )
+
+    llm_with_tools = llm.bind_tools(
+        [
+            {
+                "type": "tool_search_tool_regex_20251119",
+                "name": "tool_search_tool_regex",
+            },
+            get_weather,
+            search_files,
+        ]
+    )
+
+    # Verify the payload includes extras fields
+    payload = llm_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **llm_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+
+    # Check that defer_loading was merged for both LangChain tools
+    weather_tool = None
+    search_tool = None
+    for tool_def in payload["tools"]:
+        if isinstance(tool_def, dict):
+            if tool_def.get("name") == "get_weather":
+                weather_tool = tool_def
+            elif tool_def.get("name") == "search_files":
+                search_tool = tool_def
+
+    assert weather_tool is not None
+    assert weather_tool.get("defer_loading") is True
+    assert search_tool is not None
+    assert search_tool.get("defer_loading") is True
+
+    # Beta header should be auto-appended
+    assert "advanced-tool-use-2025-11-20" in payload["betas"]
+
+    # Test with actual API call
+    input_message = {
+        "role": "user",
+        "content": "What's the weather in San Francisco?",
+    }
+    response = llm_with_tools.invoke([input_message])
+
+    # Verify response structure
+    assert isinstance(response.content, list)
+    assert all(isinstance(block, (str, dict)) for block in response.content)
+
+    # Check for tool-related blocks
+    block_types = {
+        block["type"]
+        for block in response.content
+        if isinstance(block, dict) and "type" in block
+    }
+
+    # Should have either server_tool_use (tool search) or tool_use blocks
+    assert "server_tool_use" in block_types or "tool_use" in block_types
+
+
 def test_async_shared_client() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
     _ = asyncio.run(llm.ainvoke("Hello"))

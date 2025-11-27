@@ -496,6 +496,23 @@ class ChildTool(BaseTool):
     two-tuple corresponding to the `(content, artifact)` of a `ToolMessage`.
     """
 
+    extras: dict[str, Any] | None = None
+    """Optional provider-specific extra fields for the tool.
+
+    This is used to pass provider-specific configuration that doesn't fit into
+    standard tool fields.
+
+    Example:
+        Anthropic-specific fields like `cache_control`, `defer_loading`, or
+        `input_examples`.
+
+        ```python
+        @tool(extras={"defer_loading": True, "cache_control": {"type": "ephemeral"}})
+        def my_tool(x: str) -> str:
+            return x
+        ```
+    """
+
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the tool.
 

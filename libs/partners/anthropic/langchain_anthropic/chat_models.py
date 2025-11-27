@@ -147,6 +147,56 @@ _TOOL_TYPE_TO_BETA: dict[str, str] = {
     "tool_search_tool_bm25_20251119": "advanced-tool-use-2025-11-20",
 }
 
+# Allowlist of valid Anthropic-specific extra fields
+_ANTHROPIC_EXTRA_FIELDS: set[str] = {
+    "cache_control",
+    "defer_loading",
+    "input_examples",
+}
+
+
+def _validate_anthropic_extras(extras: dict[str, Any]) -> dict[str, Any]:
+    """Validate and filter extras to only include Anthropic-specific fields.
+
+    Args:
+        extras: Dictionary of extra fields from a tool.
+
+    Returns:
+        Dictionary containing only valid Anthropic-specific fields.
+
+    Raises:
+        ValueError: If extras contains invalid fields.
+    """
+    validated = {}
+    invalid_fields = []
+
+    for key, value in extras.items():
+        if key in _ANTHROPIC_EXTRA_FIELDS:
+            # Type validation for each field
+            if key == "cache_control":
+                if not isinstance(value, dict):
+                    msg = f"'cache_control' must be a dict, got {type(value).__name__}"
+                    raise ValueError(msg)
+            elif key == "defer_loading":
+                if not isinstance(value, bool):
+                    msg = f"'defer_loading' must be a bool, got {type(value).__name__}"
+                    raise ValueError(msg)
+            elif key == "input_examples" and not isinstance(value, list):
+                msg = f"'input_examples' must be a list, got {type(value).__name__}"
+                raise ValueError(msg)
+            validated[key] = value
+        else:
+            invalid_fields.append(key)
+
+    if invalid_fields:
+        msg = (
+            f"Invalid Anthropic extra fields: {invalid_fields}. "
+            f"Valid fields are: {sorted(_ANTHROPIC_EXTRA_FIELDS)}"
+        )
+        raise ValueError(msg)
+
+    return validated
+
 
 def _is_builtin_tool(tool: Any) -> bool:
     """Check if a tool is a built-in Anthropic tool.
@@ -1614,54 +1664,38 @@ class ChatAnthropic(BaseChatModel):
         ??? example "Tool search"
 
             Tool search enables Claude to dynamically discover and load tools on-demand
-            instead of loading all tool definitions upfront. See the
+            instead of loading all tool definitions upfront. Use the `extras` parameter to
+            specify `defer_loading` on LangChain tools.
+
+            See the
             [LangChain docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#tool-search)
             for more detail.
 
-            ```python hl_lines="8-11 26 36"
+            ```python hl_lines="4 10"
             from langchain_anthropic import ChatAnthropic
+            from langchain_core.tools import tool
 
-            model = ChatAnthropic(
-                model="claude-sonnet-4-5-20250929",
-            )
+            @tool(extras={"defer_loading": True})
+            def get_weather(location: str, unit: str = "fahrenheit") -> str:
+                \"\"\"Get the current weather for a location.\"\"\"
+                return f"Weather in {location}: Sunny, 72°{unit[0].upper()}"
 
-            tools = [
+            @tool(extras={"defer_loading": True})
+            def search_files(query: str) -> str:
+                \"\"\"Search through files in the workspace.\"\"\"
+                return f"Found 3 files matching '{query}'"
+
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
+
+            model_with_tools = model.bind_tools([
                 {
                     "type": "tool_search_tool_regex_20251119",
                     "name": "tool_search_tool_regex",
                 },
-                {
-                    "name": "get_weather",
-                    "description": "Get the current weather for a location",
-                    "input_schema": {
-                        "type": "object",
-                        "properties": {
-                            "location": {"type": "string", "description": "City name"},
-                            "unit": {
-                                "type": "string",
-                                "enum": ["celsius", "fahrenheit"],
-                            },
-                        },
-                        "required": ["location"],
-                    },
-                    "defer_loading": True,  # Tool is loaded on-demand
-                },
-                {
-                    "name": "search_files",
-                    "description": "Search through files in the workspace",
-                    "input_schema": {
-                        "type": "object",
-                        "properties": {
-                            "query": {"type": "string"},
-                        },
-                        "required": ["query"],
-                    },
-                    "defer_loading": True,  # Tool is loaded on-demand
-                },
-                ...,
-            ]
+                get_weather,
+                search_files,
+            ])
 
-            model_with_tools = model.bind_tools(tools)
             response = model_with_tools.invoke("What's the weather in San Francisco?")
             ```
 
@@ -2605,12 +2639,24 @@ class ChatAnthropic(BaseChatModel):
             See LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#strict-tool-use)
             for more detail.
         """  # noqa: E501
-        formatted_tools = [
-            tool
-            if _is_builtin_tool(tool)
-            else convert_to_anthropic_tool(tool, strict=strict)
-            for tool in tools
-        ]
+        formatted_tools: list[dict[str, Any] | type | Callable | BaseTool] = []
+        for tool in tools:
+            if _is_builtin_tool(tool):
+                formatted_tools.append(tool)
+            else:
+                formatted = convert_to_anthropic_tool(tool, strict=strict)
+                # Merge extras if present
+                if hasattr(tool, "extras") and isinstance(tool.extras, dict):
+                    # Validate and merge Anthropic-specific extras
+                    validated_extras = _validate_anthropic_extras(tool.extras)
+                    # Create a new dict with merged extras to avoid TypedDict issues
+                    formatted_with_extras = cast(
+                        dict[str, Any], {**formatted, **validated_extras}
+                    )
+                    formatted_tools.append(formatted_with_extras)
+                else:
+                    # Cast TypedDict to dict for type compatibility
+                    formatted_tools.append(cast(dict[str, Any], formatted))
         if not tool_choice:
             pass
         elif isinstance(tool_choice, dict):
