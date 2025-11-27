@@ -12,7 +12,11 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models import (
+    LanguageModelInput,
+    ModelProfile,
+    ModelProfileRegistry,
+)
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     LangSmithParams,
@@ -63,7 +67,15 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 from langchain_groq._compat import _convert_from_v1_to_groq
+from langchain_groq.data._profiles import _PROFILES
 from langchain_groq.version import __version__
+
+_MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 class ChatGroq(BaseChatModel):
@@ -490,6 +502,13 @@ class ChatGroq(BaseChatModel):
             raise ImportError(msg) from exc
         return self
 
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model_name)
+        return self
+
     #
     # Serializable class method overrides
     #
@@ -873,6 +892,7 @@ class ChatGroq(BaseChatModel):
                 when specifying a Pydantic or `TypedDict` class.
 
                 !!! warning "Behavior changed in `langchain-groq` 0.3.8"
+
                     Added support for Groq's dedicated structured output feature via
                     `method="json_schema"`.
 
