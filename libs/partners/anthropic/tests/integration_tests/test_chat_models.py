@@ -1151,6 +1151,30 @@ def test_structured_output_thinking_force_tool_use() -> None:
         llm.invoke("Generate a username for Sally with green hair")
 
 
+def test_effort_parameter() -> None:
+    """Test that effort parameter can be passed without errors.
+
+    Only Opus 4.5 supports currently.
+    """
+    llm = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        effort="medium",
+        max_tokens=100,
+    )
+
+    result = llm.invoke("Say hello in one sentence")
+
+    # Verify we got a response
+    assert isinstance(result.content, str)
+    assert len(result.content) > 0
+
+    # Verify response metadata is present
+    assert "model_name" in result.response_metadata
+    assert result.usage_metadata is not None
+    assert result.usage_metadata["input_tokens"] > 0
+    assert result.usage_metadata["output_tokens"] > 0
+
+
 def test_image_tool_calling() -> None:
     """Test tool calling with image inputs."""
 
