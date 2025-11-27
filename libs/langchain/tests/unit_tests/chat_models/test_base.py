@@ -131,7 +131,6 @@ def test_configurable() -> None:
         "bound": {
             "name": None,
             "disable_streaming": False,
-            "effort": None,
             "disabled_params": None,
             "model_name": "gpt-4o",
             "temperature": None,
@@ -257,6 +256,7 @@ def test_configurable_with_default() -> None:
             "max_tokens": 64000,
             "temperature": None,
             "thinking": None,
+            "effort": None,
             "top_k": None,
             "top_p": None,
             "default_request_timeout": None,
