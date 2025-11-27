@@ -436,4 +436,3 @@ def test_chat_ollama_ignores_strict_arg() -> None:
         # Check that 'strict' was NOT passed to the client
         call_kwargs = mock_client.chat.call_args[1]
         assert "strict" not in call_kwargs
-
