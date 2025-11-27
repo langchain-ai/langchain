@@ -15,7 +15,7 @@ from typing_extensions import TypedDict
 
 from langchain_fireworks import ChatFireworks
 
-_MODEL = "accounts/fireworks/models/llama-v3p1-8b-instruct"
+_MODEL = "fireworks/llama-v3p3-70b-instruct"
 
 
 def test_tool_choice_bool() -> None:
@@ -142,7 +142,7 @@ def _get_joke_class(
 
 @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
 def test_structured_output_json_schema(schema_type: str) -> None:
-    llm = ChatFireworks(model="accounts/fireworks/models/llama-v3p1-70b-instruct")
+    llm = ChatFireworks(model="fireworks/llama-v3p3-70b-instruct")
     schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
     chat = llm.with_structured_output(schema, method="json_schema")
 
