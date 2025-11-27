@@ -1610,6 +1610,74 @@ class ChatAnthropic(BaseChatModel):
 
             See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/text-editor-tool)
             for more info.
+
+        ??? example "Tool search"
+
+            Tool search enables Claude to dynamically discover and load tools on-demand
+            instead of loading all tool definitions upfront. See the
+            [LangChain docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#tool-search)
+            for more detail.
+
+            ```python hl_lines="8-11 26 36"
+            from langchain_anthropic import ChatAnthropic
+
+            model = ChatAnthropic(
+                model="claude-sonnet-4-5-20250929",
+            )
+
+            tools = [
+                {
+                    "type": "tool_search_tool_regex_20251119",
+                    "name": "tool_search_tool_regex",
+                },
+                {
+                    "name": "get_weather",
+                    "description": "Get the current weather for a location",
+                    "input_schema": {
+                        "type": "object",
+                        "properties": {
+                            "location": {"type": "string", "description": "City name"},
+                            "unit": {
+                                "type": "string",
+                                "enum": ["celsius", "fahrenheit"],
+                            },
+                        },
+                        "required": ["location"],
+                    },
+                    "defer_loading": True,  # Tool is loaded on-demand
+                },
+                {
+                    "name": "search_files",
+                    "description": "Search through files in the workspace",
+                    "input_schema": {
+                        "type": "object",
+                        "properties": {
+                            "query": {"type": "string"},
+                        },
+                        "required": ["query"],
+                    },
+                    "defer_loading": True,  # Tool is loaded on-demand
+                },
+                ...,
+            ]
+
+            model_with_tools = model.bind_tools(tools)
+            response = model_with_tools.invoke("What's the weather in San Francisco?")
+            ```
+
+            !!! note "Automatic beta header"
+
+                The required `advanced-tool-use-2025-11-20` beta header is automatically
+                appended to the request when using tool search tools.
+
+            !!! tip "Best practices"
+
+                - Tools with `defer_loading: True` are only loaded when Claude discovers them via search
+                - Keep your 3-5 most frequently used tools as non-deferred for optimal performance
+                - Both variants search tool names, descriptions, argument names, and argument descriptions
+
+            See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-search-tool)
+            for more info.
     """  # noqa: E501
 
     model_config = ConfigDict(
