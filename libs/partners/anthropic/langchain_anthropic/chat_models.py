@@ -143,6 +143,8 @@ _TOOL_TYPE_TO_BETA: dict[str, str] = {
     "code_execution_20250522": "code-execution-2025-05-22",
     "code_execution_20250825": "code-execution-2025-08-25",
     "memory_20250818": "context-management-2025-06-27",
+    "computer_20250124": "computer-use-2025-01-24",
+    "computer_20251124": "computer-use-2025-11-24",
 }
 
 
@@ -2472,6 +2474,60 @@ class ChatAnthropic(BaseChatModel):
                 },
             )
             ```
+
+        ??? example "Computer use tool"
+
+            Claude supports computer use capabilities, allowing it to interact with
+            desktop environments through screenshots, mouse control, and keyboard input.
+
+            !!! warning "Execution environment required"
+
+                LangChain handles the API integration, but **you must provide**:
+
+                - A sandboxed computing environment (Docker, VM, etc.)
+                - A virtual display (e.g., Xvfb)
+                - Code to execute tool calls (screenshot, clicks, typing)
+                - An agent loop to pass results back to Claude
+
+                Anthropic provides a [reference implementation](https://github.com/anthropics/anthropic-quickstarts/tree/main/computer-use-demo).
+
+            !!! note
+
+                Computer use requires:
+
+                - Claude Opus 4.5, Claude 4, or Claude Sonnet 3.7
+                - A sandboxed computing environment with virtual display
+
+            See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool)
+            for setup instructions, model capability, and best practices.
+
+            ```python
+            from langchain_anthropic import ChatAnthropic
+
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
+
+            # LangChain handles the API call and tool binding
+            computer_tool = {
+                "type": "computer_20250124",
+                "name": "computer",
+                "display_width_px": 1024,
+                "display_height_px": 768,
+                "display_number": 1,
+            }
+
+            model_with_computer = model.bind_tools([computer_tool])
+            response = model_with_computer.invoke("Take a screenshot to see what's on the screen")
+
+            # response.tool_calls contains the action Claude wants to perform
+            # You must execute this action in your environment and pass the result back
+            ```
+
+            !!! note "Automatic beta header"
+
+                The required beta header is automatically appended based on the tool
+                version. For `computer_20250124` and `computer_20251124`, the respective
+                `computer-use-2025-01-24` and `computer-use-2025-11-24` beta header is
+                added automatically.
 
         ??? example "Strict tool use"
 
