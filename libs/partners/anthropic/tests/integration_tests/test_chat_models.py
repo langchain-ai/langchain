@@ -2038,6 +2038,131 @@ def test_context_management() -> None:
     assert full.response_metadata.get("context_management")
 
 
+# @pytest.mark.vcr
+def test_tool_search() -> None:
+    """Test tool search functionality with both regex and BM25 variants."""
+    # Test with regex variant
+    llm = ChatAnthropic(
+        model="claude-opus-4-5-20251101",  # type: ignore[call-arg]
+    )
+
+    # Define tools with defer_loading
+    tools = [
+        {
+            "type": "tool_search_tool_regex_20251119",
+            "name": "tool_search_tool_regex",
+        },
+        {
+            "name": "get_weather",
+            "description": "Get the current weather for a location",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "location": {"type": "string", "description": "City name"},
+                    "unit": {
+                        "type": "string",
+                        "enum": ["celsius", "fahrenheit"],
+                        "description": "Temperature unit",
+                    },
+                },
+                "required": ["location"],
+            },
+            "defer_loading": True,
+        },
+        {
+            "name": "search_files",
+            "description": "Search through files in the workspace",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query"},
+                },
+                "required": ["query"],
+            },
+            "defer_loading": True,
+        },
+    ]
+
+    llm_with_tools = llm.bind_tools(tools)  # type: ignore[arg-type]
+
+    # Beta header should be auto-appended
+    payload = llm_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **llm_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+    assert "advanced-tool-use-2025-11-20" in payload["betas"]
+
+    # Test with a query that should trigger tool search
+    input_message = {
+        "role": "user",
+        "content": "What's the weather in San Francisco?",
+    }
+    response = llm_with_tools.invoke([input_message])
+
+    # Verify response contains expected block types
+    assert all(isinstance(block, (str, dict)) for block in response.content)
+
+    # Check for server_tool_use (tool search) and tool_result blocks
+    block_types = {
+        block["type"]
+        for block in response.content
+        if isinstance(block, dict) and "type" in block
+    }
+
+    # Response should contain server_tool_use for tool search
+    # and potentially tool_result with tool_reference blocks
+    assert "server_tool_use" in block_types or "tool_use" in block_types
+
+
+# @pytest.mark.vcr
+def test_tool_search_with_deferred_tools() -> None:
+    """Test that `defer_loading` works correctly with tool search."""
+    llm = ChatAnthropic(
+        model="claude-opus-4-5-20251101",  # type: ignore[call-arg]
+    )
+
+    # Create tools with defer_loading
+    tools = [
+        {
+            "type": "tool_search_tool_bm25_20251119",
+            "name": "tool_search_tool_bm25",
+        },
+        {
+            "name": "calculator",
+            "description": "Perform mathematical calculations",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "expression": {
+                        "type": "string",
+                        "description": "Mathematical expression",
+                    },
+                },
+                "required": ["expression"],
+            },
+            "defer_loading": True,
+        },
+    ]
+
+    llm_with_tools = llm.bind_tools(tools)  # type: ignore[arg-type]
+
+    # Verify the payload includes tools with defer_loading
+    payload = llm_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **llm_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+
+    # Find the calculator tool in the payload
+    calculator_tool = None
+    for tool in payload["tools"]:  # noqa: F402
+        if isinstance(tool, dict) and tool.get("name") == "calculator":
+            calculator_tool = tool
+            break
+
+    assert calculator_tool is not None
+    assert calculator_tool.get("defer_loading") is True
+
+
 def test_async_shared_client() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
     _ = asyncio.run(llm.ainvoke("Hello"))
