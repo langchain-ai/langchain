@@ -3123,3 +3123,15 @@ def test_filter_tool_runtime_directly_injected_arg() -> None:
     assert captured is not None
     assert captured == {"query": "test", "limit": 5}
     assert "runtime" not in captured
+
+
+def test_tool_init_config_arg_raises_error() -> None:
+    """Test that defining a tool with 'config' arg raises a ValueError."""
+
+    def bad_tool(config: str) -> str:
+        return "I will fail"
+
+    # This asserts that the code specifically raises ValueError
+    # with a message containing "reserved"
+    with pytest.raises(ValueError, match="reserved"):
+        StructuredTool.from_function(bad_tool)

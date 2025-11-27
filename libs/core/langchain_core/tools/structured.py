@@ -202,6 +202,17 @@ class StructuredTool(BaseTool):
                 error_on_invalid_docstring=error_on_invalid_docstring,
                 filter_args=_filter_schema_args(source_function),
             )
+
+        # Validate that "config" is not used as an argument name, unless it is typed as RunnableConfig
+        sig = signature(source_function)
+        if "config" in sig.parameters:
+            param = sig.parameters["config"]
+            if param.annotation != RunnableConfig:
+                msg = (
+                    "The argument name 'config' is reserved for the LangChain RunnableConfig object. "
+                    "Please rename your argument (e.g., 'configuration' or 'config_path')."
+                )
+                raise ValueError(msg)
         description_ = description
         if description is None and not parse_docstring:
             description_ = source_function.__doc__ or None
