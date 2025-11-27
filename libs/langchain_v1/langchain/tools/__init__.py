@@ -1,5 +1,3 @@
-"""Tools."""
-
 """LangChain Tools module.
 
 This module provides the ``tool`` decorator and ``ToolRuntime`` for creating
