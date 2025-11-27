@@ -55,6 +55,13 @@ class ModelProfile(TypedDict, total=False):
     reasoning_output: bool
     """Whether the model supports [reasoning / chain-of-thought](https://docs.langchain.com/oss/python/langchain/models#reasoning)"""
 
+    reasoning_effort_control: bool
+    """Whether the model supports controlling reasoning effort.
+
+    This can take the form of an effort value, e.g., "low", "medium", "high", or to
+    disable reasoning altogether.
+    """
+
     image_outputs: bool
     """Whether [image outputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
     are supported."""
