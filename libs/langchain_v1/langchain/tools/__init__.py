@@ -1,4 +1,4 @@
-"""LangChain Tools module.
+'''LangChain Tools module.
 
 This module provides the ``tool`` decorator and ``ToolRuntime`` for creating
 custom tools that can be used with LangChain agents.
@@ -91,7 +91,7 @@ Example - Custom Tool Name and Description:
         return f"Results for: {query}"
 
     print(search.name)  # Output: web_search
-"""
+'''
 
 from langchain_core.tools import (
     BaseTool,
