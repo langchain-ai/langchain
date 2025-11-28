@@ -16,3 +16,6 @@ structured_output = true
 
 [overrides."claude-opus-4-5"]
 reasoning_effort_control = true
+
+[overrides."claude-opus-4-5-20251101"]
+reasoning_effort_control = true
