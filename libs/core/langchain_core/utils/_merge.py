@@ -44,6 +44,12 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 )
                 raise TypeError(msg)
             elif isinstance(merged[right_k], str):
+                if right_k == "id":
+                    # Prefer the most recent non-null ID instead of concatenating
+                    if merged[right_k] == right_v or right_v is None:
+                        continue
+                    merged[right_k] = right_v
+                    continue
                 # TODO: Add below special handling for 'type' key in 0.3 and remove
                 # merge_lists 'type' logic.
                 #

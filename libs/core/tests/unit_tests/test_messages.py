@@ -1013,6 +1013,11 @@ def test_tool_message_str() -> None:
             [[{"index": 0, "text": "bar"}]],
             [{"text": "foo"}, {"index": 0, "text": "bar"}],
         ),
+        (
+            [{"index": 0, "text": "foo", "id": "msg_1"}],
+            [[{"index": 0, "type": "text", "id": "msg_2"}]],
+            [{"index": 0, "text": "foo", "id": "msg_2"}],
+        ),
     ],
 )
 def test_merge_content(first: list | str, others: list, expected: list | str) -> None:
