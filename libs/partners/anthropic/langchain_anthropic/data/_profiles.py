@@ -10,7 +10,7 @@ License: MIT License
 
 To update these data, refer to the instructions here:
 
-https://docs.langchain.com/oss/python/langchain/models#updating-or-overwriting-profile-data
+https://docs.langchain.com/oss/python/langchain/models#modify-profile-data
 """
 
 from typing import Any
@@ -159,6 +159,24 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "structured_output": False,
         "reasoning_effort_control": False,
+    },
+    "claude-opus-4-5-20251101": {
+        "max_input_tokens": 200000,
+        "max_output_tokens": 64000,
+        "image_inputs": True,
+        "audio_inputs": False,
+        "video_inputs": False,
+        "image_outputs": False,
+        "audio_outputs": False,
+        "video_outputs": False,
+        "reasoning_output": True,
+        "tool_calling": True,
+        "image_url_inputs": True,
+        "pdf_inputs": True,
+        "pdf_tool_message": True,
+        "image_tool_message": True,
+        "structured_output": False,
+        "reasoning_effort_control": True,
     },
     "claude-sonnet-4-5": {
         "max_input_tokens": 200000,

@@ -83,11 +83,6 @@ def _get_default_model_profile(model_name: str) -> ModelProfile:
     Returns:
         The model profile dictionary, or an empty dict if not found.
     """
-    # Hardcoded mapping for claude-opus-4-5-20251101 until upstream models.dev
-    # includes this dated API ID. This is a temporary fix.
-    if model_name == "claude-opus-4-5-20251101":
-        model_name = "claude-opus-4-5"
-
     default = _MODEL_PROFILES.get(model_name)
     if default:
         return default.copy()
