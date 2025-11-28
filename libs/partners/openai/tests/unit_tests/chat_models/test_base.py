@@ -3056,3 +3056,82 @@ def test_gpt_5_temperature_case_insensitive(
         messages = [HumanMessage(content="Hello")]
         payload = llm._get_request_payload(messages)
         assert payload["temperature"] == 0.7
+
+
+def test_convert_delta_to_message_chunk_with_reasoning_content() -> None:
+    """Test that reasoning_content is preserved in streaming delta chunks.
+
+    This tests support for the reasoning_content field returned by:
+    - LiteLLM when proxying Gemini models with reasoning_effort enabled
+    - DeepSeek reasoning models (deepseek-reasoner)
+    - vLLM with reasoning parser enabled
+    - Other OpenAI-compatible providers that support reasoning/thinking output
+
+    Related issues: #29513, #31326, #32981, #30580
+    """
+    from langchain_openai.chat_models.base import _convert_delta_to_message_chunk
+
+    # Test with reasoning_content present
+    delta_with_reasoning = {
+        "role": "assistant",
+        "content": "The answer is 2.",
+        "reasoning_content": "Let me think step by step. 1 + 1 = 2.",
+    }
+
+    chunk = _convert_delta_to_message_chunk(delta_with_reasoning, AIMessageChunk)
+
+    assert isinstance(chunk, AIMessageChunk)
+    assert chunk.content == "The answer is 2."
+    assert chunk.additional_kwargs.get("reasoning_content") == (
+        "Let me think step by step. 1 + 1 = 2."
+    )
+
+    # Test with only reasoning_content (no regular content yet)
+    delta_reasoning_only = {
+        "role": "assistant",
+        "content": "",
+        "reasoning_content": "Analyzing the problem...",
+    }
+
+    chunk = _convert_delta_to_message_chunk(delta_reasoning_only, AIMessageChunk)
+
+    assert isinstance(chunk, AIMessageChunk)
+    assert chunk.content == ""
+    assert (
+        chunk.additional_kwargs.get("reasoning_content") == "Analyzing the problem..."
+    )
+
+    # Test without reasoning_content (normal case, should still work)
+    delta_no_reasoning = {
+        "role": "assistant",
+        "content": "Hello!",
+    }
+
+    chunk = _convert_delta_to_message_chunk(delta_no_reasoning, AIMessageChunk)
+
+    assert isinstance(chunk, AIMessageChunk)
+    assert chunk.content == "Hello!"
+    assert "reasoning_content" not in chunk.additional_kwargs
+
+    # Test with reasoning_content and tool_calls
+    delta_with_tools = {
+        "role": "assistant",
+        "content": "",
+        "reasoning_content": "I need to call a tool to get the weather.",
+        "tool_calls": [
+            {
+                "index": 0,
+                "id": "call_abc123",
+                "function": {"name": "get_weather", "arguments": '{"city": "SF"}'},
+            }
+        ],
+    }
+
+    chunk = _convert_delta_to_message_chunk(delta_with_tools, AIMessageChunk)
+
+    assert isinstance(chunk, AIMessageChunk)
+    assert chunk.additional_kwargs.get("reasoning_content") == (
+        "I need to call a tool to get the weather."
+    )
+    assert len(chunk.tool_call_chunks) == 1
+    assert chunk.tool_call_chunks[0]["name"] == "get_weather"
