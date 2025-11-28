@@ -2,7 +2,6 @@ from collections.abc import Callable
 
 import pytest
 
-from langchain_core.runnables.base import RunnableLambda
 from langchain_core.runnables.utils import (
     get_function_nonlocals,
     get_lambda_source,
@@ -10,9 +9,12 @@ from langchain_core.runnables.utils import (
     as_message_state,
     to_message_state
 )
+from langchain_core.runnables.base import RunnableLambda
 from langchain_core.messages import (
     BaseMessage,
-    HumanMessage
+    HumanMessage,
+    AIMessage,
+    SystemMessage
 )
 
 
