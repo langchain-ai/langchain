@@ -1147,28 +1147,33 @@ def test_multi_party_conversation() -> None:
     assert "Bob" in response.content
 
 
-class ResponseFormat(BaseModel):
+class ResponseFormatPydanticBaseModel(BaseModel):
     response: str
     explanation: str
 
 
-class ResponseFormatDict(TypedDict):
+class ResponseFormatTypedDict(TypedDict):
     response: str
     explanation: str
 
 
 @pytest.mark.parametrize(
-    "schema", [ResponseFormat, ResponseFormat.model_json_schema(), ResponseFormatDict]
+    "schema",
+    [
+        ResponseFormatPydanticBaseModel,
+        ResponseFormatPydanticBaseModel.model_json_schema(),
+        ResponseFormatTypedDict,
+    ],
 )
 def test_structured_output_and_tools(schema: Any) -> None:
     llm = ChatOpenAI(model="gpt-5-nano", verbosity="low").bind_tools(
         [GenerateUsername], strict=True, response_format=schema
     )
-
     response = llm.invoke("What weighs more, a pound of feathers or a pound of gold?")
-    if schema == ResponseFormat:
+
+    if schema == ResponseFormatPydanticBaseModel:
         parsed = response.additional_kwargs["parsed"]
-        assert isinstance(parsed, ResponseFormat)
+        assert isinstance(parsed, ResponseFormatPydanticBaseModel)
     else:
         parsed = json.loads(response.text)
         assert isinstance(parsed, dict)
@@ -1190,7 +1195,10 @@ def test_structured_output_and_tools(schema: Any) -> None:
 
 def test_tools_and_structured_output() -> None:
     llm = ChatOpenAI(model="gpt-5-nano").with_structured_output(
-        ResponseFormat, strict=True, include_raw=True, tools=[GenerateUsername]
+        ResponseFormatPydanticBaseModel,
+        strict=True,
+        include_raw=True,
+        tools=[GenerateUsername],
     )
 
     expected_keys = {"raw", "parsing_error", "parsed"}
@@ -1199,7 +1207,7 @@ def test_tools_and_structured_output() -> None:
     # Test invoke
     ## Engage structured output
     response = llm.invoke(query)
-    assert isinstance(response["parsed"], ResponseFormat)
+    assert isinstance(response["parsed"], ResponseFormatPydanticBaseModel)
     ## Engage tool calling
     response_tools = llm.invoke(tool_query)
     ai_msg = response_tools["raw"]
