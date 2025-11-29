@@ -31,7 +31,7 @@ def test_embeddings_uses_max_concurrent_requests_for_limits() -> None:
         mock_async_client.return_value = MagicMock()
 
         max_concurrent = 5
-        _ = MistralAIEmbeddings(  # noqa: F841
+        MistralAIEmbeddings(
             model="mistral-embed",
             mistral_api_key="test",  # type: ignore[call-arg]
             max_concurrent_requests=max_concurrent,
@@ -69,7 +69,7 @@ async def test_aembed_documents_respects_max_concurrent_requests() -> None:
     active = 0
     max_active = 0
 
-    async def fake_post(*args, **kwargs) -> Response:  # type: ignore[override]
+    async def fake_post(*args: object, **kwargs: object) -> Response:  # type: ignore[override]
         nonlocal active, max_active
         active += 1
         max_active = max(max_active, active)
