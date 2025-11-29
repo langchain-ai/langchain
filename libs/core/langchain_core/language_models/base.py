@@ -12,6 +12,7 @@ from typing import (
     Literal,
     TypeAlias,
     TypeVar,
+    overload,
 )
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -106,6 +107,8 @@ LanguageModelLike = Runnable[LanguageModelInput, LanguageModelOutput]
 
 LanguageModelOutputVar = TypeVar("LanguageModelOutputVar", AIMessage, str)
 """Type variable for the output of a language model."""
+
+_ModelT = TypeVar("_ModelT", bound=BaseModel | Mapping)
 
 
 def _get_verbosity() -> bool:
@@ -267,9 +270,40 @@ class BaseLanguageModel(
 
         """
 
+    @overload
     def with_structured_output(
-        self, schema: dict | type, **kwargs: Any
-    ) -> Runnable[LanguageModelInput, dict | BaseModel]:
+        self,
+        schema: Mapping[str, Any],
+        *,
+        include_raw: Literal[False] = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, dict]: ...
+
+    @overload
+    def with_structured_output(
+        self,
+        schema: type[_ModelT],
+        *,
+        include_raw: Literal[False] = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, _ModelT]: ...
+
+    @overload
+    def with_structured_output(
+        self,
+        schema: Mapping[str, Any] | type[_ModelT],
+        *,
+        include_raw: Literal[True],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, dict]: ...
+
+    def with_structured_output(
+        self,
+        schema: Mapping | type,
+        *,
+        include_raw: bool = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, Any]:
         """Not implemented on this class."""
         # Implement this on child class if there is a way of steering the model to
         # generate responses that match a given schema.
