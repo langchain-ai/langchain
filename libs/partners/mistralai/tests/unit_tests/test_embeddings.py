@@ -24,9 +24,12 @@ def test_mistral_init() -> None:
 def test_embeddings_uses_max_concurrent_requests_for_limits() -> None:
     """Ensure HTTPX client limits respect max_concurrent_requests configuration."""
 
-    with patch("langchain_mistralai.embeddings.httpx.Client") as mock_client, patch(
-        "langchain_mistralai.embeddings.httpx.AsyncClient",
-    ) as mock_async_client:
+    with (
+        patch("langchain_mistralai.embeddings.httpx.Client") as mock_client,
+        patch(
+            "langchain_mistralai.embeddings.httpx.AsyncClient",
+        ) as mock_async_client,
+    ):
         mock_client.return_value = MagicMock()
         mock_async_client.return_value = MagicMock()
 
@@ -77,7 +80,8 @@ async def test_aembed_documents_respects_max_concurrent_requests() -> None:
         response = MagicMock(spec=Response)
         response.json.return_value = {
             "data": [
-                {"embedding": [0.0]} for _ in kwargs["json"]["input"]  # type: ignore[index]
+                {"embedding": [0.0]}
+                for _ in kwargs["json"]["input"]  # type: ignore[index]
             ]
         }
         active -= 1
