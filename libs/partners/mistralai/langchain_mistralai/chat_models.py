@@ -611,6 +611,10 @@ class ChatMistralAI(BaseChatModel):
             or "https://api.mistral.ai/v1"
         )
         self.endpoint = base_url_str
+        limits = httpx.Limits(
+            max_connections=self.max_concurrent_requests,
+            max_keepalive_connections=self.max_concurrent_requests,
+        )
         if not self.client:
             self.client = httpx.Client(
                 base_url=base_url_str,
@@ -621,6 +625,7 @@ class ChatMistralAI(BaseChatModel):
                 },
                 timeout=self.timeout,
                 verify=global_ssl_context,
+                limits=limits,
             )
         # TODO: handle retries and max_concurrency
         if not self.async_client:
@@ -633,6 +638,7 @@ class ChatMistralAI(BaseChatModel):
                 },
                 timeout=self.timeout,
                 verify=global_ssl_context,
+                limits=limits,
             )
 
         if self.temperature is not None and not 0 <= self.temperature <= 1:
