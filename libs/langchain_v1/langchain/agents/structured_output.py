@@ -255,10 +255,17 @@ class ProviderStrategy(Generic[SchemaT]):
     def __init__(
         self,
         schema: type[SchemaT],
+        *,
+        strict: bool = False,
     ) -> None:
-        """Initialize ProviderStrategy with schema."""
+        """Initialize ProviderStrategy with schema.
+
+        Args:
+            schema: Schema to enforce via the provider's native structured output.
+            strict: Whether to request strict provider-side schema enforcement.
+        """
         self.schema = schema
-        self.schema_spec = _SchemaSpec(schema)
+        self.schema_spec = _SchemaSpec(schema, strict=strict)
 
     def to_model_kwargs(self) -> dict[str, Any]:
         """Convert to kwargs to bind to a model to force structured output."""
@@ -271,6 +278,8 @@ class ProviderStrategy(Generic[SchemaT]):
                 "schema": self.schema_spec.json_schema,
             },
         }
+        if self.schema_spec.strict:
+            response_format["json_schema"]["strict"] = True
         return {"response_format": response_format}
 
 
