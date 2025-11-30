@@ -68,20 +68,20 @@ class ClearToolUsesEdit(ContextEdit):
     clear_tool_inputs: bool = False
     """Whether to clear the originating tool call parameters on the AI message."""
 
-    included_tools: Sequence[str] = ()
+    include_tools: Sequence[str] = ()
     """List of tool names to include in clearning. Should not be set if
     `exclude_tools` parameter is used."""
 
     exclude_tools: Sequence[str] = ()
     """List of tool names to exclude from clearing. Should not be set if
-    `included_tools` parameter is used."""
+    `include_tools` parameter is used."""
 
     placeholder: str = DEFAULT_TOOL_PLACEHOLDER
     """Placeholder text inserted for cleared tool outputs."""
 
     def __post_init__(self) -> None:
         """Validate that included_tools and exclude_tools are not both set."""
-        if self.included_tools and self.exclude_tools:
+        if self.include_tools and self.exclude_tools:
             msg = "Cannot set both `exclude_tools` and `included_tools` at the same time."
             raise ValueError(msg)
 
@@ -108,7 +108,7 @@ class ClearToolUsesEdit(ContextEdit):
 
         cleared_tokens = 0
         excluded_tools = set(self.exclude_tools)
-        included_tools = set(self.included_tools)
+        included_tools = set(self.include_tools)
 
         for idx, tool_message in candidates:
             if tool_message.response_metadata.get("context_editing", {}).get("cleared"):
