@@ -271,15 +271,17 @@ class ProviderStrategy(Generic[SchemaT]):
         """Convert to kwargs to bind to a model to force structured output."""
         # OpenAI:
         # - see https://platform.openai.com/docs/guides/structured-outputs
-        response_format = {
-            "type": "json_schema",
-            "json_schema": {
-                "name": self.schema_spec.name,
-                "schema": self.schema_spec.json_schema,
-            },
+        json_schema: dict[str, Any] = {
+            "name": self.schema_spec.name,
+            "schema": self.schema_spec.json_schema,
         }
         if self.schema_spec.strict:
-            response_format["json_schema"]["strict"] = True
+            json_schema["strict"] = True
+
+        response_format: dict[str, Any] = {
+            "type": "json_schema",
+            "json_schema": json_schema,
+        }
         return {"response_format": response_format}
 
 
