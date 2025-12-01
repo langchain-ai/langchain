@@ -205,7 +205,7 @@ License: MIT License
 
 To update these data, refer to the instructions here:
 
-https://docs.langchain.com/oss/python/langchain/models#updating-or-overwriting-profile-data
+https://docs.langchain.com/oss/python/langchain/models#modify-profile-data
 """
 
 
