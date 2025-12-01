@@ -273,23 +273,27 @@ def _format_message_content(
                 and block["type"] in ("tool_use", "thinking")
             ):
                 continue
-            # Preserve reasoning blocks (normalized to "reasoning")
-            # but still filter out "reasoning_content" if somehow present
+            # Preserve reasoning blocks (normalized to "reasoning") only for assistant
+            # messages. Filter out reasoning_content from user messages (from other
+            # providers).
             if (
                 isinstance(block, dict)
                 and "type" in block
                 and block["type"] == "reasoning_content"
-                and api == "chat/completions"
             ):
-                # For chat/completions API, convert reasoning_content to reasoning
-                reasoning_block = {
-                    "type": "reasoning",
-                    "reasoning": block.get("reasoning", ""),
-                }
-                for key in ("id", "summary", "encrypted_content"):
-                    if key in block:
-                        reasoning_block[key] = block[key]
-                formatted_content.append(reasoning_block)
+                # Only preserve reasoning blocks for assistant messages
+                # Filter out reasoning_content from user messages (from other providers)
+                if role == "assistant" and api == "chat/completions":
+                    # For chat/completions API, convert reasoning_content to reasoning
+                    reasoning_block = {
+                        "type": "reasoning",
+                        "reasoning": block.get("reasoning", ""),
+                    }
+                    for key in ("id", "summary", "encrypted_content"):
+                        if key in block:
+                            reasoning_block[key] = block[key]
+                    formatted_content.append(reasoning_block)
+                # For user messages or other cases, filter out reasoning_content
                 continue
             if (
                 isinstance(block, dict)
