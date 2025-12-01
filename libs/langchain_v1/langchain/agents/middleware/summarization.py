@@ -58,10 +58,44 @@ _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
 _SEARCH_RANGE_FOR_TOOL_PAIRS = 5
 
 ContextFraction = tuple[Literal["fraction"], float]
+"""Fraction of model's maximum input tokens.
+
+Example: `("fraction", 0.5)` to specify 50% of the model's max input tokens.
+"""
+
 ContextTokens = tuple[Literal["tokens"], int]
+"""Absolute number of tokens.
+
+Example: `("tokens", 3000)` to specify 3000 tokens.
+"""
+
 ContextMessages = tuple[Literal["messages"], int]
+"""Absolute number of messages.
+
+Example: `("messages", 50)` to specify 50 messages.
+"""
 
 ContextSize = ContextFraction | ContextTokens | ContextMessages
+"""Union type for context size specifications.
+
+Can be either:
+
+- `ContextFraction`: A fraction of the model's maximum input tokens.
+- `ContextTokens`: An absolute number of tokens.
+- `ContextMessages`: An absolute number of messages.
+
+Example:
+    ```python
+    # ContextFraction
+    context_size: ContextSize = ("fraction", 0.5)
+
+    # ContextTokens
+    context_size: ContextSize = ("tokens", 3000)
+
+    # ContextMessages
+    context_size: ContextSize = ("messages", 50)
+    ```
+"""
 
 
 class SummarizationMiddleware(AgentMiddleware):
@@ -98,7 +132,7 @@ class SummarizationMiddleware(AgentMiddleware):
 
                 Provide a `ContextSize` tuple to specify how much history to preserve.
 
-                Defaults to keeping the most recent 20 messages.
+                Defaults to keeping the most recent `20` messages.
 
                 Examples: `("messages", 20)`, `("tokens", 3000)`, or
                     `("fraction", 0.3)`.
@@ -140,7 +174,9 @@ class SummarizationMiddleware(AgentMiddleware):
             self.trigger: ContextSize | list[ContextSize] | None = None
             trigger_conditions: list[ContextSize] = []
         elif isinstance(trigger, list):
-            validated_list = [self._validate_context_size(item, "trigger") for item in trigger]
+            validated_list = [
+                self._validate_context_size(item, "trigger") for item in trigger
+            ]
             self.trigger = validated_list
             trigger_conditions = validated_list
         else:
@@ -154,7 +190,9 @@ class SummarizationMiddleware(AgentMiddleware):
         self.summary_prompt = summary_prompt
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
 
-        requires_profile = any(condition[0] == "fraction" for condition in self._trigger_conditions)
+        requires_profile = any(
+            condition[0] == "fraction" for condition in self._trigger_conditions
+        )
         if self.keep[0] == "fraction":
             requires_profile = True
         if requires_profile and self._get_profile_limits() is None:
@@ -167,7 +205,9 @@ class SummarizationMiddleware(AgentMiddleware):
             )
             raise ValueError(msg)
 
-    def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
+    def before_model(
+        self, state: AgentState, runtime: Runtime
+    ) -> dict[str, Any] | None:  # noqa: ARG002
         """Process messages before model invocation, potentially triggering summarization."""
         messages = state["messages"]
         self._ensure_message_ids(messages)
@@ -181,7 +221,9 @@ class SummarizationMiddleware(AgentMiddleware):
         if cutoff_index <= 0:
             return None
 
-        messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
+        messages_to_summarize, preserved_messages = self._partition_messages(
+            messages, cutoff_index
+        )
 
         summary = self._create_summary(messages_to_summarize)
         new_messages = self._build_new_messages(summary)
@@ -194,7 +236,9 @@ class SummarizationMiddleware(AgentMiddleware):
             ]
         }
 
-    async def abefore_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
+    async def abefore_model(
+        self, state: AgentState, runtime: Runtime
+    ) -> dict[str, Any] | None:  # noqa: ARG002
         """Process messages before model invocation, potentially triggering summarization."""
         messages = state["messages"]
         self._ensure_message_ids(messages)
@@ -208,7 +252,9 @@ class SummarizationMiddleware(AgentMiddleware):
         if cutoff_index <= 0:
             return None
 
-        messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
+        messages_to_summarize, preserved_messages = self._partition_messages(
+            messages, cutoff_index
+        )
 
         summary = await self._acreate_summary(messages_to_summarize)
         new_messages = self._build_new_messages(summary)
@@ -323,7 +369,9 @@ class SummarizationMiddleware(AgentMiddleware):
 
         return max_input_tokens
 
-    def _validate_context_size(self, context: ContextSize, parameter_name: str) -> ContextSize:
+    def _validate_context_size(
+        self, context: ContextSize, parameter_name: str
+    ) -> ContextSize:
         """Validate context configuration tuples."""
         kind, value = context
         if kind == "fraction":
@@ -332,7 +380,9 @@ class SummarizationMiddleware(AgentMiddleware):
                 raise ValueError(msg)
         elif kind in {"tokens", "messages"}:
             if value <= 0:
-                msg = f"{parameter_name} thresholds must be greater than 0, got {value}."
+                msg = (
+                    f"{parameter_name} thresholds must be greater than 0, got {value}."
+                )
                 raise ValueError(msg)
         else:
             msg = f"Unsupported context size type {kind} for {parameter_name}."
@@ -341,7 +391,9 @@ class SummarizationMiddleware(AgentMiddleware):
 
     def _build_new_messages(self, summary: str) -> list[HumanMessage]:
         return [
-            HumanMessage(content=f"Here is a summary of the conversation to date:\n\n{summary}")
+            HumanMessage(
+                content=f"Here is a summary of the conversation to date:\n\n{summary}"
+            )
         ]
 
     def _ensure_message_ids(self, messages: list[AnyMessage]) -> None:
@@ -361,7 +413,9 @@ class SummarizationMiddleware(AgentMiddleware):
 
         return messages_to_summarize, preserved_messages
 
-    def _find_safe_cutoff(self, messages: list[AnyMessage], messages_to_keep: int) -> int:
+    def _find_safe_cutoff(
+        self, messages: list[AnyMessage], messages_to_keep: int
+    ) -> int:
         """Find safe cutoff point that preserves AI/Tool message pairs.
 
         Returns the index where messages can be safely cut without separating
@@ -378,7 +432,9 @@ class SummarizationMiddleware(AgentMiddleware):
 
         return 0
 
-    def _is_safe_cutoff_point(self, messages: list[AnyMessage], cutoff_index: int) -> bool:
+    def _is_safe_cutoff_point(
+        self, messages: list[AnyMessage], cutoff_index: int
+    ) -> bool:
         """Check if cutting at index would separate AI/Tool message pairs."""
         if cutoff_index >= len(messages):
             return True
@@ -391,7 +447,9 @@ class SummarizationMiddleware(AgentMiddleware):
                 continue
 
             tool_call_ids = self._extract_tool_call_ids(cast("AIMessage", messages[i]))
-            if self._cutoff_separates_tool_pair(messages, i, cutoff_index, tool_call_ids):
+            if self._cutoff_separates_tool_pair(
+                messages, i, cutoff_index, tool_call_ids
+            ):
                 return False
 
         return True
@@ -399,7 +457,9 @@ class SummarizationMiddleware(AgentMiddleware):
     def _has_tool_calls(self, message: AnyMessage) -> bool:
         """Check if message is an AI message with tool calls."""
         return (
-            isinstance(message, AIMessage) and hasattr(message, "tool_calls") and message.tool_calls  # type: ignore[return-value]
+            isinstance(message, AIMessage)
+            and hasattr(message, "tool_calls")
+            and message.tool_calls  # type: ignore[return-value]
         )
 
     def _extract_tool_call_ids(self, ai_message: AIMessage) -> set[str]:
@@ -421,7 +481,10 @@ class SummarizationMiddleware(AgentMiddleware):
         """Check if cutoff separates an AI message from its corresponding tool messages."""
         for j in range(ai_message_index + 1, len(messages)):
             message = messages[j]
-            if isinstance(message, ToolMessage) and message.tool_call_id in tool_call_ids:
+            if (
+                isinstance(message, ToolMessage)
+                and message.tool_call_id in tool_call_ids
+            ):
                 ai_before_cutoff = ai_message_index < cutoff_index
                 tool_before_cutoff = j < cutoff_index
                 if ai_before_cutoff != tool_before_cutoff:
@@ -438,7 +501,9 @@ class SummarizationMiddleware(AgentMiddleware):
             return "Previous conversation was too long to summarize."
 
         try:
-            response = self.model.invoke(self.summary_prompt.format(messages=trimmed_messages))
+            response = self.model.invoke(
+                self.summary_prompt.format(messages=trimmed_messages)
+            )
             return response.text.strip()
         except Exception as e:  # noqa: BLE001
             return f"Error generating summary: {e!s}"
@@ -460,7 +525,9 @@ class SummarizationMiddleware(AgentMiddleware):
         except Exception as e:  # noqa: BLE001
             return f"Error generating summary: {e!s}"
 
-    def _trim_messages_for_summary(self, messages: list[AnyMessage]) -> list[AnyMessage]:
+    def _trim_messages_for_summary(
+        self, messages: list[AnyMessage]
+    ) -> list[AnyMessage]:
         """Trim messages to fit within summary generation limits."""
         try:
             if self.trim_tokens_to_summarize is None:
