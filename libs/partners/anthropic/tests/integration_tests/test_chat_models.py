@@ -700,6 +700,7 @@ def test_response_format(schema: dict | type) -> None:
         assert parsed["age"]
 
 
+@pytest.mark.vcr
 def test_response_format_in_agent() -> None:
     class Weather(BaseModel):
         temperature: float
