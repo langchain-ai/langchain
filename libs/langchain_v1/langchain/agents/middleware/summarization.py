@@ -3,6 +3,7 @@
 import uuid
 import warnings
 from collections.abc import Callable, Iterable, Mapping
+from functools import partial
 from typing import Any, Literal, cast
 
 from langchain_core.messages import (
@@ -117,6 +118,15 @@ Example:
     context_size: ContextSize = ("messages", 50)
     ```
 """
+
+
+def _get_approximate_token_counter(model: BaseChatModel) -> TokenCounter:
+    """Tune parameters of approximate token counter based on model type."""
+    if model._llm_type == "anthropic-chat":
+        # 3.3 was estimated in an offline experiment, comparing with Claude's token-counting
+        # API: https://platform.claude.com/docs/en/build-with-claude/token-counting
+        return partial(count_tokens_approximately, chars_per_token=3.3)
+    return count_tokens_approximately
 
 
 class SummarizationMiddleware(AgentMiddleware):
@@ -234,7 +244,10 @@ class SummarizationMiddleware(AgentMiddleware):
         self._trigger_conditions = trigger_conditions
 
         self.keep = self._validate_context_size(keep, "keep")
-        self.token_counter = token_counter
+        if token_counter is count_tokens_approximately:
+            self.token_counter = _get_approximate_token_counter(self.model)
+        else:
+            self.token_counter = token_counter
         self.summary_prompt = summary_prompt
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
 
