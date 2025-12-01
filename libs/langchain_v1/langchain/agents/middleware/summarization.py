@@ -251,7 +251,7 @@ class SummarizationMiddleware(AgentMiddleware):
             )
             raise ValueError(msg)
 
-    def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+    def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
         """Process messages before model invocation, potentially triggering summarization."""
         messages = state["messages"]
         self._ensure_message_ids(messages)
@@ -278,7 +278,7 @@ class SummarizationMiddleware(AgentMiddleware):
             ]
         }
 
-    async def abefore_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+    async def abefore_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
         """Process messages before model invocation, potentially triggering summarization."""
         messages = state["messages"]
         self._ensure_message_ids(messages)
