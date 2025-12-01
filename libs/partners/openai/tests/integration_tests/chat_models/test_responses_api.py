@@ -371,6 +371,69 @@ def test_reasoning(output_version: Literal["v0", "responses/v1", "v1"]) -> None:
             assert block_types == ["reasoning", "text"]
 
 
+def test_reasoning_blocks_compatible_models() -> None:
+    """Test reasoning blocks preserved in AIMessage for OpenAI compatible models.
+
+    This test verifies the fix for issue #34153 where reasoning blocks were missing
+    in AIMessageChunk and AIMessage when using OpenAI compatible models.
+    """
+    from langchain_openai.chat_models.base import _convert_dict_to_message
+
+    # Simulate a response from an OpenAI compatible model with reasoning blocks
+    response_dict = {
+        "role": "assistant",
+        "content": [
+            {"type": "reasoning", "reasoning": "Let me think about this..."},
+            {"type": "text", "text": "The answer is 42."},
+        ],
+    }
+
+    message = _convert_dict_to_message(response_dict)
+    assert isinstance(message.content, list)
+    assert all(isinstance(block, dict) for block in message.content)
+    block_types = [cast(dict, block)["type"] for block in message.content]
+    assert "reasoning" in block_types
+    assert "text" in block_types
+
+    # Test with reasoning_content format (should be normalized to reasoning)
+    response_dict_content = {
+        "role": "assistant",
+        "content": [
+            {"type": "reasoning_content", "reasoning": "Thinking step by step..."},
+            {"type": "text", "text": "Final answer."},
+        ],
+    }
+
+    message_content = _convert_dict_to_message(response_dict_content)
+    assert isinstance(message_content.content, list)
+    assert all(isinstance(block, dict) for block in message_content.content)
+    block_types_content = [
+        cast(dict, block)["type"] for block in message_content.content
+    ]
+    # reasoning_content should be normalized to reasoning
+    assert "reasoning" in block_types_content
+    assert "reasoning_content" not in block_types_content
+    assert "text" in block_types_content
+
+    # Test streaming case with AIMessageChunk
+    from langchain_openai.chat_models.base import _convert_delta_to_message_chunk
+
+    delta_dict = {
+        "role": "assistant",
+        "content": [
+            {"type": "reasoning", "reasoning": "Streaming reasoning..."},
+            {"type": "text", "text": "Streaming text."},
+        ],
+    }
+
+    chunk = _convert_delta_to_message_chunk(delta_dict, AIMessageChunk)
+    assert isinstance(chunk.content, list)
+    assert all(isinstance(block, dict) for block in chunk.content)
+    chunk_block_types = [cast(dict, block)["type"] for block in chunk.content]
+    assert "reasoning" in chunk_block_types
+    assert "text" in chunk_block_types
+
+
 def test_stateful_api() -> None:
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
     response = llm.invoke("how are you, my name is Bobo")

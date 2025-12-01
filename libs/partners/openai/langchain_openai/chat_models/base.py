@@ -174,7 +174,38 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     if role == "assistant":
         # Fix for azure
         # Also OpenAI returns None for tool invocations
-        content = _dict.get("content", "") or ""
+        raw_content = _dict.get("content", "") or ""
+        # Handle reasoning blocks in content for OpenAI compatible models
+        # If content is a list, preserve reasoning blocks
+        content: Any = raw_content
+        if isinstance(content, list):
+            # Check if any block is a reasoning block
+            has_reasoning = any(
+                isinstance(block, dict)
+                and block.get("type") in ("reasoning", "reasoning_content")
+                for block in content
+            )
+            if has_reasoning:
+                # Normalize reasoning blocks: convert "reasoning_content" to "reasoning"
+                normalized_content = []
+                for block in content:
+                    if (
+                        isinstance(block, dict)
+                        and block.get("type") == "reasoning_content"
+                    ):
+                        # Convert reasoning_content to reasoning format
+                        reasoning_block = {
+                            "type": "reasoning",
+                            "reasoning": block.get("reasoning", ""),
+                        }
+                        # Preserve other fields if present
+                        for key in ("id", "summary", "encrypted_content"):
+                            if key in block:
+                                reasoning_block[key] = block[key]
+                        normalized_content.append(reasoning_block)
+                    else:
+                        normalized_content.append(block)
+                content = normalized_content
         additional_kwargs: dict = {}
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
@@ -191,7 +222,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         if audio := _dict.get("audio"):
             additional_kwargs["audio"] = audio
         return AIMessage(
-            content=content,
+            content=content,  # type: ignore[arg-type]
             additional_kwargs=additional_kwargs,
             name=name,
             id=id_,
@@ -234,11 +265,31 @@ def _format_message_content(
         formatted_content = []
         for block in content:
             # Remove unexpected block types
+            # Note: "reasoning" blocks should be preserved for OpenAI compatible models
+            # Only filter "reasoning_content" if it hasn't been normalized
             if (
                 isinstance(block, dict)
                 and "type" in block
-                and block["type"] in ("tool_use", "thinking", "reasoning_content")
+                and block["type"] in ("tool_use", "thinking")
             ):
+                continue
+            # Preserve reasoning blocks (normalized to "reasoning")
+            # but still filter out "reasoning_content" if somehow present
+            if (
+                isinstance(block, dict)
+                and "type" in block
+                and block["type"] == "reasoning_content"
+                and api == "chat/completions"
+            ):
+                # For chat/completions API, convert reasoning_content to reasoning
+                reasoning_block = {
+                    "type": "reasoning",
+                    "reasoning": block.get("reasoning", ""),
+                }
+                for key in ("id", "summary", "encrypted_content"):
+                    if key in block:
+                        reasoning_block[key] = block[key]
+                formatted_content.append(reasoning_block)
                 continue
             if (
                 isinstance(block, dict)
@@ -365,7 +416,35 @@ def _convert_delta_to_message_chunk(
     """Convert to a LangChain message chunk."""
     id_ = _dict.get("id")
     role = cast(str, _dict.get("role"))
-    content = cast(str, _dict.get("content") or "")
+    raw_content = _dict.get("content") or ""
+    # Handle reasoning blocks in content for OpenAI compatible models
+    # If content is a list, preserve reasoning blocks
+    content: Any = raw_content
+    if isinstance(content, list):
+        # Check if any block is a reasoning block
+        has_reasoning = any(
+            isinstance(block, dict)
+            and block.get("type") in ("reasoning", "reasoning_content")
+            for block in content
+        )
+        if has_reasoning:
+            # Normalize reasoning blocks: convert "reasoning_content" to "reasoning"
+            normalized_content = []
+            for block in content:
+                if isinstance(block, dict) and block.get("type") == "reasoning_content":
+                    # Convert reasoning_content to reasoning format
+                    reasoning_block = {
+                        "type": "reasoning",
+                        "reasoning": block.get("reasoning", ""),
+                    }
+                    # Preserve other fields if present
+                    for key in ("id", "summary", "encrypted_content"):
+                        if key in block:
+                            reasoning_block[key] = block[key]
+                    normalized_content.append(reasoning_block)
+                else:
+                    normalized_content.append(block)
+            content = normalized_content
     additional_kwargs: dict = {}
     if _dict.get("function_call"):
         function_call = dict(_dict["function_call"])
