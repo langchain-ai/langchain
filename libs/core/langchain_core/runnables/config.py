@@ -47,54 +47,59 @@ class EmptyDict(TypedDict, total=False):
 
 
 class RunnableConfig(TypedDict, total=False):
-    """Configuration for a Runnable."""
+    """Configuration for a `Runnable`.
+
+    See the [reference docs](https://reference.langchain.com/python/langchain_core/runnables/#langchain_core.runnables.RunnableConfig)
+    for more details.
+    """
 
     tags: list[str]
-    """
-    Tags for this call and any sub-calls (eg. a Chain calling an LLM).
+    """Tags for this call and any sub-calls (e.g. a Chain calling an LLM).
+
     You can use these to filter calls.
     """
 
     metadata: dict[str, Any]
-    """
-    Metadata for this call and any sub-calls (eg. a Chain calling an LLM).
+    """Metadata for this call and any sub-calls (e.g. a Chain calling an LLM).
+
     Keys should be strings, values should be JSON-serializable.
     """
 
     callbacks: Callbacks
-    """
-    Callbacks for this call and any sub-calls (eg. a Chain calling an LLM).
+    """Callbacks for this call and any sub-calls (e.g. a Chain calling an LLM).
+
     Tags are passed to all callbacks, metadata is passed to handle*Start callbacks.
     """
 
     run_name: str
-    """
-    Name for the tracer run for this call. Defaults to the name of the class.
-    """
+    """Name for the tracer run for this call.
+
+    Defaults to the name of the class."""
 
     max_concurrency: int | None
-    """
-    Maximum number of parallel calls to make. If not provided, defaults to
-    `ThreadPoolExecutor`'s default.
+    """Maximum number of parallel calls to make.
+
+    If not provided, defaults to `ThreadPoolExecutor`'s default.
     """
 
     recursion_limit: int
-    """
-    Maximum number of times a call can recurse. If not provided, defaults to `25`.
+    """Maximum number of times a call can recurse.
+
+    If not provided, defaults to `25`.
     """
 
     configurable: dict[str, Any]
-    """
-    Runtime values for attributes previously made configurable on this `Runnable`,
+    """Runtime values for attributes previously made configurable on this `Runnable`,
     or sub-Runnables, through `configurable_fields` or `configurable_alternatives`.
+
     Check `output_schema` for a description of the attributes that have been made
     configurable.
     """
 
     run_id: uuid.UUID | None
-    """
-    Unique identifier for the tracer run for this call. If not provided, a new UUID
-    will be generated.
+    """Unique identifier for the tracer run for this call.
+
+    If not provided, a new UUID will be generated.
     """
 
 
