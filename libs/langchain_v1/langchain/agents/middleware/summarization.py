@@ -97,7 +97,7 @@ Can be either:
 
 - [`ContextFraction`][langchain.agents.middleware.summarization.ContextFraction]: A
     fraction of the model's maximum input tokens.
-- [`ContextTokens`][langchain.agents.middleware.summarization.ContextToken]: An absolute
+- [`ContextTokens`][langchain.agents.middleware.summarization.ContextTokens]: An absolute
     number of tokens.
 - [`ContextMessages`][langchain.agents.middleware.summarization.ContextMessages]: An
     absolute number of messages.
