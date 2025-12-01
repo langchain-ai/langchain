@@ -121,6 +121,16 @@ class AnthropicTool(TypedDict):
     cache_control: NotRequired[dict[str, str]]
 
 
+# Some tool types require specific beta headers to be enabled
+# Mapping of tool type patterns to required beta headers
+_TOOL_TYPE_TO_BETA: dict[str, str] = {
+    "web_fetch_20250910": "web-fetch-2025-09-10",
+    "code_execution_20250522": "code-execution-2025-05-22",
+    "code_execution_20250825": "code-execution-2025-08-25",
+    "memory_20250818": "context-management-2025-06-27",
+}
+
+
 def _is_builtin_tool(tool: Any) -> bool:
     """Check if a tool is a built-in Anthropic tool.
 
@@ -1393,12 +1403,11 @@ class ChatAnthropic(BaseChatModel):
 
         ??? example "Web fetch (beta)"
 
-            ```python hl_lines="5 8-12"
+            ```python hl_lines="7-11"
             from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(
                 model="claude-3-5-haiku-20241022",
-                betas=["web-fetch-2025-09-10"],  # Enable web fetch beta
             )
 
             tool = {
@@ -1411,16 +1420,19 @@ class ChatAnthropic(BaseChatModel):
             response = model_with_tools.invoke("Please analyze the content at https://example.com/article")
             ```
 
+            !!! note "Automatic beta header"
+
+                The required `web-fetch-2025-09-10` beta header is automatically
+                appended to the request when using the `web_fetch_20250910` tool type.
+                You don't need to manually specify it in the `betas` parameter.
+
             See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-fetch-tool)
             for more info.
 
         ??? example "Code execution"
 
-            ```python hl_lines="3 6-9"
-            model = ChatAnthropic(
-                model="claude-sonnet-4-5-20250929",
-                betas=["code-execution-2025-05-22"],  # Enable code execution beta
-            )
+            ```python hl_lines="3-6"
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 
             tool = {
                 "type": "code_execution_20250522",
@@ -1433,18 +1445,21 @@ class ChatAnthropic(BaseChatModel):
             )
             ```
 
+            !!! note "Automatic beta header"
+
+                The required `code-execution-2025-05-22` beta header is automatically
+                appended to the request when using the `code_execution_20250522` tool
+                type. You don't need to manually specify it in the `betas` parameter.
+
             See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool)
             for more info.
 
         ??? example "Memory tool"
 
-            ```python hl_lines="5 8-11"
+            ```python hl_lines="5-8"
             from langchain_anthropic import ChatAnthropic
 
-            model = ChatAnthropic(
-                model="claude-sonnet-4-5-20250929",
-                betas=["context-management-2025-06-27"],  # Enable context management beta
-            )
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 
             tool = {
                 "type": "memory_20250818",
@@ -1454,6 +1469,12 @@ class ChatAnthropic(BaseChatModel):
 
             response = model_with_tools.invoke("What are my interests?")
             ```
+
+            !!! note "Automatic beta header"
+
+                The required `context-management-2025-06-27` beta header is automatically
+                appended to the request when using the `memory_20250818` tool type.
+                You don't need to manually specify it in the `betas` parameter.
 
             See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool)
             for more info.
@@ -1592,6 +1613,12 @@ class ChatAnthropic(BaseChatModel):
 
     Example: `#!python betas=["mcp-client-2025-04-04"]`
     """
+    # Can also be passed in w/ model_kwargs, but having it as a param makes better devx
+    #
+    # Precedence order:
+    # 1. Call-time kwargs (e.g., llm.invoke(..., betas=[...]))
+    # 2. model_kwargs (e.g., ChatAnthropic(model_kwargs={"betas": [...]}))
+    # 3. Direct parameter (e.g., ChatAnthropic(betas=[...]))
 
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
 
@@ -1842,21 +1869,74 @@ class ChatAnthropic(BaseChatModel):
             payload["thinking"] = self.thinking
 
         if "response_format" in payload:
+            # response_format present when using agents.create_agent's ProviderStrategy
+            # ---
+            # ProviderStrategy converts to OpenAI-style format, which passes kwargs to
+            # ChatAnthropic, ending up in our payload
             response_format = payload.pop("response_format")
             if (
                 isinstance(response_format, dict)
                 and response_format.get("type") == "json_schema"
                 and "schema" in response_format.get("json_schema", {})
             ):
-                # compat with langchain.agents.create_agent response_format, which is
-                # an approximation of OpenAI format
                 response_format = cast(dict, response_format["json_schema"]["schema"])
+            # Convert OpenAI-style response_format to Anthropic's output_format
             payload["output_format"] = _convert_to_anthropic_output_format(
                 response_format
             )
 
-        if "output_format" in payload and not payload["betas"]:
-            payload["betas"] = ["structured-outputs-2025-11-13"]
+        if "output_format" in payload:
+            # Native structured output requires the structured outputs beta
+            if payload["betas"]:
+                if "structured-outputs-2025-11-13" not in payload["betas"]:
+                    # Merge with existing betas
+                    payload["betas"] = [
+                        *payload["betas"],
+                        "structured-outputs-2025-11-13",
+                    ]
+            else:
+                payload["betas"] = ["structured-outputs-2025-11-13"]
+
+        # Check if any tools have strict mode enabled
+        if "tools" in payload and isinstance(payload["tools"], list):
+            has_strict_tool = any(
+                isinstance(tool, dict) and tool.get("strict") is True
+                for tool in payload["tools"]
+            )
+            if has_strict_tool:
+                # Strict tool use requires the structured outputs beta
+                if payload["betas"]:
+                    if "structured-outputs-2025-11-13" not in payload["betas"]:
+                        # Merge with existing betas
+                        payload["betas"] = [
+                            *payload["betas"],
+                            "structured-outputs-2025-11-13",
+                        ]
+                else:
+                    payload["betas"] = ["structured-outputs-2025-11-13"]
+
+            # Auto-append required betas for specific tool types
+            for tool in payload["tools"]:
+                if isinstance(tool, dict) and "type" in tool:
+                    tool_type = tool["type"]
+                    if tool_type in _TOOL_TYPE_TO_BETA:
+                        required_beta = _TOOL_TYPE_TO_BETA[tool_type]
+                        if payload["betas"]:
+                            # Append to existing betas if not already present
+                            if required_beta not in payload["betas"]:
+                                payload["betas"] = [*payload["betas"], required_beta]
+                        else:
+                            payload["betas"] = [required_beta]
+
+        # Auto-append required beta for mcp_servers
+        if payload.get("mcp_servers"):
+            required_beta = "mcp-client-2025-11-20"
+            if payload["betas"]:
+                # Append to existing betas if not already present
+                if required_beta not in payload["betas"]:
+                    payload["betas"] = [*payload["betas"], required_beta]
+            else:
+                payload["betas"] = [required_beta]
 
         return {k: v for k, v in payload.items() if v is not None}
 
@@ -2300,17 +2380,13 @@ class ChatAnthropic(BaseChatModel):
                 - Claude Sonnet 4.5 or Opus 4.1
                 - `langchain-anthropic>=1.1.0`
 
-            To enable strict tool use:
+            To enable strict tool use, specify `strict=True` when calling `bind_tools`.
 
-            1. Specify the `structured-outputs-2025-11-13` beta header
-            2. Specify `strict=True` when calling `bind_tools`
-
-            ```python hl_lines="5 12"
+            ```python hl_lines="11"
             from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(
                 model="claude-sonnet-4-5",
-                betas=["structured-outputs-2025-11-13"],
             )
 
             def get_weather(location: str) -> str:
@@ -2319,6 +2395,12 @@ class ChatAnthropic(BaseChatModel):
 
             model_with_tools = model.bind_tools([get_weather], strict=True)
             ```
+
+            !!! note "Automatic beta header"
+
+                The required `structured-outputs-2025-11-13` beta header is
+                automatically appended to the request when using `strict=True`, so you
+                don't need to manually specify it in the `betas` parameter.
 
             See LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#strict-tool-use)
             for more detail.
@@ -2513,19 +2595,15 @@ class ChatAnthropic(BaseChatModel):
                 - Claude Sonnet 4.5 or Opus 4.1
                 - `langchain-anthropic>=1.1.0`
 
-            To enable native structured output:
+            To enable native structured output, specify `method="json_schema"` when
+            calling `with_structured_output`. (Under the hood, LangChain will
+            append the required `structured-outputs-2025-11-13` beta header)
 
-            1. Specify the `structured-outputs-2025-11-13` beta header
-            2. Specify `method="json_schema"` when calling `with_structured_output`
-
-            ```python hl_lines="6 16"
+            ```python hl_lines="13"
             from langchain_anthropic import ChatAnthropic
             from pydantic import BaseModel, Field
 
-            model = ChatAnthropic(
-                model="claude-sonnet-4-5",
-                betas=["structured-outputs-2025-11-13"],
-            )
+            model = ChatAnthropic(model="claude-sonnet-4-5")
 
             class Movie(BaseModel):
                 \"\"\"A movie with details.\"\"\"
@@ -2713,8 +2791,7 @@ def convert_to_anthropic_tool(
 
             !!! note
 
-                Requires Claude Sonnet 4.5 or Opus 4.1 and the
-                `structured-outputs-2025-11-13` beta header.
+                Requires Claude Sonnet 4.5 or Opus 4.1.
 
     Returns:
         An Anthropic tool definition dict.

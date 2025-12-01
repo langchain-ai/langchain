@@ -3,6 +3,7 @@
 import uuid
 import warnings
 from collections.abc import Callable, Iterable, Mapping
+from functools import partial
 from typing import Any, Literal, cast
 
 from langchain_core.messages import (
@@ -58,10 +59,74 @@ _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
 _SEARCH_RANGE_FOR_TOOL_PAIRS = 5
 
 ContextFraction = tuple[Literal["fraction"], float]
+"""Fraction of model's maximum input tokens.
+
+Example:
+    To specify 50% of the model's max input tokens:
+
+    ```python
+    ("fraction", 0.5)
+    ```
+"""
+
 ContextTokens = tuple[Literal["tokens"], int]
+"""Absolute number of tokens.
+
+Example:
+    To specify 3000 tokens:
+
+    ```python
+    ("tokens", 3000)
+    ```
+"""
+
 ContextMessages = tuple[Literal["messages"], int]
+"""Absolute number of messages.
+
+Example:
+    To specify 50 messages:
+
+    ```python
+    ("messages", 50)
+    ```
+"""
 
 ContextSize = ContextFraction | ContextTokens | ContextMessages
+"""Union type for context size specifications.
+
+Can be either:
+
+- [`ContextFraction`][langchain.agents.middleware.summarization.ContextFraction]: A
+    fraction of the model's maximum input tokens.
+- [`ContextTokens`][langchain.agents.middleware.summarization.ContextTokens]: An absolute
+    number of tokens.
+- [`ContextMessages`][langchain.agents.middleware.summarization.ContextMessages]: An
+    absolute number of messages.
+
+Depending on use with `trigger` or `keep` parameters, this type indicates either
+when to trigger summarization or how much context to retain.
+
+Example:
+    ```python
+    # ContextFraction
+    context_size: ContextSize = ("fraction", 0.5)
+
+    # ContextTokens
+    context_size: ContextSize = ("tokens", 3000)
+
+    # ContextMessages
+    context_size: ContextSize = ("messages", 50)
+    ```
+"""
+
+
+def _get_approximate_token_counter(model: BaseChatModel) -> TokenCounter:
+    """Tune parameters of approximate token counter based on model type."""
+    if model._llm_type == "anthropic-chat":
+        # 3.3 was estimated in an offline experiment, comparing with Claude's token-counting
+        # API: https://platform.claude.com/docs/en/build-with-claude/token-counting
+        return partial(count_tokens_approximately, chars_per_token=3.3)
+    return count_tokens_approximately
 
 
 class SummarizationMiddleware(AgentMiddleware):
@@ -89,19 +154,48 @@ class SummarizationMiddleware(AgentMiddleware):
             model: The language model to use for generating summaries.
             trigger: One or more thresholds that trigger summarization.
 
-                Provide a single `ContextSize` tuple or a list of tuples, in which case
-                summarization runs when any threshold is breached.
+                Provide a single
+                [`ContextSize`][langchain.agents.middleware.summarization.ContextSize]
+                tuple or a list of tuples, in which case summarization runs when any
+                threshold is met.
 
-                Examples: `("messages", 50)`, `("tokens", 3000)`, `[("fraction", 0.8),
-                    ("messages", 100)]`.
+                !!! example
+
+                    ```python
+                    # Trigger summarization when 50 messages is reached
+                    ("messages", 50)
+
+                    # Trigger summarization when 3000 tokens is reached
+                    ("tokens", 3000)
+
+                    # Trigger summarization either when 80% of model's max input tokens
+                    # is reached or when 100 messages is reached (whichever comes first)
+                    [("fraction", 0.8), ("messages", 100)]
+                    ```
+
+                    See [`ContextSize`][langchain.agents.middleware.summarization.ContextSize]
+                    for more details.
             keep: Context retention policy applied after summarization.
 
-                Provide a `ContextSize` tuple to specify how much history to preserve.
+                Provide a [`ContextSize`][langchain.agents.middleware.summarization.ContextSize]
+                tuple to specify how much history to preserve.
 
-                Defaults to keeping the most recent 20 messages.
+                Defaults to keeping the most recent `20` messages.
 
-                Examples: `("messages", 20)`, `("tokens", 3000)`, or
-                    `("fraction", 0.3)`.
+                Does not support multiple values like `trigger`.
+
+                !!! example
+
+                    ```python
+                    # Keep the most recent 20 messages
+                    ("messages", 20)
+
+                    # Keep the most recent 3000 tokens
+                    ("tokens", 3000)
+
+                    # Keep the most recent 30% of the model's max input tokens
+                    ("fraction", 0.3)
+                    ```
             token_counter: Function to count tokens in messages.
             summary_prompt: Prompt template for generating summaries.
             trim_tokens_to_summarize: Maximum tokens to keep when preparing messages for
@@ -150,7 +244,10 @@ class SummarizationMiddleware(AgentMiddleware):
         self._trigger_conditions = trigger_conditions
 
         self.keep = self._validate_context_size(keep, "keep")
-        self.token_counter = token_counter
+        if token_counter is count_tokens_approximately:
+            self.token_counter = _get_approximate_token_counter(self.model)
+        else:
+            self.token_counter = token_counter
         self.summary_prompt = summary_prompt
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
 
