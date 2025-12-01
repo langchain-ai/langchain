@@ -773,6 +773,9 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 r"\nfor \(",
                 r"\nwhile \(",
                 r"\nswitch\(",
+                # Split along pipe operators
+                r" \|> ",  # Native R pipe (R 4.1+)
+                r" %>% ",  # magrittr pipe (tidyverse)
                 # Split along data structure creation
                 r"\ndata\.frame\(",
                 r"\nlist\(",

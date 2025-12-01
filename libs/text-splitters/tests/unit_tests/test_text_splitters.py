@@ -2369,6 +2369,87 @@ def test_haskell_code_splitter() -> None:
     assert chunks == expected_chunks
 
 
+def test_r_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.R, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+library(dplyr)
+require(ggplot2)
+
+add <- function(a, b) {
+    return(a + b)
+}
+
+result = function(x) x^2
+
+if (x > 0) {
+    print("positive")
+}
+
+for (i in 1:10) {
+    print(i)
+}
+
+while (x > 0) {
+    x <- x - 1
+}
+
+# Native R pipe (R 4.1+)
+mtcars |> filter(cyl == 4) |> select(mpg, hp)
+
+# magrittr pipe (tidyverse)
+mtcars %>% filter(cyl == 4) %>% select(mpg, hp)
+
+df <- data.frame(x = 1:3, y = 4:6)
+my_list <- list(a = 1, b = 2)
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "library(dplyr)",
+        "require(ggplot2",
+        ")",
+        "add <-",
+        "function(a, b)",
+        "{",
+        "return(a +",
+        "b)",
+        "}",
+        "result =",
+        "function(x) x^2",
+        "if (x > 0) {",
+        'print("positive',
+        '")',
+        "}",
+        "for (i in 1:10)",
+        "{",
+        "print(i)\n}",
+        "while (x > 0) {",
+        "x <- x - 1",
+        "}",
+        "# Native R pipe",
+        "(R 4.1+)",
+        "mtcars",
+        "|> filter(cyl",
+        "== 4)",
+        "|> select(mpg,",
+        "hp)",
+        "# magrittr pipe",
+        "(tidyverse)",
+        "mtcars",
+        "%>% filter(cyl",
+        "== 4)",
+        "%>% select(mpg,",
+        "hp)",
+        "df <-",
+        "data.frame(x =",
+        "1:3, y = 4:6)",
+        "my_list <-",
+        "list(a = 1, b =",
+        "2)",
+    ]
+
+
 @pytest.fixture
 def html_header_splitter_splitter_factory() -> Callable[
     [list[tuple[str, str]]], HTMLHeaderTextSplitter
