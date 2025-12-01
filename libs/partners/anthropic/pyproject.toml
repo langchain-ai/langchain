@@ -9,11 +9,11 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.0.2"
+version = "1.2.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "anthropic>=0.69.0,<1.0.0",
-    "langchain-core>=1.0.3,<2.0.0",
+    "anthropic>=0.73.0,<1.0.0",
+    "langchain-core>=1.1.0,<2.0.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
 
@@ -29,6 +29,7 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 [dependency-groups]
 test = [
     "pytest>=7.3.0,<8.0.0",
+    "blockbuster>=1.5.5,<1.6",
     "freezegun>=1.2.2,<2.0.0",
     "pytest-mock>=3.10.0,<4.0.0",
     "syrupy>=4.0.2,<5.0.0",

@@ -6,7 +6,7 @@ import base64
 import json
 import os
 import warnings
-from typing import Annotated, Any, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal
 from unittest.mock import MagicMock
 
 import httpx
@@ -31,12 +31,16 @@ from langchain_core.utils.function_calling import (
 from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
-from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
 from typing_extensions import TypedDict, override
-from vcr.cassette import Cassette
 
 from langchain_tests.unit_tests.chat_models import ChatModelTests
 from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
+
+if TYPE_CHECKING:
+    from pytest_benchmark.fixture import (  # type: ignore[import-untyped]
+        BenchmarkFixture,
+    )
+    from vcr.cassette import Cassette
 
 
 def _get_joke_class(  # noqa: RET503
@@ -998,6 +1002,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         usage metadata (see configuration below).
 
         !!! warning "Behavior changed in `langchain-tests` 0.3.17"
+
             Additionally check for the presence of `model_name` in the response
             metadata, which is needed for usage tracking in callback handlers.
 
@@ -1172,6 +1177,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         Test to verify that the model returns correct usage metadata in streaming mode.
 
         !!! warning "Behavior changed in `langchain-tests` 0.3.17"
+
             Additionally check for the presence of `model_name` in the response
             metadata, which is needed for usage tracking in callback handlers.
 

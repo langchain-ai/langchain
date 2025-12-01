@@ -40,7 +40,10 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models import (
+    LanguageModelInput,
+    ModelProfileRegistry,
+)
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     LangSmithParams,
@@ -123,8 +126,10 @@ from langchain_openai.chat_models._compat import (
     _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
 )
+from langchain_openai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
+    from langchain_core.language_models import ModelProfile
     from openai.types.responses import Response
 
 logger = logging.getLogger(__name__)
@@ -132,6 +137,14 @@ logger = logging.getLogger(__name__)
 # This SSL context is equivelent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
+
+_MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
+
 
 WellKnownTools = (
     "file_search",
@@ -560,6 +573,7 @@ class BaseChatOpenAI(BaseChatModel):
     !!! version-added "Added in `langchain-openai` 0.3.9"
 
     !!! warning "Behavior changed in `langchain-openai` 0.3.35"
+
         Enabled for default base URL and client.
     """
 
@@ -790,6 +804,7 @@ class BaseChatOpenAI(BaseChatModel):
     - `'v1'`: v1 of LangChain cross-provider standard.
 
     !!! warning "Behavior changed in `langchain-openai` 1.0.0"
+
         Default updated to `"responses/v1"`.
     """
 
@@ -811,14 +826,15 @@ class BaseChatOpenAI(BaseChatModel):
             (Defaults to 1)
         """
         model = values.get("model_name") or values.get("model") or ""
+        model_lower = model.lower()
 
         # For o1 models, set temperature=1 if not provided
-        if model.startswith("o1") and "temperature" not in values:
+        if model_lower.startswith("o1") and "temperature" not in values:
             values["temperature"] = 1
 
         # For gpt-5 models, handle temperature restrictions
         # Note that gpt-5-chat models do support temperature
-        if model.startswith("gpt-5") and "chat" not in model:
+        if model_lower.startswith("gpt-5") and "chat" not in model_lower:
             temperature = values.get("temperature")
             if temperature is not None and temperature != 1:
                 # For gpt-5 (non-chat), only temperature=1 is supported
@@ -950,6 +966,13 @@ class BaseChatOpenAI(BaseChatModel):
                 **async_specific,  # type: ignore[arg-type]
             )
             self.async_client = self.root_async_client.chat.completions
+        return self
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model_name)
         return self
 
     @property
@@ -1646,15 +1669,13 @@ class BaseChatOpenAI(BaseChatModel):
             model = self.tiktoken_model_name
         else:
             model = self.model_name
+
         try:
             encoding = tiktoken.encoding_for_model(model)
         except KeyError:
+            model_lower = model.lower()
             encoder = "cl100k_base"
-            if (
-                self.model_name.startswith("gpt-4o")
-                or self.model_name.startswith("gpt-4.1")
-                or self.model_name.startswith("gpt-5")
-            ):
+            if model_lower.startswith(("gpt-4o", "gpt-4.1", "gpt-5")):
                 encoder = "o200k_base"
             encoding = tiktoken.get_encoding(encoder)
         return model, encoding
@@ -1771,6 +1792,7 @@ class BaseChatOpenAI(BaseChatModel):
         tool_choice: dict | str | bool | None = None,
         strict: bool | None = None,
         parallel_tool_calls: bool | None = None,
+        response_format: _DictOrPydanticClass | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
@@ -1796,6 +1818,9 @@ class BaseChatOpenAI(BaseChatModel):
                 be validated. If `None`, `strict` argument will not be passed to the model.
             parallel_tool_calls: Set to `False` to disable parallel tool use.
                 Defaults to `None` (no specification, which allows parallel tool use).
+            response_format: Optional schema to format model response. If provided
+                and the model does not call a tool, the model will generate a
+                [structured response](https://platform.openai.com/docs/guides/structured-outputs).
             kwargs: Any additional parameters are passed directly to `bind`.
         """  # noqa: E501
         if parallel_tool_calls is not None:
@@ -1838,6 +1863,19 @@ class BaseChatOpenAI(BaseChatModel):
                 )
                 raise ValueError(msg)
             kwargs["tool_choice"] = tool_choice
+
+        if response_format:
+            if (
+                isinstance(response_format, dict)
+                and response_format.get("type") == "json_schema"
+                and "schema" in response_format.get("json_schema", {})
+            ):
+                # compat with langchain.agents.create_agent response_format, which is
+                # an approximation of OpenAI format
+                response_format = cast(dict, response_format["json_schema"]["schema"])
+            kwargs["response_format"] = _convert_to_openai_response_format(
+                response_format
+            )
         return super().bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(
@@ -1970,9 +2008,11 @@ class BaseChatOpenAI(BaseChatModel):
                 - `'parsing_error'`: `BaseException | None`
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.12"
+
             Support for `tools` added.
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.21"
+
             Pass `kwargs` through to the model.
         """
         if strict is not None and method == "json_mode":
@@ -2768,26 +2808,32 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         To use custom parameters specific to these providers, use the `extra_body` parameter.
 
-        ```python title="LM Studio example with TTL (auto-eviction)"
-        from langchain_openai import ChatOpenAI
+        !!! example "LM Studio example with TTL (auto-eviction)"
 
-        model = ChatOpenAI(
-            base_url="http://localhost:1234/v1",
-            api_key="lm-studio",  # Can be any string
-            model="mlx-community/QwQ-32B-4bit",
-            temperature=0,
-            extra_body={"ttl": 300},  # Auto-evict model after 5 minutes of inactivity
-        )
-        ```
+            ```python
+            from langchain_openai import ChatOpenAI
 
-        ```python title="vLLM example with custom parameters"
-        model = ChatOpenAI(
-            base_url="http://localhost:8000/v1",
-            api_key="EMPTY",
-            model="meta-llama/Llama-2-7b-chat-hf",
-            extra_body={"use_beam_search": True, "best_of": 4},
-        )
-        ```
+            model = ChatOpenAI(
+                base_url="http://localhost:1234/v1",
+                api_key="lm-studio",  # Can be any string
+                model="mlx-community/QwQ-32B-4bit",
+                temperature=0,
+                extra_body={
+                    "ttl": 300
+                },  # Auto-evict model after 5 minutes of inactivity
+            )
+            ```
+
+        !!! example "vLLM example with custom parameters"
+
+            ```python
+            model = ChatOpenAI(
+                base_url="http://localhost:8000/v1",
+                api_key="EMPTY",
+                model="meta-llama/Llama-2-7b-chat-hf",
+                extra_body={"use_beam_search": True, "best_of": 4},
+            )
+            ```
 
     ??? info "`model_kwargs` vs `extra_body`"
 
@@ -3086,12 +3132,15 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 - `'parsing_error'`: `BaseException | None`
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.0"
+
             `method` default changed from `"function_calling"` to `"json_schema"`.
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.12"
+
             Support for `tools` added.
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.21"
+
             Pass `kwargs` through to the model.
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`, `strict=True`"
@@ -3479,6 +3528,7 @@ def _convert_to_openai_response_format(
         strict is not None
         and strict is not response_format["json_schema"].get("strict")
         and isinstance(schema, dict)
+        and "strict" in schema.get("json_schema", {})
     ):
         msg = (
             f"Output schema already has 'strict' value set to "

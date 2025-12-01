@@ -1,0 +1,14 @@
+provider = "openai"
+
+[overrides]
+image_url_inputs = true
+pdf_inputs = true
+pdf_tool_message = true
+image_tool_message = true
+tool_choice = true
+
+[overrides."gpt-3.5-turbo"]
+image_url_inputs = false
+pdf_inputs = false
+pdf_tool_message = false
+image_tool_message = false

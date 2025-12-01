@@ -38,8 +38,7 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
         **kwargs: Any,
     ) -> ChatResult:
         """Top Level call"""
-        rf = kwargs.get("response_format")
-        is_native = isinstance(rf, dict) and rf.get("type") == "json_schema"
+        is_native = kwargs.get("response_format")
 
         if self.tool_calls:
             if is_native:
@@ -60,7 +59,7 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
                 content_obj = self.structured_response
             message = AIMessage(content=json.dumps(content_obj), id=str(self.index))
         else:
-            messages_string = "-".join([m.content for m in messages])
+            messages_string = "-".join([m.text for m in messages])
             message = AIMessage(
                 content=messages_string,
                 id=str(self.index),

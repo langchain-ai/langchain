@@ -3,12 +3,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Literal
+from typing import TYPE_CHECKING, Annotated, Literal, cast
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-from langchain_core.messages import ToolMessage
+from langchain_core.messages import SystemMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
@@ -150,10 +150,6 @@ class TodoListMiddleware(AgentMiddleware):
 
         print(result["todos"])  # Array of todo items with status tracking
         ```
-
-    Args:
-        system_prompt: Custom system prompt to guide the agent on using the todo tool.
-        tool_description: Custom description for the write_todos tool.
     """
 
     state_schema = PlanningState
@@ -197,23 +193,33 @@ class TodoListMiddleware(AgentMiddleware):
         request: ModelRequest,
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
-        """Update the system prompt to include the todo system prompt."""
-        request.system_prompt = (
-            request.system_prompt + "\n\n" + self.system_prompt
-            if request.system_prompt
-            else self.system_prompt
+        """Update the system message to include the todo system prompt."""
+        if request.system_message is not None:
+            new_system_content = [
+                *request.system_message.content_blocks,
+                {"type": "text", "text": f"\n\n{self.system_prompt}"},
+            ]
+        else:
+            new_system_content = [{"type": "text", "text": self.system_prompt}]
+        new_system_message = SystemMessage(
+            content=cast("list[str | dict[str, str]]", new_system_content)
         )
-        return handler(request)
+        return handler(request.override(system_message=new_system_message))
 
     async def awrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
-        """Update the system prompt to include the todo system prompt (async version)."""
-        request.system_prompt = (
-            request.system_prompt + "\n\n" + self.system_prompt
-            if request.system_prompt
-            else self.system_prompt
+        """Update the system message to include the todo system prompt (async version)."""
+        if request.system_message is not None:
+            new_system_content = [
+                *request.system_message.content_blocks,
+                {"type": "text", "text": f"\n\n{self.system_prompt}"},
+            ]
+        else:
+            new_system_content = [{"type": "text", "text": self.system_prompt}]
+        new_system_message = SystemMessage(
+            content=cast("list[str | dict[str, str]]", new_system_content)
         )
-        return await handler(request)
+        return await handler(request.override(system_message=new_system_message))
