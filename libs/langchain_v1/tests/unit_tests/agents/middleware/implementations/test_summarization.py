@@ -892,3 +892,20 @@ def test_summarization_middleware_is_safe_cutoff_at_end() -> None:
 
     # Cutoff past the length should also be safe
     assert middleware._is_safe_cutoff_point(messages, len(messages) + 5)
+
+
+def test_summarization_adjust_token_counts() -> None:
+    test_message = HumanMessage(content="a" * 12)
+
+    middleware = SummarizationMiddleware(model=MockChatModel(), trigger=("messages", 5))
+    count_1 = middleware.token_counter([test_message])
+
+    class MockAnthropicModel(MockChatModel):
+        @property
+        def _llm_type(self) -> str:
+            return "anthropic-chat"
+
+    middleware = SummarizationMiddleware(model=MockAnthropicModel(), trigger=("messages", 5))
+    count_2 = middleware.token_counter([test_message])
+
+    assert count_1 != count_2
