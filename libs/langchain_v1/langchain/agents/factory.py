@@ -76,6 +76,34 @@ FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
 ]
 
 
+def _get_state_defaults(state_schema: type[AgentState]) -> dict[str, Any]:
+    """Extract default values from state schema class attributes.
+    
+    TypedDict with class-level defaults don't automatically populate runtime dicts.
+    This function extracts those defaults to ensure middleware can access custom
+    state fields even when not explicitly provided in the input.
+    
+    Args:
+        state_schema: The state schema class (TypedDict subclass)
+        
+    Returns:
+        Dictionary of field names to their default values
+    """
+    defaults = {}
+    
+    # Get all attributes from the class, including inherited ones
+    for base in reversed(state_schema.__mro__):
+        if base is dict or base is object:
+            continue
+        # Get class-level attributes (defaults)
+        for key, value in base.__dict__.items():
+            if not key.startswith('_') and not callable(value):
+                # This is a class attribute with a default value
+                defaults[key] = value
+    
+    return defaults
+
+
 def _normalize_to_model_response(result: ModelResponse | AIMessage) -> ModelResponse:
     """Normalize middleware return value to ModelResponse."""
     if isinstance(result, AIMessage):
@@ -854,6 +882,9 @@ def create_agent(  # noqa: PLR0915
     base_state = state_schema if state_schema is not None else AgentState
     state_schemas.add(base_state)
 
+    # Extract default values from state schema to ensure custom fields are available
+    state_defaults = _get_state_defaults(base_state)
+
     resolved_state_schema = _resolve_schema(state_schemas, "StateSchema", None)
     input_schema = _resolve_schema(state_schemas, "InputSchema", "input")
     output_schema = _resolve_schema(state_schemas, "OutputSchema", "output")
@@ -1113,6 +1144,9 @@ def create_agent(  # noqa: PLR0915
 
     def model_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
+        # Merge state defaults with runtime state to ensure custom fields are accessible
+        complete_state = {**state_defaults, **state}
+        
         request = ModelRequest(
             model=model,
             tools=default_tools,
@@ -1120,7 +1154,7 @@ def create_agent(  # noqa: PLR0915
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
-            state=state,
+            state=complete_state,
             runtime=runtime,
         )
 
@@ -1166,6 +1200,9 @@ def create_agent(  # noqa: PLR0915
 
     async def amodel_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
+        # Merge state defaults with runtime state to ensure custom fields are accessible
+        complete_state = {**state_defaults, **state}
+        
         request = ModelRequest(
             model=model,
             tools=default_tools,
@@ -1173,7 +1210,7 @@ def create_agent(  # noqa: PLR0915
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
-            state=state,
+            state=complete_state,
             runtime=runtime,
         )
 
