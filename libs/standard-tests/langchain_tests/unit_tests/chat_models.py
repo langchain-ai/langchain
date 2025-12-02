@@ -235,6 +235,26 @@ class ChatModelTests(BaseStandardTests):
         """
         return {"invoke": [], "stream": []}
 
+    @property
+    def supports_model_override(self) -> bool:
+        """Whether the model supports overriding the model name at runtime.
+
+        If True, the model accepts a `model` kwarg in `invoke()`, `stream()`,
+        etc. that overrides the model specified at initialization.
+
+        This enables dynamic model selection without creating new instances.
+        """
+        return False
+
+    @property
+    def model_override_value(self) -> str | None:
+        """Alternative model name to use when testing model override.
+
+        Should return a valid model name that differs from the default model.
+        Required if `supports_model_override` is True.
+        """
+        return None
+
 
 class ChatModelUnitTests(ChatModelTests):
     '''Base class for chat model unit tests.
@@ -647,6 +667,36 @@ class ChatModelUnitTests(ChatModelTests):
         cached, audio, or reasoning.
 
         Only needs to be overridden if these details are supplied.
+
+    ??? info "`supports_model_override`"
+
+        Boolean property indicating whether the chat model supports overriding the
+        model name at runtime via kwargs.
+
+        If `True`, the model accepts a `model` kwarg in `invoke()`, `stream()`, etc.
+        that overrides the model specified at initialization. This enables dynamic
+        model selection without creating new chat model instances.
+
+        Defaults to `False`.
+
+        ```python
+        @property
+        def supports_model_override(self) -> bool:
+            return True
+        ```
+
+    ??? info "`model_override_value`"
+
+        Alternative model name to use when testing model override.
+
+        Should return a valid model name that differs from the default model.
+        Required if `supports_model_override` is `True`.
+
+        ```python
+        @property
+        def model_override_value(self) -> str:
+            return "gpt-4o-mini"  # e.g. if default is "gpt-4o"
+        ```
 
     ??? info "`enable_vcr_tests`"
 

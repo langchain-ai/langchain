@@ -865,6 +865,135 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert len(full.content_blocks) == 1
         assert full.content_blocks[0]["type"] == "text"
 
+    def test_invoke_with_model_override(self, model: BaseChatModel) -> None:
+        """Test that model name can be overridden at invoke time via kwargs.
+
+        This enables dynamic model selection without creating new instances,
+        which is useful for fallback strategies, A/B testing, or cost optimization.
+
+        Test is skipped if `supports_model_override` is `False`.
+
+        ??? question "Troubleshooting"
+
+            If this test fails, ensure that your `_generate` method passes
+            `**kwargs` through to the API request payload in a way that allows
+            the `model` parameter to be overridden.
+
+            For example:
+            ```python
+            def _get_request_payload(self, ..., **kwargs) -> dict:
+                return {
+                    "model": self.model,
+                    ...
+                    **kwargs,  # kwargs should come last to allow overrides
+                }
+            ```
+        """
+        if not self.supports_model_override:
+            pytest.skip("Model override not supported.")
+
+        override_model = self.model_override_value
+        if not override_model:
+            pytest.skip("model_override_value not specified.")
+
+        result = model.invoke("Hello", model=override_model)
+        assert result is not None
+        assert isinstance(result, AIMessage)
+
+        # Verify the overridden model was used
+        model_name = result.response_metadata.get("model_name")
+        assert model_name is not None, "model_name not found in response_metadata"
+        assert override_model in model_name, (
+            f"Expected model '{override_model}' but got '{model_name}'"
+        )
+
+    async def test_ainvoke_with_model_override(self, model: BaseChatModel) -> None:
+        """Test that model name can be overridden at ainvoke time via kwargs.
+
+        Test is skipped if `supports_model_override` is `False`.
+
+        ??? question "Troubleshooting"
+
+            See troubleshooting for `test_invoke_with_model_override`.
+        """
+        if not self.supports_model_override:
+            pytest.skip("Model override not supported.")
+
+        override_model = self.model_override_value
+        if not override_model:
+            pytest.skip("model_override_value not specified.")
+
+        result = await model.ainvoke("Hello", model=override_model)
+        assert result is not None
+        assert isinstance(result, AIMessage)
+
+        # Verify the overridden model was used
+        model_name = result.response_metadata.get("model_name")
+        assert model_name is not None, "model_name not found in response_metadata"
+        assert override_model in model_name, (
+            f"Expected model '{override_model}' but got '{model_name}'"
+        )
+
+    def test_stream_with_model_override(self, model: BaseChatModel) -> None:
+        """Test that model name can be overridden at stream time via kwargs.
+
+        Test is skipped if `supports_model_override` is `False`.
+
+        ??? question "Troubleshooting"
+
+            See troubleshooting for `test_invoke_with_model_override`.
+        """
+        if not self.supports_model_override:
+            pytest.skip("Model override not supported.")
+
+        override_model = self.model_override_value
+        if not override_model:
+            pytest.skip("model_override_value not specified.")
+
+        full: AIMessageChunk | None = None
+        for chunk in model.stream("Hello", model=override_model):
+            assert isinstance(chunk, AIMessageChunk)
+            full = chunk if full is None else full + chunk
+
+        assert full is not None
+
+        # Verify the overridden model was used
+        model_name = full.response_metadata.get("model_name")
+        assert model_name is not None, "model_name not found in response_metadata"
+        assert override_model in model_name, (
+            f"Expected model '{override_model}' but got '{model_name}'"
+        )
+
+    async def test_astream_with_model_override(self, model: BaseChatModel) -> None:
+        """Test that model name can be overridden at astream time via kwargs.
+
+        Test is skipped if `supports_model_override` is `False`.
+
+        ??? question "Troubleshooting"
+
+            See troubleshooting for `test_invoke_with_model_override`.
+        """
+        if not self.supports_model_override:
+            pytest.skip("Model override not supported.")
+
+        override_model = self.model_override_value
+        if not override_model:
+            pytest.skip("model_override_value not specified.")
+
+        full: AIMessageChunk | None = None
+        async for chunk in model.astream("Hello", model=override_model):
+            assert isinstance(chunk, AIMessageChunk)
+            full = chunk if full is None else full + chunk
+
+        assert full is not None
+
+        # Verify the overridden model was used
+        model_name = full.response_metadata.get("model_name")
+        assert model_name is not None, "model_name not found in response_metadata"
+        assert override_model in model_name, (
+            f"Expected model '{override_model}' but got '{model_name}'"
+        )
+
     def test_batch(self, model: BaseChatModel) -> None:
         """Test to verify that `model.batch([messages])` works.
 
