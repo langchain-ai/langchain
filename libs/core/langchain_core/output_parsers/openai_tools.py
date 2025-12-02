@@ -72,6 +72,9 @@ def parse_tool_call(
     }
     if return_id:
         parsed["id"] = raw_tool_call.get("id")
+        # Preserve extra_content if present (e.g., for Google's thought_signature)
+        if "extra_content" in raw_tool_call:
+            parsed["extra_content"] = raw_tool_call["extra_content"]
         parsed = create_tool_call(**parsed)  # type: ignore[assignment,arg-type]
     return parsed
 

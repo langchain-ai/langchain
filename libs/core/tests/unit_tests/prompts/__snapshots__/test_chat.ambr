@@ -988,6 +988,10 @@
             'title': 'Args',
             'type': 'object',
           }),
+          'extra_content': dict({
+            'title': 'Extra Content',
+            'type': 'object',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -2402,6 +2406,10 @@
         'properties': dict({
           'args': dict({
             'title': 'Args',
+            'type': 'object',
+          }),
+          'extra_content': dict({
+            'title': 'Extra Content',
             'type': 'object',
           }),
           'id': dict({

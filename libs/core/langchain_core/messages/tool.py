@@ -227,6 +227,13 @@ class ToolCall(TypedDict):
 
     """
     type: NotRequired[Literal["tool_call"]]
+    extra_content: NotRequired[dict[str, Any]]
+    """Optional provider-specific metadata.
+
+    For example, Google's Gemini API returns thought_signature in:
+    extra_content.google.thought_signature
+
+    """
 
 
 def tool_call(
@@ -234,6 +241,7 @@ def tool_call(
     name: str,
     args: dict[str, Any],
     id: str | None,
+    extra_content: dict[str, Any] | None = None,
 ) -> ToolCall:
     """Create a tool call.
 
@@ -241,11 +249,15 @@ def tool_call(
         name: The name of the tool to be called.
         args: The arguments to the tool call.
         id: An identifier associated with the tool call.
+        extra_content: Optional provider-specific metadata.
 
     Returns:
         The created tool call.
     """
-    return ToolCall(name=name, args=args, id=id, type="tool_call")
+    result = ToolCall(name=name, args=args, id=id, type="tool_call")
+    if extra_content is not None:
+        result["extra_content"] = extra_content
+    return result
 
 
 class ToolCallChunk(TypedDict):
@@ -347,6 +359,7 @@ def default_tool_parser(
                 name=function_name or "",
                 args=function_args or {},
                 id=raw_tool_call.get("id"),
+                extra_content=raw_tool_call.get("extra_content"),
             )
             tool_calls.append(parsed)
         except json.JSONDecodeError:
