@@ -6,7 +6,6 @@ import asyncio
 import atexit
 import functools
 import logging
-import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -40,6 +39,7 @@ from langchain_core.tracers.context import (
 )
 from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.stdout import ConsoleCallbackHandler
+from langchain_core.utils import uuid as lc_uuid
 from langchain_core.utils.env import env_var_is_set
 
 if TYPE_CHECKING:
@@ -504,7 +504,7 @@ class BaseRunManager(RunManagerMixin):
 
         """
         return cls(
-            run_id=uuid.uuid4(),
+            run_id=lc_uuid.uuid7(),
             handlers=[],
             inheritable_handlers=[],
             tags=[],
@@ -1330,7 +1330,7 @@ class CallbackManager(BaseCallbackManager):
         managers = []
         for i, prompt in enumerate(prompts):
             # Can't have duplicate runs with the same run ID (if provided)
-            run_id_ = run_id if i == 0 and run_id is not None else uuid.uuid4()
+            run_id_ = run_id if i == 0 and run_id is not None else lc_uuid.uuid7()
             handle_event(
                 self.handlers,
                 "on_llm_start",
@@ -1384,7 +1384,7 @@ class CallbackManager(BaseCallbackManager):
                 run_id_ = run_id
                 run_id = None
             else:
-                run_id_ = uuid.uuid4()
+                run_id_ = lc_uuid.uuid7()
             handle_event(
                 self.handlers,
                 "on_chat_model_start",
@@ -1433,7 +1433,7 @@ class CallbackManager(BaseCallbackManager):
 
         """
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = lc_uuid.uuid7()
         handle_event(
             self.handlers,
             "on_chain_start",
@@ -1488,7 +1488,7 @@ class CallbackManager(BaseCallbackManager):
 
         """
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = lc_uuid.uuid7()
 
         handle_event(
             self.handlers,
@@ -1537,7 +1537,7 @@ class CallbackManager(BaseCallbackManager):
             The callback manager for the retriever run.
         """
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = lc_uuid.uuid7()
 
         handle_event(
             self.handlers,
@@ -1594,7 +1594,7 @@ class CallbackManager(BaseCallbackManager):
             )
             raise ValueError(msg)
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = lc_uuid.uuid7()
 
         handle_event(
             self.handlers,
@@ -1816,7 +1816,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                 run_id_ = run_id
                 run_id = None
             else:
-                run_id_ = uuid.uuid4()
+                run_id_ = lc_uuid.uuid7()
 
             if inline_handlers:
                 inline_tasks.append(
@@ -1900,7 +1900,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                 run_id_ = run_id
                 run_id = None
             else:
-                run_id_ = uuid.uuid4()
+                run_id_ = lc_uuid.uuid7()
 
             for handler in self.handlers:
                 task = ahandle_event(
@@ -1962,7 +1962,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             The async callback manager for the chain run.
         """
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = lc_uuid.uuid7()
 
         await ahandle_event(
             self.handlers,
@@ -2010,7 +2010,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             The async callback manager for the tool run.
         """
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = lc_uuid.uuid7()
 
         await ahandle_event(
             self.handlers,
@@ -2060,7 +2060,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         if not self.handlers:
             return
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = lc_uuid.uuid7()
 
         if kwargs:
             msg = (
@@ -2102,7 +2102,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             The async callback manager for the retriever run.
         """
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = lc_uuid.uuid7()
 
         await ahandle_event(
             self.handlers,

@@ -12,7 +12,7 @@ from typing import (
     TypeVar,
     cast,
 )
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from typing_extensions import NotRequired, override
 
@@ -42,6 +42,7 @@ from langchain_core.tracers.log_stream import (
     _astream_log_implementation,
 )
 from langchain_core.tracers.memory_stream import _MemoryStream
+from langchain_core.utils import uuid as lc_uuid
 from langchain_core.utils.aiter import aclosing, py_anext
 
 if TYPE_CHECKING:
@@ -1006,7 +1007,11 @@ async def _astream_events_implementation_v2(
 
     # Assign the stream handler to the config
     config = ensure_config(config)
-    run_id = cast("UUID", config.setdefault("run_id", uuid4()))
+    if "run_id" in config:
+        run_id = cast("UUID", config["run_id"])
+    else:
+        run_id = lc_uuid.uuid7()
+        config["run_id"] = run_id
     callbacks = config.get("callbacks")
     if callbacks is None:
         config["callbacks"] = [event_streamer]
