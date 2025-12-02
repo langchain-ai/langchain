@@ -318,6 +318,7 @@ class Language(str, Enum):
     SCALA = "scala"
     SWIFT = "swift"
     MARKDOWN = "markdown"
+    MYSQL = "mysql"
     LATEX = "latex"
     HTML = "html"
     SOL = "sol"
