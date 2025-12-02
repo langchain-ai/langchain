@@ -1995,7 +1995,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         ??? note "Configuration"
 
-            To disable structured output tests, set `has_structured_output` to False
+            To disable structured output tests, set `has_structured_output` to `False`
             in your test class:
 
             ```python
@@ -2005,7 +2005,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-            By default, `has_structured_output` is True if a model overrides the
+            By default, `has_structured_output` is `True` if a model overrides the
             `with_structured_output` or `bind_tools` methods.
 
         ??? question "Troubleshooting"
@@ -2078,7 +2078,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         ??? note "Configuration"
 
-            To disable structured output tests, set `has_structured_output` to False
+            To disable structured output tests, set `has_structured_output` to `False`
             in your test class:
 
             ```python
@@ -2088,7 +2088,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-            By default, `has_structured_output` is True if a model overrides the
+            By default, `has_structured_output` is `True` if a model overrides the
             `with_structured_output` or `bind_tools` methods.
 
         ??? question "Troubleshooting"
@@ -2160,7 +2160,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         ??? note "Configuration"
 
-            To disable structured output tests, set `has_structured_output` to False
+            To disable structured output tests, set `has_structured_output` to `False`
             in your test class:
 
             ```python
@@ -2170,7 +2170,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-            By default, `has_structured_output` is True if a model overrides the
+            By default, `has_structured_output` is `True` if a model overrides the
             `with_structured_output` or `bind_tools` methods.
 
         ??? question "Troubleshooting"
@@ -2226,7 +2226,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         ??? note "Configuration"
 
-            To disable structured output tests, set `has_structured_output` to False
+            To disable structured output tests, set `has_structured_output` to `False`
             in your test class:
 
             ```python
@@ -2681,7 +2681,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         ```
 
         This test can be skipped by setting the `supports_image_tool_message` property
-        to False (see configuration below).
+        to `False` (see configuration below).
 
         ??? note "Configuration"
 
@@ -2700,7 +2700,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             If this test fails, check that the model can correctly handle messages
             with image content blocks in `ToolMessage` objects, including base64-encoded
             images. Otherwise, set the `supports_image_tool_message` property to
-            False.
+            `False`.
 
         """
         if not self.supports_image_tool_message:
@@ -2781,7 +2781,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         ```
 
         This test can be skipped by setting the `supports_pdf_tool_message` property
-        to False (see configuration below).
+        to `False` (see configuration below).
 
         ??? note "Configuration"
 
@@ -2800,7 +2800,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             If this test fails, check that the model can correctly handle messages
             with PDF content blocks in `ToolMessage` objects, specifically
             base64-encoded PDFs. Otherwise, set the `supports_pdf_tool_message` property
-            to False.
+            to `False`.
         """
         if not self.supports_pdf_tool_message:
             pytest.skip("Model does not support PDF tool message.")
