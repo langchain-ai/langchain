@@ -838,6 +838,15 @@ class ChatGroq(BaseChatModel):
                 `langchain.runnable.Runnable` constructor.
 
         """
+        strict_parameter = kwargs.pop("strict", None)
+        response_format_parameter = kwargs.pop("response_format", None)
+        if strict_parameter is not None:
+            warnings.warn("strict parameter is not supported by Groq", stacklevel=1)
+        if response_format_parameter is not None:
+            warnings.warn(
+                "response_format parameter is not supported by Groq", stacklevel=1
+            )
+
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None and tool_choice:
             if tool_choice == "any":
