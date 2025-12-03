@@ -901,8 +901,6 @@ def test_summarization_middleware_find_safe_cutoff_advances_past_tools() -> None
     )
 
     # Messages: [Human, AI, Tool, Tool, Tool, Human]
-    # If we want to keep 3 messages, target cutoff is 6-3=3 (pointing at Tool)
-    # Should advance to index 5 (the Human after the tools)
     messages: list[AnyMessage] = [
         HumanMessage(content="msg1"),
         AIMessage(
@@ -919,9 +917,9 @@ def test_summarization_middleware_find_safe_cutoff_advances_past_tools() -> None
         HumanMessage(content="msg2"),
     ]
 
-    cutoff = middleware._find_safe_cutoff(messages, 3)
-    # Target cutoff would be 6-3=3, but that's a ToolMessage
-    # Advancing past tools gets us to index 5 (aggressive summarization)
+    # Target cutoff index is len(messages) - messages_to_keep = 6 - 3 = 3
+    # Index 3 is a ToolMessage, so we advance past the tool sequence to index 5
+    cutoff = middleware._find_safe_cutoff(messages, messages_to_keep=3)
     assert cutoff == 5
 
 
@@ -932,8 +930,6 @@ def test_summarization_middleware_find_safe_cutoff_aggressive_when_all_tools_at_
     )
 
     # Messages: [Human, AI, Tool, Tool, Tool, Human]
-    # If we want to keep 2 messages, target cutoff is 6-2=4 (pointing at Tool)
-    # Advancing gets us to 5, keeping only 1 message - that's aggressive behavior
     messages: list[AnyMessage] = [
         HumanMessage(content="msg1"),
         AIMessage(
@@ -950,9 +946,10 @@ def test_summarization_middleware_find_safe_cutoff_aggressive_when_all_tools_at_
         HumanMessage(content="msg2"),
     ]
 
-    cutoff = middleware._find_safe_cutoff(messages, 2)
-    # Target cutoff is 4, but that's a ToolMessage
-    # Advancing past tools to 5, we keep only 1 message (aggressive)
+    # Target cutoff index is len(messages) - messages_to_keep = 6 - 2 = 4
+    # Index 4 is a ToolMessage, so we advance past the tool sequence to index 5
+    # This is aggressive - we keep only 1 message instead of 2
+    cutoff = middleware._find_safe_cutoff(messages, messages_to_keep=2)
     assert cutoff == 5
 
 
@@ -971,8 +968,9 @@ def test_summarization_middleware_cutoff_at_start_of_tool_sequence() -> None:
         HumanMessage(content="msg4"),
     ]
 
-    # Target cutoff is 6-4=2, which is the AI message (safe)
-    cutoff = middleware._find_safe_cutoff(messages, 4)
+    # Target cutoff index is len(messages) - messages_to_keep = 6 - 4 = 2
+    # Index 2 is an AIMessage (safe cutoff point), so no adjustment needed
+    cutoff = middleware._find_safe_cutoff(messages, messages_to_keep=4)
     assert cutoff == 2
 
 
@@ -995,10 +993,10 @@ def test_summarization_middleware_all_tool_messages_at_end() -> None:
         ToolMessage(content="result2", tool_call_id="call2"),
     ]
 
-    # Target cutoff is 4-2=2, which is a ToolMessage
-    # Advancing past tools gets us to index 4 (end of messages)
+    # Target cutoff index is len(messages) - messages_to_keep = 4 - 2 = 2
+    # Index 2 is a ToolMessage, so we advance past the tool sequence to index 4
     # This is aggressive - we keep no messages from this conversation
-    cutoff = middleware._find_safe_cutoff(messages, 2)
+    cutoff = middleware._find_safe_cutoff(messages, messages_to_keep=2)
     assert cutoff == 4
 
 
