@@ -909,3 +909,21 @@ def test_summarization_adjust_token_counts() -> None:
     count_2 = middleware.token_counter([test_message])
 
     assert count_1 != count_2
+
+
+def test_summarization_middleware_many_parallel_tool_calls_safety_gap() -> None:
+    """Test cutoff safety with many parallel tool calls extending beyond old search range."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(), trigger=("messages", 15), keep=("messages", 5)
+    )
+    tool_calls = [{"name": f"tool_{i}", "args": {}, "id": f"call_{i}"} for i in range(10)]
+    human_message = HumanMessage(content="calling 10 tools")
+    ai_message = AIMessage(content="calling 10 tools", tool_calls=tool_calls)
+    tool_messages = [
+        ToolMessage(content=f"result_{i}", tool_call_id=f"call_{i}") for i in range(10)
+    ]
+    messages: list[AnyMessage] = [human_message, ai_message, *tool_messages]
+
+    # Cutoff at index 7 would separate the AI message (index 1) from tool messages 7-11
+    is_safe = middleware._is_safe_cutoff_point(messages, 7)
+    assert is_safe is False

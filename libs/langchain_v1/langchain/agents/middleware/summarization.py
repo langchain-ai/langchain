@@ -56,7 +56,6 @@ Messages to summarize:
 _DEFAULT_MESSAGES_TO_KEEP = 20
 _DEFAULT_TRIM_TOKEN_LIMIT = 4000
 _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
-_SEARCH_RANGE_FOR_TOOL_PAIRS = 5
 
 ContextFraction = tuple[Literal["fraction"], float]
 """Fraction of model's maximum input tokens.
@@ -480,16 +479,25 @@ class SummarizationMiddleware(AgentMiddleware):
         if cutoff_index >= len(messages):
             return True
 
-        search_start = max(0, cutoff_index - _SEARCH_RANGE_FOR_TOOL_PAIRS)
-        search_end = min(len(messages), cutoff_index + _SEARCH_RANGE_FOR_TOOL_PAIRS)
-
-        for i in range(search_start, search_end):
-            if not self._has_tool_calls(messages[i]):
+        # Check tool messages at or after cutoff and find their source AI message
+        for i in range(cutoff_index, len(messages)):
+            msg = messages[i]
+            if not isinstance(msg, ToolMessage):
                 continue
 
-            tool_call_ids = self._extract_tool_call_ids(cast("AIMessage", messages[i]))
-            if self._cutoff_separates_tool_pair(messages, i, cutoff_index, tool_call_ids):
-                return False
+            # Search backwards to find the AI message that generated this tool call
+            tool_call_id = msg.tool_call_id
+            for j in range(i - 1, -1, -1):
+                ai_msg = messages[j]
+                if not self._has_tool_calls(ai_msg):
+                    continue
+                ai_tool_ids = self._extract_tool_call_ids(cast("AIMessage", ai_msg))
+                if tool_call_id in ai_tool_ids:
+                    # Found the AI message - check if cutoff separates them
+                    if j < cutoff_index:
+                        # AI message would be summarized, tool message would be kept
+                        return False
+                    break
 
         return True
 
