@@ -296,7 +296,7 @@ class ChatModelUnitTests(ChatModelTests):
         By default, this is determined by whether the chat model's `bind_tools` method
         is overridden. It typically does not need to be overridden on the test class.
 
-        ```python "Example override"
+        ```python
         @property
         def has_tool_calling(self) -> bool:
             return True
@@ -331,7 +331,7 @@ class ChatModelUnitTests(ChatModelTests):
         `tool_choice="any"` will force a tool call, and `tool_choice=<tool name>`
         will force a call to a specific tool.
 
-        ```python "Example override"
+        ```python
         @property
         def has_tool_choice(self) -> bool:
             return False
@@ -346,7 +346,7 @@ class ChatModelUnitTests(ChatModelTests):
         `with_structured_output` or `bind_tools` methods. If the base
         implementations are intended to be used, this method should be overridden.
 
-        See: https://docs.langchain.com/oss/python/langchain/structured-output
+        See docs for [Structured output](https://docs.langchain.com/oss/python/langchain/structured-output).
 
         ```python
         @property
@@ -372,7 +372,7 @@ class ChatModelUnitTests(ChatModelTests):
         Boolean property indicating whether the chat model supports JSON mode in
         `with_structured_output`.
 
-        See: https://docs.langchain.com/oss/python/langchain/structured-output
+        See docs for [Structured output](https://docs.langchain.com/oss/python/langchain/structured-output).
 
         ```python
         @property
@@ -406,7 +406,7 @@ class ChatModelUnitTests(ChatModelTests):
         }
         ```
 
-        See https://docs.langchain.com/oss/python/langchain/models#multimodal
+        See docs for [Multimodality](https://docs.langchain.com/oss/python/langchain/models#multimodal).
 
         ```python
         @property
@@ -431,7 +431,7 @@ class ChatModelUnitTests(ChatModelTests):
         }
         ```
 
-        See https://docs.langchain.com/oss/python/langchain/models#multimodal
+        See docs for [Multimodality](https://docs.langchain.com/oss/python/langchain/models#multimodal).
 
         ```python
         @property
@@ -456,7 +456,7 @@ class ChatModelUnitTests(ChatModelTests):
         }
         ```
 
-        See https://docs.langchain.com/oss/python/langchain/models#multimodal
+        See docs for [Multimodality](https://docs.langchain.com/oss/python/langchain/models#multimodal).
 
         ```python
         @property
@@ -481,7 +481,7 @@ class ChatModelUnitTests(ChatModelTests):
         }
         ```
 
-        See https://docs.langchain.com/oss/python/langchain/models#multimodal
+        See docs for [Multimodality](https://docs.langchain.com/oss/python/langchain/models#multimodal).
 
         ```python
         @property
@@ -640,6 +640,7 @@ class ChatModelUnitTests(ChatModelTests):
 
         `usage_metadata` is an optional dict attribute on `AIMessage` objects that track
         input and output tokens.
+
         [See more](https://reference.langchain.com/python/langchain_core/language_models/#langchain_core.messages.ai.UsageMetadata).
 
         It includes optional keys `input_token_details` and `output_token_details`
@@ -856,7 +857,7 @@ class ChatModelUnitTests(ChatModelTests):
             1. `chat_model_params` is specified and the model can be initialized
                 from those params;
             2. The model accommodates
-                [standard parameters](https://python.langchain.com/docs/concepts/chat_models/#standard-parameters).
+                [standard parameters](https://docs.langchain.com/oss/python/langchain/models#parameters).
 
         """
         model = self.chat_model_class(
@@ -929,10 +930,13 @@ class ChatModelUnitTests(ChatModelTests):
         ??? question "Troubleshooting"
 
             If this test fails, ensure that the model's `bind_tools` method
-            properly handles Pydantic V2 models. `langchain_core` implements
-            a utility function that will accommodate most formats: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html
+            properly handles Pydantic V2 models.
 
-            See example implementation of `bind_tools` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.bind_tools
+            `langchain_core` implements a [utility function](https://reference.langchain.com/python/langchain_core/utils/?h=convert_to_op#langchain_core.utils.function_calling.convert_to_openai_tool).
+            that will accommodate most formats.
+
+            See [example implementation](https://github.com/langchain-ai/langchain/blob/master/libs/partners/openai/langchain_openai/chat_models/base.py).
+            of `with_structured_output`.
         """
         if not self.has_tool_calling:
             return
@@ -971,11 +975,13 @@ class ChatModelUnitTests(ChatModelTests):
         ??? question "Troubleshooting"
 
             If this test fails, ensure that the model's `bind_tools` method
-            properly handles Pydantic V2 models. `langchain_core` implements
-            a utility function that will accommodate most formats: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html
+            properly handles Pydantic V2 models.
 
-            See example implementation of `with_structured_output` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
+            `langchain_core` implements a [utility function](https://reference.langchain.com/python/langchain_core/utils/?h=convert_to_op#langchain_core.utils.function_calling.convert_to_openai_tool).
+            that will accommodate most formats.
 
+            See [example implementation](https://github.com/langchain-ai/langchain/blob/master/libs/partners/openai/langchain_openai/chat_models/base.py).
+            of `with_structured_output`.
         """
         if not self.has_structured_output:
             return
@@ -995,7 +1001,7 @@ class ChatModelUnitTests(ChatModelTests):
 
         ??? question "Troubleshooting"
 
-            If this test fails, check that the model accommodates [standard parameters](https://python.langchain.com/docs/concepts/chat_models/#standard-parameters).
+            If this test fails, check that the model accommodates [standard parameters](https://docs.langchain.com/oss/python/langchain/models#parameters).
 
             Check also that the model class is named according to convention
             (e.g., `ChatProviderName`).
