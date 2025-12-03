@@ -121,18 +121,6 @@ def test_summarization_middleware_helper_methods() -> None:
     assert "Here is a summary of the conversation to date:" in new_messages[0].content
     assert summary in new_messages[0].content
 
-    # Test tool call detection
-    ai_message_no_tools = AIMessage(content="Hello")
-    assert not middleware._has_tool_calls(ai_message_no_tools)
-
-    ai_message_with_tools = AIMessage(
-        content="Hello", tool_calls=[{"name": "test", "args": {}, "id": "1"}]
-    )
-    assert middleware._has_tool_calls(ai_message_with_tools)
-
-    human_message = HumanMessage(content="Hello")
-    assert not middleware._has_tool_calls(human_message)
-
 
 def test_summarization_middleware_tool_call_safety() -> None:
     """Test SummarizationMiddleware tool call safety logic."""
@@ -141,25 +129,22 @@ def test_summarization_middleware_tool_call_safety() -> None:
         model=model, trigger=("tokens", 1000), keep=("messages", 3)
     )
 
-    # Test safe cutoff point detection with tool calls
-    messages = [
+    # Test finding safe cutoff points
+    messages: list[AnyMessage] = [
         HumanMessage(content="1"),
         AIMessage(content="2", tool_calls=[{"name": "test", "args": {}, "id": "1"}]),
         ToolMessage(content="3", tool_call_id="1"),
         HumanMessage(content="4"),
     ]
 
-    # Safe cutoff (doesn't separate AI/Tool pair)
-    is_safe = middleware._is_safe_cutoff_point(messages, 0)
-    assert is_safe is True
+    # Starting at a non-ToolMessage returns the same index
+    assert middleware._find_safe_cutoff_point(messages, 0) == 0
 
-    # Unsafe cutoff (separates AI/Tool pair)
-    is_safe = middleware._is_safe_cutoff_point(messages, 2)
-    assert is_safe is False
+    # Starting at a ToolMessage advances to the next non-ToolMessage
+    assert middleware._find_safe_cutoff_point(messages, 2) == 3
 
-    # Test tool call ID extraction
-    ids = middleware._extract_tool_call_ids(messages[1])
-    assert ids == {"1"}
+    # Starting at the HumanMessage after tools returns that index
+    assert middleware._find_safe_cutoff_point(messages, 3) == 3
 
 
 def test_summarization_middleware_summary_creation() -> None:
@@ -315,8 +300,8 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     ]
 
 
-def test_summarization_middleware_token_retention_pct_respects_tool_pairs() -> None:
-    """Ensure token retention keeps pairs together even if exceeding target tokens."""
+def test_summarization_middleware_token_retention_advances_past_tool_messages() -> None:
+    """Ensure token retention advances past tool messages for aggressive summarization."""
 
     def token_counter(messages: list[AnyMessage]) -> int:
         return sum(len(getattr(message, "content", "")) for message in messages)
@@ -328,6 +313,10 @@ def test_summarization_middleware_token_retention_pct_respects_tool_pairs() -> N
     )
     middleware.token_counter = token_counter
 
+    # Total tokens: 300 + 200 + 50 + 180 + 160 = 890
+    # Target keep: 500 tokens (50% of 1000)
+    # Binary search finds cutoff around index 2 (ToolMessage)
+    # We advance past it to index 3 (HumanMessage)
     messages: list[AnyMessage] = [
         HumanMessage(content="H" * 300),
         AIMessage(
@@ -344,13 +333,14 @@ def test_summarization_middleware_token_retention_pct_respects_tool_pairs() -> N
     assert result is not None
 
     preserved_messages = result["messages"][2:]
-    assert preserved_messages == messages[1:]
+    # With aggressive summarization, we advance past the ToolMessage
+    # So we preserve messages from index 3 onward (the two HumanMessages)
+    assert preserved_messages == messages[3:]
 
+    # Verify preserved tokens are within budget
     target_token_count = int(1000 * 0.5)
     preserved_tokens = middleware.token_counter(preserved_messages)
-
-    # Tool pair retention can exceed the target token count but should keep the pair intact.
-    assert preserved_tokens > target_token_count
+    assert preserved_tokens <= target_token_count
 
 
 def test_summarization_middleware_missing_profile() -> None:
@@ -692,42 +682,13 @@ def test_summarization_middleware_binary_search_edge_cases() -> None:
     assert cutoff == 0
 
 
-def test_summarization_middleware_tool_call_extraction_edge_cases() -> None:
-    """Test tool call ID extraction with various message formats."""
-    model = FakeToolCallingModel()
-    middleware = SummarizationMiddleware(model=model, trigger=("messages", 5))
-
-    # Test with dict-style tool calls
-    ai_message_dict = AIMessage(
-        content="test", tool_calls=[{"name": "tool1", "args": {}, "id": "id1"}]
-    )
-    ids = middleware._extract_tool_call_ids(ai_message_dict)
-    assert ids == {"id1"}
-
-    # Test with multiple tool calls
-    ai_message_multiple = AIMessage(
-        content="test",
-        tool_calls=[
-            {"name": "tool1", "args": {}, "id": "id1"},
-            {"name": "tool2", "args": {}, "id": "id2"},
-        ],
-    )
-    ids = middleware._extract_tool_call_ids(ai_message_multiple)
-    assert ids == {"id1", "id2"}
-
-    # Test with empty tool calls list
-    ai_message_empty = AIMessage(content="test", tool_calls=[])
-    ids = middleware._extract_tool_call_ids(ai_message_empty)
-    assert len(ids) == 0
-
-
 def test_summarization_middleware_complex_tool_pair_scenarios() -> None:
     """Test complex tool call pairing scenarios."""
     model = FakeToolCallingModel()
     middleware = SummarizationMiddleware(model=model, trigger=("messages", 5), keep=("messages", 3))
 
     # Test with multiple AI messages with tool calls
-    messages = [
+    messages: list[AnyMessage] = [
         HumanMessage(content="msg1"),
         AIMessage(content="ai1", tool_calls=[{"name": "tool1", "args": {}, "id": "call1"}]),
         ToolMessage(content="result1", tool_call_id="call1"),
@@ -737,50 +698,47 @@ def test_summarization_middleware_complex_tool_pair_scenarios() -> None:
         HumanMessage(content="msg3"),
     ]
 
-    # Test cutoff at index 1 - unsafe (separates first AI/Tool pair)
-    assert not middleware._is_safe_cutoff_point(messages, 2)
+    # Test finding safe cutoff at ToolMessage index 2 goes to index 3 (HumanMessage)
+    assert middleware._find_safe_cutoff_point(messages, 2) == 3
 
-    # Test cutoff at index 3 - safe (keeps first pair together)
-    assert middleware._is_safe_cutoff_point(messages, 3)
+    # Test starting at index 3 (HumanMessage) stays at index 3
+    assert middleware._find_safe_cutoff_point(messages, 3) == 3
 
-    # Test cutoff at index 5 - unsafe (separates second AI/Tool pair)
-    assert not middleware._is_safe_cutoff_point(messages, 5)
+    # Test finding safe cutoff at ToolMessage index 5 goes to index 6 (HumanMessage)
+    assert middleware._find_safe_cutoff_point(messages, 5) == 6
 
-    # Test _cutoff_separates_tool_pair directly
-    assert middleware._cutoff_separates_tool_pair(messages, 1, 2, {"call1"})
-    assert not middleware._cutoff_separates_tool_pair(messages, 1, 0, {"call1"})
-    assert not middleware._cutoff_separates_tool_pair(messages, 1, 3, {"call1"})
+    # Test starting at HumanMessage index 6 stays at index 6
+    assert middleware._find_safe_cutoff_point(messages, 6) == 6
 
 
-def test_summarization_middleware_tool_call_in_search_range() -> None:
-    """Test tool call safety with messages at edge of search range."""
+def test_summarization_middleware_find_safe_cutoff_point() -> None:
+    """Test _find_safe_cutoff_point finds safe cutoff past ToolMessages."""
     model = FakeToolCallingModel()
     middleware = SummarizationMiddleware(
         model=model, trigger=("messages", 10), keep=("messages", 2)
     )
 
-    # Create messages with tool pair separated by some distance
-    # Search range is 5, so messages within 5 positions of cutoff are checked
-    messages = [
+    messages: list[AnyMessage] = [
         HumanMessage(content="msg1"),
-        HumanMessage(content="msg2"),
         AIMessage(content="ai", tool_calls=[{"name": "tool", "args": {}, "id": "call1"}]),
-        HumanMessage(content="msg3"),
-        HumanMessage(content="msg4"),
-        ToolMessage(content="result", tool_call_id="call1"),
-        HumanMessage(content="msg6"),
+        ToolMessage(content="result1", tool_call_id="call1"),
+        ToolMessage(content="result2", tool_call_id="call2"),
+        HumanMessage(content="msg2"),
     ]
 
-    # Cutoff at index 3 would separate: [0,1,2] from [3,4,5,6]
-    # AI at index 2 is before cutoff, Tool at index 5 is after cutoff - unsafe
-    assert not middleware._is_safe_cutoff_point(messages, 3)
+    # Starting at a non-ToolMessage returns the same index
+    assert middleware._find_safe_cutoff_point(messages, 0) == 0
+    assert middleware._find_safe_cutoff_point(messages, 1) == 1
 
-    # Cutoff at index 6 keeps AI and Tool both in summarized section
-    assert middleware._is_safe_cutoff_point(messages, 6)
+    # Starting at a ToolMessage advances to the next non-ToolMessage
+    assert middleware._find_safe_cutoff_point(messages, 2) == 4
+    assert middleware._find_safe_cutoff_point(messages, 3) == 4
 
-    # Cutoff at index 0 or 1 also safe - both AI and Tool in preserved section
-    assert middleware._is_safe_cutoff_point(messages, 0)
-    assert middleware._is_safe_cutoff_point(messages, 1)
+    # Starting at the HumanMessage after tools returns that index
+    assert middleware._find_safe_cutoff_point(messages, 4) == 4
+
+    # Starting past the end returns the index unchanged
+    assert middleware._find_safe_cutoff_point(messages, 5) == 5
 
 
 def test_summarization_middleware_zero_and_negative_target_tokens() -> None:
@@ -880,18 +838,18 @@ def test_summarization_middleware_fraction_trigger_with_no_profile() -> None:
     middleware._get_profile_limits = original_method
 
 
-def test_summarization_middleware_is_safe_cutoff_at_end() -> None:
-    """Test _is_safe_cutoff_point when cutoff is at or past the end."""
+def test_summarization_middleware_find_safe_cutoff_point_at_end() -> None:
+    """Test _find_safe_cutoff_point when cutoff is at or past the end."""
     model = FakeToolCallingModel()
     middleware = SummarizationMiddleware(model=model, trigger=("messages", 5))
 
     messages = [HumanMessage(content=str(i)) for i in range(5)]
 
-    # Cutoff at exactly the length should be safe
-    assert middleware._is_safe_cutoff_point(messages, len(messages))
+    # Cutoff at exactly the length returns the same index
+    assert middleware._find_safe_cutoff_point(messages, len(messages)) == len(messages)
 
-    # Cutoff past the length should also be safe
-    assert middleware._is_safe_cutoff_point(messages, len(messages) + 5)
+    # Cutoff past the length returns the same index
+    assert middleware._find_safe_cutoff_point(messages, len(messages) + 5) == len(messages) + 5
 
 
 def test_summarization_adjust_token_counts() -> None:
@@ -909,3 +867,162 @@ def test_summarization_adjust_token_counts() -> None:
     count_2 = middleware.token_counter([test_message])
 
     assert count_1 != count_2
+
+
+def test_summarization_middleware_many_parallel_tool_calls_safety() -> None:
+    """Test cutoff safety with many parallel tool calls extending beyond old search range."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(), trigger=("messages", 15), keep=("messages", 5)
+    )
+    tool_calls = [{"name": f"tool_{i}", "args": {}, "id": f"call_{i}"} for i in range(10)]
+    human_message = HumanMessage(content="calling 10 tools")
+    ai_message = AIMessage(content="calling 10 tools", tool_calls=tool_calls)
+    tool_messages = [
+        ToolMessage(content=f"result_{i}", tool_call_id=f"call_{i}") for i in range(10)
+    ]
+    messages: list[AnyMessage] = [human_message, ai_message, *tool_messages]
+
+    # Cutoff at index 7 (a ToolMessage) advances to index 12 (end of messages)
+    assert middleware._find_safe_cutoff_point(messages, 7) == 12
+
+    # Any cutoff pointing at a ToolMessage (indices 2-11) advances to index 12
+    for i in range(2, 12):
+        assert middleware._find_safe_cutoff_point(messages, i) == 12
+
+    # Cutoff at index 0, 1 (before tool messages) stays the same
+    assert middleware._find_safe_cutoff_point(messages, 0) == 0
+    assert middleware._find_safe_cutoff_point(messages, 1) == 1
+
+
+def test_summarization_middleware_find_safe_cutoff_advances_past_tools() -> None:
+    """Test _find_safe_cutoff advances past ToolMessages to find safe cutoff."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(), trigger=("messages", 10), keep=("messages", 3)
+    )
+
+    # Messages: [Human, AI, Tool, Tool, Tool, Human]
+    # If we want to keep 3 messages, target cutoff is 6-3=3 (pointing at Tool)
+    # Should advance to index 5 (the Human after the tools)
+    messages: list[AnyMessage] = [
+        HumanMessage(content="msg1"),
+        AIMessage(
+            content="ai",
+            tool_calls=[
+                {"name": "tool1", "args": {}, "id": "call1"},
+                {"name": "tool2", "args": {}, "id": "call2"},
+                {"name": "tool3", "args": {}, "id": "call3"},
+            ],
+        ),
+        ToolMessage(content="result1", tool_call_id="call1"),
+        ToolMessage(content="result2", tool_call_id="call2"),
+        ToolMessage(content="result3", tool_call_id="call3"),
+        HumanMessage(content="msg2"),
+    ]
+
+    cutoff = middleware._find_safe_cutoff(messages, 3)
+    # Target cutoff would be 6-3=3, but that's a ToolMessage
+    # Advancing past tools gets us to index 5 (aggressive summarization)
+    assert cutoff == 5
+
+
+def test_summarization_middleware_find_safe_cutoff_aggressive_when_all_tools_at_end() -> None:
+    """Test _find_safe_cutoff is aggressive even when advancing keeps fewer messages."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(), trigger=("messages", 10), keep=("messages", 2)
+    )
+
+    # Messages: [Human, AI, Tool, Tool, Tool, Human]
+    # If we want to keep 2 messages, target cutoff is 6-2=4 (pointing at Tool)
+    # Advancing gets us to 5, keeping only 1 message - that's aggressive behavior
+    messages: list[AnyMessage] = [
+        HumanMessage(content="msg1"),
+        AIMessage(
+            content="ai",
+            tool_calls=[
+                {"name": "tool1", "args": {}, "id": "call1"},
+                {"name": "tool2", "args": {}, "id": "call2"},
+                {"name": "tool3", "args": {}, "id": "call3"},
+            ],
+        ),
+        ToolMessage(content="result1", tool_call_id="call1"),
+        ToolMessage(content="result2", tool_call_id="call2"),
+        ToolMessage(content="result3", tool_call_id="call3"),
+        HumanMessage(content="msg2"),
+    ]
+
+    cutoff = middleware._find_safe_cutoff(messages, 2)
+    # Target cutoff is 4, but that's a ToolMessage
+    # Advancing past tools to 5, we keep only 1 message (aggressive)
+    assert cutoff == 5
+
+
+def test_summarization_middleware_cutoff_at_start_of_tool_sequence() -> None:
+    """Test cutoff when target lands exactly at the first ToolMessage."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(), trigger=("messages", 8), keep=("messages", 4)
+    )
+
+    messages: list[AnyMessage] = [
+        HumanMessage(content="msg1"),
+        HumanMessage(content="msg2"),
+        AIMessage(content="ai", tool_calls=[{"name": "tool", "args": {}, "id": "call1"}]),
+        ToolMessage(content="result", tool_call_id="call1"),
+        HumanMessage(content="msg3"),
+        HumanMessage(content="msg4"),
+    ]
+
+    # Target cutoff is 6-4=2, which is the AI message (safe)
+    cutoff = middleware._find_safe_cutoff(messages, 4)
+    assert cutoff == 2
+
+
+def test_summarization_middleware_all_tool_messages_at_end() -> None:
+    """Test when all remaining messages after target cutoff are ToolMessages."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(), trigger=("messages", 8), keep=("messages", 2)
+    )
+
+    messages: list[AnyMessage] = [
+        HumanMessage(content="msg1"),
+        AIMessage(
+            content="ai",
+            tool_calls=[
+                {"name": "tool1", "args": {}, "id": "call1"},
+                {"name": "tool2", "args": {}, "id": "call2"},
+            ],
+        ),
+        ToolMessage(content="result1", tool_call_id="call1"),
+        ToolMessage(content="result2", tool_call_id="call2"),
+    ]
+
+    # Target cutoff is 4-2=2, which is a ToolMessage
+    # Advancing past tools gets us to index 4 (end of messages)
+    # This is aggressive - we keep no messages from this conversation
+    cutoff = middleware._find_safe_cutoff(messages, 2)
+    assert cutoff == 4
+
+
+def test_summarization_middleware_find_safe_cutoff_point_boundary_conditions() -> None:
+    """Test _find_safe_cutoff_point at boundary conditions."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(), trigger=("messages", 5), keep=("messages", 2)
+    )
+
+    messages: list[AnyMessage] = [
+        HumanMessage(content="msg1"),
+        ToolMessage(content="result", tool_call_id="call1"),
+        HumanMessage(content="msg2"),
+    ]
+
+    # Cutoff at 0 stays at 0 (boundary condition)
+    assert middleware._find_safe_cutoff_point(messages, 0) == 0
+
+    # Cutoff at or past length stays the same
+    assert middleware._find_safe_cutoff_point(messages, len(messages)) == len(messages)
+    assert middleware._find_safe_cutoff_point(messages, len(messages) + 5) == len(messages) + 5
+
+    # Cutoff at ToolMessage advances to next non-ToolMessage
+    assert middleware._find_safe_cutoff_point(messages, 1) == 2
+
+    # Cutoff at HumanMessage stays the same
+    assert middleware._find_safe_cutoff_point(messages, 2) == 2
