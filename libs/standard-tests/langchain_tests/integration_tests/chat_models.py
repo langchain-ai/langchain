@@ -314,21 +314,22 @@ class ChatModelIntegrationTests(ChatModelTests):
         Boolean property indicating whether the chat model supports
         `method='json_mode'` in `with_structured_output`.
 
+        Defaults to `False`.
+
         JSON mode constrains the model to output valid JSON without enforcing
         a specific schema (unlike `'function_calling'` or `'json_schema'` methods).
 
         When using JSON mode, you must prompt the model to output JSON in your
         message.
 
-    Example:
+        !!! example
+
             ```python
             structured_llm = llm.with_structured_output(MySchema, method="json_mode")
             structured_llm.invoke("... Return the result as JSON.")
             ```
 
         See docs for [Structured output](https://docs.langchain.com/oss/python/langchain/structured-output).
-
-        Defaults to `False`.
 
         ```python
         @property
