@@ -143,10 +143,7 @@ class TestChatDeepSeekCustomUnit:
             result.generations[0].message.additional_kwargs.get("reasoning_content")
             == "This is the reasoning"
         )
-        assert (
-            result.generations[0].message.additional_kwargs.get("reasoning")
-            == "This is the reasoning"
-        )
+        assert "reasoning" not in result.generations[0].message.additional_kwargs
 
     def test_create_chat_result_preserves_empty_model_extra_reasoning(self) -> None:
         """Empty reasoning_content inside model_extra should be preserved."""
@@ -169,7 +166,7 @@ class TestChatDeepSeekCustomUnit:
             result.generations[0].message.additional_kwargs.get("reasoning_content")
             == ""
         )
-        assert result.generations[0].message.additional_kwargs.get("reasoning") == ""
+        assert "reasoning" not in result.generations[0].message.additional_kwargs
 
     def test_create_chat_result_preserves_empty_reasoning(self) -> None:
         """Empty reasoning_content should be preserved (not dropped as falsy)."""
@@ -188,7 +185,7 @@ class TestChatDeepSeekCustomUnit:
             result.generations[0].message.additional_kwargs.get("reasoning_content")
             == ""
         )
-        assert result.generations[0].message.additional_kwargs.get("reasoning") == ""
+        assert "reasoning" not in result.generations[0].message.additional_kwargs
 
     def test_create_chat_result_normalizes_list_reasoning(self) -> None:
         """List reasoning (OpenRouter style) should be normalized and set."""
@@ -210,9 +207,7 @@ class TestChatDeepSeekCustomUnit:
             result.generations[0].message.additional_kwargs.get("reasoning_content")
             == "Step 1\nStep 2"
         )
-        assert result.generations[0].message.additional_kwargs.get("reasoning") == (
-            "Step 1\nStep 2"
-        )
+        assert "reasoning" not in result.generations[0].message.additional_kwargs
 
     def test_convert_chunk_with_reasoning_content(self) -> None:
         """Test that reasoning_content is properly extracted from streaming chunk."""
@@ -240,10 +235,7 @@ class TestChatDeepSeekCustomUnit:
             chunk_result.message.additional_kwargs.get("reasoning_content")
             == "Streaming reasoning content"
         )
-        assert (
-            chunk_result.message.additional_kwargs.get("reasoning")
-            == "Streaming reasoning content"
-        )
+        assert "reasoning" not in chunk_result.message.additional_kwargs
 
     def test_convert_chunk_with_reasoning(self) -> None:
         """Test that reasoning is properly extracted from streaming chunk."""
@@ -271,10 +263,7 @@ class TestChatDeepSeekCustomUnit:
             chunk_result.message.additional_kwargs.get("reasoning_content")
             == "Streaming reasoning"
         )
-        assert (
-            chunk_result.message.additional_kwargs.get("reasoning")
-            == "Streaming reasoning"
-        )
+        assert "reasoning" not in chunk_result.message.additional_kwargs
 
     def test_convert_chunk_preserves_empty_reasoning(self) -> None:
         """Streaming chunks with empty reasoning_content should be preserved."""
@@ -299,7 +288,7 @@ class TestChatDeepSeekCustomUnit:
             msg = "Expected chunk_result not to be None"
             raise AssertionError(msg)
         assert chunk_result.message.additional_kwargs.get("reasoning_content") == ""
-        assert chunk_result.message.additional_kwargs.get("reasoning") == ""
+        assert "reasoning" not in chunk_result.message.additional_kwargs
 
     def test_convert_chunk_normalizes_list_reasoning(self) -> None:
         """Streaming chunks with list reasoning should be normalized."""
@@ -330,9 +319,7 @@ class TestChatDeepSeekCustomUnit:
             chunk_result.message.additional_kwargs.get("reasoning_content")
             == "First\nSecond"
         )
-        assert (
-            chunk_result.message.additional_kwargs.get("reasoning") == "First\nSecond"
-        )
+        assert "reasoning" not in chunk_result.message.additional_kwargs
 
     def test_convert_chunk_without_reasoning(self) -> None:
         """Test that chunk without reasoning fields works correctly."""
@@ -407,7 +394,7 @@ class TestChatDeepSeekCustomUnit:
         assert (
             assistant_msgs[0].get("reasoning_content") == "First, I'll add 2 and 2..."
         )
-        assert assistant_msgs[0].get("reasoning") == "First, I'll add 2 and 2..."
+        assert "reasoning" not in assistant_msgs[0]
 
     def test_get_request_payload_preserves_multiple_reasoning_contents(self) -> None:
         """Test that multiple AI messages each preserve their reasoning_content."""
@@ -433,9 +420,9 @@ class TestChatDeepSeekCustomUnit:
         ]
         assert len(assistant_msgs) == 2
         assert assistant_msgs[0].get("reasoning_content") == "Reasoning for answer 1"
-        assert assistant_msgs[0].get("reasoning") == "Reasoning for answer 1"
         assert assistant_msgs[1].get("reasoning_content") == "Reasoning for answer 2"
-        assert assistant_msgs[1].get("reasoning") == "Reasoning for answer 2"
+        assert "reasoning" not in assistant_msgs[0]
+        assert "reasoning" not in assistant_msgs[1]
 
     def test_get_request_payload_without_reasoning_content(self) -> None:
         """Test that messages without reasoning_content work correctly."""
@@ -540,9 +527,9 @@ class TestChatDeepSeekCustomUnit:
         ]
         assert len(assistant_msgs) == 2
         assert assistant_msgs[0].get("reasoning_content") == "Tool reasoning here"
-        assert assistant_msgs[0].get("reasoning") == "Tool reasoning here"
         assert assistant_msgs[1].get("reasoning_content") == "Final reasoning"
-        assert assistant_msgs[1].get("reasoning") == "Final reasoning"
+        assert "reasoning" not in assistant_msgs[0]
+        assert "reasoning" not in assistant_msgs[1]
 
     def test_empty_string_reasoning_preserved(self) -> None:
         """Test that empty string reasoning_content is preserved (not treated as None).
@@ -569,8 +556,7 @@ class TestChatDeepSeekCustomUnit:
         # Empty string should be preserved, not dropped
         assert "reasoning_content" in assistant_msgs[0]
         assert assistant_msgs[0]["reasoning_content"] == ""
-        assert "reasoning" in assistant_msgs[0]
-        assert assistant_msgs[0]["reasoning"] == ""
+        assert "reasoning" not in assistant_msgs[0]
 
     def test_streaming_chunk_reasoning_accumulation(self) -> None:
         """Test that AIMessageChunk accumulation handles reasoning correctly."""

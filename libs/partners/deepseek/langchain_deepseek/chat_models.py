@@ -299,14 +299,13 @@ class ChatDeepSeek(BaseChatOpenAI):
 
     @staticmethod
     def _set_reasoning(message: BaseMessage, reasoning: str) -> None:
-        """Set reasoning content on a message with both key names for compatibility.
+        """Attach reasoning content to a message.
 
         Args:
             message: The message to set reasoning on.
             reasoning: The reasoning content string.
         """
         message.additional_kwargs["reasoning_content"] = reasoning
-        message.additional_kwargs["reasoning"] = reasoning
 
     def _build_reasoning_sequence(
         self,
@@ -357,7 +356,6 @@ class ChatDeepSeek(BaseChatOpenAI):
                 reasoning = next(reasoning_sequence, None)
                 if reasoning is not None:
                     message["reasoning_content"] = reasoning
-                    message["reasoning"] = reasoning
                 # DeepSeek API expects assistant content to be a string, not a list.
                 # Extract text blocks and join them, or use empty string if none exist.
                 if isinstance(message["content"], list):
