@@ -1,77 +1,9 @@
 """Configuration for unit tests."""
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Sequence
 from importlib import util
 
 import pytest
-from blockbuster import blockbuster_ctx
-
-
-@pytest.fixture(autouse=True)
-def blockbuster() -> Iterator[None]:
-    with blockbuster_ctx("langchain_classic") as bb:
-        bb.functions["io.TextIOWrapper.read"].can_block_in(
-            "langchain_classic/__init__.py",
-            "<module>",
-        )
-
-        # Allow write operations triggered by the SQLRecordManager used in indexing
-        # tests. These operations legitimately perform DB writes (sync/async) and
-        # can trip blockbuster's IO guards inside the event loop.
-        for write_func in [
-            "io.BufferedWriter.write",
-            "io.TextIOWrapper.write",
-        ]:
-            (
-                bb.functions[write_func]
-                .can_block_in(
-                    "langchain_classic/indexes/_sql_record_manager.py",
-                    "create_schema",
-                )
-                .can_block_in(
-                    "langchain_classic/indexes/_sql_record_manager.py",
-                    "acreate_schema",
-                )
-                .can_block_in(
-                    "langchain_classic/indexes/_sql_record_manager.py",
-                    "update",
-                )
-                .can_block_in(
-                    "langchain_classic/indexes/_sql_record_manager.py",
-                    "aupdate",
-                )
-                .can_block_in(
-                    "langchain_classic/indexes/_sql_record_manager.py",
-                    "delete_keys",
-                )
-                .can_block_in(
-                    "langchain_classic/indexes/_sql_record_manager.py",
-                    "adelete_keys",
-                )
-            )
-
-        for func in ["os.stat", "os.path.abspath"]:
-            (
-                bb.functions[func]
-                .can_block_in("langchain_core/runnables/base.py", "__repr__")
-                .can_block_in(
-                    "langchain_core/beta/runnables/context.py",
-                    "aconfig_with_context",
-                )
-            )
-
-        for func in ["os.stat", "io.TextIOWrapper.read"]:
-            bb.functions[func].can_block_in(
-                "langsmith/client.py",
-                "_default_retry_config",
-            )
-
-        for bb_function in bb.functions.values():
-            bb_function.can_block_in(
-                "freezegun/api.py",
-                "_get_cached_module_attributes",
-            )
-        yield
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
