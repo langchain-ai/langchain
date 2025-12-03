@@ -320,7 +320,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         When using JSON mode, you must prompt the model to output JSON in your
         message.
 
-        Example:
+    Example:
             ```python
             structured_llm = llm.with_structured_output(MySchema, method="json_mode")
             structured_llm.invoke("... Return the result as JSON.")
