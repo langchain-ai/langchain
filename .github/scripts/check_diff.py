@@ -33,12 +33,6 @@ LANGCHAIN_DIRS = [
     "libs/model-profiles",
 ]
 
-# When set to True, we are ignoring core dependents
-# in order to be able to get CI to pass for each individual
-# package that depends on core
-# e.g. if you touch core, we don't then add textsplitters/etc to CI
-IGNORE_CORE_DEPENDENTS = False
-
 # ignored partners are removed from dependents
 # but still run if directly edited
 IGNORED_PARTNERS = [
@@ -117,11 +111,11 @@ def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
     updated = set()
     for dir_ in dirs_to_eval:
         # handle core manually because it has so many dependents
-        if "core" in dir_ and IGNORE_CORE_DEPENDENTS:
+        if "core" in dir_:
             updated.add(dir_)
             continue
         pkg = "langchain-" + dir_.split("/")[-1]
-        updated.update(dependents.get(pkg, set()))
+        updated.update(dependents[pkg])
         updated.add(dir_)
     return list(updated)
 
