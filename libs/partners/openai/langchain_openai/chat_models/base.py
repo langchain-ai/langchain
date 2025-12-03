@@ -573,6 +573,7 @@ class BaseChatOpenAI(BaseChatModel):
     !!! version-added "Added in `langchain-openai` 0.3.9"
 
     !!! warning "Behavior changed in `langchain-openai` 0.3.35"
+
         Enabled for default base URL and client.
     """
 
@@ -803,6 +804,7 @@ class BaseChatOpenAI(BaseChatModel):
     - `'v1'`: v1 of LangChain cross-provider standard.
 
     !!! warning "Behavior changed in `langchain-openai` 1.0.0"
+
         Default updated to `"responses/v1"`.
     """
 
@@ -824,14 +826,15 @@ class BaseChatOpenAI(BaseChatModel):
             (Defaults to 1)
         """
         model = values.get("model_name") or values.get("model") or ""
+        model_lower = model.lower()
 
         # For o1 models, set temperature=1 if not provided
-        if model.startswith("o1") and "temperature" not in values:
+        if model_lower.startswith("o1") and "temperature" not in values:
             values["temperature"] = 1
 
         # For gpt-5 models, handle temperature restrictions
         # Note that gpt-5-chat models do support temperature
-        if model.startswith("gpt-5") and "chat" not in model:
+        if model_lower.startswith("gpt-5") and "chat" not in model_lower:
             temperature = values.get("temperature")
             if temperature is not None and temperature != 1:
                 # For gpt-5 (non-chat), only temperature=1 is supported
@@ -1666,15 +1669,13 @@ class BaseChatOpenAI(BaseChatModel):
             model = self.tiktoken_model_name
         else:
             model = self.model_name
+
         try:
             encoding = tiktoken.encoding_for_model(model)
         except KeyError:
+            model_lower = model.lower()
             encoder = "cl100k_base"
-            if (
-                self.model_name.startswith("gpt-4o")
-                or self.model_name.startswith("gpt-4.1")
-                or self.model_name.startswith("gpt-5")
-            ):
+            if model_lower.startswith(("gpt-4o", "gpt-4.1", "gpt-5")):
                 encoder = "o200k_base"
             encoding = tiktoken.get_encoding(encoder)
         return model, encoding
@@ -2007,9 +2008,11 @@ class BaseChatOpenAI(BaseChatModel):
                 - `'parsing_error'`: `BaseException | None`
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.12"
+
             Support for `tools` added.
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.21"
+
             Pass `kwargs` through to the model.
         """
         if strict is not None and method == "json_mode":
@@ -3129,12 +3132,15 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 - `'parsing_error'`: `BaseException | None`
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.0"
+
             `method` default changed from `"function_calling"` to `"json_schema"`.
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.12"
+
             Support for `tools` added.
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.21"
+
             Pass `kwargs` through to the model.
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`, `strict=True`"

@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10.0, <4.0.0"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
@@ -286,7 +286,7 @@ name = "exceptiongroup"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0b/9f/a65090624ecf468cdca03533906e7c69ed7588582240cfe7cc9e770b50eb/exceptiongroup-1.3.0.tar.gz", hash = "sha256:b241f5885f560bc56a59ee63ca4c6a8bfa46ae4ad651af316d4e81817bb9fd88", size = 29749, upload-time = "2025-05-10T17:42:51.123Z" }
 wheels = [
@@ -495,7 +495,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.0.5"
+version = "1.1.0"
 source = { editable = "../../langchain_v1" }
 dependencies = [
     { name = "langchain-core" },
@@ -517,7 +517,6 @@ requires-dist = [
     { name = "langchain-groq", marker = "extra == 'groq'" },
     { name = "langchain-huggingface", marker = "extra == 'huggingface'" },
     { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
-    { name = "langchain-model-profiles", marker = "extra == 'model-profiles'", editable = "../../model-profiles" },
     { name = "langchain-ollama", marker = "extra == 'ollama'" },
     { name = "langchain-openai", marker = "extra == 'openai'", editable = "../openai" },
     { name = "langchain-perplexity", marker = "extra == 'perplexity'" },
@@ -526,12 +525,11 @@ requires-dist = [
     { name = "langgraph", specifier = ">=1.0.2,<1.1.0" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
-provides-extras = ["model-profiles", "community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
+provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
 lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
 test = [
-    { name = "langchain-model-profiles", editable = "../../model-profiles" },
     { name = "langchain-openai", editable = "../openai" },
     { name = "langchain-tests", editable = "../../standard-tests" },
     { name = "pytest", specifier = ">=8.0.0,<9.0.0" },
@@ -547,7 +545,6 @@ test = [
 test-integration = [
     { name = "cassio", specifier = ">=0.1.0,<1.0.0" },
     { name = "langchain-core", editable = "../../core" },
-    { name = "langchain-model-profiles", editable = "../../model-profiles" },
     { name = "langchain-text-splitters", editable = "../../text-splitters" },
     { name = "langchainhub", specifier = ">=0.1.16,<1.0.0" },
     { name = "python-dotenv", specifier = ">=1.0.0,<2.0.0" },
@@ -561,7 +558,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.1.0"
+version = "1.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
@@ -646,7 +643,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.6"
+version = "1.1.0"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -704,7 +701,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.0.1"
+version = "1.0.2"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },

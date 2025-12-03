@@ -333,7 +333,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     [`langchain-openai`](https://pypi.org/project/langchain-openai)) can also use this
     field to roll out new content formats in a backward-compatible way.
 
-    !!! version-added "Added in `langchain-core` 1.0"
+    !!! version-added "Added in `langchain-core` 1.0.0"
 
     """
 
@@ -349,7 +349,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     Example profile data includes context window sizes, supported modalities, or support
     for tool calling, structured output, and other features.
 
-    !!! version-added "Added in `langchain-core` 1.1"
+    !!! version-added "Added in `langchain-core` 1.1.0"
     """
 
     model_config = ConfigDict(
@@ -1632,7 +1632,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         # }
         ```
 
-        Example: `dict` schema (`include_raw=False`):
+        Example: Dictionary schema (`include_raw=False`):
 
         ```python
         from pydantic import BaseModel
@@ -1660,6 +1660,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         ```
 
         !!! warning "Behavior changed in `langchain-core` 0.2.26"
+
             Added support for `TypedDict` class.
 
         """  # noqa: E501
