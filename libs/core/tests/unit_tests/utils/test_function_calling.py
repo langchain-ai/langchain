@@ -11,6 +11,7 @@ from typing import TypedDict as TypingTypedDict
 import pytest
 from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
 from pydantic import Field as FieldV2Maybe  # pydantic: ignore
+from typing_extensions import NotRequired
 from typing_extensions import TypedDict as ExtensionsTypedDict
 
 try:
@@ -1168,3 +1169,19 @@ def test_convert_to_openai_function_strict_required() -> None:
     func = convert_to_openai_function(MyModel, strict=True)
     actual = func["parameters"]["required"]
     assert actual == expected
+
+
+def test_convert_to_openai_function_typed_dict_with_not_required() -> None:
+    class MyTypedDict(TypingTypedDict):
+        """A TypedDict with NotRequired field."""
+
+        required_field: str
+        optional_field: NotRequired[str]
+
+    result = convert_to_openai_function(MyTypedDict)
+
+    assert result["name"] == "MyTypedDict"
+    assert "required_field" in result["parameters"]["properties"]
+    assert "optional_field" in result["parameters"]["properties"]
+    assert "required_field" in result["parameters"]["required"]
+    assert "optional_field" not in result["parameters"]["required"]
