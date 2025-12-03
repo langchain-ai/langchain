@@ -495,7 +495,9 @@ class ChatModelIntegrationTests(ChatModelTests):
     ??? info "`supports_image_tool_message`"
 
         Boolean property indicating whether the chat model supports a `ToolMessage`
-        that includes image content, e.g. in the OpenAI Chat Completions format:
+        that includes image content, e.g. in the OpenAI Chat Completions format.
+
+        Defaults to `False`.
 
         ```python
         ToolMessage(
@@ -532,13 +534,15 @@ class ChatModelIntegrationTests(ChatModelTests):
         ```python
         @property
         def supports_image_tool_message(self) -> bool:
-            return False
+            return True
         ```
 
     ??? info "`supports_pdf_tool_message`"
 
-        Boolean property indicating whether the chat model supports a `ToolMessage
-        that include PDF content using the LangChain `FileContentBlock` format:
+        Boolean property indicating whether the chat model supports a `ToolMessage`
+        that includes PDF content using the LangChain `FileContentBlock` format.
+
+        Defaults to `False`.
 
         ```python
         ToolMessage(
@@ -560,13 +564,15 @@ class ChatModelIntegrationTests(ChatModelTests):
         ```python
         @property
         def supports_pdf_tool_message(self) -> bool:
-            return False
+            return True
         ```
 
     ??? info "`supported_usage_metadata_details`"
 
         Property controlling what usage metadata details are emitted in both invoke
         and stream.
+
+        Defaults to `{"invoke": [], "stream": []}`.
 
         `usage_metadata` is an optional dict attribute on `AIMessage` objects that track
         input and output tokens.
@@ -584,6 +590,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         Property controlling whether to enable select tests that rely on
         [VCR](https://vcrpy.readthedocs.io/en/latest/) caching of HTTP calls, such
         as benchmarking tests.
+
+        Defaults to `False`.
 
         To enable these tests, follow these steps:
 
@@ -711,8 +719,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         3. Run tests to generate VCR cassettes.
 
-            Example:
-            ```bash
+            ```bash title="Example"
             uv run python -m pytest tests/integration_tests/test_chat_models.py::TestMyModel::test_stream_time
             ```
 
@@ -727,7 +734,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             You can then commit the cassette to your repository. Subsequent test runs
             will use the cassette instead of making HTTP calls.
-    '''  # noqa: E501,D214
+    '''  # noqa: E501
 
     @property
     def standard_chat_model_params(self) -> dict:
