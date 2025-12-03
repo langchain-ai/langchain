@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Literal
 from unittest.mock import MagicMock
 
-from langchain_core.messages import AIMessageChunk, ToolMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, ToolMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
 from openai.types.chat import ChatCompletionMessage
@@ -143,6 +143,76 @@ class TestChatDeepSeekCustomUnit:
             result.generations[0].message.additional_kwargs.get("reasoning_content")
             == "This is the reasoning"
         )
+        assert (
+            result.generations[0].message.additional_kwargs.get("reasoning")
+            == "This is the reasoning"
+        )
+
+    def test_create_chat_result_preserves_empty_model_extra_reasoning(self) -> None:
+        """Empty reasoning_content inside model_extra should be preserved."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+        mock_message = MagicMock(spec=ChatCompletionMessage)
+        mock_message.content = "Main content"
+        mock_message.role = "assistant"
+        mock_message.model_extra = {"reasoning_content": ""}
+        mock_message.model_dump.return_value = {
+            "role": "assistant",
+            "content": "Main content",
+            "model_extra": {"reasoning_content": ""},
+        }
+        mock_choice = MagicMock()
+        mock_choice.message = mock_message
+        mock_response = MockOpenAIResponse(choices=[mock_choice], error=None)
+
+        result = chat_model._create_chat_result(mock_response)
+        assert (
+            result.generations[0].message.additional_kwargs.get("reasoning_content")
+            == ""
+        )
+        assert result.generations[0].message.additional_kwargs.get("reasoning") == ""
+
+    def test_create_chat_result_preserves_empty_reasoning(self) -> None:
+        """Empty reasoning_content should be preserved (not dropped as falsy)."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+        mock_message = MagicMock()
+        mock_message.content = "Main content"
+        mock_message.reasoning_content = ""
+        mock_message.role = "assistant"
+        mock_response = MockOpenAIResponse(
+            choices=[MagicMock(message=mock_message)],
+            error=None,
+        )
+
+        result = chat_model._create_chat_result(mock_response)
+        assert (
+            result.generations[0].message.additional_kwargs.get("reasoning_content")
+            == ""
+        )
+        assert result.generations[0].message.additional_kwargs.get("reasoning") == ""
+
+    def test_create_chat_result_normalizes_list_reasoning(self) -> None:
+        """List reasoning (OpenRouter style) should be normalized and set."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+        mock_message = MagicMock()
+        mock_message.content = "Main content"
+        mock_message.reasoning_content = [
+            {"type": "thinking", "thinking": "Step 1"},
+            {"type": "thinking", "thinking": "Step 2"},
+        ]
+        mock_message.role = "assistant"
+        mock_response = MockOpenAIResponse(
+            choices=[MagicMock(message=mock_message)],
+            error=None,
+        )
+
+        result = chat_model._create_chat_result(mock_response)
+        assert (
+            result.generations[0].message.additional_kwargs.get("reasoning_content")
+            == "Step 1\nStep 2"
+        )
+        assert result.generations[0].message.additional_kwargs.get("reasoning") == (
+            "Step 1\nStep 2"
+        )
 
     def test_convert_chunk_with_reasoning_content(self) -> None:
         """Test that reasoning_content is properly extracted from streaming chunk."""
@@ -168,6 +238,10 @@ class TestChatDeepSeekCustomUnit:
             raise AssertionError(msg)
         assert (
             chunk_result.message.additional_kwargs.get("reasoning_content")
+            == "Streaming reasoning content"
+        )
+        assert (
+            chunk_result.message.additional_kwargs.get("reasoning")
             == "Streaming reasoning content"
         )
 
@@ -196,6 +270,68 @@ class TestChatDeepSeekCustomUnit:
         assert (
             chunk_result.message.additional_kwargs.get("reasoning_content")
             == "Streaming reasoning"
+        )
+        assert (
+            chunk_result.message.additional_kwargs.get("reasoning")
+            == "Streaming reasoning"
+        )
+
+    def test_convert_chunk_preserves_empty_reasoning(self) -> None:
+        """Streaming chunks with empty reasoning_content should be preserved."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+        chunk: dict[str, Any] = {
+            "choices": [
+                {
+                    "delta": {
+                        "content": "Main content",
+                        "reasoning_content": "",
+                    },
+                },
+            ],
+        }
+
+        chunk_result = chat_model._convert_chunk_to_generation_chunk(
+            chunk,
+            AIMessageChunk,
+            None,
+        )
+        if chunk_result is None:
+            msg = "Expected chunk_result not to be None"
+            raise AssertionError(msg)
+        assert chunk_result.message.additional_kwargs.get("reasoning_content") == ""
+        assert chunk_result.message.additional_kwargs.get("reasoning") == ""
+
+    def test_convert_chunk_normalizes_list_reasoning(self) -> None:
+        """Streaming chunks with list reasoning should be normalized."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+        chunk: dict[str, Any] = {
+            "choices": [
+                {
+                    "delta": {
+                        "content": "Main content",
+                        "reasoning_content": [
+                            {"type": "thinking", "thinking": "First"},
+                            {"type": "thinking", "thinking": "Second"},
+                        ],
+                    },
+                },
+            ],
+        }
+
+        chunk_result = chat_model._convert_chunk_to_generation_chunk(
+            chunk,
+            AIMessageChunk,
+            None,
+        )
+        if chunk_result is None:
+            msg = "Expected chunk_result not to be None"
+            raise AssertionError(msg)
+        assert (
+            chunk_result.message.additional_kwargs.get("reasoning_content")
+            == "First\nSecond"
+        )
+        assert (
+            chunk_result.message.additional_kwargs.get("reasoning") == "First\nSecond"
         )
 
     def test_convert_chunk_without_reasoning(self) -> None:
@@ -243,6 +379,221 @@ class TestChatDeepSeekCustomUnit:
         tool_message = ToolMessage(content="test string", tool_call_id="test_id")
         payload = chat_model._get_request_payload([tool_message])
         assert payload["messages"][0]["content"] == "test string"
+
+    def test_get_request_payload_preserves_reasoning_content(self) -> None:
+        """Test that reasoning_content is preserved in multi-turn conversations.
+
+        This tests the fix for interleaved thinking, where reasoning_content from
+        previous AI messages must be passed back to the API in subsequent turns.
+        """
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        messages = [
+            HumanMessage(content="What is 2+2?"),
+            AIMessage(
+                content="Let me think...",
+                additional_kwargs={"reasoning_content": "First, I'll add 2 and 2..."},
+            ),
+            HumanMessage(content="And 3+3?"),
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+
+        # Find assistant message and verify reasoning_content is preserved
+        assistant_msgs = [
+            m for m in payload["messages"] if m.get("role") == "assistant"
+        ]
+        assert len(assistant_msgs) == 1
+        assert (
+            assistant_msgs[0].get("reasoning_content") == "First, I'll add 2 and 2..."
+        )
+        assert assistant_msgs[0].get("reasoning") == "First, I'll add 2 and 2..."
+
+    def test_get_request_payload_preserves_multiple_reasoning_contents(self) -> None:
+        """Test that multiple AI messages each preserve their reasoning_content."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        messages = [
+            HumanMessage(content="Question 1"),
+            AIMessage(
+                content="Answer 1",
+                additional_kwargs={"reasoning_content": "Reasoning for answer 1"},
+            ),
+            HumanMessage(content="Question 2"),
+            AIMessage(
+                content="Answer 2",
+                additional_kwargs={"reasoning_content": "Reasoning for answer 2"},
+            ),
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+
+        assistant_msgs = [
+            m for m in payload["messages"] if m.get("role") == "assistant"
+        ]
+        assert len(assistant_msgs) == 2
+        assert assistant_msgs[0].get("reasoning_content") == "Reasoning for answer 1"
+        assert assistant_msgs[0].get("reasoning") == "Reasoning for answer 1"
+        assert assistant_msgs[1].get("reasoning_content") == "Reasoning for answer 2"
+        assert assistant_msgs[1].get("reasoning") == "Reasoning for answer 2"
+
+    def test_get_request_payload_without_reasoning_content(self) -> None:
+        """Test that messages without reasoning_content work correctly."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        messages = [
+            HumanMessage(content="Hello"),
+            AIMessage(content="Hi there!"),
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+
+        assistant_msgs = [
+            m for m in payload["messages"] if m.get("role") == "assistant"
+        ]
+        assert len(assistant_msgs) == 1
+        assert assistant_msgs[0].get("reasoning_content") is None
+
+    def test_no_reasoning_added_if_not_in_original(self) -> None:
+        """Test that reasoning_content is not added if not in original message.
+
+        This is data-driven behavior: we only preserve what was in the original
+        message, rather than adding empty reasoning based on model name.
+        """
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        messages = [
+            HumanMessage(content="Hello"),
+            AIMessage(content="Hi there!"),  # No reasoning_content
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+
+        assistant_msgs = [
+            m for m in payload["messages"] if m.get("role") == "assistant"
+        ]
+        assert len(assistant_msgs) == 1
+        # Should NOT have reasoning_content since it wasn't in original message
+        assert "reasoning_content" not in assistant_msgs[0]
+        assert "reasoning" not in assistant_msgs[0]
+
+    def test_normalize_reasoning_with_string(self) -> None:
+        """Test _normalize_reasoning with string input."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        result = chat_model._normalize_reasoning("test reasoning")
+        assert result == "test reasoning"
+
+    def test_normalize_reasoning_with_list(self) -> None:
+        """Test _normalize_reasoning with list input (OpenRouter format)."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        # OpenRouter format with thinking dicts
+        list_reasoning = [
+            {"type": "thinking", "thinking": "First thought"},
+            {"type": "thinking", "thinking": "Second thought"},
+        ]
+        result = chat_model._normalize_reasoning(list_reasoning)
+        assert result == "First thought\nSecond thought"
+
+        # List with content key instead
+        list_reasoning_content = [
+            {"content": "Thought 1"},
+            {"content": "Thought 2"},
+        ]
+        result = chat_model._normalize_reasoning(list_reasoning_content)
+        assert result == "Thought 1\nThought 2"
+
+    def test_normalize_reasoning_with_empty_values(self) -> None:
+        """Test _normalize_reasoning with empty/None values."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        assert chat_model._normalize_reasoning(None) is None
+        # Empty string is preserved (important for deepseek-reasoner)
+        assert chat_model._normalize_reasoning("") == ""
+        assert chat_model._normalize_reasoning([]) is None
+
+    def test_reasoning_preserved_with_tool_calls(self) -> None:
+        """Test reasoning is preserved when messages include tool calls."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        messages = [
+            HumanMessage(content="Use the tool"),
+            AIMessage(
+                content="",
+                tool_calls=[
+                    {"id": "call_1", "name": "test_tool", "args": {"value": "test"}}
+                ],
+                additional_kwargs={"reasoning_content": "Tool reasoning here"},
+            ),
+            ToolMessage(content="Tool result", tool_call_id="call_1"),
+            AIMessage(
+                content="Done with the task",
+                additional_kwargs={"reasoning_content": "Final reasoning"},
+            ),
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+
+        assistant_msgs = [
+            m for m in payload["messages"] if m.get("role") == "assistant"
+        ]
+        assert len(assistant_msgs) == 2
+        assert assistant_msgs[0].get("reasoning_content") == "Tool reasoning here"
+        assert assistant_msgs[0].get("reasoning") == "Tool reasoning here"
+        assert assistant_msgs[1].get("reasoning_content") == "Final reasoning"
+        assert assistant_msgs[1].get("reasoning") == "Final reasoning"
+
+    def test_empty_string_reasoning_preserved(self) -> None:
+        """Test that empty string reasoning_content is preserved (not treated as None).
+
+        This is important for deepseek-reasoner which requires reasoning_content
+        to be present even if empty.
+        """
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        messages = [
+            HumanMessage(content="Hello"),
+            AIMessage(
+                content="Hi",
+                additional_kwargs={"reasoning_content": ""},  # Explicitly empty
+            ),
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+
+        assistant_msgs = [
+            m for m in payload["messages"] if m.get("role") == "assistant"
+        ]
+        assert len(assistant_msgs) == 1
+        # Empty string should be preserved, not dropped
+        assert "reasoning_content" in assistant_msgs[0]
+        assert assistant_msgs[0]["reasoning_content"] == ""
+        assert "reasoning" in assistant_msgs[0]
+        assert assistant_msgs[0]["reasoning"] == ""
+
+    def test_streaming_chunk_reasoning_accumulation(self) -> None:
+        """Test that AIMessageChunk accumulation handles reasoning correctly."""
+        # Create chunks with reasoning
+        chunk1 = AIMessageChunk(
+            content="Hello",
+            additional_kwargs={"reasoning_content": "First thought"},
+        )
+        chunk2 = AIMessageChunk(
+            content=" world",
+            additional_kwargs={"reasoning_content": " second thought"},
+        )
+
+        # Accumulate chunks
+        accumulated = chunk1 + chunk2
+
+        # Content should be concatenated
+        assert accumulated.content == "Hello world"
+
+        # additional_kwargs behavior: values are merged/concatenated.
+        assert accumulated.additional_kwargs.get("reasoning_content") == (
+            "First thought second thought"
+        )
 
 
 class SampleTool(PydanticBaseModel):
