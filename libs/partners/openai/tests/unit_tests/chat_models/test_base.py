@@ -75,6 +75,7 @@ from langchain_openai.chat_models.base import (
     _get_last_messages,
     _make_computer_call_output_from_message,
     _oai_structured_outputs_parser,
+    _resize,
 )
 
 
@@ -1065,6 +1066,12 @@ def test__create_usage_metadata_responses() -> None:
         input_token_details={"cache_read": 50},
         output_token_details={"reasoning": 10},
     )
+
+
+def test__resize_caps_dimensions_preserving_ratio() -> None:
+    """Larger side capped at 2048 then smaller at 768 keeping aspect ratio."""
+    assert _resize(2048, 4096) == (768, 1536)
+    assert _resize(4096, 2048) == (1536, 768)
 
 
 def test__convert_to_openai_response_format() -> None:
