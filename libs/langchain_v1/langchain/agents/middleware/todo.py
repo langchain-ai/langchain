@@ -177,7 +177,7 @@ class TodoListMiddleware(AgentMiddleware):
             todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCallId]
         ) -> Command:
             """Create and manage a structured task list for your current work session."""
-            return Command[tuple[()]](
+            return Command(
                 update={
                     "todos": todos,
                     "messages": [
