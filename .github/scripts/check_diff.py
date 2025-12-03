@@ -274,6 +274,10 @@ if __name__ == "__main__":
                 if file.startswith(dir_):
                     found = True
                 if found:
+                    # libs/langchain (classic) should not trigger tests on
+                    # libs/langchain_v1 or later packages since they are independent
+                    if file.startswith("libs/langchain/") and dir_ != "libs/langchain":
+                        continue
                     dirs_to_run["extended-test"].add(dir_)
         elif file.startswith("libs/standard-tests"):
             # TODO: update to include all packages that rely on standard-tests (all partner packages)
