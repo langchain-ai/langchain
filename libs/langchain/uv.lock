@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10.0, <4.0.0"
 resolution-markers = [
     "python_full_version >= '3.14' and platform_python_implementation == 'PyPy'",
@@ -375,18 +375,6 @@ wheels = [
 [package.optional-dependencies]
 css = [
     { name = "tinycss2" },
-]
-
-[[package]]
-name = "blockbuster"
-version = "1.5.25"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "forbiddenfruit", marker = "implementation_name == 'cpython'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/7f/bc/57c49465decaeeedd58ce2d970b4cdfd93a74ba9993abff2dc498a31c283/blockbuster-1.5.25.tar.gz", hash = "sha256:b72f1d2aefdeecd2a820ddf1e1c8593bf00b96e9fdc4cd2199ebafd06f7cb8f0", size = 36058, upload-time = "2025-07-14T16:00:20.766Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0b/01/dccc277c014f171f61a6047bb22c684e16c7f2db6bb5c8cce1feaf41ec55/blockbuster-1.5.25-py3-none-any.whl", hash = "sha256:cb06229762273e0f5f3accdaed3d2c5a3b61b055e38843de202311ede21bb0f5", size = 13196, upload-time = "2025-07-14T16:00:19.396Z" },
 ]
 
 [[package]]
@@ -1041,12 +1029,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/5b/39/a39c176fca0cdd8f4
 wheels = [
     { url = "https://files.pythonhosted.org/packages/39/de/576c2dab45914e08c1fc4adfa4a334da037b8b4ad4df1fdab4b56904bd07/fireworks_ai-0.16.4-py3-none-any.whl", hash = "sha256:e7592fdec64aa35f0068b8fa8277e2440ef6f0d6355e818b7220e098f7ea0ee9", size = 193771, upload-time = "2025-05-18T07:16:20.611Z" },
 ]
-
-[[package]]
-name = "forbiddenfruit"
-version = "0.1.4"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e6/79/d4f20e91327c98096d605646bdc6a5ffedae820f38d378d3515c42ec5e60/forbiddenfruit-0.1.4.tar.gz", hash = "sha256:e3f7e66561a29ae129aac139a85d610dbf3dd896128187ed5454b6421f624253", size = 43756, upload-time = "2021-01-16T21:03:35.401Z" }
 
 [[package]]
 name = "fqdn"
@@ -2333,7 +2315,6 @@ lint = [
     { name = "ruff" },
 ]
 test = [
-    { name = "blockbuster" },
     { name = "cffi" },
     { name = "freezegun" },
     { name = "langchain-core" },
@@ -2424,7 +2405,6 @@ lint = [
     { name = "ruff", specifier = ">=0.13.1,<0.14.0" },
 ]
 test = [
-    { name = "blockbuster", specifier = ">=1.5.18,<1.6.0" },
     { name = "cffi", marker = "python_full_version < '3.10'", specifier = "<1.17.1" },
     { name = "cffi", marker = "python_full_version >= '3.10'" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
@@ -2478,7 +2458,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.3"
+version = "1.1.0"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -2512,7 +2492,6 @@ test = [
     { name = "blockbuster", specifier = ">=1.5.18,<1.6.0" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
     { name = "grandalf", specifier = ">=0.8.0,<1.0.0" },
-    { name = "langchain-model-profiles", directory = "../model-profiles" },
     { name = "langchain-tests", directory = "../standard-tests" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
@@ -2529,7 +2508,6 @@ test = [
 ]
 test-integration = []
 typing = [
-    { name = "langchain-model-profiles", directory = "../model-profiles" },
     { name = "langchain-text-splitters", directory = "../text-splitters" },
     { name = "mypy", specifier = ">=1.18.1,<1.19.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
@@ -2659,7 +2637,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.0.2"
+version = "1.1.0"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },
@@ -2722,7 +2700,7 @@ wheels = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.0.1"
+version = "1.0.2"
 source = { editable = "../standard-tests" }
 dependencies = [
     { name = "httpx" },
