@@ -449,6 +449,11 @@ def _init_chat_model_helper(
         from langchain_perplexity import ChatPerplexity
 
         return ChatPerplexity(model=model, **kwargs)
+    if model_provider == "qwen":
+        _check_pkg("langchain_qwen")
+        from langchain_qwen import ChatQwQ
+
+        return ChatQwQ(model=model, **kwargs)
     supported = ", ".join(_SUPPORTED_PROVIDERS)
     msg = f"Unsupported {model_provider=}.\n\nSupported model providers are: {supported}"
     raise ValueError(msg)
