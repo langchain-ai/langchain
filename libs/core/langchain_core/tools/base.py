@@ -696,7 +696,9 @@ class ChildTool(BaseTool):
                 k: getattr(result, k) for k in result_dict if k in tool_input
             }
             for k in self._injected_args_keys:
-                if k == "tool_call_id":
+                if k in tool_input:
+                    validated_input[k] = tool_input[k]
+                elif k == "tool_call_id":
                     if tool_call_id is None:
                         msg = (
                             "When tool includes an InjectedToolCallId "
@@ -707,9 +709,6 @@ class ChildTool(BaseTool):
                         )
                         raise ValueError(msg)
                     validated_input[k] = tool_call_id
-                if k in tool_input:
-                    injected_val = tool_input[k]
-                    validated_input[k] = injected_val
             return validated_input
         return tool_input
 
