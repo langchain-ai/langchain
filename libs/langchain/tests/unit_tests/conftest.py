@@ -31,6 +31,15 @@ def blockbuster() -> Iterator[None]:
                 "_default_retry_config",
             )
 
+        # Allow blocking writes during bytecode caching (.pyc files)
+        # This happens when SQLAlchemy imports dialects during async engine init
+        for write_func in ["io.BufferedWriter.write", "io.FileIO.write"]:
+            if write_func in bb.functions:
+                bb.functions[write_func].can_block_in(
+                    "importlib/_bootstrap_external.py",
+                    "_write_atomic",
+                )
+
         for bb_function in bb.functions.values():
             bb_function.can_block_in(
                 "freezegun/api.py",
