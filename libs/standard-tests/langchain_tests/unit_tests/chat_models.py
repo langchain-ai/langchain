@@ -96,11 +96,6 @@ class ChatModelTests(BaseStandardTests):
         return self.chat_model_class.bind_tools is not BaseChatModel.bind_tools
 
     @property
-    def tool_choice_value(self) -> str | None:
-        """(None or str) to use for tool choice when used in tests."""
-        return None
-
-    @property
     def has_tool_choice(self) -> bool:
         """Whether the model supports tool calling."""
         bind_tools_params = inspect.signature(
@@ -302,23 +297,6 @@ class ChatModelUnitTests(ChatModelTests):
             return True
         ```
 
-    ??? info "`tool_choice_value`"
-
-        Value to use for tool choice when used in tests.
-
-        !!! warning
-            Deprecated since version 0.3.15.
-            This property will be removed in version 0.3.20. If a model does not
-            support forcing tool calling, override the `has_tool_choice` property to
-            return `False`. Otherwise, models should accept values of `'any'` or
-            the name of a tool in `tool_choice`.
-
-        ```python
-        @property
-        def tool_choice_value(self) -> str | None:
-            return "any"
-        ```
-
     ??? info "`has_tool_choice`"
 
         Boolean property indicating whether the chat model supports forcing tool
@@ -328,7 +306,7 @@ class ChatModelUnitTests(ChatModelTests):
         signature for the corresponding `bind_tools` method.
 
         If `True`, the minimum requirement for this feature is that
-        `tool_choice="any"` will force a tool call, and `tool_choice=<tool name>`
+        `tool_choice='any'` will force a tool call, and `tool_choice=<tool name>`
         will force a call to a specific tool.
 
         ```python "Example override"
