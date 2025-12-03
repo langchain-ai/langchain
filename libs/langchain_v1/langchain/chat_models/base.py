@@ -129,6 +129,7 @@ def init_chat_model(
             - `nvidia`                  -> [`langchain-nvidia-ai-endpoints`](https://docs.langchain.com/oss/python/integrations/providers/nvidia)
             - `xai`                     -> [`langchain-xai`](https://docs.langchain.com/oss/python/integrations/providers/xai)
             - `perplexity`              -> [`langchain-perplexity`](https://docs.langchain.com/oss/python/integrations/providers/perplexity)
+            - `qwen`                    -> [`langchain-qwen`](https://docs.langchain.com/oss/python/integrations/providers/qwen)
 
         configurable_fields: Which model parameters are configurable at runtime:
 
