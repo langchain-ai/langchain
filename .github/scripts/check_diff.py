@@ -117,11 +117,11 @@ def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
     updated = set()
     for dir_ in dirs_to_eval:
         # handle core manually because it has so many dependents
-        if "core" in dir_:
+        if "core" in dir_ and IGNORE_CORE_DEPENDENTS:
             updated.add(dir_)
             continue
         pkg = "langchain-" + dir_.split("/")[-1]
-        updated.update(dependents[pkg])
+        updated.update(dependents.get(pkg, set()))
         updated.add(dir_)
     return list(updated)
 
@@ -260,21 +260,15 @@ if __name__ == "__main__":
             # libs/langchain_v1, even though the workflow may only affect documentation.
             dirs_to_run["extended-test"].update(LANGCHAIN_DIRS)
 
-        if file.startswith("libs/core"):
+        if file.startswith("libs/core/"):
             dirs_to_run["codspeed"].add("libs/core")
-        if any(file.startswith(dir_) for dir_ in LANGCHAIN_DIRS):
-            # add that dir and all dirs after in LANGCHAIN_DIRS
-            # for extended testing
-
-            found = False
+        if any(file.startswith(dir_ + "/") for dir_ in LANGCHAIN_DIRS):
+            # add the specific dir that changed for extended testing
+            # dependents will be added later via add_dependents()
             for dir_ in LANGCHAIN_DIRS:
-                if dir_ == "libs/core" and IGNORE_CORE_DEPENDENTS:
+                if file.startswith(dir_ + "/"):
                     dirs_to_run["extended-test"].add(dir_)
-                    continue
-                if file.startswith(dir_):
-                    found = True
-                if found:
-                    dirs_to_run["extended-test"].add(dir_)
+                    break
         elif file.startswith("libs/standard-tests"):
             # TODO: update to include all packages that rely on standard-tests (all partner packages)
             # Note: won't run on external repo partners
