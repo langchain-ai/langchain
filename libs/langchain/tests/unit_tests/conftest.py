@@ -15,6 +15,41 @@ def blockbuster() -> Iterator[None]:
             "<module>",
         )
 
+        # Allow write operations triggered by the SQLRecordManager used in indexing
+        # tests. These operations legitimately perform DB writes (sync/async) and
+        # can trip blockbuster's IO guards inside the event loop.
+        for write_func in [
+            "io.BufferedWriter.write",
+            "io.TextIOWrapper.write",
+        ]:
+            (
+                bb.functions[write_func]
+                .can_block_in(
+                    "langchain_classic/indexes/_sql_record_manager.py",
+                    "create_schema",
+                )
+                .can_block_in(
+                    "langchain_classic/indexes/_sql_record_manager.py",
+                    "acreate_schema",
+                )
+                .can_block_in(
+                    "langchain_classic/indexes/_sql_record_manager.py",
+                    "update",
+                )
+                .can_block_in(
+                    "langchain_classic/indexes/_sql_record_manager.py",
+                    "aupdate",
+                )
+                .can_block_in(
+                    "langchain_classic/indexes/_sql_record_manager.py",
+                    "delete_keys",
+                )
+                .can_block_in(
+                    "langchain_classic/indexes/_sql_record_manager.py",
+                    "adelete_keys",
+                )
+            )
+
         for func in ["os.stat", "os.path.abspath"]:
             (
                 bb.functions[func]
