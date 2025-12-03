@@ -1511,6 +1511,63 @@ def test_get_buffer_string_with_function_call() -> None:
     assert actual == expected
 
 
+def test_get_buffer_string_with_tool_calls() -> None:
+    """Test get_buffer_string with tool_calls (modern format)."""
+    messages = [
+        HumanMessage(content="Hello"),
+        AIMessage(
+            content="Hi",
+            tool_calls=[
+                {
+                    "name": "test_tool",
+                    "args": {"arg": "value"},
+                    "id": "call_123",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+    ]
+    expected = (
+        "Human: Hello\n"
+        "AI: Hi[{'name': 'test_tool', 'args': {'arg': 'value'}, "
+        "'id': 'call_123', 'type': 'tool_call'}]"
+    )
+    actual = get_buffer_string(messages)
+    assert actual == expected
+
+
+def test_get_buffer_string_tool_calls_priority() -> None:
+    """Test that tool_calls takes priority over function_call."""
+    messages = [
+        HumanMessage(content="Hello"),
+        AIMessage(
+            content="Hi",
+            tool_calls=[
+                {
+                    "name": "modern_tool",
+                    "args": {"x": 1},
+                    "id": "call_456",
+                    "type": "tool_call",
+                }
+            ],
+            additional_kwargs={
+                "function_call": {
+                    "name": "legacy_function",
+                    "arguments": '{"y": 2}',
+                }
+            },
+        ),
+    ]
+    # tool_calls should take priority
+    expected = (
+        "Human: Hello\n"
+        "AI: Hi[{'name': 'modern_tool', 'args': {'x': 1}, "
+        "'id': 'call_456', 'type': 'tool_call'}]"
+    )
+    actual = get_buffer_string(messages)
+    assert actual == expected
+
+
 def test_get_buffer_string_with_empty_content() -> None:
     """Test get_buffer_string with empty content in messages."""
     messages = [
