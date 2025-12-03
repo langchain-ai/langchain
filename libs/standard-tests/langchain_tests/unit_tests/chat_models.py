@@ -480,6 +480,54 @@ class ChatModelUnitTests(ChatModelTests):
             return True
         ```
 
+    ??? info "`supports_image_tool_message`"
+
+        Boolean property indicating whether the chat model supports a `ToolMessage`
+        that includes image content, e.g. in the OpenAI Chat Completions format.
+
+        Defaults to `False`.
+
+        ```python
+        ToolMessage(
+            content=[
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                },
+            ],
+            tool_call_id="1",
+            name="random_image",
+        )
+        ```
+
+        (OpenAI Chat Completions format), as well as LangChain's `ImageContentBlock`
+        format:
+
+        ```python
+        ToolMessage(
+            content=[
+                {
+                    "type": "image",
+                    "base64": image_data,
+                    "mime_type": "image/jpeg",
+                },
+            ],
+            tool_call_id="1",
+            name="random_image",
+        )
+        ```
+
+        (standard format).
+
+        If set to `True`, the chat model will be tested with message sequences that
+        include `ToolMessage` objects of this form.
+
+        ```python
+        @property
+        def supports_image_tool_message(self) -> bool:
+            return True
+        ```
+
     ??? info "`supports_pdf_inputs`"
 
         Boolean property indicating whether the chat model supports PDF inputs.
@@ -502,6 +550,38 @@ class ChatModelUnitTests(ChatModelTests):
         ```python
         @property
         def supports_pdf_inputs(self) -> bool:
+            return True
+        ```
+
+    ??? info "`supports_pdf_tool_message`"
+
+        Boolean property indicating whether the chat model supports a `ToolMessage`
+        that includes PDF content using the LangChain `FileContentBlock` format.
+
+        Defaults to `False`.
+
+        ```python
+        ToolMessage(
+            content=[
+                {
+                    "type": "file",
+                    "base64": pdf_data,
+                    "mime_type": "application/pdf",
+                },
+            ],
+            tool_call_id="1",
+            name="random_pdf",
+        )
+        ```
+
+        using LangChain's `FileContentBlock` format.
+
+        If set to `True`, the chat model will be tested with message sequences that
+        include `ToolMessage` objects of this form.
+
+        ```python
+        @property
+        def supports_pdf_tool_message(self) -> bool:
             return True
         ```
 
@@ -595,82 +675,6 @@ class ChatModelUnitTests(ChatModelTests):
         ```python
         @property
         def supports_anthropic_inputs(self) -> bool:
-            return False
-        ```
-
-    ??? info "`supports_image_tool_message`"
-
-        Boolean property indicating whether the chat model supports `ToolMessage`
-        objects that include image content, e.g.,
-
-        ```python
-        ToolMessage(
-            content=[
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-                },
-            ],
-            tool_call_id="1",
-            name="random_image",
-        )
-        ```
-
-        (OpenAI Chat Completions format), as well as LangChain's `ImageContentBlock`
-        format:
-
-        ```python
-        ToolMessage(
-            content=[
-                {
-                    "type": "image",
-                    "base64": image_data,
-                    "mime_type": "image/jpeg",
-                },
-            ],
-            tool_call_id="1",
-            name="random_image",
-        )
-        ```
-
-        (standard format).
-
-        If set to `True`, the chat model will be tested with message sequences that
-        include `ToolMessage` objects of this form.
-
-        ```python
-        @property
-        def supports_image_tool_message(self) -> bool:
-            return False
-        ```
-
-    ??? info "`supports_pdf_tool_message`"
-
-        Boolean property indicating whether the chat model supports `ToolMessage`
-        objects that include PDF content, i.e.,
-
-        ```python
-        ToolMessage(
-            content=[
-                {
-                    "type": "file",
-                    "base64": pdf_data,
-                    "mime_type": "application/pdf",
-                },
-            ],
-            tool_call_id="1",
-            name="random_pdf",
-        )
-        ```
-
-        using LangChain's `FileContentBlock` format.
-
-        If set to `True`, the chat model will be tested with message sequences that
-        include `ToolMessage` objects of this form.
-
-        ```python
-        @property
-        def supports_pdf_tool_message(self) -> bool:
             return False
         ```
 
