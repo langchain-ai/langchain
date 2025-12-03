@@ -281,7 +281,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         `with_structured_output` method is overridden. If the base implementation is
         intended to be used, this method should be overridden.
 
-        See: https://docs.langchain.com/oss/python/langchain/structured-output
+        See docs for [Structured output](https://docs.langchain.com/oss/python/langchain/structured-output).
 
         ```python
         @property
@@ -307,7 +307,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         Boolean property indicating whether the chat model supports JSON mode in
         `with_structured_output`.
 
-        See: https://docs.langchain.com/oss/python/langchain/structured-output
+        See docs for [Structured output](https://docs.langchain.com/oss/python/langchain/structured-output).
 
         ```python
         @property
@@ -341,7 +341,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         }
         ```
 
-        See https://docs.langchain.com/oss/python/langchain/models#multimodal
+        See docs for [Multimodality](https://docs.langchain.com/oss/python/langchain/models#multimodal).
 
         ```python
         @property
@@ -366,7 +366,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         }
         ```
 
-        See https://docs.langchain.com/oss/python/langchain/models#multimodal
+        See docs for [Multimodality](https://docs.langchain.com/oss/python/langchain/models#multimodal).
 
         ```python
         @property
@@ -391,7 +391,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         }
         ```
 
-        See https://docs.langchain.com/oss/python/langchain/models#multimodal
+        See docs for [Multimodality](https://docs.langchain.com/oss/python/langchain/models#multimodal).
 
         ```python
         @property
@@ -416,7 +416,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         }
         ```
 
-        See https://docs.langchain.com/oss/python/langchain/models#multimodal
+        See docs for [Multimodality](https://docs.langchain.com/oss/python/langchain/models#multimodal).
 
         ```python
         @property
@@ -452,6 +452,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         `usage_metadata` is an optional dict attribute on `AIMessage` objects that track
         input and output tokens.
+
         [See more](https://reference.langchain.com/python/langchain_core/language_models/#langchain_core.messages.ai.UsageMetadata).
 
         ```python
@@ -569,6 +570,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         `usage_metadata` is an optional dict attribute on `AIMessage` objects that track
         input and output tokens.
+
         [See more](https://reference.langchain.com/python/langchain_core/language_models/#langchain_core.messages.ai.UsageMetadata).
 
         It includes optional keys `input_token_details` and `output_token_details`
@@ -1946,10 +1948,6 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         ??? question "Troubleshooting"
 
-            This test uses [a utility function](https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.tool_example_to_messages.html).
-            in `langchain_core` to generate a sequence of messages representing
-            "few-shot" examples.
-
             If this test fails, check that the model can correctly handle this
             sequence of messages.
 
@@ -2013,10 +2011,10 @@ class ChatModelIntegrationTests(ChatModelTests):
             If this test fails, ensure that the model's `bind_tools` method
             properly handles both JSON Schema and Pydantic V2 models.
 
-            `langchain_core` implements a [utility function](https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html).
+            `langchain_core` implements a [utility function](https://reference.langchain.com/python/langchain_core/utils/?h=convert_to_op#langchain_core.utils.function_calling.convert_to_openai_tool).
             that will accommodate most formats.
 
-            See [example implementation](https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output).
+            See [example implementation](https://github.com/langchain-ai/langchain/blob/master/libs/partners/openai/langchain_openai/chat_models/base.py).
             of `with_structured_output`.
 
         """
@@ -2096,10 +2094,10 @@ class ChatModelIntegrationTests(ChatModelTests):
             If this test fails, ensure that the model's `bind_tools` method
             properly handles both JSON Schema and Pydantic V2 models.
 
-            `langchain_core` implements a [utility function](https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html).
+            `langchain_core` implements a [utility function](https://reference.langchain.com/python/langchain_core/utils/?h=convert_to_op#langchain_core.utils.function_calling.convert_to_openai_tool).
             that will accommodate most formats.
 
-            See [example implementation](https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output).
+            See [example implementation](https://github.com/langchain-ai/langchain/blob/master/libs/partners/openai/langchain_openai/chat_models/base.py).
             of `with_structured_output`.
 
         """
@@ -2178,10 +2176,10 @@ class ChatModelIntegrationTests(ChatModelTests):
             If this test fails, ensure that the model's `bind_tools` method
             properly handles both JSON Schema and Pydantic V1 models.
 
-            `langchain_core` implements [a utility function](https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html).
+            `langchain_core` implements a [utility function](https://reference.langchain.com/python/langchain_core/utils/?h=convert_to_op#langchain_core.utils.function_calling.convert_to_openai_tool).
             that will accommodate most formats.
 
-            See [example implementation](https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output).
+            See [example implementation](https://github.com/langchain-ai/langchain/blob/master/libs/partners/openai/langchain_openai/chat_models/base.py).
             of `with_structured_output`.
 
         """
@@ -2244,10 +2242,10 @@ class ChatModelIntegrationTests(ChatModelTests):
             If this test fails, ensure that the model's `bind_tools` method
             properly handles Pydantic V2 models with optional parameters.
 
-            `langchain_core` implements [a utility function](https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html).
+            `langchain_core` implements a [utility function](https://reference.langchain.com/python/langchain_core/utils/?h=convert_to_op#langchain_core.utils.function_calling.convert_to_openai_tool).
             that will accommodate most formats.
 
-            See [example implementation](https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output).
+            See [example implementation](https://github.com/langchain-ai/langchain/blob/master/libs/partners/openai/langchain_openai/chat_models/base.py).
             of `with_structured_output`.
 
         """
@@ -2291,7 +2289,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result, dict)
 
     def test_json_mode(self, model: BaseChatModel) -> None:
-        """Test structured output via [JSON mode.](https://python.langchain.com/docs/concepts/structured_outputs/#json-mode).
+        """Test [structured output]((https://docs.langchain.com/oss/python/langchain/structured-output)) via JSON mode.
 
         This test is optional and should be skipped if the model does not support
         the JSON mode feature (see configuration below).
@@ -2312,7 +2310,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             See example implementation of `with_structured_output` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
 
-        """
+        """  # noqa: E501
         if not self.supports_json_mode:
             pytest.skip("Test requires json mode support.")
 
@@ -2561,7 +2559,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         ]
         ```
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        See docs for [Multimodality](https://docs.langchain.com/oss/python/langchain/models#multimodal).
 
         If the property `supports_image_urls` is set to `True`, the test will also
         check that we can process content blocks of the form:
