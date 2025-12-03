@@ -1,51 +1,9 @@
 """Configuration for unit tests."""
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Sequence
 from importlib import util
 
 import pytest
-from blockbuster import blockbuster_ctx
-
-
-@pytest.fixture(autouse=True)
-def blockbuster() -> Iterator[None]:
-    with blockbuster_ctx("langchain_classic") as bb:
-        bb.functions["io.TextIOWrapper.read"].can_block_in(
-            "langchain_classic/__init__.py",
-            "<module>",
-        )
-
-        for func in ["os.stat", "os.path.abspath"]:
-            (
-                bb.functions[func]
-                .can_block_in("langchain_core/runnables/base.py", "__repr__")
-                .can_block_in(
-                    "langchain_core/beta/runnables/context.py",
-                    "aconfig_with_context",
-                )
-            )
-
-        for func in ["os.stat", "io.TextIOWrapper.read"]:
-            bb.functions[func].can_block_in(
-                "langsmith/client.py",
-                "_default_retry_config",
-            )
-
-        # Allow blocking writes during bytecode caching (.pyc files)
-        # This happens when SQLAlchemy imports dialects during async engine init
-        for write_func in ["io.BufferedWriter.write", "io.FileIO.write"]:
-            if write_func in bb.functions:
-                bb.functions[write_func].can_block_in(
-                    "importlib/_bootstrap_external.py",
-                    "_write_atomic",
-                )
-
-        for bb_function in bb.functions.values():
-            bb_function.can_block_in(
-                "freezegun/api.py",
-                "_get_cached_module_attributes",
-            )
-        yield
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
