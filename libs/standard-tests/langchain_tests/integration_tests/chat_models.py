@@ -223,7 +223,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
     Expand to see details:
 
-    ??? info "`has_tool_calling`"
+    ???+ info "`has_tool_calling`"
 
         Boolean property indicating whether the chat model supports tool calling.
 
