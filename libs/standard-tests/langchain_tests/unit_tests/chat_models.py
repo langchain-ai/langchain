@@ -118,7 +118,27 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def structured_output_kwargs(self) -> dict:
-        """If specified, additional kwargs for `with_structured_output`."""
+        """Additional kwargs to pass to `with_structured_output()` in tests.
+
+        Override this property to customize how structured output is generated
+        for your model. The most common use case is specifying the `method`
+        parameter, which controls the mechanism used to enforce structured output:
+
+        - `'function_calling'`: Uses tool/function calling to enforce the schema.
+        - `'json_mode'`: Uses the model's JSON mode.
+        - `'json_schema'`: Uses native JSON schema support (e.g., OpenAI's
+            structured outputs).
+
+        Returns:
+            A dict of kwargs passed to `with_structured_output()`.
+
+        Example:
+            ```python
+            @property
+            def structured_output_kwargs(self) -> dict:
+                return {"method": "json_schema"}
+            ```
+        """
         return {}
 
     @property
@@ -356,23 +376,44 @@ class ChatModelUnitTests(ChatModelTests):
 
     ??? info "`structured_output_kwargs`"
 
-        Dict property that can be used to specify additional kwargs for
-        `with_structured_output`.
+        Dict property specifying additional kwargs to pass to
+        `with_structured_output()` when running structured output tests.
 
-        Useful for testing different models.
+        Override this to customize how your model generates structured output.
+
+        The most common use case is specifying the `method` parameter:
+
+        - `'function_calling'`: Uses tool/function calling to enforce the schema.
+        - `'json_mode'`: Uses the model's JSON mode.
+        - `'json_schema'`: Uses native JSON schema support (e.g., OpenAI's structured
+            outputs).
 
         ```python
         @property
         def structured_output_kwargs(self) -> dict:
-            return {"method": "function_calling"}
+            return {"method": "json_schema"}
         ```
 
     ??? info "`supports_json_mode`"
 
-        Boolean property indicating whether the chat model supports JSON mode in
-        `with_structured_output`.
+        Boolean property indicating whether the chat model supports
+        `method='json_mode'` in `with_structured_output`.
+
+        JSON mode constrains the model to output valid JSON without enforcing
+        a specific schema (unlike `'function_calling'` or `'json_schema'` methods).
+
+        When using JSON mode, you must prompt the model to output JSON in your
+        message.
+
+        Example:
+            ```python
+            structured_llm = llm.with_structured_output(MySchema, method="json_mode")
+            structured_llm.invoke("... Return the result as JSON.")
+            ```
 
         See docs for [Structured output](https://docs.langchain.com/oss/python/langchain/structured-output).
+
+        Defaults to `False`.
 
         ```python
         @property
@@ -439,6 +480,54 @@ class ChatModelUnitTests(ChatModelTests):
             return True
         ```
 
+    ??? info "`supports_image_tool_message`"
+
+        Boolean property indicating whether the chat model supports a `ToolMessage`
+        that includes image content, e.g. in the OpenAI Chat Completions format.
+
+        Defaults to `False`.
+
+        ```python
+        ToolMessage(
+            content=[
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                },
+            ],
+            tool_call_id="1",
+            name="random_image",
+        )
+        ```
+
+        (OpenAI Chat Completions format), as well as LangChain's `ImageContentBlock`
+        format:
+
+        ```python
+        ToolMessage(
+            content=[
+                {
+                    "type": "image",
+                    "base64": image_data,
+                    "mime_type": "image/jpeg",
+                },
+            ],
+            tool_call_id="1",
+            name="random_image",
+        )
+        ```
+
+        (standard format).
+
+        If set to `True`, the chat model will be tested with message sequences that
+        include `ToolMessage` objects of this form.
+
+        ```python
+        @property
+        def supports_image_tool_message(self) -> bool:
+            return True
+        ```
+
     ??? info "`supports_pdf_inputs`"
 
         Boolean property indicating whether the chat model supports PDF inputs.
@@ -461,6 +550,38 @@ class ChatModelUnitTests(ChatModelTests):
         ```python
         @property
         def supports_pdf_inputs(self) -> bool:
+            return True
+        ```
+
+    ??? info "`supports_pdf_tool_message`"
+
+        Boolean property indicating whether the chat model supports a `ToolMessage`
+        that includes PDF content using the LangChain `FileContentBlock` format.
+
+        Defaults to `False`.
+
+        ```python
+        ToolMessage(
+            content=[
+                {
+                    "type": "file",
+                    "base64": pdf_data,
+                    "mime_type": "application/pdf",
+                },
+            ],
+            tool_call_id="1",
+            name="random_pdf",
+        )
+        ```
+
+        using LangChain's `FileContentBlock` format.
+
+        If set to `True`, the chat model will be tested with message sequences that
+        include `ToolMessage` objects of this form.
+
+        ```python
+        @property
+        def supports_pdf_tool_message(self) -> bool:
             return True
         ```
 
@@ -554,82 +675,6 @@ class ChatModelUnitTests(ChatModelTests):
         ```python
         @property
         def supports_anthropic_inputs(self) -> bool:
-            return False
-        ```
-
-    ??? info "`supports_image_tool_message`"
-
-        Boolean property indicating whether the chat model supports `ToolMessage`
-        objects that include image content, e.g.,
-
-        ```python
-        ToolMessage(
-            content=[
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-                },
-            ],
-            tool_call_id="1",
-            name="random_image",
-        )
-        ```
-
-        (OpenAI Chat Completions format), as well as LangChain's `ImageContentBlock`
-        format:
-
-        ```python
-        ToolMessage(
-            content=[
-                {
-                    "type": "image",
-                    "base64": image_data,
-                    "mime_type": "image/jpeg",
-                },
-            ],
-            tool_call_id="1",
-            name="random_image",
-        )
-        ```
-
-        (standard format).
-
-        If set to `True`, the chat model will be tested with message sequences that
-        include `ToolMessage` objects of this form.
-
-        ```python
-        @property
-        def supports_image_tool_message(self) -> bool:
-            return False
-        ```
-
-    ??? info "`supports_pdf_tool_message`"
-
-        Boolean property indicating whether the chat model supports `ToolMessage`
-        objects that include PDF content, i.e.,
-
-        ```python
-        ToolMessage(
-            content=[
-                {
-                    "type": "file",
-                    "base64": pdf_data,
-                    "mime_type": "application/pdf",
-                },
-            ],
-            tool_call_id="1",
-            name="random_pdf",
-        )
-        ```
-
-        using LangChain's `FileContentBlock` format.
-
-        If set to `True`, the chat model will be tested with message sequences that
-        include `ToolMessage` objects of this form.
-
-        ```python
-        @property
-        def supports_pdf_tool_message(self) -> bool:
             return False
         ```
 
@@ -781,8 +826,7 @@ class ChatModelUnitTests(ChatModelTests):
 
         3. Run tests to generate VCR cassettes.
 
-            Example:
-            ```bash
+            ```bash title="Example"
             uv run python -m pytest tests/integration_tests/test_chat_models.py::TestMyModel::test_stream_time
             ```
 
