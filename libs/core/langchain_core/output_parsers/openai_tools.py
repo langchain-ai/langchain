@@ -48,7 +48,7 @@ def parse_tool_call(
     if "function" not in raw_tool_call:
         return None
     args = raw_tool_call["function"].get("arguments")
-    if args in (None, "",{}):
+    if args in (None, "", {}):
         function_args = {}
     elif partial:
         try:
