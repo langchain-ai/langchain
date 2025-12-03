@@ -50,15 +50,15 @@ def parse_tool_call(
     args = raw_tool_call["function"].get("arguments")
     if args in (None, "", {}):
             function_args={}
-    else:
-        if partial:
+
+    elif partial:
                 try:
                     function_args = parse_partial_json(
                         raw_tool_call["function"]["arguments"], strict=strict
                     )
                 except (JSONDecodeError, TypeError):  # None args raise TypeError
                     return None
-        else:
+    else:
             try:
                 function_args = json.loads(
                     raw_tool_call["function"]["arguments"], strict=strict
