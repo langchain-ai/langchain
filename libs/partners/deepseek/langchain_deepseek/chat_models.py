@@ -17,7 +17,11 @@ from langchain_core.language_models import (
     ModelProfile,
     ModelProfileRegistry,
 )
-from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+)
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
@@ -254,6 +258,79 @@ class ChatDeepSeek(BaseChatOpenAI):
             self.profile = _get_default_model_profile(self.model_name)
         return self
 
+    @staticmethod
+    def _normalize_reasoning(reasoning: Any) -> str | None:
+        """Normalize reasoning content to a string.
+
+        Some providers (e.g., OpenRouter) return reasoning as a list of dicts.
+        This normalizes all formats to a single string.
+
+        Args:
+            reasoning: Reasoning content in various formats.
+
+        Returns:
+            Normalized string or None if not set. Empty string is preserved
+        """
+        if reasoning is None:
+            return None
+        if isinstance(reasoning, str):
+            return reasoning  # Preserve empty string ""
+        if isinstance(reasoning, list):
+            if not reasoning:  # Empty list
+                return None
+            parts: list[str] = []
+            for item in reasoning:
+                if isinstance(item, dict):
+                    # OpenRouter format: {"type": "thinking", "thinking": "..."}
+                    if "thinking" in item:
+                        value = item.get("thinking")
+                    elif "content" in item:
+                        value = item.get("content")
+                    else:
+                        value = None
+                    if value is None:
+                        value = str(item)
+                    parts.append(value if isinstance(value, str) else str(value))
+                    continue
+                parts.append(str(item))
+            # Preserve empty strings from list items (important for deepseek-reasoner)
+            return "\n".join(parts)
+        return str(reasoning)
+
+    @staticmethod
+    def _set_reasoning(message: BaseMessage, reasoning: str) -> None:
+        """Set reasoning content on a message with both key names for compatibility.
+
+        Args:
+            message: The message to set reasoning on.
+            reasoning: The reasoning content string.
+        """
+        message.additional_kwargs["reasoning_content"] = reasoning
+        message.additional_kwargs["reasoning"] = reasoning
+
+    def _build_reasoning_sequence(
+        self,
+        messages: list[BaseMessage],
+    ) -> list[str | None]:
+        """Build a sequence of reasoning content aligned to AI messages.
+
+        Args:
+            messages: Original conversation messages.
+
+        Returns:
+            List of reasoning content (or None) in AI message order.
+        """
+        reasoning_sequence: list[str | None] = []
+        for msg in messages:
+            if isinstance(msg, AIMessage):
+                # Use `is not None` to preserve empty string reasoning_content
+                # (important for deepseek official api which requires the field)
+                raw_reasoning = msg.additional_kwargs.get("reasoning_content")
+                if raw_reasoning is None:
+                    raw_reasoning = msg.additional_kwargs.get("reasoning")
+                reasoning_sequence.append(self._normalize_reasoning(raw_reasoning))
+        return reasoning_sequence
+
     def _get_request_payload(
         self,
         input_: LanguageModelInput,
@@ -262,20 +339,35 @@ class ChatDeepSeek(BaseChatOpenAI):
         **kwargs: Any,
     ) -> dict:
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+
+        # Convert input to access original messages with reasoning_content
+        # Uses inherited _convert_input() from base class to avoid duplication
+        messages = self._convert_input(input_).to_messages()
+
+        # Build reasoning list from original AIMessages in order so we can re-attach
+        # exactly what the caller provided, including empty strings.
+        reasoning_sequence = iter(self._build_reasoning_sequence(messages))
+
+        # Process payload messages
         for message in payload["messages"]:
             if message["role"] == "tool" and isinstance(message["content"], list):
                 message["content"] = json.dumps(message["content"])
-            elif message["role"] == "assistant" and isinstance(
-                message["content"], list
-            ):
+            elif message["role"] == "assistant":
+                # Re-inject reasoning if it exists in original message.
+                reasoning = next(reasoning_sequence, None)
+                if reasoning is not None:
+                    message["reasoning_content"] = reasoning
+                    message["reasoning"] = reasoning
                 # DeepSeek API expects assistant content to be a string, not a list.
                 # Extract text blocks and join them, or use empty string if none exist.
-                text_parts = [
-                    block.get("text", "")
-                    for block in message["content"]
-                    if isinstance(block, dict) and block.get("type") == "text"
-                ]
-                message["content"] = "".join(text_parts) if text_parts else ""
+                if isinstance(message["content"], list):
+                    text_parts = [
+                        block.get("text", "")
+                        for block in message["content"]
+                        if isinstance(block, dict) and block.get("type") == "text"
+                    ]
+                    message["content"] = "".join(text_parts) if text_parts else ""
+
         return payload
 
     def _create_chat_result(
@@ -294,19 +386,22 @@ class ChatDeepSeek(BaseChatOpenAI):
             generation.message.response_metadata["model_provider"] = "deepseek"
 
         choices = getattr(response, "choices", None)
-        if choices and hasattr(choices[0].message, "reasoning_content"):
-            rtn.generations[0].message.additional_kwargs["reasoning_content"] = choices[
-                0
-            ].message.reasoning_content
-        # Handle use via OpenRouter
-        elif choices and hasattr(choices[0].message, "model_extra"):
-            model_extra = choices[0].message.model_extra
-            if isinstance(model_extra, dict) and (
-                reasoning := model_extra.get("reasoning")
-            ):
-                rtn.generations[0].message.additional_kwargs["reasoning_content"] = (
-                    reasoning
-                )
+        if choices:
+            msg = choices[0].message
+            raw_reasoning = None
+
+            # Priority: reasoning_content > model_extra fields
+            if hasattr(msg, "reasoning_content") and msg.reasoning_content is not None:
+                raw_reasoning = msg.reasoning_content
+            elif hasattr(msg, "model_extra") and isinstance(msg.model_extra, dict):
+                if "reasoning_content" in msg.model_extra:
+                    raw_reasoning = msg.model_extra.get("reasoning_content")
+                elif "reasoning" in msg.model_extra:
+                    raw_reasoning = msg.model_extra.get("reasoning")
+
+            reasoning = self._normalize_reasoning(raw_reasoning)
+            if reasoning is not None:
+                self._set_reasoning(rtn.generations[0].message, reasoning)
 
         return rtn
 
@@ -328,17 +423,17 @@ class ChatDeepSeek(BaseChatOpenAI):
                     **generation_chunk.message.response_metadata,
                     "model_provider": "deepseek",
                 }
-                if (
-                    reasoning_content := top.get("delta", {}).get("reasoning_content")
-                ) is not None:
-                    generation_chunk.message.additional_kwargs["reasoning_content"] = (
-                        reasoning_content
-                    )
-                # Handle use via OpenRouter
-                elif (reasoning := top.get("delta", {}).get("reasoning")) is not None:
-                    generation_chunk.message.additional_kwargs["reasoning_content"] = (
-                        reasoning
-                    )
+                delta = top.get("delta", {})
+                # Check reasoning field names and normalize (preserve empty strings)
+                if "reasoning_content" in delta:
+                    raw_reasoning = delta.get("reasoning_content")
+                elif "reasoning" in delta:
+                    raw_reasoning = delta.get("reasoning")
+                else:
+                    raw_reasoning = None
+                reasoning = self._normalize_reasoning(raw_reasoning)
+                if reasoning is not None:
+                    self._set_reasoning(generation_chunk.message, reasoning)
 
         return generation_chunk
 
