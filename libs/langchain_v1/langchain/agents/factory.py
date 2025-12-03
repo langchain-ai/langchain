@@ -78,29 +78,32 @@ FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
 
 def _get_state_defaults(state_schema: type[AgentState]) -> dict[str, Any]:
     """Extract default values from state schema class attributes.
-    
+
     TypedDict with class-level defaults don't automatically populate runtime dicts.
     This function extracts those defaults to ensure middleware can access custom
     state fields even when not explicitly provided in the input.
-    
+
     Args:
         state_schema: The state schema class (TypedDict subclass)
-        
+
     Returns:
         Dictionary of field names to their default values
     """
     defaults = {}
-    
+
     # Get all attributes from the class, including inherited ones
     for base in reversed(state_schema.__mro__):
         if base is dict or base is object:
             continue
         # Get class-level attributes (defaults)
-        for key, value in base.__dict__.items():
-            if not key.startswith('_') and not callable(value):
-                # This is a class attribute with a default value
-                defaults[key] = value
-    
+        defaults.update(
+            {
+                key: value
+                for key, value in base.__dict__.items()
+                if not key.startswith("_") and not callable(value)
+            }
+        )
+
     return defaults
 
 
@@ -1146,7 +1149,7 @@ def create_agent(  # noqa: PLR0915
         """Sync model request handler with sequential middleware processing."""
         # Merge state defaults with runtime state to ensure custom fields are accessible
         complete_state = {**state_defaults, **state}
-        
+
         request = ModelRequest(
             model=model,
             tools=default_tools,
@@ -1202,7 +1205,7 @@ def create_agent(  # noqa: PLR0915
         """Async model request handler with sequential middleware processing."""
         # Merge state defaults with runtime state to ensure custom fields are accessible
         complete_state = {**state_defaults, **state}
-        
+
         request = ModelRequest(
             model=model,
             tools=default_tools,

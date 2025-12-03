@@ -12,7 +12,7 @@ from langchain.agents.middleware.types import (
     add_messages,
 )
 
-from ..model import FakeToolCallingModel
+from .model import FakeToolCallingModel
 
 
 class CustomState(AgentState):
