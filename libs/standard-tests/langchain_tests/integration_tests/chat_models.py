@@ -230,7 +230,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         By default, this is determined by whether the chat model's `bind_tools` method
         is overridden. It typically does not need to be overridden on the test class.
 
-        ```python "Example override"
+        ```python
         @property
         def has_tool_calling(self) -> bool:
             return True
@@ -266,7 +266,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         `tool_choice="any"` will force a tool call, and `tool_choice=<tool name>`
         will force a call to a specific tool.
 
-        ```python "Example override"
+        ```python
         @property
         def has_tool_choice(self) -> bool:
             return False
