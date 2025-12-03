@@ -25,19 +25,18 @@ import tomllib
 from get_min_versions import get_min_version_from_toml
 from packaging.requirements import Requirement
 
-LANGCHAIN_DIRS = [
-    "libs/core",
-    "libs/text-splitters",
-    "libs/langchain",
-    "libs/langchain_v1",
-    "libs/model-profiles",
-]
+# Define explicit dependency relationships for main LangChain packages.
+# Key = package directory, Value = set of directories that should trigger tests for this package
+PACKAGE_DEPENDENCIES: Dict[str, Set[str]] = {
+    "libs/core": set(),  # core has no upstream dependencies
+    "libs/text-splitters": {"libs/core"},
+    "libs/langchain": {"libs/core", "libs/text-splitters"},
+    "libs/langchain_v1": {"libs/core"},
+    "libs/model-profiles": set(),  # model-profiles is independent
+}
 
-# When set to True, we are ignoring core dependents
-# in order to be able to get CI to pass for each individual
-# package that depends on core
-# e.g. if you touch core, we don't then add textsplitters/etc to CI
-IGNORE_CORE_DEPENDENTS = False
+# All main LangChain directories (order doesn't matter with explicit deps)
+LANGCHAIN_DIRS = list(PACKAGE_DEPENDENCIES.keys())
 
 # ignored partners are removed from dependents
 # but still run if directly edited
@@ -61,7 +60,7 @@ def all_package_dirs() -> Set[str]:
 
 
 def dependents_graph() -> dict:
-    """Construct a mapping of package -> dependents
+    """Construct a mapping of package -> dependents.
 
     Done such that we can run tests on all dependents of a package when a change is made.
     """
@@ -124,6 +123,25 @@ def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
         updated.update(dependents[pkg])
         updated.add(dir_)
     return list(updated)
+
+
+def get_affected_packages(changed_dir: str) -> Set[str]:
+    """Get all packages that should be tested when a directory changes.
+
+    Args:
+        changed_dir: The directory that was changed (e.g., "libs/core")
+
+    Returns:
+        Set of package directories that depend on the changed directory
+    """
+    affected = {changed_dir}
+
+    # Check each package to see if it depends on the changed directory
+    for pkg_dir, dependencies in PACKAGE_DEPENDENCIES.items():
+        if changed_dir in dependencies:
+            affected.add(pkg_dir)
+
+    return affected
 
 
 def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
@@ -254,31 +272,23 @@ if __name__ == "__main__":
             # infrastructure don't inadvertently break package testing, even if the change
             # appears unrelated (e.g., documentation build workflows). This is intentionally
             # conservative to catch unexpected side effects from workflow modifications.
-            #
-            # Example: A PR modifying .github/workflows/api_doc_build.yml will trigger
-            # lint/test jobs for libs/core, libs/text-splitters, libs/langchain, and
-            # libs/langchain_v1, even though the workflow may only affect documentation.
             dirs_to_run["extended-test"].update(LANGCHAIN_DIRS)
 
         if file.startswith("libs/core"):
             dirs_to_run["codspeed"].add("libs/core")
-        if any(file.startswith(dir_) for dir_ in LANGCHAIN_DIRS):
-            # add that dir and all dirs after in LANGCHAIN_DIRS
-            # for extended testing
 
-            found = False
-            for dir_ in LANGCHAIN_DIRS:
-                if dir_ == "libs/core" and IGNORE_CORE_DEPENDENTS:
-                    dirs_to_run["extended-test"].add(dir_)
-                    continue
-                if file.startswith(dir_):
-                    found = True
-                if found:
-                    # libs/langchain (classic) should not trigger tests on
-                    # libs/langchain_v1 or later packages since they are independent
-                    if file.startswith("libs/langchain/") and dir_ != "libs/langchain":
-                        continue
-                    dirs_to_run["extended-test"].add(dir_)
+        # Check if file is in one of the main LangChain directories
+        matched_langchain_dir = None
+        for dir_ in LANGCHAIN_DIRS:
+            if file.startswith(dir_):
+                matched_langchain_dir = dir_
+                break
+
+        if matched_langchain_dir:
+            # Add the changed directory and all packages that depend on it
+            affected_packages = get_affected_packages(matched_langchain_dir)
+            dirs_to_run["extended-test"].update(affected_packages)
+
         elif file.startswith("libs/standard-tests"):
             # TODO: update to include all packages that rely on standard-tests (all partner packages)
             # Note: won't run on external repo partners
