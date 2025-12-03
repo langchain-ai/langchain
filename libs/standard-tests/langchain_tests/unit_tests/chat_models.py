@@ -482,8 +482,10 @@ class ChatModelUnitTests(ChatModelTests):
 
     ??? info "`supports_image_tool_message`"
 
-        Boolean property indicating whether the chat model supports `ToolMessage`
-        objects that include image content, e.g.,
+        Boolean property indicating whether the chat model supports a `ToolMessage`
+        that includes image content, e.g. in the OpenAI Chat Completions format.
+
+        Defaults to `False`.
 
         ```python
         ToolMessage(
@@ -523,7 +525,7 @@ class ChatModelUnitTests(ChatModelTests):
         ```python
         @property
         def supports_image_tool_message(self) -> bool:
-            return False
+            return True
         ```
 
     ??? info "`supports_pdf_inputs`"
@@ -553,8 +555,10 @@ class ChatModelUnitTests(ChatModelTests):
 
     ??? info "`supports_pdf_tool_message`"
 
-        Boolean property indicating whether the chat model supports `ToolMessage`
-        objects that include PDF content, i.e.,
+        Boolean property indicating whether the chat model supports a `ToolMessage`
+        that includes PDF content using the LangChain `FileContentBlock` format.
+
+        Defaults to `False`.
 
         ```python
         ToolMessage(
@@ -578,7 +582,7 @@ class ChatModelUnitTests(ChatModelTests):
         ```python
         @property
         def supports_pdf_tool_message(self) -> bool:
-            return False
+            return True
         ```
 
     ??? info "`supports_audio_inputs`"
