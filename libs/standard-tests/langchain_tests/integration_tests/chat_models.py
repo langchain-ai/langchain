@@ -490,6 +490,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         Boolean property indicating whether the chat model supports Anthropic-style
         inputs.
 
+        Defaults to `False`.
+
         These inputs might feature "tool use" and "tool result" content blocks, e.g.,
 
         ```python
@@ -510,7 +512,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         ```python
         @property
         def supports_anthropic_inputs(self) -> bool:
-            return False
+            return True
         ```
 
     ??? info "`supports_image_tool_message`"
