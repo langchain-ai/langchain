@@ -42,8 +42,8 @@ from langchain_core.tracers.log_stream import (
     _astream_log_implementation,
 )
 from langchain_core.tracers.memory_stream import _MemoryStream
-from langchain_core.utils import uuid as lc_uuid
 from langchain_core.utils.aiter import aclosing, py_anext
+from langchain_core.utils.uuid import uuid7
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
@@ -1010,7 +1010,7 @@ async def _astream_events_implementation_v2(
     if "run_id" in config:
         run_id = cast("UUID", config["run_id"])
     else:
-        run_id = lc_uuid.uuid7()
+        run_id = uuid7()
         config["run_id"] = run_id
     callbacks = config.get("callbacks")
     if callbacks is None:
