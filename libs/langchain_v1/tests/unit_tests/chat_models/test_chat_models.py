@@ -293,7 +293,7 @@ def test_init_chat_model_huggingface(monkeypatch: Any) -> None:
 
     created: dict[str, Any] = {}
 
-    class DummyHFEndpoint(huggingface_endpoint_cls):  # type: ignore[misc]
+    class DummyHFEndpoint(huggingface_endpoint_cls):  # type: ignore[misc, valid-type]
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             super().__init__(**kwargs)
             created["args"] = args
