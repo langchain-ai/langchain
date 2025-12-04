@@ -301,7 +301,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     @functools.cached_property
     def _serialized(self) -> dict[str, Any]:
-        return dumpd(self)
+        return cast("dict[str, Any]", dumpd(self))
 
     # --- Runnable methods ---
 

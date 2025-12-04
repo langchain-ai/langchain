@@ -5,7 +5,7 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from string import Formatter
-from typing import TYPE_CHECKING, Any, Literal, override
+from typing import TYPE_CHECKING, Any, Literal, cast, override
 
 from pydantic import BaseModel, create_model
 
@@ -190,12 +190,15 @@ def mustache_schema(template: str) -> type[BaseModel]:
 
 
 def _create_model_recursive(name: str, defs: Defs) -> type[BaseModel]:
-    return create_model(  # type: ignore[call-overload]
-        name,
-        **{
-            k: (_create_model_recursive(k, v), None) if v else (type(v), None)
-            for k, v in defs.items()
-        },
+    return cast(
+        "type[BaseModel]",
+        create_model(  # type: ignore[call-overload]
+            name,
+            **{
+                k: (_create_model_recursive(k, v), None) if v else (type(v), None)
+                for k, v in defs.items()
+            },
+        ),
     )
 
 

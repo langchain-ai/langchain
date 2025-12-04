@@ -358,7 +358,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     @cached_property
     def _serialized(self) -> dict[str, Any]:
-        return dumpd(self)
+        return cast("dict[str, Any]", dumpd(self))
 
     # --- Runnable methods ---
 
