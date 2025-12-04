@@ -67,10 +67,27 @@ def parse_url_with_auth(
         return None, None
 
     parsed = urlparse(url)
-    if not parsed.scheme or not parsed.netloc or not parsed.hostname:
-        return None, None
+    if not (parsed.scheme in {"http", "https"} and parsed.netloc and parsed.hostname):
+        if ":" in url:
+            parsed_with_scheme = urlparse(f"http://{url}")
+            if parsed_with_scheme.netloc and parsed_with_scheme.hostname:
+                parsed = parsed_with_scheme
+            else:
+                return None, None
+        else:
+            return None, None
     if not parsed.username:
-        return url, None
+        cleaned_netloc = parsed.hostname or ""
+        if parsed.port:
+            cleaned_netloc += f":{parsed.port}"
+        cleaned_url = f"{parsed.scheme}://{cleaned_netloc}"
+        if parsed.path:
+            cleaned_url += parsed.path
+        if parsed.query:
+            cleaned_url += f"?{parsed.query}"
+        if parsed.fragment:
+            cleaned_url += f"#{parsed.fragment}"
+        return cleaned_url, None
 
     # Handle case where password might be empty string or None
     password = parsed.password or ""
