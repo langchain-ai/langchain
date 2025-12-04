@@ -35,7 +35,6 @@ aws = ["langchain-aws"]
 deepseek = ["langchain-deepseek"]
 xai = ["langchain-xai"]
 perplexity = ["langchain-perplexity"]
-huggingface = ["langchain-huggingface"]
 
 [project.urls]
 Homepage = "https://docs.langchain.com/"
