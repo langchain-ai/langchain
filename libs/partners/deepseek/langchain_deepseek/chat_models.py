@@ -262,14 +262,14 @@ class ChatDeepSeek(BaseChatOpenAI):
     def _normalize_reasoning(reasoning: Any) -> str | None:
         """Normalize reasoning content to a string.
 
-        Some providers (e.g., OpenRouter) return reasoning as a list of dicts.
-        This normalizes all formats to a single string.
+        Providers like OpenRouter/MiniMax return reasoning as a list of dicts.
+        This normalizes to a single string.
 
         Args:
             reasoning: Reasoning content in various formats.
 
         Returns:
-            Normalized string or None if not set. Empty string is preserved
+            Normalized string or None if not set. Empty string is preserved.
         """
         if reasoning is None:
             return None
@@ -281,53 +281,189 @@ class ChatDeepSeek(BaseChatOpenAI):
             parts: list[str] = []
             for item in reasoning:
                 if isinstance(item, dict):
-                    # OpenRouter format: {"type": "thinking", "thinking": "..."}
-                    if "thinking" in item:
-                        value = item.get("thinking")
-                    elif "content" in item:
-                        value = item.get("content")
-                    else:
-                        value = None
+                    # Expected format: {"type": "reasoning.text", "text": "...", ...}
+                    value = item.get("text")
                     if value is None:
                         value = str(item)
                     parts.append(value if isinstance(value, str) else str(value))
-                    continue
-                parts.append(str(item))
-            # Preserve empty strings from list items (important for deepseek-reasoner)
+                else:
+                    parts.append(str(item))
             return "\n".join(parts)
         return str(reasoning)
 
     @staticmethod
-    def _set_reasoning(message: BaseMessage, reasoning: str) -> None:
+    def _strip_reasoning_text(reasoning_details: list) -> list | None:
+        """Strip text from reasoning_details if single item; else return None.
+
+        Single-item: strip text to avoid duplication with reasoning_content.
+        Multi-item: keep full content to preserve per-item text mapping.
+
+        Args:
+            reasoning_details: List of reasoning detail dicts.
+
+        Returns:
+            Stripped list if single item, None if multiple items (keep original).
+        """
+        if len(reasoning_details) != 1:
+            return None  # keep original with full content
+
+        item = reasoning_details[0]
+        if isinstance(item, dict):
+            stripped = {k: v for k, v in item.items() if k != "text"}
+            return [stripped]
+        return None
+
+    @staticmethod
+    def _reconstruct_reasoning_details(
+        reasoning_details: list,
+        reasoning_content: str,
+    ) -> list:
+        """Reconstruct reasoning_details by re-attaching text if it was stripped.
+
+        For single-item lists where text was stripped, re-attach reasoning_content.
+        For multi-item lists where text was kept, return as-is.
+
+        Args:
+            reasoning_details: List of reasoning detail dicts.
+            reasoning_content: The reasoning text to re-attach if needed.
+
+        Returns:
+            List with text field restored if it was stripped.
+        """
+        if not reasoning_details:
+            return reasoning_details
+
+        first = reasoning_details[0]
+        # If text already exists, it wasn't stripped - return as-is
+        if isinstance(first, dict) and "text" in first:
+            return reasoning_details
+
+        # Text was stripped (single item) - reconstruct
+        if isinstance(first, dict):
+            return [{**first, "text": reasoning_content}]
+        return reasoning_details
+
+    @staticmethod
+    def _set_reasoning(
+        message: BaseMessage,
+        reasoning: str,
+        *,
+        reasoning_details: Any | None = None,
+    ) -> None:
         """Attach reasoning content to a message.
 
         Args:
             message: The message to set reasoning on.
             reasoning: The reasoning content string.
+            reasoning_details: Optional structured details.
         """
         message.additional_kwargs["reasoning_content"] = reasoning
+        if reasoning_details is not None and isinstance(reasoning_details, list):
+            stripped = ChatDeepSeek._strip_reasoning_text(reasoning_details)
+            if stripped is not None:
+                # Single item - store metadata only (text is in reasoning_content)
+                message.additional_kwargs["reasoning_details"] = stripped
+            else:
+                # Multiple items - keep full content (edge case: accept duplication)
+                message.additional_kwargs["reasoning_details"] = reasoning_details
+
+    @staticmethod
+    def _extract_reasoning_from_message(msg: Any) -> tuple[Any, Any]:
+        """Extract raw_reasoning and reasoning_details from a message.
+
+        Checks multiple field locations for provider compatibility:
+        - DeepSeek: reasoning_content
+        - OpenRouter/MiniMax: reasoning_details
+        - OpenRouter(legacy): reasoning
+
+        Args:
+            msg: The message object from API response.
+
+        Returns:
+            Tuple of (raw_reasoning, reasoning_details).
+        """
+        raw_reasoning = None
+        reasoning_details = None
+
+        if hasattr(msg, "reasoning_content") and msg.reasoning_content is not None:
+            raw_reasoning = msg.reasoning_content
+        if hasattr(msg, "reasoning_details") and msg.reasoning_details is not None:
+            reasoning_details = msg.reasoning_details
+            if raw_reasoning is None:
+                raw_reasoning = msg.reasoning_details
+        if hasattr(msg, "model_extra") and isinstance(msg.model_extra, dict):
+            if raw_reasoning is None:
+                # Preserve empty strings by checking for key presence
+                if "reasoning_content" in msg.model_extra:
+                    raw_reasoning = msg.model_extra.get("reasoning_content")
+                elif "reasoning_details" in msg.model_extra:
+                    raw_reasoning = msg.model_extra.get("reasoning_details")
+                elif "reasoning" in msg.model_extra:
+                    raw_reasoning = msg.model_extra.get("reasoning")
+            if reasoning_details is None and "reasoning_details" in msg.model_extra:
+                reasoning_details = msg.model_extra.get("reasoning_details")
+
+        return raw_reasoning, reasoning_details
+
+    def _apply_reasoning(
+        self,
+        message: BaseMessage,
+        raw_reasoning: Any,
+        reasoning_details: Any | None,
+    ) -> None:
+        """Normalize raw reasoning and attach to message.
+
+        Handles the common pattern of normalizing reasoning content and
+        conditionally setting reasoning_details.
+
+        Args:
+            message: The message to attach reasoning to.
+            raw_reasoning: Raw reasoning in various formats (string, list, etc).
+            reasoning_details: Optional structured reasoning details.
+        """
+        reasoning = self._normalize_reasoning(raw_reasoning)
+        if reasoning is not None:
+            if reasoning_details is None and isinstance(raw_reasoning, list):
+                reasoning_details = raw_reasoning
+            self._set_reasoning(message, reasoning, reasoning_details=reasoning_details)
+        elif reasoning_details is not None:
+            message.additional_kwargs["reasoning_details"] = reasoning_details
 
     def _build_reasoning_sequence(
         self,
         messages: list[BaseMessage],
-    ) -> list[str | None]:
+    ) -> list[dict[str, Any]]:
         """Build a sequence of reasoning content aligned to AI messages.
 
         Args:
             messages: Original conversation messages.
 
         Returns:
-            List of reasoning content (or None) in AI message order.
+            List of reasoning payloads (in AI message order) with normalized content
+            and provider-specific reasoning_details.
         """
-        reasoning_sequence: list[str | None] = []
+        reasoning_sequence: list[dict[str, Any]] = []
         for msg in messages:
             if isinstance(msg, AIMessage):
                 # Use `is not None` to preserve empty string reasoning_content
                 # (important for deepseek official api which requires the field)
+                # Check multiple field names for provider compatibility:
+                # - DeepSeek: reasoning_content
+                # - OpenRouter/MiniMax: reasoning_details
+                # - OpenRouter(legacy): reasoning
                 raw_reasoning = msg.additional_kwargs.get("reasoning_content")
                 if raw_reasoning is None:
+                    raw_reasoning = msg.additional_kwargs.get("reasoning_details")
+                if raw_reasoning is None:
                     raw_reasoning = msg.additional_kwargs.get("reasoning")
-                reasoning_sequence.append(self._normalize_reasoning(raw_reasoning))
+
+                reasoning_details = msg.additional_kwargs.get("reasoning_details")
+                reasoning_sequence.append(
+                    {
+                        "content": self._normalize_reasoning(raw_reasoning),
+                        "details": reasoning_details,
+                    },
+                )
         return reasoning_sequence
 
     def _get_request_payload(
@@ -355,7 +491,17 @@ class ChatDeepSeek(BaseChatOpenAI):
                 # Re-inject reasoning if it exists in original message.
                 reasoning = next(reasoning_sequence, None)
                 if reasoning is not None:
-                    message["reasoning_content"] = reasoning
+                    content = reasoning.get("content")
+                    details = reasoning.get("details")
+                    if content is not None:
+                        message["reasoning_content"] = content
+                    if details is not None and isinstance(details, list):
+                        if content is not None:
+                            message["reasoning_details"] = (
+                                self._reconstruct_reasoning_details(details, content)
+                            )
+                        else:
+                            message["reasoning_details"] = details
                 # DeepSeek API expects assistant content to be a string, not a list.
                 # Extract text blocks and join them, or use empty string if none exist.
                 if isinstance(message["content"], list):
@@ -386,20 +532,10 @@ class ChatDeepSeek(BaseChatOpenAI):
         choices = getattr(response, "choices", None)
         if choices:
             msg = choices[0].message
-            raw_reasoning = None
-
-            # Priority: reasoning_content > model_extra fields
-            if hasattr(msg, "reasoning_content") and msg.reasoning_content is not None:
-                raw_reasoning = msg.reasoning_content
-            elif hasattr(msg, "model_extra") and isinstance(msg.model_extra, dict):
-                if "reasoning_content" in msg.model_extra:
-                    raw_reasoning = msg.model_extra.get("reasoning_content")
-                elif "reasoning" in msg.model_extra:
-                    raw_reasoning = msg.model_extra.get("reasoning")
-
-            reasoning = self._normalize_reasoning(raw_reasoning)
-            if reasoning is not None:
-                self._set_reasoning(rtn.generations[0].message, reasoning)
+            raw_reasoning, reasoning_details = self._extract_reasoning_from_message(msg)
+            self._apply_reasoning(
+                rtn.generations[0].message, raw_reasoning, reasoning_details
+            )
 
         return rtn
 
@@ -422,16 +558,19 @@ class ChatDeepSeek(BaseChatOpenAI):
                     "model_provider": "deepseek",
                 }
                 delta = top.get("delta", {})
-                # Check reasoning field names and normalize (preserve empty strings)
+                # Check reasoning field names and normalize
+                reasoning_details = delta.get("reasoning_details")
                 if "reasoning_content" in delta:
                     raw_reasoning = delta.get("reasoning_content")
+                elif "reasoning_details" in delta:
+                    raw_reasoning = delta.get("reasoning_details")
                 elif "reasoning" in delta:
                     raw_reasoning = delta.get("reasoning")
                 else:
                     raw_reasoning = None
-                reasoning = self._normalize_reasoning(raw_reasoning)
-                if reasoning is not None:
-                    self._set_reasoning(generation_chunk.message, reasoning)
+                self._apply_reasoning(
+                    generation_chunk.message, raw_reasoning, reasoning_details
+                )
 
         return generation_chunk
 
