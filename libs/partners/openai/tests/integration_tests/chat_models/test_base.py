@@ -1170,6 +1170,14 @@ def test_structured_output_and_tools(schema: Any) -> None:
         parsed = response.additional_kwargs["parsed"]
         assert isinstance(parsed, ResponseFormat)
     else:
+        kwargs = getattr(llm, "kwargs", None)
+        assert kwargs is not None
+        assert "response_format" in kwargs
+        response_format = kwargs["response_format"]
+        assert isinstance(response_format, dict)
+        assert "json_schema" in response_format
+        strict = response_format["json_schema"].get("strict")
+        assert strict is True
         parsed = json.loads(response.text)
         assert isinstance(parsed, dict)
         assert parsed["response"]
