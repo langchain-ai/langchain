@@ -17,6 +17,7 @@ EXPECTED_ALL = [
     "BaseChatModel",
 ]
 
+
 def test_all_imports() -> None:
     """Test that all expected imports are present in the module's __all__."""
     assert set(__all__) == set(EXPECTED_ALL)
@@ -283,6 +284,7 @@ def test_configurable_with_default() -> None:
     chain = prompt | model_with_config
     assert isinstance(chain, RunnableSequence)
 
+
 @pytest.mark.requires("langchain_huggingface")
 def test_init_chat_model_huggingface(monkeypatch: Any) -> None:
     lhf = pytest.importorskip("langchain_huggingface")
@@ -310,4 +312,3 @@ def test_init_chat_model_huggingface(monkeypatch: Any) -> None:
     assert created["kwargs"]["repo_id"] == "microsoft/Phi-3-mini-4k-instruct"
     assert created["kwargs"]["task"] == "text-generation"
     assert created["kwargs"]["temperature"] == 0
-
