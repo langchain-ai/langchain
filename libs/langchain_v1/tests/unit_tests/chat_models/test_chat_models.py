@@ -17,7 +17,6 @@ EXPECTED_ALL = [
     "BaseChatModel",
 ]
 
-
 def test_all_imports() -> None:
     """Test that all expected imports are present in the module's __all__."""
     assert set(__all__) == set(EXPECTED_ALL)
@@ -283,29 +282,30 @@ def test_configurable_with_default() -> None:
     prompt = ChatPromptTemplate.from_messages([("system", "foo")])
     chain = prompt | model_with_config
     assert isinstance(chain, RunnableSequence)
+import pytest
 from typing import Any
 
 from langchain.chat_models import init_chat_model
-import langchain_huggingface as lhf
 
 
+@pytest.mark.requires("langchain_huggingface")
 def test_init_chat_model_huggingface(monkeypatch: Any) -> None:
+    # Import the optional integration lazily
+    lhf = pytest.importorskip("langchain_huggingface")
+
+    ChatHuggingFace = lhf.ChatHuggingFace
+    HuggingFaceEndpoint = lhf.HuggingFaceEndpoint
+
     created: dict[str, Any] = {}
 
-    class DummyHFEndpoint:
+    class DummyHFEndpoint(HuggingFaceEndpoint):  # type: ignore[misc]
         def __init__(self, *args: Any, **kwargs: Any) -> None:
+            super().__init__(**kwargs)
             created["args"] = args
             created["kwargs"] = kwargs
 
-    class DummyChat:
-        def __init__(self, llm: Any, **kwargs: Any) -> None:
-            self.llm = llm
-            self.kwargs = kwargs
-
-    # When _init_chat_model_helper imports from langchain_huggingface,
-    # it will get these dummy classes instead of the real ones.
+    # Force helper to use DummyHFEndpoint
     monkeypatch.setattr(lhf, "HuggingFaceEndpoint", DummyHFEndpoint)
-    monkeypatch.setattr(lhf, "ChatHuggingFace", DummyChat)
 
     model = init_chat_model(
         model="microsoft/Phi-3-mini-4k-instruct",
@@ -313,10 +313,7 @@ def test_init_chat_model_huggingface(monkeypatch: Any) -> None:
         temperature=0,
     )
 
-    # We should get our DummyChat instance
-    assert isinstance(model, DummyChat)
-
-    # And the helper should have wired through the correct HF kwargs
+    assert isinstance(model, ChatHuggingFace)
     assert created["kwargs"]["repo_id"] == "microsoft/Phi-3-mini-4k-instruct"
     assert created["kwargs"]["task"] == "text-generation"
     assert created["kwargs"]["temperature"] == 0
