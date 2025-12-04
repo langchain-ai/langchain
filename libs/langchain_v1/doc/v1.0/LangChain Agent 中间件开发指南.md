@@ -93,6 +93,95 @@ Agent 结束
 
 ## 可用的钩子方法
 
+### 钩子总览
+
+所有中间件都可以使用以下 **6 个钩子方法**（每个都有同步和异步版本）：
+
+| 钩子方法 | 同步版本 | 异步版本 | 执行时机 | 执行方式 | 返回值 |
+|---------|---------|---------|---------|---------|--------|
+| **before_agent** | `before_agent` | `abefore_agent` | Agent 执行开始前 | 顺序执行（从前往后） | `dict[str, Any] \| None` |
+| **before_model** | `before_model` | `abefore_model` | 每次模型调用前 | 顺序执行（从前往后） | `dict[str, Any] \| None` |
+| **wrap_model_call** | `wrap_model_call` | `awrap_model_call` | 模型调用时 | 嵌套执行（洋葱模型） | `ModelResponse` |
+| **after_model** | `after_model` | `aafter_model` | 模型调用后 | 顺序执行（从后往前） | `dict[str, Any] \| None` |
+| **wrap_tool_call** | `wrap_tool_call` | `awrap_tool_call` | 工具调用时 | 嵌套执行（洋葱模型） | `ToolMessage \| Command` |
+| **after_agent** | `after_agent` | `aafter_agent` | Agent 执行完成后 | 顺序执行（从后往前） | `dict[str, Any] \| None` |
+
+**重要说明：**
+
+1. **所有中间件都可以使用所有钩子**：每个中间件类都可以选择实现任意一个或多个钩子方法，不需要实现全部。
+2. **同步和异步版本**：如果 Agent 以同步方式调用（`invoke()`），则使用同步版本；如果以异步方式调用（`ainvoke()`），则使用异步版本。建议同时实现两个版本以支持两种调用方式。
+3. **钩子的可选性**：中间件只需要实现它需要的钩子，不需要的钩子可以不实现。
+
+### 在 TodoListMiddleware 场景中的钩子使用
+
+当使用 `TodoListMiddleware` 时，**所有其他中间件仍然可以使用所有 6 个钩子**，没有任何限制。
+
+**TodoListMiddleware 本身的实现：**
+
+- `TodoListMiddleware` 只实现了 `wrap_model_call` / `awrap_model_call` 钩子
+- 它的作用是：在模型调用时注入 `write_todos` 工具的系统提示词
+- 它不影响其他中间件使用任何钩子
+
+**示例：多个中间件与 TodoListMiddleware 组合**
+
+```python
+from langchain.agents import create_agent
+from langchain.agents.middleware.todo import TodoListMiddleware
+from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddleware
+from langchain.agents.middleware.human_in_the_loop import HumanInTheLoopMiddleware
+
+# 创建包含多个中间件的 Agent
+agent = create_agent(
+    model="openai:gpt-4o",
+    middleware=[
+        # 中间件 A：使用 before_model 和 after_model
+        ModelCallLimitMiddleware(max_calls=10),
+        
+        # 中间件 B：使用 wrap_model_call（注入 todo 工具提示）
+        TodoListMiddleware(),
+        
+        # 中间件 C：使用 after_model（人工参与）
+        HumanInTheLoopMiddleware(),
+    ]
+)
+```
+
+**执行流程：**
+
+```text
+Agent 开始
+    ↓
+before_agent (所有中间件，如果有实现)
+    ↓
+before_model (ModelCallLimitMiddleware) ← 检查调用限制
+    ↓
+wrap_model_call (嵌套执行)
+    ├─ ModelCallLimitMiddleware.wrap_model_call (外层)
+    ├─ TodoListMiddleware.wrap_model_call (中层) ← 注入 todo 提示
+    └─ 实际模型调用 (内层)
+    ↓
+after_model (所有中间件，从后往前)
+    ├─ HumanInTheLoopMiddleware.after_model ← 检查是否需要人工参与
+    └─ ModelCallLimitMiddleware.after_model ← 更新调用计数
+    ↓
+工具调用（如果需要）
+    ↓
+wrap_tool_call (所有中间件，如果有实现)
+    ↓
+after_agent (所有中间件，如果有实现)
+    ↓
+Agent 结束
+```
+
+**关键点：**
+
+- ✅ **所有中间件都可以使用所有钩子**，包括与 `TodoListMiddleware` 一起使用时
+- ✅ `TodoListMiddleware` 只使用 `wrap_model_call`，不影响其他中间件
+- ✅ 多个中间件可以同时使用同一个钩子，按照执行顺序/嵌套顺序执行
+- ✅ 每个中间件可以选择性地实现它需要的钩子
+
+---
+
 ### 1. before_agent / abefore_agent
 
 在 Agent 执行开始前调用。
