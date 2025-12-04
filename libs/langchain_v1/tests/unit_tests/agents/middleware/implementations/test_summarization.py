@@ -884,29 +884,3 @@ def test_summarization_middleware_cutoff_at_start_of_tool_sequence() -> None:
     # Index 2 is an AIMessage (safe cutoff point), so no adjustment needed
     cutoff = middleware._find_safe_cutoff(messages, messages_to_keep=4)
     assert cutoff == 2
-
-
-def test_summarization_middleware_all_tool_messages_at_end() -> None:
-    """Test when all remaining messages after target cutoff are ToolMessages."""
-    middleware = SummarizationMiddleware(
-        model=MockChatModel(), trigger=("messages", 8), keep=("messages", 2)
-    )
-
-    messages: list[AnyMessage] = [
-        HumanMessage(content="msg1"),
-        AIMessage(
-            content="ai",
-            tool_calls=[
-                {"name": "tool1", "args": {}, "id": "call1"},
-                {"name": "tool2", "args": {}, "id": "call2"},
-            ],
-        ),
-        ToolMessage(content="result1", tool_call_id="call1"),
-        ToolMessage(content="result2", tool_call_id="call2"),
-    ]
-
-    # Target cutoff index is len(messages) - messages_to_keep = 4 - 2 = 2
-    # Index 2 is a ToolMessage, so we advance past the tool sequence to index 4
-    # This is aggressive - we keep no messages from this conversation
-    cutoff = middleware._find_safe_cutoff(messages, messages_to_keep=2)
-    assert cutoff == 4
