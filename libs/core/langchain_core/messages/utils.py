@@ -65,9 +65,9 @@ logger = logging.getLogger(__name__)
 def _get_type(v: Any) -> str:
     """Get the type associated with the object for serialization purposes."""
     if isinstance(v, dict) and "type" in v:
-        return v["type"]
+        return cast("str", v["type"])
     if hasattr(v, "type"):
-        return v.type
+        return cast("str", v.type)
     msg = (
         f"Expected either a dictionary with a 'type' key or an object "
         f"with a 'type' attribute. Instead got type {type(v)}."
@@ -1112,6 +1112,30 @@ def trim_messages(
     raise ValueError(msg)
 
 
+_SingleMessage = BaseMessage | str | dict[str, Any]
+_T = TypeVar("_T", bound=_SingleMessage)
+# A sequence of _SingleMessage that is NOT a bare str
+_MultipleMessages = Sequence[_T]
+
+
+@overload
+def convert_to_openai_messages(
+    messages: _SingleMessage,
+    *,
+    text_format: Literal["string", "block"] = "string",
+    include_id: bool = False,
+) -> dict: ...
+
+
+@overload
+def convert_to_openai_messages(
+    messages: _MultipleMessages,
+    *,
+    text_format: Literal["string", "block"] = "string",
+    include_id: bool = False,
+) -> list[dict]: ...
+
+
 def convert_to_openai_messages(
     messages: MessageLikeRepresentation | Sequence[MessageLikeRepresentation],
     *,
@@ -1207,7 +1231,7 @@ def convert_to_openai_messages(
         err = f"Unrecognized {text_format=}, expected one of 'string' or 'block'."
         raise ValueError(err)
 
-    oai_messages: list = []
+    oai_messages: list[dict] = []
 
     if is_single := isinstance(messages, (BaseMessage, dict, str)):
         messages = [messages]
@@ -1774,7 +1798,7 @@ def _get_message_openai_role(message: BaseMessage) -> str:
     if isinstance(message, ToolMessage):
         return "tool"
     if isinstance(message, SystemMessage):
-        return message.additional_kwargs.get("__openai_role__", "system")
+        return cast("str", message.additional_kwargs.get("__openai_role__", "system"))
     if isinstance(message, FunctionMessage):
         return "function"
     if isinstance(message, ChatMessage):

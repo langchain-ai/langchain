@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-from typing import Any
 
 
 def env_var_is_set(env_var: str) -> bool:
@@ -24,7 +23,7 @@ def env_var_is_set(env_var: str) -> bool:
 
 
 def get_from_dict_or_env(
-    data: dict[str, Any],
+    data: dict[str, str],
     key: str | list[str],
     env_key: str,
     default: str | None = None,

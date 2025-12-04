@@ -224,7 +224,7 @@ _MAX_TYPED_DICT_RECURSION = 25
 def _convert_any_typed_dicts_to_pydantic(
     type_: type,
     *,
-    visited: dict,
+    visited: dict[type, type],
     depth: int = 0,
 ) -> type:
     if type_ in visited:
