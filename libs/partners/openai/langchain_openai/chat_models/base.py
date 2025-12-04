@@ -1874,7 +1874,7 @@ class BaseChatOpenAI(BaseChatModel):
                 # an approximation of OpenAI format
                 response_format = cast(dict, response_format["json_schema"]["schema"])
             kwargs["response_format"] = _convert_to_openai_response_format(
-                response_format
+                response_format, strict=strict
             )
         return super().bind(tools=formatted_tools, **kwargs)
 
