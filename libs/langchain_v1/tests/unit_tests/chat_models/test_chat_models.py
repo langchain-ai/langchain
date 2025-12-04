@@ -285,7 +285,6 @@ def test_configurable_with_default() -> None:
     assert isinstance(chain, RunnableSequence)
 
 
-@pytest.mark.requires("langchain_huggingface")
 def test_init_chat_model_huggingface(monkeypatch: Any) -> None:
     lhf = pytest.importorskip("langchain_huggingface")
 
