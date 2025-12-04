@@ -1148,7 +1148,7 @@ def create_agent(  # noqa: PLR0915
     def model_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
         # Merge state defaults with runtime state to ensure custom fields are accessible
-        complete_state = cast(AgentState, {**state_defaults, **state})
+        complete_state = cast("AgentState", {**state_defaults, **state})
 
         request = ModelRequest(
             model=model,
@@ -1204,7 +1204,7 @@ def create_agent(  # noqa: PLR0915
     async def amodel_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
         # Merge state defaults with runtime state to ensure custom fields are accessible
-        complete_state = cast(AgentState, {**state_defaults, **state})
+        complete_state = cast("AgentState", {**state_defaults, **state})
 
         request = ModelRequest(
             model=model,
