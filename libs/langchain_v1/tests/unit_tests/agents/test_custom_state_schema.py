@@ -17,7 +17,7 @@ from .model import FakeToolCallingModel
 
 class CustomState(AgentState):
     """Custom state schema with additional fields."""
-    
+
     messages: Required[Annotated[list, add_messages]]
     custom_field: bool = False
     another_field: str = "default_value"
@@ -26,18 +26,20 @@ class CustomState(AgentState):
 def test_custom_state_schema_with_defaults_in_middleware():
     """Test that custom state fields with defaults are accessible in middleware."""
     accessed_values = []
-    
+
     class StateAccessMiddleware(AgentMiddleware):
         """Middleware that accesses custom state fields."""
-        
+
         def wrap_model_call(self, request, handler):
             # Should be able to access custom fields even if not in input
-            accessed_values.append({
-                "custom_field": request.state.get("custom_field"),
-                "another_field": request.state.get("another_field"),
-            })
+            accessed_values.append(
+                {
+                    "custom_field": request.state.get("custom_field"),
+                    "another_field": request.state.get("another_field"),
+                }
+            )
             return handler(request)
-    
+
     agent = create_agent(
         model=FakeToolCallingModel(tool_calls=[[]]),
         tools=[],
@@ -45,15 +47,15 @@ def test_custom_state_schema_with_defaults_in_middleware():
         state_schema=CustomState,
         middleware=[StateAccessMiddleware()],
     )
-    
+
     # Invoke with only messages, not providing custom fields
     result = agent.invoke({"messages": [HumanMessage(content="test")]})
-    
+
     # Middleware should have accessed the default values
     assert len(accessed_values) == 1
     assert accessed_values[0]["custom_field"] is False
     assert accessed_values[0]["another_field"] == "default_value"
-    
+
     # Result should contain the message
     assert len(result["messages"]) == 2
     assert isinstance(result["messages"][0], HumanMessage)
@@ -63,17 +65,19 @@ def test_custom_state_schema_with_defaults_in_middleware():
 def test_custom_state_schema_with_provided_values():
     """Test that explicitly provided custom state values override defaults."""
     accessed_values = []
-    
+
     class StateAccessMiddleware(AgentMiddleware):
         """Middleware that accesses custom state fields."""
-        
+
         def wrap_model_call(self, request, handler):
-            accessed_values.append({
-                "custom_field": request.state.get("custom_field"),
-                "another_field": request.state.get("another_field"),
-            })
+            accessed_values.append(
+                {
+                    "custom_field": request.state.get("custom_field"),
+                    "another_field": request.state.get("another_field"),
+                }
+            )
             return handler(request)
-    
+
     agent = create_agent(
         model=FakeToolCallingModel(tool_calls=[[]]),
         tools=[],
@@ -81,14 +85,16 @@ def test_custom_state_schema_with_provided_values():
         state_schema=CustomState,
         middleware=[StateAccessMiddleware()],
     )
-    
+
     # Invoke with custom field values provided
-    result = agent.invoke({
-        "messages": [HumanMessage(content="test")],
-        "custom_field": True,
-        "another_field": "custom_value",
-    })
-    
+    result = agent.invoke(
+        {
+            "messages": [HumanMessage(content="test")],
+            "custom_field": True,
+            "another_field": "custom_value",
+        }
+    )
+
     # Middleware should have accessed the provided values
     assert len(accessed_values) == 1
     assert accessed_values[0]["custom_field"] is True
@@ -97,10 +103,10 @@ def test_custom_state_schema_with_provided_values():
 
 def test_custom_state_schema_direct_access_no_keyerror():
     """Test that direct dictionary access to custom fields doesn't raise KeyError."""
-    
+
     class DirectAccessMiddleware(AgentMiddleware):
         """Middleware that directly accesses custom state fields."""
-        
+
         def wrap_model_call(self, request, handler):
             # This should NOT raise KeyError with the fix
             custom_field = request.state["custom_field"]
@@ -108,7 +114,7 @@ def test_custom_state_schema_direct_access_no_keyerror():
             assert custom_field is False
             assert another_field == "default_value"
             return handler(request)
-    
+
     agent = create_agent(
         model=FakeToolCallingModel(tool_calls=[[]]),
         tools=[],
@@ -116,7 +122,7 @@ def test_custom_state_schema_direct_access_no_keyerror():
         state_schema=CustomState,
         middleware=[DirectAccessMiddleware()],
     )
-    
+
     # This should not raise KeyError
     result = agent.invoke({"messages": [HumanMessage(content="test")]})
     assert result is not None
