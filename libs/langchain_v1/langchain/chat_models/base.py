@@ -411,8 +411,6 @@ def _init_chat_model_helper(
             **kwargs,
         )
         return ChatHuggingFace(llm=llm)
-
-
     if model_provider == "groq":
         _check_pkg("langchain_groq")
         from langchain_groq import ChatGroq
