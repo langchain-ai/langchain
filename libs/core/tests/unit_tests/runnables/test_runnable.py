@@ -3500,7 +3500,7 @@ def test_bind_bind() -> None:
 
 def test_bind_with_lambda() -> None:
     def my_function(_: Any, **kwargs: Any) -> int:
-        return 3 + kwargs.get("n", 0)
+        return 3 + int(kwargs.get("n", 0))
 
     runnable = RunnableLambda(my_function).bind(n=1)
     assert runnable.invoke({}) == 4
@@ -3510,7 +3510,7 @@ def test_bind_with_lambda() -> None:
 
 async def test_bind_with_lambda_async() -> None:
     def my_function(_: Any, **kwargs: Any) -> int:
-        return 3 + kwargs.get("n", 0)
+        return 3 + int(kwargs.get("n", 0))
 
     runnable = RunnableLambda(my_function).bind(n=1)
     assert await runnable.ainvoke({}) == 4

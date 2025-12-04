@@ -1849,13 +1849,13 @@ def test_tool_inherited_injected_arg() -> None:
 def _get_parametrized_tools() -> list:
     def my_tool(x: int, y: str, some_tool: Annotated[Any, InjectedToolArg]) -> str:
         """my_tool."""
-        return some_tool
+        return "my_tool"
 
     async def my_async_tool(
         x: int, y: str, *, some_tool: Annotated[Any, InjectedToolArg]
     ) -> str:
         """my_tool."""
-        return some_tool
+        return "my_tool"
 
     return [my_tool, my_async_tool]
 
@@ -2432,7 +2432,7 @@ def test_tool_injected_tool_call_id() -> None:
     @tool
     def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
         """Foo."""
-        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[call-overload]
+        return ToolMessage(str(x), tool_call_id=tool_call_id)
 
     assert foo.invoke(
         {
@@ -2441,7 +2441,7 @@ def test_tool_injected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[call-overload]
+    ) == ToolMessage("0", tool_call_id="bar")
 
     with pytest.raises(
         ValueError,
@@ -2453,7 +2453,7 @@ def test_tool_injected_tool_call_id() -> None:
     @tool
     def foo2(x: int, tool_call_id: Annotated[str, InjectedToolCallId()]) -> ToolMessage:
         """Foo."""
-        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[call-overload]
+        return ToolMessage(str(x), tool_call_id=tool_call_id)
 
     assert foo2.invoke(
         {
@@ -2462,7 +2462,7 @@ def test_tool_injected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[call-overload]
+    ) == ToolMessage("0", tool_call_id="bar")
 
 
 def test_tool_injected_tool_call_id_override_llm_generated() -> None:
