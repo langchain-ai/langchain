@@ -118,7 +118,27 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def structured_output_kwargs(self) -> dict:
-        """If specified, additional kwargs for `with_structured_output`."""
+        """Additional kwargs to pass to `with_structured_output()` in tests.
+
+        Override this property to customize how structured output is generated
+        for your model. The most common use case is specifying the `method`
+        parameter, which controls the mechanism used to enforce structured output:
+
+        - `'function_calling'`: Uses tool/function calling to enforce the schema.
+        - `'json_mode'`: Uses the model's JSON mode.
+        - `'json_schema'`: Uses native JSON schema support (e.g., OpenAI's
+            structured outputs).
+
+        Returns:
+            A dict of kwargs passed to `with_structured_output()`.
+
+        Example:
+            ```python
+            @property
+            def structured_output_kwargs(self) -> dict:
+                return {"method": "json_schema"}
+            ```
+        """
         return {}
 
     @property
@@ -289,14 +309,14 @@ class ChatModelUnitTests(ChatModelTests):
 
     Expand to see details:
 
-    ??? info "`has_tool_calling`"
+    ???+ info "`has_tool_calling`"
 
         Boolean property indicating whether the chat model supports tool calling.
 
         By default, this is determined by whether the chat model's `bind_tools` method
         is overridden. It typically does not need to be overridden on the test class.
 
-        ```python "Example override"
+        ```python
         @property
         def has_tool_calling(self) -> bool:
             return True
@@ -331,7 +351,7 @@ class ChatModelUnitTests(ChatModelTests):
         `tool_choice="any"` will force a tool call, and `tool_choice=<tool name>`
         will force a call to a specific tool.
 
-        ```python "Example override"
+        ```python
         @property
         def has_tool_choice(self) -> bool:
             return False
@@ -346,7 +366,7 @@ class ChatModelUnitTests(ChatModelTests):
         `with_structured_output` or `bind_tools` methods. If the base
         implementations are intended to be used, this method should be overridden.
 
-        See: https://docs.langchain.com/oss/python/langchain/structured-output
+        See docs for [Structured output](https://docs.langchain.com/oss/python/langchain/structured-output).
 
         ```python
         @property
@@ -356,23 +376,44 @@ class ChatModelUnitTests(ChatModelTests):
 
     ??? info "`structured_output_kwargs`"
 
-        Dict property that can be used to specify additional kwargs for
-        `with_structured_output`.
+        Dict property specifying additional kwargs to pass to
+        `with_structured_output()` when running structured output tests.
 
-        Useful for testing different models.
+        Override this to customize how your model generates structured output.
+
+        The most common use case is specifying the `method` parameter:
+
+        - `'function_calling'`: Uses tool/function calling to enforce the schema.
+        - `'json_mode'`: Uses the model's JSON mode.
+        - `'json_schema'`: Uses native JSON schema support (e.g., OpenAI's structured
+            outputs).
 
         ```python
         @property
         def structured_output_kwargs(self) -> dict:
-            return {"method": "function_calling"}
+            return {"method": "json_schema"}
         ```
 
     ??? info "`supports_json_mode`"
 
-        Boolean property indicating whether the chat model supports JSON mode in
-        `with_structured_output`.
+        Boolean property indicating whether the chat model supports
+        `method='json_mode'` in `with_structured_output`.
 
-        See: https://docs.langchain.com/oss/python/langchain/structured-output
+        JSON mode constrains the model to output valid JSON without enforcing
+        a specific schema (unlike `'function_calling'` or `'json_schema'` methods).
+
+        When using JSON mode, you must prompt the model to output JSON in your
+        message.
+
+        Example:
+            ```python
+            structured_llm = llm.with_structured_output(MySchema, method="json_mode")
+            structured_llm.invoke("... Return the result as JSON.")
+            ```
+
+        See docs for [Structured output](https://docs.langchain.com/oss/python/langchain/structured-output).
+
+        Defaults to `False`.
 
         ```python
         @property
@@ -406,7 +447,7 @@ class ChatModelUnitTests(ChatModelTests):
         }
         ```
 
-        See https://docs.langchain.com/oss/python/langchain/models#multimodal
+        See docs for [Multimodality](https://docs.langchain.com/oss/python/langchain/models#multimodal).
 
         ```python
         @property
@@ -431,11 +472,59 @@ class ChatModelUnitTests(ChatModelTests):
         }
         ```
 
-        See https://docs.langchain.com/oss/python/langchain/models#multimodal
+        See docs for [Multimodality](https://docs.langchain.com/oss/python/langchain/models#multimodal).
 
         ```python
         @property
         def supports_image_urls(self) -> bool:
+            return True
+        ```
+
+    ??? info "`supports_image_tool_message`"
+
+        Boolean property indicating whether the chat model supports a `ToolMessage`
+        that includes image content, e.g. in the OpenAI Chat Completions format.
+
+        Defaults to `False`.
+
+        ```python
+        ToolMessage(
+            content=[
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                },
+            ],
+            tool_call_id="1",
+            name="random_image",
+        )
+        ```
+
+        (OpenAI Chat Completions format), as well as LangChain's `ImageContentBlock`
+        format:
+
+        ```python
+        ToolMessage(
+            content=[
+                {
+                    "type": "image",
+                    "base64": image_data,
+                    "mime_type": "image/jpeg",
+                },
+            ],
+            tool_call_id="1",
+            name="random_image",
+        )
+        ```
+
+        (standard format).
+
+        If set to `True`, the chat model will be tested with message sequences that
+        include `ToolMessage` objects of this form.
+
+        ```python
+        @property
+        def supports_image_tool_message(self) -> bool:
             return True
         ```
 
@@ -456,11 +545,43 @@ class ChatModelUnitTests(ChatModelTests):
         }
         ```
 
-        See https://docs.langchain.com/oss/python/langchain/models#multimodal
+        See docs for [Multimodality](https://docs.langchain.com/oss/python/langchain/models#multimodal).
 
         ```python
         @property
         def supports_pdf_inputs(self) -> bool:
+            return True
+        ```
+
+    ??? info "`supports_pdf_tool_message`"
+
+        Boolean property indicating whether the chat model supports a `ToolMessage`
+        that includes PDF content using the LangChain `FileContentBlock` format.
+
+        Defaults to `False`.
+
+        ```python
+        ToolMessage(
+            content=[
+                {
+                    "type": "file",
+                    "base64": pdf_data,
+                    "mime_type": "application/pdf",
+                },
+            ],
+            tool_call_id="1",
+            name="random_pdf",
+        )
+        ```
+
+        using LangChain's `FileContentBlock` format.
+
+        If set to `True`, the chat model will be tested with message sequences that
+        include `ToolMessage` objects of this form.
+
+        ```python
+        @property
+        def supports_pdf_tool_message(self) -> bool:
             return True
         ```
 
@@ -481,7 +602,7 @@ class ChatModelUnitTests(ChatModelTests):
         }
         ```
 
-        See https://docs.langchain.com/oss/python/langchain/models#multimodal
+        See docs for [Multimodality](https://docs.langchain.com/oss/python/langchain/models#multimodal).
 
         ```python
         @property
@@ -557,82 +678,6 @@ class ChatModelUnitTests(ChatModelTests):
             return False
         ```
 
-    ??? info "`supports_image_tool_message`"
-
-        Boolean property indicating whether the chat model supports `ToolMessage`
-        objects that include image content, e.g.,
-
-        ```python
-        ToolMessage(
-            content=[
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-                },
-            ],
-            tool_call_id="1",
-            name="random_image",
-        )
-        ```
-
-        (OpenAI Chat Completions format), as well as LangChain's `ImageContentBlock`
-        format:
-
-        ```python
-        ToolMessage(
-            content=[
-                {
-                    "type": "image",
-                    "base64": image_data,
-                    "mime_type": "image/jpeg",
-                },
-            ],
-            tool_call_id="1",
-            name="random_image",
-        )
-        ```
-
-        (standard format).
-
-        If set to `True`, the chat model will be tested with message sequences that
-        include `ToolMessage` objects of this form.
-
-        ```python
-        @property
-        def supports_image_tool_message(self) -> bool:
-            return False
-        ```
-
-    ??? info "`supports_pdf_tool_message`"
-
-        Boolean property indicating whether the chat model supports `ToolMessage`
-        objects that include PDF content, i.e.,
-
-        ```python
-        ToolMessage(
-            content=[
-                {
-                    "type": "file",
-                    "base64": pdf_data,
-                    "mime_type": "application/pdf",
-                },
-            ],
-            tool_call_id="1",
-            name="random_pdf",
-        )
-        ```
-
-        using LangChain's `FileContentBlock` format.
-
-        If set to `True`, the chat model will be tested with message sequences that
-        include `ToolMessage` objects of this form.
-
-        ```python
-        @property
-        def supports_pdf_tool_message(self) -> bool:
-            return False
-        ```
-
     ??? info "`supported_usage_metadata_details`"
 
         Property controlling what usage metadata details are emitted in both `invoke`
@@ -640,6 +685,7 @@ class ChatModelUnitTests(ChatModelTests):
 
         `usage_metadata` is an optional dict attribute on `AIMessage` objects that track
         input and output tokens.
+
         [See more](https://reference.langchain.com/python/langchain_core/language_models/#langchain_core.messages.ai.UsageMetadata).
 
         It includes optional keys `input_token_details` and `output_token_details`
@@ -780,8 +826,7 @@ class ChatModelUnitTests(ChatModelTests):
 
         3. Run tests to generate VCR cassettes.
 
-            Example:
-            ```bash
+            ```bash title="Example"
             uv run python -m pytest tests/integration_tests/test_chat_models.py::TestMyModel::test_stream_time
             ```
 
@@ -856,7 +901,7 @@ class ChatModelUnitTests(ChatModelTests):
             1. `chat_model_params` is specified and the model can be initialized
                 from those params;
             2. The model accommodates
-                [standard parameters](https://python.langchain.com/docs/concepts/chat_models/#standard-parameters).
+                [standard parameters](https://docs.langchain.com/oss/python/langchain/models#parameters).
 
         """
         model = self.chat_model_class(
@@ -929,10 +974,13 @@ class ChatModelUnitTests(ChatModelTests):
         ??? question "Troubleshooting"
 
             If this test fails, ensure that the model's `bind_tools` method
-            properly handles Pydantic V2 models. `langchain_core` implements
-            a utility function that will accommodate most formats: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html
+            properly handles Pydantic V2 models.
 
-            See example implementation of `bind_tools` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.bind_tools
+            `langchain_core` implements a [utility function](https://reference.langchain.com/python/langchain_core/utils/?h=convert_to_op#langchain_core.utils.function_calling.convert_to_openai_tool).
+            that will accommodate most formats.
+
+            See [example implementation](https://github.com/langchain-ai/langchain/blob/master/libs/partners/openai/langchain_openai/chat_models/base.py).
+            of `with_structured_output`.
         """
         if not self.has_tool_calling:
             return
@@ -971,11 +1019,13 @@ class ChatModelUnitTests(ChatModelTests):
         ??? question "Troubleshooting"
 
             If this test fails, ensure that the model's `bind_tools` method
-            properly handles Pydantic V2 models. `langchain_core` implements
-            a utility function that will accommodate most formats: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html
+            properly handles Pydantic V2 models.
 
-            See example implementation of `with_structured_output` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
+            `langchain_core` implements a [utility function](https://reference.langchain.com/python/langchain_core/utils/?h=convert_to_op#langchain_core.utils.function_calling.convert_to_openai_tool).
+            that will accommodate most formats.
 
+            See [example implementation](https://github.com/langchain-ai/langchain/blob/master/libs/partners/openai/langchain_openai/chat_models/base.py).
+            of `with_structured_output`.
         """
         if not self.has_structured_output:
             return
@@ -995,7 +1045,7 @@ class ChatModelUnitTests(ChatModelTests):
 
         ??? question "Troubleshooting"
 
-            If this test fails, check that the model accommodates [standard parameters](https://python.langchain.com/docs/concepts/chat_models/#standard-parameters).
+            If this test fails, check that the model accommodates [standard parameters](https://docs.langchain.com/oss/python/langchain/models#parameters).
 
             Check also that the model class is named according to convention
             (e.g., `ChatProviderName`).

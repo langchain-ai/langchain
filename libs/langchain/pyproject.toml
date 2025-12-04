@@ -70,7 +70,6 @@ test = [
     "pandas>=2.0.0,<3.0.0",
     "syrupy>=4.0.2,<5.0.0",
     "requests-mock>=1.11.0,<2.0.0",
-    "blockbuster>=1.5.18,<1.6.0",
     "toml>=0.10.2,<1.0.0",
     "packaging>=24.2.0,<26.0.0",
     "langchain-tests",
