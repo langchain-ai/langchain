@@ -276,6 +276,30 @@ class ChatDeepSeek(BaseChatOpenAI):
                     if isinstance(block, dict) and block.get("type") == "text"
                 ]
                 message["content"] = "".join(text_parts) if text_parts else ""
+
+        # DeepSeek v3.2 thinking mode:
+        # Docs: https://api-docs.deepseek.com/guides/thinking_mode#tool-calls
+        if (
+            isinstance(input_, list)
+            and self.extra_body
+            and "thinking" in self.extra_body
+            and self.extra_body["thinking"].get("type") == "enabled"
+        ):
+            last_human_message_index = message_len = len(input_) - 1
+            for message_index in range(last_human_message_index, 0, -1):
+                if input_[message_index].type == "human":
+                    last_human_message_index = message_index
+                    break
+
+            for message_index in range(last_human_message_index, message_len):
+                message_obj = input_[message_index]
+                if (
+                    isinstance(message_obj, AIMessage)
+                    and "reasoning_content" in message_obj.additional_kwargs
+                ):
+                    payload["messages"][message_index]["reasoning_content"] = \
+                        message_obj.additional_kwargs["reasoning_content"]
+
         return payload
 
     def _create_chat_result(
