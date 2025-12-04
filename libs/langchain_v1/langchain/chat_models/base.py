@@ -401,9 +401,18 @@ def _init_chat_model_helper(
         return ChatMistralAI(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
     if model_provider == "huggingface":
         _check_pkg("langchain_huggingface")
-        from langchain_huggingface import ChatHuggingFace
+        from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
 
-        return ChatHuggingFace(model_id=model, **kwargs)
+        # Build a HuggingFaceEndpoint from the model id and wrap it in ChatHuggingFace.
+        # ChatHuggingFace expects an underlying HF LLM in `llm`, not a raw model_id.
+        llm = HuggingFaceEndpoint(
+            repo_id=model,
+            task="text-generation",
+            **kwargs,
+        )
+        return ChatHuggingFace(llm=llm)
+
+
     if model_provider == "groq":
         _check_pkg("langchain_groq")
         from langchain_groq import ChatGroq
