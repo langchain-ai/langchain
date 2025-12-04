@@ -5,9 +5,10 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from string import Formatter
-from typing import TYPE_CHECKING, Any, Literal, cast, override
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from pydantic import BaseModel, create_model
+from typing_extensions import override
 
 from langchain_core.prompt_values import PromptValue, StringPromptValue
 from langchain_core.prompts.base import BasePromptTemplate
