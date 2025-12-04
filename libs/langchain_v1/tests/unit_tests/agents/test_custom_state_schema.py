@@ -30,12 +30,13 @@ def test_custom_state_schema_with_defaults_in_middleware():
     class StateAccessMiddleware(AgentMiddleware):
         """Middleware that accesses custom state fields."""
         
-        def before_model(self, request: ModelRequest):
+        def wrap_model_call(self, request, handler):
             # Should be able to access custom fields even if not in input
             accessed_values.append({
                 "custom_field": request.state.get("custom_field"),
                 "another_field": request.state.get("another_field"),
             })
+            return handler(request)
     
     agent = create_agent(
         model=FakeToolCallingModel(tool_calls=[[]]),
@@ -66,11 +67,12 @@ def test_custom_state_schema_with_provided_values():
     class StateAccessMiddleware(AgentMiddleware):
         """Middleware that accesses custom state fields."""
         
-        def before_model(self, request: ModelRequest):
+        def wrap_model_call(self, request, handler):
             accessed_values.append({
                 "custom_field": request.state.get("custom_field"),
                 "another_field": request.state.get("another_field"),
             })
+            return handler(request)
     
     agent = create_agent(
         model=FakeToolCallingModel(tool_calls=[[]]),
@@ -99,12 +101,13 @@ def test_custom_state_schema_direct_access_no_keyerror():
     class DirectAccessMiddleware(AgentMiddleware):
         """Middleware that directly accesses custom state fields."""
         
-        def before_model(self, request: ModelRequest):
+        def wrap_model_call(self, request, handler):
             # This should NOT raise KeyError with the fix
             custom_field = request.state["custom_field"]
             another_field = request.state["another_field"]
             assert custom_field is False
             assert another_field == "default_value"
+            return handler(request)
     
     agent = create_agent(
         model=FakeToolCallingModel(tool_calls=[[]]),
