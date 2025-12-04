@@ -568,7 +568,7 @@ class ChildTool(BaseTool):
         else:
             input_schema = self.get_input_schema()
             json_schema = input_schema.model_json_schema()
-        return json_schema["properties"]
+        return cast("dict", json_schema["properties"])
 
     @property
     def tool_call_schema(self) -> ArgsSchema:
@@ -1545,7 +1545,7 @@ def _replace_type_vars(
             _replace_type_vars(arg, generic_map, default_to_bound=default_to_bound)
             for arg in args
         )
-        return _py_38_safe_origin(origin)[new_args]  # type: ignore[index]
+        return cast("type", _py_38_safe_origin(origin)[new_args])  # type: ignore[index]
     return type_
 
 

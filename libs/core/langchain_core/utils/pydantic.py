@@ -206,7 +206,7 @@ def _create_subset_model_v1(
     *,
     descriptions: dict | None = None,
     fn_description: str | None = None,
-) -> type[BaseModel]:
+) -> type[BaseModelV1]:
     """Create a Pydantic model with only a subset of model's fields."""
     fields = {}
 
@@ -223,7 +223,7 @@ def _create_subset_model_v1(
             field.field_info.description = descriptions[field_name]
         fields[field_name] = (t, field.field_info)
 
-    rtn = create_model_v1(name, **fields)  # type: ignore[call-overload]
+    rtn = cast("type[BaseModelV1]", create_model_v1(name, **fields))  # type: ignore[call-overload]
     rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
     return rtn
 
@@ -247,8 +247,11 @@ def _create_subset_model_v2(
             field_info.metadata = field.metadata
         fields[field_name] = (field.annotation, field_info)
 
-    rtn = _create_model_base(  # type: ignore[call-overload]
-        name, **fields, __config__=ConfigDict(arbitrary_types_allowed=True)
+    rtn = cast(
+        "type[BaseModel]",
+        _create_model_base(  # type: ignore[call-overload]
+            name, **fields, __config__=ConfigDict(arbitrary_types_allowed=True)
+        ),
     )
 
     # TODO(0.3): Determine if there is a more "pydantic" way to preserve annotations.

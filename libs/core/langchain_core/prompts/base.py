@@ -9,12 +9,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from functools import cached_property
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generic,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -122,7 +117,7 @@ class BasePromptTemplate(
 
     @cached_property
     def _serialized(self) -> dict[str, Any]:
-        return dumpd(self)
+        return cast("dict[str, Any]", dumpd(self))
 
     @property
     @override

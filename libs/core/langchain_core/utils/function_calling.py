@@ -275,7 +275,9 @@ def _convert_any_typed_dicts_to_pydantic(
                 if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
                 fields[arg] = (new_arg_type, Field_v1(**field_kwargs))
-        model = create_model_v1(typed_dict.__name__, **fields)
+        model = cast(
+            "type[BaseModelV1]", create_model_v1(typed_dict.__name__, **fields)
+        )
         model.__doc__ = description
         visited[typed_dict] = model
         return model
@@ -285,7 +287,7 @@ def _convert_any_typed_dicts_to_pydantic(
             _convert_any_typed_dicts_to_pydantic(arg, depth=depth + 1, visited=visited)
             for arg in type_args
         )
-        return subscriptable_origin[type_args]  # type: ignore[index]
+        return cast("type", subscriptable_origin[type_args])  # type: ignore[index]
     return type_
 
 

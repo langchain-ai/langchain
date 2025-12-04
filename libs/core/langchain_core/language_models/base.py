@@ -12,6 +12,7 @@ from typing import (
     Literal,
     TypeAlias,
     TypeVar,
+    cast,
 )
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -92,7 +93,7 @@ def _get_token_ids_default_method(text: str) -> list[int]:
     tokenizer = get_tokenizer()
 
     # tokenize the text using the GPT-2 tokenizer
-    return tokenizer.encode(text)
+    return cast("list[int]", tokenizer.encode(text))
 
 
 LanguageModelInput = PromptValue | str | Sequence[MessageLikeRepresentation]

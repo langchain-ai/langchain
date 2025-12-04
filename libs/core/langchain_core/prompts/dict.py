@@ -2,7 +2,7 @@
 
 import warnings
 from functools import cached_property
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from typing_extensions import override
 
@@ -65,7 +65,7 @@ class DictPromptTemplate(RunnableSerializable[dict, dict]):
 
     @cached_property
     def _serialized(self) -> dict[str, Any]:
-        return dumpd(self)
+        return cast("dict[str, Any]", dumpd(self))
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
