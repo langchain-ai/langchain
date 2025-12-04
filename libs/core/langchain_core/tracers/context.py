@@ -137,7 +137,7 @@ def _get_tracer_project() -> str:
     tracing_context = ls_rh.get_tracing_context()
     run_tree = tracing_context["parent"]
     if run_tree is None and tracing_context["project_name"] is not None:
-        return tracing_context["project_name"]
+        return cast("str", tracing_context["project_name"])
     return getattr(
         run_tree,
         "session_name",

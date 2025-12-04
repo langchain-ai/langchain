@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import warnings
-from abc import ABC
+from abc import ABC, abstractmethod
 from string import Formatter
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, override
 
 from pydantic import BaseModel, create_model
 
@@ -189,7 +189,7 @@ def mustache_schema(template: str) -> type[BaseModel]:
     return _create_model_recursive("PromptInput", defs)
 
 
-def _create_model_recursive(name: str, defs: Defs) -> type:
+def _create_model_recursive(name: str, defs: Defs) -> type[BaseModel]:
     return create_model(  # type: ignore[call-overload]
         name,
         **{
@@ -199,7 +199,7 @@ def _create_model_recursive(name: str, defs: Defs) -> type:
     )
 
 
-DEFAULT_FORMATTER_MAPPING: dict[str, Callable] = {
+DEFAULT_FORMATTER_MAPPING: dict[str, Callable[..., str]] = {
     "f-string": formatter.format,
     "mustache": mustache_formatter,
     "jinja2": jinja2_formatter,
@@ -329,6 +329,10 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
             A formatted string.
         """
         return StringPromptValue(text=await self.aformat(**kwargs))
+
+    @override
+    @abstractmethod
+    def format(self, **kwargs: Any) -> str: ...
 
     def pretty_repr(
         self,
