@@ -1,5 +1,249 @@
-# 使用 langchain_v1 和 InMemoryStore 的简单示例
+# 使用 langchain_v1 用 Store 
 
+
+## Store 的使用场景汇总
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                          Store 可以使用的 4 个地方                               │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+┌───────────────────┐   ┌───────────────────┐   ┌───────────────────┐   ┌───────────────────┐
+│                   │   │                   │   │                   │   │                   │
+│   1. Tools        │   │   2. Middleware   │   │   3. Agent 外部   │   │  4. wrap_tool_call│
+│      (工具)       │   │      (中间件)     │   │      (直接访问)   │   │      (工具拦截)   │
+│                   │   │                   │   │                   │   │                   │
+│ InjectedStore()   │   │  runtime.store    │   │  store.mget()     │   │ request.runtime   │
+│ ToolRuntime.store │   │                   │   │  store.mset()     │   │    .store         │
+│                   │   │                   │   │                   │   │                   │
+└───────────────────┘   └───────────────────┘   └───────────────────┘   └───────────────────┘
+```
+
+---
+
+### 1. 在 Tools 中使用（已讨论）
+
+```python
+from typing import Annotated, Any
+from langchain.tools import InjectedStore, tool, ToolRuntime
+
+# 方式 A: InjectedStore
+@tool
+def my_tool(query: str, store: Annotated[Any, InjectedStore()]) -> str:
+    store.mset([("key", "value")])
+    return store.mget(["key"])[0]
+
+# 方式 B: ToolRuntime (包含 store)
+@tool
+def my_tool2(query: str, runtime: ToolRuntime) -> str:
+    if runtime.store:
+        runtime.store.put(("namespace",), "key", {"data": "value"})
+    return "done"
+```
+
+---
+
+### 2. 在 Middleware 中使用 ⭐
+
+中间件的所有钩子方法都接收 `runtime` 参数，可以通过 `runtime.store` 访问 store：
+
+```python
+from langchain.agents import AgentMiddleware, AgentState
+from langgraph.runtime import Runtime
+
+class MyMiddleware(AgentMiddleware):
+    
+    def before_agent(self, state: AgentState, runtime: Runtime) -> dict | None:
+        """Agent 执行前，通过 runtime.store 访问 store"""
+        if runtime.store:
+            # 读取用户偏好
+            user_prefs = runtime.store.get(("users",), state.get("user_id"))
+            print(f"用户偏好: {user_prefs}")
+        return None
+    
+    def before_model(self, state: AgentState, runtime: Runtime) -> dict | None:
+        """每次模型调用前"""
+        if runtime.store:
+            # 记录调用次数
+            runtime.store.put(("stats",), "call_count", {"count": 1})
+        return None
+    
+    def after_model(self, state: AgentState, runtime: Runtime) -> dict | None:
+        """每次模型调用后"""
+        if runtime.store:
+            # 缓存结果
+            runtime.store.put(("cache",), "last_response", state["messages"][-1])
+        return None
+    
+    def after_agent(self, state: AgentState, runtime: Runtime) -> dict | None:
+        """Agent 执行完成后"""
+        if runtime.store:
+            # 保存会话摘要
+            runtime.store.put(("sessions",), "summary", {"messages": len(state["messages"])})
+        return None
+```
+
+也可以使用装饰器方式：
+
+```python
+from langchain.agents import before_model, after_model
+
+@before_model
+def log_and_cache(state: AgentState, runtime: Runtime) -> None:
+    if runtime.store:
+        runtime.store.put(("logs",), "last_input", state["messages"][-1])
+
+@after_model  
+def cache_response(state: AgentState, runtime: Runtime) -> None:
+    if runtime.store:
+        runtime.store.put(("cache",), "last_output", state["messages"][-1])
+```
+
+---
+
+### 3. 在 Agent 外部直接使用
+
+因为 `store` 是你自己创建的对象，可以在代码任何地方直接访问：
+
+```python
+from langchain_core.stores import InMemoryStore
+from langchain.agents import create_agent
+
+# 创建 store
+store = InMemoryStore()
+
+# 创建 agent
+agent = create_agent(
+    model="openai:gpt-4o",
+    tools=[...],
+    store=store,
+)
+
+# ========== Agent 执行前 ==========
+# 预加载用户数据
+store.mset([
+    ("user:123:name", "张三"),
+    ("user:123:preferences", {"theme": "dark", "language": "zh-CN"}),
+])
+
+# ========== Agent 执行 ==========
+result = agent.invoke({"messages": [HumanMessage("...")]})
+
+# ========== Agent 执行后 ==========
+# 读取 agent 执行过程中保存的数据
+all_keys = list(store.yield_keys())
+print(f"Store 中的所有键: {all_keys}")
+
+# 导出数据用于持久化
+data = {key: store.mget([key])[0] for key in all_keys}
+print(f"所有数据: {data}")
+```
+
+---
+
+### 4. 在 wrap_tool_call 中使用
+
+拦截工具调用时，也可以通过 `request.runtime.store` 访问：
+
+```python
+from langchain.agents import AgentMiddleware
+from langchain.tools import ToolCallRequest
+from langchain_core.messages import ToolMessage
+
+class ToolCacheMiddleware(AgentMiddleware):
+    
+    def wrap_tool_call(self, request: ToolCallRequest, handler) -> ToolMessage:
+        """拦截工具调用，实现缓存"""
+        store = request.runtime.store if request.runtime else None
+        
+        if store:
+            # 检查缓存
+            cache_key = f"tool_cache:{request.tool_call['name']}:{request.tool_call['args']}"
+            cached = store.mget([cache_key])[0]
+            if cached:
+                return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
+        
+        # 执行工具
+        result = handler(request)
+        
+        if store:
+            # 保存缓存
+            store.mset([(cache_key, result.content)])
+        
+        return result
+```
+
+---
+
+## 完整示例：综合使用 Store
+
+```python
+from typing import Annotated, Any
+from langchain.agents import AgentState, AgentMiddleware, create_agent, before_agent
+from langchain.tools import InjectedStore, tool
+from langchain_core.messages import HumanMessage
+from langchain_core.stores import InMemoryStore
+from langgraph.runtime import Runtime
+
+
+# ========== 1. 工具中使用 ==========
+@tool
+def save_preference(key: str, value: str, store: Annotated[Any, InjectedStore()]) -> str:
+    """保存偏好设置"""
+    store.mset([(f"pref:{key}", value)])
+    return f"Saved {key}={value}"
+
+
+# ========== 2. 中间件中使用 ==========
+class UserContextMiddleware(AgentMiddleware):
+    def before_agent(self, state: AgentState, runtime: Runtime) -> dict | None:
+        if runtime.store:
+            # 加载用户上下文
+            user_name = runtime.store.mget(["user:name"])[0]
+            if user_name:
+                print(f"[Middleware] 欢迎回来，{user_name}!")
+        return None
+
+
+@before_agent
+def load_preferences(state: AgentState, runtime: Runtime) -> None:
+    if runtime.store:
+        prefs = list(runtime.store.yield_keys(prefix="pref:"))
+        print(f"[Decorator Middleware] 已加载 {len(prefs)} 个偏好设置")
+
+
+# ========== 3. 外部直接使用 ==========
+store = InMemoryStore()
+
+# 预设数据
+store.mset([("user:name", "小明")])
+
+agent = create_agent(
+    model="openai:gpt-4o-mini",
+    tools=[save_preference],
+    store=store,
+    middleware=[UserContextMiddleware(), load_preferences],
+)
+
+# 执行
+result = agent.invoke({"messages": [HumanMessage("保存我的主题为 dark")]})
+
+# 读取结果
+print(f"Store 数据: {list(store.yield_keys())}")
+```
+
+---
+
+## 总结对比
+
+| 使用场景 | 访问方式 | 适用情况 |
+|---------|---------|---------|
+| **Tools** | `Annotated[Any, InjectedStore()]` 或 `ToolRuntime.store` | 工具需要持久化数据 |
+| **Middleware 钩子** | `runtime.store` | 在 agent 生命周期各阶段操作数据 |
+| **wrap_tool_call** | `request.runtime.store` | 拦截工具调用时缓存/记录 |
+| **Agent 外部** | 直接使用 `store` 对象 | 预加载数据、导出数据、调试 |
+
+## 简单示例
 ```python
 """
 使用 langchain_v1 和 InMemoryStore 的简单示例
