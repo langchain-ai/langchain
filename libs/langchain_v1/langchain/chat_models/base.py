@@ -129,6 +129,7 @@ def init_chat_model(
             - `nvidia`                  -> [`langchain-nvidia-ai-endpoints`](https://docs.langchain.com/oss/python/integrations/providers/nvidia)
             - `xai`                     -> [`langchain-xai`](https://docs.langchain.com/oss/python/integrations/providers/xai)
             - `perplexity`              -> [`langchain-perplexity`](https://docs.langchain.com/oss/python/integrations/providers/perplexity)
+            - `qwen`                    -> [`langchain-qwen`](https://docs.langchain.com/oss/python/integrations/providers/qwen)
 
         configurable_fields: Which model parameters are configurable at runtime:
 
@@ -449,6 +450,11 @@ def _init_chat_model_helper(
         from langchain_perplexity import ChatPerplexity
 
         return ChatPerplexity(model=model, **kwargs)
+    if model_provider == "qwen":
+        _check_pkg("langchain_qwen")
+        from langchain_qwen import ChatQwQ
+
+        return ChatQwQ(model=model, **kwargs)
     supported = ", ".join(_SUPPORTED_PROVIDERS)
     msg = f"Unsupported {model_provider=}.\n\nSupported model providers are: {supported}"
     raise ValueError(msg)
