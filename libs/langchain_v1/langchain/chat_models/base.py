@@ -315,7 +315,10 @@ def init_chat_model(
         raise TypeError(msg)
 
     if model_provider is not None and not isinstance(model_provider, str):
-        msg = f"model_provider must be a string, got {type(model_provider).__name__}: {model_provider!r}"
+        msg = (
+            f"model_provider must be a string, got "
+            f"{type(model_provider).__name__}: {model_provider!r}"
+        )
         raise TypeError(msg)
 
     if model is not None and model.strip() == "":
@@ -572,7 +575,10 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
         return "google_vertexai"
 
     # AWS Bedrock models
-    if model_name.startswith("amazon.") or model_lower.startswith("anthropic.") or model_lower.startswith("meta."):
+    if (
+        model_name.startswith("amazon.")
+        or model_lower.startswith(("anthropic.", "meta."))
+    ):
         return "bedrock"
 
     # Mistral models
