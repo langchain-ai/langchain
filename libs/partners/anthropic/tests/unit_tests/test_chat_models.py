@@ -24,6 +24,7 @@ from langchain_anthropic.chat_models import (
     _create_usage_metadata,
     _format_image,
     _format_messages,
+    _is_builtin_tool,
     _merge_messages,
     convert_to_anthropic_tool,
 )
@@ -1792,6 +1793,123 @@ def test_auto_append_betas_for_tool_types() -> None:
         "web-fetch-2025-09-10",
         "code-execution-2025-05-22",
     }
+
+
+def test_tool_search_is_builtin_tool() -> None:
+    """Test that tool search tools are recognized as built-in tools."""
+    # Test regex variant
+    regex_tool = {
+        "type": "tool_search_tool_regex_20251119",
+        "name": "tool_search_tool_regex",
+    }
+    assert _is_builtin_tool(regex_tool)
+
+    # Test BM25 variant
+    bm25_tool = {
+        "type": "tool_search_tool_bm25_20251119",
+        "name": "tool_search_tool_bm25",
+    }
+    assert _is_builtin_tool(bm25_tool)
+
+    # Test non-builtin tool
+    regular_tool = {
+        "name": "get_weather",
+        "description": "Get weather",
+        "input_schema": {"type": "object", "properties": {}},
+    }
+    assert not _is_builtin_tool(regular_tool)
+
+
+def test_tool_search_beta_headers() -> None:
+    """Test that tool search tools auto-append the correct beta headers."""
+    # Test regex variant
+    model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    regex_tool = {
+        "type": "tool_search_tool_regex_20251119",
+        "name": "tool_search_tool_regex",
+    }
+    model_with_tools = model.bind_tools([regex_tool])
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+    assert payload["betas"] == ["advanced-tool-use-2025-11-20"]
+
+    # Test BM25 variant
+    model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    bm25_tool = {
+        "type": "tool_search_tool_bm25_20251119",
+        "name": "tool_search_tool_bm25",
+    }
+    model_with_tools = model.bind_tools([bm25_tool])
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+    assert payload["betas"] == ["advanced-tool-use-2025-11-20"]
+
+    # Test merging with existing betas
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        betas=["mcp-client-2025-04-04"],  # type: ignore[call-arg]
+    )
+    model_with_tools = model.bind_tools([regex_tool])
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+    assert payload["betas"] == [
+        "mcp-client-2025-04-04",
+        "advanced-tool-use-2025-11-20",
+    ]
+
+
+def test_tool_search_result_formatting() -> None:
+    """Test that `tool_result` blocks with `tool_reference` are handled correctly."""
+    # Tool search result with tool_reference blocks
+    messages = [
+        HumanMessage("What tools can help with weather?"),  # type: ignore[misc]
+        AIMessage(  # type: ignore[misc]
+            [
+                {
+                    "type": "server_tool_use",
+                    "id": "srvtoolu_123",
+                    "name": "tool_search_tool_regex",
+                    "input": {"query": "weather"},
+                },
+                {
+                    "type": "tool_result",
+                    "tool_use_id": "srvtoolu_123",
+                    "content": [
+                        {"type": "tool_reference", "tool_name": "get_weather"},
+                        {"type": "tool_reference", "tool_name": "weather_forecast"},
+                    ],
+                },
+            ],
+        ),
+    ]
+
+    _, formatted = _format_messages(messages)
+
+    # Verify the tool_result block is preserved correctly
+    assistant_msg = formatted[1]
+    assert assistant_msg["role"] == "assistant"
+
+    # Find the tool_result block
+    tool_result_block = None
+    for block in assistant_msg["content"]:
+        if isinstance(block, dict) and block.get("type") == "tool_result":
+            tool_result_block = block
+            break
+
+    assert tool_result_block is not None
+    assert tool_result_block["tool_use_id"] == "srvtoolu_123"
+    assert isinstance(tool_result_block["content"], list)
+    assert len(tool_result_block["content"]) == 2
+    assert tool_result_block["content"][0]["type"] == "tool_reference"
+    assert tool_result_block["content"][0]["tool_name"] == "get_weather"
+    assert tool_result_block["content"][1]["type"] == "tool_reference"
+    assert tool_result_block["content"][1]["tool_name"] == "weather_forecast"
 
 
 def test_auto_append_betas_for_mcp_servers() -> None:
