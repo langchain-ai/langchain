@@ -71,6 +71,11 @@ from pydantic import (
     SecretStr,
     model_validator,
 )
+from tenacity import (
+    AsyncRetrying,
+    stop_after_attempt,
+    wait_exponential_jitter,
+)
 from typing_extensions import Self
 
 from langchain_mistralai._compat import _convert_from_v1_to_mistral
@@ -479,7 +484,7 @@ class ChatMistralAI(BaseChatModel):
 
     max_retries: int = 5
 
-    timeout: int = 120
+    timeout: int = 60
 
     max_concurrent_requests: int = 64
 
@@ -748,22 +753,29 @@ class ChatMistralAI(BaseChatModel):
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         index = -1
         index_type = ""
-        async for chunk in await acompletion_with_retry(
-            self, messages=message_dicts, run_manager=run_manager, **params
+
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(self.max_retries),
+            wait=wait_exponential_jitter(),
+            reraise=True,
         ):
-            if len(chunk.get("choices", [])) == 0:
-                continue
-            new_chunk, index, index_type = _convert_chunk_to_message_chunk(
-                chunk, default_chunk_class, index, index_type, self.output_version
-            )
-            # make future chunks same type as first chunk
-            default_chunk_class = new_chunk.__class__
-            gen_chunk = ChatGenerationChunk(message=new_chunk)
-            if run_manager:
-                await run_manager.on_llm_new_token(
-                    token=cast("str", new_chunk.content), chunk=gen_chunk
-                )
-            yield gen_chunk
+            with attempt:
+                async for chunk in await acompletion_with_retry(
+                    self, messages=message_dicts, run_manager=run_manager, **params
+                ):
+                    if len(chunk.get("choices", [])) == 0:
+                        continue
+                    new_chunk, index, index_type = _convert_chunk_to_message_chunk(
+                        chunk, default_chunk_class, index, index_type, self.output_version
+                    )
+                    # make future chunks same type as first chunk
+                    default_chunk_class = new_chunk.__class__
+                    gen_chunk = ChatGenerationChunk(message=new_chunk)
+                    if run_manager:
+                        await run_manager.on_llm_new_token(
+                            token=cast("str", new_chunk.content), chunk=gen_chunk
+                        )
+                    yield gen_chunk
 
     async def _agenerate(
         self,
