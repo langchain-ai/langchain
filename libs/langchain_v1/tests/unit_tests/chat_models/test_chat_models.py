@@ -284,3 +284,200 @@ def test_configurable_with_default() -> None:
     prompt = ChatPromptTemplate.from_messages([("system", "foo")])
     chain = prompt | model_with_config
     assert isinstance(chain, RunnableSequence)
+
+
+def test_init_chat_model_input_validation() -> None:
+    """Test input validation for init_chat_model function.
+
+    Validates that the function properly checks input types and values:
+    - model parameter must be a string or None
+    - model_provider parameter must be a string or None
+    - Empty strings are rejected
+    - configurable_fields must be properly typed
+    """
+    # Test invalid model type
+    with pytest.raises(TypeError, match="model must be a string"):
+        init_chat_model(model=123)  # type: ignore[arg-type]
+
+    # Test invalid model_provider type
+    with pytest.raises(TypeError, match="model_provider must be a string"):
+        init_chat_model(model="gpt-4o", model_provider=456)  # type: ignore[arg-type]
+
+    # Test empty model string
+    with pytest.raises(ValueError, match="model cannot be an empty string"):
+        init_chat_model(model="")
+
+    # Test empty model_provider string
+    with pytest.raises(ValueError, match="model_provider cannot be an empty string"):
+        init_chat_model(model="gpt-4o", model_provider="")
+
+    # Test model string with only whitespace
+    with pytest.raises(ValueError, match="model cannot be an empty string"):
+        init_chat_model(model="   ")
+
+    # Test invalid configurable_fields type
+    with pytest.raises(TypeError, match="configurable_fields must be 'any', list, or tuple"):
+        init_chat_model(model="gpt-4o", configurable_fields="invalid")  # type: ignore[arg-type]
+
+    # Test configurable_fields with non-string elements
+    with pytest.raises(TypeError, match="All configurable_fields must be strings"):
+        init_chat_model(model="gpt-4o", configurable_fields=["model", 123])  # type: ignore[list-item]
+
+    # Test configurable_fields with empty string elements
+    with pytest.raises(ValueError, match="configurable_fields cannot contain empty strings"):
+        init_chat_model(model="gpt-4o", configurable_fields=["model", ""])
+
+
+def test_model_inference_patterns() -> None:
+    """Test enhanced model inference patterns.
+
+    Validates that the improved _attempt_infer_model_provider function:
+    - Correctly infers providers for various model naming patterns
+    - Handles case-insensitive matching where appropriate
+    - Supports newer OpenAI models and aliases
+    - Recognizes Bedrock model patterns
+    """
+    from langchain.chat_models.base import _attempt_infer_model_provider
+
+    # OpenAI models
+    assert _attempt_infer_model_provider("gpt-4o") == "openai"
+    assert _attempt_infer_model_provider("gpt-3.5-turbo") == "openai"
+    assert _attempt_infer_model_provider("o1-preview") == "openai"
+    assert _attempt_infer_model_provider("o3-mini") == "openai"
+    assert _attempt_infer_model_provider("ChatGPT-4o") == "openai"  # Case insensitive
+    assert _attempt_infer_model_provider("text-davinci-003") == "openai"
+
+    # Anthropic models
+    assert _attempt_infer_model_provider("claude-3-sonnet-20240229") == "anthropic"
+    assert _attempt_infer_model_provider("Claude-3-5-Haiku") == "anthropic"  # Case insensitive
+
+    # Mistral models (including mixtral)
+    assert _attempt_infer_model_provider("mistral-7b-instruct") == "mistralai"
+    assert _attempt_infer_model_provider("mixtral-8x7b-instruct") == "mistralai"
+    assert _attempt_infer_model_provider("Mistral-Large") == "mistralai"  # Case insensitive
+
+    # Bedrock models (multiple patterns)
+    assert _attempt_infer_model_provider("amazon.titan-text-lite-v1") == "bedrock"
+    assert _attempt_infer_model_provider("anthropic.claude-v2") == "bedrock"
+    assert _attempt_infer_model_provider("meta.llama2-13b-chat-v1") == "bedrock"
+
+    # Other providers
+    assert _attempt_infer_model_provider("command-light") == "cohere"
+    assert _attempt_infer_model_provider("gemini-pro") == "google_vertexai"
+    assert _attempt_infer_model_provider("deepseek-chat") == "deepseek"
+    assert _attempt_infer_model_provider("grok-1") == "xai"
+    assert _attempt_infer_model_provider("sonar-medium-online") == "perplexity"
+    assert _attempt_infer_model_provider("solar-1-mini-chat") == "upstage"
+
+    # Unknown models
+    assert _attempt_infer_model_provider("unknown-model-123") is None
+    assert _attempt_infer_model_provider("") is None
+
+
+def test_enhanced_error_messages() -> None:
+    """Test enhanced error messages for better user experience.
+
+    Validates that error messages:
+    - Provide helpful suggestions and examples
+    - Include links to documentation
+    - List supported providers in sorted order
+    - Give specific guidance for common issues
+    """
+    # Test error message for unknown model provider
+    with pytest.raises(ValueError) as exc_info:
+        init_chat_model("unknown-model-xyz")
+
+    error_msg = str(exc_info.value)
+    # Check that error message contains helpful information
+    assert "Unable to infer model provider" in error_msg
+    assert "Supported providers:" in error_msg
+    assert "Examples:" in error_msg
+    assert "https://docs.langchain.com" in error_msg
+    assert "init_chat_model('unknown-model-xyz', model_provider=" in error_msg
+
+    # Test error message for unsupported provider
+    with pytest.raises(ValueError) as exc_info:
+        init_chat_model("test-model", model_provider="unsupported_provider")
+
+    error_msg = str(exc_info.value)
+    assert "Unsupported model_provider='unsupported_provider'" in error_msg
+    assert "Supported providers are:" in error_msg
+    assert "https://docs.langchain.com/oss/python/integrations/providers/" in error_msg
+    assert "https://docs.langchain.com/oss/python/contributing/" in error_msg
+
+
+def test_provider_colon_format_parsing() -> None:
+    """Test parsing of provider:model format with various edge cases.
+
+    Validates that provider:model parsing:
+    - Works with standard formats
+    - Handles models with colons in their names
+    - Properly validates provider names
+    """
+    from langchain.chat_models.base import _parse_model
+
+    # Standard format
+    model, provider = _parse_model("openai:gpt-4o", None)
+    assert model == "gpt-4o"
+    assert provider == "openai"
+
+    # Model with multiple colons
+    model, provider = _parse_model("openai:custom:model:v1", None)
+    assert model == "custom:model:v1"
+    assert provider == "openai"
+
+    # Provider normalization (dash to underscore)
+    model, provider = _parse_model("azure-openai:gpt-4", None)
+    assert model == "gpt-4"
+    assert provider == "azure_openai"
+
+    # Explicit provider overrides colon format
+    model, provider = _parse_model("openai:gpt-4o", "anthropic")
+    assert model == "openai:gpt-4o"  # Model not split when provider is explicit
+    assert provider == "anthropic"
+
+
+@pytest.mark.parametrize(
+    ("model_name", "expected_provider"),
+    [
+        # OpenAI variations
+        ("gpt-4o-mini", "openai"),
+        ("o1-mini", "openai"),
+        ("o3-mini", "openai"),
+        ("ChatGPT-4", "openai"),
+
+        # Anthropic variations
+        ("claude-3-opus-20240229", "anthropic"),
+        ("claude-3-5-sonnet-20241022", "anthropic"),
+
+        # Mistral/Mixtral
+        ("mistral-large-latest", "mistralai"),
+        ("mixtral-8x22b-instruct-v0.1", "mistralai"),
+
+        # Bedrock patterns
+        ("amazon.titan-embed-text-v1", "bedrock"),
+        ("anthropic.claude-instant-v1", "bedrock"),
+        ("meta.llama2-70b-chat-v1", "bedrock"),
+
+        # Other providers
+        ("command-r-plus", "cohere"),
+        ("gemini-1.5-pro", "google_vertexai"),
+        ("deepseek-coder-6.7b-instruct", "deepseek"),
+        ("grok-beta", "xai"),
+        ("sonar-small-chat", "perplexity"),
+        ("solar-10.7b-instruct-v1.0", "upstage"),
+    ],
+)
+def test_comprehensive_model_inference(model_name: str, expected_provider: str) -> None:
+    """Comprehensive test for model inference with real model names.
+
+    Tests the enhanced model inference with actual model names from various
+    providers to ensure robust pattern matching.
+    """
+    from langchain.chat_models.base import _attempt_infer_model_provider
+
+    inferred_provider = _attempt_infer_model_provider(model_name)
+    assert inferred_provider == expected_provider, (
+        f"Expected {expected_provider} for model {model_name}, "
+        f"but got {inferred_provider}"
+    )
