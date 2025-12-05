@@ -13,6 +13,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PrivateAttr,
     SecretStr,
     model_validator,
 )
@@ -130,6 +131,8 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         default=None
     )
 
+    _semaphore: asyncio.Semaphore | None = PrivateAttr(default=None)
+
     mistral_api_key: SecretStr = Field(
         alias="api_key",
         default_factory=secret_from_env("MISTRAL_API_KEY", default=""),
@@ -160,6 +163,10 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         """Validate configuration."""
         api_key_str = self.mistral_api_key.get_secret_value()
         # TODO: handle retries
+        limits = httpx.Limits(
+            max_connections=self.max_concurrent_requests,
+            max_keepalive_connections=self.max_concurrent_requests,
+        )
         if not self.client:
             self.client = httpx.Client(
                 base_url=self.endpoint,
@@ -169,6 +176,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                     "Authorization": f"Bearer {api_key_str}",
                 },
                 timeout=self.timeout,
+                limits=limits,
             )
         # TODO: handle retries and max_concurrency
         if not self.async_client:
@@ -180,7 +188,10 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                     "Authorization": f"Bearer {api_key_str}",
                 },
                 timeout=self.timeout,
+                limits=limits,
             )
+        if self._semaphore is None:
+            self._semaphore = asyncio.Semaphore(self.max_concurrent_requests)
         if self.tokenizer is None:
             try:
                 self.tokenizer = Tokenizer.from_pretrained(
@@ -292,8 +303,17 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                 response.raise_for_status()
                 return response
 
+            semaphore = self._semaphore
+            if semaphore is None:
+                semaphore = asyncio.Semaphore(self.max_concurrent_requests)
+                self._semaphore = semaphore
+
+            async def _bounded_aembed_batch(batch: list[str]) -> Response:
+                async with semaphore:
+                    return await _aembed_batch(batch)
+
             batch_responses = await asyncio.gather(
-                *[_aembed_batch(batch) for batch in self._get_batches(texts)]
+                *[_bounded_aembed_batch(batch) for batch in self._get_batches(texts)]
             )
             return [
                 list(map(float, embedding_obj["embedding"]))
