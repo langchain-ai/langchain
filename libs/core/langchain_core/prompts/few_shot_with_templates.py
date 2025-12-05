@@ -39,7 +39,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
 
     template_format: PromptTemplateFormat = "f-string"
     """The format of the prompt template.
-    Options are: 'f-string', 'jinja2', 'mustache'."""
+    Options are: 'f-string', 'jinja2', 'jinja2_unrestricted', 'mustache'."""
 
     validate_template: bool = False
     """Whether or not to try validating the template."""

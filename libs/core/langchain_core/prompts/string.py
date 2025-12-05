@@ -83,7 +83,38 @@ try:
 except ImportError:
     _HAS_JINJA2 = False
 
-PromptTemplateFormat = Literal["f-string", "mustache", "jinja2"]
+PromptTemplateFormat = Literal["f-string", "mustache", "jinja2", "jinja2_unrestricted"]
+
+
+def jinja2_formatter_unrestricted(template: str, /, **kwargs: Any) -> str:
+    """Format a template using jinja2.
+
+    *Security warning*:
+        This method uses Jinja2's unrestricted sandbox.
+        This is not recommended as it is not secure.
+
+    Args:
+        template: The template string.
+        **kwargs: The variables to format the template with.
+
+    Returns:
+        The formatted string.
+
+    Raises:
+        ImportError: If jinja2 is not installed.
+    """
+    if not _HAS_JINJA2:
+        msg = (
+            "jinja2 not installed, which is needed to use the\
+                jinja2_formatter_unrestricted. "
+            "Please install it with `pip install jinja2`."
+            "Please be cautious when using jinja2 templates. "
+            "Do not expand jinja2 templates using unverified or user-controlled "
+            "inputs as that can result in arbitrary Python code execution."
+        )
+        raise ImportError(msg)
+
+    return SandboxedEnvironment().from_string(template).render(**kwargs)
 
 
 def jinja2_formatter(template: str, /, **kwargs: Any) -> str:
@@ -260,11 +291,13 @@ DEFAULT_FORMATTER_MAPPING: dict[str, Callable] = {
     "f-string": formatter.format,
     "mustache": mustache_formatter,
     "jinja2": jinja2_formatter,
+    "jinja2_unrestricted": jinja2_formatter_unrestricted,
 }
 
 DEFAULT_VALIDATOR_MAPPING: dict[str, Callable] = {
     "f-string": formatter.validate_input_variables,
     "jinja2": validate_jinja2,
+    "jinja2_unrestricted": validate_jinja2,
 }
 
 
@@ -313,7 +346,7 @@ def get_template_variables(template: str, template_format: str) -> list[str]:
     Raises:
         ValueError: If the template format is not supported.
     """
-    if template_format == "jinja2":
+    if template_format in ["jinja2", "jinja2_unrestricted"]:
         # Get the variables for the template
         input_variables = _get_jinja2_variables_from_template(template)
     elif template_format == "f-string":
