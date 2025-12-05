@@ -242,7 +242,12 @@ class ChatDeepSeek(BaseChatOpenAI):
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
         for message in payload["messages"]:
             if message["role"] == "tool" and isinstance(message["content"], list):
-                message["content"] = json.dumps(message["content"])
+                # DeepSeek API expects tool message content to be a string, not a list.
+                # Convert empty arrays to empty string, non-empty arrays to JSON string.
+                if not message["content"]:
+                    message["content"] = ""
+                else:
+                    message["content"] = json.dumps(message["content"])
             elif message["role"] == "assistant" and isinstance(
                 message["content"], list
             ):
