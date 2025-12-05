@@ -4015,9 +4015,14 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         if block_type in ("text", "output_text", "refusal"):
                             msg_id = block.get("id")
                             if block_type in ("text", "output_text"):
+                                # Defensive check: block may not have "text" key
+                                text = block.get("text")
+                                if text is None:
+                                    # Skip blocks without text content
+                                    continue
                                 new_block = {
                                     "type": "output_text",
-                                    "text": block["text"],
+                                    "text": text,
                                     "annotations": [
                                         _format_annotation_from_lc(annotation)
                                         for annotation in block.get("annotations") or []

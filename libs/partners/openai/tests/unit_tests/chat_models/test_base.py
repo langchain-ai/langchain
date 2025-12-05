@@ -2091,6 +2091,38 @@ def test__construct_responses_api_input_multiple_message_components() -> None:
     ]
 
 
+def test__construct_responses_api_input_skips_blocks_without_text() -> None:
+    """Test that blocks without 'text' key are skipped."""
+    # Test case: block with type "text" but missing "text" key
+    messages = [
+        AIMessage(
+            content=[
+                {"type": "text", "text": "valid text", "id": "msg_123"},
+                {"type": "text", "id": "msg_123"},  # Missing "text" key
+                {"type": "output_text", "text": "valid output", "id": "msg_123"},
+                {"type": "output_text", "id": "msg_123"},  # Missing "text" key
+            ]
+        )
+    ]
+    result = _construct_responses_api_input(messages)
+
+    # Should only include blocks with valid text content
+    assert len(result) == 1
+    assert result[0]["type"] == "message"
+    assert result[0]["role"] == "assistant"
+    assert len(result[0]["content"]) == 2
+    assert result[0]["content"][0] == {
+        "type": "output_text",
+        "text": "valid text",
+        "annotations": [],
+    }
+    assert result[0]["content"][1] == {
+        "type": "output_text",
+        "text": "valid output",
+        "annotations": [],
+    }
+
+
 def test__construct_responses_api_input_human_message_with_image_url_conversion() -> (
     None
 ):
