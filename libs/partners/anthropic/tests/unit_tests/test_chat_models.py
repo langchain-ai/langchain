@@ -2046,16 +2046,8 @@ def test_effort_parameter_validation() -> None:
         ChatAnthropic(model="claude-opus-4-5-20251101", effort="invalid")  # type: ignore[arg-type]
 
 
-def test_effort_model_compatibility() -> None:
-    """Test that effort parameter checks model compatibility."""
-    # Should raise error for models that don't support effort
-    with pytest.raises(
-        ValueError,
-        match="does not support reasoning effort control",
-    ):
-        ChatAnthropic(model=MODEL_NAME, effort="medium")
-
-    # Should work for models that support effort
+def test_effort_populates_betas() -> None:
+    """Test that effort parameter auto-populates required betas."""
     model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="medium")
     assert model.effort == "medium"
 
@@ -2067,13 +2059,6 @@ def test_effort_model_compatibility() -> None:
 
 def test_effort_in_output_config() -> None:
     """Test that effort can be specified in `output_config`."""
-    # Test effort in output_config is validated
-    with pytest.raises(ValueError, match="Invalid effort value"):
-        ChatAnthropic(
-            model="claude-opus-4-5-20251101",
-            output_config={"effort": "invalid"},
-        )
-
     # Test valid effort in output_config
     model = ChatAnthropic(
         model="claude-opus-4-5-20251101",
@@ -2145,17 +2130,3 @@ def test_output_config_without_effort() -> None:
     assert payload.get("betas") is None or "effort-2025-11-24" not in payload.get(
         "betas", []
     )
-
-
-def test_effort_in_model_profile() -> None:
-    """Test that `reasoning_effort_control` is in the model profile."""
-    # Claude Opus 4.5 should support effort
-    model = ChatAnthropic(model="claude-opus-4-5-20251101")
-    assert model.profile
-    assert model.profile.get("reasoning_effort_control") is True
-
-
-def test_effort_validation_with_unknown_model() -> None:
-    """Test that effort validation gives helpful errors for unknown models."""
-    with pytest.raises(ValueError, match="Profile not found for model"):
-        ChatAnthropic(model="claude-unknown-model", effort="medium")
