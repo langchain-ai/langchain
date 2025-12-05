@@ -2396,6 +2396,10 @@ def test_tool_injected_tool_call_id_with_custom_schema() -> None:
     ):
         injected_tool.invoke({"x": 42})
 
+    # Test that tool_call_id can be passed directly in input dict
+    result = injected_tool.invoke({"x": 42, "tool_call_id": "direct_id"})
+    assert result == ToolMessage("42", tool_call_id="direct_id")
+
 
 def test_tool_injected_arg_with_custom_schema() -> None:
     """Ensure InjectedToolArg works with custom args schema."""
