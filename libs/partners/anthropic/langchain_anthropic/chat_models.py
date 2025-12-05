@@ -75,8 +75,18 @@ _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
-    default = _MODEL_PROFILES.get(model_name) or {}
-    return default.copy()
+    """Get the default profile for a model.
+
+    Args:
+        model_name: The model identifier.
+
+    Returns:
+        The model profile dictionary, or an empty dict if not found.
+    """
+    default = _MODEL_PROFILES.get(model_name)
+    if default:
+        return default.copy()
+    return {}
 
 
 _MODEL_DEFAULT_MAX_OUTPUT_TOKENS: Final[dict[str, int]] = {
@@ -1056,6 +1066,29 @@ class ChatAnthropic(BaseChatModel):
             Refer to the [Claude docs](https://platform.claude.com/docs/en/build-with-claude/extended-thinking#differences-in-thinking-across-model-versions)
             for more info.
 
+    ???+ example "Effort"
+
+        Certain Claude models support an [effort](https://platform.claude.com/docs/en/build-with-claude/effort)
+        feature, which will control how many tokens Claude uses when responding.
+
+        !!! example
+
+            ```python hl_lines="6"
+            from langchain_anthropic import ChatAnthropic
+
+            model = ChatAnthropic(
+                model="claude-opus-4-5-20251101",
+                max_tokens=4096,
+                effort="medium",  # Options: "high", "medium", "low"
+            )
+
+            response = model.invoke("Analyze the trade-offs between microservices and monolithic architectures")
+            print(response.content)
+            ```
+
+        See the [Claude docs](https://platform.claude.com/docs/en/build-with-claude/effort)
+        for more detail on when to use different effort levels.
+
     ???+ example "Prompt caching"
 
         Prompt caching reduces processing time and costs for repetitive tasks or prompts
@@ -1638,26 +1671,40 @@ class ChatAnthropic(BaseChatModel):
     e.g., `#!python {"type": "enabled", "budget_tokens": 10_000}`
     """
 
+    effort: Literal["high", "medium", "low"] | None = None
+    """Control how many tokens Claude uses when responding.
+
+    This parameter will be merged into the `output_config` parameter when making
+    API calls.
+
+    Example: `effort="medium"`
+
+    !!! note
+
+        Setting `effort` to `'high'` produces exactly the same behavior as omitting the
+        parameter altogether.
+
+    !!! note "Model Support"
+
+        This feature is currently only supported by Claude Opus 4.5.
+
+    !!! note "Automatic beta header"
+
+        The required `effort-2025-11-24` beta header is
+        automatically appended to the request when using `effort`, so you
+        don't need to manually specify it in the `betas` parameter.
+    """
+
     mcp_servers: list[dict[str, Any]] | None = None
     """List of MCP servers to use for the request.
 
     Example: `#!python mcp_servers=[{"type": "url", "url": "https://mcp.example.com/mcp",
     "name": "example-mcp"}]`
-
-    !!! note
-
-        This feature requires the beta header `'mcp-client-2025-11-20'` to be set in
-        [`betas`][langchain_anthropic.chat_models.ChatAnthropic.betas].
     """
 
     context_management: dict[str, Any] | None = None
     """Configuration for
     [context management](https://platform.claude.com/docs/en/build-with-claude/context-editing).
-
-    !!! note
-
-        This feature requires the beta header `'context-management-2025-06-27'` to be
-        set in [`betas`][langchain_anthropic.chat_models.ChatAnthropic.betas].
     """
 
     @property
@@ -1867,6 +1914,27 @@ class ChatAnthropic(BaseChatModel):
         }
         if self.thinking is not None:
             payload["thinking"] = self.thinking
+
+        # Handle output_config and effort parameter
+        # Priority: self.effort > payload output_config
+        output_config = payload.get("output_config", {})
+        output_config = output_config.copy() if isinstance(output_config, dict) else {}
+
+        if self.effort:
+            output_config["effort"] = self.effort
+
+        if output_config:
+            payload["output_config"] = output_config
+
+            # Auto-append required beta for effort
+            if "effort" in output_config:
+                required_beta = "effort-2025-11-24"
+                if payload["betas"]:
+                    # Merge with existing betas
+                    if required_beta not in payload["betas"]:
+                        payload["betas"] = [*payload["betas"], required_beta]
+                else:
+                    payload["betas"] = [required_beta]
 
         if "response_format" in payload:
             # response_format present when using agents.create_agent's ProviderStrategy
