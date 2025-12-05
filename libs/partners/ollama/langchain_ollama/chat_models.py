@@ -774,6 +774,11 @@ class ChatOllama(BaseChatModel):
             **kwargs,
         }
 
+        # Filter out 'strict' argument if present, as it is not supported by Ollama
+        # but may be passed by upstream libraries (e.g. LangChain ProviderStrategy)
+        if "strict" in params:
+            params.pop("strict")
+
         if tools := kwargs.get("tools"):
             params["tools"] = tools
 
