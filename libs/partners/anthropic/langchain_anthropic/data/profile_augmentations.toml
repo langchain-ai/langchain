@@ -6,16 +6,9 @@ pdf_inputs = true
 pdf_tool_message = true
 image_tool_message = true
 structured_output = false
-reasoning_effort_control = false
 
 [overrides."claude-sonnet-4-5"]
 structured_output = true
 
 [overrides."claude-opus-4-1"]
 structured_output = true
-
-[overrides."claude-opus-4-5"]
-reasoning_effort_control = true
-
-[overrides."claude-opus-4-5-20251101"]
-reasoning_effort_control = true
