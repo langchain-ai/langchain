@@ -330,58 +330,58 @@ def test_init_chat_model_input_validation() -> None:
 
 def test_model_inference_patterns() -> None:
     """Test enhanced model inference patterns.
-    
+
     Validates model inference by testing the public init_chat_model function
     with various model naming patterns to ensure providers are correctly inferred.
     """
     # Test that model inference works correctly through the public API
     # We test error messages to verify inference is working
-    
+
     # OpenAI models - should be inferred correctly (won't raise ValueError for provider)
     # We expect ImportError since we don't have the actual packages installed
     with pytest.raises(ImportError, match="langchain_openai"):
         init_chat_model("gpt-4o")
-    
+
     with pytest.raises(ImportError, match="langchain_openai"):
         init_chat_model("o1-preview")
-    
-    with pytest.raises(ImportError, match="langchain_openai"):  
+
+    with pytest.raises(ImportError, match="langchain_openai"):
         init_chat_model("o3-mini")
-    
+
     # Anthropic models
     with pytest.raises(ImportError, match="langchain_anthropic"):
         init_chat_model("claude-3-sonnet-20240229")
-    
+
     # Mistral models (including mixtral)
     with pytest.raises(ImportError, match="langchain_mistralai"):
         init_chat_model("mistral-7b-instruct")
-    
+
     with pytest.raises(ImportError, match="langchain_mistralai"):
         init_chat_model("mixtral-8x7b-instruct")
-    
+
     # Bedrock models (multiple patterns)
     with pytest.raises(ImportError, match="langchain_aws"):
         init_chat_model("amazon.titan-text-lite-v1")
-    
+
     # Other providers
     with pytest.raises(ImportError, match="langchain_cohere"):
         init_chat_model("command-light")
-    
+
     with pytest.raises(ImportError, match="langchain_google_vertexai"):
         init_chat_model("gemini-pro")
-    
+
     with pytest.raises(ImportError, match="langchain_deepseek"):
         init_chat_model("deepseek-chat")
-    
+
     with pytest.raises(ImportError, match="langchain_xai"):
         init_chat_model("grok-1")
-    
+
     with pytest.raises(ImportError, match="langchain_perplexity"):
         init_chat_model("sonar-medium-online")
-    
+
     with pytest.raises(ImportError, match="langchain_upstage"):
         init_chat_model("solar-1-mini-chat")
-    
+
     # Unknown models should raise ValueError for provider inference
     with pytest.raises(ValueError, match="Unable to infer model provider"):
         init_chat_model("unknown-model-123")
@@ -421,24 +421,24 @@ def test_enhanced_error_messages() -> None:
 
 def test_provider_colon_format_parsing() -> None:
     """Test parsing of provider:model format with various edge cases.
-    
+
     Validates that provider:model parsing works through the public API:
     - Works with standard formats
-    - Handles models with colons in their names  
+    - Handles models with colons in their names
     - Properly validates provider names
     """
     # Standard format - should work (will fail at ImportError, not ValueError)
     with pytest.raises(ImportError, match="langchain_openai"):
         init_chat_model("openai:gpt-4o")
-    
+
     # Model with multiple colons - should work
     with pytest.raises(ImportError, match="langchain_openai"):
         init_chat_model("openai:custom:model:v1")
-    
+
     # Provider normalization (dash to underscore) should work
     with pytest.raises(ImportError, match="langchain_openai"):
         init_chat_model("azure-openai:gpt-4")
-    
+
     # Invalid provider should raise ValueError
     with pytest.raises(ValueError, match="Unsupported model_provider"):
         init_chat_model("invalid_provider:some-model")
