@@ -232,14 +232,17 @@ class TestChatDeepSeekCustomUnit:
         """Test that tool message content is converted from list to string."""
         chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
 
+        # Empty array should be converted to empty string (not JSON string "[]")
         tool_message = ToolMessage(content=[], tool_call_id="test_id")
         payload = chat_model._get_request_payload([tool_message])
-        assert payload["messages"][0]["content"] == "[]"
+        assert payload["messages"][0]["content"] == ""
 
+        # Non-empty array should be converted to JSON string
         tool_message = ToolMessage(content=["item1", "item2"], tool_call_id="test_id")
         payload = chat_model._get_request_payload([tool_message])
         assert payload["messages"][0]["content"] == '["item1", "item2"]'
 
+        # String content should remain unchanged
         tool_message = ToolMessage(content="test string", tool_call_id="test_id")
         payload = chat_model._get_request_payload([tool_message])
         assert payload["messages"][0]["content"] == "test string"
