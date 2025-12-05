@@ -45,6 +45,12 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_perplexity.cost_tracking import (
+    CostBreakdown,
+    calculate_cost_breakdown,
+    estimate_cost,
+)
+from langchain_perplexity.data._pricing import PERPLEXITY_PRICING, get_model_pricing
 from langchain_perplexity.data._profiles import _PROFILES
 from langchain_perplexity.output_parsers import (
     ReasoningJsonOutputParser,
@@ -93,6 +99,50 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
         total_tokens=total_tokens,
         output_token_details=output_token_details,
     )
+
+
+def calculate_cost(
+    model_name: str,
+    usage_metadata: UsageMetadata,
+    num_search_queries: int = 0,
+) -> float | None:
+    """Calculate the cost of an API call based on token usage.
+
+    Args:
+        model_name: The name of the Perplexity model used.
+        usage_metadata: UsageMetadata containing token counts.
+        num_search_queries: Number of search queries made (for deep-research model).
+
+    Returns:
+        The estimated cost in USD, or None if pricing data is unavailable.
+    """
+    pricing = get_model_pricing(model_name)
+    if pricing is None:
+        return None
+
+    input_tokens = usage_metadata.get("input_tokens", 0)
+    output_tokens = usage_metadata.get("output_tokens", 0)
+    output_details = usage_metadata.get("output_token_details", {})
+    reasoning_tokens = output_details.get("reasoning", 0) or 0
+    citation_tokens = output_details.get("citation_tokens", 0) or 0  # type: ignore[typeddict-item]
+
+    # Calculate base costs (per million tokens)
+    cost = (input_tokens / 1_000_000) * pricing["input_cost_per_million"]
+    cost += (output_tokens / 1_000_000) * pricing["output_cost_per_million"]
+
+    # Add citation cost if applicable
+    if pricing["citation_cost_per_million"] and citation_tokens > 0:
+        cost += (citation_tokens / 1_000_000) * pricing["citation_cost_per_million"]
+
+    # Add reasoning cost if applicable
+    if pricing["reasoning_cost_per_million"] and reasoning_tokens > 0:
+        cost += (reasoning_tokens / 1_000_000) * pricing["reasoning_cost_per_million"]
+
+    # Add search query cost if applicable
+    if pricing["search_cost_per_thousand"] and num_search_queries > 0:
+        cost += (num_search_queries / 1_000) * pricing["search_cost_per_thousand"]
+
+    return cost
 
 
 class ChatPerplexity(BaseChatModel):
@@ -439,12 +489,26 @@ class ChatPerplexity(BaseChatModel):
             if hasattr(response, attr):
                 additional_kwargs[attr] = getattr(response, attr)
 
-        # Build response_metadata with model_name and num_search_queries
-        response_metadata: dict[str, Any] = {
-            "model_name": getattr(response, "model", self.model)
-        }
-        if num_search_queries := usage_dict.get("num_search_queries"):
+        # Build response_metadata with model_name, num_search_queries, and cost
+        model_name = getattr(response, "model", self.model)
+        response_metadata: dict[str, Any] = {"model_name": model_name}
+        num_search_queries = usage_dict.get("num_search_queries", 0)
+        if num_search_queries:
             response_metadata["num_search_queries"] = num_search_queries
+
+        # Calculate and add detailed cost breakdown if usage metadata is available
+        if usage_metadata:
+            output_details = usage_metadata.get("output_token_details", {}) or {}
+            cost_breakdown = calculate_cost_breakdown(
+                model_name=model_name,
+                input_tokens=usage_metadata.get("input_tokens", 0),
+                output_tokens=usage_metadata.get("output_tokens", 0),
+                reasoning_tokens=output_details.get("reasoning", 0) or 0,
+                citation_tokens=output_details.get("citation_tokens", 0) or 0,
+                num_search_queries=num_search_queries,
+            )
+            response_metadata["cost"] = cost_breakdown.total
+            response_metadata["cost_breakdown"] = cost_breakdown.to_dict()
 
         message = AIMessage(
             content=response.choices[0].message.content,

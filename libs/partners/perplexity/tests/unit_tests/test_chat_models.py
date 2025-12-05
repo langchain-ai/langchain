@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 from langchain_core.messages import AIMessageChunk, BaseMessage
 from pytest_mock import MockerFixture
 
-from langchain_perplexity import ChatPerplexity
+from langchain_perplexity import ChatPerplexity, calculate_cost, PERPLEXITY_PRICING
 from langchain_perplexity.chat_models import _create_usage_metadata
 
 
@@ -528,3 +528,184 @@ def test_perplexity_stream_includes_num_search_queries(mocker: MockerFixture) ->
 def test_profile() -> None:
     model = ChatPerplexity(model="sonar")
     assert model.profile
+
+
+# Cost calculation tests
+
+
+def test_calculate_cost_sonar_basic() -> None:
+    """Test cost calculation for sonar model with basic token usage."""
+    usage_metadata = _create_usage_metadata({
+        "prompt_tokens": 1000,
+        "completion_tokens": 500,
+        "total_tokens": 1500,
+    })
+
+    cost = calculate_cost("sonar", usage_metadata)
+
+    assert cost is not None
+    # sonar: $1/1M input + $1/1M output
+    # (1000/1M) * 1 + (500/1M) * 1 = 0.001 + 0.0005 = 0.0015
+    assert abs(cost - 0.0015) < 1e-10
+
+
+def test_calculate_cost_sonar_pro() -> None:
+    """Test cost calculation for sonar-pro model."""
+    usage_metadata = _create_usage_metadata({
+        "prompt_tokens": 1000,
+        "completion_tokens": 500,
+        "total_tokens": 1500,
+    })
+
+    cost = calculate_cost("sonar-pro", usage_metadata)
+
+    assert cost is not None
+    # sonar-pro: $3/1M input + $15/1M output
+    # (1000/1M) * 3 + (500/1M) * 15 = 0.003 + 0.0075 = 0.0105
+    assert abs(cost - 0.0105) < 1e-10
+
+
+def test_calculate_cost_sonar_reasoning() -> None:
+    """Test cost calculation for sonar-reasoning model."""
+    usage_metadata = _create_usage_metadata({
+        "prompt_tokens": 1000,
+        "completion_tokens": 500,
+        "total_tokens": 1500,
+    })
+
+    cost = calculate_cost("sonar-reasoning", usage_metadata)
+
+    assert cost is not None
+    # sonar-reasoning: $1/1M input + $5/1M output
+    # (1000/1M) * 1 + (500/1M) * 5 = 0.001 + 0.0025 = 0.0035
+    assert abs(cost - 0.0035) < 1e-10
+
+
+def test_calculate_cost_sonar_reasoning_pro() -> None:
+    """Test cost calculation for sonar-reasoning-pro model."""
+    usage_metadata = _create_usage_metadata({
+        "prompt_tokens": 1000,
+        "completion_tokens": 500,
+        "total_tokens": 1500,
+    })
+
+    cost = calculate_cost("sonar-reasoning-pro", usage_metadata)
+
+    assert cost is not None
+    # sonar-reasoning-pro: $2/1M input + $8/1M output
+    # (1000/1M) * 2 + (500/1M) * 8 = 0.002 + 0.004 = 0.006
+    assert abs(cost - 0.006) < 1e-10
+
+
+def test_calculate_cost_deep_research_with_extras() -> None:
+    """Test cost calculation for sonar-deep-research with citation and reasoning tokens."""
+    usage_metadata = _create_usage_metadata({
+        "prompt_tokens": 33,
+        "completion_tokens": 7163,
+        "total_tokens": 7196,
+        "citation_tokens": 20016,
+        "reasoning_tokens": 73997,
+    })
+
+    cost = calculate_cost("sonar-deep-research", usage_metadata, num_search_queries=18)
+
+    assert cost is not None
+    # sonar-deep-research:
+    # Input: (33/1M) * 2 = 0.000066
+    # Output: (7163/1M) * 8 = 0.057304
+    # Citation: (20016/1M) * 2 = 0.040032
+    # Reasoning: (73997/1M) * 3 = 0.221991
+    # Search: (18/1000) * 5 = 0.09
+    # Total: ~0.409393
+    expected = (
+        (33 / 1_000_000) * 2
+        + (7163 / 1_000_000) * 8
+        + (20016 / 1_000_000) * 2
+        + (73997 / 1_000_000) * 3
+        + (18 / 1_000) * 5
+    )
+    assert abs(cost - expected) < 1e-10
+
+
+def test_calculate_cost_unknown_model() -> None:
+    """Test that cost calculation returns None for unknown models."""
+    usage_metadata = _create_usage_metadata({
+        "prompt_tokens": 1000,
+        "completion_tokens": 500,
+    })
+
+    cost = calculate_cost("unknown-model", usage_metadata)
+
+    assert cost is None
+
+
+def test_calculate_cost_zero_tokens() -> None:
+    """Test cost calculation with zero tokens."""
+    usage_metadata = _create_usage_metadata({
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+    })
+
+    cost = calculate_cost("sonar", usage_metadata)
+
+    assert cost is not None
+    assert cost == 0.0
+
+
+def test_perplexity_pricing_data_structure() -> None:
+    """Test that PERPLEXITY_PRICING has expected models and structure."""
+    expected_models = ["sonar", "sonar-pro", "sonar-reasoning", "sonar-reasoning-pro"]
+    for model in expected_models:
+        assert model in PERPLEXITY_PRICING
+        pricing = PERPLEXITY_PRICING[model]
+        assert "input_cost_per_million" in pricing
+        assert "output_cost_per_million" in pricing
+        assert pricing["input_cost_per_million"] > 0
+        assert pricing["output_cost_per_million"] > 0
+
+
+def test_perplexity_invoke_includes_cost(mocker: MockerFixture) -> None:
+    """Test that invoke includes cost and cost_breakdown in response_metadata."""
+    llm = ChatPerplexity(model="sonar", timeout=30, verbose=True)
+
+    mock_usage = MagicMock()
+    mock_usage.model_dump.return_value = {
+        "prompt_tokens": 1000,
+        "completion_tokens": 500,
+        "total_tokens": 1500,
+    }
+
+    mock_response = MagicMock()
+    mock_response.choices = [
+        MagicMock(
+            message=MagicMock(
+                content="Test response",
+                tool_calls=None,
+            ),
+            finish_reason="stop",
+        )
+    ]
+    mock_response.model = "sonar"
+    mock_response.usage = mock_usage
+
+    patcher = mocker.patch.object(
+        llm.client.chat.completions, "create", return_value=mock_response
+    )
+
+    result = llm.invoke("Test query")
+
+    # Check total cost
+    assert "cost" in result.response_metadata
+    # sonar: $1/1M input + $1/1M output = 0.0015
+    assert abs(result.response_metadata["cost"] - 0.0015) < 1e-10
+
+    # Check cost breakdown
+    assert "cost_breakdown" in result.response_metadata
+    breakdown = result.response_metadata["cost_breakdown"]
+    assert abs(breakdown["input_cost"] - 0.001) < 1e-10
+    assert abs(breakdown["output_cost"] - 0.0005) < 1e-10
+    assert breakdown["citation_cost"] == 0.0
+    assert breakdown["reasoning_cost"] == 0.0
+    assert breakdown["search_cost"] == 0.0
+
+    patcher.assert_called_once()
