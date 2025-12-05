@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from abc import abstractmethod
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -27,12 +28,12 @@ class ToolsTests(BaseStandardTests):
         ...
 
     @property
-    def tool_constructor_params(self) -> dict:
+    def tool_constructor_params(self) -> dict[str, Any]:
         """Returns a dictionary of parameters to pass to the tool constructor."""
         return {}
 
     @property
-    def tool_invoke_params_example(self) -> dict:
+    def tool_invoke_params_example(self) -> dict[str, Any]:
         """Returns a dictionary representing the "args" of an example tool call.
 
         This should NOT be a `ToolCall` dict - it should not have
@@ -58,7 +59,9 @@ class ToolsUnitTests(ToolsTests):
     """Base class for tools unit tests."""
 
     @property
-    def init_from_env_params(self) -> tuple[dict, dict, dict]:
+    def init_from_env_params(
+        self,
+    ) -> tuple[dict[str, str], dict[str, Any], dict[str, Any]]:
         """Init from env params.
 
         Return env vars, init args, and expected instance attrs for initializing
