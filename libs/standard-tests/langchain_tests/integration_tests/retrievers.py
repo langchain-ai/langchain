@@ -1,6 +1,7 @@
 """Integration tests for retrievers."""
 
 from abc import abstractmethod
+from typing import Any
 
 import pytest
 from langchain_core.documents import Document
@@ -19,7 +20,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
         ...
 
     @property
-    def retriever_constructor_params(self) -> dict:
+    def retriever_constructor_params(self) -> dict[str, Any]:
         """Returns a dictionary of parameters to pass to the retriever constructor."""
         return {}
 

@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 
 from langchain_core.tools import BaseTool
 from typing_extensions import override
@@ -36,14 +36,14 @@ class TestParrotMultiplyToolUnit(ToolsUnitTests):
         return ParrotMultiplyTool
 
     @property
-    def tool_constructor_params(self) -> dict:
+    def tool_constructor_params(self) -> dict[str, Any]:
         # if your tool constructor instead required initialization arguments like
         # `def __init__(self, some_arg: int):`, you would return those here
         # as a dictionary, e.g.: `return {'some_arg': 42}`
         return {}
 
     @property
-    def tool_invoke_params_example(self) -> dict:
+    def tool_invoke_params_example(self) -> dict[str, Any]:
         """Returns a dictionary representing the "args" of an example tool call.
 
         This should NOT be a ToolCall dict - i.e. it should not
@@ -58,14 +58,14 @@ class TestParrotMultiplyToolIntegration(ToolsIntegrationTests):
         return ParrotMultiplyTool
 
     @property
-    def tool_constructor_params(self) -> dict:
+    def tool_constructor_params(self) -> dict[str, Any]:
         # if your tool constructor instead required initialization arguments like
         # `def __init__(self, some_arg: int):`, you would return those here
         # as a dictionary, e.g.: `return {'some_arg': 42}`
         return {}
 
     @property
-    def tool_invoke_params_example(self) -> dict:
+    def tool_invoke_params_example(self) -> dict[str, Any]:
         """Returns a dictionary representing the "args" of an example tool call.
 
         This should NOT be a ToolCall dict - i.e. it should not
@@ -80,14 +80,14 @@ class TestParrotMultiplyArtifactToolIntegration(ToolsIntegrationTests):
         return ParrotMultiplyArtifactTool
 
     @property
-    def tool_constructor_params(self) -> dict:
+    def tool_constructor_params(self) -> dict[str, Any]:
         # if your tool constructor instead required initialization arguments like
         # `def __init__(self, some_arg: int):`, you would return those here
         # as a dictionary, e.g.: `return {'some_arg': 42}`
         return {}
 
     @property
-    def tool_invoke_params_example(self) -> dict:
+    def tool_invoke_params_example(self) -> dict[str, Any]:
         """Returns a dictionary representing the "args" of an example tool call.
 
         This should NOT be a ToolCall dict - i.e. it should not
