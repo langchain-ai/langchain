@@ -3406,7 +3406,7 @@ def _is_pydantic_class(obj: Any) -> bool:
 
 
 def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
-    return {
+    result = {
         "type": "function",
         "id": tool_call["id"],
         "function": {
@@ -3414,6 +3414,10 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
             "arguments": json.dumps(tool_call["args"], ensure_ascii=False),
         },
     }
+    # Include extra_content if present (for thought_signature, etc.)
+    if "extra_content" in tool_call:
+        result["extra_content"] = tool_call["extra_content"]
+    return result
 
 
 def _lc_invalid_tool_call_to_openai_tool_call(
