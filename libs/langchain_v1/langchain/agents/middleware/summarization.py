@@ -7,7 +7,6 @@ from functools import partial
 from typing import Any, Literal, cast
 
 from langchain_core.messages import (
-    AIMessage,
     AnyMessage,
     MessageLikeRepresentation,
     RemoveMessage,
@@ -56,7 +55,6 @@ Messages to summarize:
 _DEFAULT_MESSAGES_TO_KEEP = 20
 _DEFAULT_TRIM_TOKEN_LIMIT = 4000
 _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
-_SEARCH_RANGE_FOR_TOOL_PAIRS = 5
 
 ContextFraction = tuple[Literal["fraction"], float]
 """Fraction of model's maximum input tokens.
@@ -397,11 +395,8 @@ class SummarizationMiddleware(AgentMiddleware):
                 return 0
             cutoff_candidate = len(messages) - 1
 
-        for i in range(cutoff_candidate, -1, -1):
-            if self._is_safe_cutoff_point(messages, i):
-                return i
-
-        return 0
+        # Advance past any ToolMessages to avoid splitting AI/Tool pairs
+        return self._find_safe_cutoff_point(messages, cutoff_candidate)
 
     def _get_profile_limits(self) -> int | None:
         """Retrieve max input token limit from the model profile."""
@@ -463,67 +458,26 @@ class SummarizationMiddleware(AgentMiddleware):
 
         Returns the index where messages can be safely cut without separating
         related AI and Tool messages. Returns `0` if no safe cutoff is found.
+
+        This is aggressive with summarization - if the target cutoff lands in the
+        middle of tool messages, we advance past all of them (summarizing more).
         """
         if len(messages) <= messages_to_keep:
             return 0
 
         target_cutoff = len(messages) - messages_to_keep
+        return self._find_safe_cutoff_point(messages, target_cutoff)
 
-        for i in range(target_cutoff, -1, -1):
-            if self._is_safe_cutoff_point(messages, i):
-                return i
+    def _find_safe_cutoff_point(self, messages: list[AnyMessage], cutoff_index: int) -> int:
+        """Find a safe cutoff point that doesn't split AI/Tool message pairs.
 
-        return 0
-
-    def _is_safe_cutoff_point(self, messages: list[AnyMessage], cutoff_index: int) -> bool:
-        """Check if cutting at index would separate AI/Tool message pairs."""
-        if cutoff_index >= len(messages):
-            return True
-
-        search_start = max(0, cutoff_index - _SEARCH_RANGE_FOR_TOOL_PAIRS)
-        search_end = min(len(messages), cutoff_index + _SEARCH_RANGE_FOR_TOOL_PAIRS)
-
-        for i in range(search_start, search_end):
-            if not self._has_tool_calls(messages[i]):
-                continue
-
-            tool_call_ids = self._extract_tool_call_ids(cast("AIMessage", messages[i]))
-            if self._cutoff_separates_tool_pair(messages, i, cutoff_index, tool_call_ids):
-                return False
-
-        return True
-
-    def _has_tool_calls(self, message: AnyMessage) -> bool:
-        """Check if message is an AI message with tool calls."""
-        return (
-            isinstance(message, AIMessage) and hasattr(message, "tool_calls") and message.tool_calls  # type: ignore[return-value]
-        )
-
-    def _extract_tool_call_ids(self, ai_message: AIMessage) -> set[str]:
-        """Extract tool call IDs from an AI message."""
-        tool_call_ids = set()
-        for tc in ai_message.tool_calls:
-            call_id = tc.get("id") if isinstance(tc, dict) else getattr(tc, "id", None)
-            if call_id is not None:
-                tool_call_ids.add(call_id)
-        return tool_call_ids
-
-    def _cutoff_separates_tool_pair(
-        self,
-        messages: list[AnyMessage],
-        ai_message_index: int,
-        cutoff_index: int,
-        tool_call_ids: set[str],
-    ) -> bool:
-        """Check if cutoff separates an AI message from its corresponding tool messages."""
-        for j in range(ai_message_index + 1, len(messages)):
-            message = messages[j]
-            if isinstance(message, ToolMessage) and message.tool_call_id in tool_call_ids:
-                ai_before_cutoff = ai_message_index < cutoff_index
-                tool_before_cutoff = j < cutoff_index
-                if ai_before_cutoff != tool_before_cutoff:
-                    return True
-        return False
+        If the message at cutoff_index is a ToolMessage, advance until we find
+        a non-ToolMessage. This ensures we never cut in the middle of parallel
+        tool call responses.
+        """
+        while cutoff_index < len(messages) and isinstance(messages[cutoff_index], ToolMessage):
+            cutoff_index += 1
+        return cutoff_index
 
     def _create_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
         """Generate summary for the given messages."""
