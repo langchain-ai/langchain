@@ -127,10 +127,10 @@ class Runnable(ABC, Generic[Input, Output]):
     Key Methods
     ===========
 
-    - **`invoke`/`ainvoke`**: Transforms a single input into an output.
-    - **`batch`/`abatch`**: Efficiently transforms multiple inputs into outputs.
-    - **`stream`/`astream`**: Streams output from a single input as it's produced.
-    - **`astream_log`**: Streams output and selected intermediate results from an
+    - `invoke`/`ainvoke`: Transforms a single input into an output.
+    - `batch`/`abatch`: Efficiently transforms multiple inputs into outputs.
+    - `stream`/`astream`: Streams output from a single input as it's produced.
+    - `astream_log`: Streams output and selected intermediate results from an
         input.
 
     Built-in optimizations:
