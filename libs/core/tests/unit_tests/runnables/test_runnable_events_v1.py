@@ -648,7 +648,7 @@ async def test_astream_events_from_model() -> None:
                                 }
                             ]
                         ],
-                        "llm_output": None,
+                        "llm_output": {},
                         "run": None,
                         "type": "LLMResult",
                     },
@@ -780,7 +780,7 @@ async def test_astream_events_from_model() -> None:
                                 }
                             ]
                         ],
-                        "llm_output": None,
+                        "llm_output": {},
                         "run": None,
                         "type": "LLMResult",
                     },
@@ -1030,7 +1030,7 @@ async def test_event_stream_with_simple_chain() -> None:
                                 }
                             ]
                         ],
-                        "llm_output": None,
+                        "llm_output": {},
                         "run": None,
                         "type": "LLMResult",
                     },
@@ -1809,7 +1809,7 @@ async def test_with_llm() -> None:
                                 }
                             ]
                         ],
-                        "llm_output": None,
+                        "llm_output": {},
                         "run": None,
                         "type": "LLMResult",
                     },

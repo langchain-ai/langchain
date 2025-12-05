@@ -204,7 +204,8 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
                 message=message_chunk_to_message(generation.message),
                 generation_info=generation.generation_info,
             )
-        ]
+        ],
+        llm_output={},
     )
 
 
@@ -596,7 +597,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 run_manager.on_llm_error(err, response=LLMResult(generations=[]))
                 raise err
 
-            run_manager.on_llm_end(LLMResult(generations=[[generation]]))
+            run_manager.on_llm_end(LLMResult(generations=[[generation]], llm_output={}))
 
     @override
     async def astream(
@@ -725,7 +726,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             raise err
 
         await run_manager.on_llm_end(
-            LLMResult(generations=[[generation]]),
+            LLMResult(generations=[[generation]], llm_output={}),
         )
 
     # --- Custom methods ---
@@ -1148,7 +1149,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     converted_generations = self._convert_cached_generations(cache_val)
-                    return ChatResult(generations=converted_generations)
+                    return ChatResult(generations=converted_generations, llm_output={})
             elif self.cache is None:
                 pass
             else:
@@ -1266,7 +1267,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 cache_val = await llm_cache.alookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     converted_generations = self._convert_cached_generations(cache_val)
-                    return ChatResult(generations=converted_generations)
+                    return ChatResult(generations=converted_generations, llm_output={})
             elif self.cache is None:
                 pass
             else:
@@ -1722,7 +1723,7 @@ class SimpleChatModel(BaseChatModel):
         output_str = self._call(messages, stop=stop, run_manager=run_manager, **kwargs)
         message = AIMessage(content=output_str)
         generation = ChatGeneration(message=message)
-        return ChatResult(generations=[generation])
+        return ChatResult(generations=[generation], llm_output={})
 
     @abstractmethod
     def _call(
