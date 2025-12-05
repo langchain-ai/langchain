@@ -33,7 +33,7 @@ from langchain_core.runnables.utils import (
     AddableDict,
     ConfigurableFieldSpec,
 )
-from langchain_core.utils.aiter import atee, py_anext
+from langchain_core.utils.aiter import atee
 from langchain_core.utils.iter import safetee
 from langchain_core.utils.pydantic import create_model_v2
 
@@ -614,7 +614,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         )
         # start map output stream
         first_map_chunk_task: asyncio.Task = asyncio.create_task(
-            py_anext(map_output, None),  # type: ignore[arg-type]
+            anext(map_output, None),
         )
         # consume passthrough stream
         async for chunk in for_passthrough:
