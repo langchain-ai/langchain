@@ -1222,19 +1222,12 @@ def test_get_ls_params() -> None:
 
 def test_model_profiles() -> None:
     model = GenericFakeChatModel(messages=iter([]))
-    profile = model.profile
-    assert profile == {}
+    assert model.profile is None
 
-    class MyModel(GenericFakeChatModel):
-        model: str = "gpt-5"
-
-        @property
-        def _llm_type(self) -> str:
-            return "openai-chat"
-
-    model = MyModel(messages=iter([]))
-    profile = model.profile
-    assert profile
+    model_with_profile = GenericFakeChatModel(
+        messages=iter([]), profile={"max_input_tokens": 100}
+    )
+    assert model_with_profile.profile == {"max_input_tokens": 100}
 
 
 class MockResponse:

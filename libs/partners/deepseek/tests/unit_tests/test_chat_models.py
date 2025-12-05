@@ -310,3 +310,10 @@ class TestChatDeepSeekStrictMode:
 
         # The structured model should work with beta endpoint
         assert structured_model is not None
+
+
+def test_profile() -> None:
+    """Test that model profile is loaded correctly."""
+    model = ChatDeepSeek(model="deepseek-reasoner", api_key=SecretStr("test_key"))
+    assert model.profile is not None
+    assert model.profile["reasoning_output"]

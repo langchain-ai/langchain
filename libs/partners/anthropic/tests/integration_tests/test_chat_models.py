@@ -12,6 +12,8 @@ import httpx
 import pytest
 import requests
 from anthropic import BadRequestError
+from langchain.agents import create_agent
+from langchain.agents.structured_output import ProviderStrategy
 from langchain_core.callbacks import CallbackManager
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import (
@@ -27,6 +29,7 @@ from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
+from typing_extensions import TypedDict
 
 from langchain_anthropic import ChatAnthropic
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
@@ -533,7 +536,7 @@ def test_tool_use() -> None:
     assert content_blocks[1]["args"]
 
     # Testing token-efficient tools
-    # https://docs.claude.com/en/docs/agents-and-tools/tool-use/token-efficient-tool-use
+    # https://platform.claude.com/docs/en/agents-and-tools/tool-use/token-efficient-tool-use
     assert gathered.usage_metadata
     assert response.usage_metadata
     assert (
@@ -661,6 +664,91 @@ def test_with_structured_output() -> None:
     response = structured_llm.invoke("what's the weather in san francisco, ca")
     assert isinstance(response, dict)
     assert response["location"]
+
+
+class Person(BaseModel):
+    """Person data."""
+
+    name: str
+    age: int
+    nicknames: list[str] | None
+
+
+class PersonDict(TypedDict):
+    """Person data as a TypedDict."""
+
+    name: str
+    age: int
+    nicknames: list[str] | None
+
+
+@pytest.mark.parametrize("schema", [Person, Person.model_json_schema(), PersonDict])
+def test_response_format(schema: dict | type) -> None:
+    model = ChatAnthropic(
+        model="claude-sonnet-4-5",  # type: ignore[call-arg]
+        betas=["structured-outputs-2025-11-13"],
+    )
+    query = "Chester (a.k.a. Chet) is 100 years old."
+
+    response = model.invoke(query, response_format=schema)
+    parsed = json.loads(response.text)
+    if isinstance(schema, type) and issubclass(schema, BaseModel):
+        schema.model_validate(parsed)
+    else:
+        assert isinstance(parsed, dict)
+        assert parsed["name"]
+        assert parsed["age"]
+
+
+@pytest.mark.vcr
+def test_response_format_in_agent() -> None:
+    class Weather(BaseModel):
+        temperature: float
+        units: str
+
+    # no tools
+    agent = create_agent(
+        "anthropic:claude-sonnet-4-5", response_format=ProviderStrategy(Weather)
+    )
+    result = agent.invoke({"messages": [{"role": "user", "content": "75 degrees F."}]})
+    assert len(result["messages"]) == 2
+    parsed = json.loads(result["messages"][-1].text)
+    assert Weather(**parsed) == result["structured_response"]
+
+    # with tools
+    def get_weather(location: str) -> str:
+        """Get the weather at a location."""
+        return "75 degrees Fahrenheit."
+
+    agent = create_agent(
+        "anthropic:claude-sonnet-4-5",
+        tools=[get_weather],
+        response_format=ProviderStrategy(Weather),
+    )
+    result = agent.invoke(
+        {"messages": [{"role": "user", "content": "What's the weather in SF?"}]},
+    )
+    assert len(result["messages"]) == 4
+    assert result["messages"][1].tool_calls
+    parsed = json.loads(result["messages"][-1].text)
+    assert Weather(**parsed) == result["structured_response"]
+
+
+@pytest.mark.vcr
+def test_strict_tool_use() -> None:
+    model = ChatAnthropic(
+        model="claude-sonnet-4-5",  # type: ignore[call-arg]
+        betas=["structured-outputs-2025-11-13"],
+    )
+
+    def get_weather(location: str, unit: Literal["C", "F"]) -> str:
+        """Get the weather at a location."""
+        return "75 degrees Fahrenheit."
+
+    model_with_tools = model.bind_tools([get_weather], strict=True)
+
+    response = model_with_tools.invoke("What's the weather in Boston, in Celsius?")
+    assert response.tool_calls
 
 
 def test_get_num_tokens_from_messages() -> None:
@@ -1062,6 +1150,30 @@ def test_structured_output_thinking_force_tool_use() -> None:
     )
     with pytest.raises(BadRequestError):
         llm.invoke("Generate a username for Sally with green hair")
+
+
+def test_effort_parameter() -> None:
+    """Test that effort parameter can be passed without errors.
+
+    Only Opus 4.5 supports currently.
+    """
+    llm = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        effort="medium",
+        max_tokens=100,
+    )
+
+    result = llm.invoke("Say hello in one sentence")
+
+    # Verify we got a response
+    assert isinstance(result.content, str)
+    assert len(result.content) > 0
+
+    # Verify response metadata is present
+    assert "model_name" in result.response_metadata
+    assert result.usage_metadata is not None
+    assert result.usage_metadata["input_tokens"] > 0
+    assert result.usage_metadata["output_tokens"] > 0
 
 
 def test_image_tool_calling() -> None:
@@ -1511,7 +1623,7 @@ def test_code_execution_old(output_version: Literal["v0", "v1"]) -> None:
     See the `test_code_execution` test below to test the current
     `code_execution_20250825` tool.
 
-    Migration guide: https://docs.claude.com/en/docs/agents-and-tools/tool-use/code-execution-tool#upgrade-to-latest-tool-version
+    Migration guide: https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool#upgrade-to-latest-tool-version
     """
     llm = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]

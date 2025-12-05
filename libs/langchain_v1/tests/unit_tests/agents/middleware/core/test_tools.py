@@ -79,8 +79,8 @@ def test_middleware_can_modify_tools() -> None:
             handler: Callable[[ModelRequest], AIMessage],
         ) -> AIMessage:
             # Only allow tool_a and tool_b
-            request.tools = [t for t in request.tools if t.name in ["tool_a", "tool_b"]]
-            return handler(request)
+            filtered_tools = [t for t in request.tools if t.name in ["tool_a", "tool_b"]]
+            return handler(request.override(tools=filtered_tools))
 
     # Model will try to call tool_a
     model = FakeToolCallingModel(
@@ -123,8 +123,7 @@ def test_unknown_tool_raises_error() -> None:
             handler: Callable[[ModelRequest], AIMessage],
         ) -> AIMessage:
             # Add an unknown tool
-            request.tools = request.tools + [unknown_tool]
-            return handler(request)
+            return handler(request.override(tools=request.tools + [unknown_tool]))
 
     agent = create_agent(
         model=FakeToolCallingModel(),
@@ -163,7 +162,8 @@ def test_middleware_can_add_and_remove_tools() -> None:
         ) -> AIMessage:
             # Remove admin_tool if not admin
             if not request.state.get("is_admin", False):
-                request.tools = [t for t in request.tools if t.name != "admin_tool"]
+                filtered_tools = [t for t in request.tools if t.name != "admin_tool"]
+                request = request.override(tools=filtered_tools)
             return handler(request)
 
     model = FakeToolCallingModel()
@@ -200,7 +200,7 @@ def test_empty_tools_list_is_valid() -> None:
             handler: Callable[[ModelRequest], AIMessage],
         ) -> AIMessage:
             # Remove all tools
-            request.tools = []
+            request = request.override(tools=[])
             return handler(request)
 
     model = FakeToolCallingModel()
@@ -244,7 +244,8 @@ def test_tools_preserved_across_multiple_middleware() -> None:
         ) -> AIMessage:
             modification_order.append([t.name for t in request.tools])
             # Remove tool_c
-            request.tools = [t for t in request.tools if t.name != "tool_c"]
+            filtered_tools = [t for t in request.tools if t.name != "tool_c"]
+            request = request.override(tools=filtered_tools)
             return handler(request)
 
     class SecondMiddleware(AgentMiddleware):
@@ -257,7 +258,8 @@ def test_tools_preserved_across_multiple_middleware() -> None:
             # Should not see tool_c here
             assert all(t.name != "tool_c" for t in request.tools)
             # Remove tool_b
-            request.tools = [t for t in request.tools if t.name != "tool_b"]
+            filtered_tools = [t for t in request.tools if t.name != "tool_b"]
+            request = request.override(tools=filtered_tools)
             return handler(request)
 
     agent = create_agent(

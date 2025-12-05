@@ -6,6 +6,7 @@ import sys
 import textwrap
 import threading
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from functools import partial
@@ -55,6 +56,7 @@ from langchain_core.tools.base import (
     InjectedToolArg,
     InjectedToolCallId,
     SchemaAnnotationError,
+    _DirectlyInjectedToolArg,
     _is_message_content_block,
     _is_message_content_type,
     get_all_basemodel_annotations,
@@ -2329,6 +2331,105 @@ def test_injected_arg_with_complex_type() -> None:
         return foo.value
 
     assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"
+
+
+@pytest.mark.parametrize("schema_format", ["model", "json_schema"])
+def test_tool_allows_extra_runtime_args_with_custom_schema(
+    schema_format: Literal["model", "json_schema"],
+) -> None:
+    """Ensure runtime args are preserved even if not in the args schema."""
+
+    class InputSchema(BaseModel):
+        query: str
+
+    captured: dict[str, Any] = {}
+
+    @dataclass
+    class MyRuntime(_DirectlyInjectedToolArg):
+        some_obj: object
+
+    args_schema = (
+        InputSchema if schema_format == "model" else InputSchema.model_json_schema()
+    )
+
+    @tool(args_schema=args_schema)
+    def runtime_tool(query: str, runtime: MyRuntime) -> str:
+        """Echo the query and capture runtime value."""
+        captured["runtime"] = runtime
+        return query
+
+    runtime_obj = object()
+    runtime = MyRuntime(some_obj=runtime_obj)
+    assert runtime_tool.invoke({"query": "hello", "runtime": runtime}) == "hello"
+    assert captured["runtime"] is runtime
+
+
+def test_tool_injected_tool_call_id_with_custom_schema() -> None:
+    """Ensure InjectedToolCallId works with custom args schema."""
+
+    class InputSchema(BaseModel):
+        x: int
+
+    @tool(args_schema=InputSchema)
+    def injected_tool(
+        x: int, tool_call_id: Annotated[str, InjectedToolCallId]
+    ) -> ToolMessage:
+        """Tool with injected tool_call_id and custom schema."""
+        return ToolMessage(str(x), tool_call_id=tool_call_id)
+
+    # Test that tool_call_id is properly injected even though not in custom schema
+    result = injected_tool.invoke(
+        {
+            "type": "tool_call",
+            "args": {"x": 42},
+            "name": "injected_tool",
+            "id": "test_call_id",
+        }
+    )
+    assert result == ToolMessage("42", tool_call_id="test_call_id")
+
+    # Test that it still raises error when invoked without a ToolCall
+    with pytest.raises(
+        ValueError,
+        match="When tool includes an InjectedToolCallId argument, "
+        "tool must always be invoked with a full model ToolCall",
+    ):
+        injected_tool.invoke({"x": 42})
+
+    # Test that tool_call_id can be passed directly in input dict
+    result = injected_tool.invoke({"x": 42, "tool_call_id": "direct_id"})
+    assert result == ToolMessage("42", tool_call_id="direct_id")
+
+
+def test_tool_injected_arg_with_custom_schema() -> None:
+    """Ensure InjectedToolArg works with custom args schema."""
+
+    class InputSchema(BaseModel):
+        query: str
+
+    class CustomContext:
+        """Custom context object to be injected."""
+
+        def __init__(self, value: str) -> None:
+            self.value = value
+
+    captured: dict[str, Any] = {}
+
+    @tool(args_schema=InputSchema)
+    def search_tool(
+        query: str, context: Annotated[CustomContext, InjectedToolArg]
+    ) -> str:
+        """Search with custom context."""
+        captured["context"] = context
+        return f"Results for {query} with context {context.value}"
+
+    # Test that context is properly injected even though not in custom schema
+    ctx = CustomContext("test_context")
+    result = search_tool.invoke({"query": "hello", "context": ctx})
+
+    assert result == "Results for hello with context test_context"
+    assert captured["context"] is ctx
+    assert captured["context"].value == "test_context"
 
 
 def test_tool_injected_tool_call_id() -> None:
