@@ -18,12 +18,16 @@ from typing import (
     Protocol,
     TypeGuard,
     TypeVar,
+    Dict
 )
 
 from typing_extensions import override
 
 # Re-export create-model for backwards compatibility
 from langchain_core.utils.pydantic import create_model  # noqa: F401
+
+from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.runnables import RunnableLambda
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -147,6 +151,42 @@ def coro_with_context(
     if create_task:
         return asyncio.create_task(coro)  # type: ignore[arg-type]
     return coro
+
+
+def to_message_state(obj: Any) -> dict[str, list[BaseMessage]]:
+    """Convert input into a {'messages': [BaseMessage]} format.
+
+    Args:
+        obj: The input to convert.
+
+    Returns:
+        A dictionary with a 'messages' key containing a list of BaseMessages.
+    """
+    if obj is None:
+        return {"messages": []}
+    if isinstance(obj, str):
+        return {"messages": [HumanMessage(content=obj)]}
+    if isinstance(obj, BaseMessage):
+        return {"messages": [obj]}
+    if isinstance(obj, list):
+        msgs: list[BaseMessage] = []
+        for item in obj:
+            state = to_message_state(item)
+            msgs.extend(state["messages"])
+        return {"messages": msgs}
+    if isinstance(obj, dict) and "messages" in obj:
+        return obj
+    msg = f"Unsupported type for to_message_state: {type(obj)}"  # <- fixes TRY003 + EM102
+    raise TypeError(msg)
+
+
+def as_message_state() -> RunnableLambda:
+    """Runnable that normalizes output to message-state structure.
+
+    Returns:
+        A Runnable Lambda that normalizes output to message-state structure.
+    """
+    return RunnableLambda(lambda x: to_message_state(x))
 
 
 class IsLocalDict(ast.NodeVisitor):
