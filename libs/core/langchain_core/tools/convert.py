@@ -93,6 +93,9 @@ def tool(
         - When `infer_schema=False`, functions must be `(str) -> str` and have
             docstrings
         - When using with `Runnable`, a string name must be provided
+        - The argument name 'config' is reserved for internal use (RunnableConfig).
+          Do not use 'config' as a name for one of your tool arguments;
+          use 'config_path', 'configuration', or similar instead.
 
     Args:
         name_or_callable: Optional name of the tool or the `Callable` to be
