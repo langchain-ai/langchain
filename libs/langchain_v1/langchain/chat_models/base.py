@@ -506,14 +506,7 @@ def _init_chat_model_helper(
 
         return ChatUpstage(model=model, **kwargs)
     supported = ", ".join(sorted(_SUPPORTED_PROVIDERS))
-    msg = (
-        f"Unsupported model_provider='{model_provider}'.\n\n"
-        f"Supported providers are: {supported}\n\n"
-        f"For help with specific providers and their models, see:\n"
-        f"https://docs.langchain.com/oss/python/integrations/providers/\n\n"
-        f"To add support for a new provider, please refer to:\n"
-        f"https://docs.langchain.com/oss/python/contributing/"
-    )
+    msg = f"Unsupported model_provider='{model_provider}'. Supported: {supported}"
     raise ValueError(msg)
 
 
