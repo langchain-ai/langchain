@@ -9,12 +9,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from functools import cached_property
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generic,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -122,7 +117,7 @@ class BasePromptTemplate(
 
     @cached_property
     def _serialized(self) -> dict[str, Any]:
-        return dumpd(self)
+        return cast("dict[str, Any]", dumpd(self))
 
     @property
     @override
@@ -156,7 +151,7 @@ class BasePromptTemplate(
         if not isinstance(inner_input, dict):
             if len(self.input_variables) == 1:
                 var_name = self.input_variables[0]
-                inner_input = {var_name: inner_input}
+                inner_input_ = {var_name: inner_input}
 
             else:
                 msg = (
@@ -168,12 +163,14 @@ class BasePromptTemplate(
                         message=msg, error_code=ErrorCode.INVALID_PROMPT_INPUT
                     )
                 )
-        missing = set(self.input_variables).difference(inner_input)
+        else:
+            inner_input_ = inner_input
+        missing = set(self.input_variables).difference(inner_input_)
         if missing:
             msg = (
                 f"Input to {self.__class__.__name__} is missing variables {missing}. "
                 f" Expected: {self.input_variables}"
-                f" Received: {list(inner_input.keys())}"
+                f" Received: {list(inner_input_.keys())}"
             )
             example_key = missing.pop()
             msg += (
@@ -184,7 +181,7 @@ class BasePromptTemplate(
             raise KeyError(
                 create_message(message=msg, error_code=ErrorCode.INVALID_PROMPT_INPUT)
             )
-        return inner_input
+        return inner_input_
 
     def _format_prompt_with_error_handling(self, inner_input: dict) -> PromptValue:
         inner_input_ = self._validate_input(inner_input)

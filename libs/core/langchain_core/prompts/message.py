@@ -92,4 +92,4 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         from langchain_core.prompts.chat import ChatPromptTemplate  # noqa: PLC0415
 
         prompt = ChatPromptTemplate(messages=[self])
-        return prompt + other
+        return prompt.__add__(other)
