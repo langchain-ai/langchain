@@ -1,5 +1,5 @@
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest import mock
 
 import pytest
@@ -57,7 +57,7 @@ def test_init_missing_dep() -> None:
 
 
 def test_init_unknown_provider() -> None:
-    with pytest.raises(ValueError, match="Unsupported model_provider='bar'."):
+    with pytest.raises(ValueError, match=r"Unsupported model_provider='bar'\."):
         init_chat_model("foo", model_provider="bar")
 
 
@@ -284,3 +284,31 @@ def test_configurable_with_default() -> None:
     prompt = ChatPromptTemplate.from_messages([("system", "foo")])
     chain = prompt | model_with_config
     assert isinstance(chain, RunnableSequence)
+
+
+def test_init_chat_model_huggingface(monkeypatch: Any) -> None:
+    lhf = pytest.importorskip("langchain_huggingface")
+
+    chat_huggingface_cls = lhf.ChatHuggingFace
+    huggingface_endpoint_cls = lhf.HuggingFaceEndpoint
+
+    created: dict[str, Any] = {}
+
+    class DummyHFEndpoint(huggingface_endpoint_cls):  # type: ignore[misc, valid-type]
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            super().__init__(**kwargs)
+            created["args"] = args
+            created["kwargs"] = kwargs
+
+    monkeypatch.setattr(lhf, "HuggingFaceEndpoint", DummyHFEndpoint)
+
+    model = init_chat_model(
+        model="microsoft/Phi-3-mini-4k-instruct",
+        model_provider="huggingface",
+        temperature=0,
+    )
+
+    assert isinstance(model, chat_huggingface_cls)
+    assert created["kwargs"]["repo_id"] == "microsoft/Phi-3-mini-4k-instruct"
+    assert created["kwargs"]["task"] == "text-generation"
+    assert created["kwargs"]["temperature"] == 0
