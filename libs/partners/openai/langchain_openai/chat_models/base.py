@@ -3750,7 +3750,7 @@ def _construct_responses_api_payload(
                     if payload.get("stream") and "partial_images" not in tool:
                         # OpenAI requires this parameter be set; we ignore it during
                         # streaming.
-                        tool["partial_images"] = 1
+                        tool = {**tool, "partial_images": 1}
                     else:
                         pass
 
