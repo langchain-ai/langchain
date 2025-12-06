@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from inspect import iscoroutinefunction
 from typing import (
@@ -47,6 +47,7 @@ if TYPE_CHECKING:
 __all__ = [
     "AgentMiddleware",
     "AgentState",
+    "ContextAwareAgentMiddleware",
     "ContextT",
     "ModelRequest",
     "ModelResponse",
@@ -686,6 +687,15 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             "(3) invoke your agent synchronously using `stream()` or `invoke()`."
         )
         raise NotImplementedError(msg)
+
+
+class ContextAwareAgentMiddleware(AgentMiddleware[StateT, ContextT]):
+    """Base middleware class for agents that access runtime context.
+
+    This specialization of `AgentMiddleware` parameterizes the runtime context as
+    `ContextT`, providing a common base for middleware that needs to read or modify
+    agent state while also using contextual information from the LangGraph runtime.
+    """
 
 
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):

@@ -17,7 +17,7 @@ from pydantic import Field, TypeAdapter
 from typing_extensions import TypedDict
 
 from langchain.agents.middleware.types import (
-    AgentMiddleware,
+    ContextAwareAgentMiddleware,
     ModelCallResult,
     ModelRequest,
     ModelResponse,
@@ -85,7 +85,7 @@ def _render_tool_list(tools: list[BaseTool]) -> str:
     return "\n".join(f"- {tool.name}: {tool.description}" for tool in tools)
 
 
-class LLMToolSelectorMiddleware(AgentMiddleware):
+class LLMToolSelectorMiddleware(ContextAwareAgentMiddleware):
     """Uses an LLM to select relevant tools before calling the main model.
 
     When an agent has many tools available, this middleware filters them down

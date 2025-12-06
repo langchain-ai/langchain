@@ -7,7 +7,7 @@ from langgraph.runtime import Runtime
 from langgraph.types import interrupt
 from typing_extensions import NotRequired, TypedDict
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, StateT
+from langchain.agents.middleware.types import AgentState, ContextAwareAgentMiddleware, ContextT
 
 
 class Action(TypedDict):
@@ -156,7 +156,7 @@ class InterruptOnConfig(TypedDict):
     """JSON schema for the args associated with the action, if edits are allowed."""
 
 
-class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT]):
+class HumanInTheLoopMiddleware(ContextAwareAgentMiddleware):
     """Human in the loop middleware."""
 
     def __init__(

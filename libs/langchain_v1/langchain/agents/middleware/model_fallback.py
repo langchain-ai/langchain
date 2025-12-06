@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from langchain.agents.middleware.types import (
-    AgentMiddleware,
+    ContextAwareAgentMiddleware,
     ModelCallResult,
     ModelRequest,
     ModelResponse,
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
 
 
-class ModelFallbackMiddleware(AgentMiddleware):
+class ModelFallbackMiddleware(ContextAwareAgentMiddleware):
     """Automatic fallback to alternative models on errors.
 
     Retries failed model calls with alternative models in sequence until

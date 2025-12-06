@@ -19,7 +19,7 @@ from langgraph.graph.message import (
 )
 from langgraph.runtime import Runtime
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState
+from langchain.agents.middleware.types import AgentState, ContextAwareAgentMiddleware
 from langchain.chat_models import BaseChatModel, init_chat_model
 
 TokenCounter = Callable[[Iterable[MessageLikeRepresentation]], int]
@@ -127,7 +127,7 @@ def _get_approximate_token_counter(model: BaseChatModel) -> TokenCounter:
     return count_tokens_approximately
 
 
-class SummarizationMiddleware(AgentMiddleware):
+class SummarizationMiddleware(ContextAwareAgentMiddleware):
     """Summarizes conversation history when token limits are approached.
 
     This middleware monitors message token counts and automatically summarizes older
