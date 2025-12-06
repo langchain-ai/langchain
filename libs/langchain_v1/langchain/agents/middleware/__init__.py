@@ -5,6 +5,12 @@ from .context_editing import (
     ContextEditingMiddleware,
 )
 from .file_search import FilesystemFileSearchMiddleware
+from .health import (
+    HealthMiddleware,
+    HealthPolicy,
+    HealthStats,
+    create_langsmith_emitter,
+)
 from .human_in_the_loop import (
     HumanInTheLoopMiddleware,
     InterruptOnConfig,
@@ -49,6 +55,9 @@ __all__ = [
     "ContextEditingMiddleware",
     "DockerExecutionPolicy",
     "FilesystemFileSearchMiddleware",
+    "HealthMiddleware",
+    "HealthPolicy",
+    "HealthStats",
     "HostExecutionPolicy",
     "HumanInTheLoopMiddleware",
     "InterruptOnConfig",
@@ -71,6 +80,7 @@ __all__ = [
     "after_model",
     "before_agent",
     "before_model",
+    "create_langsmith_emitter",
     "dynamic_prompt",
     "hook_config",
     "wrap_model_call",
