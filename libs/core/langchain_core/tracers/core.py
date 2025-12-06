@@ -16,6 +16,7 @@ from typing import (
 from langchain_core.exceptions import TracerException
 from langchain_core.load import dumpd
 from langchain_core.tracers.schemas import Run
+from langchain_core.tracers.utils import store_tool_call_count_in_run
 
 if TYPE_CHECKING:
     from collections.abc import Coroutine, Sequence
@@ -283,6 +284,7 @@ class _TracerCore(ABC):
                     )
         llm_run.end_time = datetime.now(timezone.utc)
         llm_run.events.append({"name": "end", "time": llm_run.end_time})
+        store_tool_call_count_in_run(llm_run)
 
         return llm_run
 
