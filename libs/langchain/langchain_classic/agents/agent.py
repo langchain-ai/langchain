@@ -443,10 +443,21 @@ class RunnableAgent(BaseSingleActionAgent):
             # Because the response from the plan is not a generator, we need to
             # accumulate the output into final output and return that.
             for chunk in self.runnable.stream(inputs, config={"callbacks": callbacks}):
+                chunk_any = cast("Any", chunk)
                 if final_output is None:
-                    final_output = chunk
+                    final_output = chunk_any
+                elif isinstance(final_output, dict) and isinstance(chunk_any, dict):
+                    final_output = AddableDict(final_output) + AddableDict(chunk_any)
                 else:
-                    final_output += chunk
+                    try:
+                        final_output += chunk_any
+                    except TypeError as e:
+                        msg = (
+                            "Cannot stream-accumulate outputs of type "
+                            f"{type(final_output)} and {type(chunk_any)}. "
+                            "Set `stream_runnable=False` to disable streaming."
+                        )
+                        raise TypeError(msg) from e
         else:
             final_output = self.runnable.invoke(inputs, config={"callbacks": callbacks})
 
@@ -482,10 +493,21 @@ class RunnableAgent(BaseSingleActionAgent):
                 inputs,
                 config={"callbacks": callbacks},
             ):
+                chunk_any = cast("Any", chunk)
                 if final_output is None:
-                    final_output = chunk
+                    final_output = chunk_any
+                elif isinstance(final_output, dict) and isinstance(chunk_any, dict):
+                    final_output = AddableDict(final_output) + AddableDict(chunk_any)
                 else:
-                    final_output += chunk
+                    try:
+                        final_output += chunk_any
+                    except TypeError as e:
+                        msg = (
+                            "Cannot stream-accumulate outputs of type "
+                            f"{type(final_output)} and {type(chunk_any)}. "
+                            "Set `stream_runnable=False` to disable streaming."
+                        )
+                        raise TypeError(msg) from e
         else:
             final_output = await self.runnable.ainvoke(
                 inputs,
