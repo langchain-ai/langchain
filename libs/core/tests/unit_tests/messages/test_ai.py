@@ -434,7 +434,7 @@ def test_content_blocks() -> None:
             {
                 "type": "non_standard",
                 "index": 0,
-                "value": {"type": "input_json_delta", "partial_json": "a"},
+                "value": {"type": "non_standard_tool", "partial_json": "a"},
             }
         ]
     )
@@ -443,7 +443,7 @@ def test_content_blocks() -> None:
             {
                 "type": "non_standard",
                 "index": 0,
-                "value": {"type": "input_json_delta", "partial_json": "b"},
+                "value": {"type": "non_standard_tool", "partial_json": "b"},
             }
         ]
     )
