@@ -16,7 +16,7 @@ from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr, ValidationError
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
@@ -1906,3 +1906,109 @@ async def test_model_profile_not_blocking() -> None:
     with blockbuster_ctx():
         model = ChatAnthropic(model="claude-sonnet-4-5")
         _ = model.profile
+
+
+def test_effort_parameter_validation() -> None:
+    """Test that effort parameter is validated correctly.
+
+    The effort parameter is currently in beta and only supported by Claude Opus 4.5.
+    """
+    # Valid effort values should work
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="high")
+    assert model.effort == "high"
+
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="medium")
+    assert model.effort == "medium"
+
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="low")
+    assert model.effort == "low"
+
+    # Invalid effort values should raise ValidationError
+    with pytest.raises(ValidationError, match="Input should be"):
+        ChatAnthropic(model="claude-opus-4-5-20251101", effort="invalid")  # type: ignore[arg-type]
+
+
+def test_effort_populates_betas() -> None:
+    """Test that effort parameter auto-populates required betas."""
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="medium")
+    assert model.effort == "medium"
+
+    # Test that effort works with dated API ID
+    payload = model._get_request_payload("Test query")
+    assert payload["output_config"]["effort"] == "medium"
+    assert "effort-2025-11-24" in payload["betas"]
+
+
+def test_effort_in_output_config() -> None:
+    """Test that effort can be specified in `output_config`."""
+    # Test valid effort in output_config
+    model = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        output_config={"effort": "low"},
+    )
+    assert model.model_kwargs["output_config"] == {"effort": "low"}
+
+
+def test_effort_priority() -> None:
+    """Test that top-level effort takes precedence over `output_config`."""
+    model = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        effort="high",
+        output_config={"effort": "low"},
+    )
+
+    # Top-level effort should take precedence in the payload
+    payload = model._get_request_payload("Test query")
+    assert payload["output_config"]["effort"] == "high"
+
+
+def test_effort_beta_header_auto_append() -> None:
+    """Test that effort beta header is automatically appended."""
+    # Test with top-level effort parameter
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="medium")
+    payload = model._get_request_payload("Test query")
+    assert "effort-2025-11-24" in payload["betas"]
+
+    # Test with output_config
+    model = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        output_config={"effort": "low"},
+    )
+    payload = model._get_request_payload("Test query")
+    assert "effort-2025-11-24" in payload["betas"]
+
+    # Test that beta is not duplicated if already present
+    model = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        effort="high",
+        betas=["effort-2025-11-24"],
+    )
+    payload = model._get_request_payload("Test query")
+    assert payload["betas"].count("effort-2025-11-24") == 1
+
+    # Test combining effort with other betas
+    model = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        effort="medium",
+        betas=["context-1m-2025-08-07"],
+    )
+    payload = model._get_request_payload("Test query")
+    assert set(payload["betas"]) == {
+        "context-1m-2025-08-07",
+        "effort-2025-11-24",
+    }
+
+
+def test_output_config_without_effort() -> None:
+    """Test that output_config can be used without effort."""
+    # output_config might have other fields in the future
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        output_config={"some_future_param": "value"},
+    )
+    payload = model._get_request_payload("Test query")
+    assert payload["output_config"] == {"some_future_param": "value"}
+    # No effort beta should be added
+    assert payload.get("betas") is None or "effort-2025-11-24" not in payload.get(
+        "betas", []
+    )
