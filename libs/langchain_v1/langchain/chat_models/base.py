@@ -527,10 +527,7 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
         return "google_vertexai"
 
     # AWS Bedrock models
-    if (
-        model_name.startswith("amazon.")
-        or model_lower.startswith(("anthropic.", "meta."))
-    ):
+    if model_name.startswith("amazon.") or model_lower.startswith(("anthropic.", "meta.")):
         return "bedrock"
 
     # Mistral models
