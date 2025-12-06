@@ -259,6 +259,35 @@ class ChatDeepSeek(BaseChatOpenAI):
         return self
 
     @staticmethod
+    def _has_provider_reasoning_refs(reasoning_details: list) -> bool:
+        """Check if reasoning_details contains provider-specific reasoning references.
+
+        Some providers (via OpenRouter) return reasoning with special metadata
+        fields like 'id', 'signature', 'data' that reference stored reasoning items.
+        These formats require special handling (currently bypassed):
+        - 'anthropic-claude-v1' (Claude) - has signature field
+        - 'openai-responses-v1' (OpenAI) - has id field for stored items
+        - 'xai-responses-v1' (xAI)
+
+        Args:
+            reasoning_details: List of reasoning detail dicts.
+
+        Returns:
+            True if format has provider-specific reasoning references.
+        """
+        if not reasoning_details:
+            return False
+        first = reasoning_details[0]
+        if isinstance(first, dict):
+            fmt = first.get("format", "")
+            return fmt in (
+                "anthropic-claude-v1",
+                "openai-responses-v1",
+                "xai-responses-v1",
+            )
+        return False
+
+    @staticmethod
     def _normalize_reasoning(reasoning: Any) -> str | None:
         """Normalize reasoning content to a string.
 
@@ -281,10 +310,11 @@ class ChatDeepSeek(BaseChatOpenAI):
             parts: list[str] = []
             for item in reasoning:
                 if isinstance(item, dict):
-                    # Expected format: {"type": "reasoning.text", "text": "...", ...}
-                    value = item.get("text")
+                    # Expected format: {"type": "reasoning_content", "text": "..."}
+                    # or {"type": "reasoning.summary", "summary": "..."}
+                    value = item.get("text") or item.get("summary")
                     if value is None:
-                        value = str(item)
+                        continue
                     parts.append(value if isinstance(value, str) else str(value))
                 else:
                     parts.append(str(item))
@@ -359,6 +389,9 @@ class ChatDeepSeek(BaseChatOpenAI):
         """
         message.additional_kwargs["reasoning_content"] = reasoning
         if reasoning_details is not None and isinstance(reasoning_details, list):
+            # Skip reasoning_details for special OpenRouter formats (Claude/OpenAI/xAI)
+            if ChatDeepSeek._has_provider_reasoning_refs(reasoning_details):
+                return
             stripped = ChatDeepSeek._strip_reasoning_text(reasoning_details)
             if stripped is not None:
                 # Single item - store metadata only (text is in reasoning_content)
@@ -368,7 +401,25 @@ class ChatDeepSeek(BaseChatOpenAI):
                 message.additional_kwargs["reasoning_details"] = reasoning_details
 
     @staticmethod
-    def _extract_reasoning_from_message(msg: Any) -> tuple[Any, Any]:
+    def _get_msg_field(msg: Any, field: str) -> Any | None:
+        """Get a field from a message object, checking model_extra as fallback.
+
+        Args:
+            msg: The message object from API response.
+            field: The field name to retrieve.
+
+        Returns:
+            The field value or None if not found.
+        """
+        if hasattr(msg, field):
+            value = getattr(msg, field)
+            if value is not None:
+                return value
+        if hasattr(msg, "model_extra") and isinstance(msg.model_extra, dict):
+            return msg.model_extra.get(field)
+        return None
+
+    def _extract_reasoning_from_message(self, msg: Any) -> tuple[Any, Any]:
         """Extract raw_reasoning and reasoning_details from a message.
 
         Checks multiple field locations for provider compatibility:
@@ -382,26 +433,16 @@ class ChatDeepSeek(BaseChatOpenAI):
         Returns:
             Tuple of (raw_reasoning, reasoning_details).
         """
-        raw_reasoning = None
-        reasoning_details = None
+        reasoning_details = self._get_msg_field(msg, "reasoning_details")
 
-        if hasattr(msg, "reasoning_content") and msg.reasoning_content is not None:
-            raw_reasoning = msg.reasoning_content
-        if hasattr(msg, "reasoning_details") and msg.reasoning_details is not None:
-            reasoning_details = msg.reasoning_details
-            if raw_reasoning is None:
-                raw_reasoning = msg.reasoning_details
-        if hasattr(msg, "model_extra") and isinstance(msg.model_extra, dict):
-            if raw_reasoning is None:
-                # Preserve empty strings by checking for key presence
-                if "reasoning_content" in msg.model_extra:
-                    raw_reasoning = msg.model_extra.get("reasoning_content")
-                elif "reasoning_details" in msg.model_extra:
-                    raw_reasoning = msg.model_extra.get("reasoning_details")
-                elif "reasoning" in msg.model_extra:
-                    raw_reasoning = msg.model_extra.get("reasoning")
-            if reasoning_details is None and "reasoning_details" in msg.model_extra:
-                reasoning_details = msg.model_extra.get("reasoning_details")
+        # For formats with provider refs: use 'reasoning' field instead
+        if reasoning_details and self._has_provider_reasoning_refs(reasoning_details):
+            raw_reasoning = self._get_msg_field(msg, "reasoning")
+            return raw_reasoning, reasoning_details
+
+        raw_reasoning = self._get_msg_field(msg, "reasoning_content")
+        if raw_reasoning is None:
+            raw_reasoning = reasoning_details or self._get_msg_field(msg, "reasoning")
 
         return raw_reasoning, reasoning_details
 
@@ -427,6 +468,9 @@ class ChatDeepSeek(BaseChatOpenAI):
                 reasoning_details = raw_reasoning
             self._set_reasoning(message, reasoning, reasoning_details=reasoning_details)
         elif reasoning_details is not None:
+            # Skip reasoning_details for special OpenRouter formats (Claude/OpenAI/xAI)
+            if self._has_provider_reasoning_refs(reasoning_details):
+                return
             message.additional_kwargs["reasoning_details"] = reasoning_details
 
     def _build_reasoning_sequence(
