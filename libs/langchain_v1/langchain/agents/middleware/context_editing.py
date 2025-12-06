@@ -24,7 +24,7 @@ from langchain_core.messages.utils import count_tokens_approximately
 from typing_extensions import Protocol
 
 from langchain.agents.middleware.types import (
-    AgentMiddleware,
+    ContextAwareAgentMiddleware,
     ModelCallResult,
     ModelRequest,
     ModelResponse,
@@ -182,7 +182,7 @@ class ClearToolUsesEdit(ContextEdit):
         )
 
 
-class ContextEditingMiddleware(AgentMiddleware):
+class ContextEditingMiddleware(ContextAwareAgentMiddleware):
     """Automatically prune tool results to manage context size.
 
     The middleware applies a sequence of edits when the total input token count exceeds
