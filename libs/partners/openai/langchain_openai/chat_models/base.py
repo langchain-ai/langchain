@@ -23,14 +23,7 @@ from io import BytesIO
 from json import JSONDecodeError
 from math import ceil
 from operator import itemgetter
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    TypeAlias,
-    TypeVar,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, cast
 from urllib.parse import urlparse
 
 import certifi
@@ -40,14 +33,8 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import (
-    LanguageModelInput,
-    ModelProfileRegistry,
-)
-from langchain_core.language_models.chat_models import (
-    BaseChatModel,
-    LangSmithParams,
-)
+from langchain_core.language_models import LanguageModelInput, ModelProfileRegistry
+from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -106,13 +93,7 @@ from langchain_core.utils.pydantic import (
     is_basemodel_subclass,
 )
 from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    SecretStr,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
 
@@ -362,11 +343,25 @@ def _convert_message_to_dict(
 def _convert_delta_to_message_chunk(
     _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
 ) -> BaseMessageChunk:
-    """Convert to a LangChain message chunk."""
+    """Convert to a LangChain message chunk.
+
+    Supports the following fields from the delta:
+    - content: The main text content
+    - function_call: Legacy function calling (deprecated)
+    - tool_calls: Tool calling chunks
+    - reasoning_content: Reasoning/thinking content from models like Gemini, DeepSeek,
+      etc. when accessed via LiteLLM or other OpenAI-compatible proxies
+    """
     id_ = _dict.get("id")
     role = cast(str, _dict.get("role"))
     content = cast(str, _dict.get("content") or "")
     additional_kwargs: dict = {}
+
+    # Support reasoning_content field from LiteLLM/Gemini/DeepSeek/vLLM
+    # This field contains the model's internal reasoning/thinking process
+    if reasoning_content := _dict.get("reasoning_content"):
+        additional_kwargs["reasoning_content"] = reasoning_content
+
     if _dict.get("function_call"):
         function_call = dict(_dict["function_call"])
         if "name" in function_call and function_call["name"] is None:
