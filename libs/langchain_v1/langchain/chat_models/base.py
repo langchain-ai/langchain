@@ -766,16 +766,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     @property
     def InputType(self) -> TypeAlias:
         """Get the input type for this `Runnable`."""
-        from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
-
-        # This is a version of LanguageModelInput which replaces the abstract
-        # base class BaseMessage with a union of its subclasses, which makes
-        # for a much better schema.
-        from typing import Union
-        from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
-
-        InputType: TypeAlias = Union[str, StringPromptValue, ChatPromptValueConcrete, list[AnyMessage]]
-        return InputType
+        return LanguageModelInput  # type: ignore[return-value]
 
     @override
     def invoke(

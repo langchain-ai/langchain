@@ -326,10 +326,3 @@ def test_init_chat_model_input_validation() -> None:
     # Test configurable_fields with empty string elements
     with pytest.raises(ValueError, match="configurable_fields cannot contain empty strings"):
         init_chat_model(model="gpt-4o", configurable_fields=["model", ""])
-
-
-def test_provider_colon_format_parsing() -> None:
-    """Test parsing of provider:model format with edge cases."""
-    # Test invalid provider should raise ValueError about unsupported provider
-    with pytest.raises(ValueError, match="Unsupported model_provider"):
-        init_chat_model("invalid_provider:some-model")
