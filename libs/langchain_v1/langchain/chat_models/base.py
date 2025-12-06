@@ -309,47 +309,6 @@ def init_chat_model(
         ```
 
     """  # noqa: E501
-    # Input validation
-    if model is not None and not isinstance(model, str):
-        msg = f"model must be a string, got {type(model).__name__}: {model!r}"
-        raise TypeError(msg)
-
-    if model_provider is not None and not isinstance(model_provider, str):
-        msg = (
-            f"model_provider must be a string, got "
-            f"{type(model_provider).__name__}: {model_provider!r}"
-        )
-        raise TypeError(msg)
-
-    if model is not None and model.strip() == "":
-        msg = "model cannot be an empty string"
-        raise ValueError(msg)
-
-    if model_provider is not None and model_provider.strip() == "":
-        msg = "model_provider cannot be an empty string"
-        raise ValueError(msg)
-
-    # Validate configurable_fields parameter
-    if configurable_fields is not None and configurable_fields != "any":
-        if not isinstance(configurable_fields, (list, tuple)):
-            msg = (
-                f"configurable_fields must be 'any', list, or tuple, "
-                f"got {type(configurable_fields).__name__}: {configurable_fields!r}"
-            )
-            raise TypeError(msg)
-
-        # Check for empty or invalid field names
-        for field in configurable_fields:
-            if not isinstance(field, str):
-                msg = (
-                    f"All configurable_fields must be strings, "
-                    f"got {type(field).__name__}: {field!r}"
-                )
-                raise TypeError(msg)
-            if field.strip() == "":
-                msg = "configurable_fields cannot contain empty strings"
-                raise ValueError(msg)
-
     if not model and not configurable_fields:
         configurable_fields = ("model", "model_provider")
     config_prefix = config_prefix or ""
