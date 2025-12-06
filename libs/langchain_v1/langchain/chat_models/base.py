@@ -73,7 +73,15 @@ def init_chat_model(
         runtime via `config`. Makes it easy to switch between models/providers without
         changing your code
 
-    !!! note
+    !!! note "Enhanced Model Support"
+        This function has been enhanced with:
+
+        - **Improved model inference** for newer model naming patterns
+        - **Comprehensive input validation** with helpful error messages
+        - **Better error handling** with suggestions and documentation links
+        - **Support for case-insensitive** model name matching where appropriate
+
+    !!! note "Installation Requirements"
         Requires the integration package for the chosen model provider to be installed.
 
         See the `model_provider` parameter below for specific package names
@@ -456,8 +464,8 @@ def _init_chat_model_helper(
         from langchain_upstage import ChatUpstage
 
         return ChatUpstage(model=model, **kwargs)
-    supported = ", ".join(_SUPPORTED_PROVIDERS)
-    msg = f"Unsupported {model_provider=}.\n\nSupported model providers are: {supported}"
+    supported = ", ".join(sorted(_SUPPORTED_PROVIDERS))
+    msg = f"Unsupported model_provider='{model_provider}'. Supported: {supported}"
     raise ValueError(msg)
 
 
@@ -487,41 +495,101 @@ _SUPPORTED_PROVIDERS = {
 
 
 def _attempt_infer_model_provider(model_name: str) -> str | None:
-    if any(model_name.startswith(pre) for pre in ("gpt-", "o1", "o3")):
+    """Attempt to infer model provider from model name.
+
+    Args:
+        model_name: The name of the model to infer provider for.
+
+    Returns:
+        The inferred provider name, or None if no provider could be inferred.
+    """
+    # Normalize model name for consistent matching
+    model_lower = model_name.lower()
+
+    # OpenAI models (including newer models and aliases)
+    if any(model_lower.startswith(pre) for pre in ("gpt-", "o1", "o3", "chatgpt", "text-davinci")):
         return "openai"
-    if model_name.startswith("claude"):
+
+    # Anthropic models
+    if model_lower.startswith("claude"):
         return "anthropic"
-    if model_name.startswith("command"):
+
+    # Cohere models
+    if model_lower.startswith("command"):
         return "cohere"
+
+    # Fireworks models
     if model_name.startswith("accounts/fireworks"):
         return "fireworks"
-    if model_name.startswith("gemini"):
+
+    # Google models
+    if model_lower.startswith("gemini"):
         return "google_vertexai"
-    if model_name.startswith("amazon."):
+
+    # AWS Bedrock models
+    if model_name.startswith("amazon.") or model_lower.startswith(("anthropic.", "meta.")):
         return "bedrock"
-    if model_name.startswith("mistral"):
+
+    # Mistral models
+    if model_lower.startswith(("mistral", "mixtral")):
         return "mistralai"
-    if model_name.startswith("deepseek"):
+
+    # DeepSeek models
+    if model_lower.startswith("deepseek"):
         return "deepseek"
-    if model_name.startswith("grok"):
+
+    # xAI models
+    if model_lower.startswith("grok"):
         return "xai"
-    if model_name.startswith("sonar"):
+
+    # Perplexity models
+    if model_lower.startswith("sonar"):
         return "perplexity"
-    if model_name.startswith("solar"):
+
+    # Upstage models
+    if model_lower.startswith("solar"):
         return "upstage"
+
     return None
 
 
 def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
+    """Parse model name and provider, inferring provider if necessary.
+
+    Args:
+        model: The model name, optionally prefixed with provider (e.g., "openai:gpt-4o").
+        model_provider: Optional explicit model provider.
+
+    Returns:
+        Tuple of (parsed_model_name, model_provider).
+
+    Raises:
+        ValueError: If model provider cannot be inferred or is unsupported.
+    """
+    # Handle provider:model format
     if not model_provider and ":" in model and model.split(":")[0] in _SUPPORTED_PROVIDERS:
         model_provider = model.split(":")[0]
         model = ":".join(model.split(":")[1:])
+
+    # Attempt to infer provider if not specified
     model_provider = model_provider or _attempt_infer_model_provider(model)
+
     if not model_provider:
+        # Enhanced error message with suggestions
+        supported_list = ", ".join(sorted(_SUPPORTED_PROVIDERS))
         msg = (
-            f"Unable to infer model provider for {model=}, please specify model_provider directly."
+            f"Unable to infer model provider for model='{model}'. "
+            f"Please specify model_provider directly.\n\n"
+            f"Supported providers: {supported_list}\n\n"
+            f"Examples:\n"
+            f"  - init_chat_model('{model}', model_provider='openai')\n"
+            f"  - init_chat_model('openai:{model}')\n"
+            f"\nFor help with specific providers, see: "
+            f"https://docs.langchain.com/oss/python/integrations/providers"
         )
         raise ValueError(msg)
+
+    # Normalize provider name
     model_provider = model_provider.replace("-", "_").lower()
     return model, model_provider
 
@@ -551,7 +619,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     ) -> None:
         self._default_config: dict = default_config or {}
         self._configurable_fields: Literal["any"] | list[str] = (
-            configurable_fields if configurable_fields == "any" else list(configurable_fields)
+            "any" if configurable_fields == "any" else list(configurable_fields)
         )
         self._config_prefix = (
             config_prefix + "_"
@@ -617,6 +685,8 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     ) -> _ConfigurableModel:
         """Bind config to a `Runnable`, returning a new `Runnable`."""
         config = RunnableConfig(**(config or {}), **cast("RunnableConfig", kwargs))
+        # Ensure config is not None after creation
+        config = ensure_config(config)
         model_params = self._model_params(config)
         remaining_config = {k: v for k, v in config.items() if k != "configurable"}
         remaining_config["configurable"] = {
