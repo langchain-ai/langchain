@@ -670,7 +670,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     ) -> None:
         self._default_config: dict = default_config or {}
         self._configurable_fields: Literal["any"] | list[str] = (
-            configurable_fields if configurable_fields == "any" else list(configurable_fields)
+            "any" if configurable_fields == "any" else list(configurable_fields)
         )
         self._config_prefix = (
             config_prefix + "_"
@@ -736,6 +736,8 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     ) -> _ConfigurableModel:
         """Bind config to a `Runnable`, returning a new `Runnable`."""
         config = RunnableConfig(**(config or {}), **cast("RunnableConfig", kwargs))
+        # Ensure config is not None after creation
+        config = ensure_config(config)
         model_params = self._model_params(config)
         remaining_config = {k: v for k, v in config.items() if k != "configurable"}
         remaining_config["configurable"] = {
@@ -769,7 +771,11 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         # This is a version of LanguageModelInput which replaces the abstract
         # base class BaseMessage with a union of its subclasses, which makes
         # for a much better schema.
-        return str | StringPromptValue | ChatPromptValueConcrete | list[AnyMessage]
+        from typing import Union
+        from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
+
+        InputType: TypeAlias = Union[str, StringPromptValue, ChatPromptValueConcrete, list[AnyMessage]]
+        return InputType
 
     @override
     def invoke(
