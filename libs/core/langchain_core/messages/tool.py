@@ -342,7 +342,8 @@ def default_tool_parser(
             continue
         function_name = raw_tool_call["function"]["name"]
         try:
-            function_args = json.loads(raw_tool_call["function"]["arguments"])
+            args = raw_tool_call["function"].get("arguments")
+            function_args = {} if args in (None, "", {}) else json.loads(args)
             parsed = tool_call(
                 name=function_name or "",
                 args=function_args or {},
