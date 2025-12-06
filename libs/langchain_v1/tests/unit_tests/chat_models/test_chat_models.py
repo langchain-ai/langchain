@@ -57,7 +57,7 @@ def test_init_missing_dep() -> None:
 
 
 def test_init_unknown_provider() -> None:
-    with pytest.raises(ValueError, match="Unsupported model_provider='bar'."):
+    with pytest.raises(ValueError, match=r"Unsupported model_provider='bar'."):
         init_chat_model("foo", model_provider="bar")
 
 
