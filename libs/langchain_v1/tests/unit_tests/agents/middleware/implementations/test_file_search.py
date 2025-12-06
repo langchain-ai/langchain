@@ -18,7 +18,6 @@ class TestFilesystemGrepSearch:
 
     def test_grep_invalid_include_pattern(self, tmp_path: Path) -> None:
         """Return error when include glob cannot be parsed."""
-
         (tmp_path / "example.py").write_text("print('hello')\n", encoding="utf-8")
 
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
@@ -31,7 +30,6 @@ class TestFilesystemGrepSearch:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Ensure ripgrep receives pattern after ``--`` to avoid option parsing."""
-
         (tmp_path / "example.py").write_text("print('hello')\n", encoding="utf-8")
 
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=True)

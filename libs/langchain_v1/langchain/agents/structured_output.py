@@ -227,7 +227,7 @@ class ToolStrategy(Generic[SchemaT]):
 
         def _iter_variants(schema: Any) -> Iterable[Any]:
             """Yield leaf variants from Union and JSON Schema oneOf."""
-            if get_origin(schema) in (UnionType, Union):
+            if get_origin(schema) in {UnionType, Union}:
                 for arg in get_args(schema):
                     yield from _iter_variants(arg)
                 return

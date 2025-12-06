@@ -18,13 +18,12 @@ def _get_model(provider: str) -> Any:
         from langchain_anthropic import ChatAnthropic
 
         return ChatAnthropic(model="claude-sonnet-4-5-20250929")
-    elif provider == "openai":
+    if provider == "openai":
         from langchain_openai import ChatOpenAI
 
         return ChatOpenAI(model="gpt-4o-mini")
-    else:
-        msg = f"Unknown provider: {provider}"
-        raise ValueError(msg)
+    msg = f"Unknown provider: {provider}"
+    raise ValueError(msg)
 
 
 @pytest.mark.parametrize("provider", ["anthropic", "openai"])

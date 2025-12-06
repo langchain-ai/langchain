@@ -3,6 +3,7 @@
 import math
 
 from langchain_core.embeddings import Embeddings
+from typing_extensions import override
 
 fake_texts = ["foo", "bar", "baz"]
 
@@ -10,6 +11,7 @@ fake_texts = ["foo", "bar", "baz"]
 class FakeEmbeddings(Embeddings):
     """Fake embeddings functionality for testing."""
 
+    @override
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Return simple embeddings.
 
@@ -20,6 +22,7 @@ class FakeEmbeddings(Embeddings):
     async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
         return self.embed_documents(texts)
 
+    @override
     def embed_query(self, text: str) -> list[float]:
         """Return constant query embeddings.
 
@@ -72,6 +75,7 @@ class AngularTwoDimensionalEmbeddings(Embeddings):
         """Make a list of texts into a list of embedding vectors."""
         return [self.embed_query(text) for text in texts]
 
+    @override
     def embed_query(self, text: str) -> list[float]:
         """Convert input text to a 'vector' (list of floats).
 
