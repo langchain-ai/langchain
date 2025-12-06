@@ -612,23 +612,6 @@ class TestChatDeepSeekCustomUnit:
         assert "reasoning" not in assistant_msgs[0]
         assert "reasoning" not in assistant_msgs[1]
 
-    def test_get_request_payload_without_reasoning_content(self) -> None:
-        """Test that messages without reasoning_content work correctly."""
-        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
-
-        messages = [
-            HumanMessage(content="Hello"),
-            AIMessage(content="Hi there!"),
-        ]
-
-        payload = chat_model._get_request_payload(messages)
-
-        assistant_msgs = [
-            m for m in payload["messages"] if m.get("role") == "assistant"
-        ]
-        assert len(assistant_msgs) == 1
-        assert assistant_msgs[0].get("reasoning_content") is None
-
     def test_no_reasoning_added_if_not_in_original(self) -> None:
         """Test that reasoning_content is not added if not in original message.
 
@@ -671,13 +654,19 @@ class TestChatDeepSeekCustomUnit:
         result = chat_model._normalize_reasoning(list_reasoning)
         assert result == "First thought\nSecond thought"
 
-        # List without text field falls back to stringified dict
+        # OpenAI format with summary field
+        list_reasoning_summary = [
+            {"type": "reasoning.summary", "summary": "Summary thought"},
+        ]
+        result = chat_model._normalize_reasoning(list_reasoning_summary)
+        assert result == "Summary thought"
+
+        # List without text/summary field is skipped (metadata-only items)
         list_reasoning_no_text = [
-            {"content": "Thought 1"},
-            {"content": "Thought 2"},
+            {"type": "reasoning.text", "signature": "abc123"},
         ]
         result = chat_model._normalize_reasoning(list_reasoning_no_text)
-        assert result == "{'content': 'Thought 1'}\n{'content': 'Thought 2'}"
+        assert result == ""  # Empty string, not stringified dict
 
     def test_normalize_reasoning_with_empty_values(self) -> None:
         """Test _normalize_reasoning with empty/None values."""
@@ -897,6 +886,192 @@ class TestChatDeepSeekCustomUnit:
             reasoning_details, "Ignored"
         )
         assert result == reasoning_details
+
+    def test_has_provider_reasoning_refs_claude(self) -> None:
+        """Test _has_provider_reasoning_refs detects Claude format."""
+        reasoning_details = [
+            {
+                "type": "reasoning.text",
+                "text": "My reasoning",
+                "signature": "abc123",
+                "format": "anthropic-claude-v1",
+            }
+        ]
+        assert ChatDeepSeek._has_provider_reasoning_refs(reasoning_details) is True
+
+    def test_has_provider_reasoning_refs_openai(self) -> None:
+        """Test _has_provider_reasoning_refs detects OpenAI format."""
+        reasoning_details = [
+            {
+                "type": "reasoning.encrypted",
+                "data": "encrypted_data_base64",
+                "id": "rs_12345",
+                "format": "openai-responses-v1",
+            }
+        ]
+        assert ChatDeepSeek._has_provider_reasoning_refs(reasoning_details) is True
+
+    def test_has_provider_reasoning_refs_xai(self) -> None:
+        """Test _has_provider_reasoning_refs detects xAI format."""
+        reasoning_details = [
+            {
+                "type": "reasoning.text",
+                "text": "My reasoning",
+                "format": "xai-responses-v1",
+            }
+        ]
+        assert ChatDeepSeek._has_provider_reasoning_refs(reasoning_details) is True
+
+    def test_has_provider_reasoning_refs_deepseek(self) -> None:
+        """Test _has_provider_reasoning_refs returns False for DeepSeek format."""
+        # DeepSeek/MiniMax format doesn't have 'format' field
+        reasoning_details = [{"type": "thinking", "text": "My reasoning"}]
+        assert ChatDeepSeek._has_provider_reasoning_refs(reasoning_details) is False
+
+    def test_has_provider_reasoning_refs_empty(self) -> None:
+        """Test _has_provider_reasoning_refs returns False for empty list."""
+        assert ChatDeepSeek._has_provider_reasoning_refs([]) is False
+
+    def test_create_chat_result_openrouter_format_skipped(self) -> None:
+        """Test OpenRouter format reasoning_details is skipped (not stored)."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+        mock_message = MagicMock()
+        mock_message.content = "Main content"
+        mock_message.reasoning = "My readable reasoning"  # OpenRouter's fallback field
+        mock_message.reasoning_details = [
+            {
+                "type": "reasoning.text",
+                "text": "My readable reasoning",
+                "signature": "sig_abc123",
+                "format": "anthropic-claude-v1",
+                "index": 0,
+            }
+        ]
+        mock_message.role = "assistant"
+        mock_response = MockOpenAIResponse(
+            choices=[MagicMock(message=mock_message)],
+            error=None,
+        )
+
+        result = chat_model._create_chat_result(mock_response)
+        # reasoning_content comes from 'reasoning' field
+        assert (
+            result.generations[0].message.additional_kwargs.get("reasoning_content")
+            == "My readable reasoning"
+        )
+        # Special OpenRouter format: reasoning_details is skipped (not stored)
+        assert (
+            result.generations[0].message.additional_kwargs.get("reasoning_details")
+            is None
+        )
+
+    def test_create_chat_result_openai_format_skipped(self) -> None:
+        """Test OpenAI format reasoning_details is skipped (not stored)."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+        mock_message = MagicMock()
+        mock_message.content = "Main content"
+        mock_message.reasoning = "Summary of reasoning"
+        mock_message.reasoning_details = [
+            {
+                "type": "reasoning.summary",
+                "summary": "Summary of reasoning",
+                "format": "openai-responses-v1",
+                "index": 0,
+            },
+            {
+                "type": "reasoning.encrypted",
+                "data": "encrypted_base64_data",
+                "id": "rs_12345",
+                "format": "openai-responses-v1",
+                "index": 1,
+            },
+        ]
+        mock_message.role = "assistant"
+        mock_response = MockOpenAIResponse(
+            choices=[MagicMock(message=mock_message)],
+            error=None,
+        )
+
+        result = chat_model._create_chat_result(mock_response)
+        # reasoning_content from 'reasoning' field
+        assert (
+            result.generations[0].message.additional_kwargs.get("reasoning_content")
+            == "Summary of reasoning"
+        )
+        # OpenAI format: reasoning_details is skipped (not stored)
+        assert (
+            result.generations[0].message.additional_kwargs.get("reasoning_details")
+            is None
+        )
+
+    def test_convert_chunk_openrouter_format_skipped(self) -> None:
+        """Test OpenRouter format reasoning_details in streaming chunk is skipped."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+        chunk: dict[str, Any] = {
+            "choices": [
+                {
+                    "delta": {
+                        "content": "Main content",
+                        "reasoning": "My reasoning text",
+                        "reasoning_details": [
+                            {
+                                "type": "reasoning.text",
+                                "text": "My reasoning text",
+                                "signature": "sig_xyz",
+                                "format": "anthropic-claude-v1",
+                            }
+                        ],
+                    },
+                },
+            ],
+        }
+
+        chunk_result = chat_model._convert_chunk_to_generation_chunk(
+            chunk,
+            AIMessageChunk,
+            None,
+        )
+        if chunk_result is None:
+            msg = "Expected chunk_result not to be None"
+            raise AssertionError(msg)
+        # reasoning_content from 'reasoning' field
+        assert (
+            chunk_result.message.additional_kwargs.get("reasoning_content")
+            == "My reasoning text"
+        )
+        # OpenRouter format: reasoning_details is skipped (not stored)
+        assert chunk_result.message.additional_kwargs.get("reasoning_details") is None
+
+    def test_get_request_payload_openrouter_format_no_details(self) -> None:
+        """Test OpenRouter format doesn't include reasoning_details in request.
+
+        OpenRouter formats (Claude/OpenAI/xAI) use special encrypted/signed reasoning
+        that we skip storing. The reasoning_content is still preserved.
+        """
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        # Simulate a message where reasoning_details was originally skipped
+        messages = [
+            HumanMessage(content="What is 2+2?"),
+            AIMessage(
+                content="4",
+                additional_kwargs={
+                    "reasoning_content": "Let me calculate...",
+                    # reasoning_details is NOT stored for OpenRouter format
+                },
+            ),
+            HumanMessage(content="And 3+3?"),
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+
+        assistant_msgs = [
+            m for m in payload["messages"] if m.get("role") == "assistant"
+        ]
+        assert len(assistant_msgs) == 1
+        assert assistant_msgs[0].get("reasoning_content") == "Let me calculate..."
+        # No reasoning_details in request
+        assert assistant_msgs[0].get("reasoning_details") is None
 
 
 class SampleTool(PydanticBaseModel):
