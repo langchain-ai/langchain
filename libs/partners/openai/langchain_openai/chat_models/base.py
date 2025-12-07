@@ -203,7 +203,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                 tool_calls=tool_calls,
                 invalid_tool_calls=invalid_tool_calls,
             )
-        elif "reasoning" in _dict:
+
+        if "reasoning" in _dict:
             reasoning = _dict.get("reasoning", "") or ""
             return AIMessage(
                 content=content,
