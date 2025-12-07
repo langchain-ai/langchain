@@ -61,6 +61,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_background_tasks: set[asyncio.Task] = set()
+
 
 @functools.lru_cache
 def _log_error_once(msg: str) -> None:
@@ -102,7 +104,9 @@ def create_base_retry_decorator(
                         if loop.is_running():
                             # TODO: Fix RUF006 - this task should have a reference
                             #  and be awaited somewhere
-                            loop.create_task(coro)  # noqa: RUF006
+                            task = loop.create_task(coro)
+                            _background_tasks.add(task)
+                            task.add_done_callback(_background_tasks.discard)
                         else:
                             asyncio.run(coro)
                 except Exception as e:
