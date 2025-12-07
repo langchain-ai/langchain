@@ -190,6 +190,31 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                     )
         if audio := _dict.get("audio"):
             additional_kwargs["audio"] = audio
+
+        # fix reasoning_content miss
+        if "reasoning_content" in _dict:
+            reasoning_content = _dict.get("reasoning_content", "") or ""
+            return AIMessage(
+                content=content,
+                reasoning_content=reasoning_content,
+                additional_kwargs=additional_kwargs,
+                name=name,
+                id=id_,
+                tool_calls=tool_calls,
+                invalid_tool_calls=invalid_tool_calls,
+            )
+        elif "reasoning" in _dict:
+            reasoning = _dict.get("reasoning", "") or ""
+            return AIMessage(
+                content=content,
+                reasoning=reasoning,
+                additional_kwargs=additional_kwargs,
+                name=name,
+                id=id_,
+                tool_calls=tool_calls,
+                invalid_tool_calls=invalid_tool_calls,
+            )
+
         return AIMessage(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -320,6 +345,13 @@ def _convert_message_to_dict(
         # If tool calls present, content null value should be None not empty string.
         if "function_call" in message_dict or "tool_calls" in message_dict:
             message_dict["content"] = message_dict["content"] or None
+
+            # fix reasoning_content miss
+            if hasattr(message, "reasoning_content"):
+                message_dict["reasoning_content"] = message.reasoning_content
+            elif hasattr(message, "reasoning"):
+                message_dict["reasoning"] = message.reasoning
+
 
         audio: dict[str, Any] | None = None
         for block in message.content:
