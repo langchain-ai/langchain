@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import MagicMock, patch
 
 import pytest
-from langsmith import Client, get_current_run_tree, traceable
+from langsmith import Client, RunTree, get_current_run_tree, traceable
 from langsmith.run_helpers import tracing_context
 from langsmith.utils import get_env_var
 
@@ -17,8 +17,6 @@ from langchain_core.tracers.langchain import LangChainTracer
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Callable, Coroutine, Generator
-
-    from langsmith.run_trees import RunTree
 
     from langchain_core.callbacks import BaseCallbackHandler
 
@@ -432,13 +430,19 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
     mock_client_ = Client(
         session=mock_session, api_key="test", auto_batch_tracing=False
     )
+    grandchild_run = None
+    kitten_run = None
 
     @traceable
     def kitten(x: str) -> str:
+        nonlocal kitten_run
+        kitten_run = get_current_run_tree()
         return x
 
     @RunnableLambda
     def grandchild(x: str) -> str:
+        nonlocal grandchild_run
+        grandchild_run = get_current_run_tree()
         return kitten(x)
 
     @RunnableLambda
@@ -485,14 +489,14 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
     assert run.child_runs
     child_run = run.child_runs[0]
     assert child_run.name == "child"
-    assert child_run.child_runs
-    grandchild_run = child_run.child_runs[0]
+    assert isinstance(grandchild_run, RunTree)
     assert grandchild_run.name == "grandchild"
-    assert grandchild_run.child_runs
     assert grandchild_run.metadata.get("some_foo") == "some_bar"
     assert "afoo" in grandchild_run.tags  # type: ignore[operator]
-    kitten_run = grandchild_run.child_runs[0]
+    assert isinstance(kitten_run, RunTree)
     assert kitten_run.name == "kitten"
     assert not kitten_run.child_runs
     assert kitten_run.metadata.get("some_foo") == "some_bar"
     assert "afoo" in kitten_run.tags  # type: ignore[operator]
+    assert grandchild_run is not None
+    assert kitten_run.dotted_order.startswith(grandchild_run.dotted_order)

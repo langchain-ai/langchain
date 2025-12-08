@@ -16,7 +16,7 @@ from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr, ValidationError
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
@@ -24,6 +24,7 @@ from langchain_anthropic.chat_models import (
     _create_usage_metadata,
     _format_image,
     _format_messages,
+    _is_builtin_tool,
     _merge_messages,
     convert_to_anthropic_tool,
 )
@@ -1299,6 +1300,56 @@ def test_anthropic_bind_tools_tool_choice() -> None:
     }
 
 
+def test_fine_grained_tool_streaming_beta() -> None:
+    """Test that fine-grained tool streaming beta can be enabled."""
+    # Test with betas parameter at initialization
+    model = ChatAnthropic(
+        model=MODEL_NAME, betas=["fine-grained-tool-streaming-2025-05-14"]
+    )
+
+    # Create a simple tool
+    def get_weather(city: str) -> str:
+        """Get the weather for a city."""
+        return f"Weather in {city}"
+
+    model_with_tools = model.bind_tools([get_weather])
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "What's the weather in SF?",
+        stream=True,
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+
+    # Verify beta header is in payload
+    assert "fine-grained-tool-streaming-2025-05-14" in payload["betas"]
+    assert payload["stream"] is True
+
+    # Test combining with other betas
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        betas=["context-1m-2025-08-07", "fine-grained-tool-streaming-2025-05-14"],
+    )
+    model_with_tools = model.bind_tools([get_weather])
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "What's the weather?",
+        stream=True,
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+    assert set(payload["betas"]) == {
+        "context-1m-2025-08-07",
+        "fine-grained-tool-streaming-2025-05-14",
+    }
+
+    # Test that _create routes to beta client when betas are present
+    model = ChatAnthropic(
+        model=MODEL_NAME, betas=["fine-grained-tool-streaming-2025-05-14"]
+    )
+    payload = {"betas": ["fine-grained-tool-streaming-2025-05-14"], "stream": True}
+
+    with patch.object(model._client.beta.messages, "create") as mock_beta_create:
+        model._create(payload)
+        mock_beta_create.assert_called_once_with(**payload)
+
+
 def test_optional_description() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
@@ -1794,6 +1845,171 @@ def test_auto_append_betas_for_tool_types() -> None:
     }
 
 
+def test_tool_search_is_builtin_tool() -> None:
+    """Test that tool search tools are recognized as built-in tools."""
+    # Test regex variant
+    regex_tool = {
+        "type": "tool_search_tool_regex_20251119",
+        "name": "tool_search_tool_regex",
+    }
+    assert _is_builtin_tool(regex_tool)
+
+    # Test BM25 variant
+    bm25_tool = {
+        "type": "tool_search_tool_bm25_20251119",
+        "name": "tool_search_tool_bm25",
+    }
+    assert _is_builtin_tool(bm25_tool)
+
+    # Test non-builtin tool
+    regular_tool = {
+        "name": "get_weather",
+        "description": "Get weather",
+        "input_schema": {"type": "object", "properties": {}},
+    }
+    assert not _is_builtin_tool(regular_tool)
+
+
+def test_tool_search_beta_headers() -> None:
+    """Test that tool search tools auto-append the correct beta headers."""
+    # Test regex variant
+    model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    regex_tool = {
+        "type": "tool_search_tool_regex_20251119",
+        "name": "tool_search_tool_regex",
+    }
+    model_with_tools = model.bind_tools([regex_tool])
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+    assert payload["betas"] == ["advanced-tool-use-2025-11-20"]
+
+    # Test BM25 variant
+    model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    bm25_tool = {
+        "type": "tool_search_tool_bm25_20251119",
+        "name": "tool_search_tool_bm25",
+    }
+    model_with_tools = model.bind_tools([bm25_tool])
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+    assert payload["betas"] == ["advanced-tool-use-2025-11-20"]
+
+    # Test merging with existing betas
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        betas=["mcp-client-2025-04-04"],  # type: ignore[call-arg]
+    )
+    model_with_tools = model.bind_tools([regex_tool])
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+    assert payload["betas"] == [
+        "mcp-client-2025-04-04",
+        "advanced-tool-use-2025-11-20",
+    ]
+
+
+def test_tool_search_with_deferred_tools() -> None:
+    """Test that `defer_loading` works correctly with tool search."""
+    llm = ChatAnthropic(
+        model="claude-opus-4-5-20251101",  # type: ignore[call-arg]
+    )
+
+    # Create tools with defer_loading
+    tools = [
+        {
+            "type": "tool_search_tool_bm25_20251119",
+            "name": "tool_search_tool_bm25",
+        },
+        {
+            "name": "calculator",
+            "description": "Perform mathematical calculations",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "expression": {
+                        "type": "string",
+                        "description": "Mathematical expression",
+                    },
+                },
+                "required": ["expression"],
+            },
+            "defer_loading": True,
+        },
+    ]
+
+    llm_with_tools = llm.bind_tools(tools)  # type: ignore[arg-type]
+
+    # Verify the payload includes tools with defer_loading
+    payload = llm_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **llm_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+
+    # Find the calculator tool in the payload
+    calculator_tool = None
+    for tool in payload["tools"]:
+        if isinstance(tool, dict) and tool.get("name") == "calculator":
+            calculator_tool = tool
+            break
+
+    assert calculator_tool is not None
+    assert calculator_tool.get("defer_loading") is True
+
+
+def test_tool_search_result_formatting() -> None:
+    """Test that `tool_result` blocks with `tool_reference` are handled correctly."""
+    # Tool search result with tool_reference blocks
+    messages = [
+        HumanMessage("What tools can help with weather?"),  # type: ignore[misc]
+        AIMessage(  # type: ignore[misc]
+            [
+                {
+                    "type": "server_tool_use",
+                    "id": "srvtoolu_123",
+                    "name": "tool_search_tool_regex",
+                    "input": {"query": "weather"},
+                },
+                {
+                    "type": "tool_result",
+                    "tool_use_id": "srvtoolu_123",
+                    "content": [
+                        {"type": "tool_reference", "tool_name": "get_weather"},
+                        {"type": "tool_reference", "tool_name": "weather_forecast"},
+                    ],
+                },
+            ],
+        ),
+    ]
+
+    _, formatted = _format_messages(messages)
+
+    # Verify the tool_result block is preserved correctly
+    assistant_msg = formatted[1]
+    assert assistant_msg["role"] == "assistant"
+
+    # Find the tool_result block
+    tool_result_block = None
+    for block in assistant_msg["content"]:
+        if isinstance(block, dict) and block.get("type") == "tool_result":
+            tool_result_block = block
+            break
+
+    assert tool_result_block is not None
+    assert tool_result_block["tool_use_id"] == "srvtoolu_123"
+    assert isinstance(tool_result_block["content"], list)
+    assert len(tool_result_block["content"]) == 2
+    assert tool_result_block["content"][0]["type"] == "tool_reference"
+    assert tool_result_block["content"][0]["tool_name"] == "get_weather"
+    assert tool_result_block["content"][1]["type"] == "tool_reference"
+    assert tool_result_block["content"][1]["tool_name"] == "weather_forecast"
+
+
 def test_auto_append_betas_for_mcp_servers() -> None:
     """Test that `mcp-client-2025-11-20` beta is automatically appended
     for `mcp_servers`."""
@@ -1906,3 +2122,109 @@ async def test_model_profile_not_blocking() -> None:
     with blockbuster_ctx():
         model = ChatAnthropic(model="claude-sonnet-4-5")
         _ = model.profile
+
+
+def test_effort_parameter_validation() -> None:
+    """Test that effort parameter is validated correctly.
+
+    The effort parameter is currently in beta and only supported by Claude Opus 4.5.
+    """
+    # Valid effort values should work
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="high")
+    assert model.effort == "high"
+
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="medium")
+    assert model.effort == "medium"
+
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="low")
+    assert model.effort == "low"
+
+    # Invalid effort values should raise ValidationError
+    with pytest.raises(ValidationError, match="Input should be"):
+        ChatAnthropic(model="claude-opus-4-5-20251101", effort="invalid")  # type: ignore[arg-type]
+
+
+def test_effort_populates_betas() -> None:
+    """Test that effort parameter auto-populates required betas."""
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="medium")
+    assert model.effort == "medium"
+
+    # Test that effort works with dated API ID
+    payload = model._get_request_payload("Test query")
+    assert payload["output_config"]["effort"] == "medium"
+    assert "effort-2025-11-24" in payload["betas"]
+
+
+def test_effort_in_output_config() -> None:
+    """Test that effort can be specified in `output_config`."""
+    # Test valid effort in output_config
+    model = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        output_config={"effort": "low"},
+    )
+    assert model.model_kwargs["output_config"] == {"effort": "low"}
+
+
+def test_effort_priority() -> None:
+    """Test that top-level effort takes precedence over `output_config`."""
+    model = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        effort="high",
+        output_config={"effort": "low"},
+    )
+
+    # Top-level effort should take precedence in the payload
+    payload = model._get_request_payload("Test query")
+    assert payload["output_config"]["effort"] == "high"
+
+
+def test_effort_beta_header_auto_append() -> None:
+    """Test that effort beta header is automatically appended."""
+    # Test with top-level effort parameter
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="medium")
+    payload = model._get_request_payload("Test query")
+    assert "effort-2025-11-24" in payload["betas"]
+
+    # Test with output_config
+    model = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        output_config={"effort": "low"},
+    )
+    payload = model._get_request_payload("Test query")
+    assert "effort-2025-11-24" in payload["betas"]
+
+    # Test that beta is not duplicated if already present
+    model = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        effort="high",
+        betas=["effort-2025-11-24"],
+    )
+    payload = model._get_request_payload("Test query")
+    assert payload["betas"].count("effort-2025-11-24") == 1
+
+    # Test combining effort with other betas
+    model = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        effort="medium",
+        betas=["context-1m-2025-08-07"],
+    )
+    payload = model._get_request_payload("Test query")
+    assert set(payload["betas"]) == {
+        "context-1m-2025-08-07",
+        "effort-2025-11-24",
+    }
+
+
+def test_output_config_without_effort() -> None:
+    """Test that output_config can be used without effort."""
+    # output_config might have other fields in the future
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        output_config={"some_future_param": "value"},
+    )
+    payload = model._get_request_payload("Test query")
+    assert payload["output_config"] == {"some_future_param": "value"}
+    # No effort beta should be added
+    assert payload.get("betas") is None or "effort-2025-11-24" not in payload.get(
+        "betas", []
+    )
