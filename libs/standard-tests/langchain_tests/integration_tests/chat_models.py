@@ -37,7 +37,7 @@ from langchain_tests.unit_tests.chat_models import ChatModelTests
 from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 if TYPE_CHECKING:
-    from pytest_benchmark.fixture import (  # type: ignore[import-untyped]
+    from pytest_benchmark.fixture import (
         BenchmarkFixture,
     )
     from vcr.cassette import Cassette
