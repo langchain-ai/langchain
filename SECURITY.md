@@ -26,11 +26,10 @@ If you're building applications that access external resources like file systems
 
 ## Reporting OSS Vulnerabilities
 
-LangChain is partnered with [huntr by Protect AI](https://huntr.com/) to provide
-a bounty program for our open source projects.
+Please report security vulnerabilities associated with the LangChain open source projects using the following process:
 
-Please report security vulnerabilities associated with the LangChain
-open source projects at [huntr](https://huntr.com/bounties/disclose/?target=https%3A%2F%2Fgithub.com%2Flangchain-ai%2Flangchain&validSearch=true).
+1. **Submit a security advisory** through [GitHub's Security tab](../../security) in the repository where the vulnerability exists
+2. **Send an email** to `security@langchain.dev` notifying us that you've filed a security issue and which repository it was filed in
 
 Before reporting a vulnerability, please review:
 
@@ -40,7 +39,7 @@ Before reporting a vulnerability, please review:
 
 ### In-Scope Targets
 
-The following packages and repositories are eligible for bug bounties:
+The following packages and repositories are in scope for security vulnerability reports:
 
 * langchain-core
 * langchain (see exceptions)
@@ -50,20 +49,18 @@ The following packages and repositories are eligible for bug bounties:
 
 ### Out of Scope Targets
 
-All out of scope targets defined by huntr as well as:
+The following are out of scope for security vulnerability reports:
 
 * **langchain-experimental**: This repository is for experimental code and is not
-  eligible for bug bounties (see [package warning](https://pypi.org/project/langchain-experimental/)), bug reports to it will be marked as interesting or waste of
-  time and published with no bounty attached.
-* **tools**: Tools in either `langchain` or `langchain-community` are not eligible for bug
-  bounties. This includes the following directories
+  in scope for security reports (see [package warning](https://pypi.org/project/langchain-experimental/)).
+* **tools**: Tools in either `langchain` or `langchain-community` are not in scope for security reports. This includes the following directories
   * `libs/langchain/langchain/tools`
   * `libs/community/langchain_community/tools`
   * Please review the [Best Practices](#best-practices)
     for more details, but generally tools interact with the real world. Developers are
     expected to understand the security implications of their code and are responsible
     for the security of their tools.
-* Code documented with security notices. This will be decided on a case-by-case basis, but likely will not be eligible for a bounty as the code is already
+* Code documented with security notices. This will be decided on a case-by-case basis, but likely will not be in scope as the code is already
   documented with guidelines for developers that should be followed for making their
   application secure.
 * Any LangSmith related repositories or APIs (see [Reporting LangSmith Vulnerabilities](#reporting-langsmith-vulnerabilities)).
