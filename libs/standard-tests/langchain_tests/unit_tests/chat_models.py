@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field, SecretStr, ValidationError
 from langchain_tests.base import BaseStandardTests
 
 if TYPE_CHECKING:
-    from pytest_benchmark.fixture import (  # type: ignore[import-untyped]
+    from pytest_benchmark.fixture import (
         BenchmarkFixture,
     )
     from syrupy.assertion import SnapshotAssertion
