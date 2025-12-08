@@ -34,7 +34,7 @@ _no_default = object()
 
 
 # https://github.com/python/cpython/blob/main/Lib/test/test_asyncgen.py#L54
-@deprecated(since="1.1.0", removal="2.0.0")
+@deprecated(since="1.1.2", removal="2.0.0")
 def py_anext(
     iterator: AsyncIterator[T], default: T | Any = _no_default
 ) -> Awaitable[T | Any | None]:
