@@ -2310,33 +2310,22 @@ def test_extras_with_multiple_fields() -> None:
     assert "input_examples" in tool_def
 
 
-def test_extras_validation_invalid_field() -> None:
-    """Test that invalid extra fields raise `ValueError`."""
-    from langchain_anthropic.chat_models import _validate_anthropic_extras
+def test_filter_known_extras() -> None:
+    """Test that known extra fields are filtered correctly."""
+    from langchain_anthropic.chat_models import _filter_known_anthropic_extras
 
-    with pytest.raises(ValueError, match="Invalid Anthropic extra fields"):
-        _validate_anthropic_extras({"invalid_field": "value"})
+    extras = {
+        "defer_loading": True,
+        "cache_control": {"type": "ephemeral"},
+        "input_examples": [{"query": "test"}],
+        "unknown_field": "value",
+    }
 
+    filtered = _filter_known_anthropic_extras(extras)
+    assert filtered == {
+        "defer_loading": True,
+        "cache_control": {"type": "ephemeral"},
+        "input_examples": [{"query": "test"}],
+    }
 
-def test_extras_validation_wrong_type_cache_control() -> None:
-    """Test that `cache_control` with wrong type raises `ValueError`."""
-    from langchain_anthropic.chat_models import _validate_anthropic_extras
-
-    with pytest.raises(ValueError, match="'cache_control' must be a dict"):
-        _validate_anthropic_extras({"cache_control": "not a dict"})
-
-
-def test_extras_validation_wrong_type_defer_loading() -> None:
-    """Test that `defer_loading` with wrong type raises `ValueError`."""
-    from langchain_anthropic.chat_models import _validate_anthropic_extras
-
-    with pytest.raises(ValueError, match="'defer_loading' must be a bool"):
-        _validate_anthropic_extras({"defer_loading": "not a bool"})
-
-
-def test_extras_validation_wrong_type_input_examples() -> None:
-    """Test that `input_examples` with wrong type raises `ValueError`."""
-    from langchain_anthropic.chat_models import _validate_anthropic_extras
-
-    with pytest.raises(ValueError, match="'input_examples' must be a list"):
-        _validate_anthropic_extras({"input_examples": "not a list"})
+    assert _filter_known_anthropic_extras({}) == {}

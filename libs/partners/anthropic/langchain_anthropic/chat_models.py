@@ -150,47 +150,18 @@ _ANTHROPIC_EXTRA_FIELDS: set[str] = {
 }
 
 
-def _validate_anthropic_extras(extras: dict[str, Any]) -> dict[str, Any]:
-    """Validate and filter extras to only include Anthropic-specific fields.
+def _filter_known_anthropic_extras(extras: dict[str, Any]) -> dict[str, Any]:
+    """Filter extras to only include Anthropic-specific fields.
 
     Args:
         extras: Dictionary of extra fields from a tool.
 
     Returns:
         Dictionary containing only valid Anthropic-specific fields.
-
-    Raises:
-        ValueError: If extras contains invalid fields.
     """
-    validated = {}
-    invalid_fields = []
-
-    for key, value in extras.items():
-        if key in _ANTHROPIC_EXTRA_FIELDS:
-            # Type validation for each field
-            if key == "cache_control":
-                if not isinstance(value, dict):
-                    msg = f"'cache_control' must be a dict, got {type(value).__name__}"
-                    raise ValueError(msg)
-            elif key == "defer_loading":
-                if not isinstance(value, bool):
-                    msg = f"'defer_loading' must be a bool, got {type(value).__name__}"
-                    raise ValueError(msg)
-            elif key == "input_examples" and not isinstance(value, list):
-                msg = f"'input_examples' must be a list, got {type(value).__name__}"
-                raise ValueError(msg)
-            validated[key] = value
-        else:
-            invalid_fields.append(key)
-
-    if invalid_fields:
-        msg = (
-            f"Invalid Anthropic extra fields: {invalid_fields}. "
-            f"Valid fields are: {sorted(_ANTHROPIC_EXTRA_FIELDS)}"
-        )
-        raise ValueError(msg)
-
-    return validated
+    return {
+        key: value for key, value in extras.items() if key in _ANTHROPIC_EXTRA_FIELDS
+    }
 
 
 def _is_builtin_tool(tool: Any) -> bool:
@@ -2611,7 +2582,7 @@ class ChatAnthropic(BaseChatModel):
                 # Merge extras if present
                 if hasattr(tool, "extras") and isinstance(tool.extras, dict):
                     # Validate and merge Anthropic-specific extras
-                    validated_extras = _validate_anthropic_extras(tool.extras)
+                    validated_extras = _filter_known_anthropic_extras(tool.extras)
                     # Create a new dict with merged extras to avoid TypedDict issues
                     formatted_with_extras = cast(
                         dict[str, Any], {**formatted, **validated_extras}
