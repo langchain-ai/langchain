@@ -2039,77 +2039,11 @@ def test_context_management() -> None:
     assert full.response_metadata.get("context_management")
 
 
-def test_tool_search() -> None:
-    """Test tool search functionality with both regex and BM25 variants."""
-    # Test with regex variant
-    llm = ChatAnthropic(
-        model="claude-opus-4-5-20251101",  # type: ignore[call-arg]
-    )
-
-    # Define tools with defer_loading
-    tools = [
-        {
-            "type": "tool_search_tool_regex_20251119",
-            "name": "tool_search_tool_regex",
-        },
-        {
-            "name": "get_weather",
-            "description": "Get the current weather for a location",
-            "input_schema": {
-                "type": "object",
-                "properties": {
-                    "location": {"type": "string", "description": "City name"},
-                    "unit": {
-                        "type": "string",
-                        "enum": ["celsius", "fahrenheit"],
-                        "description": "Temperature unit",
-                    },
-                },
-                "required": ["location"],
-            },
-            "defer_loading": True,
-        },
-        {
-            "name": "search_files",
-            "description": "Search through files in the workspace",
-            "input_schema": {
-                "type": "object",
-                "properties": {
-                    "query": {"type": "string", "description": "Search query"},
-                },
-                "required": ["query"],
-            },
-            "defer_loading": True,
-        },
-    ]
-
-    llm_with_tools = llm.bind_tools(tools)  # type: ignore[arg-type]
-
-    # Test with a query that should trigger tool search
-    input_message = {
-        "role": "user",
-        "content": "What's the weather in San Francisco?",
-    }
-    response = llm_with_tools.invoke([input_message])
-
-    # Verify response contains expected block types
-    assert all(isinstance(block, (str, dict)) for block in response.content)
-
-    # Check for server_tool_use (tool search) and tool_result blocks
-    block_types = {
-        block["type"]
-        for block in response.content
-        if isinstance(block, dict) and "type" in block
-    }
-
-    # Response should contain server_tool_use for tool search
-    # and potentially tool_result with tool_reference blocks
-    assert "server_tool_use" in block_types or "tool_use" in block_types
-
-
-def test_tool_search_with_langchain_tools_extras() -> None:
+@pytest.mark.default_cassette("test_tool_search.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_tool_search(output_version: str) -> None:
     """Test tool search with LangChain tools using extras parameter."""
-    from langchain_core.tools import tool
 
     @tool(extras={"defer_loading": True})
     def get_weather(location: str, unit: str = "fahrenheit") -> str:
@@ -2130,65 +2064,51 @@ def test_tool_search_with_langchain_tools_extras() -> None:
         """
         return f"Found 3 files matching '{query}'"
 
-    llm = ChatAnthropic(
-        model="claude-opus-4-5-20251101",  # type: ignore[call-arg]
+    model = ChatAnthropic(
+        model="claude-opus-4-5-20251101", output_version=output_version
     )
 
-    llm_with_tools = llm.bind_tools(
-        [
+    agent = create_agent(  # type: ignore[var-annotated]
+        model,
+        tools=[
             {
                 "type": "tool_search_tool_regex_20251119",
                 "name": "tool_search_tool_regex",
             },
             get_weather,
             search_files,
-        ]
+        ],
     )
-
-    # Verify the payload includes extras fields
-    payload = llm_with_tools._get_request_payload(  # type: ignore[attr-defined]
-        "test",
-        **llm_with_tools.kwargs,  # type: ignore[attr-defined]
-    )
-
-    # Check that defer_loading was merged for both LangChain tools
-    weather_tool = None
-    search_tool = None
-    for tool_def in payload["tools"]:
-        if isinstance(tool_def, dict):
-            if tool_def.get("name") == "get_weather":
-                weather_tool = tool_def
-            elif tool_def.get("name") == "search_files":
-                search_tool = tool_def
-
-    assert weather_tool is not None
-    assert weather_tool.get("defer_loading") is True
-    assert search_tool is not None
-    assert search_tool.get("defer_loading") is True
-
-    # Beta header should be auto-appended
-    assert "advanced-tool-use-2025-11-20" in payload["betas"]
 
     # Test with actual API call
     input_message = {
         "role": "user",
         "content": "What's the weather in San Francisco?",
     }
-    response = llm_with_tools.invoke([input_message])
+    result = agent.invoke({"messages": [input_message]})
+    first_response = result["messages"][1]
+    content_types = [block["type"] for block in first_response.content]
+    if output_version == "v0":
+        assert content_types == [
+            "text",
+            "server_tool_use",
+            "tool_search_tool_result",
+            "text",
+            "tool_use",
+        ]
+    else:
+        # v1
+        assert content_types == [
+            "text",
+            "server_tool_call",
+            "server_tool_result",
+            "text",
+            "tool_call",
+        ]
 
-    # Verify response structure
-    assert isinstance(response.content, list)
-    assert all(isinstance(block, (str, dict)) for block in response.content)
-
-    # Check for tool-related blocks
-    block_types = {
-        block["type"]
-        for block in response.content
-        if isinstance(block, dict) and "type" in block
-    }
-
-    # Should have either server_tool_use (tool search) or tool_use blocks
-    assert "server_tool_use" in block_types or "tool_use" in block_types
+    answer = result["messages"][-1]
+    assert not answer.tool_calls
+    assert answer.text
 
 
 def test_async_shared_client() -> None:
