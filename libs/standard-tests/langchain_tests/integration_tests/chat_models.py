@@ -236,24 +236,6 @@ class ChatModelIntegrationTests(ChatModelTests):
             return True
         ```
 
-    ??? info "`tool_choice_value`"
-
-        Value to use for tool choice when used in tests.
-
-        !!! warning
-            Deprecated since version 0.3.15.
-            This property will be removed in version 0.3.20. If a model supports
-            `tool_choice`, it should accept `tool_choice="any"` and
-            `tool_choice=<string name of tool>`. If a model does not
-            support forcing tool calling, override the `has_tool_choice` property to
-            return `False`.
-
-        ```python
-        @property
-        def tool_choice_value(self) -> str | None:
-            return "any"
-        ```
-
     ??? info "`has_tool_choice`"
 
         Boolean property indicating whether the chat model supports forcing tool
@@ -263,7 +245,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         signature for the corresponding `bind_tools` method.
 
         If `True`, the minimum requirement for this feature is that
-        `tool_choice="any"` will force a tool call, and `tool_choice=<tool name>`
+        `tool_choice='any'` will force a tool call, and `tool_choice=<tool name>`
         will force a call to a specific tool.
 
         ```python
@@ -1566,17 +1548,14 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             This test may fail if the chat model does not support a `tool_choice`
             parameter. This parameter can be used to force a tool call. If
-            `tool_choice` is not supported and the model consistently fails this
-            test, you can `xfail` the test:
+            `tool_choice` is not supported, set `has_tool_choice` to `False` in
+            your test class:
 
             ```python
-            @pytest.mark.xfail(reason=("Does not support tool_choice."))
-            def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
-                super().test_bind_runnables_as_tools(model)
+            @property
+            def has_tool_choice(self) -> bool:
+                return False
             ```
-
-            Otherwise, ensure that the `tool_choice_value` property is correctly
-            specified on the test class.
 
         """
         if not self.has_tool_calling:

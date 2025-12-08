@@ -582,6 +582,47 @@ def test_builtin_tools_text_editor() -> None:
     assert content_blocks[1]["name"] == "str_replace_based_edit_tool"
 
 
+def test_builtin_tools_computer_use() -> None:
+    """Test computer use tool integration.
+
+    Beta header should be automatically appended based on tool type.
+
+    This test only verifies tool call generation.
+    """
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
+    )
+    tool = {
+        "type": "computer_20250124",
+        "name": "computer",
+        "display_width_px": 1024,
+        "display_height_px": 768,
+        "display_number": 1,
+    }
+    llm_with_tools = llm.bind_tools([tool])
+    response = llm_with_tools.invoke(
+        "Can you take a screenshot to see what's on the screen?",
+    )
+    assert isinstance(response, AIMessage)
+    assert response.tool_calls
+
+    content_blocks = response.content_blocks
+    assert len(content_blocks) >= 2
+    assert content_blocks[0]["type"] == "text"
+    assert content_blocks[0]["text"]
+
+    # Check that we have a tool_call for computer use
+    tool_call_blocks = [b for b in content_blocks if b["type"] == "tool_call"]
+    assert len(tool_call_blocks) >= 1
+    assert tool_call_blocks[0]["name"] == "computer"
+
+    # Verify tool call has expected action (screenshot in this case)
+    tool_call = response.tool_calls[0]
+    assert tool_call["name"] == "computer"
+    assert "action" in tool_call["args"]
+    assert tool_call["args"]["action"] == "screenshot"
+
+
 class GenerateUsername(BaseModel):
     """Get a username based on someone's name and hair color."""
 
@@ -1150,6 +1191,30 @@ def test_structured_output_thinking_force_tool_use() -> None:
     )
     with pytest.raises(BadRequestError):
         llm.invoke("Generate a username for Sally with green hair")
+
+
+def test_effort_parameter() -> None:
+    """Test that effort parameter can be passed without errors.
+
+    Only Opus 4.5 supports currently.
+    """
+    llm = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        effort="medium",
+        max_tokens=100,
+    )
+
+    result = llm.invoke("Say hello in one sentence")
+
+    # Verify we got a response
+    assert isinstance(result.content, str)
+    assert len(result.content) > 0
+
+    # Verify response metadata is present
+    assert "model_name" in result.response_metadata
+    assert result.usage_metadata is not None
+    assert result.usage_metadata["input_tokens"] > 0
+    assert result.usage_metadata["output_tokens"] > 0
 
 
 def test_image_tool_calling() -> None:
@@ -2013,6 +2078,74 @@ def test_context_management() -> None:
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.response_metadata.get("context_management")
+
+
+def test_tool_search() -> None:
+    """Test tool search functionality with both regex and BM25 variants."""
+    # Test with regex variant
+    llm = ChatAnthropic(
+        model="claude-opus-4-5-20251101",  # type: ignore[call-arg]
+    )
+
+    # Define tools with defer_loading
+    tools = [
+        {
+            "type": "tool_search_tool_regex_20251119",
+            "name": "tool_search_tool_regex",
+        },
+        {
+            "name": "get_weather",
+            "description": "Get the current weather for a location",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "location": {"type": "string", "description": "City name"},
+                    "unit": {
+                        "type": "string",
+                        "enum": ["celsius", "fahrenheit"],
+                        "description": "Temperature unit",
+                    },
+                },
+                "required": ["location"],
+            },
+            "defer_loading": True,
+        },
+        {
+            "name": "search_files",
+            "description": "Search through files in the workspace",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query"},
+                },
+                "required": ["query"],
+            },
+            "defer_loading": True,
+        },
+    ]
+
+    llm_with_tools = llm.bind_tools(tools)  # type: ignore[arg-type]
+
+    # Test with a query that should trigger tool search
+    input_message = {
+        "role": "user",
+        "content": "What's the weather in San Francisco?",
+    }
+    response = llm_with_tools.invoke([input_message])
+
+    # Verify response contains expected block types
+    assert all(isinstance(block, (str, dict)) for block in response.content)
+
+    # Check for server_tool_use (tool search) and tool_result blocks
+    block_types = {
+        block["type"]
+        for block in response.content
+        if isinstance(block, dict) and "type" in block
+    }
+
+    # Response should contain server_tool_use for tool search
+    # and potentially tool_result with tool_reference blocks
+    assert "server_tool_use" in block_types or "tool_use" in block_types
 
 
 def test_async_shared_client() -> None:
