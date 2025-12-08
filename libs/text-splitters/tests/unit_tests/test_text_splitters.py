@@ -3390,7 +3390,8 @@ def test_html_splitter_with_preserved_elements() -> None:
 
     expected = [
         Document(
-            page_content="<table>\n<tr><td>Row 1</td></tr>\n<tr><td>Row 2</td></tr>\n</table>",
+            page_content="<table>\n<tr><td>Row 1</td></tr>\n<tr><td>Row 2</td></tr>"
+            "\n</table>",
             metadata={"Header 1": "Section 1"},
         ),
         Document(
@@ -3583,7 +3584,9 @@ def test_html_splitter_with_mixed_preserve_and_filter() -> None:
 
     expected = [
         Document(
-            page_content="<table>\n<tr>\n<td>Keep this table</td>\n<td>Cell contents kept, span removed\n                \n</td>\n</tr>\n</table> This paragraph should be kept.",
+            page_content="<table>\n<tr>\n<td>Keep this table</td>\n<td>Cell contents "
+            "kept, span removed\n                \n</td>\n</tr>\n</table> This "
+            "paragraph should be kept.",
             metadata={"Header 1": "Section 1"},
         ),
     ]

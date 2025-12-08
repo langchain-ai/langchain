@@ -1,5 +1,5 @@
-import pytest
 from langchain_text_splitters import HTMLSemanticPreservingSplitter
+
 
 def test_preserve_nested_elements() -> None:
     body = """
@@ -13,6 +13,7 @@ def test_preserve_nested_elements() -> None:
     assert len(docs) == 1
     # Check that <preserved> tag is intact
     assert "<preserved>content</preserved>" in docs[0].page_content
+
 
 def test_preserve_container_elements() -> None:
     body = """
@@ -32,6 +33,7 @@ def test_preserve_container_elements() -> None:
     assert "<preserved-container>" in docs[0].page_content
     assert "</preserved-container>" in docs[0].page_content
 
+
 def test_preserve_body_element() -> None:
     # This was the original issue report case
     body = """
@@ -45,6 +47,7 @@ def test_preserve_body_element() -> None:
     assert len(docs) == 1
     assert "<body>nest" in docs[0].page_content
     assert "edbody</body>" in docs[0].page_content
+
 
 def test_nested_preservation_with_multiple_elements() -> None:
     body = """
@@ -60,4 +63,3 @@ def test_nested_preservation_with_multiple_elements() -> None:
     docs = splitter.split_text(body)
     assert "<outer>" in docs[0].page_content
     assert "<inner>preserved text</inner>" in docs[0].page_content
-
