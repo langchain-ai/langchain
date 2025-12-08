@@ -894,6 +894,7 @@ class ChildTool(BaseTool):
             name=run_name,
             run_id=run_id,
             inputs=filtered_tool_input,
+            tool_call_id=tool_call_id,
             **kwargs,
         )
 
@@ -1021,6 +1022,7 @@ class ChildTool(BaseTool):
             name=run_name,
             run_id=run_id,
             inputs=filtered_tool_input,
+            tool_call_id=tool_call_id,
             **kwargs,
         )
         content = None
