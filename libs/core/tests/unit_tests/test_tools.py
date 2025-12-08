@@ -3130,10 +3130,10 @@ def test_filter_tool_runtime_directly_injected_arg() -> None:
 
 
 class CallbackHandlerWithToolCallIdCapture(FakeCallbackHandler):
-    """Callback handler that captures tool_call_id passed to on_tool_start.
+    """Callback handler that captures `tool_call_id` passed to `on_tool_start`.
 
-    This handler is used to verify that tool_call_id is correctly forwarded
-    to the on_tool_start callback method.
+    Used to verify that `tool_call_id` is correctly forwarded to the `on_tool_start`
+    callback method.
     """
 
     captured_tool_call_ids: list[str | None] = []
@@ -3151,7 +3151,7 @@ class CallbackHandlerWithToolCallIdCapture(FakeCallbackHandler):
         tool_call_id: str | None = None,
         **kwargs: Any,
     ) -> Any:
-        """Capture the tool_call_id passed to on_tool_start.
+        """Capture the `tool_call_id` passed to `on_tool_start`.
 
         Args:
             serialized: Serialized tool information.
@@ -3165,7 +3165,7 @@ class CallbackHandlerWithToolCallIdCapture(FakeCallbackHandler):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            Result from parent on_tool_start call.
+            Result from parent `on_tool_start` call.
         """
         self.captured_tool_call_ids.append(tool_call_id)
         return super().on_tool_start(
@@ -3180,11 +3180,9 @@ class CallbackHandlerWithToolCallIdCapture(FakeCallbackHandler):
         )
 
 
-def test_tool_call_id_passed_to_on_tool_start_callback() -> None:
-    """Test that tool_call_id is passed to the on_tool_start callback.
-
-    This verifies the fix for https://github.com/langchain-ai/langchain/issues/34168
-    """
+@pytest.mark.parametrize("method", ["invoke", "ainvoke"])
+async def test_tool_call_id_passed_to_on_tool_start_callback(method: str) -> None:
+    """Test that `tool_call_id` is passed to the `on_tool_start` callback."""
 
     @tool
     def simple_tool(query: str) -> str:
@@ -3197,7 +3195,6 @@ def test_tool_call_id_passed_to_on_tool_start_callback() -> None:
 
     handler = CallbackHandlerWithToolCallIdCapture(captured_tool_call_ids=[])
 
-    # Invoke tool with a ToolCall that includes an id
     tool_call: ToolCall = {
         "name": "simple_tool",
         "args": {"query": "test"},
@@ -3205,60 +3202,24 @@ def test_tool_call_id_passed_to_on_tool_start_callback() -> None:
         "type": "tool_call",
     }
 
-    result = simple_tool.invoke(tool_call, config={"callbacks": [handler]})
+    if method == "ainvoke":
+        result = await simple_tool.ainvoke(tool_call, config={"callbacks": [handler]})
+    else:
+        result = simple_tool.invoke(tool_call, config={"callbacks": [handler]})
 
     assert result == ToolMessage(
         content="Result: test", name="simple_tool", tool_call_id="test_tool_call_id_123"
     )
     assert handler.tool_starts == 1
     assert len(handler.captured_tool_call_ids) == 1
-    # Verify that tool_call_id was passed to the callback
     assert handler.captured_tool_call_ids[0] == "test_tool_call_id_123"
 
 
-async def test_tool_call_id_passed_to_on_tool_start_callback_async() -> None:
-    """Test that tool_call_id is passed to on_tool_start callback in async.
-
-    This verifies the fix for https://github.com/langchain-ai/langchain/issues/34168
-    """
-
-    @tool
-    async def async_tool(query: str) -> str:
-        """Async tool for testing.
-
-        Args:
-            query: The query string.
-        """
-        return f"Async result: {query}"
-
-    handler = CallbackHandlerWithToolCallIdCapture(captured_tool_call_ids=[])
-
-    # Invoke tool with a ToolCall that includes an id
-    tool_call: ToolCall = {
-        "name": "async_tool",
-        "args": {"query": "async test"},
-        "id": "async_tool_call_id_456",
-        "type": "tool_call",
-    }
-
-    result = await async_tool.ainvoke(tool_call, config={"callbacks": [handler]})
-
-    assert result == ToolMessage(
-        content="Async result: async test",
-        name="async_tool",
-        tool_call_id="async_tool_call_id_456",
-    )
-    assert handler.tool_starts == 1
-    assert len(handler.captured_tool_call_ids) == 1
-    # Verify that tool_call_id was passed to the callback
-    assert handler.captured_tool_call_ids[0] == "async_tool_call_id_456"
-
-
 def test_tool_call_id_none_when_invoked_without_tool_call() -> None:
-    """Test that tool_call_id is None when tool is invoked without a ToolCall.
+    """Test that `tool_call_id` is `None` when tool is invoked without a `ToolCall`.
 
-    When a tool is invoked directly with arguments (not via a ToolCall),
-    the tool_call_id should be None in the callback.
+    When a tool is invoked directly with arguments (not via a `ToolCall`),
+    the `tool_call_id` should be `None` in the callback.
     """
 
     @tool
@@ -3283,10 +3244,10 @@ def test_tool_call_id_none_when_invoked_without_tool_call() -> None:
 
 
 def test_tool_call_id_empty_string_passed_to_callback() -> None:
-    """Test that empty string tool_call_id is correctly passed to callback.
+    """Test that empty string `tool_call_id` is correctly passed to callback.
 
-    Some systems may use empty strings as tool_call_id, and this should
-    be passed through correctly (not converted to None).
+    Some systems may use empty strings as `tool_call_id`, and this should
+    be passed through correctly (not converted to `None`).
     """
 
     @tool
@@ -3319,11 +3280,13 @@ def test_tool_call_id_empty_string_passed_to_callback() -> None:
     assert handler.captured_tool_call_ids[0] == ""
 
 
-def test_tool_call_id_passed_via_run_method() -> None:
-    """Test that tool_call_id is passed to callback when using run() method directly.
+@pytest.mark.parametrize("method", ["run", "arun"])
+async def test_tool_call_id_passed_via_run_method(method: str) -> None:
+    """Test that `tool_call_id` is passed to callback when using run/arun method.
 
-    The run() method is the lower-level API that invoke() calls internally.
-    This test ensures tool_call_id works at the run() level as well.
+    The `run()` and `arun()` methods are the lower-level APIs that `invoke()`
+    and `ainvoke()` call internally. This test ensures `tool_call_id` works
+    at this level as well.
     """
 
     @tool
@@ -3337,14 +3300,19 @@ def test_tool_call_id_passed_via_run_method() -> None:
 
     handler = CallbackHandlerWithToolCallIdCapture(captured_tool_call_ids=[])
 
-    # Use the run() method directly with tool_call_id parameter
-    result = simple_tool.run(
-        {"query": "test"},
-        callbacks=[handler],
-        tool_call_id="run_method_tool_call_id",
-    )
+    if method == "arun":
+        result = await simple_tool.arun(
+            {"query": "test"},
+            callbacks=[handler],
+            tool_call_id="run_method_tool_call_id",
+        )
+    else:
+        result = simple_tool.run(
+            {"query": "test"},
+            callbacks=[handler],
+            tool_call_id="run_method_tool_call_id",
+        )
 
-    # When tool_call_id is provided, result is wrapped in a ToolMessage
     assert result == ToolMessage(
         content="Result: test",
         name="simple_tool",
@@ -3353,39 +3321,3 @@ def test_tool_call_id_passed_via_run_method() -> None:
     assert handler.tool_starts == 1
     assert len(handler.captured_tool_call_ids) == 1
     assert handler.captured_tool_call_ids[0] == "run_method_tool_call_id"
-
-
-async def test_tool_call_id_passed_via_arun_method() -> None:
-    """Test that tool_call_id is passed to callback when using arun() method directly.
-
-    The arun() method is the async lower-level API that ainvoke() calls internally.
-    This test ensures tool_call_id works at the arun() level as well.
-    """
-
-    @tool
-    async def async_tool(query: str) -> str:
-        """Async tool for testing.
-
-        Args:
-            query: The query string.
-        """
-        return f"Async result: {query}"
-
-    handler = CallbackHandlerWithToolCallIdCapture(captured_tool_call_ids=[])
-
-    # Use the arun() method directly with tool_call_id parameter
-    result = await async_tool.arun(
-        {"query": "async test"},
-        callbacks=[handler],
-        tool_call_id="arun_method_tool_call_id",
-    )
-
-    # When tool_call_id is provided, result is wrapped in a ToolMessage
-    assert result == ToolMessage(
-        content="Async result: async test",
-        name="async_tool",
-        tool_call_id="arun_method_tool_call_id",
-    )
-    assert handler.tool_starts == 1
-    assert len(handler.captured_tool_call_ids) == 1
-    assert handler.captured_tool_call_ids[0] == "arun_method_tool_call_id"
