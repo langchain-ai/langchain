@@ -102,8 +102,6 @@ def create_base_retry_decorator(
                         asyncio.run(coro)
                     else:
                         if loop.is_running():
-                            # TODO: Fix RUF006 - this task should have a reference
-                            #  and be awaited somewhere
                             task = loop.create_task(coro)
                             _background_tasks.add(task)
                             task.add_done_callback(_background_tasks.discard)
