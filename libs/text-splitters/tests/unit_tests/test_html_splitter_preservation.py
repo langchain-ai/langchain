@@ -58,7 +58,6 @@ def test_nested_preservation_with_multiple_elements() -> None:
         elements_to_preserve=["outer"],
     )
     docs = splitter.split_text(body)
-    print(docs[0].page_content)
     assert "<outer>" in docs[0].page_content
     assert "<inner>preserved text</inner>" in docs[0].page_content
 
