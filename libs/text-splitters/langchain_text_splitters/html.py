@@ -852,7 +852,13 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             current_content: list[str],
             preserved_elements: dict[str, str],
             counters: dict[str, int],
-        ) -> tuple[list[Document], dict[str, str], list[str], dict[str, str], dict[str, int]]:
+        ) -> tuple[
+            list[Document],
+            dict[str, str],
+            list[str],
+            dict[str, str],
+            dict[str, int],
+        ]:
             for elem in element:
                 # 1. Check if it's a preserved element FIRST
                 if elem.name in self._elements_to_preserve:
@@ -878,6 +884,11 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                         counters,
                     )
                     # Also collect any direct text content of the container
+                    content = "".join(
+                        str(child)
+                        for child in elem.children
+                        if isinstance(child, NavigableString)
+                    )
                     if content:
                         content = self._normalize_and_clean_text(content)
                         current_content.append(content)
@@ -897,8 +908,9 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                         preserved_elements.clear()
                         # Reset counters? No, we likely want unique IDs across the doc.
                         # But clearing preserved_elements implies we're done with them.
-                        # If we clear preserved_elements, we don't strictly *need* to reset
-                        # counters, but keeping them increasing is safer for uniqueness.
+                        # If we clear preserved_elements, we don't strictly *need*
+                        # to reset counters, but keeping them increasing is safer for
+                        # uniqueness.
                     header_name = elem.get_text(strip=True)
                     current_headers = {
                         dict(self._headers_to_split_on)[elem.name]: header_name
@@ -982,6 +994,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         Returns:
             A list of `Document` objects containing the split content.
         """
+
         def length_function(text: str) -> int:
             return self._effective_length(text, preserved_elements)
 
@@ -1018,10 +1031,8 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
         return result
 
-    def _effective_length(
-        self, text: str, preserved_elements: dict[str, str]
-    ) -> int:
-        """Calculates the effective length of the text by accounting for preserved elements.
+    def _effective_length(self, text: str, preserved_elements: dict[str, str]) -> int:
+        """Calculates effective length of text, accounting for preserved elements.
 
         Args:
             text: The text to calculate length for.
