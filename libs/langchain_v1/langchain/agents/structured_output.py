@@ -74,8 +74,8 @@ class StructuredOutputValidationError(StructuredOutputError):
 
 
 def _parse_with_schema(
-    schema: type[SchemaT] | dict, schema_kind: SchemaKind, data: dict[str, Any]
-) -> Any:
+    schema: type[SchemaT], schema_kind: SchemaKind, data: dict[str, Any]
+) -> SchemaT:
     """Parse data using for any supported schema type.
 
     Args:
@@ -91,9 +91,12 @@ def _parse_with_schema(
         ValueError: If parsing fails
     """
     if schema_kind == "json_schema":
+        if not isinstance(schema, dict):
+            msg = f"Expected JSON schema to be a dict, got: {type(schema)}"
+            raise ValueError(msg)
         return data
     try:
-        adapter: TypeAdapter[SchemaT] = TypeAdapter(schema)
+        adapter = TypeAdapter[SchemaT](schema)
         return adapter.validate_python(data)
     except Exception as e:
         schema_name = getattr(schema, "__name__", str(schema))
