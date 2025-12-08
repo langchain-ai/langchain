@@ -649,19 +649,8 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 for tag in denylist_tags
                 if tag not in [header[0] for header in headers_to_split_on]
             ]
-        if separators:
-            self._recursive_splitter = RecursiveCharacterTextSplitter(
-                separators=separators,
-                keep_separator=keep_separator,
-                chunk_size=max_chunk_size,
-                chunk_overlap=chunk_overlap,
-            )
-        else:
-            self._recursive_splitter = RecursiveCharacterTextSplitter(
-                keep_separator=keep_separator,
-                chunk_size=max_chunk_size,
-                chunk_overlap=chunk_overlap,
-            )
+        self._separators = separators
+        self._chunk_overlap = chunk_overlap
 
         if self._stopword_removal:
             if not _HAS_NLTK:
@@ -808,20 +797,38 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         current_headers: dict[str, str] = {}
         current_content: list[str] = []
         preserved_elements: dict[str, str] = {}
-        placeholder_count: int = 0
+        # Use a dict for mutable integer reference
+        counters: dict[str, int] = {"placeholder_count": 0}
 
-        def _get_element_text(element: PageElement) -> str:
+        def _get_element_text(
+            element: PageElement,
+            preserved_elements: dict[str, str],
+            counters: dict[str, int],
+        ) -> str:
             """Recursively extracts and processes the text of an element.
 
             Applies custom handlers where applicable, and ensures correct spacing.
 
             Args:
                 element: The HTML element to process.
+                preserved_elements: map of preserved elements
+                counters: counter for preserved elements
 
             Returns:
                 The processed text of the element.
             """
             element = cast("Tag | NavigableString", element)
+            
+            # Check for preservation first (even in nested calls)
+            if (
+                isinstance(element, Tag) 
+                and element.name in self._elements_to_preserve
+            ):
+                placeholder = f"PRESERVED_{counters['placeholder_count']}"
+                preserved_elements[placeholder] = str(element)
+                counters["placeholder_count"] += 1
+                return placeholder
+
             if element.name in self._custom_handlers:
                 return self._custom_handlers[element.name](element)
 
@@ -829,7 +836,9 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
             if element.name is not None:
                 for child in element.children:
-                    child_text = _get_element_text(child).strip()
+                    child_text = _get_element_text(
+                        child, preserved_elements, counters
+                    ).strip()
                     if text and child_text:
                         text += " "
                     text += child_text
@@ -846,32 +855,46 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             current_headers: dict[str, str],
             current_content: list[str],
             preserved_elements: dict[str, str],
-            placeholder_count: int,
-        ) -> tuple[list[Document], dict[str, str], list[str], dict[str, str], int]:
+            counters: dict[str, int],
+        ) -> tuple[list[Document], dict[str, str], list[str], dict[str, str], dict[str, int]]:
             for elem in element:
-                if elem.name.lower() in {"html", "body", "div", "main"}:
+                # 1. Check if it's a preserved element FIRST
+                if elem.name in self._elements_to_preserve:
+                    # _get_element_text now handles the preservation logic internally
+                    content = _get_element_text(elem, preserved_elements, counters)
+                    if content:
+                        current_content.append(content)
+                
+                # 2. Then check if it's a container tag to unwrap
+                elif elem.name.lower() in {"html", "body", "div", "main"}:
                     children = _find_all_tags(elem, recursive=False)
                     (
                         documents,
                         current_headers,
                         current_content,
                         preserved_elements,
-                        placeholder_count,
+                        counters,
                     ) = _process_element(
                         children,
                         documents,
                         current_headers,
                         current_content,
                         preserved_elements,
-                        placeholder_count,
+                        counters,
                     )
-                    content = " ".join(_find_all_strings(elem, recursive=False))
+                    # Also collect any direct text content of the container
+                    content = " ".join(
+                        _get_element_text(child, preserved_elements, counters) 
+                        for child in elem.children 
+                        if isinstance(child, NavigableString) and child.strip()
+                    )
                     if content:
                         content = self._normalize_and_clean_text(content)
                         current_content.append(content)
                     continue
 
-                if elem.name in [h[0] for h in self._headers_to_split_on]:
+                # 3. Handle split headers
+                elif elem.name in [h[0] for h in self._headers_to_split_on]:
                     if current_content:
                         documents.extend(
                             self._create_documents(
@@ -882,17 +905,19 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                         )
                         current_content.clear()
                         preserved_elements.clear()
+                        # Reset counters? No, we likely want unique IDs across the doc.
+                        # But clearing preserved_elements implies we're done with them.
+                        # If we clear preserved_elements, we don't strictly *need* to reset 
+                        # counters, but keeping them increasing is safer for uniqueness.
+                        
                     header_name = elem.get_text(strip=True)
                     current_headers = {
                         dict(self._headers_to_split_on)[elem.name]: header_name
                     }
-                elif elem.name in self._elements_to_preserve:
-                    placeholder = f"PRESERVED_{placeholder_count}"
-                    preserved_elements[placeholder] = _get_element_text(elem)
-                    current_content.append(placeholder)
-                    placeholder_count += 1
+                
+                # 4. Default processing
                 else:
-                    content = _get_element_text(elem)
+                    content = _get_element_text(elem, preserved_elements, counters)
                     if content:
                         current_content.append(content)
 
@@ -901,7 +926,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 current_headers,
                 current_content,
                 preserved_elements,
-                placeholder_count,
+                counters,
             )
 
         # Process the elements
@@ -910,14 +935,14 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             current_headers,
             current_content,
             preserved_elements,
-            placeholder_count,
+            counters,
         ) = _process_element(
             elements,
             documents,
             current_headers,
             current_content,
             preserved_elements,
-            placeholder_count,
+            counters,
         )
 
         # Handle any remaining content
@@ -949,7 +974,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
         metadata = {**headers, **self._external_metadata}
 
-        if len(content) <= self._max_chunk_size:
+        if self._effective_length(content, preserved_elements) <= self._max_chunk_size:
             page_content = self._reinsert_preserved_elements(
                 content, preserved_elements
             )
@@ -969,7 +994,26 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         Returns:
             A list of `Document` objects containing the split content.
         """
-        splits = self._recursive_splitter.split_text(content)
+        def length_function(text: str) -> int:
+            return self._effective_length(text, preserved_elements)
+
+        if self._separators:
+            recursive_splitter = RecursiveCharacterTextSplitter(
+                separators=self._separators,
+                keep_separator=self._keep_separator,
+                chunk_size=self._max_chunk_size,
+                chunk_overlap=self._chunk_overlap,
+                length_function=length_function,
+            )
+        else:
+            recursive_splitter = RecursiveCharacterTextSplitter(
+                keep_separator=self._keep_separator,
+                chunk_size=self._max_chunk_size,
+                chunk_overlap=self._chunk_overlap,
+                length_function=length_function,
+            )
+
+        splits = recursive_splitter.split_text(content)
         result = []
 
         for split in splits:
@@ -985,6 +1029,24 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 )
 
         return result
+
+    def _effective_length(
+        self, text: str, preserved_elements: dict[str, str]
+    ) -> int:
+        """Calculates the effective length of the text by accounting for preserved elements.
+        
+        Args:
+            text: The text to calculate length for.
+            preserved_elements: Preserved elements to account for.
+
+        Returns:
+            The effective length of the text.
+        """
+        length = len(text)
+        for placeholder, preserved_content in preserved_elements.items():
+            if placeholder in text:
+                length += len(preserved_content) - len(placeholder)
+        return length
 
     def _reinsert_preserved_elements(
         self, content: str, preserved_elements: dict[str, str]
