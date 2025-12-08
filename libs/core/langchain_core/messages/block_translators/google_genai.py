@@ -95,7 +95,7 @@ def translate_grounding_metadata_to_citations(
                     "confidence_scores": support.get("confidence_scores") or [],
                 }
 
-                # Add maps-specific metadata if present)
+                # Add maps-specific metadata if present
                 if maps_info.get("placeId"):
                     extras_metadata["place_id"] = maps_info["placeId"]
 
