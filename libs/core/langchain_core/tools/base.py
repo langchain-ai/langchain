@@ -655,6 +655,17 @@ class ChildTool(BaseTool):
         if input_args is not None:
             if isinstance(input_args, dict):
                 return tool_input
+            # Extract injected args that are NOT in the schema before validation
+            # to avoid Pydantic errors when args_schema has extra="forbid".
+            # Only strip injected args that are NOT fields in the schema.
+            injected_args_keys = self._injected_args_keys
+            schema_fields = set(get_fields(input_args).keys())
+            injected_values: dict[str, Any] = {}
+            input_for_validation = dict(tool_input)
+            for k in injected_args_keys:
+                # Only strip if NOT in schema - if in schema, let validation handle it
+                if k in input_for_validation and k not in schema_fields:
+                    injected_values[k] = input_for_validation.pop(k)
             if issubclass(input_args, BaseModel):
                 # Check args_schema for InjectedToolCallId
                 for k, v in get_all_basemodel_annotations(input_args).items():
@@ -668,8 +679,8 @@ class ChildTool(BaseTool):
                                 "'tool_call_id': '...'}"
                             )
                             raise ValueError(msg)
-                        tool_input[k] = tool_call_id
-                result = input_args.model_validate(tool_input)
+                        input_for_validation[k] = tool_call_id
+                result = input_args.model_validate(input_for_validation)
                 result_dict = result.model_dump()
             elif issubclass(input_args, BaseModelV1):
                 # Check args_schema for InjectedToolCallId
@@ -684,8 +695,8 @@ class ChildTool(BaseTool):
                                 "'tool_call_id': '...'}"
                             )
                             raise ValueError(msg)
-                        tool_input[k] = tool_call_id
-                result = input_args.parse_obj(tool_input)
+                        input_for_validation[k] = tool_call_id
+                result = input_args.parse_obj(input_for_validation)
                 result_dict = result.dict()
             else:
                 msg = (
@@ -695,20 +706,29 @@ class ChildTool(BaseTool):
             validated_input = {
                 k: getattr(result, k) for k in result_dict if k in tool_input
             }
-            for k in self._injected_args_keys:
-                if k in tool_input:
+            # Re-add injected args that were extracted before validation,
+            # or that weren't in tool_input but need to be injected
+            for k in injected_args_keys:
+                if k == "tool_call_id" and tool_call_id is not None:
+                    # When invoked with a ToolCall, use the real tool_call_id
+                    # (override any LLM-generated value in args)
+                    validated_input[k] = tool_call_id
+                elif k in injected_values:
+                    # Was extracted before validation, re-add it
+                    validated_input[k] = injected_values[k]
+                elif k in tool_input:
+                    # Was in original tool_input (and passed validation)
                     validated_input[k] = tool_input[k]
                 elif k == "tool_call_id":
-                    if tool_call_id is None:
-                        msg = (
-                            "When tool includes an InjectedToolCallId "
-                            "argument, tool must always be invoked with a full "
-                            "model ToolCall of the form: {'args': {...}, "
-                            "'name': '...', 'type': 'tool_call', "
-                            "'tool_call_id': '...'}"
-                        )
-                        raise ValueError(msg)
-                    validated_input[k] = tool_call_id
+                    # tool_call_id is required but not provided
+                    msg = (
+                        "When tool includes an InjectedToolCallId "
+                        "argument, tool must always be invoked with a full "
+                        "model ToolCall of the form: {'args': {...}, "
+                        "'name': '...', 'type': 'tool_call', "
+                        "'tool_call_id': '...'}"
+                    )
+                    raise ValueError(msg)
             return validated_input
         return tool_input
 
@@ -1271,6 +1291,27 @@ def _get_type_hints(func: Callable) -> dict[str, type] | None:
         func = func.func
     try:
         return get_type_hints(func)
+    except Exception:
+        return None
+
+
+def _get_type_hints_with_extras(func: Callable) -> dict[str, type] | None:
+    """Get type hints from a function, preserving Annotated metadata.
+
+    This is similar to `_get_type_hints` but uses `include_extras=True`
+    to preserve `Annotated` type metadata, which is needed to detect
+    injected arguments via `InjectedToolArg` and similar markers.
+
+    Args:
+        func: The function to get type hints from.
+
+    Returns:
+        `dict` of type hints with extras preserved, or `None` if extraction fails.
+    """
+    if isinstance(func, functools.partial):
+        func = func.func
+    try:
+        return get_type_hints(func, include_extras=True)
     except Exception:
         return None
 

@@ -2432,6 +2432,58 @@ def test_tool_injected_arg_with_custom_schema() -> None:
     assert captured["context"].value == "test_context"
 
 
+def test_tool_injected_arg_with_strict_schema() -> None:
+    """Test injected args work with args_schema that has extra='forbid'.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/34246
+    """
+
+    class StrictArgsSchema(BaseModel):
+        str_value: str
+        int_value: int
+
+        model_config = {"extra": "forbid"}
+
+    class RuntimeInfo:
+        """A simple runtime info class to inject."""
+
+        def __init__(self, value: str) -> None:
+            self.value = value
+
+    def tool_func(
+        runtime: Annotated[RuntimeInfo, InjectedToolArg],
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        return {"input_kwargs": kwargs, "runtime_value": runtime.value}
+
+    strict_tool = StructuredTool(
+        name="example_tool",
+        description="An example tool that echoes its input and runtime.",
+        func=tool_func,
+        args_schema=StrictArgsSchema,
+    )
+
+    dummy_runtime = RuntimeInfo("test_runtime")
+    input_kwargs = {
+        "str_value": "hello",
+        "int_value": 42,
+        "runtime": dummy_runtime,
+    }
+
+    # This should NOT raise a ValidationError even with extra="forbid"
+    result = strict_tool.invoke(input_kwargs)
+
+    assert result["input_kwargs"]["str_value"] == "hello"
+    assert result["input_kwargs"]["int_value"] == 42
+    assert result["runtime_value"] == "test_runtime"
+
+    # The schema exposed to the LLM should not include 'runtime'
+    schema = strict_tool.get_input_jsonschema()
+    assert "runtime" not in schema.get("properties", {})
+    assert "str_value" in schema.get("properties", {})
+    assert "int_value" in schema.get("properties", {})
+
+
 def test_tool_injected_tool_call_id() -> None:
     @tool
     def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
