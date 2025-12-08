@@ -1300,6 +1300,56 @@ def test_anthropic_bind_tools_tool_choice() -> None:
     }
 
 
+def test_fine_grained_tool_streaming_beta() -> None:
+    """Test that fine-grained tool streaming beta can be enabled."""
+    # Test with betas parameter at initialization
+    model = ChatAnthropic(
+        model=MODEL_NAME, betas=["fine-grained-tool-streaming-2025-05-14"]
+    )
+
+    # Create a simple tool
+    def get_weather(city: str) -> str:
+        """Get the weather for a city."""
+        return f"Weather in {city}"
+
+    model_with_tools = model.bind_tools([get_weather])
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "What's the weather in SF?",
+        stream=True,
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+
+    # Verify beta header is in payload
+    assert "fine-grained-tool-streaming-2025-05-14" in payload["betas"]
+    assert payload["stream"] is True
+
+    # Test combining with other betas
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        betas=["context-1m-2025-08-07", "fine-grained-tool-streaming-2025-05-14"],
+    )
+    model_with_tools = model.bind_tools([get_weather])
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "What's the weather?",
+        stream=True,
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+    assert set(payload["betas"]) == {
+        "context-1m-2025-08-07",
+        "fine-grained-tool-streaming-2025-05-14",
+    }
+
+    # Test that _create routes to beta client when betas are present
+    model = ChatAnthropic(
+        model=MODEL_NAME, betas=["fine-grained-tool-streaming-2025-05-14"]
+    )
+    payload = {"betas": ["fine-grained-tool-streaming-2025-05-14"], "stream": True}
+
+    with patch.object(model._client.beta.messages, "create") as mock_beta_create:
+        model._create(payload)
+        mock_beta_create.assert_called_once_with(**payload)
+
+
 def test_optional_description() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
