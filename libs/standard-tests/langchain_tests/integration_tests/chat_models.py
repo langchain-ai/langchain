@@ -37,7 +37,7 @@ from langchain_tests.unit_tests.chat_models import ChatModelTests
 from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 if TYPE_CHECKING:
-    from pytest_benchmark.fixture import (  # type: ignore[import-untyped]
+    from pytest_benchmark.fixture import (
         BenchmarkFixture,
     )
     from vcr.cassette import Cassette
@@ -1303,6 +1303,12 @@ class ChatModelIntegrationTests(ChatModelTests):
                     "Only one chunk should set input_tokens,"
                     " the rest should be 0 or None"
                 )
+            # only one chunk is allowed to set usage_metadata.model_name
+            # if multiple do, they'll be concatenated incorrectly
+            if full and full.usage_metadata and full.usage_metadata.get("model_name"):
+                assert not chunk.usage_metadata or not chunk.usage_metadata.get(
+                    "model_name"
+                ), "Only one chunk should set model_name, the rest should be None"
             full = chunk if full is None else full + chunk
 
         assert isinstance(full, AIMessageChunk)
