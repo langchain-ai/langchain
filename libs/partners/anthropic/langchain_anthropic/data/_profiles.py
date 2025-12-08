@@ -10,7 +10,7 @@ License: MIT License
 
 To update these data, refer to the instructions here:
 
-https://docs.langchain.com/oss/python/langchain/models#modify-profile-data
+https://docs.langchain.com/oss/python/langchain/models#updating-or-overwriting-profile-data
 """
 
 from typing import Any
@@ -32,7 +32,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
-        "reasoning_effort_control": False,
     },
     "claude-3-5-sonnet-20241022": {
         "max_input_tokens": 200000,
@@ -50,7 +49,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
-        "reasoning_effort_control": False,
     },
     "claude-opus-4-1": {
         "max_input_tokens": 200000,
@@ -68,7 +66,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": True,
-        "reasoning_effort_control": False,
     },
     "claude-haiku-4-5": {
         "max_input_tokens": 200000,
@@ -86,7 +83,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
-        "reasoning_effort_control": False,
     },
     "claude-3-5-sonnet-20240620": {
         "max_input_tokens": 200000,
@@ -104,7 +100,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
-        "reasoning_effort_control": False,
     },
     "claude-3-5-haiku-latest": {
         "max_input_tokens": 200000,
@@ -122,25 +117,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
-        "reasoning_effort_control": False,
-    },
-    "claude-opus-4-5": {
-        "max_input_tokens": 200000,
-        "max_output_tokens": 64000,
-        "image_inputs": True,
-        "audio_inputs": False,
-        "video_inputs": False,
-        "image_outputs": False,
-        "audio_outputs": False,
-        "video_outputs": False,
-        "reasoning_output": True,
-        "tool_calling": True,
-        "image_url_inputs": True,
-        "pdf_inputs": True,
-        "pdf_tool_message": True,
-        "image_tool_message": True,
-        "structured_output": False,
-        "reasoning_effort_control": True,
     },
     "claude-opus-4-5": {
         "max_input_tokens": 200000,
@@ -175,7 +151,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
-        "reasoning_effort_control": False,
     },
     "claude-opus-4-5-20251101": {
         "max_input_tokens": 200000,
@@ -211,7 +186,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": True,
-        "reasoning_effort_control": False,
     },
     "claude-sonnet-4-5-20250929": {
         "max_input_tokens": 200000,
@@ -229,7 +203,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
-        "reasoning_effort_control": False,
     },
     "claude-sonnet-4-20250514": {
         "max_input_tokens": 200000,
@@ -247,7 +220,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
-        "reasoning_effort_control": False,
     },
     "claude-opus-4-20250514": {
         "max_input_tokens": 200000,
@@ -265,7 +237,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
-        "reasoning_effort_control": False,
     },
     "claude-3-5-haiku-20241022": {
         "max_input_tokens": 200000,
@@ -283,7 +254,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
-        "reasoning_effort_control": False,
     },
     "claude-3-haiku-20240307": {
         "max_input_tokens": 200000,
@@ -301,7 +271,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
-        "reasoning_effort_control": False,
     },
     "claude-3-7-sonnet-20250219": {
         "max_input_tokens": 200000,
@@ -319,7 +288,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
-        "reasoning_effort_control": False,
     },
     "claude-3-7-sonnet-latest": {
         "max_input_tokens": 200000,
@@ -337,7 +305,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
-        "reasoning_effort_control": False,
     },
     "claude-sonnet-4-0": {
         "max_input_tokens": 200000,
@@ -355,7 +322,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
-        "reasoning_effort_control": False,
     },
     "claude-opus-4-1-20250805": {
         "max_input_tokens": 200000,
@@ -373,7 +339,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
-        "reasoning_effort_control": False,
     },
     "claude-3-sonnet-20240229": {
         "max_input_tokens": 200000,
@@ -391,7 +356,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
-        "reasoning_effort_control": False,
     },
     "claude-haiku-4-5-20251001": {
         "max_input_tokens": 200000,
@@ -409,6 +373,5 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
-        "reasoning_effort_control": False,
     },
 }
