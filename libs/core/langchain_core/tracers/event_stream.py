@@ -42,7 +42,7 @@ from langchain_core.tracers.log_stream import (
     _astream_log_implementation,
 )
 from langchain_core.tracers.memory_stream import _MemoryStream
-from langchain_core.utils.aiter import aclosing, py_anext
+from langchain_core.utils.aiter import aclosing
 from langchain_core.utils.uuid import uuid7
 
 if TYPE_CHECKING:
@@ -189,7 +189,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         # atomic check and set
         tap = self.is_tapped.setdefault(run_id, sentinel)
         # wait for first chunk
-        first = await py_anext(output, default=sentinel)
+        first = await anext(output, sentinel)
         if first is sentinel:
             return
         # get run info
