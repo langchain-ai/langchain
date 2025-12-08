@@ -37,8 +37,8 @@ Before reporting a vulnerability, please review the [Best Practices](#best-pract
 
 We welcome security vulnerability reports for all LangChain libraries. However, we may offer ad hoc bug bounties only for vulnerabilities in the following packages:
 
-* Core libraries owned and maintained by the LangChain team: `langchain-core`, `langchain` (v1), `langgraph`, and related checkpointer packages
-* Popular integrations maintained by the LangChain team (e.g., `langchain-openai`, `langchain-anthropic`, etc.)
+* Core libraries owned and maintained by the LangChain team: `langchain-core`, `langchain` (v1), `langgraph`, and related checkpointer packages (or their JavaScript equivalents)
+* Popular integrations maintained by the LangChain team (e.g., `langchain-openai`, `langchain-anthropic`, etc., or their JavaScript equivalents)
 
 The vulnerability must be in the library code itself, not in example code or example applications.
 
