@@ -83,11 +83,6 @@ def _get_default_model_profile(model_name: str) -> ModelProfile:
     Returns:
         The model profile dictionary, or an empty dict if not found.
     """
-    # Hardcoded mapping for claude-opus-4-5-20251101 until upstream models.dev
-    # includes this dated API ID. This is a temporary fix.
-    if model_name == "claude-opus-4-5-20251101":
-        model_name = "claude-opus-4-5"
-
     default = _MODEL_PROFILES.get(model_name)
     if default:
         return default.copy()
@@ -1840,38 +1835,6 @@ class ChatAnthropic(BaseChatModel):
     """Configuration for
     [context management](https://platform.claude.com/docs/en/build-with-claude/context-editing).
     """
-
-    @model_validator(mode="after")
-    def _validate_effort(self) -> Self:
-        """Validate effort parameter and model compatibility."""
-        effort_value = self.effort
-        if not effort_value and self.model_kwargs.get("output_config"):
-            effort_value = self.model_kwargs["output_config"].get("effort")
-
-        if effort_value:
-            profile = self.profile or _get_default_model_profile(self.model)
-            if not profile:
-                msg = (
-                    f"Profile not found for model {self.model!r}. "
-                    "The effort parameter requires a model with a known profile."
-                )
-                raise ValueError(msg)
-
-            if not profile.get("reasoning_effort_control"):
-                msg = (
-                    f"The model {self.model!r} does not support reasoning effort "
-                    "control."
-                )
-                raise ValueError(msg)
-
-            if effort_value not in ("high", "medium", "low"):
-                msg = (
-                    f"Invalid effort value: {effort_value!r}. "
-                    "Must be one of 'high', 'medium', or 'low'."
-                )
-                raise ValueError(msg)
-
-        return self
 
     @property
     def _llm_type(self) -> str:
