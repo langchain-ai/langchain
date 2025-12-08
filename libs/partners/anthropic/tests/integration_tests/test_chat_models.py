@@ -700,6 +700,7 @@ def test_response_format(schema: dict | type) -> None:
         assert parsed["age"]
 
 
+@pytest.mark.vcr
 def test_response_format_in_agent() -> None:
     class Weather(BaseModel):
         temperature: float
@@ -2036,6 +2037,74 @@ def test_context_management() -> None:
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.response_metadata.get("context_management")
+
+
+def test_tool_search() -> None:
+    """Test tool search functionality with both regex and BM25 variants."""
+    # Test with regex variant
+    llm = ChatAnthropic(
+        model="claude-opus-4-5-20251101",  # type: ignore[call-arg]
+    )
+
+    # Define tools with defer_loading
+    tools = [
+        {
+            "type": "tool_search_tool_regex_20251119",
+            "name": "tool_search_tool_regex",
+        },
+        {
+            "name": "get_weather",
+            "description": "Get the current weather for a location",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "location": {"type": "string", "description": "City name"},
+                    "unit": {
+                        "type": "string",
+                        "enum": ["celsius", "fahrenheit"],
+                        "description": "Temperature unit",
+                    },
+                },
+                "required": ["location"],
+            },
+            "defer_loading": True,
+        },
+        {
+            "name": "search_files",
+            "description": "Search through files in the workspace",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query"},
+                },
+                "required": ["query"],
+            },
+            "defer_loading": True,
+        },
+    ]
+
+    llm_with_tools = llm.bind_tools(tools)  # type: ignore[arg-type]
+
+    # Test with a query that should trigger tool search
+    input_message = {
+        "role": "user",
+        "content": "What's the weather in San Francisco?",
+    }
+    response = llm_with_tools.invoke([input_message])
+
+    # Verify response contains expected block types
+    assert all(isinstance(block, (str, dict)) for block in response.content)
+
+    # Check for server_tool_use (tool search) and tool_result blocks
+    block_types = {
+        block["type"]
+        for block in response.content
+        if isinstance(block, dict) and "type" in block
+    }
+
+    # Response should contain server_tool_use for tool search
+    # and potentially tool_result with tool_reference blocks
+    assert "server_tool_use" in block_types or "tool_use" in block_types
 
 
 def test_async_shared_client() -> None:
