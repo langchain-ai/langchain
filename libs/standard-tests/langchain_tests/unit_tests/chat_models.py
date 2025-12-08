@@ -239,19 +239,21 @@ class ChatModelTests(BaseStandardTests):
     def supports_model_override(self) -> bool:
         """Whether the model supports overriding the model name at runtime.
 
-        If True, the model accepts a `model` kwarg in `invoke()`, `stream()`,
+        Defaults to `True`.
+
+        If `True`, the model accepts a `model` kwarg in `invoke()`, `stream()`,
         etc. that overrides the model specified at initialization.
 
         This enables dynamic model selection without creating new instances.
         """
-        return False
+        return True
 
     @property
     def model_override_value(self) -> str | None:
         """Alternative model name to use when testing model override.
 
         Should return a valid model name that differs from the default model.
-        Required if `supports_model_override` is True.
+        Required if `supports_model_override` is `True`.
         """
         return None
 
