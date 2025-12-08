@@ -391,12 +391,12 @@ class BaseMessageChunk(BaseMessage):
         Raises:
             TypeError: If the other object is not a message chunk.
 
-        For example,
-
-        `AIMessageChunk(content="Hello") + AIMessageChunk(content=" World")`
-
-        will give `AIMessageChunk(content="Hello World")`
-
+        Example:
+            ```txt
+              AIMessageChunk(content="Hello", ...)
+            + AIMessageChunk(content=" World", ...)
+            = AIMessageChunk(content="Hello World", ...)
+            ```
         """
         if isinstance(other, BaseMessageChunk):
             # If both are (subclasses of) BaseMessageChunk,
