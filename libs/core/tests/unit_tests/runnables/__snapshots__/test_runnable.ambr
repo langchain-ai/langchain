@@ -483,273 +483,6 @@
     RunTree(id=00000000-0000-4000-8000-000000000000, name='RunnableSequence', run_type='chain', dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000'),
   ])
 # ---
-# name: test_configurable_fields[schema2]
-  dict({
-    '$defs': dict({
-      'Configurable': dict({
-        'properties': dict({
-          'llm_responses': dict({
-            'default': list([
-              'a',
-            ]),
-            'description': 'A list of fake responses for this LLM',
-            'items': dict({
-              'type': 'string',
-            }),
-            'title': 'LLM Responses',
-            'type': 'array',
-          }),
-        }),
-        'title': 'Configurable',
-        'type': 'object',
-      }),
-    }),
-    'properties': dict({
-      'configurable': dict({
-        '$ref': '#/$defs/Configurable',
-      }),
-    }),
-    'title': 'RunnableConfigurableFieldsConfig',
-    'type': 'object',
-  })
-# ---
-# name: test_configurable_fields[schema3]
-  dict({
-    '$defs': dict({
-      'Configurable': dict({
-        'properties': dict({
-          'prompt_template': dict({
-            'default': 'Hello, {name}!',
-            'description': 'The prompt template for this chain',
-            'title': 'Prompt Template',
-            'type': 'string',
-          }),
-        }),
-        'title': 'Configurable',
-        'type': 'object',
-      }),
-    }),
-    'properties': dict({
-      'configurable': dict({
-        '$ref': '#/$defs/Configurable',
-      }),
-    }),
-    'title': 'RunnableConfigurableFieldsConfig',
-    'type': 'object',
-  })
-# ---
-# name: test_configurable_fields[schema4]
-  dict({
-    '$defs': dict({
-      'Configurable': dict({
-        'properties': dict({
-          'llm_responses': dict({
-            'default': list([
-              'a',
-            ]),
-            'description': 'A list of fake responses for this LLM',
-            'items': dict({
-              'type': 'string',
-            }),
-            'title': 'LLM Responses',
-            'type': 'array',
-          }),
-          'prompt_template': dict({
-            'default': 'Hello, {name}!',
-            'description': 'The prompt template for this chain',
-            'title': 'Prompt Template',
-            'type': 'string',
-          }),
-        }),
-        'title': 'Configurable',
-        'type': 'object',
-      }),
-    }),
-    'properties': dict({
-      'configurable': dict({
-        '$ref': '#/$defs/Configurable',
-      }),
-    }),
-    'title': 'RunnableSequenceConfig',
-    'type': 'object',
-  })
-# ---
-# name: test_configurable_fields[schema5]
-  dict({
-    '$defs': dict({
-      'Configurable': dict({
-        'properties': dict({
-          'llm_responses': dict({
-            'default': list([
-              'a',
-            ]),
-            'description': 'A list of fake responses for this LLM',
-            'items': dict({
-              'type': 'string',
-            }),
-            'title': 'LLM Responses',
-            'type': 'array',
-          }),
-          'other_responses': dict({
-            'default': list([
-              'a',
-            ]),
-            'items': dict({
-              'type': 'string',
-            }),
-            'title': 'Other Responses',
-            'type': 'array',
-          }),
-          'prompt_template': dict({
-            'default': 'Hello, {name}!',
-            'description': 'The prompt template for this chain',
-            'title': 'Prompt Template',
-            'type': 'string',
-          }),
-        }),
-        'title': 'Configurable',
-        'type': 'object',
-      }),
-    }),
-    'properties': dict({
-      'configurable': dict({
-        '$ref': '#/$defs/Configurable',
-      }),
-    }),
-    'title': 'RunnableSequenceConfig',
-    'type': 'object',
-  })
-# ---
-# name: test_configurable_fields_example[schema7]
-  dict({
-    '$defs': dict({
-      'Chat_Responses': dict({
-        'title': 'Chat Responses',
-      }),
-      'Configurable': dict({
-        'properties': dict({
-          'chat_responses': dict({
-            'default': list([
-              'hello',
-              'bye',
-            ]),
-            'items': dict({
-              '$ref': '#/$defs/Chat_Responses',
-            }),
-            'title': 'Chat Responses',
-            'type': 'array',
-          }),
-          'llm': dict({
-            '$ref': '#/$defs/LLM',
-            'default': 'default',
-          }),
-          'llm_responses': dict({
-            'default': list([
-              'a',
-            ]),
-            'description': 'A list of fake responses for this LLM',
-            'items': dict({
-              'type': 'string',
-            }),
-            'title': 'LLM Responses',
-            'type': 'array',
-          }),
-          'prompt_template': dict({
-            '$ref': '#/$defs/Prompt_Template',
-            'default': 'hello',
-            'description': 'The prompt template for this chain',
-          }),
-        }),
-        'title': 'Configurable',
-        'type': 'object',
-      }),
-      'LLM': dict({
-        'title': 'LLM',
-      }),
-      'Prompt_Template': dict({
-        'title': 'Prompt Template',
-      }),
-    }),
-    'properties': dict({
-      'configurable': dict({
-        '$ref': '#/$defs/Configurable',
-      }),
-    }),
-    'title': 'RunnableSequenceConfig',
-    'type': 'object',
-  })
-# ---
-# name: test_configurable_fields_prefix_keys[schema6]
-  dict({
-    'definitions': dict({
-      'Chat_Responses': dict({
-        'title': 'Chat Responses',
-      }),
-      'Configurable': dict({
-        'properties': dict({
-          'chat_sleep': dict({
-            'anyOf': list([
-              dict({
-                'type': 'number',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Chat Sleep',
-          }),
-          'llm': dict({
-            '$ref': '#/definitions/LLM',
-            'default': 'default',
-          }),
-          'llm==chat/responses': dict({
-            'default': list([
-              'hello',
-              'bye',
-            ]),
-            'items': dict({
-              '$ref': '#/definitions/Chat_Responses',
-            }),
-            'title': 'Chat Responses',
-            'type': 'array',
-          }),
-          'llm==default/responses': dict({
-            'default': list([
-              'a',
-            ]),
-            'description': 'A list of fake responses for this LLM',
-            'items': dict({
-              'type': 'string',
-            }),
-            'title': 'LLM Responses',
-            'type': 'array',
-          }),
-          'prompt_template': dict({
-            '$ref': '#/definitions/Prompt_Template',
-            'default': 'hello',
-            'description': 'The prompt template for this chain',
-          }),
-        }),
-        'title': 'Configurable',
-        'type': 'object',
-      }),
-      'LLM': dict({
-        'title': 'LLM',
-      }),
-      'Prompt_Template': dict({
-        'title': 'Prompt Template',
-      }),
-    }),
-    'properties': dict({
-      'configurable': dict({
-        '$ref': '#/definitions/Configurable',
-      }),
-    }),
-    'title': 'RunnableSequenceConfig',
-    'type': 'object',
-  })
-# ---
 # name: test_each
   '''
   {
@@ -974,37 +707,6 @@
     "name": "RunnableSequence"
   }
   '''
-# ---
-# name: test_lambda_schemas[schema8]
-  dict({
-    '$defs': dict({
-      'OutputType': dict({
-        'properties': dict({
-          'bye': dict({
-            'title': 'Bye',
-            'type': 'string',
-          }),
-          'byebye': dict({
-            'title': 'Byebye',
-            'type': 'integer',
-          }),
-          'hello': dict({
-            'title': 'Hello',
-            'type': 'string',
-          }),
-        }),
-        'required': list([
-          'hello',
-          'bye',
-          'byebye',
-        ]),
-        'title': 'OutputType',
-        'type': 'object',
-      }),
-    }),
-    '$ref': '#/$defs/OutputType',
-    'title': 'aget_values_typed_output',
-  })
 # ---
 # name: test_prompt_with_chat_model
   '''
@@ -3045,37 +2747,39 @@
           `ToolMessage` objects contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A `ToolMessage` representing a result of `42` from a tool call with id
+          `tool_call_id` is used to associate the tool call request with the tool call
+          response. Useful in situations where a chat model is able to request multiple tool
+          calls in parallel.
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` representing a result of `42` from a tool call with id
           
-          ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
-          ```
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          Example: A `ToolMessage` where only part of the tool output is sent to the model
-          and the full output is passed in to artifact.
+              ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ```
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` where only part of the tool output is sent to the model
+              and the full output is passed in to artifact.
           
-          tool_output = {
-              "stdout": "From the graph we can see that the correlation between "
-              "x and y is ...",
-              "stderr": None,
-              "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-          }
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          ToolMessage(
-              content=tool_output["stdout"],
-              artifact=tool_output,
-              tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-          )
-          ```
+              tool_output = {
+                  "stdout": "From the graph we can see that the correlation between "
+                  "x and y is ...",
+                  "stderr": None,
+                  "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+              }
           
-          The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. Useful in situations where a chat model is able
-          to request multiple tool calls in parallel.
+              ToolMessage(
+                  content=tool_output["stdout"],
+                  artifact=tool_output,
+                  tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+              )
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -4523,37 +4227,39 @@
           `ToolMessage` objects contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A `ToolMessage` representing a result of `42` from a tool call with id
+          `tool_call_id` is used to associate the tool call request with the tool call
+          response. Useful in situations where a chat model is able to request multiple tool
+          calls in parallel.
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` representing a result of `42` from a tool call with id
           
-          ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
-          ```
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          Example: A `ToolMessage` where only part of the tool output is sent to the model
-          and the full output is passed in to artifact.
+              ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ```
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` where only part of the tool output is sent to the model
+              and the full output is passed in to artifact.
           
-          tool_output = {
-              "stdout": "From the graph we can see that the correlation between "
-              "x and y is ...",
-              "stderr": None,
-              "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-          }
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          ToolMessage(
-              content=tool_output["stdout"],
-              artifact=tool_output,
-              tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-          )
-          ```
+              tool_output = {
+                  "stdout": "From the graph we can see that the correlation between "
+                  "x and y is ...",
+                  "stderr": None,
+                  "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+              }
           
-          The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. Useful in situations where a chat model is able
-          to request multiple tool calls in parallel.
+              ToolMessage(
+                  content=tool_output["stdout"],
+                  artifact=tool_output,
+                  tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+              )
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -6013,37 +5719,39 @@
           `ToolMessage` objects contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A `ToolMessage` representing a result of `42` from a tool call with id
+          `tool_call_id` is used to associate the tool call request with the tool call
+          response. Useful in situations where a chat model is able to request multiple tool
+          calls in parallel.
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` representing a result of `42` from a tool call with id
           
-          ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
-          ```
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          Example: A `ToolMessage` where only part of the tool output is sent to the model
-          and the full output is passed in to artifact.
+              ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ```
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` where only part of the tool output is sent to the model
+              and the full output is passed in to artifact.
           
-          tool_output = {
-              "stdout": "From the graph we can see that the correlation between "
-              "x and y is ...",
-              "stderr": None,
-              "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-          }
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          ToolMessage(
-              content=tool_output["stdout"],
-              artifact=tool_output,
-              tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-          )
-          ```
+              tool_output = {
+                  "stdout": "From the graph we can see that the correlation between "
+                  "x and y is ...",
+                  "stderr": None,
+                  "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+              }
           
-          The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. Useful in situations where a chat model is able
-          to request multiple tool calls in parallel.
+              ToolMessage(
+                  content=tool_output["stdout"],
+                  artifact=tool_output,
+                  tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+              )
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -7359,37 +7067,39 @@
           `ToolMessage` objects contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A `ToolMessage` representing a result of `42` from a tool call with id
+          `tool_call_id` is used to associate the tool call request with the tool call
+          response. Useful in situations where a chat model is able to request multiple tool
+          calls in parallel.
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` representing a result of `42` from a tool call with id
           
-          ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
-          ```
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          Example: A `ToolMessage` where only part of the tool output is sent to the model
-          and the full output is passed in to artifact.
+              ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ```
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` where only part of the tool output is sent to the model
+              and the full output is passed in to artifact.
           
-          tool_output = {
-              "stdout": "From the graph we can see that the correlation between "
-              "x and y is ...",
-              "stderr": None,
-              "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-          }
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          ToolMessage(
-              content=tool_output["stdout"],
-              artifact=tool_output,
-              tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-          )
-          ```
+              tool_output = {
+                  "stdout": "From the graph we can see that the correlation between "
+                  "x and y is ...",
+                  "stderr": None,
+                  "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+              }
           
-          The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. Useful in situations where a chat model is able
-          to request multiple tool calls in parallel.
+              ToolMessage(
+                  content=tool_output["stdout"],
+                  artifact=tool_output,
+                  tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+              )
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -8879,37 +8589,39 @@
           `ToolMessage` objects contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A `ToolMessage` representing a result of `42` from a tool call with id
+          `tool_call_id` is used to associate the tool call request with the tool call
+          response. Useful in situations where a chat model is able to request multiple tool
+          calls in parallel.
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` representing a result of `42` from a tool call with id
           
-          ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
-          ```
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          Example: A `ToolMessage` where only part of the tool output is sent to the model
-          and the full output is passed in to artifact.
+              ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ```
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` where only part of the tool output is sent to the model
+              and the full output is passed in to artifact.
           
-          tool_output = {
-              "stdout": "From the graph we can see that the correlation between "
-              "x and y is ...",
-              "stderr": None,
-              "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-          }
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          ToolMessage(
-              content=tool_output["stdout"],
-              artifact=tool_output,
-              tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-          )
-          ```
+              tool_output = {
+                  "stdout": "From the graph we can see that the correlation between "
+                  "x and y is ...",
+                  "stderr": None,
+                  "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+              }
           
-          The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. Useful in situations where a chat model is able
-          to request multiple tool calls in parallel.
+              ToolMessage(
+                  content=tool_output["stdout"],
+                  artifact=tool_output,
+                  tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+              )
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -10270,37 +9982,39 @@
           `ToolMessage` objects contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A `ToolMessage` representing a result of `42` from a tool call with id
+          `tool_call_id` is used to associate the tool call request with the tool call
+          response. Useful in situations where a chat model is able to request multiple tool
+          calls in parallel.
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` representing a result of `42` from a tool call with id
           
-          ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
-          ```
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          Example: A `ToolMessage` where only part of the tool output is sent to the model
-          and the full output is passed in to artifact.
+              ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ```
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` where only part of the tool output is sent to the model
+              and the full output is passed in to artifact.
           
-          tool_output = {
-              "stdout": "From the graph we can see that the correlation between "
-              "x and y is ...",
-              "stderr": None,
-              "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-          }
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          ToolMessage(
-              content=tool_output["stdout"],
-              artifact=tool_output,
-              tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-          )
-          ```
+              tool_output = {
+                  "stdout": "From the graph we can see that the correlation between "
+                  "x and y is ...",
+                  "stderr": None,
+                  "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+              }
           
-          The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. Useful in situations where a chat model is able
-          to request multiple tool calls in parallel.
+              ToolMessage(
+                  content=tool_output["stdout"],
+                  artifact=tool_output,
+                  tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+              )
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -11709,37 +11423,39 @@
           `ToolMessage` objects contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A `ToolMessage` representing a result of `42` from a tool call with id
+          `tool_call_id` is used to associate the tool call request with the tool call
+          response. Useful in situations where a chat model is able to request multiple tool
+          calls in parallel.
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` representing a result of `42` from a tool call with id
           
-          ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
-          ```
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          Example: A `ToolMessage` where only part of the tool output is sent to the model
-          and the full output is passed in to artifact.
+              ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ```
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` where only part of the tool output is sent to the model
+              and the full output is passed in to artifact.
           
-          tool_output = {
-              "stdout": "From the graph we can see that the correlation between "
-              "x and y is ...",
-              "stderr": None,
-              "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-          }
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          ToolMessage(
-              content=tool_output["stdout"],
-              artifact=tool_output,
-              tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-          )
-          ```
+              tool_output = {
+                  "stdout": "From the graph we can see that the correlation between "
+                  "x and y is ...",
+                  "stderr": None,
+                  "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+              }
           
-          The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. Useful in situations where a chat model is able
-          to request multiple tool calls in parallel.
+              ToolMessage(
+                  content=tool_output["stdout"],
+                  artifact=tool_output,
+                  tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+              )
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -13149,37 +12865,39 @@
           `ToolMessage` objects contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A `ToolMessage` representing a result of `42` from a tool call with id
+          `tool_call_id` is used to associate the tool call request with the tool call
+          response. Useful in situations where a chat model is able to request multiple tool
+          calls in parallel.
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` representing a result of `42` from a tool call with id
           
-          ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
-          ```
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          Example: A `ToolMessage` where only part of the tool output is sent to the model
-          and the full output is passed in to artifact.
+              ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ```
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` where only part of the tool output is sent to the model
+              and the full output is passed in to artifact.
           
-          tool_output = {
-              "stdout": "From the graph we can see that the correlation between "
-              "x and y is ...",
-              "stderr": None,
-              "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-          }
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          ToolMessage(
-              content=tool_output["stdout"],
-              artifact=tool_output,
-              tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-          )
-          ```
+              tool_output = {
+                  "stdout": "From the graph we can see that the correlation between "
+                  "x and y is ...",
+                  "stderr": None,
+                  "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+              }
           
-          The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. Useful in situations where a chat model is able
-          to request multiple tool calls in parallel.
+              ToolMessage(
+                  content=tool_output["stdout"],
+                  artifact=tool_output,
+                  tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+              )
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -13788,181 +13506,6 @@
           }
         },
         "name": "RunnableParallel<chat,llm>"
-      }
-    },
-    "name": "RunnableSequence"
-  }
-  '''
-# ---
-# name: test_seq_prompt_map
-  '''
-  {
-    "lc": 1,
-    "type": "constructor",
-    "id": [
-      "langchain",
-      "schema",
-      "runnable",
-      "RunnableSequence"
-    ],
-    "kwargs": {
-      "first": {
-        "lc": 1,
-        "type": "constructor",
-        "id": [
-          "langchain",
-          "prompts",
-          "chat",
-          "ChatPromptTemplate"
-        ],
-        "kwargs": {
-          "input_variables": [
-            "question"
-          ],
-          "messages": [
-            {
-              "lc": 1,
-              "type": "constructor",
-              "id": [
-                "langchain",
-                "prompts",
-                "chat",
-                "SystemMessagePromptTemplate"
-              ],
-              "kwargs": {
-                "prompt": {
-                  "lc": 1,
-                  "type": "constructor",
-                  "id": [
-                    "langchain",
-                    "prompts",
-                    "prompt",
-                    "PromptTemplate"
-                  ],
-                  "kwargs": {
-                    "input_variables": [],
-                    "template": "You are a nice assistant.",
-                    "template_format": "f-string"
-                  },
-                  "name": "PromptTemplate"
-                }
-              }
-            },
-            {
-              "lc": 1,
-              "type": "constructor",
-              "id": [
-                "langchain",
-                "prompts",
-                "chat",
-                "HumanMessagePromptTemplate"
-              ],
-              "kwargs": {
-                "prompt": {
-                  "lc": 1,
-                  "type": "constructor",
-                  "id": [
-                    "langchain",
-                    "prompts",
-                    "prompt",
-                    "PromptTemplate"
-                  ],
-                  "kwargs": {
-                    "input_variables": [
-                      "question"
-                    ],
-                    "template": "{question}",
-                    "template_format": "f-string"
-                  },
-                  "name": "PromptTemplate"
-                }
-              }
-            }
-          ]
-        },
-        "name": "ChatPromptTemplate"
-      },
-      "middle": [
-        {
-          "lc": 1,
-          "type": "not_implemented",
-          "id": [
-            "langchain_core",
-            "runnables",
-            "base",
-            "RunnableLambda"
-          ],
-          "repr": "RunnableLambda(...)"
-        }
-      ],
-      "last": {
-        "lc": 1,
-        "type": "constructor",
-        "id": [
-          "langchain",
-          "schema",
-          "runnable",
-          "RunnableParallel"
-        ],
-        "kwargs": {
-          "steps__": {
-            "chat": {
-              "lc": 1,
-              "type": "constructor",
-              "id": [
-                "langchain",
-                "schema",
-                "runnable",
-                "RunnableBinding"
-              ],
-              "kwargs": {
-                "bound": {
-                  "lc": 1,
-                  "type": "not_implemented",
-                  "id": [
-                    "langchain_core",
-                    "language_models",
-                    "fake_chat_models",
-                    "FakeListChatModel"
-                  ],
-                  "repr": "FakeListChatModel(responses=[\"i'm a chatbot\"])",
-                  "name": "FakeListChatModel"
-                },
-                "kwargs": {
-                  "stop": [
-                    "Thought:"
-                  ]
-                },
-                "config": {}
-              },
-              "name": "FakeListChatModel"
-            },
-            "llm": {
-              "lc": 1,
-              "type": "not_implemented",
-              "id": [
-                "langchain_core",
-                "language_models",
-                "fake",
-                "FakeListLLM"
-              ],
-              "repr": "FakeListLLM(responses=[\"i'm a textbot\"])",
-              "name": "FakeListLLM"
-            },
-            "passthrough": {
-              "lc": 1,
-              "type": "not_implemented",
-              "id": [
-                "langchain_core",
-                "runnables",
-                "base",
-                "RunnableLambda"
-              ],
-              "repr": "RunnableLambda(...)"
-            }
-          }
-        },
-        "name": "RunnableParallel<chat,llm,passthrough>"
       }
     },
     "name": "RunnableSequence"
