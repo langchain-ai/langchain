@@ -46,7 +46,7 @@ We welcome reports for all other LangChain packages and will address valid secur
 
 ### Out of Scope
 
-The following are out of scope for security vulnerability reports:
+The following are out-of-scope for security vulnerability reports:
 
 * **langchain-experimental**: This repository is for experimental code and is not in scope for security reports (see [package warning](https://pypi.org/project/langchain-experimental/)).
 * **Examples and example applications**: Example code and demo applications are not in scope for security reports.
