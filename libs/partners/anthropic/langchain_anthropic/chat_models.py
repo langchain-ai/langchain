@@ -890,6 +890,42 @@ class ChatAnthropic(BaseChatModel):
         Total tokens: 408
         ```
 
+    ???+ example "Fine-grained tool streaming"
+
+        Fine-grained tool streaming enables faster streaming of tool parameters
+        without buffering or JSON validation, reducing latency when receiving large tool
+        parameters.
+
+        More info available in the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/fine-grained-tool-streaming)
+
+        ```python hl_lines="5"
+        from langchain_anthropic import ChatAnthropic
+
+        model = ChatAnthropic(
+            model="claude-3-5-sonnet-20241022",
+            betas=["fine-grained-tool-streaming-2025-05-14"]
+        )
+
+        def write_document(title: str, content: str) -> str:
+            \"\"\"Write a document with the given title and content.\"\"\"
+            return f"Document '{title}' written"
+
+        model_with_tools = model.bind_tools([write_document])
+
+        # Stream tool calls with reduced latency
+        for chunk in model_with_tools.stream(
+            "Write a document about the benefits of streaming APIs"
+        ):
+            print(chunk)
+        ```
+
+        !!! note
+
+            This is a beta feature that may return invalid or partial JSON inputs.
+
+            Implement appropriate error handling for incomplete JSON, especially
+            when `max_tokens` is reached.
+
     ???+ example "Image input"
 
         See the [multimodal guide](https://docs.langchain.com/oss/python/langchain/models#multimodal)
