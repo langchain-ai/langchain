@@ -138,6 +138,7 @@ def tool(
         extras: Optional provider-specific extra fields for the tool.
 
             Used to pass configuration that doesn't fit into standard tool fields.
+            Chat models should process known extras when constructing model payloads.
 
             !!! example
 
