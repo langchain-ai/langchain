@@ -31,39 +31,27 @@ Please report security vulnerabilities associated with the LangChain open source
 1. **Submit a security advisory** through [GitHub's Security tab](../../security) in the repository where the vulnerability exists
 2. **Send an email** to `security@langchain.dev` notifying us that you've filed a security issue and which repository it was filed in
 
-Before reporting a vulnerability, please review:
+Before reporting a vulnerability, please review the [Best Practices](#best-practices) above to understand what we consider to be a security vulnerability vs. developer responsibility.
 
-1) In-Scope Targets and Out-of-Scope Targets below.
-2) The [langchain-ai/langchain](https://docs.langchain.com/oss/python/contributing/code#repository-structure) monorepo structure.
-3) The [Best Practices](#best-practices) above to understand what we consider to be a security vulnerability vs. developer responsibility.
+### Bug Bounty Eligibility
 
-### In-Scope Targets
+We welcome security vulnerability reports for all LangChain libraries. However, we may offer ad hoc bug bounties only for vulnerabilities in the following packages:
 
-The following packages and repositories are in scope for security vulnerability reports:
+* Core libraries owned and maintained by the LangChain team: `langchain-core`, `langchain` (v1), `langgraph`, and related checkpointer packages
+* Popular integrations maintained by the LangChain team (e.g., `langchain-openai`, `langchain-anthropic`, etc.)
 
-* langchain-core
-* langchain (see exceptions)
-* langchain-community (see exceptions)
-* langgraph
-* langserve
+The vulnerability must be in the library code itself, not in example code or example applications.
 
-### Out of Scope Targets
+We welcome reports for all other LangChain packages and will address valid security concerns, but bug bounties will not be awarded for packages outside this scope. This includes `langchain-community`, which due to its community-driven nature is not eligible for bug bounties, though we will accept and address reports.
+
+### Out of Scope
 
 The following are out of scope for security vulnerability reports:
 
-* **langchain-experimental**: This repository is for experimental code and is not
-  in scope for security reports (see [package warning](https://pypi.org/project/langchain-experimental/)).
-* **tools**: Tools in either `langchain` or `langchain-community` are not in scope for security reports. This includes the following directories
-  * `libs/langchain/langchain/tools`
-  * `libs/community/langchain_community/tools`
-  * Please review the [Best Practices](#best-practices)
-    for more details, but generally tools interact with the real world. Developers are
-    expected to understand the security implications of their code and are responsible
-    for the security of their tools.
-* Code documented with security notices. This will be decided on a case-by-case basis, but likely will not be in scope as the code is already
-  documented with guidelines for developers that should be followed for making their
-  application secure.
-* Any LangSmith related repositories or APIs (see [Reporting LangSmith Vulnerabilities](#reporting-langsmith-vulnerabilities)).
+* **langchain-experimental**: This repository is for experimental code and is not in scope for security reports (see [package warning](https://pypi.org/project/langchain-experimental/)).
+* **Examples and example applications**: Example code and demo applications are not in scope for security reports.
+* **Code documented with security notices**: This will be decided on a case-by-case basis, but likely will not be in scope as the code is already documented with guidelines for developers that should be followed for making their application secure.
+* **LangSmith related repositories or APIs**: See [Reporting LangSmith Vulnerabilities](#reporting-langsmith-vulnerabilities) below.
 
 ## Reporting LangSmith Vulnerabilities
 
