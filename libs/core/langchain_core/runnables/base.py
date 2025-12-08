@@ -94,7 +94,7 @@ from langchain_core.tracers.root_listeners import (
     AsyncRootListenersTracer,
     RootListenersTracer,
 )
-from langchain_core.utils.aiter import aclosing, atee, py_anext
+from langchain_core.utils.aiter import aclosing, atee
 from langchain_core.utils.iter import safetee
 from langchain_core.utils.pydantic import create_model_v2
 
@@ -127,10 +127,10 @@ class Runnable(ABC, Generic[Input, Output]):
     Key Methods
     ===========
 
-    - **`invoke`/`ainvoke`**: Transforms a single input into an output.
-    - **`batch`/`abatch`**: Efficiently transforms multiple inputs into outputs.
-    - **`stream`/`astream`**: Streams output from a single input as it's produced.
-    - **`astream_log`**: Streams output and selected intermediate results from an
+    - `invoke`/`ainvoke`: Transforms a single input into an output.
+    - `batch`/`abatch`: Efficiently transforms multiple inputs into outputs.
+    - `stream`/`astream`: Streams output from a single input as it's produced.
+    - `astream_log`: Streams output and selected intermediate results from an
         input.
 
     Built-in optimizations:
@@ -2377,7 +2377,7 @@ class Runnable(ABC, Generic[Input, Output]):
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = atee(inputs, 2)
         # Start the input iterator to ensure the input Runnable starts before this one
-        final_input: Input | None = await py_anext(input_for_tracing, None)
+        final_input: Input | None = await anext(input_for_tracing, None)
         final_input_supported = True
         final_output: Output | None = None
         final_output_supported = True
@@ -2417,7 +2417,7 @@ class Runnable(ABC, Generic[Input, Output]):
                     iterator = iterator_
                 try:
                     while True:
-                        chunk = await coro_with_context(py_anext(iterator), context)
+                        chunk = await coro_with_context(anext(iterator), context)
                         yield chunk
                         if final_output_supported:
                             if final_output is None:
@@ -4025,7 +4025,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
 
         # Wrap in a coroutine to satisfy linter
         async def get_next_chunk(generator: AsyncIterator) -> Output | None:
-            return await py_anext(generator)
+            return await anext(generator)
 
         # Start the first iteration of each generator
         tasks = {
