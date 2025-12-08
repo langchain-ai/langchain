@@ -818,12 +818,8 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 The processed text of the element.
             """
             element = cast("Tag | NavigableString", element)
-            
             # Check for preservation first (even in nested calls)
-            if (
-                isinstance(element, Tag) 
-                and element.name in self._elements_to_preserve
-            ):
+            if isinstance(element, Tag) and element.name in self._elements_to_preserve:
                 placeholder = f"PRESERVED_{counters['placeholder_count']}"
                 preserved_elements[placeholder] = str(element)
                 counters["placeholder_count"] += 1
@@ -864,7 +860,6 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                     content = _get_element_text(elem, preserved_elements, counters)
                     if content:
                         current_content.append(content)
-                
                 # 2. Then check if it's a container tag to unwrap
                 elif elem.name.lower() in {"html", "body", "div", "main"}:
                     children = _find_all_tags(elem, recursive=False)
@@ -883,11 +878,6 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                         counters,
                     )
                     # Also collect any direct text content of the container
-                    content = " ".join(
-                        _get_element_text(child, preserved_elements, counters) 
-                        for child in elem.children 
-                        if isinstance(child, NavigableString) and child.strip()
-                    )
                     if content:
                         content = self._normalize_and_clean_text(content)
                         current_content.append(content)
@@ -907,14 +897,12 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                         preserved_elements.clear()
                         # Reset counters? No, we likely want unique IDs across the doc.
                         # But clearing preserved_elements implies we're done with them.
-                        # If we clear preserved_elements, we don't strictly *need* to reset 
+                        # If we clear preserved_elements, we don't strictly *need* to reset
                         # counters, but keeping them increasing is safer for uniqueness.
-                        
                     header_name = elem.get_text(strip=True)
                     current_headers = {
                         dict(self._headers_to_split_on)[elem.name]: header_name
                     }
-                
                 # 4. Default processing
                 else:
                     content = _get_element_text(elem, preserved_elements, counters)
@@ -1034,7 +1022,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         self, text: str, preserved_elements: dict[str, str]
     ) -> int:
         """Calculates the effective length of the text by accounting for preserved elements.
-        
+
         Args:
             text: The text to calculate length for.
             preserved_elements: Preserved elements to account for.
