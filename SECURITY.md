@@ -16,9 +16,9 @@ Risks of not doing so include, but are not limited to:
 * Data corruption or loss.
 * Unauthorized access to confidential information.
 * Compromised performance or availability of critical resources.
-* Supply chain attacks through malicious tools or integrations
-* Prompt injection leading to unauthorized action execution
-* Model theft or model parameter exfiltration
+* Supply chain attacks through malicious tools or integrations.
+* Prompt injection leading to unauthorized action execution.
+* Model theft or model parameter exfiltration.
 
 Example scenarios with mitigation strategies:
 
