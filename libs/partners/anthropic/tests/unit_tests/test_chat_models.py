@@ -2308,24 +2308,3 @@ def test_extras_with_multiple_fields() -> None:
     assert tool_def.get("defer_loading") is True
     assert tool_def.get("cache_control") == {"type": "ephemeral"}
     assert "input_examples" in tool_def
-
-
-def test_filter_known_extras() -> None:
-    """Test that known extra fields are filtered correctly."""
-    from langchain_anthropic.chat_models import _filter_known_anthropic_extras
-
-    extras = {
-        "defer_loading": True,
-        "cache_control": {"type": "ephemeral"},
-        "input_examples": [{"query": "test"}],
-        "unknown_field": "value",
-    }
-
-    filtered = _filter_known_anthropic_extras(extras)
-    assert filtered == {
-        "defer_loading": True,
-        "cache_control": {"type": "ephemeral"},
-        "input_examples": [{"query": "test"}],
-    }
-
-    assert _filter_known_anthropic_extras({}) == {}

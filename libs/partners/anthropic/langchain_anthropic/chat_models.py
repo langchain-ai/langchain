@@ -130,6 +130,12 @@ class AnthropicTool(TypedDict):
 
     cache_control: NotRequired[dict[str, str]]
 
+    defer_loading: NotRequired[bool]
+
+    input_examples: NotRequired[list[dict[str, Any]]]
+
+    allowed_callers: NotRequired[list[str]]
+
 
 # Some tool types require specific beta headers to be enabled
 # Mapping of tool type patterns to required beta headers
@@ -144,24 +150,11 @@ _TOOL_TYPE_TO_BETA: dict[str, str] = {
 
 # Allowlist of valid Anthropic-specific extra fields
 _ANTHROPIC_EXTRA_FIELDS: set[str] = {
+    "allowed_callers",
     "cache_control",
     "defer_loading",
     "input_examples",
 }
-
-
-def _filter_known_anthropic_extras(extras: dict[str, Any]) -> dict[str, Any]:
-    """Filter extras to only include Anthropic-specific fields.
-
-    Args:
-        extras: Dictionary of extra fields from a tool.
-
-    Returns:
-        Dictionary containing only valid Anthropic-specific fields.
-    """
-    return {
-        key: value for key, value in extras.items() if key in _ANTHROPIC_EXTRA_FIELDS
-    }
 
 
 def _is_builtin_tool(tool: Any) -> bool:
@@ -2573,24 +2566,12 @@ class ChatAnthropic(BaseChatModel):
             See LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#strict-tool-use)
             for more detail.
         """  # noqa: E501
-        formatted_tools: list[dict[str, Any] | type | Callable | BaseTool] = []
-        for tool in tools:
-            if _is_builtin_tool(tool):
-                formatted_tools.append(tool)
-            else:
-                formatted = convert_to_anthropic_tool(tool, strict=strict)
-                # Merge extras if present
-                if hasattr(tool, "extras") and isinstance(tool.extras, dict):
-                    # Validate and merge Anthropic-specific extras
-                    validated_extras = _filter_known_anthropic_extras(tool.extras)
-                    # Create a new dict with merged extras to avoid TypedDict issues
-                    formatted_with_extras = cast(
-                        dict[str, Any], {**formatted, **validated_extras}
-                    )
-                    formatted_tools.append(formatted_with_extras)
-                else:
-                    # Cast TypedDict to dict for type compatibility
-                    formatted_tools.append(cast(dict[str, Any], formatted))
+        formatted_tools = [
+            tool
+            if _is_builtin_tool(tool)
+            else convert_to_anthropic_tool(tool, strict=strict)
+            for tool in tools
+        ]
         if not tool_choice:
             pass
         elif isinstance(tool_choice, dict):
@@ -2991,6 +2972,16 @@ def convert_to_anthropic_tool(
             anthropic_formatted["description"] = oai_formatted["description"]
         if "strict" in oai_formatted and isinstance(strict, bool):
             anthropic_formatted["strict"] = oai_formatted["strict"]
+        # Select params from tool.extras
+        if (
+            isinstance(tool, BaseTool)
+            and hasattr(tool, "extras")
+            and isinstance(tool.extras, dict)
+        ):
+            for key, value in tool.extras.items():
+                if key in _ANTHROPIC_EXTRA_FIELDS:
+                    # all are populated top-level
+                    anthropic_formatted[key] = value  # type: ignore[literal-required]
     return anthropic_formatted
 
 
