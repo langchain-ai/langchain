@@ -15,7 +15,7 @@ from langchain_openai.chat_models.base import (
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
-from langchain_xai.data._profiles import _PROFILES
+from langchain_xai.data._profiles import _PROFILES  # noqa: E402
 
 if TYPE_CHECKING:
     from langchain_core.language_models import (
@@ -61,9 +61,12 @@ def _convert_message_to_dict_xai(
 
     # xAI requires content to be at least an empty string, not None
     # This is especially important for AIMessages with tool_calls but no content
-    if isinstance(message, AIMessage) and message_dict.get("content") is None:
-        if "tool_calls" in message_dict or "function_call" in message_dict:
-            message_dict["content"] = ""
+    if (
+        isinstance(message, AIMessage)
+        and message_dict.get("content") is None
+        and ("tool_calls" in message_dict or "function_call" in message_dict)
+    ):
+        message_dict["content"] = ""
 
     return message_dict
 
@@ -583,7 +586,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         input_: LanguageModelInput,
         *,
         stop: list[str] | None = None,
-        **kwargs: Any,
+        **kwargs: Any,  # noqa: ANN401
     ) -> dict:
         """Prepare the request payload for xAI's API.
 
