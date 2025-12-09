@@ -417,8 +417,11 @@ class ChatGroq(BaseChatModel):
     """Optional `httpx.Client`."""
 
     http_async_client: Any | None = None
-    """Optional `httpx.AsyncClient`. Only used for async invocations. Must specify
-        `http_client` as well if you'd like a custom client for sync invocations."""
+    """Optional `httpx.AsyncClient`.
+
+    Only used for async invocations. Must specify `http_client` as well if you'd like a
+    custom client for sync invocations.
+    """
 
     model_config = ConfigDict(
         populate_by_name=True,
