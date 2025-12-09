@@ -695,7 +695,8 @@ class ChatAnthropic(BaseChatModel):
     ???+ note
 
         Any param which is not explicitly supported will be passed directly to
-        `Anthropic.messages.create(...)` each time to the model is invoked.
+        [`Anthropic.messages.create(...)`](https://platform.claude.com/docs/en/api/python/messages/create)
+        each time to the model is invoked.
 
         !!! example
 
@@ -871,7 +872,7 @@ class ChatAnthropic(BaseChatModel):
             See [`ChatAnthropic.bind_tools()`][langchain_anthropic.chat_models.ChatAnthropic.bind_tools]
             for more info.
 
-    ???+ example "Token-efficient tool use (beta)"
+    ???+ example "Token-efficient tool use"
 
         See LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#token-efficient-tool-use)
         for more detail.
@@ -1394,7 +1395,7 @@ class ChatAnthropic(BaseChatModel):
         }
         ```
 
-    ???+ example "Extended context windows (beta)"
+    ???+ example "Extended context window"
 
         Claude Sonnet 4 supports a 1-million token context window, available in beta for
         organizations in usage tier 4 and organizations with custom rate limits.
@@ -1477,7 +1478,7 @@ class ChatAnthropic(BaseChatModel):
             ```python hl_lines="5-9"
             from langchain_anthropic import ChatAnthropic
 
-            model = ChatAnthropic(model="claude-3-5-haiku-20241022")
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 
             tool = {
                 "type": "web_search_20250305",
@@ -1492,14 +1493,12 @@ class ChatAnthropic(BaseChatModel):
             See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool)
             for more info.
 
-        ??? example "Web fetch (beta)"
+        ??? example "Web fetch"
 
-            ```python hl_lines="7-11"
+            ```python hl_lines="5-9"
             from langchain_anthropic import ChatAnthropic
 
-            model = ChatAnthropic(
-                model="claude-3-5-haiku-20241022",
-            )
+            model = ChatAnthropic(model="claude-haiku-4-5-20251001")
 
             tool = {
                 "type": "web_fetch_20250910",
@@ -1508,9 +1507,8 @@ class ChatAnthropic(BaseChatModel):
             }
             model_with_tools = model.bind_tools([tool])
 
-            response = model_with_tools.invoke("Please analyze the content at https://example.com/article")
+            response = model_with_tools.invoke("Please analyze the content at https://docs.langchain.com/")
             ```
-
             !!! note "Automatic beta header"
 
                 The required `web-fetch-2025-09-10` beta header is automatically
@@ -1572,69 +1570,34 @@ class ChatAnthropic(BaseChatModel):
 
         ??? example "Remote MCP"
 
-            ```python hl_lines="3-14 18-19"
+            ```python hl_lines="3-14 18 23"
             from langchain_anthropic import ChatAnthropic
 
             mcp_servers = [
                 {
                     "type": "url",
-                    "url": "https://mcp.deepwiki.com/mcp",
-                    "name": "deepwiki",
-                    "tool_configuration": {  # optional configuration
-                        "enabled": True,
-                        "allowed_tools": ["ask_question"],
-                    },
-                    "authorization_token": "PLACEHOLDER",  # optional authorization
+                    "url": "https://docs.langchain.com/mcp",
+                    "name": "LangChain Docs",
+                    # "tool_configuration": {  # optional configuration
+                    #     "enabled": True,
+                    #     "allowed_tools": ["ask_question"],
+                    # },
+                    # "authorization_token": "PLACEHOLDER",  # optional authorization
                 }
             ]
 
             model = ChatAnthropic(
                 model="claude-sonnet-4-5-20250929",
-                betas=["mcp-client-2025-04-04"],  # Enable MCP client beta
-                mcp_servers=mcp_servers,  # Pass in MCP server configurations
+                mcp_servers=mcp_servers,
             )
 
             response = model.invoke(
-                "What transport protocols does the 2025-03-26 version of the MCP "
-                "spec (modelcontextprotocol/modelcontextprotocol) support?"
+                "What are LangChain content blocks?",
+                tools=[{"type": "mcp_toolset", "mcp_server_name": "LangChain Docs"}],
             )
             ```
 
             See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/mcp-connector)
-            for more info.
-
-        ??? example "Text editor"
-
-            ```python hl_lines="5-8"
-            from langchain_anthropic import ChatAnthropic
-
-            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-
-            tool = {
-                "type": "text_editor_20250124",
-                "name": "str_replace_editor",
-            }
-            model_with_tools = model.bind_tools([tool])
-
-            response = model_with_tools.invoke(
-                "There's a syntax error in my primes.py file. Can you help me fix it?"
-            )
-            print(response.text)
-            response.tool_calls
-            ```
-
-            ```txt
-            I'd be happy to help you fix the syntax error in your primes.py file. First, let's look at the current content of the file to identify the error.
-            ```
-
-            ```txt
-            [{'name': 'str_replace_editor',
-            'args': {'command': 'view', 'path': '/repo/primes.py'},
-            'id': 'toolu_01VdNgt1YV7kGfj9LFLm6HyQ',
-            'type': 'tool_call'}]
-            ```
-
-            See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/text-editor-tool)
             for more info.
 
         ??? example "Tool search"
@@ -1688,6 +1651,94 @@ class ChatAnthropic(BaseChatModel):
 
             See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-search-tool)
             for more info.
+
+        ??? example "Text editor"
+
+            ```python hl_lines="5-8"
+            from langchain_anthropic import ChatAnthropic
+
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
+
+            tool = {
+                "type": "text_editor_20250124",
+                "name": "str_replace_editor",
+            }
+            model_with_tools = model.bind_tools([tool])
+
+            response = model_with_tools.invoke(
+                "There's a syntax error in my primes.py file. Can you help me fix it?"
+            )
+            print(response.text)
+            response.tool_calls
+            ```
+
+            ```txt
+            I'd be happy to help you fix the syntax error in your primes.py file. First, let's look at the current content of the file to identify the error.
+            ```
+
+            ```txt
+            [{'name': 'str_replace_editor',
+            'args': {'command': 'view', 'path': '/repo/primes.py'},
+            'id': 'toolu_01VdNgt1YV7kGfj9LFLm6HyQ',
+            'type': 'tool_call'}]
+            ```
+
+            See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/text-editor-tool)
+            for more info.
+
+        ??? example "Computer use"
+
+            Claude supports computer use capabilities, allowing it to interact with
+            desktop environments through screenshots, mouse control, and keyboard input.
+
+            !!! warning "Execution environment required"
+
+                LangChain handles the API integration, but **you must provide**:
+
+                - A sandboxed computing environment (Docker, VM, etc.)
+                - A virtual display (e.g., Xvfb)
+                - Code to execute tool calls (screenshot, clicks, typing)
+                - An agent loop to pass results back to Claude
+
+                Anthropic provides a [reference implementation](https://github.com/anthropics/anthropic-quickstarts/tree/main/computer-use-demo).
+
+            !!! note
+
+                Computer use requires:
+
+                - Claude Opus 4.5, Claude 4, or Claude Sonnet 3.7
+                - A sandboxed computing environment with virtual display
+
+            See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool)
+            for setup instructions, model capability, and best practices.
+
+            ```python
+            from langchain_anthropic import ChatAnthropic
+
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
+
+            # LangChain handles the API call and tool binding
+            computer_tool = {
+                "type": "computer_20250124",
+                "name": "computer",
+                "display_width_px": 1024,
+                "display_height_px": 768,
+                "display_number": 1,
+            }
+
+            model_with_computer = model.bind_tools([computer_tool])
+            response = model_with_computer.invoke("Take a screenshot to see what's on the screen")
+
+            # response.tool_calls contains the action Claude wants to perform
+            # You must execute this action in your environment and pass the result back
+            ```
+
+            !!! note "Automatic beta header"
+
+                The required beta header is automatically appended based on the tool
+                version. For `computer_20250124` and `computer_20251124`, the respective
+                `computer-use-2025-01-24` and `computer-use-2025-11-24` beta header is
+                added automatically.
     """  # noqa: E501
 
     model_config = ConfigDict(
@@ -1698,7 +1749,14 @@ class ChatAnthropic(BaseChatModel):
     """Model name to use."""
 
     max_tokens: int | None = Field(default=None, alias="max_tokens_to_sample")
-    """Denotes the number of tokens to predict per generation."""
+    """Denotes the number of tokens to predict per generation.
+
+    If not specified, this is set dynamically using the model's `max_output_tokens`
+    from its model profile.
+
+    See docs on [model profiles](https://docs.langchain.com/oss/python/langchain/models#model-profiles)
+    for more information.
+    """
 
     temperature: float | None = None
     """A non-negative float that tunes the degree of randomness in generation."""
@@ -2119,18 +2177,33 @@ class ChatAnthropic(BaseChatModel):
                 else:
                     payload["betas"] = ["structured-outputs-2025-11-13"]
 
-            # Auto-append required betas for specific tool types
+            # Auto-append required betas for specific tool types and input_examples
+            has_input_examples = False
             for tool in payload["tools"]:
-                if isinstance(tool, dict) and "type" in tool:
-                    tool_type = tool["type"]
-                    if tool_type in _TOOL_TYPE_TO_BETA:
+                if isinstance(tool, dict):
+                    tool_type = tool.get("type")
+                    if tool_type and tool_type in _TOOL_TYPE_TO_BETA:
                         required_beta = _TOOL_TYPE_TO_BETA[tool_type]
                         if payload["betas"]:
-                            # Append to existing betas if not already present
                             if required_beta not in payload["betas"]:
-                                payload["betas"] = [*payload["betas"], required_beta]
+                                payload["betas"] = [
+                                    *payload["betas"],
+                                    required_beta,
+                                ]
                         else:
                             payload["betas"] = [required_beta]
+                    # Check for input_examples
+                    if tool.get("input_examples"):
+                        has_input_examples = True
+
+            # Auto-append header for input_examples
+            if has_input_examples:
+                required_beta = "advanced-tool-use-2025-11-20"
+                if payload["betas"]:
+                    if required_beta not in payload["betas"]:
+                        payload["betas"] = [*payload["betas"], required_beta]
+                else:
+                    payload["betas"] = [required_beta]
 
         # Auto-append required beta for mcp_servers
         if payload.get("mcp_servers"):
@@ -2368,7 +2441,7 @@ class ChatAnthropic(BaseChatModel):
                 !!! version-added "Added in `langchain-anthropic` 0.3.2"
             strict: If `True`, Claude's schema adherence is applied to tool calls.
 
-                See the [Claude docs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs#when-to-use-json-outputs-vs-strict-tool-use).
+                See the [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#strict-tool-use) for more info.
             kwargs: Any additional parameters are passed directly to `bind`.
 
         ???+ example
@@ -2580,60 +2653,6 @@ class ChatAnthropic(BaseChatModel):
             )
             ```
 
-        ??? example "Computer use tool"
-
-            Claude supports computer use capabilities, allowing it to interact with
-            desktop environments through screenshots, mouse control, and keyboard input.
-
-            !!! warning "Execution environment required"
-
-                LangChain handles the API integration, but **you must provide**:
-
-                - A sandboxed computing environment (Docker, VM, etc.)
-                - A virtual display (e.g., Xvfb)
-                - Code to execute tool calls (screenshot, clicks, typing)
-                - An agent loop to pass results back to Claude
-
-                Anthropic provides a [reference implementation](https://github.com/anthropics/anthropic-quickstarts/tree/main/computer-use-demo).
-
-            !!! note
-
-                Computer use requires:
-
-                - Claude Opus 4.5, Claude 4, or Claude Sonnet 3.7
-                - A sandboxed computing environment with virtual display
-
-            See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool)
-            for setup instructions, model capability, and best practices.
-
-            ```python
-            from langchain_anthropic import ChatAnthropic
-
-            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-
-            # LangChain handles the API call and tool binding
-            computer_tool = {
-                "type": "computer_20250124",
-                "name": "computer",
-                "display_width_px": 1024,
-                "display_height_px": 768,
-                "display_number": 1,
-            }
-
-            model_with_computer = model.bind_tools([computer_tool])
-            response = model_with_computer.invoke("Take a screenshot to see what's on the screen")
-
-            # response.tool_calls contains the action Claude wants to perform
-            # You must execute this action in your environment and pass the result back
-            ```
-
-            !!! note "Automatic beta header"
-
-                The required beta header is automatically appended based on the tool
-                version. For `computer_20250124` and `computer_20251124`, the respective
-                `computer-use-2025-01-24` and `computer-use-2025-11-24` beta header is
-                added automatically.
-
         ??? example "Strict tool use"
 
             Strict tool use guarantees that tool names and arguments are validated
@@ -2646,7 +2665,8 @@ class ChatAnthropic(BaseChatModel):
                 - Claude Sonnet 4.5 or Opus 4.1
                 - `langchain-anthropic>=1.1.0`
 
-            To enable strict tool use, specify `strict=True` when calling `bind_tools`.
+            To enable strict tool use, specify `strict=True` when calling
+            [`bind_tools`][langchain_anthropic.chat_models.ChatAnthropic.bind_tools].
 
             ```python hl_lines="11"
             from langchain_anthropic import ChatAnthropic
@@ -2773,6 +2793,41 @@ class ChatAnthropic(BaseChatModel):
                     depends on the `schema` as described above.
                 - `'parsing_error'`: `BaseException | None`
 
+        ???+ example "Native structured output with `method='json_schema'`"
+
+            Anthropic supports a native structured output feature that guarantees
+            responses adhere to a given schema.
+
+            !!! note
+
+                Native structured output requires:
+
+                - Claude Sonnet 4.5 or Opus 4.1
+                - `langchain-anthropic>=1.1.0`
+
+            To enable native structured output, specify `method="json_schema"` when
+            calling `with_structured_output`. (Under the hood, LangChain will
+            append the required `structured-outputs-2025-11-13` beta header)
+
+            ```python hl_lines="13"
+            from langchain_anthropic import ChatAnthropic
+            from pydantic import BaseModel, Field
+
+            model = ChatAnthropic(model="claude-sonnet-4-5")
+
+            class Movie(BaseModel):
+                \"\"\"A movie with details.\"\"\"
+                title: str = Field(..., description="The title of the movie")
+                year: int = Field(..., description="The year the movie was released")
+                director: str = Field(..., description="The director of the movie")
+                rating: float = Field(..., description="The movie's rating out of 10")
+
+            model_with_structure = model.with_structured_output(Movie, method="json_schema")
+            response = model_with_structure.invoke("Provide details about the movie Inception")
+            print(response)
+            # -> Movie(title="Inception", year=2010, director="Christopher Nolan", rating=8.8)
+            ```
+
         ??? example "Pydantic schema (`include_raw=False`)"
 
             ```python
@@ -2847,41 +2902,6 @@ class ChatAnthropic(BaseChatModel):
             #     'answer': 'They weigh the same',
             #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
             # }
-            ```
-
-        ??? example "Native structured output with `method='json_schema'`"
-
-            Anthropic supports a native structured output feature that guarantees
-            responses adhere to a given schema.
-
-            !!! note
-
-                Native structured output requires:
-
-                - Claude Sonnet 4.5 or Opus 4.1
-                - `langchain-anthropic>=1.1.0`
-
-            To enable native structured output, specify `method="json_schema"` when
-            calling `with_structured_output`. (Under the hood, LangChain will
-            append the required `structured-outputs-2025-11-13` beta header)
-
-            ```python hl_lines="13"
-            from langchain_anthropic import ChatAnthropic
-            from pydantic import BaseModel, Field
-
-            model = ChatAnthropic(model="claude-sonnet-4-5")
-
-            class Movie(BaseModel):
-                \"\"\"A movie with details.\"\"\"
-                title: str = Field(..., description="The title of the movie")
-                year: int = Field(..., description="The year the movie was released")
-                director: str = Field(..., description="The director of the movie")
-                rating: float = Field(..., description="The movie's rating out of 10")
-
-            model_with_structure = model.with_structured_output(Movie, method="json_schema")
-            response = model_with_structure.invoke("Provide details about the movie Inception")
-            print(response)
-            # -> Movie(title="Inception", year=2010, director="Christopher Nolan", rating=8.8)
             ```
         """  # noqa: E501
         if method == "json_mode":

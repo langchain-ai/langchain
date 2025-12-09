@@ -503,8 +503,9 @@ class ChildTool(BaseTool):
     standard tool fields.
 
     Example:
-        Anthropic-specific fields like `cache_control`, `defer_loading`, or
-        `input_examples`.
+        Anthropic-specific fields like [`cache_control`](https://docs.langchain.com/oss/python/integrations/chat/anthropic#prompt-caching),
+        [`defer_loading`](https://docs.langchain.com/oss/python/integrations/chat/anthropic#tool-search),
+        or `input_examples`.
 
         ```python
         @tool(extras={"defer_loading": True, "cache_control": {"type": "ephemeral"}})
