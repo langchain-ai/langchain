@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field, SecretStr, ValidationError
 from langchain_tests.base import BaseStandardTests
 
 if TYPE_CHECKING:
-    from pytest_benchmark.fixture import (  # type: ignore[import-untyped]
+    from pytest_benchmark.fixture import (
         BenchmarkFixture,
     )
     from syrupy.assertion import SnapshotAssertion
@@ -94,11 +94,6 @@ class ChatModelTests(BaseStandardTests):
     def has_tool_calling(self) -> bool:
         """Whether the model supports tool calling."""
         return self.chat_model_class.bind_tools is not BaseChatModel.bind_tools
-
-    @property
-    def tool_choice_value(self) -> str | None:
-        """(None or str) to use for tool choice when used in tests."""
-        return None
 
     @property
     def has_tool_choice(self) -> bool:
@@ -255,6 +250,28 @@ class ChatModelTests(BaseStandardTests):
         """
         return {"invoke": [], "stream": []}
 
+    @property
+    def supports_model_override(self) -> bool:
+        """Whether the model supports overriding the model name at runtime.
+
+        Defaults to `True`.
+
+        If `True`, the model accepts a `model` kwarg in `invoke()`, `stream()`,
+        etc. that overrides the model specified at initialization.
+
+        This enables dynamic model selection without creating new instances.
+        """
+        return True
+
+    @property
+    def model_override_value(self) -> str | None:
+        """Alternative model name to use when testing model override.
+
+        Should return a valid model name that differs from the default model.
+        Required if `supports_model_override` is `True`.
+        """
+        return None
+
 
 class ChatModelUnitTests(ChatModelTests):
     '''Base class for chat model unit tests.
@@ -309,7 +326,7 @@ class ChatModelUnitTests(ChatModelTests):
 
     Expand to see details:
 
-    ??? info "`has_tool_calling`"
+    ???+ info "`has_tool_calling`"
 
         Boolean property indicating whether the chat model supports tool calling.
 
@@ -322,23 +339,6 @@ class ChatModelUnitTests(ChatModelTests):
             return True
         ```
 
-    ??? info "`tool_choice_value`"
-
-        Value to use for tool choice when used in tests.
-
-        !!! warning
-            Deprecated since version 0.3.15.
-            This property will be removed in version 0.3.20. If a model does not
-            support forcing tool calling, override the `has_tool_choice` property to
-            return `False`. Otherwise, models should accept values of `'any'` or
-            the name of a tool in `tool_choice`.
-
-        ```python
-        @property
-        def tool_choice_value(self) -> str | None:
-            return "any"
-        ```
-
     ??? info "`has_tool_choice`"
 
         Boolean property indicating whether the chat model supports forcing tool
@@ -348,7 +348,7 @@ class ChatModelUnitTests(ChatModelTests):
         signature for the corresponding `bind_tools` method.
 
         If `True`, the minimum requirement for this feature is that
-        `tool_choice="any"` will force a tool call, and `tool_choice=<tool name>`
+        `tool_choice='any'` will force a tool call, and `tool_choice=<tool name>`
         will force a call to a specific tool.
 
         ```python
@@ -693,6 +693,36 @@ class ChatModelUnitTests(ChatModelTests):
         cached, audio, or reasoning.
 
         Only needs to be overridden if these details are supplied.
+
+    ??? info "`supports_model_override`"
+
+        Boolean property indicating whether the chat model supports overriding the
+        model name at runtime via kwargs.
+
+        If `True`, the model accepts a `model` kwarg in `invoke()`, `stream()`, etc.
+        that overrides the model specified at initialization. This enables dynamic
+        model selection without creating new chat model instances.
+
+        Defaults to `False`.
+
+        ```python
+        @property
+        def supports_model_override(self) -> bool:
+            return True
+        ```
+
+    ??? info "`model_override_value`"
+
+        Alternative model name to use when testing model override.
+
+        Should return a valid model name that differs from the default model.
+        Required if `supports_model_override` is `True`.
+
+        ```python
+        @property
+        def model_override_value(self) -> str:
+            return "gpt-4o-mini"  # e.g. if default is "gpt-4o"
+        ```
 
     ??? info "`enable_vcr_tests`"
 
