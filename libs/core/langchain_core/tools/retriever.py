@@ -57,9 +57,6 @@ def create_retriever_tool(
     """
     document_prompt_ = document_prompt or PromptTemplate.from_template("{page_content}")
 
-    # Use wrapper functions instead of functools.partial to ensure compatibility
-    # with typing.get_type_hints(), which fails on partial objects in Python 3.12+.
-    # This allows tools like LangGraph's ToolNode to inspect the function signature.
     def func(
         query: str, callbacks: Callbacks = None
     ) -> str | tuple[str, list[Document]]:
