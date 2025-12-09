@@ -3277,6 +3277,45 @@ def test_visualbasic6_code_splitter() -> None:
     ]
 
 
+def test_mysql_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.MYSQL,
+        chunk_size=CHUNK_SIZE,
+        chunk_overlap=0,
+    )
+    code = """
+CREATE TABLE products (
+    id INT PRIMARY KEY,
+    name VARCHAR(100)
+);
+INSERT INTO products VALUES (1, 'Keyboard'), (2, 'Mouse');
+SELECT * FROM products WHERE id = 1;
+SELECT name FROM products ORDER BY name DESC;
+"""
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "CREATE TABLE",
+        "products (",
+        "id INT",
+        "PRIMARY KEY,",
+        "name",
+        "VARCHAR(100)",
+        ");",
+        "INSERT INTO",
+        "products VALUES",
+        "(1,",
+        "'Keyboard'),",
+        "(2, 'Mouse');",
+        "SELECT * FROM",
+        "products WHERE",
+        "id = 1;",
+        "SELECT name",
+        "FROM products",
+        "ORDER BY name",
+        "DESC;",
+    ]
+
+
 def custom_iframe_extractor(iframe_tag: Tag) -> str:
     iframe_src = iframe_tag.get("src", "")
     return f"[iframe:{iframe_src}]({iframe_src})"
