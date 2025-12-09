@@ -1473,52 +1473,33 @@ class ChatAnthropic(BaseChatModel):
         See LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#built-in-tools)
         for more detail.
 
-        ??? example "Web search"
+        ??? example "Bash tool"
 
-            ```python hl_lines="5-9"
+            Claude supports a [bash tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/bash-tool)
+            that allows it to execute shell commands in a persistent bash session. See
+            the LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#bash-tool)
+            for more detail.
+
+            ```python
             from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 
-            tool = {
-                "type": "web_search_20250305",
-                "name": "web_search",
-                "max_uses": 3,
+            bash_tool = {
+                "type": "bash_20250124",
+                "name": "bash",
             }
-            model_with_tools = model.bind_tools([tool])
 
-            response = model_with_tools.invoke("How do I update a web app to TypeScript 5.5?")
+            model_with_bash = model.bind_tools([bash_tool])
+            response = model_with_bash.invoke("List all Python files in the current directory")
             ```
-
-            See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool)
-            for more info.
-
-        ??? example "Web fetch"
-
-            ```python hl_lines="5-9"
-            from langchain_anthropic import ChatAnthropic
-
-            model = ChatAnthropic(model="claude-haiku-4-5-20251001")
-
-            tool = {
-                "type": "web_fetch_20250910",
-                "name": "web_fetch",
-                "max_uses": 3,
-            }
-            model_with_tools = model.bind_tools([tool])
-
-            response = model_with_tools.invoke("Please analyze the content at https://docs.langchain.com/")
-            ```
-            !!! note "Automatic beta header"
-
-                The required `web-fetch-2025-09-10` beta header is automatically
-                appended to the request when using the `web_fetch_20250910` tool type.
-                You don't need to manually specify it in the `betas` parameter.
-
-            See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-fetch-tool)
-            for more info.
 
         ??? example "Code execution"
+
+            Claude supports a [code execution tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool)
+            that allows it to execute code snippets in a secure, sandboxed environment. See the
+            LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#code-execution)
+            for more detail.
 
             ```python hl_lines="3-6"
             model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
@@ -1536,39 +1517,53 @@ class ChatAnthropic(BaseChatModel):
 
             !!! note "Automatic beta header"
 
-                The required `code-execution-2025-05-22` beta header is automatically
-                appended to the request when using the `code_execution_20250522` tool
-                type. You don't need to manually specify it in the `betas` parameter.
+                The required `code-execution-2025-05-22` or `code-execution-2025-08-25`
+                beta header is automatically appended to the request when using the
+                `code_execution_20250522` or `code_execution_20250825` tool type,
+                respectively. You don't need to manually specify it in the `betas`
+                parameter.
 
-            See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool)
-            for more info.
+        ??? example "Computer use"
 
-        ??? example "Memory tool"
+            Claude supports [computer use](https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool)
+            capabilities, allowing it to interact with desktop environments through
+            screenshots, mouse control, and keyboard input. See the LangChain
+            [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#computer-use)
+            for more detail.
 
-            ```python hl_lines="5-8"
+            ```python
             from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 
-            tool = {
-                "type": "memory_20250818",
-                "name": "memory",
+            computer_tool = {
+                "type": "computer_20250124",
+                "name": "computer",
+                "display_width_px": 1024,
+                "display_height_px": 768,
+                "display_number": 1,
             }
-            model_with_tools = model.bind_tools([tool])
 
-            response = model_with_tools.invoke("What are my interests?")
+            model_with_computer = model.bind_tools([computer_tool])
+            response = model_with_computer.invoke("Take a screenshot to see what's on the screen")
+
+            # response.tool_calls contains the action Claude wants to perform
+            # You must execute this action in your environment and pass the result back
             ```
 
             !!! note "Automatic beta header"
 
-                The required `context-management-2025-06-27` beta header is automatically
-                appended to the request when using the `memory_20250818` tool type.
-                You don't need to manually specify it in the `betas` parameter.
-
-            See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool)
-            for more info.
+                The required beta header is automatically appended based on the tool
+                version. For `computer_20250124` and `computer_20251124`, the respective
+                `computer-use-2025-01-24` and `computer-use-2025-11-24` beta header is
+                added automatically.
 
         ??? example "Remote MCP"
+
+            Claude can use a [MCP connector tool](https://platform.claude.com/docs/en/agents-and-tools/mcp-connector)
+            for model-generated calls to remote MCP servers. See the LangChain
+            [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#remote-mcp)
+            for more detail.
 
             ```python hl_lines="3-14 18 23"
             from langchain_anthropic import ChatAnthropic
@@ -1597,7 +1592,122 @@ class ChatAnthropic(BaseChatModel):
             )
             ```
 
-            See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/mcp-connector)
+            !!! note "Automatic beta header"
+
+                The required `mcp-client-2025-11-20` beta header is automatically
+                appended to the request when using `mcp_servers`. You don't need to
+                manually specify it in the `betas` parameter.
+
+        ??? example "Text editor"
+
+            Claude supports a [text editor tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/text-editor-tool)
+            that allows it to read and modify files in a code repository. See the
+            LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#text-editor)
+            for more detail.
+
+            ```python hl_lines="5-8"
+            from langchain_anthropic import ChatAnthropic
+
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
+
+            tool = {
+                "type": "text_editor_20250124",
+                "name": "str_replace_editor",
+            }
+            model_with_tools = model.bind_tools([tool])
+
+            response = model_with_tools.invoke(
+                "There's a syntax error in my primes.py file. Can you help me fix it?"
+            )
+            print(response.text)
+            response.tool_calls
+            ```
+
+            ```txt
+            I'd be happy to help you fix the syntax error in your primes.py file. First, let's look at the current content of the file to identify the error.
+            ```
+
+            ```txt
+            [{'name': 'str_replace_editor',
+            'args': {'command': 'view', 'path': '/repo/primes.py'},
+            'id': 'toolu_01VdNgt1YV7kGfj9LFLm6HyQ',
+            'type': 'tool_call'}]
+            ```
+
+        ??? example "Web fetch"
+
+            Claude can use a [web fetching tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-fetch-tool)
+            to retrieve full content from specified web pages and PDF documents and
+            ground its responses with citations. See the LangChain
+            [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#web-fetch)
+            for more detail.
+
+            ```python hl_lines="5-9"
+            from langchain_anthropic import ChatAnthropic
+
+            model = ChatAnthropic(model="claude-haiku-4-5-20251001")
+
+            tool = {
+                "type": "web_fetch_20250910",
+                "name": "web_fetch",
+                "max_uses": 3,
+            }
+            model_with_tools = model.bind_tools([tool])
+
+            response = model_with_tools.invoke("Please analyze the content at https://docs.langchain.com/")
+            ```
+
+            !!! note "Automatic beta header"
+
+                The required `web-fetch-2025-09-10` beta header is automatically
+                appended to the request when using the `web_fetch_20250910` tool type.
+                You don't need to manually specify it in the `betas` parameter.
+
+        ??? example "Web search"
+
+            Claude can use a [web search tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool)
+            to run searches and ground its responses with citations. See the LangChain
+            [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#web-search)
+            for more detail.
+
+            ```python hl_lines="5-9"
+            from langchain_anthropic import ChatAnthropic
+
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
+
+            tool = {
+                "type": "web_search_20250305",
+                "name": "web_search",
+                "max_uses": 3,
+            }
+            model_with_tools = model.bind_tools([tool])
+
+            response = model_with_tools.invoke("How do I update a web app to TypeScript 5.5?")
+            ```
+
+        ??? example "Memory tool"
+
+            ```python hl_lines="5-8"
+            from langchain_anthropic import ChatAnthropic
+
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
+
+            tool = {
+                "type": "memory_20250818",
+                "name": "memory",
+            }
+            model_with_tools = model.bind_tools([tool])
+
+            response = model_with_tools.invoke("What are my interests?")
+            ```
+
+            !!! note "Automatic beta header"
+
+                The required `context-management-2025-06-27` beta header is automatically
+                appended to the request when using the `memory_20250818` tool type.
+                You don't need to manually specify it in the `betas` parameter.
+
+            See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool)
             for more info.
 
         ??? example "Tool search"
@@ -1651,94 +1761,6 @@ class ChatAnthropic(BaseChatModel):
 
             See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-search-tool)
             for more info.
-
-        ??? example "Text editor"
-
-            ```python hl_lines="5-8"
-            from langchain_anthropic import ChatAnthropic
-
-            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-
-            tool = {
-                "type": "text_editor_20250124",
-                "name": "str_replace_editor",
-            }
-            model_with_tools = model.bind_tools([tool])
-
-            response = model_with_tools.invoke(
-                "There's a syntax error in my primes.py file. Can you help me fix it?"
-            )
-            print(response.text)
-            response.tool_calls
-            ```
-
-            ```txt
-            I'd be happy to help you fix the syntax error in your primes.py file. First, let's look at the current content of the file to identify the error.
-            ```
-
-            ```txt
-            [{'name': 'str_replace_editor',
-            'args': {'command': 'view', 'path': '/repo/primes.py'},
-            'id': 'toolu_01VdNgt1YV7kGfj9LFLm6HyQ',
-            'type': 'tool_call'}]
-            ```
-
-            See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/text-editor-tool)
-            for more info.
-
-        ??? example "Computer use"
-
-            Claude supports computer use capabilities, allowing it to interact with
-            desktop environments through screenshots, mouse control, and keyboard input.
-
-            !!! warning "Execution environment required"
-
-                LangChain handles the API integration, but **you must provide**:
-
-                - A sandboxed computing environment (Docker, VM, etc.)
-                - A virtual display (e.g., Xvfb)
-                - Code to execute tool calls (screenshot, clicks, typing)
-                - An agent loop to pass results back to Claude
-
-                Anthropic provides a [reference implementation](https://github.com/anthropics/anthropic-quickstarts/tree/main/computer-use-demo).
-
-            !!! note
-
-                Computer use requires:
-
-                - Claude Opus 4.5, Claude 4, or Claude Sonnet 3.7
-                - A sandboxed computing environment with virtual display
-
-            See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool)
-            for setup instructions, model capability, and best practices.
-
-            ```python
-            from langchain_anthropic import ChatAnthropic
-
-            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-
-            # LangChain handles the API call and tool binding
-            computer_tool = {
-                "type": "computer_20250124",
-                "name": "computer",
-                "display_width_px": 1024,
-                "display_height_px": 768,
-                "display_number": 1,
-            }
-
-            model_with_computer = model.bind_tools([computer_tool])
-            response = model_with_computer.invoke("Take a screenshot to see what's on the screen")
-
-            # response.tool_calls contains the action Claude wants to perform
-            # You must execute this action in your environment and pass the result back
-            ```
-
-            !!! note "Automatic beta header"
-
-                The required beta header is automatically appended based on the tool
-                version. For `computer_20250124` and `computer_20251124`, the respective
-                `computer-use-2025-01-24` and `computer-use-2025-11-24` beta header is
-                added automatically.
     """  # noqa: E501
 
     model_config = ConfigDict(
