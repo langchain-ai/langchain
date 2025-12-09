@@ -434,9 +434,11 @@ def _format_messages(
                     elif block["type"] == "tool_use":
                         # If a tool_call with the same id as a tool_use content block
                         # exists, the tool_call is preferred.
-                        if isinstance(message, AIMessage) and block["id"] in [
-                            tc["id"] for tc in message.tool_calls
-                        ]:
+                        if (
+                            isinstance(message, AIMessage)
+                            and (block["id"] in [tc["id"] for tc in message.tool_calls])
+                            and "caller" not in block  # take caller from content
+                        ):
                             overlapping = [
                                 tc
                                 for tc in message.tool_calls
@@ -457,14 +459,15 @@ def _format_messages(
                                     args = {}
                             else:
                                 args = {}
-                            content.append(
-                                _AnthropicToolUse(
-                                    type="tool_use",
-                                    name=block["name"],
-                                    input=args,
-                                    id=block["id"],
-                                )
+                            tool_use_block = _AnthropicToolUse(
+                                type="tool_use",
+                                name=block["name"],
+                                input=args,
+                                id=block["id"],
                             )
+                            if "caller" in block:
+                                tool_use_block["caller"] = block["caller"]
+                            content.append(tool_use_block)
                     elif block["type"] in ("server_tool_use", "mcp_tool_use"):
                         formatted_block = {
                             k: v
@@ -2074,6 +2077,18 @@ class ChatAnthropic(BaseChatModel):
             else:
                 payload["betas"] = ["structured-outputs-2025-11-13"]
 
+        # Traverse messages backward, check for most recent AIMessage with container
+        # set in response_metadata, set as top-level param
+        for message in reversed(messages):
+            if (
+                isinstance(message, AIMessage)
+                and (container := message.response_metadata.get("container"))
+                and isinstance(container, dict)
+                and (container_id := container.get("id"))
+            ):
+                payload["container"] = container_id
+                break
+
         # Check if any tools have strict mode enabled
         if "tools" in payload and isinstance(payload["tools"], list):
             has_strict_tool = any(
@@ -2257,6 +2272,7 @@ class ChatAnthropic(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        print("PAYLOAD:"); print(json.dumps(payload, indent=2)); print()
         try:
             data = self._create(payload)
         except anthropic.BadRequestError as e:
@@ -3085,6 +3101,7 @@ class _AnthropicToolUse(TypedDict):
     name: str
     input: dict
     id: str
+    caller: NotRequired[dict[str, Any]]
 
 
 def _lc_tool_calls_to_anthropic_tool_use_blocks(

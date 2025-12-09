@@ -2152,6 +2152,38 @@ def test_tool_search(output_version: str) -> None:
     assert answer.text
 
 
+@pytest.mark.vcr()
+def test_programmatic_tool_calling() -> None:
+
+    @tool(extras={"allowed_callers": ["code_execution_20250825"]})
+    def get_weather(location: str) -> str:
+        """Get the weather at a location."""
+        return "It's sunny."
+
+
+    tools = [
+        {
+            "type": "code_execution_20250825",
+            "name": "code_execution"
+        },
+        get_weather,
+    ]
+
+    model = ChatAnthropic(
+        model="claude-sonnet-4-5",
+        betas=["advanced-tool-use-2025-11-20"],
+    )
+
+    agent = create_agent(model, tools=tools)
+
+    input_query = {
+        "role": "user",
+        "content": "What's the weather in Boston?",
+    }
+
+    result = agent.invoke({"messages": [input_query]})
+
+
 def test_async_shared_client() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
     _ = asyncio.run(llm.ainvoke("Hello"))
