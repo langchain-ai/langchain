@@ -34,7 +34,7 @@ def create_retriever_tool(
     document_prompt: BasePromptTemplate | None = None,
     document_separator: str = "\n\n",
     response_format: Literal["content", "content_and_artifact"] = "content",
-) -> Tool:
+) -> StructuredTool:
     r"""Create a tool to do retrieval of documents.
 
     Args:
