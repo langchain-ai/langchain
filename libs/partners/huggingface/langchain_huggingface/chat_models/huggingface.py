@@ -634,9 +634,7 @@ class ChatHuggingFace(BaseChatModel):
                 HuggingFaceTextGenInference,
             )
 
-            llm = HuggingFaceTextGenInference(
-                inference_server_url=model_id, **kwargs
-            )
+            llm = HuggingFaceTextGenInference(inference_server_url=model_id, **kwargs)
         else:
             msg = f"Unknown backend: {backend}"
             raise ValueError(msg)
