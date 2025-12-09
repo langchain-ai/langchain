@@ -2324,6 +2324,10 @@ def test_extras_with_input_examples() -> None:
         "unit": "fahrenheit",
     }
 
+    # Beta header is required
+    assert "betas" in payload
+    assert "advanced-tool-use-2025-11-20" in payload["betas"]
+
 
 def test_extras_with_multiple_fields() -> None:
     """Test that multiple extra fields can be specified together."""
