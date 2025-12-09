@@ -630,14 +630,11 @@ def create_agent(  # noqa: PLR0915
                 Example:
 
                 ```python
-                from typing import Annotated
                 from langchain.agents import AgentState, create_agent
-                from langgraph.graph import add_messages
 
                 class MyState(AgentState):
-                    messages: Annotated[list, add_messages]
                     authenticated: bool
-                    password: str
+                    user_id: str
 
                 agent = create_agent(
                     model=model,
@@ -692,11 +689,9 @@ def create_agent(  # noqa: PLR0915
         ```python
         from langchain.agents import create_agent
 
-
         def check_weather(location: str) -> str:
             '''Return the weather forecast for the specified location.'''
             return f"It's always sunny in {location}"
-
 
         graph = create_agent(
             model="anthropic:claude-sonnet-4-5-20250929",
