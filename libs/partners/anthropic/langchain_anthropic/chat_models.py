@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import datetime
 import json
 import re
 import warnings
@@ -2249,6 +2250,14 @@ class ChatAnthropic(BaseChatModel):
         llm_output = {
             k: v for k, v in data_dict.items() if k not in ("content", "role", "type")
         }
+        if (
+            (container := llm_output.get("container"))
+            and isinstance(container, dict)
+            and (expires_at := container.get("expires_at"))
+            and isinstance(expires_at, datetime.datetime)
+        ):
+            # TODO: dump all `data` with `mode="json"`
+            llm_output["container"]["expires_at"] = expires_at.isoformat()
         response_metadata = {"model_provider": "anthropic"}
         if "model" in llm_output and "model_name" not in llm_output:
             llm_output["model_name"] = llm_output["model"]
@@ -3294,7 +3303,7 @@ def _make_message_chunk_from_anthropic_event(
             response_metadata["context_management"] = context_management.model_dump()
         message_delta = getattr(event, "delta", None)
         if message_delta and (container := getattr(message_delta, "container", None)):
-            response_metadata["container"] = container.model_dump()
+            response_metadata["container"] = container.model_dump(mode="json")
         message_chunk = AIMessageChunk(
             content="" if coerce_content_to_string else [],
             usage_metadata=usage_metadata,
