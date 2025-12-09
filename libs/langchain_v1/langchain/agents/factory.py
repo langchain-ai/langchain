@@ -538,7 +538,7 @@ def _chain_async_tool_call_wrappers(
     return result
 
 
-def create_agent(  # noqa: PLR0915
+def create_agent(  # noqa: PLR0915, D417
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
     *,
@@ -627,14 +627,15 @@ def create_agent(  # noqa: PLR0915
                 preserved in the runtime state, and any additional fields passed during
                 invocation will be silently ignored.
 
-                Example:
-
+    Example:
                 ```python
                 from langchain.agents import AgentState, create_agent
+
 
                 class MyState(AgentState):
                     authenticated: bool
                     user_id: str
+
 
                 agent = create_agent(
                     model=model,
@@ -689,9 +690,11 @@ def create_agent(  # noqa: PLR0915
         ```python
         from langchain.agents import create_agent
 
+
         def check_weather(location: str) -> str:
             '''Return the weather forecast for the specified location.'''
             return f"It's always sunny in {location}"
+
 
         graph = create_agent(
             model="anthropic:claude-sonnet-4-5-20250929",
