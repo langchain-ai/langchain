@@ -777,15 +777,12 @@ class ChatOllama(BaseChatModel):
             "model": kwargs.pop("model", self.model),
             "think": kwargs.pop("reasoning", self.reasoning),
             "format": kwargs.pop("format", self.format),
+            "logprobs": kwargs.pop("logprobs", self.logprobs),
+            "top_logprobs": kwargs.pop("top_logprobs", self.top_logprobs),
             "options": options_dict,
             "keep_alive": kwargs.pop("keep_alive", self.keep_alive),
             **kwargs,
         }
-
-        if self.logprobs is not None:
-            params["logprobs"] = self.logprobs
-        if self.top_logprobs is not None:
-            params["top_logprobs"] = self.top_logprobs
 
         if tools := kwargs.get("tools"):
             params["tools"] = tools

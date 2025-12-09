@@ -2,13 +2,10 @@
 
 import json
 import logging
-from collections.abc import Generator
-from contextlib import contextmanager
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-from httpx import Client, Request, Response
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import ChatMessage, HumanMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
@@ -20,17 +17,6 @@ from langchain_ollama.chat_models import (
 )
 
 MODEL_NAME = "llama3.1"
-
-
-@contextmanager
-def _mock_httpx_client_stream(
-    *_args: Any, **_kwargs: Any
-) -> Generator[Response, Any, Any]:
-    yield Response(
-        status_code=200,
-        content='{"message": {"role": "assistant", "content": "The meaning ..."}}',
-        request=Request(method="POST", url="http://whocares:11434"),
-    )
 
 
 dummy_raw_tool_call = {
@@ -105,25 +91,37 @@ def test__parse_arguments_from_tool_call_with_function_name_metadata() -> None:
     assert response_different == {"functionName": "function_b"}
 
 
-def test_arbitrary_roles_accepted_in_chatmessages(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_arbitrary_roles_accepted_in_chatmessages() -> None:
     """Test that `ChatOllama` accepts arbitrary roles in `ChatMessage`."""
-    monkeypatch.setattr(Client, "stream", _mock_httpx_client_stream)
-    llm = ChatOllama(
-        model=MODEL_NAME,
-        verbose=True,
-        format=None,
-    )
-    messages = [
-        ChatMessage(
-            role="somerandomrole",
-            content="I'm ok with you adding any role message now!",
-        ),
-        ChatMessage(role="control", content="thinking"),
-        ChatMessage(role="user", content="What is the meaning of life?"),
+    response = [
+        {
+            "model": MODEL_NAME,
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "done": True,
+            "done_reason": "stop",
+            "message": {"role": "assistant", "content": "The meaning of life..."},
+        }
     ]
-    llm.invoke(messages)
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = response
+
+        llm = ChatOllama(
+            model=MODEL_NAME,
+            verbose=True,
+            format=None,
+        )
+        messages = [
+            ChatMessage(
+                role="somerandomrole",
+                content="I'm ok with you adding any role message now!",
+            ),
+            ChatMessage(role="control", content="thinking"),
+            ChatMessage(role="user", content="What is the meaning of life?"),
+        ]
+        llm.invoke(messages)
 
 
 @patch("langchain_ollama.chat_models.validate_model")
