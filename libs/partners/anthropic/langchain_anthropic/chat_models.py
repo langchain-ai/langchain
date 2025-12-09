@@ -2272,7 +2272,6 @@ class ChatAnthropic(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        print("PAYLOAD:"); print(json.dumps(payload, indent=2)); print()
         try:
             data = self._create(payload)
         except anthropic.BadRequestError as e:
