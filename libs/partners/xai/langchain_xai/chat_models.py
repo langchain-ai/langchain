@@ -9,11 +9,8 @@ from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.utils import secret_from_env
 from langchain_openai.chat_models.base import (
     BaseChatOpenAI,
-    _construct_responses_api_payload,
     _convert_from_v1_to_chat_completions,
     _convert_message_to_dict as _openai_convert_message_to_dict,
-    _get_last_messages,
-    _use_responses_api,
 )
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
@@ -49,25 +46,25 @@ def _convert_message_to_dict_xai(
     api: Literal["chat/completions", "responses"] = "chat/completions",
 ) -> dict:
     """Convert a LangChain message to dictionary format expected by xAI.
-    
+
     xAI's API requires that all messages have at least an empty content field,
     unlike OpenAI which allows None for messages with tool_calls.
-    
+
     Args:
-        message: The LangChain message to convert
-        api: The API format to use (default: "chat/completions")
-        
+        message: The LangChain message to convert.
+        api: The API format to use. Defaults to "chat/completions".
+
     Returns:
-        Dictionary representation of the message compatible with xAI's API
+        Dictionary representation of the message compatible with xAI's API.
     """
     message_dict = _openai_convert_message_to_dict(message, api=api)
-    
+
     # xAI requires content to be at least an empty string, not None
     # This is especially important for AIMessages with tool_calls but no content
     if isinstance(message, AIMessage) and message_dict.get("content") is None:
         if "tool_calls" in message_dict or "function_call" in message_dict:
             message_dict["content"] = ""
-    
+
     return message_dict
 
 
@@ -589,9 +586,17 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         **kwargs: Any,
     ) -> dict:
         """Prepare the request payload for xAI's API.
-        
+
         Overrides the base implementation to use xAI-specific message conversion
         that ensures all messages have at least an empty content field.
+
+        Args:
+            input_: The input to convert into messages.
+            stop: List of stop sequences. Defaults to None.
+            **kwargs: Additional keyword arguments to pass to the API.
+
+        Returns:
+            Dictionary containing the request payload for xAI's API.
         """
         messages = self._convert_input(input_).to_messages()
         if stop is not None:
@@ -599,23 +604,14 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
         payload = {**self._default_params, **kwargs}
 
-        if self._use_responses_api(payload):
-            if self.use_previous_response_id:
-                last_messages, previous_response_id = _get_last_messages(messages)
-                payload_to_use = last_messages if previous_response_id else messages
-                if previous_response_id:
-                    payload["previous_response_id"] = previous_response_id
-                payload = _construct_responses_api_payload(payload_to_use, payload)
-            else:
-                payload = _construct_responses_api_payload(messages, payload)
-        else:
-            # Use xAI-specific message converter instead of OpenAI's
-            payload["messages"] = [
-                _convert_message_to_dict_xai(_convert_from_v1_to_chat_completions(m))
-                if isinstance(m, AIMessage)
-                else _convert_message_to_dict_xai(m)
-                for m in messages
-            ]
+        # Use xAI-specific message converter for all message conversion
+        # xAI requires all messages to have at least empty content field
+        payload["messages"] = [
+            _convert_message_to_dict_xai(_convert_from_v1_to_chat_completions(m))
+            if isinstance(m, AIMessage)
+            else _convert_message_to_dict_xai(m)
+            for m in messages
+        ]
         return payload
 
     def _create_chat_result(
