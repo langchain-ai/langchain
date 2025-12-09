@@ -2156,6 +2156,11 @@ def test_tool_search(output_version: str) -> None:
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["v0", "v1"])
 def test_programmatic_tool_use(output_version: str) -> None:
+    """Test programmatic tool use.
+
+    Implicitly checks that `allowed_callers` in tool extras works.
+    """
+
     @tool(extras={"allowed_callers": ["code_execution_20250825"]})
     def get_weather(location: str) -> str:
         """Get the weather at a location."""
@@ -2184,6 +2189,7 @@ def test_programmatic_tool_use(output_version: str) -> None:
     assert len(result["messages"]) == 4
     tool_call_message = result["messages"][1]
     response_message = result["messages"][-1]
+
     if output_version == "v0":
         server_tool_use_block = next(
             block
@@ -2191,10 +2197,12 @@ def test_programmatic_tool_use(output_version: str) -> None:
             if block["type"] == "server_tool_use"
         )
         assert server_tool_use_block
+
         tool_use_block = next(
             block for block in tool_call_message.content if block["type"] == "tool_use"
         )
         assert "caller" in tool_use_block
+
         code_execution_result = next(
             block
             for block in response_message.content
@@ -2208,10 +2216,12 @@ def test_programmatic_tool_use(output_version: str) -> None:
             if block["type"] == "server_tool_call"
         )
         assert server_tool_call_block
+
         tool_call_block = next(
             block for block in tool_call_message.content if block["type"] == "tool_call"
         )
         assert "caller" in tool_call_block["extras"]
+
         server_tool_result = next(
             block
             for block in response_message.content
@@ -2253,6 +2263,7 @@ def test_programmatic_tool_use_streaming(output_version: str) -> None:
     assert len(result["messages"]) == 4
     tool_call_message = result["messages"][1]
     response_message = result["messages"][-1]
+
     if output_version == "v0":
         server_tool_use_block = next(
             block
@@ -2260,10 +2271,12 @@ def test_programmatic_tool_use_streaming(output_version: str) -> None:
             if block["type"] == "server_tool_use"
         )
         assert server_tool_use_block
+
         tool_use_block = next(
             block for block in tool_call_message.content if block["type"] == "tool_use"
         )
         assert "caller" in tool_use_block
+
         code_execution_result = next(
             block
             for block in response_message.content
@@ -2277,10 +2290,12 @@ def test_programmatic_tool_use_streaming(output_version: str) -> None:
             if block["type"] == "server_tool_call"
         )
         assert server_tool_call_block
+
         tool_call_block = next(
             block for block in tool_call_message.content if block["type"] == "tool_call"
         )
         assert "caller" in tool_call_block["extras"]
+
         server_tool_result = next(
             block
             for block in response_message.content
