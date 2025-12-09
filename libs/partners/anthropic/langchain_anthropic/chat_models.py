@@ -3197,11 +3197,19 @@ def _make_message_chunk_from_anthropic_event(
         content_block = event.content_block.model_dump()
         content_block["index"] = event.index
         if event.content_block.type == "tool_use":
+            if (
+                parsed_args := getattr(event.content_block, "input", None)
+            ) and isinstance(parsed_args, dict):
+                # In some cases parsed args are represented in start event, with no
+                # following input_json_delta events
+                args = json.dumps(parsed_args)
+            else:
+                args = ""
             tool_call_chunk = create_tool_call_chunk(
                 index=event.index,
                 id=event.content_block.id,
                 name=event.content_block.name,
-                args="",
+                args=args,
             )
             tool_call_chunks = [tool_call_chunk]
         else:
@@ -3273,6 +3281,9 @@ def _make_message_chunk_from_anthropic_event(
         }
         if context_management := getattr(event, "context_management", None):
             response_metadata["context_management"] = context_management.model_dump()
+        message_delta = getattr(event, "delta", None)
+        if message_delta and (container := getattr(message_delta, "container", None)):
+            response_metadata["container"] = container.model_dump()
         message_chunk = AIMessageChunk(
             content="" if coerce_content_to_string else [],
             usage_metadata=usage_metadata,
