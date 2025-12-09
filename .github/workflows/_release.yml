@@ -19,7 +19,7 @@ on:
         required: true
         type: string
         description: "From which folder this pipeline executes"
-        default: "libs/langchain"
+        default: "libs/langchain_v1"
       release-version:
         required: true
         type: string
