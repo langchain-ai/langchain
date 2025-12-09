@@ -1100,6 +1100,8 @@ def create_agent(  # noqa: PLR0915
             messages = [request.system_message, *messages]
 
         output = model_.invoke(messages)
+        if name:
+            output.name = name
 
         # Handle model output to get messages and structured_response
         handled_output = _handle_model_output(output, effective_response_format)
@@ -1153,6 +1155,8 @@ def create_agent(  # noqa: PLR0915
             messages = [request.system_message, *messages]
 
         output = await model_.ainvoke(messages)
+        if name:
+            output.name = name
 
         # Handle model output to get messages and structured_response
         handled_output = _handle_model_output(output, effective_response_format)

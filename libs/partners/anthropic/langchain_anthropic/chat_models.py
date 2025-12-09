@@ -75,36 +75,21 @@ _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
-    default = _MODEL_PROFILES.get(model_name) or {}
-    return default.copy()
+    """Get the default profile for a model.
 
+    Args:
+        model_name: The model identifier.
 
-_MODEL_DEFAULT_MAX_OUTPUT_TOKENS: Final[dict[str, int]] = {
-    # Listed old to new
-    "claude-3-haiku": 4096,  # Claude Haiku 3
-    "claude-3-5-haiku": 8192,  # Claude Haiku 3.5
-    "claude-3-7-sonnet": 64000,  # Claude Sonnet 3.7
-    "claude-sonnet-4": 64000,  # Claude Sonnet 4
-    "claude-opus-4": 32000,  # Claude Opus 4
-    "claude-opus-4-1": 32000,  # Claude Opus 4.1
-    "claude-sonnet-4-5": 64000,  # Claude Sonnet 4.5
-    "claude-haiku-4-5": 64000,  # Claude Haiku 4.5
-}
-_FALLBACK_MAX_OUTPUT_TOKENS: Final[int] = 4096
-
-
-def _default_max_tokens_for(model: str | None) -> int:
-    """Return the default max output tokens for an Anthropic model (with fallback).
-
-    See the Claude docs for [Max Tokens limits](https://platform.claude.com/docs/en/about-claude/models/overview#model-comparison-table).
+    Returns:
+        The model profile dictionary, or an empty dict if not found.
     """
-    if not model:
-        return _FALLBACK_MAX_OUTPUT_TOKENS
+    default = _MODEL_PROFILES.get(model_name)
+    if default:
+        return default.copy()
+    return {}
 
-    parts = model.split("-")
-    family = "-".join(parts[:-1]) if len(parts) > 1 else model
 
-    return _MODEL_DEFAULT_MAX_OUTPUT_TOKENS.get(family, _FALLBACK_MAX_OUTPUT_TOKENS)
+_FALLBACK_MAX_OUTPUT_TOKENS: Final[int] = 4096
 
 
 class AnthropicTool(TypedDict):
@@ -119,6 +104,20 @@ class AnthropicTool(TypedDict):
     strict: NotRequired[bool]
 
     cache_control: NotRequired[dict[str, str]]
+
+
+# Some tool types require specific beta headers to be enabled
+# Mapping of tool type patterns to required beta headers
+_TOOL_TYPE_TO_BETA: dict[str, str] = {
+    "web_fetch_20250910": "web-fetch-2025-09-10",
+    "code_execution_20250522": "code-execution-2025-05-22",
+    "code_execution_20250825": "code-execution-2025-08-25",
+    "memory_20250818": "context-management-2025-06-27",
+    "computer_20250124": "computer-use-2025-01-24",
+    "computer_20251124": "computer-use-2025-11-24",
+    "tool_search_tool_regex_20251119": "advanced-tool-use-2025-11-20",
+    "tool_search_tool_bm25_20251119": "advanced-tool-use-2025-11-20",
+}
 
 
 def _is_builtin_tool(tool: Any) -> bool:
@@ -141,6 +140,7 @@ def _is_builtin_tool(tool: Any) -> bool:
         "web_fetch_",
         "code_execution_",
         "memory_",
+        "tool_search_",
     ]
     return any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
 
@@ -514,7 +514,31 @@ def _format_messages(
                                 if k in ("type", "cache_control", "data")
                             },
                         )
+                    elif (
+                        block["type"] == "tool_result"
+                        and isinstance(block.get("content"), list)
+                        and any(
+                            isinstance(item, dict)
+                            and item.get("type") == "tool_reference"
+                            for item in block["content"]
+                        )
+                    ):
+                        # Tool search results with tool_reference blocks
+                        content.append(
+                            {
+                                k: v
+                                for k, v in block.items()
+                                if k
+                                in (
+                                    "type",
+                                    "content",
+                                    "tool_use_id",
+                                    "cache_control",
+                                )
+                            },
+                        )
                     elif block["type"] == "tool_result":
+                        # Regular tool results that need content formatting
                         tool_content = _format_messages(
                             [HumanMessage(block["content"])],
                         )[1][0]["content"]
@@ -866,6 +890,42 @@ class ChatAnthropic(BaseChatModel):
         Total tokens: 408
         ```
 
+    ???+ example "Fine-grained tool streaming"
+
+        Fine-grained tool streaming enables faster streaming of tool parameters
+        without buffering or JSON validation, reducing latency when receiving large tool
+        parameters.
+
+        More info available in the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/fine-grained-tool-streaming)
+
+        ```python hl_lines="5"
+        from langchain_anthropic import ChatAnthropic
+
+        model = ChatAnthropic(
+            model="claude-3-5-sonnet-20241022",
+            betas=["fine-grained-tool-streaming-2025-05-14"]
+        )
+
+        def write_document(title: str, content: str) -> str:
+            \"\"\"Write a document with the given title and content.\"\"\"
+            return f"Document '{title}' written"
+
+        model_with_tools = model.bind_tools([write_document])
+
+        # Stream tool calls with reduced latency
+        for chunk in model_with_tools.stream(
+            "Write a document about the benefits of streaming APIs"
+        ):
+            print(chunk)
+        ```
+
+        !!! note
+
+            This is a beta feature that may return invalid or partial JSON inputs.
+
+            Implement appropriate error handling for incomplete JSON, especially
+            when `max_tokens` is reached.
+
     ???+ example "Image input"
 
         See the [multimodal guide](https://docs.langchain.com/oss/python/langchain/models#multimodal)
@@ -1045,6 +1105,29 @@ class ChatAnthropic(BaseChatModel):
 
             Refer to the [Claude docs](https://platform.claude.com/docs/en/build-with-claude/extended-thinking#differences-in-thinking-across-model-versions)
             for more info.
+
+    ???+ example "Effort"
+
+        Certain Claude models support an [effort](https://platform.claude.com/docs/en/build-with-claude/effort)
+        feature, which will control how many tokens Claude uses when responding.
+
+        !!! example
+
+            ```python hl_lines="6"
+            from langchain_anthropic import ChatAnthropic
+
+            model = ChatAnthropic(
+                model="claude-opus-4-5-20251101",
+                max_tokens=4096,
+                effort="medium",  # Options: "high", "medium", "low"
+            )
+
+            response = model.invoke("Analyze the trade-offs between microservices and monolithic architectures")
+            print(response.content)
+            ```
+
+        See the [Claude docs](https://platform.claude.com/docs/en/build-with-claude/effort)
+        for more detail on when to use different effort levels.
 
     ???+ example "Prompt caching"
 
@@ -1393,12 +1476,11 @@ class ChatAnthropic(BaseChatModel):
 
         ??? example "Web fetch (beta)"
 
-            ```python hl_lines="5 8-12"
+            ```python hl_lines="7-11"
             from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(
                 model="claude-3-5-haiku-20241022",
-                betas=["web-fetch-2025-09-10"],  # Enable web fetch beta
             )
 
             tool = {
@@ -1411,16 +1493,19 @@ class ChatAnthropic(BaseChatModel):
             response = model_with_tools.invoke("Please analyze the content at https://example.com/article")
             ```
 
+            !!! note "Automatic beta header"
+
+                The required `web-fetch-2025-09-10` beta header is automatically
+                appended to the request when using the `web_fetch_20250910` tool type.
+                You don't need to manually specify it in the `betas` parameter.
+
             See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-fetch-tool)
             for more info.
 
         ??? example "Code execution"
 
-            ```python hl_lines="3 6-9"
-            model = ChatAnthropic(
-                model="claude-sonnet-4-5-20250929",
-                betas=["code-execution-2025-05-22"],  # Enable code execution beta
-            )
+            ```python hl_lines="3-6"
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 
             tool = {
                 "type": "code_execution_20250522",
@@ -1433,18 +1518,21 @@ class ChatAnthropic(BaseChatModel):
             )
             ```
 
+            !!! note "Automatic beta header"
+
+                The required `code-execution-2025-05-22` beta header is automatically
+                appended to the request when using the `code_execution_20250522` tool
+                type. You don't need to manually specify it in the `betas` parameter.
+
             See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool)
             for more info.
 
         ??? example "Memory tool"
 
-            ```python hl_lines="5 8-11"
+            ```python hl_lines="5-8"
             from langchain_anthropic import ChatAnthropic
 
-            model = ChatAnthropic(
-                model="claude-sonnet-4-5-20250929",
-                betas=["context-management-2025-06-27"],  # Enable context management beta
-            )
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 
             tool = {
                 "type": "memory_20250818",
@@ -1454,6 +1542,12 @@ class ChatAnthropic(BaseChatModel):
 
             response = model_with_tools.invoke("What are my interests?")
             ```
+
+            !!! note "Automatic beta header"
+
+                The required `context-management-2025-06-27` beta header is automatically
+                appended to the request when using the `memory_20250818` tool type.
+                You don't need to manually specify it in the `betas` parameter.
 
             See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool)
             for more info.
@@ -1524,6 +1618,74 @@ class ChatAnthropic(BaseChatModel):
 
             See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/text-editor-tool)
             for more info.
+
+        ??? example "Tool search"
+
+            Tool search enables Claude to dynamically discover and load tools on-demand
+            instead of loading all tool definitions upfront. See the
+            [LangChain docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#tool-search)
+            for more detail.
+
+            ```python hl_lines="8-11 26 36"
+            from langchain_anthropic import ChatAnthropic
+
+            model = ChatAnthropic(
+                model="claude-sonnet-4-5-20250929",
+            )
+
+            tools = [
+                {
+                    "type": "tool_search_tool_regex_20251119",
+                    "name": "tool_search_tool_regex",
+                },
+                {
+                    "name": "get_weather",
+                    "description": "Get the current weather for a location",
+                    "input_schema": {
+                        "type": "object",
+                        "properties": {
+                            "location": {"type": "string", "description": "City name"},
+                            "unit": {
+                                "type": "string",
+                                "enum": ["celsius", "fahrenheit"],
+                            },
+                        },
+                        "required": ["location"],
+                    },
+                    "defer_loading": True,  # Tool is loaded on-demand
+                },
+                {
+                    "name": "search_files",
+                    "description": "Search through files in the workspace",
+                    "input_schema": {
+                        "type": "object",
+                        "properties": {
+                            "query": {"type": "string"},
+                        },
+                        "required": ["query"],
+                    },
+                    "defer_loading": True,  # Tool is loaded on-demand
+                },
+                ...,
+            ]
+
+            model_with_tools = model.bind_tools(tools)
+            response = model_with_tools.invoke("What's the weather in San Francisco?")
+            ```
+
+            !!! note "Automatic beta header"
+
+                The required `advanced-tool-use-2025-11-20` beta header is automatically
+                appended to the request when using tool search tools.
+
+            !!! tip "Best practices"
+
+                - Tools with `defer_loading: True` are only loaded when Claude discovers them via search
+                - Keep your 3-5 most frequently used tools as non-deferred for optimal performance
+                - Both variants search tool names, descriptions, argument names, and argument descriptions
+
+            See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-search-tool)
+            for more info.
     """  # noqa: E501
 
     model_config = ConfigDict(
@@ -1592,6 +1754,12 @@ class ChatAnthropic(BaseChatModel):
 
     Example: `#!python betas=["mcp-client-2025-04-04"]`
     """
+    # Can also be passed in w/ model_kwargs, but having it as a param makes better devx
+    #
+    # Precedence order:
+    # 1. Call-time kwargs (e.g., llm.invoke(..., betas=[...]))
+    # 2. model_kwargs (e.g., ChatAnthropic(model_kwargs={"betas": [...]}))
+    # 3. Direct parameter (e.g., ChatAnthropic(betas=[...]))
 
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
 
@@ -1611,26 +1779,40 @@ class ChatAnthropic(BaseChatModel):
     e.g., `#!python {"type": "enabled", "budget_tokens": 10_000}`
     """
 
+    effort: Literal["high", "medium", "low"] | None = None
+    """Control how many tokens Claude uses when responding.
+
+    This parameter will be merged into the `output_config` parameter when making
+    API calls.
+
+    Example: `effort="medium"`
+
+    !!! note
+
+        Setting `effort` to `'high'` produces exactly the same behavior as omitting the
+        parameter altogether.
+
+    !!! note "Model Support"
+
+        This feature is currently only supported by Claude Opus 4.5.
+
+    !!! note "Automatic beta header"
+
+        The required `effort-2025-11-24` beta header is
+        automatically appended to the request when using `effort`, so you
+        don't need to manually specify it in the `betas` parameter.
+    """
+
     mcp_servers: list[dict[str, Any]] | None = None
     """List of MCP servers to use for the request.
 
     Example: `#!python mcp_servers=[{"type": "url", "url": "https://mcp.example.com/mcp",
     "name": "example-mcp"}]`
-
-    !!! note
-
-        This feature requires the beta header `'mcp-client-2025-11-20'` to be set in
-        [`betas`][langchain_anthropic.chat_models.ChatAnthropic.betas].
     """
 
     context_management: dict[str, Any] | None = None
     """Configuration for
     [context management](https://platform.claude.com/docs/en/build-with-claude/context-editing).
-
-    !!! note
-
-        This feature requires the beta header `'context-management-2025-06-27'` to be
-        set in [`betas`][langchain_anthropic.chat_models.ChatAnthropic.betas].
     """
 
     @property
@@ -1698,10 +1880,13 @@ class ChatAnthropic(BaseChatModel):
     @model_validator(mode="before")
     @classmethod
     def set_default_max_tokens(cls, values: dict[str, Any]) -> Any:
-        """Set default `max_tokens`."""
+        """Set default `max_tokens` from model profile with fallback."""
         if values.get("max_tokens") is None:
             model = values.get("model") or values.get("model_name")
-            values["max_tokens"] = _default_max_tokens_for(model)
+            profile = _get_default_model_profile(model) if model else {}
+            values["max_tokens"] = profile.get(
+                "max_output_tokens", _FALLBACK_MAX_OUTPUT_TOKENS
+            )
         return values
 
     @model_validator(mode="before")
@@ -1841,22 +2026,96 @@ class ChatAnthropic(BaseChatModel):
         if self.thinking is not None:
             payload["thinking"] = self.thinking
 
+        # Handle output_config and effort parameter
+        # Priority: self.effort > payload output_config
+        output_config = payload.get("output_config", {})
+        output_config = output_config.copy() if isinstance(output_config, dict) else {}
+
+        if self.effort:
+            output_config["effort"] = self.effort
+
+        if output_config:
+            payload["output_config"] = output_config
+
+            # Auto-append required beta for effort
+            if "effort" in output_config:
+                required_beta = "effort-2025-11-24"
+                if payload["betas"]:
+                    # Merge with existing betas
+                    if required_beta not in payload["betas"]:
+                        payload["betas"] = [*payload["betas"], required_beta]
+                else:
+                    payload["betas"] = [required_beta]
+
         if "response_format" in payload:
+            # response_format present when using agents.create_agent's ProviderStrategy
+            # ---
+            # ProviderStrategy converts to OpenAI-style format, which passes kwargs to
+            # ChatAnthropic, ending up in our payload
             response_format = payload.pop("response_format")
             if (
                 isinstance(response_format, dict)
                 and response_format.get("type") == "json_schema"
                 and "schema" in response_format.get("json_schema", {})
             ):
-                # compat with langchain.agents.create_agent response_format, which is
-                # an approximation of OpenAI format
                 response_format = cast(dict, response_format["json_schema"]["schema"])
+            # Convert OpenAI-style response_format to Anthropic's output_format
             payload["output_format"] = _convert_to_anthropic_output_format(
                 response_format
             )
 
-        if "output_format" in payload and not payload["betas"]:
-            payload["betas"] = ["structured-outputs-2025-11-13"]
+        if "output_format" in payload:
+            # Native structured output requires the structured outputs beta
+            if payload["betas"]:
+                if "structured-outputs-2025-11-13" not in payload["betas"]:
+                    # Merge with existing betas
+                    payload["betas"] = [
+                        *payload["betas"],
+                        "structured-outputs-2025-11-13",
+                    ]
+            else:
+                payload["betas"] = ["structured-outputs-2025-11-13"]
+
+        # Check if any tools have strict mode enabled
+        if "tools" in payload and isinstance(payload["tools"], list):
+            has_strict_tool = any(
+                isinstance(tool, dict) and tool.get("strict") is True
+                for tool in payload["tools"]
+            )
+            if has_strict_tool:
+                # Strict tool use requires the structured outputs beta
+                if payload["betas"]:
+                    if "structured-outputs-2025-11-13" not in payload["betas"]:
+                        # Merge with existing betas
+                        payload["betas"] = [
+                            *payload["betas"],
+                            "structured-outputs-2025-11-13",
+                        ]
+                else:
+                    payload["betas"] = ["structured-outputs-2025-11-13"]
+
+            # Auto-append required betas for specific tool types
+            for tool in payload["tools"]:
+                if isinstance(tool, dict) and "type" in tool:
+                    tool_type = tool["type"]
+                    if tool_type in _TOOL_TYPE_TO_BETA:
+                        required_beta = _TOOL_TYPE_TO_BETA[tool_type]
+                        if payload["betas"]:
+                            # Append to existing betas if not already present
+                            if required_beta not in payload["betas"]:
+                                payload["betas"] = [*payload["betas"], required_beta]
+                        else:
+                            payload["betas"] = [required_beta]
+
+        # Auto-append required beta for mcp_servers
+        if payload.get("mcp_servers"):
+            required_beta = "mcp-client-2025-11-20"
+            if payload["betas"]:
+                # Append to existing betas if not already present
+                if required_beta not in payload["betas"]:
+                    payload["betas"] = [*payload["betas"], required_beta]
+            else:
+                payload["betas"] = [required_beta]
 
         return {k: v for k, v in payload.items() if v is not None}
 
@@ -2288,6 +2547,60 @@ class ChatAnthropic(BaseChatModel):
             )
             ```
 
+        ??? example "Computer use tool"
+
+            Claude supports computer use capabilities, allowing it to interact with
+            desktop environments through screenshots, mouse control, and keyboard input.
+
+            !!! warning "Execution environment required"
+
+                LangChain handles the API integration, but **you must provide**:
+
+                - A sandboxed computing environment (Docker, VM, etc.)
+                - A virtual display (e.g., Xvfb)
+                - Code to execute tool calls (screenshot, clicks, typing)
+                - An agent loop to pass results back to Claude
+
+                Anthropic provides a [reference implementation](https://github.com/anthropics/anthropic-quickstarts/tree/main/computer-use-demo).
+
+            !!! note
+
+                Computer use requires:
+
+                - Claude Opus 4.5, Claude 4, or Claude Sonnet 3.7
+                - A sandboxed computing environment with virtual display
+
+            See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool)
+            for setup instructions, model capability, and best practices.
+
+            ```python
+            from langchain_anthropic import ChatAnthropic
+
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
+
+            # LangChain handles the API call and tool binding
+            computer_tool = {
+                "type": "computer_20250124",
+                "name": "computer",
+                "display_width_px": 1024,
+                "display_height_px": 768,
+                "display_number": 1,
+            }
+
+            model_with_computer = model.bind_tools([computer_tool])
+            response = model_with_computer.invoke("Take a screenshot to see what's on the screen")
+
+            # response.tool_calls contains the action Claude wants to perform
+            # You must execute this action in your environment and pass the result back
+            ```
+
+            !!! note "Automatic beta header"
+
+                The required beta header is automatically appended based on the tool
+                version. For `computer_20250124` and `computer_20251124`, the respective
+                `computer-use-2025-01-24` and `computer-use-2025-11-24` beta header is
+                added automatically.
+
         ??? example "Strict tool use"
 
             Strict tool use guarantees that tool names and arguments are validated
@@ -2300,17 +2613,13 @@ class ChatAnthropic(BaseChatModel):
                 - Claude Sonnet 4.5 or Opus 4.1
                 - `langchain-anthropic>=1.1.0`
 
-            To enable strict tool use:
+            To enable strict tool use, specify `strict=True` when calling `bind_tools`.
 
-            1. Specify the `structured-outputs-2025-11-13` beta header
-            2. Specify `strict=True` when calling `bind_tools`
-
-            ```python hl_lines="5 12"
+            ```python hl_lines="11"
             from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(
                 model="claude-sonnet-4-5",
-                betas=["structured-outputs-2025-11-13"],
             )
 
             def get_weather(location: str) -> str:
@@ -2319,6 +2628,12 @@ class ChatAnthropic(BaseChatModel):
 
             model_with_tools = model.bind_tools([get_weather], strict=True)
             ```
+
+            !!! note "Automatic beta header"
+
+                The required `structured-outputs-2025-11-13` beta header is
+                automatically appended to the request when using `strict=True`, so you
+                don't need to manually specify it in the `betas` parameter.
 
             See LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#strict-tool-use)
             for more detail.
@@ -2513,19 +2828,15 @@ class ChatAnthropic(BaseChatModel):
                 - Claude Sonnet 4.5 or Opus 4.1
                 - `langchain-anthropic>=1.1.0`
 
-            To enable native structured output:
+            To enable native structured output, specify `method="json_schema"` when
+            calling `with_structured_output`. (Under the hood, LangChain will
+            append the required `structured-outputs-2025-11-13` beta header)
 
-            1. Specify the `structured-outputs-2025-11-13` beta header
-            2. Specify `method="json_schema"` when calling `with_structured_output`
-
-            ```python hl_lines="6 16"
+            ```python hl_lines="13"
             from langchain_anthropic import ChatAnthropic
             from pydantic import BaseModel, Field
 
-            model = ChatAnthropic(
-                model="claude-sonnet-4-5",
-                betas=["structured-outputs-2025-11-13"],
-            )
+            model = ChatAnthropic(model="claude-sonnet-4-5")
 
             class Movie(BaseModel):
                 \"\"\"A movie with details.\"\"\"
@@ -2713,8 +3024,7 @@ def convert_to_anthropic_tool(
 
             !!! note
 
-                Requires Claude Sonnet 4.5 or Opus 4.1 and the
-                `structured-outputs-2025-11-13` beta header.
+                Requires Claude Sonnet 4.5 or Opus 4.1.
 
     Returns:
         An Anthropic tool definition dict.
