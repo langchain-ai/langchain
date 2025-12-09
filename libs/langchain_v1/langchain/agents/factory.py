@@ -619,6 +619,33 @@ def create_agent(  # noqa: PLR0915
             schema for merging with middleware state schemas. This allows users to
             add custom state fields without needing to create custom middleware.
 
+            !!! warning "Custom State Fields Require state_schema"
+
+                If you need to track custom fields in your agent state (beyond `messages`),
+                you **must** provide a `state_schema` that extends `AgentState` and includes
+                those fields. Without `state_schema`, only the `messages` field will be
+                preserved in the runtime state, and any additional fields passed during
+                invocation will be silently ignored.
+
+                Example:
+
+                ```python
+                from typing import Annotated
+                from langchain.agents import AgentState, create_agent
+                from langgraph.graph import add_messages
+
+                class MyState(AgentState):
+                    messages: Annotated[list, add_messages]
+                    authenticated: bool
+                    password: str
+
+                agent = create_agent(
+                    model=model,
+                    tools=tools,
+                    state_schema=MyState,  # Required for custom fields!
+                )
+                ```
+
             Generally, it's recommended to use `state_schema` extensions via middleware
             to keep relevant extensions scoped to corresponding hooks / tools.
         context_schema: An optional schema for runtime context.
