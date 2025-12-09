@@ -17,6 +17,7 @@ from typing import (
     Literal,
     TypeVar,
     cast,
+    get_type_hints,
 )
 
 import pytest
@@ -2252,7 +2253,6 @@ def test_create_retriever_tool_get_type_hints() -> None:
     raises TypeError on functools.partial objects. Tools like LangGraph's
     ToolNode call get_type_hints(tool.func) to generate schemas.
     """
-    from typing import get_type_hints
 
     class MyRetriever(BaseRetriever):
         @override
