@@ -2169,6 +2169,7 @@ def test_programmatic_tool_use(output_version: str) -> None:
     model = ChatAnthropic(
         model="claude-sonnet-4-5",
         betas=["advanced-tool-use-2025-11-20"],
+        reuse_last_container=True,
         output_version=output_version,
     )
 
@@ -2236,6 +2237,7 @@ def test_programmatic_tool_use_streaming(output_version: str) -> None:
     model = ChatAnthropic(
         model="claude-sonnet-4-5",
         betas=["advanced-tool-use-2025-11-20"],
+        reuse_last_container=True,
         streaming=True,
         output_version=output_version,
     )

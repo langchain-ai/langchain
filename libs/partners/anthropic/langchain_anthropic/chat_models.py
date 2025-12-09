@@ -1816,6 +1816,16 @@ class ChatAnthropic(BaseChatModel):
     [context management](https://platform.claude.com/docs/en/build-with-claude/context-editing).
     """
 
+    reuse_last_container: bool | None = None
+    """Automatically reuse container from most recent response (code execution).
+
+    When using the built-in
+    [code execution tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool),
+    model responses will include container metadata. Set `reuse_last_container=True`
+    to automatically reuse the container from the most recent response for subsequent
+    invocations.
+    """
+
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
@@ -2077,17 +2087,18 @@ class ChatAnthropic(BaseChatModel):
             else:
                 payload["betas"] = ["structured-outputs-2025-11-13"]
 
-        # Traverse messages backward, check for most recent AIMessage with container
-        # set in response_metadata, set as top-level param
-        for message in reversed(messages):
-            if (
-                isinstance(message, AIMessage)
-                and (container := message.response_metadata.get("container"))
-                and isinstance(container, dict)
-                and (container_id := container.get("id"))
-            ):
-                payload["container"] = container_id
-                break
+        if self.reuse_last_container:
+            # Check for most recent AIMessage with container set in response_metadata
+            # and set as a top-level param on the request
+            for message in reversed(messages):
+                if (
+                    isinstance(message, AIMessage)
+                    and (container := message.response_metadata.get("container"))
+                    and isinstance(container, dict)
+                    and (container_id := container.get("id"))
+                ):
+                    payload["container"] = container_id
+                    break
 
         # Check if any tools have strict mode enabled
         if "tools" in payload and isinstance(payload["tools"], list):
