@@ -5,16 +5,18 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 import openai
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import Self
-
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.utils import secret_from_env
 from langchain_openai.chat_models.base import (
     BaseChatOpenAI,
     _convert_from_v1_to_chat_completions,
+)
+from langchain_openai.chat_models.base import (
     _convert_message_to_dict as _openai_convert_message_to_dict,
 )
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from typing_extensions import Self
+
 from langchain_xai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
