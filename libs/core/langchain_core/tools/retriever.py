@@ -14,7 +14,7 @@ from langchain_core.prompts import (
     aformat_document,
     format_document,
 )
-from langchain_core.tools.simple import Tool
+from langchain_core.tools.structured import StructuredTool
 
 if TYPE_CHECKING:
     from langchain_core.retrievers import BaseRetriever
@@ -79,7 +79,7 @@ def create_retriever_tool(
             return (content, docs)
         return content
 
-    return Tool(
+    return StructuredTool(
         name=name,
         description=description,
         func=func,
