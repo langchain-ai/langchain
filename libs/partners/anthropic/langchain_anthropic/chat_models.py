@@ -1879,7 +1879,7 @@ class ChatAnthropic(BaseChatModel):
     """Automatically reuse container from most recent response (code execution).
 
     When using the built-in
-    [code execution tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool),
+    [code execution tool](https://docs.langchain.com/oss/python/integrations/chat/anthropic#code-execution),
     model responses will include container metadata. Set `reuse_last_container=True`
     to automatically reuse the container from the most recent response for subsequent
     invocations.
