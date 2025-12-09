@@ -419,20 +419,32 @@ class ToolCallLimitMiddleware(
         ]
 
         if self.exit_behavior == "end":
-            # Check if there are tool calls to other tools that would continue executing
-            other_tools = [
-                tc
-                for tc in last_ai_message.tool_calls
-                if self.tool_name is not None and tc["name"] != self.tool_name
-            ]
+            # If limiting a specific tool, we can't safely end if other tools are pending.
+            if self.tool_name is not None:
+                other_tools = [
+                    tc for tc in last_ai_message.tool_calls if tc["name"] != self.tool_name
+                ]
+                if other_tools:
+                    tool_names = ", ".join({tc["name"] for tc in other_tools})
+                    msg = (
+                        "Cannot end execution with other tool calls pending. "
+                        f"Found calls to: {tool_names}. Use 'continue' or 'error' instead."
+                    )
+                    raise NotImplementedError(msg)
 
-            if other_tools:
-                tool_names = ", ".join({tc["name"] for tc in other_tools})
-                msg = (
-                    f"Cannot end execution with other tool calls pending. "
-                    f"Found calls to: {tool_names}. Use 'continue' or 'error' behavior instead."
+            # For global limiters, cancel all proposed tool calls so every tool_call_id
+            # has a corresponding ToolMessage. For tool-specific limiters, we only cancel
+            # the blocked calls above (we cannot safely end if other tool names are present).
+            if self.tool_name is None:
+                artificial_messages.extend(
+                    ToolMessage(
+                        content=tool_msg_content,
+                        tool_call_id=tool_call["id"],
+                        name=tool_call.get("name"),
+                        status="error",
+                    )
+                    for tool_call in allowed_calls
                 )
-                raise NotImplementedError(msg)
 
             # Build final AI message content (displayed to user - includes thread/run details)
             # Use hypothetical thread count (what it would have been if call wasn't blocked)

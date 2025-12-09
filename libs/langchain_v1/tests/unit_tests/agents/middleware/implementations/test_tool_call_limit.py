@@ -1,7 +1,13 @@
 """Unit tests for ToolCallLimitMiddleware."""
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
+from langchain_core.language_models.chat_models import BaseChatModel
+from typing import Any
+
+from langchain_core.callbacks import AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolCall, ToolMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
 
@@ -357,6 +363,33 @@ def test_run_limit_with_multiple_human_messages():
     )
 
 
+def test_end_behavior_inserts_tool_messages_for_all_calls():
+    """Ensure exit_behavior='end' cancels every proposed tool call."""
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                ToolCall(name="search", args={}, id="id-a"),
+                ToolCall(name="search", args={}, id="id-b"),
+            ]
+        ]
+    )
+    limiter = ToolCallLimitMiddleware(run_limit=1, exit_behavior="end")
+    agent = create_agent(
+        model=model,
+        tools=[tool],
+        middleware=[limiter],
+        checkpointer=InMemorySaver(),
+    )
+
+    result = agent.invoke(
+        {"messages": [HumanMessage("call two tools")]},
+        {"configurable": {"thread_id": "test-thread"}},
+    )
+    tool_msgs = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+    assert {m.tool_call_id for m in tool_msgs} == {"id-a", "id-b"}
+    assert all(m.status == "error" for m in tool_msgs)
+
+
 def test_exception_error_messages():
     """Test that error messages include expected information."""
     # Test for specific tool
@@ -709,7 +742,7 @@ def test_parallel_tool_calls_with_limit_end_mode():
     error_tool_messages = [msg for msg in tool_messages if msg.status == "error"]
 
     assert len(successful_tool_messages) == 0, "No tools execute when we jump to end"
-    assert len(error_tool_messages) == 2, "Should have 2 blocked tool messages (q2, q3)"
+    assert len(error_tool_messages) == 3, "Should have 3 cancelled tool messages (q1, q2, q3)"
 
     # Verify error tool messages (sent to model - include "Do not" instruction)
     for error_msg in error_tool_messages:
