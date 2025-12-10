@@ -90,8 +90,7 @@ def test_on_model_call_decorator() -> None:
 
     @wrap_model_call(state_schema=CustomState, tools=[test_tool], name="CustomOnModelCall")
     def custom_on_model_call(request, handler):
-        request.system_prompt = "Modified"
-        return handler(request)
+        return handler(request.override(system_prompt="Modified"))
 
     # Verify all options were applied
     assert isinstance(custom_on_model_call, AgentMiddleware)
@@ -277,8 +276,7 @@ def test_async_on_model_call_decorator() -> None:
 
     @wrap_model_call(state_schema=CustomState, tools=[test_tool], name="AsyncOnModelCall")
     async def async_on_model_call(request, handler):
-        request.system_prompt = "Modified async"
-        return await handler(request)
+        return await handler(request.override(system_prompt="Modified async"))
 
     assert isinstance(async_on_model_call, AgentMiddleware)
     assert async_on_model_call.state_schema == CustomState

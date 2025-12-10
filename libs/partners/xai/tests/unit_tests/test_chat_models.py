@@ -23,6 +23,11 @@ def test_initialization() -> None:
     ChatXAI(model=MODEL_NAME)
 
 
+def test_profile() -> None:
+    model = ChatXAI(model="grok-4")
+    assert model.profile
+
+
 def test_xai_model_param() -> None:
     llm = ChatXAI(model="foo")
     assert llm.model_name == "foo"

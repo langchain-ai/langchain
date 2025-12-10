@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
 try:
-    from jinja2 import Environment, meta
+    from jinja2 import meta
     from jinja2.sandbox import SandboxedEnvironment
 
     _HAS_JINJA2 = True
@@ -61,13 +61,9 @@ def jinja2_formatter(template: str, /, **kwargs: Any) -> str:
         )
         raise ImportError(msg)
 
-    # This uses a sandboxed environment to prevent arbitrary code execution.
-    # Jinja2 uses an opt-out rather than opt-in approach for sand-boxing.
-    # Please treat this sand-boxing as a best-effort approach rather than
-    # a guarantee of security.
-    # We recommend to never use jinja2 templates with untrusted inputs.
-    # https://jinja.palletsprojects.com/en/3.1.x/sandbox/
-    # approach not a guarantee of security.
+    # Use a restricted sandbox that blocks ALL attribute/method access
+    # Only simple variable lookups like {{variable}} are allowed
+    # Attribute access like {{variable.attr}} or {{variable.method()}} is blocked
     return SandboxedEnvironment().from_string(template).render(**kwargs)
 
 
@@ -103,7 +99,7 @@ def _get_jinja2_variables_from_template(template: str) -> set[str]:
             "Please install it with `pip install jinja2`."
         )
         raise ImportError(msg)
-    env = Environment()  # noqa: S701
+    env = SandboxedEnvironment()
     ast = env.parse(template)
     return meta.find_undeclared_variables(ast)
 
@@ -272,6 +268,30 @@ def get_template_variables(template: str, template_format: str) -> list[str]:
     else:
         msg = f"Unsupported template format: {template_format}"
         raise ValueError(msg)
+
+    # For f-strings, block attribute access and indexing syntax
+    # This prevents template injection attacks via accessing dangerous attributes
+    if template_format == "f-string":
+        for var in input_variables:
+            # Formatter().parse() returns field names with dots/brackets if present
+            # e.g., "obj.attr" or "obj[0]" - we need to block these
+            if "." in var or "[" in var or "]" in var:
+                msg = (
+                    f"Invalid variable name {var!r} in f-string template. "
+                    f"Variable names cannot contain attribute "
+                    f"access (.) or indexing ([])."
+                )
+                raise ValueError(msg)
+
+            # Block variable names that are all digits (e.g., "0", "100")
+            # These are interpreted as positional arguments, not keyword arguments
+            if var.isdigit():
+                msg = (
+                    f"Invalid variable name {var!r} in f-string template. "
+                    f"Variable names cannot be all digits as they are interpreted "
+                    f"as positional arguments."
+                )
+                raise ValueError(msg)
 
     return sorted(input_variables)
 

@@ -354,6 +354,7 @@ def convert_to_openai_function(
         ValueError: If function is not in a supported format.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.16"
+
         `description` and `parameters` keys are now optional. Only `name` is
         required and guaranteed to be part of the output.
     """
@@ -478,15 +479,18 @@ def convert_to_openai_tool(
         OpenAI tool-calling API.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.16"
+
         `description` and `parameters` keys are now optional. Only `name` is
         required and guaranteed to be part of the output.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.44"
+
         Return OpenAI Responses API-style tools unchanged. This includes
         any dict with `"type"` in `"file_search"`, `"function"`,
         `"computer_use_preview"`, `"web_search_preview"`.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.63"
+
         Added support for OpenAI's image generation built-in tool.
     """
     # Import locally to prevent circular import
