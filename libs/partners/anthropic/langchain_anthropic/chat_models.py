@@ -171,9 +171,9 @@ def _is_builtin_tool(tool: Any) -> bool:
         "web_search_",
         "web_fetch_",
         "code_execution_",
+        "mcp_toolset",
         "memory_",
         "tool_search_",
-        "mcp_toolset",
     ]
     return any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
 
@@ -456,7 +456,7 @@ def _format_messages(
                         if (
                             isinstance(message, AIMessage)
                             and (block["id"] in [tc["id"] for tc in message.tool_calls])
-                            and "caller" not in block  # take caller from content
+                            and not block.get("caller")
                         ):
                             overlapping = [
                                 tc
@@ -484,8 +484,8 @@ def _format_messages(
                                 input=args,
                                 id=block["id"],
                             )
-                            if "caller" in block:
-                                tool_use_block["caller"] = block["caller"]
+                            if caller := block.get("caller"):
+                                tool_use_block["caller"] = caller
                             content.append(tool_use_block)
                     elif block["type"] in ("server_tool_use", "mcp_tool_use"):
                         formatted_block = {
@@ -2327,19 +2327,17 @@ class ChatAnthropic(BaseChatModel):
 
         # Remove citations if they are None - introduced in anthropic sdk 0.45
         for block in content:
-            if (
-                isinstance(block, dict)
-                and "citations" in block
-                and block["citations"] is None
-            ):
-                block.pop("citations")
-            if (
-                isinstance(block, dict)
-                and block.get("type") == "thinking"
-                and "text" in block
-                and block["text"] is None
-            ):
-                block.pop("text")
+            if isinstance(block, dict):
+                if "citations" in block and block["citations"] is None:
+                    block.pop("citations")
+                if "caller" in block and block["caller"] is None:
+                    block.pop("caller")
+                if (
+                    block.get("type") == "thinking"
+                    and "text" in block
+                    and block["text"] is None
+                ):
+                    block.pop("text")
 
         llm_output = {
             k: v for k, v in data_dict.items() if k not in ("content", "role", "type")
@@ -3256,6 +3254,8 @@ def _make_message_chunk_from_anthropic_event(
             warnings.warn("Received unexpected tool content block.", stacklevel=2)
 
         content_block = event.content_block.model_dump()
+        if "caller" in content_block and content_block["caller"] is None:
+            content_block.pop("caller")
         content_block["index"] = event.index
         if event.content_block.type == "tool_use":
             if (
