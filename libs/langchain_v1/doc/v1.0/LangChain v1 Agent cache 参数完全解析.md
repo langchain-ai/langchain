@@ -125,92 +125,246 @@ class CachePolicy(Generic[KeyFuncT]):
 
 ---
 
-## 三、三种 Cache 实现
+## 三、三种 Cache 实现及构造参数详解
 
 ### 3.1 InMemoryCache（内存缓存）
 
-```11:73:/Users/cong/code/github/langgraph/libs/checkpoint/langgraph/cache/memory/__init__.py
+**导入路径：**
+```python
+from langgraph.cache.memory import InMemoryCache
+```
+
+**构造函数参数：**
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `serde` | `SerializerProtocol \| None` | `None` | 序列化器，默认使用 `JsonPlusSerializer` |
+
+**源码定义：**
+```python
 class InMemoryCache(BaseCache[ValueT]):
     def __init__(self, *, serde: SerializerProtocol | None = None):
         super().__init__(serde=serde)
         self._cache: dict[Namespace, dict[str, tuple[str, bytes, float | None]]] = {}
         self._lock = threading.RLock()
+```
 
-    def get(self, keys: Sequence[FullKey]) -> dict[FullKey, ValueT]:
-        """Get the cached values for the given keys."""
-        with self._lock:
-            if not keys:
-                return {}
-            now = datetime.datetime.now(datetime.timezone.utc).timestamp()
-            values: dict[FullKey, ValueT] = {}
-            for ns_tuple, key in keys:
-                ns = Namespace(ns_tuple)
-                if ns in self._cache and key in self._cache[ns]:
-                    enc, val, expiry = self._cache[ns][key]
-                    if expiry is None or now < expiry:
-                        values[(ns, key)] = self.serde.loads_typed((enc, val))
-                    else:
-                        del self._cache[ns][key]  # 过期自动删除
-            return values
-    # ... set, clear 等方法
+**内部数据结构：**
+```python
+# _cache 的结构：
+# {
+#     ("__cache_writes__", "func_hash", "node_name"): {  # Namespace
+#         "input_hash_key": (encoding, value_bytes, expiry_timestamp),
+#     }
+# }
+```
+
+**使用示例：**
+```python
+from langgraph.cache.memory import InMemoryCache
+
+# 最简单的用法 - 无参数
+cache = InMemoryCache()
+
+# 使用自定义序列化器（高级用法）
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
+cache = InMemoryCache(serde=JsonPlusSerializer(pickle_fallback=True))
 ```
 
 **特点：**
-- 存储在进程内存中
-- 进程重启后丢失
-- 最快的缓存方式
-- 适合开发测试
+- ✅ 最快的缓存方式（纯内存）
+- ✅ 无需外部依赖
+- ✅ 线程安全（使用 `threading.RLock`）
+- ❌ 进程重启后丢失
+- ❌ 不支持多进程共享
+- 📍 适合：开发测试、单进程应用
+
+---
 
 ### 3.2 SqliteCache（文件缓存）
 
-```13:120:/Users/cong/code/github/langgraph/libs/checkpoint-sqlite/langgraph/cache/sqlite/__init__.py
-class SqliteCache(BaseCache[ValueT]):
-    """File-based cache using SQLite."""
+**导入路径：**
+```python
+from langgraph.cache.sqlite import SqliteCache
+```
 
-    def __init__(self, *, path: str, serde: SerializerProtocol | None = None) -> None:
+**构造函数参数：**
+
+| 参数 | 类型 | 默认值 | 必填 | 说明 |
+|------|------|--------|------|------|
+| `path` | `str` | - | ✅ **必填** | SQLite 数据库文件路径 |
+| `serde` | `SerializerProtocol \| None` | `None` | ❌ | 序列化器 |
+
+**源码定义：**
+```python
+class SqliteCache(BaseCache[ValueT]):
+    def __init__(
+        self,
+        *,
+        path: str,  # ← 必填参数
+        serde: SerializerProtocol | None = None,
+    ) -> None:
         super().__init__(serde=serde)
         self._conn = sqlite3.connect(path, check_same_thread=False)
         self._lock = threading.RLock()
         self._conn.execute("PRAGMA journal_mode=WAL;")
-        self._conn.execute(
-            """CREATE TABLE IF NOT EXISTS cache (
-                ns TEXT,
-                key TEXT,
-                expiry REAL,
-                encoding TEXT NOT NULL,
-                val BLOB NOT NULL,
-                PRIMARY KEY (ns, key)
-            )"""
-        )
+        # 自动创建表...
+```
+
+**数据库表结构：**
+```sql
+CREATE TABLE IF NOT EXISTS cache (
+    ns TEXT,           -- 命名空间 (如 "__cache_writes__,func_hash,node_name")
+    key TEXT,          -- 缓存 key (输入的 xxhash)
+    expiry REAL,       -- 过期时间戳 (NULL 表示永不过期)
+    encoding TEXT NOT NULL,  -- 序列化编码类型
+    val BLOB NOT NULL,       -- 序列化后的值
+    PRIMARY KEY (ns, key)
+);
+```
+
+**使用示例：**
+```python
+from langgraph.cache.sqlite import SqliteCache
+
+# 指定数据库文件路径
+cache = SqliteCache(path="./my_cache.db")
+
+# 使用绝对路径
+cache = SqliteCache(path="/var/data/agent_cache.db")
+
+# 内存数据库（不持久化，但比 InMemoryCache 慢）
+cache = SqliteCache(path=":memory:")
 ```
 
 **特点：**
-- 持久化到本地文件
-- 进程重启后保留
-- 适合单机生产环境
+- ✅ 持久化存储（进程重启后保留）
+- ✅ 无需外部服务
+- ✅ 线程安全
+- ✅ 使用 WAL 模式提高并发性能
+- ❌ 单机部署，不支持分布式
+- 📍 适合：单机生产环境、需要持久化的场景
+
+---
 
 ### 3.3 RedisCache（分布式缓存）
 
-```10:144:/Users/cong/code/github/langgraph/libs/checkpoint/langgraph/cache/redis/__init__.py
-class RedisCache(BaseCache[ValueT]):
-    """Redis-based cache implementation with TTL support."""
+**导入路径：**
+```python
+from langgraph.cache.redis import RedisCache
+```
 
+**构造函数参数：**
+
+| 参数 | 类型 | 默认值 | 必填 | 说明 |
+|------|------|--------|------|------|
+| `redis` | `Any` | - | ✅ **必填** | Redis 客户端实例（如 `redis.Redis`） |
+| `serde` | `SerializerProtocol \| None` | `None` | ❌ | 序列化器 |
+| `prefix` | `str` | `"langgraph:cache:"` | ❌ | Redis key 前缀，用于命名空间隔离 |
+
+**源码定义：**
+```python
+class RedisCache(BaseCache[ValueT]):
     def __init__(
         self,
-        redis: Any,
+        redis: Any,  # ← 必填：Redis 客户端
         *,
         serde: SerializerProtocol | None = None,
-        prefix: str = "langgraph:cache:",
+        prefix: str = "langgraph:cache:",  # ← 默认前缀
     ) -> None:
         super().__init__(serde=serde)
         self.redis = redis
         self.prefix = prefix
 ```
 
+**Redis Key 格式：**
+```
+{prefix}{namespace}:{key}
+
+示例：
+langgraph:cache:__cache_writes__:func_hash:model:abc123def456
+```
+
+**使用示例：**
+```python
+import redis
+from langgraph.cache.redis import RedisCache
+
+# 基本用法
+redis_client = redis.Redis(host='localhost', port=6379, db=0)
+cache = RedisCache(redis=redis_client)
+
+# 指定自定义前缀（推荐，用于区分不同应用）
+cache = RedisCache(
+    redis=redis_client,
+    prefix="myapp:agent:cache:"  # 自定义前缀
+)
+
+# 带密码的 Redis
+redis_client = redis.Redis(
+    host='redis.example.com',
+    port=6379,
+    password='your_password',
+    db=0,
+    decode_responses=False  # 重要：保持 False 以处理二进制数据
+)
+cache = RedisCache(redis=redis_client)
+
+# 使用连接池（生产推荐）
+pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
+redis_client = redis.Redis(connection_pool=pool)
+cache = RedisCache(redis=redis_client)
+```
+
 **特点：**
-- 分布式共享缓存
-- 支持原生 TTL
-- 适合多实例生产环境
+- ✅ 分布式共享（多实例/多进程共享）
+- ✅ 原生 TTL 支持
+- ✅ 高性能
+- ❌ 需要 Redis 服务
+- ❌ 需要额外依赖 `pip install redis`
+- 📍 适合：分布式部署、多实例共享缓存
+
+---
+
+### 3.4 参数来源说明
+
+**`serde` 参数从哪里来？**
+
+```python
+# 默认使用 JsonPlusSerializer，来自：
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
+
+# 默认配置
+serde = JsonPlusSerializer(pickle_fallback=True)
+
+# 序列化流程：
+# 1. 对象 → JsonPlusSerializer.dumps_typed() → (encoding, bytes)
+# 2. (encoding, bytes) → JsonPlusSerializer.loads_typed() → 对象
+
+# 你可以自定义：
+from langgraph.checkpoint.serde.encrypted import EncryptedSerializer
+
+# 加密存储（需要安装 pycryptodome）
+encrypted_serde = EncryptedSerializer.from_pycryptodome_aes()
+cache = SqliteCache(path="./cache.db", serde=encrypted_serde)
+```
+
+**Redis 客户端从哪里来？**
+
+```python
+# 需要安装：pip install redis
+import redis
+
+# 同步客户端
+redis_client = redis.Redis(host='localhost', port=6379, db=0)
+
+# 或者使用 Redis URL
+redis_client = redis.from_url("redis://localhost:6379/0")
+
+# 如果使用 Redis Cluster
+from redis.cluster import RedisCluster
+redis_client = RedisCluster(host="localhost", port=6379)
+```
 
 ---
 
@@ -315,9 +469,235 @@ class RedisCache(BaseCache[ValueT]):
 
 ---
 
-## 五、Cache Key 生成机制
+## 五、Cache 在 Agent 主循环中的详细位置
 
-### 5.1 默认 key 函数
+### 5.1 Agent invoke() 执行主循环源码
+
+以下是 `Pregel.invoke()` 方法的核心循环部分，展示 cache 的精确调用位置：
+
+```2640:2648:/Users/cong/code/github/langgraph/libs/langgraph/langgraph/pregel/main.py
+# Similarly to Bulk Synchronous Parallel / Pregel model
+# computation proceeds in steps, while there are channel updates.
+# Channel updates from step N are only visible in step N+1
+# channels are guaranteed to be immutable for the duration of the step,
+# with channel updates applied only at the transition between steps.
+while loop.tick():                                          # ← 主循环
+    for task in loop.match_cached_writes():                 # ← 🔥 CACHE 命中检查
+        loop.output_writes(task.id, task.writes, cached=True)
+    for _ in runner.tick(
+        [t for t in loop.tasks.values() if not t.writes],   # ← 只执行未命中缓存的任务
+        timeout=self.step_timeout,
+        get_waiter=get_waiter,
+        schedule_task=loop.accept_push,
+    ):
+        # emit output
+```
+
+### 5.2 详细执行流程图（带源码位置）
+
+```
+╔══════════════════════════════════════════════════════════════════════════════════════════════╗
+║                        Agent 执行主循环中 Cache 的精确位置                                     ║
+╠══════════════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                              ║
+║   agent.invoke({"messages": [HumanMessage("hello")]})                                        ║
+║                            │                                                                 ║
+║                            ▼                                                                 ║
+║   ┌──────────────────────────────────────────────────────────────────────────────────────┐  ║
+║   │  Pregel.invoke() / Pregel.stream()                                                   │  ║
+║   │  📍 源码位置: langgraph/pregel/main.py:2579-2599                                     │  ║
+║   │                                                                                      │  ║
+║   │  with SyncPregelLoop(                                                                │  ║
+║   │      input,                                                                          │  ║
+║   │      cache=cache,              # ← cache 传入                                        │  ║
+║   │      cache_policy=self.cache_policy,  # ← 全局缓存策略                               │  ║
+║   │      ...                                                                             │  ║
+║   │  ) as loop:                                                                          │  ║
+║   └──────────────────────────────────────────────────────────────────────────────────────┘  ║
+║                            │                                                                 ║
+║                            ▼                                                                 ║
+║   ╔══════════════════════════════════════════════════════════════════════════════════════╗  ║
+║   ║                         主循环: while loop.tick()                                    ║  ║
+║   ║                         📍 源码位置: langgraph/pregel/main.py:2640                   ║  ║
+║   ╠══════════════════════════════════════════════════════════════════════════════════════╣  ║
+║   ║                                                                                      ║  ║
+║   ║  ┌──────────────────────────────────────────────────────────────────────────────┐   ║  ║
+║   ║  │  STEP 1: loop.tick() - 准备任务                                              │   ║  ║
+║   ║  │  📍 源码位置: langgraph/pregel/_loop.py:459-536                              │   ║  ║
+║   ║  │                                                                              │   ║  ║
+║   ║  │  self.tasks = prepare_next_tasks(                                            │   ║  ║
+║   ║  │      ...,                                                                    │   ║  ║
+║   ║  │      cache_policy=self.cache_policy,  # ← 传入 cache_policy                  │   ║  ║
+║   ║  │  )                                                                           │   ║  ║
+║   ║  │                                                                              │   ║  ║
+║   ║  │  内部调用 _algo.py 生成每个任务的 cache_key:                                 │   ║  ║
+║   ║  │  📍 源码位置: langgraph/pregel/_algo.py:645-664                              │   ║  ║
+║   ║  │                                                                              │   ║  ║
+║   ║  │  if cache_policy:                                                            │   ║  ║
+║   ║  │      args_key = cache_policy.key_func(input)  # 序列化输入                   │   ║  ║
+║   ║  │      cache_key = CacheKey(                                                   │   ║  ║
+║   ║  │          ns=("__cache_writes__", func_hash, node_name),                      │   ║  ║
+║   ║  │          key=xxh3_128_hexdigest(args_key),    # 输入的 hash                  │   ║  ║
+║   ║  │          ttl=cache_policy.ttl                                                │   ║  ║
+║   ║  │      )                                                                       │   ║  ║
+║   ║  │                                                                              │   ║  ║
+║   ║  │  task = PregelExecutableTask(..., cache_key=cache_key)                       │   ║  ║
+║   ║  └──────────────────────────────────────────────────────────────────────────────┘   ║  ║
+║   ║                            │                                                         ║  ║
+║   ║                            ▼                                                         ║  ║
+║   ║  ┌──────────────────────────────────────────────────────────────────────────────┐   ║  ║
+║   ║  │  STEP 2: loop.match_cached_writes() - 🔥 缓存命中检查                        │   ║  ║
+║   ║  │  📍 源码位置: langgraph/pregel/_loop.py:1040-1053                            │   ║  ║
+║   ║  │                                                                              │   ║  ║
+║   ║  │  def match_cached_writes(self) -> Sequence[PregelExecutableTask]:            │   ║  ║
+║   ║  │      if self.cache is None:                                                  │   ║  ║
+║   ║  │          return ()  # ← 没有 cache，直接返回                                 │   ║  ║
+║   ║  │                                                                              │   ║  ║
+║   ║  │      # 收集所有有 cache_key 且还没有 writes 的任务                           │   ║  ║
+║   ║  │      cached = {                                                              │   ║  ║
+║   ║  │          (t.cache_key.ns, t.cache_key.key): t                                │   ║  ║
+║   ║  │          for t in self.tasks.values()                                        │   ║  ║
+║   ║  │          if t.cache_key and not t.writes                                     │   ║  ║
+║   ║  │      }                                                                       │   ║  ║
+║   ║  │                                                                              │   ║  ║
+║   ║  │      # 批量查询缓存                                                          │   ║  ║
+║   ║  │      for key, values in self.cache.get(tuple(cached)).items():               │   ║  ║
+║   ║  │          task = cached[key]                                                  │   ║  ║
+║   ║  │          task.writes.extend(values)  # ← 🎯 命中！直接使用缓存的 writes      │   ║  ║
+║   ║  │          matched.append(task)                                                │   ║  ║
+║   ║  │                                                                              │   ║  ║
+║   ║  │      return matched                                                          │   ║  ║
+║   ║  └──────────────────────────────────────────────────────────────────────────────┘   ║  ║
+║   ║                            │                                                         ║  ║
+║   ║              ┌─────────────┴─────────────┐                                          ║  ║
+║   ║              │                           │                                          ║  ║
+║   ║              ▼                           ▼                                          ║  ║
+║   ║  ┌─────────────────────────┐  ┌─────────────────────────────────────────────────┐   ║  ║
+║   ║  │   缓存命中 (CACHE HIT)  │  │  缓存未命中 (CACHE MISS)                        │   ║  ║
+║   ║  │                         │  │                                                 │   ║  ║
+║   ║  │  # 输出缓存的结果       │  │  STEP 3: runner.tick() - 实际执行任务           │   ║  ║
+║   ║  │  loop.output_writes(    │  │  📍 源码位置: langgraph/pregel/main.py:2643     │   ║  ║
+║   ║  │      task.id,           │  │                                                 │   ║  ║
+║   ║  │      task.writes,       │  │  for _ in runner.tick(                          │   ║  ║
+║   ║  │      cached=True  # ←   │  │      [t for t in loop.tasks.values()            │   ║  ║
+║   ║  │  )                      │  │       if not t.writes],  # ← 只执行未命中的     │   ║  ║
+║   ║  │                         │  │      ...                                        │   ║  ║
+║   ║  │  ⚡ 跳过实际执行！      │  │  ):                                             │   ║  ║
+║   ║  │                         │  │      ...                                        │   ║  ║
+║   ║  └─────────────────────────┘  │                                                 │   ║  ║
+║   ║                               │  # 任务执行（调用 LLM、工具等）                 │   ║  ║
+║   ║                               │  # 执行完成后调用 put_writes                    │   ║  ║
+║   ║                               └─────────────────────────────────────────────────┘   ║  ║
+║   ║                                             │                                        ║  ║
+║   ║                                             ▼                                        ║  ║
+║   ║  ┌──────────────────────────────────────────────────────────────────────────────┐   ║  ║
+║   ║  │  STEP 4: loop.put_writes() - 🔥 写入缓存                                     │   ║  ║
+║   ║  │  📍 源码位置: langgraph/pregel/_loop.py:1063-1079                            │   ║  ║
+║   ║  │                                                                              │   ║  ║
+║   ║  │  def put_writes(self, task_id: str, writes: WritesT) -> None:                │   ║  ║
+║   ║  │      super().put_writes(task_id, writes)  # 先调用父类方法                   │   ║  ║
+║   ║  │                                                                              │   ║  ║
+║   ║  │      # 检查是否需要写入缓存                                                  │   ║  ║
+║   ║  │      if not writes or self.cache is None:                                    │   ║  ║
+║   ║  │          return                                                              │   ║  ║
+║   ║  │      task = self.tasks.get(task_id)                                          │   ║  ║
+║   ║  │      if task is None or task.cache_key is None:                              │   ║  ║
+║   ║  │          return  # ← 没有 cache_key，不写入缓存                              │   ║  ║
+║   ║  │                                                                              │   ║  ║
+║   ║  │      # 异步写入缓存（不阻塞主流程）                                          │   ║  ║
+║   ║  │      self.submit(                                                            │   ║  ║
+║   ║  │          self.cache.set,                                                     │   ║  ║
+║   ║  │          {                                                                   │   ║  ║
+║   ║  │              (task.cache_key.ns, task.cache_key.key): (                      │   ║  ║
+║   ║  │                  task.writes,           # ← 缓存任务的输出                   │   ║  ║
+║   ║  │                  task.cache_key.ttl     # ← 使用配置的 TTL                   │   ║  ║
+║   ║  │              )                                                               │   ║  ║
+║   ║  │          },                                                                  │   ║  ║
+║   ║  │      )                                                                       │   ║  ║
+║   ║  │      # 🎯 下次相同输入的任务将直接命中缓存！                                 │   ║  ║
+║   ║  └──────────────────────────────────────────────────────────────────────────────┘   ║  ║
+║   ║                            │                                                         ║  ║
+║   ║                            ▼                                                         ║  ║
+║   ║  ┌──────────────────────────────────────────────────────────────────────────────┐   ║  ║
+║   ║  │  STEP 5: loop.after_tick() - 完成当前步骤                                    │   ║  ║
+║   ║  │  📍 源码位置: langgraph/pregel/_loop.py:538-571                              │   ║  ║
+║   ║  │                                                                              │   ║  ║
+║   ║  │  # 应用 writes 到 channels                                                   │   ║  ║
+║   ║  │  # 保存 checkpoint                                                           │   ║  ║
+║   ║  │  # 检查是否需要中断                                                          │   ║  ║
+║   ║  └──────────────────────────────────────────────────────────────────────────────┘   ║  ║
+║   ║                            │                                                         ║  ║
+║   ║                            ▼                                                         ║  ║
+║   ║                     继续下一轮 tick() 或退出循环                                     ║  ║
+║   ╚══════════════════════════════════════════════════════════════════════════════════════╝  ║
+║                                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════╝
+```
+
+### 5.3 关键时序图
+
+```
+时间轴 →
+
+第一次调用 (CACHE MISS):
+┌───────────────────────────────────────────────────────────────────────────────────┐
+│ tick()           match_cached_writes()     runner.tick()       put_writes()       │
+│   │                      │                      │                   │             │
+│   ▼                      ▼                      ▼                   ▼             │
+│ 生成             查询缓存                 实际执行任务        写入缓存            │
+│ cache_key        (未命中)                 (调用 LLM)         (异步)              │
+│   │                      │                      │                   │             │
+│   │ cache_key ──────────►│ get() ──► {}        │                   │             │
+│   │ = CacheKey(          │                      │                   │             │
+│   │   ns, hash, ttl      │                      │ LLM API call      │             │
+│   │ )                    │                      │ ............      │             │
+│   │                      │                      │ → writes          │             │
+│   │                      │                      │                   │             │
+│   │                      │                      └───────────────────► set({       │
+│   │                      │                                           │   key:     │
+│   │                      │                                           │   (writes, │
+│   │                      │                                           │    ttl)    │
+│   │                      │                                           │ })         │
+└───────────────────────────────────────────────────────────────────────────────────┘
+
+第二次相同调用 (CACHE HIT):
+┌───────────────────────────────────────────────────────────────────────────────────┐
+│ tick()           match_cached_writes()     runner.tick()       put_writes()       │
+│   │                      │                      │                   │             │
+│   ▼                      ▼                                                        │
+│ 生成             查询缓存                 ⚡ 跳过执行！                           │
+│ cache_key        (命中!)                                                          │
+│   │                      │                                                        │
+│   │ cache_key ──────────►│ get() ──► {key: writes}                               │
+│   │ (相同的 hash)        │                                                        │
+│   │                      │                                                        │
+│   │                      │ task.writes = cached_writes                            │
+│   │                      │ output_writes(cached=True)                             │
+│   │                      │                                                        │
+│   │                      │ ⚡ 直接返回缓存结果，无需调用 LLM！                    │
+└───────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 5.4 Cache 相关的源码文件索引
+
+| 文件路径 | 关键函数/类 | 作用 |
+|----------|-------------|------|
+| `langgraph/pregel/main.py` | `Pregel.invoke()` | 主入口，创建 loop 并传入 cache |
+| `langgraph/pregel/_loop.py` | `SyncPregelLoop` | 主循环，包含 match_cached_writes, put_writes |
+| `langgraph/pregel/_loop.py:459` | `tick()` | 单次迭代，准备任务 |
+| `langgraph/pregel/_loop.py:1040` | `match_cached_writes()` | 批量查询缓存命中 |
+| `langgraph/pregel/_loop.py:1063` | `put_writes()` | 任务完成后写入缓存 |
+| `langgraph/pregel/_algo.py:645` | cache_key 生成逻辑 | 生成 CacheKey(ns, key, ttl) |
+| `langgraph/cache/base/__init__.py` | `BaseCache` | 缓存抽象基类 |
+| `langgraph/cache/memory/__init__.py` | `InMemoryCache` | 内存缓存实现 |
+| `langgraph/cache/sqlite/__init__.py` | `SqliteCache` | SQLite 缓存实现 |
+| `langgraph/cache/redis/__init__.py` | `RedisCache` | Redis 缓存实现 |
+
+---
+
+## 六、Cache Key 生成机制
+
+### 6.1 默认 key 函数
 
 ```26:31:/Users/cong/code/github/langgraph/libs/langgraph/langgraph/_internal/_cache.py
 def default_cache_key(*args: Any, **kwargs: Any) -> str | bytes:
@@ -329,7 +709,7 @@ def default_cache_key(*args: Any, **kwargs: Any) -> str | bytes:
     return pickle.dumps((_freeze(args), _freeze(kwargs)), protocol=5, fix_imports=False)
 ```
 
-### 5.2 完整的 cache_key 生成（_algo.py）
+### 6.2 完整的 cache_key 生成（_algo.py）
 
 ```645:664:/Users/cong/code/github/langgraph/libs/langgraph/langgraph/pregel/_algo.py
 cache_policy = proc.cache_policy or cache_policy
@@ -361,9 +741,9 @@ else:
 
 ---
 
-## 六、缓存命中与写入逻辑
+## 七、缓存命中与写入逻辑
 
-### 6.1 缓存命中检查（执行前）
+### 7.1 缓存命中检查（执行前）
 
 ```1040:1053:/Users/cong/code/github/langgraph/libs/langgraph/langgraph/pregel/_loop.py
 def match_cached_writes(self) -> Sequence[PregelExecutableTask]:
@@ -382,7 +762,7 @@ def match_cached_writes(self) -> Sequence[PregelExecutableTask]:
     return matched
 ```
 
-### 6.2 缓存写入（执行后）
+### 7.2 缓存写入（执行后）
 
 ```1063:1079:/Users/cong/code/github/langgraph/libs/langgraph/langgraph/pregel/_loop.py
 def put_writes(self, task_id: str, writes: WritesT) -> None:
@@ -406,9 +786,9 @@ def put_writes(self, task_id: str, writes: WritesT) -> None:
 
 ---
 
-## 七、使用场景
+## 八、使用场景
 
-### 7.1 场景一：缓存昂贵的 API 调用
+### 8.1 场景一：缓存昂贵的 API 调用
 
 ```python
 from langgraph.cache.memory import InMemoryCache
@@ -441,7 +821,7 @@ result1 = agent.invoke({"messages": [HumanMessage("搜索 Python")]})
 result2 = agent.invoke({"messages": [HumanMessage("搜索 Python")]})
 ```
 
-### 7.2 场景二：持久化缓存（跨进程重启）
+### 8.2 场景二：持久化缓存（跨进程重启）
 
 ```python
 from langgraph.cache.sqlite import SqliteCache
@@ -458,7 +838,7 @@ agent = create_agent(
 # 即使进程重启，之前的缓存仍然有效！
 ```
 
-### 7.3 场景三：分布式缓存（多实例共享）
+### 8.3 场景三：分布式缓存（多实例共享）
 
 ```python
 import redis
@@ -477,7 +857,7 @@ agent = create_agent(
 # 多个 Agent 实例可以共享缓存！
 ```
 
-### 7.4 场景四：带 TTL 的节点级缓存策略
+### 8.4 场景四：带 TTL 的节点级缓存策略
 
 如果你需要更精细的控制，可以在 LangGraph 中直接使用 `CachePolicy`：
 
@@ -509,7 +889,258 @@ compiled = graph.compile(cache=InMemoryCache())
 
 ---
 
-## 八、Cache vs Checkpointer vs Store 对比
+## 九、查询和调试缓存数据
+
+### 9.1 InMemoryCache - 直接访问内部数据
+
+```python
+from langgraph.cache.memory import InMemoryCache
+
+cache = InMemoryCache()
+
+# ... 使用 agent 一段时间后 ...
+
+# 直接查看内部缓存结构
+print("缓存的命名空间：", list(cache._cache.keys()))
+
+# 查看某个命名空间下的所有 key
+for ns, entries in cache._cache.items():
+    print(f"\n命名空间: {ns}")
+    for key, (encoding, value_bytes, expiry) in entries.items():
+        print(f"  Key: {key[:20]}...")  # key 通常很长，只显示前 20 位
+        print(f"  过期时间: {expiry}")
+        # 解码查看值
+        value = cache.serde.loads_typed((encoding, value_bytes))
+        print(f"  值: {value}")
+
+# 手动查询特定 key
+from langgraph.cache.base import FullKey
+keys_to_query: list[FullKey] = [
+    (("__cache_writes__", "some_hash", "model"), "input_hash_key")
+]
+results = cache.get(keys_to_query)
+print("查询结果：", results)
+
+# 手动清除所有缓存
+cache.clear()
+```
+
+### 9.2 SqliteCache - 使用 SQL 查询
+
+```python
+from langgraph.cache.sqlite import SqliteCache
+import sqlite3
+
+cache = SqliteCache(path="./cache.db")
+
+# ... 使用 agent 一段时间后 ...
+
+# 方法 1：通过 cache 对象的内部连接查询
+with cache._lock:
+    cursor = cache._conn.execute("SELECT ns, key, expiry FROM cache")
+    for row in cursor.fetchall():
+        ns, key, expiry = row
+        print(f"命名空间: {ns}")
+        print(f"Key: {key[:20]}...")
+        print(f"过期时间: {expiry}")
+        print("---")
+
+# 方法 2：直接打开数据库文件查询
+conn = sqlite3.connect("./cache.db")
+
+# 查看所有缓存条目数量
+cursor = conn.execute("SELECT COUNT(*) FROM cache")
+print(f"缓存条目总数: {cursor.fetchone()[0]}")
+
+# 查看所有命名空间
+cursor = conn.execute("SELECT DISTINCT ns FROM cache")
+for (ns,) in cursor.fetchall():
+    print(f"命名空间: {ns}")
+
+# 查看特定节点的缓存
+cursor = conn.execute("""
+    SELECT key, expiry, encoding
+    FROM cache
+    WHERE ns LIKE '%model%'
+""")
+for key, expiry, encoding in cursor.fetchall():
+    print(f"Key: {key[:20]}..., 过期: {expiry}, 编码: {encoding}")
+
+# 删除过期条目
+import time
+now = time.time()
+conn.execute("DELETE FROM cache WHERE expiry IS NOT NULL AND expiry < ?", (now,))
+conn.commit()
+
+# 删除特定节点的缓存
+conn.execute("DELETE FROM cache WHERE ns LIKE '%model%'")
+conn.commit()
+
+conn.close()
+```
+
+### 9.3 RedisCache - 使用 Redis 命令查询
+
+```python
+import redis
+from langgraph.cache.redis import RedisCache
+
+redis_client = redis.Redis(host='localhost', port=6379, db=0)
+cache = RedisCache(redis=redis_client, prefix="myapp:cache:")
+
+# ... 使用 agent 一段时间后 ...
+
+# 查看所有缓存 key
+keys = redis_client.keys("myapp:cache:*")
+print(f"缓存 key 数量: {len(keys)}")
+
+for key in keys[:10]:  # 只显示前 10 个
+    key_str = key.decode() if isinstance(key, bytes) else key
+    print(f"Key: {key_str}")
+
+    # 查看 TTL
+    ttl = redis_client.ttl(key)
+    print(f"  TTL: {ttl} 秒 (-1 表示永不过期, -2 表示不存在)")
+
+    # 查看值大小
+    value = redis_client.get(key)
+    if value:
+        print(f"  值大小: {len(value)} bytes")
+
+# 使用 Redis CLI 查看（命令行）
+# redis-cli KEYS "myapp:cache:*"
+# redis-cli TTL "myapp:cache:__cache_writes__:xxx:model:abc123"
+# redis-cli GET "myapp:cache:__cache_writes__:xxx:model:abc123"
+
+# 删除特定前缀的所有缓存
+keys_to_delete = redis_client.keys("myapp:cache:*model*")
+if keys_to_delete:
+    redis_client.delete(*keys_to_delete)
+    print(f"删除了 {len(keys_to_delete)} 个缓存条目")
+
+# 清除所有缓存
+cache.clear()
+```
+
+---
+
+## 十、清除缓存的方法
+
+### 10.1 通过 Agent 的 `clear_cache()` 方法（推荐）
+
+```python
+from langchain.agents import create_agent
+from langgraph.cache.memory import InMemoryCache
+
+cache = InMemoryCache()
+agent = create_agent(
+    model="openai:gpt-4o",
+    tools=[my_tool],
+    cache=cache,
+)
+
+# 使用 agent...
+
+# 清除所有节点的缓存
+agent.clear_cache()
+
+# 清除特定节点的缓存
+agent.clear_cache(nodes=["model"])  # 只清除 model 节点
+agent.clear_cache(nodes=["tools"])  # 只清除 tools 节点
+
+# 异步版本
+await agent.aclear_cache()
+await agent.aclear_cache(nodes=["model"])
+```
+
+**源码实现：**
+```python
+# langgraph/pregel/main.py
+def clear_cache(self, nodes: Sequence[str] | None = None) -> None:
+    """Clear the cache for the given nodes."""
+    if not self.cache:
+        raise ValueError("No cache is set for this graph. Cannot clear cache.")
+    nodes = nodes or self.nodes.keys()
+    # 收集要清除的命名空间
+    namespaces: list[tuple[str, ...]] = []
+    for node in nodes:
+        if node in self.nodes:
+            namespaces.append(
+                (
+                    CACHE_NS_WRITES,  # "__cache_writes__"
+                    (identifier(self.nodes[node]) or "__dynamic__"),
+                    node,
+                ),
+            )
+    # 清除缓存
+    self.cache.clear(namespaces)
+```
+
+### 10.2 直接调用 Cache 的 `clear()` 方法
+
+```python
+# 清除所有缓存
+cache.clear()
+
+# 清除特定命名空间
+cache.clear(namespaces=[
+    ("__cache_writes__", "func_hash_abc", "model"),
+    ("__cache_writes__", "func_hash_def", "tools"),
+])
+
+# 异步版本
+await cache.aclear()
+```
+
+### 10.3 针对不同 Cache 实现的清除方式
+
+**InMemoryCache：**
+```python
+# 清除所有
+cache._cache.clear()
+
+# 清除特定命名空间
+ns_to_delete = ("__cache_writes__", "xxx", "model")
+if ns_to_delete in cache._cache:
+    del cache._cache[ns_to_delete]
+```
+
+**SqliteCache：**
+```python
+# 清除所有
+cache._conn.execute("DELETE FROM cache")
+cache._conn.commit()
+
+# 清除特定节点
+cache._conn.execute("DELETE FROM cache WHERE ns LIKE '%model%'")
+cache._conn.commit()
+
+# 清除过期条目
+import time
+cache._conn.execute("DELETE FROM cache WHERE expiry < ?", (time.time(),))
+cache._conn.commit()
+```
+
+**RedisCache：**
+```python
+# 清除所有（带前缀）
+keys = cache.redis.keys(f"{cache.prefix}*")
+if keys:
+    cache.redis.delete(*keys)
+
+# 清除特定模式
+keys = cache.redis.keys(f"{cache.prefix}*model*")
+if keys:
+    cache.redis.delete(*keys)
+
+# 使用 Redis CLI
+# redis-cli DEL myapp:cache:__cache_writes__:xxx:model:abc123
+# redis-cli --scan --pattern "myapp:cache:*" | xargs redis-cli DEL
+```
+
+---
+
+## 十一、Cache vs Checkpointer vs Store 对比
 
 | 特性 | Cache | Checkpointer | Store |
 |------|-------|--------------|-------|
@@ -522,7 +1153,9 @@ compiled = graph.compile(cache=InMemoryCache())
 
 ---
 
-## 九、总结
+## 十二、总结
+
+### 核心作用
 
 **`cache: BaseCache | None = None`** 参数的核心作用是：
 
@@ -530,9 +1163,53 @@ compiled = graph.compile(cache=InMemoryCache())
 2. **基于输入内容的 hash 生成 key**，而不是基于 thread_id
 3. **支持 TTL 过期机制**
 4. **跨线程/跨调用共享**，只要输入相同就能命中缓存
-5. **三种实现**：InMemoryCache（开发）、SqliteCache（单机生产）、RedisCache（分布式）
 
-**最佳实践：**
-- 对于 LLM 调用和昂贵 API，启用缓存可以显著提升性能和降低成本
-- 生产环境推荐使用 SqliteCache 或 RedisCache 进行持久化
-- 对于需要实时性的场景，合理设置 TTL 过期时间
+### 三种实现选择指南
+
+| 实现 | 构造参数 | 适用场景 |
+|------|----------|----------|
+| `InMemoryCache()` | `serde` (可选) | 开发测试、单进程应用 |
+| `SqliteCache(path="./cache.db")` | `path` (必填), `serde` (可选) | 单机生产、需要持久化 |
+| `RedisCache(redis=client)` | `redis` (必填), `prefix` (可选), `serde` (可选) | 分布式部署、多实例共享 |
+
+### 最佳实践
+
+```python
+# 开发环境
+from langgraph.cache.memory import InMemoryCache
+cache = InMemoryCache()
+
+# 单机生产
+from langgraph.cache.sqlite import SqliteCache
+cache = SqliteCache(path="/var/data/agent_cache.db")
+
+# 分布式生产
+import redis
+from langgraph.cache.redis import RedisCache
+redis_client = redis.Redis(host='redis-host', port=6379)
+cache = RedisCache(redis=redis_client, prefix="myapp:agent:")
+
+# 使用缓存
+agent = create_agent(
+    model="openai:gpt-4o",
+    tools=[my_tools],
+    cache=cache,
+)
+
+# 查看缓存（调试）
+# InMemoryCache: cache._cache
+# SqliteCache: SELECT * FROM cache
+# RedisCache: redis-cli KEYS "myapp:agent:*"
+
+# 清除缓存
+agent.clear_cache()  # 清除所有
+agent.clear_cache(nodes=["model"])  # 清除特定节点
+```
+
+### 注意事项
+
+- ⚠️ 缓存基于**输入内容**的 hash，输入相同才会命中
+- ⚠️ 缓存的是节点的**完整输出**（writes），包括所有返回值
+- ⚠️ 默认使用 `pickle` 序列化，确保你的数据类型是可序列化的
+- ⚠️ RedisCache 需要安装 `pip install redis`
+- ⚠️ SqliteCache 的数据库文件路径需要有写入权限
