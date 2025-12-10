@@ -128,7 +128,7 @@ class _SchemaSpec(Generic[SchemaT]):
     json_schema: dict[str, Any]
     """JSON schema associated with the schema."""
 
-    strict: bool = False
+    strict: bool | None = None
     """Whether to enforce strict validation of the schema."""
 
     def __init__(
@@ -137,7 +137,7 @@ class _SchemaSpec(Generic[SchemaT]):
         *,
         name: str | None = None,
         description: str | None = None,
-        strict: bool = False,
+        strict: bool | None = None,
     ) -> None:
         """Initialize SchemaSpec with schema and optional parameters."""
         self.schema = schema
@@ -256,7 +256,7 @@ class ProviderStrategy(Generic[SchemaT]):
         self,
         schema: type[SchemaT],
         *,
-        strict: bool = False,
+        strict: bool | None = None,
     ) -> None:
         """Initialize ProviderStrategy with schema.
 
