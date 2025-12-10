@@ -108,6 +108,8 @@ LanguageModelLike = Runnable[LanguageModelInput, LanguageModelOutput]
 LanguageModelOutputVar = TypeVar("LanguageModelOutputVar", AIMessage, str)
 """Type variable for the output of a language model."""
 
+# TypeVar for with_structured_output overloads. Enables precise return type inference
+# when a Pydantic BaseModel or TypedDict is passed as the schema argument.
 _ModelT = TypeVar("_ModelT", bound=BaseModel | Mapping)
 
 
@@ -270,6 +272,10 @@ class BaseLanguageModel(
 
         """
 
+    # Overloads for with_structured_output provide precise return type inference:
+    # - Mapping schema (JSON/dict) -> returns dict
+    # - type[_ModelT] schema (Pydantic/TypedDict) -> returns that specific type
+    # - include_raw=True -> returns dict (with raw response included)
     @overload
     def with_structured_output(
         self,

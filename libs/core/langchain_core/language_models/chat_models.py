@@ -73,6 +73,8 @@ from langchain_core.utils.function_calling import (
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 
+# TypeVar for with_structured_output overloads. Enables precise return type inference
+# when a Pydantic BaseModel or TypedDict is passed as the schema argument.
 _ModelT = TypeVar("_ModelT", bound=BaseModel | Mapping)
 
 if TYPE_CHECKING:
@@ -1506,6 +1508,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """
         raise NotImplementedError
 
+    # Overloads for with_structured_output provide precise return type inference:
+    # - Mapping schema (JSON/dict) -> returns dict
+    # - type[_ModelT] schema (Pydantic/TypedDict) -> returns that specific type
+    # - include_raw=True -> returns dict (with raw response included)
     @overload
     def with_structured_output(
         self,
