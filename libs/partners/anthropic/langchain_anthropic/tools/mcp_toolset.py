@@ -120,9 +120,8 @@ def mcp_toolset(
         ```python title="Enable all tools from an MCP server"
         from langchain_anthropic import ChatAnthropic, tools
 
-        model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-        response = model.invoke(
-            "What tools do you have available?",
+        model = ChatAnthropic(
+            model="claude-sonnet-4-5-20250929",
             mcp_servers=[
                 {
                     "type": "url",
@@ -131,6 +130,9 @@ def mcp_toolset(
                     "authorization_token": "YOUR_TOKEN",
                 }
             ],
+        )
+        response = model.invoke(
+            "What tools do you have available?",
             tools=[tools.mcp_toolset(mcp_server_name="example-mcp")],
         )
         ```

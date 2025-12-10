@@ -899,18 +899,13 @@ class ChatAnthropic(BaseChatModel):
             See LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#token-efficient-tool-use)
             for more detail.
 
-            ```python hl_lines="9"
+            ```python hl_lines="6"
             from langchain_anthropic import ChatAnthropic
             from langchain_core.tools import tool
 
             model = ChatAnthropic(
                 model="claude-sonnet-4-5-20250929",
-                temperature=0,
-                model_kwargs={
-                    "extra_headers": {
-                        "anthropic-beta": "token-efficient-tools-2025-02-19"
-                    }
-                }
+                betas=["token-efficient-tools-2025-02-19"]
             )
 
             @tool
@@ -1151,7 +1146,7 @@ class ChatAnthropic(BaseChatModel):
 
         !!! example
 
-            ```python hl_lines="5-6"
+            ```python hl_lines="6"
             from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(
@@ -1483,8 +1478,7 @@ class ChatAnthropic(BaseChatModel):
         See [`ChatAnthropic.with_structured_output()`][langchain_anthropic.chat_models.ChatAnthropic.with_structured_output]
         for more info, including strict output validation.
 
-        ```python hl_lines="13"
-        from typing import Optional
+        ```python hl_lines="12"
         from pydantic import BaseModel, Field
 
 
@@ -1562,7 +1556,7 @@ class ChatAnthropic(BaseChatModel):
             [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#computer-use)
             for more detail.
 
-            ```python hl_lines="4-8"
+            ```python hl_lines="4-12"
             from langchain_anthropic import ChatAnthropic, tools
 
             model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
@@ -1839,7 +1833,7 @@ class ChatAnthropic(BaseChatModel):
     """List of beta features to enable. If specified, invocations will be routed
     through `client.beta.messages.create`.
 
-    Example: `#!python betas=["mcp-client-2025-04-04"]`
+    Example: `#!python betas=["token-efficient-tools-2025-02-19"]`
     """
     # Can also be passed in w/ model_kwargs, but having it as a param makes better devx
     #
