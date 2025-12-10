@@ -106,8 +106,25 @@ class AnthropicTool(TypedDict):
     cache_control: NotRequired[dict[str, str]]
 
 
-# Some tool types require specific beta headers to be enabled
-# Mapping of tool type patterns to required beta headers
+# ---------------------------------------------------------------------------
+# Built-in Tool Support
+# ---------------------------------------------------------------------------
+# When Anthropic releases new built-in tools, two places may need updating:
+#
+# 1. _TOOL_TYPE_TO_BETA (below) - Add mapping if the tool requires a beta header.
+#     Not all tools need this; only add if API returns a beta header error.
+#
+# 2. _is_builtin_tool() - Add the tool type prefix to _builtin_tool_prefixes.
+#     This ensures the tool dict is passed through to the API unchanged (instead
+#     of being converted via convert_to_anthropic_tool, which may fail).
+#
+# 3. langchain_anthropic/tools/ - Add a factory function for better devx
+#     (IDE autocomplete, type checking, documentation).
+#     NOT required for the tool to work - users can always pass raw dicts.
+# ---------------------------------------------------------------------------
+
+# Some tool types require specific beta headers to be enabled.
+# Mapping of tool type to required beta header.
 _TOOL_TYPE_TO_BETA: dict[str, str] = {
     "web_fetch_20250910": "web-fetch-2025-09-10",
     "code_execution_20250522": "code-execution-2025-05-22",
@@ -123,7 +140,7 @@ _TOOL_TYPE_TO_BETA: dict[str, str] = {
 def _is_builtin_tool(tool: Any) -> bool:
     """Check if a tool is a built-in Anthropic tool.
 
-    [Claude docs for built-in tools](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview)
+    [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview)
     """
     if not isinstance(tool, dict):
         return False
@@ -141,6 +158,7 @@ def _is_builtin_tool(tool: Any) -> bool:
         "code_execution_",
         "memory_",
         "tool_search_",
+        "mcp_toolset",
     ]
     return any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
 
