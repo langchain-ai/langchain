@@ -496,6 +496,24 @@ class ChildTool(BaseTool):
     two-tuple corresponding to the `(content, artifact)` of a `ToolMessage`.
     """
 
+    extras: dict[str, Any] | None = None
+    """Optional provider-specific extra fields for the tool.
+
+    This is used to pass provider-specific configuration that doesn't fit into
+    standard tool fields.
+
+    Example:
+        Anthropic-specific fields like [`cache_control`](https://docs.langchain.com/oss/python/integrations/chat/anthropic#prompt-caching),
+        [`defer_loading`](https://docs.langchain.com/oss/python/integrations/chat/anthropic#tool-search),
+        or `input_examples`.
+
+        ```python
+        @tool(extras={"defer_loading": True, "cache_control": {"type": "ephemeral"}})
+        def my_tool(x: str) -> str:
+            return x
+        ```
+    """
+
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the tool.
 
@@ -696,7 +714,9 @@ class ChildTool(BaseTool):
                 k: getattr(result, k) for k in result_dict if k in tool_input
             }
             for k in self._injected_args_keys:
-                if k == "tool_call_id":
+                if k in tool_input:
+                    validated_input[k] = tool_input[k]
+                elif k == "tool_call_id":
                     if tool_call_id is None:
                         msg = (
                             "When tool includes an InjectedToolCallId "
@@ -707,9 +727,6 @@ class ChildTool(BaseTool):
                         )
                         raise ValueError(msg)
                     validated_input[k] = tool_call_id
-                if k in tool_input:
-                    injected_val = tool_input[k]
-                    validated_input[k] = injected_val
             return validated_input
         return tool_input
 
@@ -878,6 +895,7 @@ class ChildTool(BaseTool):
             name=run_name,
             run_id=run_id,
             inputs=filtered_tool_input,
+            tool_call_id=tool_call_id,
             **kwargs,
         )
 
@@ -1005,6 +1023,7 @@ class ChildTool(BaseTool):
             name=run_name,
             run_id=run_id,
             inputs=filtered_tool_input,
+            tool_call_id=tool_call_id,
             **kwargs,
         )
         content = None
