@@ -1801,18 +1801,15 @@ def test_remote_mcp(output_version: Literal["v0", "v1"]) -> None:
             "type": "url",
             "url": "https://mcp.deepwiki.com/mcp",
             "name": "deepwiki",
-            "tool_configuration": {"enabled": True, "allowed_tools": ["ask_question"]},
             "authorization_token": "PLACEHOLDER",
         },
     ]
 
     llm = ChatAnthropic(
         model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
-        betas=["mcp-client-2025-04-04"],
         mcp_servers=mcp_servers,
-        max_tokens=10_000,  # type: ignore[call-arg]
         output_version=output_version,
-    )
+    ).bind_tools([{"type": "mcp_toolset", "mcp_server_name": "deepwiki"}])
 
     input_message = {
         "role": "user",
@@ -2080,72 +2077,228 @@ def test_context_management() -> None:
     assert full.response_metadata.get("context_management")
 
 
-def test_tool_search() -> None:
-    """Test tool search functionality with both regex and BM25 variants."""
-    # Test with regex variant
-    llm = ChatAnthropic(
-        model="claude-opus-4-5-20251101",  # type: ignore[call-arg]
+@pytest.mark.default_cassette("test_tool_search.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_tool_search(output_version: str) -> None:
+    """Test tool search with LangChain tools using extras parameter."""
+
+    @tool(extras={"defer_loading": True})
+    def get_weather(location: str, unit: str = "fahrenheit") -> str:
+        """Get the current weather for a location.
+
+        Args:
+            location: City name
+            unit: Temperature unit (celsius or fahrenheit)
+        """
+        return f"The weather in {location} is sunny and 72°{unit[0].upper()}"
+
+    @tool(extras={"defer_loading": True})
+    def search_files(query: str) -> str:
+        """Search through files in the workspace.
+
+        Args:
+            query: Search query
+        """
+        return f"Found 3 files matching '{query}'"
+
+    model = ChatAnthropic(
+        model="claude-opus-4-5-20251101", output_version=output_version
     )
 
-    # Define tools with defer_loading
-    tools = [
-        {
-            "type": "tool_search_tool_regex_20251119",
-            "name": "tool_search_tool_regex",
-        },
-        {
-            "name": "get_weather",
-            "description": "Get the current weather for a location",
-            "input_schema": {
-                "type": "object",
-                "properties": {
-                    "location": {"type": "string", "description": "City name"},
-                    "unit": {
-                        "type": "string",
-                        "enum": ["celsius", "fahrenheit"],
-                        "description": "Temperature unit",
-                    },
-                },
-                "required": ["location"],
+    agent = create_agent(  # type: ignore[var-annotated]
+        model,
+        tools=[
+            {
+                "type": "tool_search_tool_regex_20251119",
+                "name": "tool_search_tool_regex",
             },
-            "defer_loading": True,
-        },
-        {
-            "name": "search_files",
-            "description": "Search through files in the workspace",
-            "input_schema": {
-                "type": "object",
-                "properties": {
-                    "query": {"type": "string", "description": "Search query"},
-                },
-                "required": ["query"],
-            },
-            "defer_loading": True,
-        },
-    ]
+            get_weather,
+            search_files,
+        ],
+    )
 
-    llm_with_tools = llm.bind_tools(tools)  # type: ignore[arg-type]
-
-    # Test with a query that should trigger tool search
+    # Test with actual API call
     input_message = {
         "role": "user",
         "content": "What's the weather in San Francisco?",
     }
-    response = llm_with_tools.invoke([input_message])
+    result = agent.invoke({"messages": [input_message]})
+    first_response = result["messages"][1]
+    content_types = [block["type"] for block in first_response.content]
+    if output_version == "v0":
+        assert content_types == [
+            "text",
+            "server_tool_use",
+            "tool_search_tool_result",
+            "text",
+            "tool_use",
+        ]
+    else:
+        # v1
+        assert content_types == [
+            "text",
+            "server_tool_call",
+            "server_tool_result",
+            "text",
+            "tool_call",
+        ]
 
-    # Verify response contains expected block types
-    assert all(isinstance(block, (str, dict)) for block in response.content)
+    answer = result["messages"][-1]
+    assert not answer.tool_calls
+    assert answer.text
 
-    # Check for server_tool_use (tool search) and tool_result blocks
-    block_types = {
-        block["type"]
-        for block in response.content
-        if isinstance(block, dict) and "type" in block
+
+@pytest.mark.default_cassette("test_programmatic_tool_use.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_programmatic_tool_use(output_version: str) -> None:
+    """Test programmatic tool use.
+
+    Implicitly checks that `allowed_callers` in tool extras works.
+    """
+
+    @tool(extras={"allowed_callers": ["code_execution_20250825"]})
+    def get_weather(location: str) -> str:
+        """Get the weather at a location."""
+        return "It's sunny."
+
+    tools: list = [
+        {"type": "code_execution_20250825", "name": "code_execution"},
+        get_weather,
+    ]
+
+    model = ChatAnthropic(
+        model="claude-sonnet-4-5",
+        betas=["advanced-tool-use-2025-11-20"],
+        reuse_last_container=True,
+        output_version=output_version,
+    )
+
+    agent = create_agent(model, tools=tools)  # type: ignore[var-annotated]
+
+    input_query = {
+        "role": "user",
+        "content": "What's the weather in Boston?",
     }
 
-    # Response should contain server_tool_use for tool search
-    # and potentially tool_result with tool_reference blocks
-    assert "server_tool_use" in block_types or "tool_use" in block_types
+    result = agent.invoke({"messages": [input_query]})
+    assert len(result["messages"]) == 4
+    tool_call_message = result["messages"][1]
+    response_message = result["messages"][-1]
+
+    if output_version == "v0":
+        server_tool_use_block = next(
+            block
+            for block in tool_call_message.content
+            if block["type"] == "server_tool_use"
+        )
+        assert server_tool_use_block
+
+        tool_use_block = next(
+            block for block in tool_call_message.content if block["type"] == "tool_use"
+        )
+        assert "caller" in tool_use_block
+
+        code_execution_result = next(
+            block
+            for block in response_message.content
+            if block["type"] == "code_execution_tool_result"
+        )
+        assert code_execution_result["content"]["return_code"] == 0
+    else:
+        server_tool_call_block = next(
+            block
+            for block in tool_call_message.content
+            if block["type"] == "server_tool_call"
+        )
+        assert server_tool_call_block
+
+        tool_call_block = next(
+            block for block in tool_call_message.content if block["type"] == "tool_call"
+        )
+        assert "caller" in tool_call_block["extras"]
+
+        server_tool_result = next(
+            block
+            for block in response_message.content
+            if block["type"] == "server_tool_result"
+        )
+        assert server_tool_result["output"]["return_code"] == 0
+
+
+@pytest.mark.default_cassette("test_programmatic_tool_use_streaming.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_programmatic_tool_use_streaming(output_version: str) -> None:
+    @tool(extras={"allowed_callers": ["code_execution_20250825"]})
+    def get_weather(location: str) -> str:
+        """Get the weather at a location."""
+        return "It's sunny."
+
+    tools: list = [
+        {"type": "code_execution_20250825", "name": "code_execution"},
+        get_weather,
+    ]
+
+    model = ChatAnthropic(
+        model="claude-sonnet-4-5",
+        betas=["advanced-tool-use-2025-11-20"],
+        reuse_last_container=True,
+        streaming=True,
+        output_version=output_version,
+    )
+
+    agent = create_agent(model, tools=tools)  # type: ignore[var-annotated]
+
+    input_query = {
+        "role": "user",
+        "content": "What's the weather in Boston?",
+    }
+
+    result = agent.invoke({"messages": [input_query]})
+    assert len(result["messages"]) == 4
+    tool_call_message = result["messages"][1]
+    response_message = result["messages"][-1]
+
+    if output_version == "v0":
+        server_tool_use_block = next(
+            block
+            for block in tool_call_message.content
+            if block["type"] == "server_tool_use"
+        )
+        assert server_tool_use_block
+
+        tool_use_block = next(
+            block for block in tool_call_message.content if block["type"] == "tool_use"
+        )
+        assert "caller" in tool_use_block
+
+        code_execution_result = next(
+            block
+            for block in response_message.content
+            if block["type"] == "code_execution_tool_result"
+        )
+        assert code_execution_result["content"]["return_code"] == 0
+    else:
+        server_tool_call_block = next(
+            block
+            for block in tool_call_message.content
+            if block["type"] == "server_tool_call"
+        )
+        assert server_tool_call_block
+
+        tool_call_block = next(
+            block for block in tool_call_message.content if block["type"] == "tool_call"
+        )
+        assert "caller" in tool_call_block["extras"]
+
+        server_tool_result = next(
+            block
+            for block in response_message.content
+            if block["type"] == "server_tool_result"
+        )
+        assert server_tool_result["output"]["return_code"] == 0
 
 
 def test_async_shared_client() -> None:
