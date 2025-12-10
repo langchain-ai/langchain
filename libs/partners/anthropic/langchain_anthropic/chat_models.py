@@ -896,6 +896,7 @@ class ChatAnthropic(BaseChatModel):
             return "It's sunny."
 
         model_with_tools = model.bind_tools([get_weather])
+
         response = model_with_tools.invoke(
             "What's the weather in San Francisco?"
         )
@@ -1317,6 +1318,7 @@ class ChatAnthropic(BaseChatModel):
                 ],
             }
         ]
+
         response = model.invoke(messages)
         response.content
         ```
@@ -1366,14 +1368,15 @@ class ChatAnthropic(BaseChatModel):
         for details and configuration options.
 
         ```python hl_lines="5-6"
-        from langchain_anthropic import ChatAnthropic
+        from langchain_anthropic import ChatAnthropic, tools
 
         model = ChatAnthropic(
             model="claude-sonnet-4-5-20250929",
             betas=["context-management-2025-06-27"],
             context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
         )
-        model_with_tools = model.bind_tools([{"type": "web_search_20250305", "name": "web_search"}])
+        model_with_tools = model.bind_tools([tools.web_search_20250305()])
+
         response = model_with_tools.invoke("Search for recent developments in AI")
         ```
 
@@ -1474,17 +1477,11 @@ class ChatAnthropic(BaseChatModel):
 
         ??? example "Web search"
 
-            ```python hl_lines="5-9"
-            from langchain_anthropic import ChatAnthropic
+            ```python hl_lines="4"
+            from langchain_anthropic import ChatAnthropic, tools
 
             model = ChatAnthropic(model="claude-3-5-haiku-20241022")
-
-            tool = {
-                "type": "web_search_20250305",
-                "name": "web_search",
-                "max_uses": 3,
-            }
-            model_with_tools = model.bind_tools([tool])
+            model_with_tools = model.bind_tools([tools.web_search_20250305(max_uses=3)])
 
             response = model_with_tools.invoke("How do I update a web app to TypeScript 5.5?")
             ```
@@ -1494,21 +1491,13 @@ class ChatAnthropic(BaseChatModel):
 
         ??? example "Web fetch (beta)"
 
-            ```python hl_lines="7-11"
-            from langchain_anthropic import ChatAnthropic
+            ```python hl_lines="4"
+            from langchain_anthropic import ChatAnthropic, tools
 
-            model = ChatAnthropic(
-                model="claude-3-5-haiku-20241022",
-            )
+            model = ChatAnthropic(model="claude-3-5-haiku-20241022")
+            model_with_tools = model.bind_tools([tools.web_fetch_20250910(max_uses=3)])
 
-            tool = {
-                "type": "web_fetch_20250910",
-                "name": "web_fetch",
-                "max_uses": 3,
-            }
-            model_with_tools = model.bind_tools([tool])
-
-            response = model_with_tools.invoke("Please analyze the content at https://example.com/article")
+            response = model_with_tools.invoke("Please analyze the content at https://docs.langchain.com/")
             ```
 
             !!! note "Automatic beta header"
@@ -1522,14 +1511,11 @@ class ChatAnthropic(BaseChatModel):
 
         ??? example "Code execution"
 
-            ```python hl_lines="3-6"
-            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
+            ```python hl_lines="4"
+            from langchain_anthropic import ChatAnthropic, tools
 
-            tool = {
-                "type": "code_execution_20250522",
-                "name": "code_execution",
-            }
-            model_with_tools = model.bind_tools([tool])
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
+            model_with_tools = model.bind_tools([tools.code_execution_20250825()])
 
             response = model_with_tools.invoke(
                 "Calculate the mean and standard deviation of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
@@ -1538,8 +1524,8 @@ class ChatAnthropic(BaseChatModel):
 
             !!! note "Automatic beta header"
 
-                The required `code-execution-2025-05-22` beta header is automatically
-                appended to the request when using the `code_execution_20250522` tool
+                The required `code-execution-2025-08-25` beta header is automatically
+                appended to the request when using the `code_execution_20250825` tool
                 type. You don't need to manually specify it in the `betas` parameter.
 
             See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool)
@@ -1547,16 +1533,11 @@ class ChatAnthropic(BaseChatModel):
 
         ??? example "Memory tool"
 
-            ```python hl_lines="5-8"
-            from langchain_anthropic import ChatAnthropic
+            ```python hl_lines="4"
+            from langchain_anthropic import ChatAnthropic, tools
 
             model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-
-            tool = {
-                "type": "memory_20250818",
-                "name": "memory",
-            }
-            model_with_tools = model.bind_tools([tool])
+            model_with_tools = model.bind_tools([tools.memory_20250818()])
 
             response = model_with_tools.invoke("What are my interests?")
             ```
@@ -1605,16 +1586,11 @@ class ChatAnthropic(BaseChatModel):
 
         ??? example "Text editor"
 
-            ```python hl_lines="5-8"
-            from langchain_anthropic import ChatAnthropic
+            ```python hl_lines="4"
+            from langchain_anthropic import ChatAnthropic, tools
 
             model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-
-            tool = {
-                "type": "text_editor_20250124",
-                "name": "str_replace_editor",
-            }
-            model_with_tools = model.bind_tools([tool])
+            model_with_tools = model.bind_tools([tools.text_editor_20250728()])
 
             response = model_with_tools.invoke(
                 "There's a syntax error in my primes.py file. Can you help me fix it?"
@@ -1644,18 +1620,13 @@ class ChatAnthropic(BaseChatModel):
             [LangChain docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#tool-search)
             for more detail.
 
-            ```python hl_lines="8-11 26 36"
-            from langchain_anthropic import ChatAnthropic
+            ```python
+            from langchain_anthropic import ChatAnthropic, tools
 
-            model = ChatAnthropic(
-                model="claude-sonnet-4-5-20250929",
-            )
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 
-            tools = [
-                {
-                    "type": "tool_search_tool_regex_20251119",
-                    "name": "tool_search_tool_regex",
-                },
+            tool_list = [
+                tools.tool_search_regex_20251119(),
                 {
                     "name": "get_weather",
                     "description": "Get the current weather for a location",
@@ -1687,7 +1658,8 @@ class ChatAnthropic(BaseChatModel):
                 ...,
             ]
 
-            model_with_tools = model.bind_tools(tools)
+            model_with_tools = model.bind_tools(tool_list)
+
             response = model_with_tools.invoke("What's the weather in San Francisco?")
             ```
 
@@ -2592,20 +2564,21 @@ class ChatAnthropic(BaseChatModel):
             for setup instructions, model capability, and best practices.
 
             ```python
-            from langchain_anthropic import ChatAnthropic
+            from langchain_anthropic import ChatAnthropic, tools
 
             model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 
             # LangChain handles the API call and tool binding
-            computer_tool = {
-                "type": "computer_20250124",
-                "name": "computer",
-                "display_width_px": 1024,
-                "display_height_px": 768,
-                "display_number": 1,
-            }
+            model_with_computer = model.bind_tools(
+                [
+                    tools.computer_20250124(
+                        display_width_px=1024,
+                        display_height_px=768,
+                        display_number=1,
+                    )
+                ]
+            )
 
-            model_with_computer = model.bind_tools([computer_tool])
             response = model_with_computer.invoke("Take a screenshot to see what's on the screen")
 
             # response.tool_calls contains the action Claude wants to perform
@@ -2864,9 +2837,13 @@ class ChatAnthropic(BaseChatModel):
                 rating: float = Field(..., description="The movie's rating out of 10")
 
             model_with_structure = model.with_structured_output(Movie, method="json_schema")
+
             response = model_with_structure.invoke("Provide details about the movie Inception")
             print(response)
-            # -> Movie(title="Inception", year=2010, director="Christopher Nolan", rating=8.8)
+            ```
+
+            ```output
+            Movie(title="Inception", year=2010, director="Christopher Nolan", rating=8.8)
             ```
         """  # noqa: E501
         if method == "json_mode":
