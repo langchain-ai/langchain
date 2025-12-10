@@ -8,6 +8,7 @@ from typing import Any, Literal, cast
 
 from langchain_core.messages import (
     AnyMessage,
+    AIMessage,
     MessageLikeRepresentation,
     RemoveMessage,
     ToolMessage,
@@ -466,7 +467,41 @@ class SummarizationMiddleware(AgentMiddleware):
             return 0
 
         target_cutoff = len(messages) - messages_to_keep
-        return self._find_safe_cutoff_point(messages, target_cutoff)
+        cutoff = self._find_safe_cutoff_point(messages, target_cutoff)
+
+        # Scan preserved messages to find any orphaned ToolCalls
+        ids_to_find = set()
+        for i in range(cutoff, len(messages)):
+            msg = messages[i]
+            if isinstance(msg, ToolMessage):
+                ids_to_find.add(msg.tool_call_id)
+            # If we find the parent in preserved, we are good for that ID
+            if isinstance(msg, AIMessage):
+                for tc in msg.tool_calls:
+                    if tc["id"] in ids_to_find:
+                        ids_to_find.remove(tc["id"])
+
+        # If ids_to_find is not empty, it means we have orphans.
+        # We must look BACKWARDS from cutoff to find the parents.
+        if ids_to_find:
+            # We iterate backwards from just before the cutoff
+            for i in range(cutoff - 1, -1, -1):
+                msg = messages[i]
+                if isinstance(msg, AIMessage):
+                    found_any = False
+                    for tc in msg.tool_calls:
+                        if tc["id"] in ids_to_find:
+                            ids_to_find.remove(tc["id"])
+                            found_any = True
+
+                    if found_any:
+                        # We found a parent! We must move the cutoff here.
+                        cutoff = i
+
+                if not ids_to_find:
+                    break
+
+        return cutoff
 
     def _find_safe_cutoff_point(self, messages: list[AnyMessage], cutoff_index: int) -> int:
         """Find a safe cutoff point that doesn't split AI/Tool message pairs.
