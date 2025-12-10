@@ -1801,18 +1801,15 @@ def test_remote_mcp(output_version: Literal["v0", "v1"]) -> None:
             "type": "url",
             "url": "https://mcp.deepwiki.com/mcp",
             "name": "deepwiki",
-            "tool_configuration": {"enabled": True, "allowed_tools": ["ask_question"]},
             "authorization_token": "PLACEHOLDER",
         },
     ]
 
     llm = ChatAnthropic(
         model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
-        betas=["mcp-client-2025-04-04"],
         mcp_servers=mcp_servers,
-        max_tokens=10_000,  # type: ignore[call-arg]
         output_version=output_version,
-    )
+    ).bind_tools([{"type": "mcp_toolset", "mcp_server_name": "deepwiki"}])
 
     input_message = {
         "role": "user",
