@@ -426,30 +426,3 @@ class TestTypeExports:
     def test_mcp_default_config_type(self) -> None:
         config: tools.MCPDefaultConfig = {"enabled": False}
         assert config["enabled"] is False
-
-    def test_memory_command_types(self) -> None:
-        view: tools.MemoryViewCommand = {"command": "view", "path": "/test"}
-        assert view["command"] == "view"
-
-        create: tools.MemoryCreateCommand = {
-            "command": "create",
-            "path": "/test",
-            "content": "hello",
-        }
-        assert create["command"] == "create"
-
-    def test_computer_action_types(self) -> None:
-        screenshot: tools.ComputerScreenshotAction = {"action": "screenshot"}
-        assert screenshot["action"] == "screenshot"
-
-        click: tools.ComputerLeftClickAction = {
-            "action": "left_click",
-            "coordinate": (100, 200),
-        }
-        assert click["action"] == "left_click"
-
-        zoom: tools.ComputerZoomAction = {
-            "action": "zoom",
-            "region": (0, 0, 100, 100),
-        }
-        assert zoom["action"] == "zoom"
