@@ -46,11 +46,9 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 from langchain_perplexity.cost_tracking import (
-    CostBreakdown,
     calculate_cost_breakdown,
-    estimate_cost,
 )
-from langchain_perplexity.data._pricing import PERPLEXITY_PRICING, get_model_pricing
+from langchain_perplexity.data._pricing import get_model_pricing
 from langchain_perplexity.data._profiles import _PROFILES
 from langchain_perplexity.output_parsers import (
     ReasoningJsonOutputParser,
@@ -120,27 +118,30 @@ def calculate_cost(
     if pricing is None:
         return None
 
-    input_tokens = usage_metadata.get("input_tokens", 0)
-    output_tokens = usage_metadata.get("output_tokens", 0)
-    output_details = usage_metadata.get("output_token_details", {})
-    reasoning_tokens = output_details.get("reasoning", 0) or 0
-    citation_tokens = output_details.get("citation_tokens", 0) or 0  # type: ignore[typeddict-item]
+    input_tokens = int(usage_metadata.get("input_tokens", 0) or 0)
+    output_tokens = int(usage_metadata.get("output_tokens", 0) or 0)
+    output_details = usage_metadata.get("output_token_details", {}) or {}
+    reasoning_tokens = int(output_details.get("reasoning", 0) or 0)
+    citation_tokens = int(output_details.get("citation_tokens", 0) or 0)  # type: ignore[call-overload]
 
     # Calculate base costs (per million tokens)
     cost = (input_tokens / 1_000_000) * pricing["input_cost_per_million"]
     cost += (output_tokens / 1_000_000) * pricing["output_cost_per_million"]
 
     # Add citation cost if applicable
-    if pricing["citation_cost_per_million"] and citation_tokens > 0:
-        cost += (citation_tokens / 1_000_000) * pricing["citation_cost_per_million"]
+    citation_rate = pricing["citation_cost_per_million"]
+    if citation_rate is not None and citation_tokens > 0:
+        cost += (citation_tokens / 1_000_000) * citation_rate
 
     # Add reasoning cost if applicable
-    if pricing["reasoning_cost_per_million"] and reasoning_tokens > 0:
-        cost += (reasoning_tokens / 1_000_000) * pricing["reasoning_cost_per_million"]
+    reasoning_rate = pricing["reasoning_cost_per_million"]
+    if reasoning_rate is not None and reasoning_tokens > 0:
+        cost += (reasoning_tokens / 1_000_000) * reasoning_rate
 
     # Add search query cost if applicable
-    if pricing["search_cost_per_thousand"] and num_search_queries > 0:
-        cost += (num_search_queries / 1_000) * pricing["search_cost_per_thousand"]
+    search_rate = pricing["search_cost_per_thousand"]
+    if search_rate is not None and num_search_queries > 0:
+        cost += (num_search_queries / 1_000) * search_rate
 
     return cost
 
@@ -498,13 +499,13 @@ class ChatPerplexity(BaseChatModel):
 
         # Calculate and add detailed cost breakdown if usage metadata is available
         if usage_metadata:
-            output_details = usage_metadata.get("output_token_details", {}) or {}
+            output_details: dict = usage_metadata.get("output_token_details", {}) or {}  # type: ignore[assignment]
             cost_breakdown = calculate_cost_breakdown(
                 model_name=model_name,
-                input_tokens=usage_metadata.get("input_tokens", 0),
-                output_tokens=usage_metadata.get("output_tokens", 0),
-                reasoning_tokens=output_details.get("reasoning", 0) or 0,
-                citation_tokens=output_details.get("citation_tokens", 0) or 0,
+                input_tokens=int(usage_metadata.get("input_tokens", 0) or 0),
+                output_tokens=int(usage_metadata.get("output_tokens", 0) or 0),
+                reasoning_tokens=int(output_details.get("reasoning", 0) or 0),
+                citation_tokens=int(output_details.get("citation_tokens", 0) or 0),
                 num_search_queries=num_search_queries,
             )
             response_metadata["cost"] = cost_breakdown.total

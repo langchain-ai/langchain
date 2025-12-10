@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 
 from langchain_perplexity import (
+    PERPLEXITY_PRICING,
     BudgetExceededError,
     CostBreakdown,
     CostSummary,
@@ -20,14 +21,13 @@ from langchain_perplexity import (
     estimate_cost,
     format_cost,
     get_model_pricing,
-    PERPLEXITY_PRICING,
 )
 from langchain_perplexity.chat_models import _create_usage_metadata
-
 
 # ============================================================================
 # EDGE CASE TESTS - "Corner cases, hide bugs do"
 # ============================================================================
+
 
 class TestEdgeCases:
     """Test edge cases that might break in production."""
@@ -104,6 +104,7 @@ class TestEdgeCases:
 # ============================================================================
 # CONCURRENCY TESTS - "Many threads, one tracker"
 # ============================================================================
+
 
 class TestConcurrency:
     """Test thread safety under concurrent load."""
@@ -188,7 +189,7 @@ class TestConcurrency:
             return record.total_cost
 
         with ThreadPoolExecutor(max_workers=20) as executor:
-            results = list(executor.map(simulate_api_call, range(1000)))
+            list(executor.map(simulate_api_call, range(1000)))
 
         assert tracker.summary.call_count == 1000
         assert len(tracker.summary.cost_by_model) == 3  # 3 different models
@@ -197,6 +198,7 @@ class TestConcurrency:
 # ============================================================================
 # BUDGET BEHAVIOR TESTS - "Limits, respect you must"
 # ============================================================================
+
 
 class TestBudgetBehavior:
     """Comprehensive budget management tests."""
@@ -216,12 +218,14 @@ class TestBudgetBehavior:
 
         # Second call should fail even with tiny cost
         with pytest.raises(BudgetExceededError):
-            tracker._record_usage(UsageRecord(
-                model="sonar",
-                input_tokens=1,
-                output_tokens=0,
-                cost_breakdown=CostBreakdown(input_cost=0.000001),
-            ))
+            tracker._record_usage(
+                UsageRecord(
+                    model="sonar",
+                    input_tokens=1,
+                    output_tokens=0,
+                    cost_breakdown=CostBreakdown(input_cost=0.000001),
+                )
+            )
 
     def test_warning_callback_receives_correct_values(self) -> None:
         """Warning callback should get accurate current/budget values."""
@@ -238,12 +242,14 @@ class TestBudgetBehavior:
 
         # Record enough to trigger warning
         with pytest.warns(UserWarning):
-            tracker._record_usage(UsageRecord(
-                model="sonar",
-                input_tokens=1000,
-                output_tokens=500,
-                cost_breakdown=CostBreakdown(output_cost=0.6),  # 60% of budget
-            ))
+            tracker._record_usage(
+                UsageRecord(
+                    model="sonar",
+                    input_tokens=1000,
+                    output_tokens=500,
+                    cost_breakdown=CostBreakdown(output_cost=0.6),  # 60% of budget
+                )
+            )
 
         assert len(received) == 1
         assert received[0][1] == 1.0  # budget
@@ -255,12 +261,14 @@ class TestBudgetBehavior:
 
         # Record massive cost
         for _ in range(100):
-            tracker._record_usage(UsageRecord(
-                model="sonar",
-                input_tokens=1000000,
-                output_tokens=500000,
-                cost_breakdown=CostBreakdown(output_cost=100.0),
-            ))
+            tracker._record_usage(
+                UsageRecord(
+                    model="sonar",
+                    input_tokens=1000000,
+                    output_tokens=500000,
+                    cost_breakdown=CostBreakdown(output_cost=100.0),
+                )
+            )
 
         # Should never raise
         assert tracker.summary.total_cost == 10000.0
@@ -270,12 +278,14 @@ class TestBudgetBehavior:
         tracker = PerplexityCostTracker(budget=1.0)
         assert tracker.remaining_budget == 1.0
 
-        tracker._record_usage(UsageRecord(
-            model="sonar",
-            input_tokens=1000,
-            output_tokens=500,
-            cost_breakdown=CostBreakdown(output_cost=0.3),
-        ))
+        tracker._record_usage(
+            UsageRecord(
+                model="sonar",
+                input_tokens=1000,
+                output_tokens=500,
+                cost_breakdown=CostBreakdown(output_cost=0.3),
+            )
+        )
 
         assert abs(tracker.remaining_budget - 0.7) < 1e-10
 
@@ -297,6 +307,7 @@ class TestBudgetBehavior:
 # INTEGRATION TESTS - "Together, stronger we are"
 # ============================================================================
 
+
 class TestIntegrationScenarios:
     """Real-world usage scenarios."""
 
@@ -313,12 +324,14 @@ class TestIntegrationScenarios:
         ]
 
         for model, inp, out, cost in models:
-            tracker._record_usage(UsageRecord(
-                model=model,
-                input_tokens=inp,
-                output_tokens=out,
-                cost_breakdown=CostBreakdown(output_cost=cost),
-            ))
+            tracker._record_usage(
+                UsageRecord(
+                    model=model,
+                    input_tokens=inp,
+                    output_tokens=out,
+                    cost_breakdown=CostBreakdown(output_cost=cost),
+                )
+            )
 
         summary = tracker.summary
         assert summary.call_count == 4
@@ -332,12 +345,14 @@ class TestIntegrationScenarios:
 
         # First session
         for _ in range(5):
-            tracker._record_usage(UsageRecord(
-                model="sonar",
-                input_tokens=100,
-                output_tokens=50,
-                cost_breakdown=CostBreakdown(output_cost=0.01),
-            ))
+            tracker._record_usage(
+                UsageRecord(
+                    model="sonar",
+                    input_tokens=100,
+                    output_tokens=50,
+                    cost_breakdown=CostBreakdown(output_cost=0.01),
+                )
+            )
 
         # Reset and capture
         session1 = tracker.reset()
@@ -345,12 +360,14 @@ class TestIntegrationScenarios:
         assert session1.total_cost == 0.05
 
         # New session
-        tracker._record_usage(UsageRecord(
-            model="sonar-pro",
-            input_tokens=100,
-            output_tokens=50,
-            cost_breakdown=CostBreakdown(output_cost=0.02),
-        ))
+        tracker._record_usage(
+            UsageRecord(
+                model="sonar-pro",
+                input_tokens=100,
+                output_tokens=50,
+                cost_breakdown=CostBreakdown(output_cost=0.02),
+            )
+        )
 
         assert tracker.summary.call_count == 1
         assert tracker.summary.total_cost == 0.02
@@ -360,23 +377,27 @@ class TestIntegrationScenarios:
         log = []
 
         def log_call(record: UsageRecord, summary: CostSummary) -> None:
-            log.append({
-                "model": record.model,
-                "tokens": record.total_tokens,
-                "cost": record.total_cost,
-                "running_total": summary.total_cost,
-            })
+            log.append(
+                {
+                    "model": record.model,
+                    "tokens": record.total_tokens,
+                    "cost": record.total_cost,
+                    "running_total": summary.total_cost,
+                }
+            )
 
         tracker = PerplexityCostTracker(on_cost_update=log_call)
 
         # Simulate calls
         for i in range(3):
-            tracker._record_usage(UsageRecord(
-                model="sonar",
-                input_tokens=100 * (i + 1),
-                output_tokens=50 * (i + 1),
-                cost_breakdown=CostBreakdown(output_cost=0.01 * (i + 1)),
-            ))
+            tracker._record_usage(
+                UsageRecord(
+                    model="sonar",
+                    input_tokens=100 * (i + 1),
+                    output_tokens=50 * (i + 1),
+                    cost_breakdown=CostBreakdown(output_cost=0.01 * (i + 1)),
+                )
+            )
 
         assert len(log) == 3
         assert log[0]["running_total"] == 0.01
@@ -411,6 +432,7 @@ class TestIntegrationScenarios:
 # PRICING DATA INTEGRITY TESTS - "Trust the data, you must"
 # ============================================================================
 
+
 class TestPricingDataIntegrity:
     """Ensure pricing data is complete and valid."""
 
@@ -432,7 +454,7 @@ class TestPricingDataIntegrity:
         """Prices must be non-negative."""
         for model_name, pricing in PERPLEXITY_PRICING.items():
             for key, value in pricing.items():
-                if value is not None:
+                if value is not None and isinstance(value, (int, float)):
                     assert value >= 0, f"{model_name}.{key} is negative"
 
     def test_pro_models_more_expensive(self) -> None:
@@ -460,6 +482,7 @@ class TestPricingDataIntegrity:
 # ============================================================================
 # SUMMARY STRING FORMATTING TESTS - "Readable, output must be"
 # ============================================================================
+
 
 class TestSummaryFormatting:
     """Test human-readable output formatting."""
@@ -510,6 +533,7 @@ class TestSummaryFormatting:
 # ERROR HANDLING TESTS - "Graceful, failures must be"
 # ============================================================================
 
+
 class TestErrorHandling:
     """Test graceful error handling."""
 
@@ -518,10 +542,15 @@ class TestErrorHandling:
         pricing = get_model_pricing("definitely-not-a-real-model")
         assert pricing is None
 
-        cost = calculate_cost("not-real", _create_usage_metadata({
-            "prompt_tokens": 100,
-            "completion_tokens": 50,
-        }))
+        cost = calculate_cost(
+            "not-real",
+            _create_usage_metadata(
+                {
+                    "prompt_tokens": 100,
+                    "completion_tokens": 50,
+                }
+            ),
+        )
         assert cost is None
 
     def test_empty_usage_metadata_handled(self) -> None:
@@ -531,9 +560,11 @@ class TestErrorHandling:
 
     def test_none_values_in_usage_handled(self) -> None:
         """None values in usage dict should be handled gracefully."""
-        usage = _create_usage_metadata({
-            "prompt_tokens": None,
-            "completion_tokens": None,
-        })
+        usage = _create_usage_metadata(
+            {
+                "prompt_tokens": None,
+                "completion_tokens": None,
+            }
+        )
         # Should default to 0, not crash
         assert usage["input_tokens"] == 0 or usage.get("input_tokens") is None

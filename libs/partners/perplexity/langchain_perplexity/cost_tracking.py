@@ -15,13 +15,13 @@ import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any
 
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import LLMResult
 
-from langchain_perplexity.data._pricing import PERPLEXITY_PRICING, get_model_pricing
+from langchain_perplexity.data._pricing import get_model_pricing
 
 logger = logging.getLogger(__name__)
 
@@ -145,9 +145,7 @@ class CostSummary:
         if self.cost_by_model:
             lines.append("")
             lines.append("Cost by Model:")
-            for model, cost in sorted(
-                self.cost_by_model.items(), key=lambda x: -x[1]
-            ):
+            for model, cost in sorted(self.cost_by_model.items(), key=lambda x: -x[1]):
                 lines.append(f"  {model}: ${cost:.6f}")
 
         return "\n".join(lines)
@@ -364,26 +362,28 @@ def calculate_cost_breakdown(
     breakdown = CostBreakdown()
 
     # Base costs
-    breakdown.input_cost = (input_tokens / 1_000_000) * pricing["input_cost_per_million"]
-    breakdown.output_cost = (
-        (output_tokens / 1_000_000) * pricing["output_cost_per_million"]
-    )
+    breakdown.input_cost = (input_tokens / 1_000_000) * pricing[
+        "input_cost_per_million"
+    ]
+    breakdown.output_cost = (output_tokens / 1_000_000) * pricing[
+        "output_cost_per_million"
+    ]
 
     # Additional costs for deep research
     if pricing["citation_cost_per_million"] and citation_tokens > 0:
-        breakdown.citation_cost = (
-            (citation_tokens / 1_000_000) * pricing["citation_cost_per_million"]
-        )
+        breakdown.citation_cost = (citation_tokens / 1_000_000) * pricing[
+            "citation_cost_per_million"
+        ]
 
     if pricing["reasoning_cost_per_million"] and reasoning_tokens > 0:
-        breakdown.reasoning_cost = (
-            (reasoning_tokens / 1_000_000) * pricing["reasoning_cost_per_million"]
-        )
+        breakdown.reasoning_cost = (reasoning_tokens / 1_000_000) * pricing[
+            "reasoning_cost_per_million"
+        ]
 
     if pricing["search_cost_per_thousand"] and num_search_queries > 0:
-        breakdown.search_cost = (
-            (num_search_queries / 1_000) * pricing["search_cost_per_thousand"]
-        )
+        breakdown.search_cost = (num_search_queries / 1_000) * pricing[
+            "search_cost_per_thousand"
+        ]
 
     return breakdown
 

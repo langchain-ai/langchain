@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 from langchain_core.messages import AIMessageChunk, BaseMessage
 from pytest_mock import MockerFixture
 
-from langchain_perplexity import ChatPerplexity, calculate_cost, PERPLEXITY_PRICING
+from langchain_perplexity import PERPLEXITY_PRICING, ChatPerplexity, calculate_cost
 from langchain_perplexity.chat_models import _create_usage_metadata
 
 
@@ -535,11 +535,13 @@ def test_profile() -> None:
 
 def test_calculate_cost_sonar_basic() -> None:
     """Test cost calculation for sonar model with basic token usage."""
-    usage_metadata = _create_usage_metadata({
-        "prompt_tokens": 1000,
-        "completion_tokens": 500,
-        "total_tokens": 1500,
-    })
+    usage_metadata = _create_usage_metadata(
+        {
+            "prompt_tokens": 1000,
+            "completion_tokens": 500,
+            "total_tokens": 1500,
+        }
+    )
 
     cost = calculate_cost("sonar", usage_metadata)
 
@@ -551,11 +553,13 @@ def test_calculate_cost_sonar_basic() -> None:
 
 def test_calculate_cost_sonar_pro() -> None:
     """Test cost calculation for sonar-pro model."""
-    usage_metadata = _create_usage_metadata({
-        "prompt_tokens": 1000,
-        "completion_tokens": 500,
-        "total_tokens": 1500,
-    })
+    usage_metadata = _create_usage_metadata(
+        {
+            "prompt_tokens": 1000,
+            "completion_tokens": 500,
+            "total_tokens": 1500,
+        }
+    )
 
     cost = calculate_cost("sonar-pro", usage_metadata)
 
@@ -567,11 +571,13 @@ def test_calculate_cost_sonar_pro() -> None:
 
 def test_calculate_cost_sonar_reasoning() -> None:
     """Test cost calculation for sonar-reasoning model."""
-    usage_metadata = _create_usage_metadata({
-        "prompt_tokens": 1000,
-        "completion_tokens": 500,
-        "total_tokens": 1500,
-    })
+    usage_metadata = _create_usage_metadata(
+        {
+            "prompt_tokens": 1000,
+            "completion_tokens": 500,
+            "total_tokens": 1500,
+        }
+    )
 
     cost = calculate_cost("sonar-reasoning", usage_metadata)
 
@@ -583,11 +589,13 @@ def test_calculate_cost_sonar_reasoning() -> None:
 
 def test_calculate_cost_sonar_reasoning_pro() -> None:
     """Test cost calculation for sonar-reasoning-pro model."""
-    usage_metadata = _create_usage_metadata({
-        "prompt_tokens": 1000,
-        "completion_tokens": 500,
-        "total_tokens": 1500,
-    })
+    usage_metadata = _create_usage_metadata(
+        {
+            "prompt_tokens": 1000,
+            "completion_tokens": 500,
+            "total_tokens": 1500,
+        }
+    )
 
     cost = calculate_cost("sonar-reasoning-pro", usage_metadata)
 
@@ -598,14 +606,16 @@ def test_calculate_cost_sonar_reasoning_pro() -> None:
 
 
 def test_calculate_cost_deep_research_with_extras() -> None:
-    """Test cost calculation for sonar-deep-research with citation and reasoning tokens."""
-    usage_metadata = _create_usage_metadata({
-        "prompt_tokens": 33,
-        "completion_tokens": 7163,
-        "total_tokens": 7196,
-        "citation_tokens": 20016,
-        "reasoning_tokens": 73997,
-    })
+    """Test cost calculation for sonar-deep-research with citation/reasoning."""
+    usage_metadata = _create_usage_metadata(
+        {
+            "prompt_tokens": 33,
+            "completion_tokens": 7163,
+            "total_tokens": 7196,
+            "citation_tokens": 20016,
+            "reasoning_tokens": 73997,
+        }
+    )
 
     cost = calculate_cost("sonar-deep-research", usage_metadata, num_search_queries=18)
 
@@ -629,10 +639,12 @@ def test_calculate_cost_deep_research_with_extras() -> None:
 
 def test_calculate_cost_unknown_model() -> None:
     """Test that cost calculation returns None for unknown models."""
-    usage_metadata = _create_usage_metadata({
-        "prompt_tokens": 1000,
-        "completion_tokens": 500,
-    })
+    usage_metadata = _create_usage_metadata(
+        {
+            "prompt_tokens": 1000,
+            "completion_tokens": 500,
+        }
+    )
 
     cost = calculate_cost("unknown-model", usage_metadata)
 
@@ -641,10 +653,12 @@ def test_calculate_cost_unknown_model() -> None:
 
 def test_calculate_cost_zero_tokens() -> None:
     """Test cost calculation with zero tokens."""
-    usage_metadata = _create_usage_metadata({
-        "prompt_tokens": 0,
-        "completion_tokens": 0,
-    })
+    usage_metadata = _create_usage_metadata(
+        {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+        }
+    )
 
     cost = calculate_cost("sonar", usage_metadata)
 

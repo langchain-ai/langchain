@@ -1,7 +1,6 @@
 """Tests for cost tracking functionality."""
 
 import pytest
-from unittest.mock import MagicMock
 
 from langchain_perplexity import (
     BudgetExceededError,
@@ -350,20 +349,24 @@ class TestPerplexityCostTracker:
         tracker = PerplexityCostTracker()
 
         # Record sonar usage
-        tracker._record_usage(UsageRecord(
-            model="sonar",
-            input_tokens=100,
-            output_tokens=50,
-            cost_breakdown=CostBreakdown(output_cost=0.01),
-        ))
+        tracker._record_usage(
+            UsageRecord(
+                model="sonar",
+                input_tokens=100,
+                output_tokens=50,
+                cost_breakdown=CostBreakdown(output_cost=0.01),
+            )
+        )
 
         # Record sonar-pro usage
-        tracker._record_usage(UsageRecord(
-            model="sonar-pro",
-            input_tokens=100,
-            output_tokens=50,
-            cost_breakdown=CostBreakdown(output_cost=0.02),
-        ))
+        tracker._record_usage(
+            UsageRecord(
+                model="sonar-pro",
+                input_tokens=100,
+                output_tokens=50,
+                cost_breakdown=CostBreakdown(output_cost=0.02),
+            )
+        )
 
         assert len(tracker.summary.cost_by_model) == 2
         assert abs(tracker.summary.cost_by_model["sonar"] - 0.01) < 1e-10
@@ -395,7 +398,8 @@ class TestIntegration:
         # 4. Check summary
         assert tracker.summary.call_count == 3
         assert tracker.total_cost > 0
-        assert tracker.remaining_budget > 0
+        remaining = tracker.remaining_budget
+        assert remaining is not None and remaining > 0
 
         # 5. Reset and verify
         final = tracker.reset()
