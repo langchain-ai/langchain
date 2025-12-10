@@ -1815,8 +1815,8 @@ class BaseChatOpenAI(BaseChatModel):
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
-                Supports any tool definition handled by
-                `langchain_core.utils.function_calling.convert_to_openai_tool`.
+
+                Supports any tool definition handled by [`convert_to_openai_tool`][langchain_core.utils.function_calling.convert_to_openai_tool].
             tool_choice: Which tool to require the model to call. Options are:
 
                 - `str` of the form `'<<tool_name>>'`: calls `<<tool_name>>` tool.
