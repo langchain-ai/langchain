@@ -135,13 +135,14 @@ def init_chat_model(
             - `mistralai`               -> [`langchain-mistralai`](https://docs.langchain.com/oss/python/integrations/providers/mistralai)
             - `huggingface`             -> [`langchain-huggingface`](https://docs.langchain.com/oss/python/integrations/providers/huggingface)
             - `groq`                    -> [`langchain-groq`](https://docs.langchain.com/oss/python/integrations/providers/groq)
-            - `ollama`                  -> [`langchain-ollama`](https://docs.langchain.com/oss/python/integrations/providers/ollama)
+            - `ollama`                  -> [`langchain_attempt_infer_model_provider-ollama`](https://docs.langchain.com/oss/python/integrations/providers/ollama)
             - `google_anthropic_vertex` -> [`langchain-google-vertexai`](https://docs.langchain.com/oss/python/integrations/providers/google)
             - `deepseek`                -> [`langchain-deepseek`](https://docs.langchain.com/oss/python/integrations/providers/deepseek)
             - `ibm`                     -> [`langchain-ibm`](https://docs.langchain.com/oss/python/integrations/providers/ibm)
             - `nvidia`                  -> [`langchain-nvidia-ai-endpoints`](https://docs.langchain.com/oss/python/integrations/providers/nvidia)
             - `xai`                     -> [`langchain-xai`](https://docs.langchain.com/oss/python/integrations/providers/xai)
             - `perplexity`              -> [`langchain-perplexity`](https://docs.langchain.com/oss/python/integrations/providers/perplexity)
+            - `qwen`                    -> [`langchain-qwq`](https://docs.langchain.com/oss/python/integrations/chat/qwen)
         configurable_fields: Which model parameters are configurable at runtime:
 
             - `None`: No configurable fields (i.e., a fixed model).
@@ -495,6 +496,11 @@ def _init_chat_model_helper(
         from langchain_perplexity import ChatPerplexity
 
         return ChatPerplexity(model=model, **kwargs)
+    if model_provider == "qwen":
+        _check_pkg("langchain_qwq")
+        from langchain_qwq import ChatQwen
+
+        return ChatQwen(model=model, **kwargs)
     supported = ", ".join(_SUPPORTED_PROVIDERS)
     msg = (
         f"Unsupported {model_provider=}.\n\nSupported model providers are: {supported}"
@@ -523,6 +529,7 @@ _SUPPORTED_PROVIDERS = {
     "ibm",
     "xai",
     "perplexity",
+    "qwen",
 }
 
 
@@ -547,6 +554,8 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
         return "xai"
     if model_name.startswith("sonar"):
         return "perplexity"
+    if model_name.startswith("qwen"):
+        return "qwen"
     return None
 
 

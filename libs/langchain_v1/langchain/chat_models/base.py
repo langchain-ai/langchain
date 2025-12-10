@@ -451,6 +451,11 @@ def _init_chat_model_helper(
         from langchain_perplexity import ChatPerplexity
 
         return ChatPerplexity(model=model, **kwargs)
+    if model_provider == "qwen":
+        _check_pkg("langchain_qwq")
+        from langchain_qwq import ChatQwen
+
+        return ChatQwen(model=model, **kwargs)
     if model_provider == "upstage":
         _check_pkg("langchain_upstage")
         from langchain_upstage import ChatUpstage
@@ -483,6 +488,7 @@ _SUPPORTED_PROVIDERS = {
     "xai",
     "perplexity",
     "upstage",
+    "qwen",
 }
 
 
@@ -509,6 +515,8 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
         return "perplexity"
     if model_name.startswith("solar"):
         return "upstage"
+    if model_name.startswith("qwen"):
+        return "qwen"
     return None
 
 
