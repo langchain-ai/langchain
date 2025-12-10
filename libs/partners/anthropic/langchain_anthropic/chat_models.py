@@ -1589,7 +1589,7 @@ class ChatAnthropic(BaseChatModel):
             [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#remote-mcp)
             for more detail.
 
-            ```python hl_lines="3-14 18 23"
+            ```python hl_lines="3-19 24 29"
             from langchain_anthropic import ChatAnthropic
 
             mcp_servers = [
@@ -1597,11 +1597,17 @@ class ChatAnthropic(BaseChatModel):
                     "type": "url",
                     "url": "https://docs.langchain.com/mcp",
                     "name": "LangChain Docs",
-                    # "tool_configuration": {  # optional configuration
-                    #     "enabled": True,
-                    #     "allowed_tools": ["ask_question"],
-                    # },
                     # "authorization_token": "PLACEHOLDER",  # optional authorization
+                }
+            ]
+
+            # Optional: configure which tools are enabled via mcp_toolset
+            tools = [
+                {
+                    "type": "mcp_toolset",
+                    "mcp_server_name": "LangChain Docs",
+                    # "default_config": {"enabled": False},  # disable all by default
+                    # "configs": {"ask_question": {"enabled": True}},  # allowlist
                 }
             ]
 
@@ -1612,7 +1618,7 @@ class ChatAnthropic(BaseChatModel):
 
             response = model.invoke(
                 "What are LangChain content blocks?",
-                tools=[{"type": "mcp_toolset", "mcp_server_name": "LangChain Docs"}],
+                tools=tools,
             )
             ```
 
