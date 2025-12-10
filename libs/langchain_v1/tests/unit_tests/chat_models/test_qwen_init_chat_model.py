@@ -7,6 +7,7 @@ pytest.importorskip("langchain_qwq")
 
 from langchain_classic.chat_models import init_chat_model
 from langchain_qwq import ChatQwen
+from langchain_tests.conftest import CustomPersister, CustomSerializer
 
 
 def test_init_chat_model_qwen(monkeypatch: pytest.MonkeyPatch) -> None:
