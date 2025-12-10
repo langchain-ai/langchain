@@ -82,14 +82,14 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
     Returns:
         UsageMetadata with properly structured token counts and details.
     """
-    input_tokens = token_usage.get("prompt_tokens", 0)
-    output_tokens = token_usage.get("completion_tokens", 0)
-    total_tokens = token_usage.get("total_tokens", input_tokens + output_tokens)
+    input_tokens = token_usage.get("prompt_tokens") or 0
+    output_tokens = token_usage.get("completion_tokens") or 0
+    total_tokens = token_usage.get("total_tokens") or (input_tokens + output_tokens)
 
     # Build output_token_details for Perplexity-specific fields
     output_token_details: OutputTokenDetails = {}
-    output_token_details["reasoning"] = token_usage.get("reasoning_tokens", 0)
-    output_token_details["citation_tokens"] = token_usage.get("citation_tokens", 0)  # type: ignore[typeddict-unknown-key]
+    output_token_details["reasoning"] = token_usage.get("reasoning_tokens") or 0
+    output_token_details["citation_tokens"] = token_usage.get("citation_tokens") or 0  # type: ignore[typeddict-unknown-key]
 
     return UsageMetadata(
         input_tokens=input_tokens,
