@@ -5,7 +5,7 @@ from langchain.chat_models import init_chat_model
 langchain_qwq = pytest.importorskip("langchain_qwq")
 
 
-def test_init_chat_model_qwen(monkeypatch) -> None:
+def test_init_chat_model_qwen(monkeypatch: pytest.MonkeyPatch) -> None:
     """init_chat_model returns ChatQwen when the qwen provider is used."""
     from langchain_qwq import ChatQwen
 
