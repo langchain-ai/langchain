@@ -7,17 +7,17 @@ from langgraph.runtime import Runtime
 from langgraph.types import interrupt
 from typing_extensions import NotRequired, TypedDict
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState
+from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, StateT
 
 
 class Action(TypedDict):
     """Represents an action with a name and args."""
 
     name: str
-    """The type or name of action being requested (e.g., "add_numbers")."""
+    """The type or name of action being requested (e.g., `'add_numbers'`)."""
 
     args: dict[str, Any]
-    """Key-value pairs of args needed for the action (e.g., {"a": 1, "b": 2})."""
+    """Key-value pairs of args needed for the action (e.g., `{"a": 1, "b": 2}`)."""
 
 
 class ActionRequest(TypedDict):
@@ -27,7 +27,7 @@ class ActionRequest(TypedDict):
     """The name of the action being requested."""
 
     args: dict[str, Any]
-    """Key-value pairs of args needed for the action (e.g., {"a": 1, "b": 2})."""
+    """Key-value pairs of args needed for the action (e.g., `{"a": 1, "b": 2}`)."""
 
     description: NotRequired[str]
     """The description of the action to be reviewed."""
@@ -102,7 +102,7 @@ class HITLResponse(TypedDict):
 class _DescriptionFactory(Protocol):
     """Callable that generates a description for a tool call."""
 
-    def __call__(self, tool_call: ToolCall, state: AgentState, runtime: Runtime) -> str:
+    def __call__(self, tool_call: ToolCall, state: AgentState, runtime: Runtime[ContextT]) -> str:
         """Generate a description for a tool call."""
         ...
 
@@ -138,7 +138,7 @@ class InterruptOnConfig(TypedDict):
         def format_tool_description(
             tool_call: ToolCall,
             state: AgentState,
-            runtime: Runtime
+            runtime: Runtime[ContextT]
         ) -> str:
             import json
             return (
@@ -156,7 +156,7 @@ class InterruptOnConfig(TypedDict):
     """JSON schema for the args associated with the action, if edits are allowed."""
 
 
-class HumanInTheLoopMiddleware(AgentMiddleware):
+class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT]):
     """Human in the loop middleware."""
 
     def __init__(
@@ -169,18 +169,22 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
         Args:
             interrupt_on: Mapping of tool name to allowed actions.
+
                 If a tool doesn't have an entry, it's auto-approved by default.
 
                 * `True` indicates all decisions are allowed: approve, edit, and reject.
                 * `False` indicates that the tool is auto-approved.
                 * `InterruptOnConfig` indicates the specific decisions allowed for this
                     tool.
-                    The InterruptOnConfig can include a `description` field (`str` or
+
+                    The `InterruptOnConfig` can include a `description` field (`str` or
                     `Callable`) for custom formatting of the interrupt description.
             description_prefix: The prefix to use when constructing action requests.
+
                 This is used to provide context about the tool call and the action being
-                requested. Not used if a tool has a `description` in its
-                `InterruptOnConfig`.
+                requested.
+
+                Not used if a tool has a `description` in its `InterruptOnConfig`.
         """
         super().__init__()
         resolved_configs: dict[str, InterruptOnConfig] = {}
@@ -200,7 +204,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         tool_call: ToolCall,
         config: InterruptOnConfig,
         state: AgentState,
-        runtime: Runtime,
+        runtime: Runtime[ContextT],
     ) -> tuple[ActionRequest, ReviewConfig]:
         """Create an ActionRequest and ReviewConfig for a tool call."""
         tool_name = tool_call["name"]
@@ -273,7 +277,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         )
         raise ValueError(msg)
 
-    def after_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+    def after_model(self, state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Trigger interrupt flows for relevant tool calls after an `AIMessage`."""
         messages = state["messages"]
         if not messages:
@@ -283,36 +287,23 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         if not last_ai_msg or not last_ai_msg.tool_calls:
             return None
 
-        # Separate tool calls that need interrupts from those that don't
-        interrupt_tool_calls: list[ToolCall] = []
-        auto_approved_tool_calls = []
-
-        for tool_call in last_ai_msg.tool_calls:
-            interrupt_tool_calls.append(tool_call) if tool_call[
-                "name"
-            ] in self.interrupt_on else auto_approved_tool_calls.append(tool_call)
-
-        # If no interrupts needed, return early
-        if not interrupt_tool_calls:
-            return None
-
-        # Process all tool calls that require interrupts
-        revised_tool_calls: list[ToolCall] = auto_approved_tool_calls.copy()
-        artificial_tool_messages: list[ToolMessage] = []
-
-        # Create action requests and review configs for all tools that need approval
+        # Create action requests and review configs for tools that need approval
         action_requests: list[ActionRequest] = []
         review_configs: list[ReviewConfig] = []
+        interrupt_indices: list[int] = []
 
-        for tool_call in interrupt_tool_calls:
-            config = self.interrupt_on[tool_call["name"]]
+        for idx, tool_call in enumerate(last_ai_msg.tool_calls):
+            if (config := self.interrupt_on.get(tool_call["name"])) is not None:
+                action_request, review_config = self._create_action_and_config(
+                    tool_call, config, state, runtime
+                )
+                action_requests.append(action_request)
+                review_configs.append(review_config)
+                interrupt_indices.append(idx)
 
-            # Create ActionRequest and ReviewConfig using helper method
-            action_request, review_config = self._create_action_and_config(
-                tool_call, config, state, runtime
-            )
-            action_requests.append(action_request)
-            review_configs.append(review_config)
+        # If no interrupts needed, return early
+        if not action_requests:
+            return None
 
         # Create single HITLRequest with all actions and configs
         hitl_request = HITLRequest(
@@ -321,31 +312,46 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         )
 
         # Send interrupt and get response
-        hitl_response: HITLResponse = interrupt(hitl_request)
-        decisions = hitl_response["decisions"]
+        decisions = interrupt(hitl_request)["decisions"]
 
         # Validate that the number of decisions matches the number of interrupt tool calls
-        if (decisions_len := len(decisions)) != (
-            interrupt_tool_calls_len := len(interrupt_tool_calls)
-        ):
+        if (decisions_len := len(decisions)) != (interrupt_count := len(interrupt_indices)):
             msg = (
                 f"Number of human decisions ({decisions_len}) does not match "
-                f"number of hanging tool calls ({interrupt_tool_calls_len})."
+                f"number of hanging tool calls ({interrupt_count})."
             )
             raise ValueError(msg)
 
-        # Process each decision using helper method
-        for i, decision in enumerate(decisions):
-            tool_call = interrupt_tool_calls[i]
-            config = self.interrupt_on[tool_call["name"]]
+        # Process decisions and rebuild tool calls in original order
+        revised_tool_calls: list[ToolCall] = []
+        artificial_tool_messages: list[ToolMessage] = []
+        decision_idx = 0
 
-            revised_tool_call, tool_message = self._process_decision(decision, tool_call, config)
-            if revised_tool_call:
-                revised_tool_calls.append(revised_tool_call)
-            if tool_message:
-                artificial_tool_messages.append(tool_message)
+        for idx, tool_call in enumerate(last_ai_msg.tool_calls):
+            if idx in interrupt_indices:
+                # This was an interrupt tool call - process the decision
+                config = self.interrupt_on[tool_call["name"]]
+                decision = decisions[decision_idx]
+                decision_idx += 1
+
+                revised_tool_call, tool_message = self._process_decision(
+                    decision, tool_call, config
+                )
+                if revised_tool_call is not None:
+                    revised_tool_calls.append(revised_tool_call)
+                if tool_message:
+                    artificial_tool_messages.append(tool_message)
+            else:
+                # This was auto-approved - keep original
+                revised_tool_calls.append(tool_call)
 
         # Update the AI message to only include approved tool calls
         last_ai_msg.tool_calls = revised_tool_calls
 
         return {"messages": [last_ai_msg, *artificial_tool_messages]}
+
+    async def aafter_model(
+        self, state: AgentState, runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
+        """Async trigger interrupt flows for relevant tool calls after an `AIMessage`."""
+        return self.after_model(state, runtime)

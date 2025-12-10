@@ -8,7 +8,6 @@ import logging
 import types
 import typing
 import uuid
-from collections.abc import Callable
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -33,6 +32,8 @@ from langchain_core.utils.json_schema import dereference_refs
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from langchain_core.tools import BaseTool
 
 logger = logging.getLogger(__name__)
@@ -352,6 +353,7 @@ def convert_to_openai_function(
         ValueError: If function is not in a supported format.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.16"
+
         `description` and `parameters` keys are now optional. Only `name` is
         required and guaranteed to be part of the output.
     """
@@ -476,15 +478,18 @@ def convert_to_openai_tool(
         OpenAI tool-calling API.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.16"
+
         `description` and `parameters` keys are now optional. Only `name` is
         required and guaranteed to be part of the output.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.44"
+
         Return OpenAI Responses API-style tools unchanged. This includes
         any dict with `"type"` in `"file_search"`, `"function"`,
         `"computer_use_preview"`, `"web_search_preview"`.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.63"
+
         Added support for OpenAI's image generation built-in tool.
     """
     # Import locally to prevent circular import

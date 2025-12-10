@@ -120,6 +120,30 @@ def test_openai_client_caching() -> None:
     assert llm1.root_client._client is not llm7.root_client._client
 
 
+def test_profile() -> None:
+    model = ChatOpenAI(model="gpt-4")
+    assert model.profile
+    assert not model.profile["structured_output"]
+
+    model = ChatOpenAI(model="gpt-5")
+    assert model.profile
+    assert model.profile["structured_output"]
+    assert model.profile["tool_calling"]
+
+    # Test overwriting a field
+    model.profile["tool_calling"] = False
+    assert not model.profile["tool_calling"]
+
+    # Test we didn't mutate
+    model = ChatOpenAI(model="gpt-5")
+    assert model.profile
+    assert model.profile["tool_calling"]
+
+    # Test passing in profile
+    model = ChatOpenAI(model="gpt-5", profile={"tool_calling": False})
+    assert model.profile == {"tool_calling": False}
+
+
 def test_openai_o1_temperature() -> None:
     llm = ChatOpenAI(model="o1-preview")
     assert llm.temperature == 1
@@ -3002,3 +3026,33 @@ def test_gpt_5_temperature(use_responses_api: bool) -> None:
     messages = [HumanMessage(content="Hello")]
     payload = llm._get_request_payload(messages)
     assert payload["temperature"] == 0.5  # gpt-5-chat is exception
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+@pytest.mark.parametrize(
+    "model_name",
+    [
+        "GPT-5-NANO",
+        "GPT-5-2025-01-01",
+        "Gpt-5-Turbo",
+        "gPt-5-mini",
+    ],
+)
+def test_gpt_5_temperature_case_insensitive(
+    use_responses_api: bool, model_name: str
+) -> None:
+    llm = ChatOpenAI(
+        model=model_name, temperature=0.5, use_responses_api=use_responses_api
+    )
+
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+    for chat_model in ["GPT-5-CHAT", "Gpt-5-Chat", "gpt-5-chat"]:
+        llm = ChatOpenAI(
+            model=chat_model, temperature=0.7, use_responses_api=use_responses_api
+        )
+        messages = [HumanMessage(content="Hello")]
+        payload = llm._get_request_payload(messages)
+        assert payload["temperature"] == 0.7

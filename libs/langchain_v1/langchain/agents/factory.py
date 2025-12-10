@@ -63,6 +63,18 @@ if TYPE_CHECKING:
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
+FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
+    # if model profile data are not available, these models are assumed to support
+    # structured output
+    "grok",
+    "gpt-5",
+    "gpt-4.1",
+    "gpt-4o",
+    "gpt-oss",
+    "o3-pro",
+    "o3-mini",
+]
+
 
 def _normalize_to_model_response(result: ModelResponse | AIMessage) -> ModelResponse:
     """Normalize middleware return value to ModelResponse."""
@@ -349,11 +361,13 @@ def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> l
     return []
 
 
-def _supports_provider_strategy(model: str | BaseChatModel) -> bool:
+def _supports_provider_strategy(model: str | BaseChatModel, tools: list | None = None) -> bool:
     """Check if a model supports provider-specific structured output.
 
     Args:
         model: Model name string or `BaseChatModel` instance.
+        tools: Optional list of tools provided to the agent. Needed because some models
+            don't support structured output together with tool calling.
 
     Returns:
         `True` if the model supports provider-specific structured output, `False` otherwise.
@@ -362,11 +376,23 @@ def _supports_provider_strategy(model: str | BaseChatModel) -> bool:
     if isinstance(model, str):
         model_name = model
     elif isinstance(model, BaseChatModel):
-        model_name = getattr(model, "model_name", None)
+        model_name = (
+            getattr(model, "model_name", None)
+            or getattr(model, "model", None)
+            or getattr(model, "model_id", "")
+        )
+        model_profile = model.profile
+        if (
+            model_profile is not None
+            and model_profile.get("structured_output")
+            # We make an exception for Gemini models, which currently do not support
+            # simultaneous tool use with structured output
+            and not (tools and isinstance(model_name, str) and "gemini" in model_name.lower())
+        ):
+            return True
 
     return (
-        "grok" in model_name.lower()
-        or any(part in model_name for part in ["gpt-5", "gpt-4.1", "gpt-oss", "o3-pro", "o3-mini"])
+        any(part in model_name.lower() for part in FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT)
         if model_name
         else False
     )
@@ -537,40 +563,64 @@ def create_agent(  # noqa: PLR0915
     visit the [Agents](https://docs.langchain.com/oss/python/langchain/agents) docs.
 
     Args:
-        model: The language model for the agent. Can be a string identifier
-            (e.g., `"openai:gpt-4"`) or a direct chat model instance (e.g.,
-            [`ChatOpenAI`][langchain_openai.ChatOpenAI] or other another
-            [chat model](https://docs.langchain.com/oss/python/integrations/chat)).
+        model: The language model for the agent.
+
+            Can be a string identifier (e.g., `"openai:gpt-4"`) or a direct chat model
+            instance (e.g., [`ChatOpenAI`][langchain_openai.ChatOpenAI] or other another
+            [LangChain chat model](https://docs.langchain.com/oss/python/integrations/chat)).
 
             For a full list of supported model strings, see
             [`init_chat_model`][langchain.chat_models.init_chat_model(model_provider)].
-        tools: A list of tools, `dicts`, or `Callable`.
+
+            !!! tip ""
+
+                See the [Models](https://docs.langchain.com/oss/python/langchain/models)
+                docs for more information.
+        tools: A list of tools, `dict`, or `Callable`.
 
             If `None` or an empty list, the agent will consist of a model node without a
             tool calling loop.
-        system_prompt: An optional system prompt for the LLM or
-        can already be a [`SystemMessage`][langchain.messages.SystemMessage] object.
 
+
+            !!! tip ""
+
+                See the [Tools](https://docs.langchain.com/oss/python/langchain/tools)
+                docs for more information.
+        system_prompt: An optional system prompt for the LLM.
+
+            Can be a `str` (which will be converted to a `SystemMessage`) or a
+            `SystemMessage` instance directly. The system message is added to the
+            beginning of the message list when calling the model.
         middleware: A sequence of middleware instances to apply to the agent.
 
-            Middleware can intercept and modify agent behavior at various stages. See
-            the [full guide](https://docs.langchain.com/oss/python/langchain/middleware).
+            Middleware can intercept and modify agent behavior at various stages.
+
+            !!! tip ""
+
+                See the [Middleware](https://docs.langchain.com/oss/python/langchain/middleware)
+                docs for more information.
         response_format: An optional configuration for structured responses.
 
             Can be a `ToolStrategy`, `ProviderStrategy`, or a Pydantic model class.
 
             If provided, the agent will handle structured output during the
-            conversation flow. Raw schemas will be wrapped in an appropriate strategy
-            based on model capabilities.
+            conversation flow.
+
+            Raw schemas will be wrapped in an appropriate strategy based on model
+            capabilities.
+
+            !!! tip ""
+
+                See the [Structured output](https://docs.langchain.com/oss/python/langchain/structured-output)
+                docs for more information.
         state_schema: An optional `TypedDict` schema that extends `AgentState`.
 
             When provided, this schema is used instead of `AgentState` as the base
             schema for merging with middleware state schemas. This allows users to
             add custom state fields without needing to create custom middleware.
+
             Generally, it's recommended to use `state_schema` extensions via middleware
             to keep relevant extensions scoped to corresponding hooks / tools.
-
-            The schema must be a subclass of `AgentState[ResponseT]`.
         context_schema: An optional schema for runtime context.
         checkpointer: An optional checkpoint saver object.
 
@@ -634,6 +684,14 @@ def create_agent(  # noqa: PLR0915
     # init chat model
     if isinstance(model, str):
         model = init_chat_model(model)
+
+    # Convert system_prompt to SystemMessage if needed
+    system_message: SystemMessage | None = None
+    if system_prompt is not None:
+        if isinstance(system_prompt, SystemMessage):
+            system_message = system_prompt
+        else:
+            system_message = SystemMessage(content=system_prompt)
 
     # Handle tools being None or empty
     if tools is None:
@@ -964,7 +1022,7 @@ def create_agent(  # noqa: PLR0915
         effective_response_format: ResponseFormat | None
         if isinstance(request.response_format, AutoStrategy):
             # User provided raw schema via AutoStrategy - auto-detect best strategy based on model
-            if _supports_provider_strategy(request.model):
+            if _supports_provider_strategy(request.model, tools=request.tools):
                 # Model supports provider strategy - use it
                 effective_response_format = ProviderStrategy(schema=request.response_format.schema)
             else:
@@ -985,7 +1043,7 @@ def create_agent(  # noqa: PLR0915
 
         # Bind model based on effective response format
         if isinstance(effective_response_format, ProviderStrategy):
-            # Use provider-specific structured output
+            # (Backward compatibility) Use OpenAI format structured output
             kwargs = effective_response_format.to_model_kwargs()
             return (
                 request.model.bind_tools(
@@ -1038,12 +1096,12 @@ def create_agent(  # noqa: PLR0915
         # Get the bound model (with auto-detection if needed)
         model_, effective_response_format = _get_bound_model(request)
         messages = request.messages
-        if request.system_prompt and not isinstance(request.system_prompt, SystemMessage):
-            messages = [SystemMessage(content=request.system_prompt), *messages]
-        elif request.system_prompt and isinstance(request.system_prompt, SystemMessage):
-            messages = [request.system_prompt, *messages]
+        if request.system_message:
+            messages = [request.system_message, *messages]
 
         output = model_.invoke(messages)
+        if name:
+            output.name = name
 
         # Handle model output to get messages and structured_response
         handled_output = _handle_model_output(output, effective_response_format)
@@ -1060,7 +1118,7 @@ def create_agent(  # noqa: PLR0915
         request = ModelRequest(
             model=model,
             tools=default_tools,
-            system_prompt=system_prompt,
+            system_message=system_message,
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
@@ -1093,12 +1151,12 @@ def create_agent(  # noqa: PLR0915
         # Get the bound model (with auto-detection if needed)
         model_, effective_response_format = _get_bound_model(request)
         messages = request.messages
-        if request.system_prompt and not isinstance(request.system_prompt, SystemMessage):
-            messages = [SystemMessage(content=request.system_prompt), *messages]
-        elif request.system_prompt and isinstance(request.system_prompt, SystemMessage):
-            messages = [request.system_prompt, *messages]
+        if request.system_message:
+            messages = [request.system_message, *messages]
 
         output = await model_.ainvoke(messages)
+        if name:
+            output.name = name
 
         # Handle model output to get messages and structured_response
         handled_output = _handle_model_output(output, effective_response_format)
@@ -1115,7 +1173,7 @@ def create_agent(  # noqa: PLR0915
         request = ModelRequest(
             model=model,
             tools=default_tools,
-            system_prompt=system_prompt,
+            system_message=system_message,
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
