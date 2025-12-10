@@ -154,6 +154,7 @@ def _is_builtin_tool(tool: Any) -> bool:
         "web_search_",
         "web_fetch_",
         "code_execution_",
+        "mcp_toolset",
         "memory_",
         "tool_search_",
     ]
