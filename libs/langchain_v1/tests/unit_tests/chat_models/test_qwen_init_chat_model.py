@@ -1,16 +1,14 @@
 import pytest
 
-pytest.importorskip("langchain_qwq")
-
 from langchain.chat_models import init_chat_model
-from langchain_qwq import ChatQwen
+
+langchain_qwq = pytest.importorskip("langchain_qwq")
 
 
-def test_init_chat_model_qwen(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Ensure init_chat_model wires qwen -> ChatQwen without real network calls."""
+def test_init_chat_model_qwen(monkeypatch) -> None:
+    """init_chat_model returns ChatQwen when the qwen provider is used."""
+    from langchain_qwq import ChatQwen
 
-    # Set a dummy key so ChatQwen's Pydantic validation passes.
-    # We are NOT actually calling the API in this test.
     monkeypatch.setenv("DASHSCOPE_API_KEY", "test-key")
 
     llm = init_chat_model(
@@ -19,4 +17,3 @@ def test_init_chat_model_qwen(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
     assert isinstance(llm, ChatQwen)
-    # Important: do NOT call llm.invoke() here, to avoid network calls.
