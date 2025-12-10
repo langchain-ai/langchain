@@ -93,30 +93,30 @@ class Checkpoint(TypedDict):
 
     v: int
     """The version of the checkpoint format. Currently `1`."""
-    
+
     id: str
     """The ID of the checkpoint.
     This is both unique and monotonically increasing, so can be used for sorting
     checkpoints from first to last."""
-    
+
     ts: str
     """The timestamp of the checkpoint in ISO 8601 format."""
-    
+
     channel_values: dict[str, Any]
     """The values of the channels at the time of the checkpoint.
     Mapping from channel name to deserialized channel snapshot value.
     这里存储了 messages、todos 等所有状态！"""
-    
+
     channel_versions: ChannelVersions
     """The versions of the channels at the time of the checkpoint.
     The keys are channel names and the values are monotonically increasing
     version strings for each channel."""
-    
+
     versions_seen: dict[str, ChannelVersions]
     """Map from node ID to map from channel name to version seen.
     This keeps track of the versions of the channels that each node has seen.
     Used to determine which nodes to execute next."""
-    
+
     updated_channels: list[str] | None
     """The channels that were updated in this checkpoint."""
 
@@ -133,13 +133,13 @@ class CheckpointMetadata(TypedDict, total=False):
     - `"update"`: The checkpoint was created from a manual state update.
     - `"fork"`: The checkpoint was created as a copy of another checkpoint.
     """
-    
+
     step: int
     """The step number of the checkpoint.
     `-1` for the first `"input"` checkpoint.
     `0` for the first `"loop"` checkpoint.
     `...` for the `nth` checkpoint afterwards."""
-    
+
     parents: dict[str, str]
     """The IDs of the parent checkpoints.
     Mapping from checkpoint namespace to checkpoint ID."""
@@ -152,16 +152,16 @@ class CheckpointTuple(NamedTuple):
 
     config: RunnableConfig
     """运行时配置，包含 thread_id, checkpoint_ns, checkpoint_id"""
-    
+
     checkpoint: Checkpoint
     """实际的检查点数据"""
-    
+
     metadata: CheckpointMetadata
     """检查点元数据"""
-    
+
     parent_config: RunnableConfig | None = None
     """父检查点的配置（用于回溯历史）"""
-    
+
     pending_writes: list[PendingWrite] | None = None
     """待处理的写入操作"""
 ```
@@ -253,7 +253,7 @@ class BaseCheckpointSaver(Generic[V]):
         self.serde = maybe_add_typed_methods(serde or self.serde)
 
     # ==================== 同步方法 ====================
-    
+
     def get(self, config: RunnableConfig) -> Checkpoint | None:
         """获取检查点（简化版，只返回 Checkpoint）"""
         if value := self.get_tuple(config):
@@ -261,7 +261,7 @@ class BaseCheckpointSaver(Generic[V]):
 
     def get_tuple(self, config: RunnableConfig) -> CheckpointTuple | None:
         """获取完整的检查点元组（包含 config、metadata 等）
-        
+
         子类必须实现此方法！
         """
         raise NotImplementedError
@@ -275,7 +275,7 @@ class BaseCheckpointSaver(Generic[V]):
         limit: int | None = None,
     ) -> Iterator[CheckpointTuple]:
         """列出符合条件的检查点
-        
+
         Args:
             config: 过滤配置（thread_id 等）
             filter: 元数据过滤条件
@@ -292,7 +292,7 @@ class BaseCheckpointSaver(Generic[V]):
         new_versions: ChannelVersions,
     ) -> RunnableConfig:
         """保存检查点
-        
+
         Returns:
             更新后的配置（包含新的 checkpoint_id）
         """
@@ -317,10 +317,10 @@ class BaseCheckpointSaver(Generic[V]):
     # （与同步方法对应的异步版本）
 
     # ==================== 版本控制 ====================
-    
+
     def get_next_version(self, current: V | None, channel: None) -> V:
         """生成 channel 的下一个版本号
-        
+
         默认使用整数版本，每次 +1
         可以重写为使用 str/int/float，只要单调递增即可
         """
@@ -520,7 +520,7 @@ class SqliteSaver(BaseCheckpointSaver[str]):
     @contextmanager
     def from_conn_string(cls, conn_string: str) -> Iterator[SqliteSaver]:
         """从连接字符串创建 SqliteSaver
-        
+
         Examples:
             In memory:
                 with SqliteSaver.from_conn_string(":memory:") as memory:
@@ -539,7 +539,7 @@ class SqliteSaver(BaseCheckpointSaver[str]):
         """创建必要的数据库表"""
         self.conn.executescript("""
             PRAGMA journal_mode=WAL;
-            
+
             CREATE TABLE IF NOT EXISTS checkpoints (
                 thread_id TEXT NOT NULL,
                 checkpoint_ns TEXT NOT NULL DEFAULT '',
@@ -550,7 +550,7 @@ class SqliteSaver(BaseCheckpointSaver[str]):
                 metadata BLOB,
                 PRIMARY KEY (thread_id, checkpoint_ns, checkpoint_id)
             );
-            
+
             CREATE TABLE IF NOT EXISTS writes (
                 thread_id TEXT NOT NULL,
                 checkpoint_ns TEXT NOT NULL DEFAULT '',
@@ -641,8 +641,8 @@ class PostgresSaver(BasePostgresSaver):
 
     def setup(self) -> None:
         """Set up the checkpoint database.
-        
-        This method creates the necessary tables in the Postgres database 
+
+        This method creates the necessary tables in the Postgres database
         if they don't already exist and runs database migrations.
         It MUST be called directly by the user the first time checkpointer is used.
         """
@@ -706,7 +706,7 @@ class JsonPlusSerializer(SerializerProtocol):
 
     def dumps_typed(self, obj: Any) -> tuple[str, bytes]:
         """序列化对象，返回 (类型, 字节)
-        
+
         Returns:
             tuple[str, bytes]: (序列化类型, 序列化后的字节)
         """
@@ -714,10 +714,10 @@ class JsonPlusSerializer(SerializerProtocol):
 
     def loads_typed(self, data: tuple[str, bytes]) -> Any:
         """反序列化对象
-        
+
         Args:
             data: (序列化类型, 序列化后的字节)
-        
+
         Returns:
             Any: 反序列化后的对象
         """
