@@ -1,4 +1,4 @@
-# LangChain 工具深度解析
+# LangChain 工具(Tools)深度解析
 
 ## 1. 工具参数可以是什么
 
