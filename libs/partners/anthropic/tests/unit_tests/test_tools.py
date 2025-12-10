@@ -1,5 +1,9 @@
 """Tests for server-side tool factories."""
 
+# cast() is used throughout to narrow union return types (e.g., `Param | BaseTool`)
+# to dict when testing server-side tool definitions (no `execute` callback provided).
+from typing import Any, cast
+
 from langchain_anthropic import tools
 from langchain_anthropic.chat_models import _is_builtin_tool
 
@@ -117,21 +121,29 @@ class TestMemory:
     """Tests for memory_20250818."""
 
     def test_default(self) -> None:
-        tool = tools.memory_20250818()
+        tool = cast(dict[str, Any], tools.memory_20250818())
         assert tool["type"] == "memory_20250818"
         assert tool["name"] == "memory"
         assert _is_builtin_tool(tool)
 
     def test_with_cache_control(self) -> None:
-        tool = tools.memory_20250818(cache_control={"type": "ephemeral"})
+        tool = cast(
+            dict[str, Any], tools.memory_20250818(cache_control={"type": "ephemeral"})
+        )
         assert tool.get("cache_control") == {"type": "ephemeral"}
 
         # Ensure setting default explicitly works
         # (Omission of ttl uses default of 5m server-side)
-        tool = tools.memory_20250818(cache_control={"type": "ephemeral", "ttl": "5m"})
+        tool = cast(
+            dict[str, Any],
+            tools.memory_20250818(cache_control={"type": "ephemeral", "ttl": "5m"}),
+        )
         assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "5m"}
 
-        tool = tools.memory_20250818(cache_control={"type": "ephemeral", "ttl": "1h"})
+        tool = cast(
+            dict[str, Any],
+            tools.memory_20250818(cache_control={"type": "ephemeral", "ttl": "1h"}),
+        )
         assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "1h"}
 
 
@@ -139,9 +151,12 @@ class TestComputer:
     """Tests for computer use tools."""
 
     def test_computer_20251124_required_params(self) -> None:
-        tool = tools.computer_20251124(
-            display_width_px=1920,
-            display_height_px=1080,
+        tool = cast(
+            dict[str, Any],
+            tools.computer_20251124(
+                display_width_px=1920,
+                display_height_px=1080,
+            ),
         )
         assert tool["type"] == "computer_20251124"
         assert tool["name"] == "computer"
@@ -150,77 +165,104 @@ class TestComputer:
         assert _is_builtin_tool(tool)
 
     def test_computer_20251124_with_options(self) -> None:
-        tool = tools.computer_20251124(
-            display_width_px=1024,
-            display_height_px=768,
-            display_number=1,
-            enable_zoom=True,
+        tool = cast(
+            dict[str, Any],
+            tools.computer_20251124(
+                display_width_px=1024,
+                display_height_px=768,
+                display_number=1,
+                enable_zoom=True,
+            ),
         )
         assert tool.get("display_number") == 1
         assert tool.get("enable_zoom") is True
 
     def test_computer_20250124_required_params(self) -> None:
-        tool = tools.computer_20250124(
-            display_width_px=1920,
-            display_height_px=1080,
+        tool = cast(
+            dict[str, Any],
+            tools.computer_20250124(
+                display_width_px=1920,
+                display_height_px=1080,
+            ),
         )
         assert tool["type"] == "computer_20250124"
         assert tool["name"] == "computer"
         assert _is_builtin_tool(tool)
 
     def test_computer_20250124_with_display_number(self) -> None:
-        tool = tools.computer_20250124(
-            display_width_px=1920,
-            display_height_px=1080,
-            display_number=0,
+        tool = cast(
+            dict[str, Any],
+            tools.computer_20250124(
+                display_width_px=1920,
+                display_height_px=1080,
+                display_number=0,
+            ),
         )
         assert tool.get("display_number") == 0
 
     def test_computer_20251124_with_cache_control(self) -> None:
-        tool = tools.computer_20251124(
-            display_width_px=1920,
-            display_height_px=1080,
-            cache_control={"type": "ephemeral"},
+        tool = cast(
+            dict[str, Any],
+            tools.computer_20251124(
+                display_width_px=1920,
+                display_height_px=1080,
+                cache_control={"type": "ephemeral"},
+            ),
         )
         assert tool.get("cache_control") == {"type": "ephemeral"}
 
         # Ensure setting default explicitly works
         # (Omission of ttl uses default of 5m server-side)
-        tool = tools.computer_20251124(
-            display_width_px=1920,
-            display_height_px=1080,
-            cache_control={"type": "ephemeral", "ttl": "5m"},
+        tool = cast(
+            dict[str, Any],
+            tools.computer_20251124(
+                display_width_px=1920,
+                display_height_px=1080,
+                cache_control={"type": "ephemeral", "ttl": "5m"},
+            ),
         )
         assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "5m"}
 
-        tool = tools.computer_20251124(
-            display_width_px=1920,
-            display_height_px=1080,
-            cache_control={"type": "ephemeral", "ttl": "1h"},
+        tool = cast(
+            dict[str, Any],
+            tools.computer_20251124(
+                display_width_px=1920,
+                display_height_px=1080,
+                cache_control={"type": "ephemeral", "ttl": "1h"},
+            ),
         )
         assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "1h"}
 
     def test_computer_20250124_with_cache_control(self) -> None:
-        tool = tools.computer_20250124(
-            display_width_px=1920,
-            display_height_px=1080,
-            cache_control={"type": "ephemeral"},
+        tool = cast(
+            dict[str, Any],
+            tools.computer_20250124(
+                display_width_px=1920,
+                display_height_px=1080,
+                cache_control={"type": "ephemeral"},
+            ),
         )
         assert tool.get("cache_control") == {"type": "ephemeral"}
 
         # Ensure setting default explicitly works
         # (Omission of ttl uses default of 5m server-side)
-        tool = tools.computer_20250124(
-            display_width_px=1920,
-            display_height_px=1080,
-            cache_control={"type": "ephemeral", "ttl": "5m"},
+        tool = cast(
+            dict[str, Any],
+            tools.computer_20250124(
+                display_width_px=1920,
+                display_height_px=1080,
+                cache_control={"type": "ephemeral", "ttl": "5m"},
+            ),
         )
         assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "5m"}
 
-        tool = tools.computer_20250124(
-            display_width_px=1920,
-            display_height_px=1080,
-            cache_control={"type": "ephemeral", "ttl": "1h"},
+        tool = cast(
+            dict[str, Any],
+            tools.computer_20250124(
+                display_width_px=1920,
+                display_height_px=1080,
+                cache_control={"type": "ephemeral", "ttl": "1h"},
+            ),
         )
         assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "1h"}
 
@@ -229,35 +271,44 @@ class TestTextEditor:
     """Tests for text editor tools."""
 
     def test_text_editor_20250728(self) -> None:
-        tool = tools.text_editor_20250728()
+        tool = cast(dict[str, Any], tools.text_editor_20250728())
         assert tool["type"] == "text_editor_20250728"
         assert tool["name"] == "str_replace_based_edit_tool"
         assert _is_builtin_tool(tool)
 
     def test_text_editor_20250429(self) -> None:
-        tool = tools.text_editor_20250429()
+        tool = cast(dict[str, Any], tools.text_editor_20250429())
         assert tool["type"] == "text_editor_20250429"
         assert _is_builtin_tool(tool)
 
     def test_text_editor_20250124(self) -> None:
-        tool = tools.text_editor_20250124()
+        tool = cast(dict[str, Any], tools.text_editor_20250124())
         assert tool["type"] == "text_editor_20250124"
         assert tool["name"] == "str_replace_editor"
         assert _is_builtin_tool(tool)
 
     def test_text_editor_20250728_with_cache_control(self) -> None:
-        tool = tools.text_editor_20250728(cache_control={"type": "ephemeral"})
+        tool = cast(
+            dict[str, Any],
+            tools.text_editor_20250728(cache_control={"type": "ephemeral"}),
+        )
         assert tool.get("cache_control") == {"type": "ephemeral"}
 
         # Ensure setting default explicitly works
         # (Omission of ttl uses default of 5m server-side)
-        tool = tools.text_editor_20250728(
-            cache_control={"type": "ephemeral", "ttl": "5m"}
+        tool = cast(
+            dict[str, Any],
+            tools.text_editor_20250728(
+                cache_control={"type": "ephemeral", "ttl": "5m"}
+            ),
         )
         assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "5m"}
 
-        tool = tools.text_editor_20250728(
-            cache_control={"type": "ephemeral", "ttl": "1h"}
+        tool = cast(
+            dict[str, Any],
+            tools.text_editor_20250728(
+                cache_control={"type": "ephemeral", "ttl": "1h"}
+            ),
         )
         assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "1h"}
 
@@ -266,21 +317,29 @@ class TestBash:
     """Tests for `bash_20250124`."""
 
     def test_default(self) -> None:
-        tool = tools.bash_20250124()
+        tool = cast(dict[str, Any], tools.bash_20250124())
         assert tool["type"] == "bash_20250124"
         assert tool["name"] == "bash"
         assert _is_builtin_tool(tool)
 
     def test_with_cache_control(self) -> None:
-        tool = tools.bash_20250124(cache_control={"type": "ephemeral"})
+        tool = cast(
+            dict[str, Any], tools.bash_20250124(cache_control={"type": "ephemeral"})
+        )
         assert tool.get("cache_control") == {"type": "ephemeral"}
 
         # Ensure setting default explicitly works
         # (Omission of ttl uses default of 5m server-side)
-        tool = tools.bash_20250124(cache_control={"type": "ephemeral", "ttl": "5m"})
+        tool = cast(
+            dict[str, Any],
+            tools.bash_20250124(cache_control={"type": "ephemeral", "ttl": "5m"}),
+        )
         assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "5m"}
 
-        tool = tools.bash_20250124(cache_control={"type": "ephemeral", "ttl": "1h"})
+        tool = cast(
+            dict[str, Any],
+            tools.bash_20250124(cache_control={"type": "ephemeral", "ttl": "1h"}),
+        )
         assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "1h"}
 
 

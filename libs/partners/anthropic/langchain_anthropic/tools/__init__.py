@@ -1,9 +1,12 @@
-"""Anthropic server-side tools for `ChatAnthropic`.
+"""Claude tools for `ChatAnthropic`.
 
-Factory functions for creating typed server-side tool definitions. These tools run on
-Anthropic's infrastructure and return results directly in the response.
+Factory functions for creating typed tool definitions. These tools support both:
 
-Server-side tools include:
+- **Server-side execution**: Anthropic executes the tool on their infrastructure
+- **Client-side execution**: You provide an `execute` callback to handle tool calls
+    locally
+
+Tools include:
 
 - **Bash** (`bash_20250124`): Shell command execution
 - **Code Execution** (`code_execution_20250825`): Run code in a sandboxed environment
@@ -17,9 +20,9 @@ Server-side tools include:
     Dynamic tool discovery
 
 Example:
-    Basic usage with web search:
+    Server-side execution (Anthropic runs the tool):
 
-    ```python
+    ```python title="Web search example"
     from langchain_anthropic import ChatAnthropic, tools
 
     model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
@@ -28,7 +31,58 @@ Example:
     response = model_with_search.invoke("What are today's top news stories?")
     ```
 
-    Multiple tools:
+    Client-side execution (you run the tool):
+
+    ```python title="Bash tool example"
+    import subprocess
+
+    from langchain_anthropic import ChatAnthropic, tools
+    from langchain_core.messages import HumanMessage, ToolMessage
+
+
+    def execute_bash(args):
+        if args.get("restart"):
+            return "Bash session restarted"
+        result = subprocess.run(
+            args["command"],
+            shell=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout + result.stderr
+
+
+    model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
+    bash_tool = tools.bash_20250124(execute=execute_bash)
+    model_with_bash = model.bind_tools([bash_tool])
+
+    # Initial request
+    response = model_with_bash.invoke("List Python files in the current directory")
+
+    # Process tool calls in a loop until no more tool calls
+    messages = [
+        HumanMessage(content="List Python files in the current directory"),
+        response,
+    ]
+
+    while response.tool_calls:
+        # Execute each tool call
+        for tool_call in response.tool_calls:
+            # Invoke the tool with the args from the model
+            result = bash_tool.invoke(tool_call["args"])
+
+            # Add the tool result to messages
+            messages.append(ToolMessage(content=result, tool_call_id=tool_call["id"]))
+
+        # Get the next response
+        response = model_with_bash.invoke(messages)
+        messages.append(response)
+
+    # Final response with the answer
+    print(response.content)
+    ```
+
+    Binding multiple tools:
 
     ```python
     from langchain_anthropic import ChatAnthropic, tools
