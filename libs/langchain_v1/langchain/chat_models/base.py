@@ -545,7 +545,7 @@ def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
     """Parse model name and provider, inferring provider if necessary.
 
     Args:
-        model: The model name, optionally prefixed with provider (e.g., "openai:gpt-4o").
+        model: The model name, optionally prefixed with provider (e.g., `'openai:gpt-4o'`).
         model_provider: Optional explicit model provider.
 
     Returns:
