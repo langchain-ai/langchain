@@ -96,7 +96,7 @@ _FALLBACK_MAX_OUTPUT_TOKENS: Final[int] = 4096
 class AnthropicTool(TypedDict):
     """Anthropic tool definition for custom/user-defined tools.
 
-    Custom tools use ``name`` and ``input_schema`` fields to define the tool's
+    Custom tools use `name` and `input_schema` fields to define the tool's
     interface. These are converted from LangChain tool formats (functions, Pydantic
     models, BaseTools) via `convert_to_anthropic_tool`.
     """
