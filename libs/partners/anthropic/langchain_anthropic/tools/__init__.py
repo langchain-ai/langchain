@@ -8,20 +8,31 @@ These factories contain tools that support both:
 
 ## Server tools
 
-- **Code Execution** (`code_execution_20250825`): Run code in a sandboxed environment
-- **Remote MCP Toolset** (`mcp_toolset`): Connect to remote MCP servers
-- **Web Fetch** (`web_fetch_20250910`): Fetch content from web pages and PDFs
-- **Web Search** (`web_search_20250305`): Real-time web search with citations
-- **Tool Search** (`tool_search_regex_20251119`, `tool_search_bm25_20251119`):
-    Dynamic tool discovery
+- [**Code Execution**][langchain_anthropic.tools.code_execution_20250825]: Run code in a
+    sandboxed environment
+- [**Remote MCP Toolset**][langchain_anthropic.tools.mcp_toolset]: Connect to remote MCP
+    servers
+- [**Web Fetch**][langchain_anthropic.tools.web_fetch_20250910]: Fetch content from web
+    pages and PDFs
+- [**Web Search**][langchain_anthropic.tools.web_search_20250305]: Real-time web search
+    with citations
+- **Tool Search**: Dynamic tool discovery, with two implementations:
+    - [BM25-based search][langchain_anthropic.tools.tool_search_bm25_20251119]
+    - [Regex-based search][langchain_anthropic.tools.tool_search_regex_20251119]
 
 
 ## Client tools
 
-- **Bash** (`bash_20250124`): Shell command execution
-- **Computer Use** (`computer_20251124`, `computer_20250124`): Desktop interaction
-- **Text Editor** (`text_editor_20250728`, etc.): File viewing and modification
-- **Memory** (`memory_20250818`): Persistent storage across conversations
+- [**Bash**][langchain_anthropic.tools.bash_20250124]: Shell command execution
+- **Computer Use**: Desktop interaction. Two versions available:
+    - [`2025-01-24`][langchain_anthropic.tools.computer_20250124]
+    - [`2025-11-24`][langchain_anthropic.tools.computer_20251124]
+- **Text Editor**: File viewing and modification. Three versions available:
+    - [`2025-01-24`][langchain_anthropic.tools.text_editor.text_editor_20250124]
+    - [`2025-04-29`][langchain_anthropic.tools.text_editor.text_editor_20250429]
+    - [`2025-07-28`][langchain_anthropic.tools.text_editor.text_editor_20250728]
+- [**Memory**][langchain_anthropic.tools.memory_20250818]: Persistent storage across
+    conversations
 
 Example:
     Server-side execution (Anthropic runs the tool):
@@ -124,7 +135,7 @@ Example:
 from langchain_anthropic.tools.bash import bash_20250124
 from langchain_anthropic.tools.code_execution import code_execution_20250825
 from langchain_anthropic.tools.computer import computer_20250124, computer_20251124
-from langchain_anthropic.tools.mcp_toolset import (
+from langchain_anthropic.tools.mcp import (
     MCPDefaultConfig,
     MCPToolConfig,
     mcp_toolset,
