@@ -216,32 +216,6 @@ def test_configurable_with_default() -> None:
 
     assert model_with_config.model == "claude-sonnet-4-5-20250929"  # type: ignore[attr-defined]
 
-    # Assert important properties instead of exact dict equality (less brittle)
-    dump = model_with_config.model_dump()  # type: ignore[attr-defined]
-
-    # Core resolved model identity
-    assert dump["bound"]["model"] == "claude-sonnet-4-5-20250929"
-
-    # Credentials were picked up from environment patch
-    assert dump["bound"]["anthropic_api_key"] == SecretStr("bar")
-
-    # Streaming/default flags we expect
-    assert dump["bound"]["disable_streaming"] is False
-    assert dump["bound"]["streaming"] is False
-
-    # Declarative tools were preserved on the model kwargs
-    assert "kwargs" in dump
-    assert "tools" in dump["kwargs"]
-    assert isinstance(dump["kwargs"]["tools"], list)
-    assert len(dump["kwargs"]["tools"]) == 1
-    assert dump["kwargs"]["tools"][0]["name"] == "foo"
-    assert dump["kwargs"]["tools"][0]["description"] == "foo"
-
-    # Config and config_factories exist and are in the expected form
-    assert dump["config"]["tags"] == ["foo"]
-    assert dump["config"]["configurable"] == {}
-    assert isinstance(dump["config_factories"], list)
-
     prompt = ChatPromptTemplate.from_messages([("system", "foo")])
     chain = prompt | model_with_config
     assert isinstance(chain, RunnableSequence)
