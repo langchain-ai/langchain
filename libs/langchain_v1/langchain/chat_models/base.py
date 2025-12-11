@@ -73,7 +73,7 @@ def init_chat_model(
         runtime via `config`. Makes it easy to switch between models/providers without
         changing your code
 
-    !!! note "Installation Requirements"
+    !!! note "Installation requirements"
         Requires the integration package for the chosen model provider to be installed.
 
         See the `model_provider` parameter below for specific package names
