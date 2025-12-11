@@ -904,7 +904,7 @@ class ChatAnthropic(BaseChatModel):
             See LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#token-efficient-tool-use)
             for more detail.
 
-            ```python hl_lines="9"
+            ```python hl_lines="6"
             from langchain_anthropic import ChatAnthropic
             from langchain_core.tools import tool
 
