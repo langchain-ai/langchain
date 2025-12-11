@@ -330,6 +330,7 @@ class Language(str, Enum):
     ELIXIR = "elixir"
     POWERSHELL = "powershell"
     VISUALBASIC6 = "visualbasic6"
+    R = "r"
 
 
 @dataclass(frozen=True)
