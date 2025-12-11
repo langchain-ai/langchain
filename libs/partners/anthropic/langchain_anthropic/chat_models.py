@@ -910,12 +910,7 @@ class ChatAnthropic(BaseChatModel):
 
             model = ChatAnthropic(
                 model="claude-sonnet-4-5-20250929",
-                temperature=0,
-                model_kwargs={
-                    "extra_headers": {
-                        "anthropic-beta": "token-efficient-tools-2025-02-19"
-                    }
-                }
+                betas=["token-efficient-tools-2025-02-19"]
             )
 
             @tool
