@@ -2499,7 +2499,7 @@ class ChatAnthropic(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
+        tools: Sequence[Mapping[str, Any] | type | Callable | BaseTool],
         *,
         tool_choice: dict[str, str] | str | None = None,
         parallel_tool_calls: bool | None = None,
@@ -3150,7 +3150,7 @@ class ChatAnthropic(BaseChatModel):
 
 
 def convert_to_anthropic_tool(
-    tool: dict[str, Any] | type | Callable | BaseTool,
+    tool: Mapping[str, Any] | type | Callable | BaseTool,
     *,
     strict: bool | None = None,
 ) -> AnthropicTool | AnthropicBuiltinTool:
