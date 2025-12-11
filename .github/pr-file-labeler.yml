@@ -148,7 +148,6 @@ documentation:
   - changed-files:
       - any-glob-to-any-file:
           - "**/*.md"
-          - "**/*.rst"
           - "**/README*"
 
 # Security related changes
