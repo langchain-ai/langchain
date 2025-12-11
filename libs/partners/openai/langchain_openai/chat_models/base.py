@@ -468,6 +468,10 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
     raise
 
 
+def _model_prefers_responses_api(model_name: str):
+    return "gpt-5.2-pro" in model_name
+
+
 _BM = TypeVar("_BM", bound=BaseModel)
 _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[_BM] | type
 _DictOrPydantic: TypeAlias = dict | _BM
@@ -1391,6 +1395,7 @@ class BaseChatOpenAI(BaseChatModel):
             or self.reasoning is not None
             or self.truncation is not None
             or self.use_previous_response_id
+            or _model_prefers_responses_api(self.model_name)
         ):
             return True
         return _use_responses_api(payload)
