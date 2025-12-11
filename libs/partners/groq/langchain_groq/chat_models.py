@@ -839,7 +839,6 @@ class ChatGroq(BaseChatModel):
                 `{"type": "function", "function": {"name": <<tool_name>>}}`.
             **kwargs: Any additional parameters to pass to the
                 `langchain.runnable.Runnable` constructor.
-
         """  # noqa: E501
         strict_parameter = kwargs.pop("strict", None)
         if strict_parameter is not None:
