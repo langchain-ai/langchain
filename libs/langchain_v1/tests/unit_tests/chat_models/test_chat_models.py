@@ -127,32 +127,62 @@ def test_configurable() -> None:
     for method in ("get_num_tokens", "get_num_tokens_from_messages"):
         assert hasattr(model_with_config, method)
 
-    # Assert important properties instead of exact dict equality (less brittle)
-    dump = model_with_config.model_dump()  # type: ignore[attr-defined]
-
-    # Core resolved model identity
-    assert dump["bound"]["model_name"] == "gpt-4o"
-
-    # Credentials were picked up from environment patch
-    assert dump["bound"]["openai_api_key"] == SecretStr("foo")
-
-    # Streaming/default flags we expect
-    assert dump["bound"]["disable_streaming"] is False
-    assert dump["bound"]["streaming"] is False
-
-    # Declarative tools were preserved on the model kwargs
-    assert "kwargs" in dump
-    assert "tools" in dump["kwargs"]
-    assert isinstance(dump["kwargs"]["tools"], list)
-    assert len(dump["kwargs"]["tools"]) == 1
-    assert dump["kwargs"]["tools"][0]["type"] == "function"
-    assert dump["kwargs"]["tools"][0]["function"]["name"] == "foo"
-    assert dump["kwargs"]["tools"][0]["function"]["description"] == "foo"
-
-    # Config and config_factories exist and are in the expected form
-    assert dump["config"]["tags"] == ["foo"]
-    assert dump["config"]["configurable"] == {}
-    assert isinstance(dump["config_factories"], list)
+    assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
+        "name": None,
+        "bound": {
+            "name": None,
+            "disable_streaming": False,
+            "disabled_params": None,
+            "model_name": "gpt-4o",
+            "temperature": None,
+            "model_kwargs": {},
+            "openai_api_key": SecretStr("foo"),
+            "openai_api_base": None,
+            "openai_organization": None,
+            "openai_proxy": None,
+            "output_version": None,
+            "request_timeout": None,
+            "max_retries": None,
+            "presence_penalty": None,
+            "reasoning": None,
+            "reasoning_effort": None,
+            "verbosity": None,
+            "frequency_penalty": None,
+            "include": None,
+            "seed": None,
+            "service_tier": None,
+            "logprobs": None,
+            "top_logprobs": None,
+            "logit_bias": None,
+            "streaming": False,
+            "n": None,
+            "top_p": None,
+            "truncation": None,
+            "max_tokens": None,
+            "tiktoken_model_name": None,
+            "default_headers": None,
+            "default_query": None,
+            "stop": None,
+            "store": None,
+            "extra_body": None,
+            "include_response_headers": False,
+            "stream_usage": True,
+            "use_previous_response_id": False,
+            "use_responses_api": None,
+        },
+        "kwargs": {
+            "tools": [
+                {
+                    "type": "function",
+                    "function": {"name": "foo", "description": "foo", "parameters": {}},
+                },
+            ],
+        },
+        "config": {"tags": ["foo"], "configurable": {}},
+        "config_factories": [],
+        "custom_input_type": None,
+        "custom_output_type": None,
+    }
 
 
 @pytest.mark.requires("langchain_openai", "langchain_anthropic")
@@ -216,6 +246,42 @@ def test_configurable_with_default() -> None:
 
     assert model_with_config.model == "claude-sonnet-4-5-20250929"  # type: ignore[attr-defined]
 
+    assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
+        "name": None,
+        "bound": {
+            "name": None,
+            "disable_streaming": False,
+            "effort": None,
+            "model": "claude-sonnet-4-5-20250929",
+            "mcp_servers": None,
+            "max_tokens": 64000,
+            "temperature": None,
+            "thinking": None,
+            "top_k": None,
+            "top_p": None,
+            "default_request_timeout": None,
+            "max_retries": 2,
+            "stop_sequences": None,
+            "anthropic_api_url": "https://api.anthropic.com",
+            "anthropic_proxy": None,
+            "context_management": None,
+            "anthropic_api_key": SecretStr("bar"),
+            "betas": None,
+            "default_headers": None,
+            "model_kwargs": {},
+            "reuse_last_container": None,
+            "streaming": False,
+            "stream_usage": True,
+            "output_version": None,
+        },
+        "kwargs": {
+            "tools": [{"name": "foo", "description": "foo", "input_schema": {}}],
+        },
+        "config": {"tags": ["foo"], "configurable": {}},
+        "config_factories": [],
+        "custom_input_type": None,
+        "custom_output_type": None,
+    }
     prompt = ChatPromptTemplate.from_messages([("system", "foo")])
     chain = prompt | model_with_config
     assert isinstance(chain, RunnableSequence)

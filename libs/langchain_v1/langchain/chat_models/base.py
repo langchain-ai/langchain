@@ -454,7 +454,7 @@ def _init_chat_model_helper(
 
         return ChatUpstage(model=model, **kwargs)
     supported = ", ".join(_SUPPORTED_PROVIDERS)
-    msg = f"Unsupported model_provider='{model_provider}'. Supported: {supported}"
+    msg = f"Unsupported {model_provider=}.\n\nSupported model providers are: {supported}"
     raise ValueError(msg)
 
 
@@ -566,13 +566,10 @@ def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
         # Enhanced error message with suggestions
         supported_list = ", ".join(sorted(_SUPPORTED_PROVIDERS))
         msg = (
-            f"Unable to infer model provider for model='{model}'. "
-            f"Please specify model_provider directly.\n\n"
+            f"Unable to infer model provider for {model=}. "
+            f"Please specify 'model_provider' directly.\n\n"
             f"Supported providers: {supported_list}\n\n"
-            f"Examples:\n"
-            f"  - init_chat_model('{model}', model_provider='openai')\n"
-            f"  - init_chat_model('openai:{model}')\n"
-            f"\nFor help with specific providers, see: "
+            f"For help with specific providers, see: "
             f"https://docs.langchain.com/oss/python/integrations/providers"
         )
         raise ValueError(msg)
