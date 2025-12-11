@@ -251,6 +251,7 @@ def test_configurable_with_default() -> None:
         "bound": {
             "name": None,
             "disable_streaming": False,
+            "effort": None,
             "model": "claude-sonnet-4-5-20250929",
             "mcp_servers": None,
             "max_tokens": 64000,
@@ -268,6 +269,7 @@ def test_configurable_with_default() -> None:
             "betas": None,
             "default_headers": None,
             "model_kwargs": {},
+            "reuse_last_container": None,
             "streaming": False,
             "stream_usage": True,
             "output_version": None,
