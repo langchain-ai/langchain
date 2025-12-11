@@ -3056,3 +3056,63 @@ def test_gpt_5_temperature_case_insensitive(
         messages = [HumanMessage(content="Hello")]
         payload = llm._get_request_payload(messages)
         assert payload["temperature"] == 0.7
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_gpt_5_temperature_with_reasoning_effort_none(
+    use_responses_api: bool,
+) -> None:
+    """Test that temperature is preserved when reasoning_effort is explicitly 'none'."""
+    # Test with reasoning_effort='none' explicitly set
+    llm = ChatOpenAI(
+        model="gpt-5-nano",
+        temperature=0.5,
+        reasoning_effort="none",
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert payload["temperature"] == 0.5
+
+    # Test with reasoning={'effort': 'none'}
+    llm = ChatOpenAI(
+        model="gpt-5-nano",
+        temperature=0.5,
+        reasoning={"effort": "none"},
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert payload["temperature"] == 0.5
+
+    # Test that temperature is restricted by default (no reasoning_effort)
+    llm = ChatOpenAI(
+        model="gpt-5-nano",
+        temperature=0.5,
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+    # Test that temperature is still restricted when reasoning_effort is set to other values
+    llm = ChatOpenAI(
+        model="gpt-5-nano",
+        temperature=0.5,
+        reasoning_effort="low",
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+    # Test with reasoning={'effort': 'low'}
+    llm = ChatOpenAI(
+        model="gpt-5-nano",
+        temperature=0.5,
+        reasoning={"effort": "low"},
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
