@@ -905,18 +905,13 @@ class ChatAnthropic(BaseChatModel):
             See LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#token-efficient-tool-use)
             for more detail.
 
-            ```python hl_lines="9"
+            ```python hl_lines="6"
             from langchain_anthropic import ChatAnthropic
             from langchain_core.tools import tool
 
             model = ChatAnthropic(
                 model="claude-sonnet-4-5-20250929",
-                temperature=0,
-                model_kwargs={
-                    "extra_headers": {
-                        "anthropic-beta": "token-efficient-tools-2025-02-19"
-                    }
-                }
+                betas=["token-efficient-tools-2025-02-19"]
             )
 
             @tool
