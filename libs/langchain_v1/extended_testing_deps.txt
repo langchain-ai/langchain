@@ -3,3 +3,9 @@
 -e ../partners/fireworks
 -e ../partners/mistralai
 -e ../partners/groq
+# Test/runtime dependencies
+pytest
+pytest-asyncio
+pycares<4.0.0
+httpx
+pydantic
