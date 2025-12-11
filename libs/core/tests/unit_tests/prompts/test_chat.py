@@ -4,23 +4,33 @@ from pathlib import Path
 from typing import Any, cast
 
 import pytest
-from langchain_core.load import dumpd, load
-from langchain_core.messages import (AIMessage, BaseMessage, HumanMessage,
-                                     SystemMessage, ToolMessage, get_buffer_string)
-from langchain_core.prompt_values import ChatPromptValue
-from langchain_core.prompts import PromptTemplate
-from langchain_core.prompts.chat import (AIMessagePromptTemplate,
-                                         ChatMessagePromptTemplate, ChatPromptTemplate,
-                                         HumanMessagePromptTemplate,
-                                         MessagesPlaceholder,
-                                         SystemMessagePromptTemplate,
-                                         _convert_to_message_template)
-from langchain_core.prompts.message import BaseMessagePromptTemplate
-from langchain_core.prompts.string import PromptTemplateFormat
-from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from packaging import version
 from pydantic import ValidationError
 from syrupy.assertion import SnapshotAssertion
+
+from langchain_core.load import dumpd, load
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+    get_buffer_string,
+)
+from langchain_core.prompt_values import ChatPromptValue
+from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts.chat import (
+    AIMessagePromptTemplate,
+    ChatMessagePromptTemplate,
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    MessagesPlaceholder,
+    SystemMessagePromptTemplate,
+    _convert_to_message_template,
+)
+from langchain_core.prompts.message import BaseMessagePromptTemplate
+from langchain_core.prompts.string import PromptTemplateFormat
+from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
 CUR_DIR = Path(__file__).parent.absolute().resolve()
