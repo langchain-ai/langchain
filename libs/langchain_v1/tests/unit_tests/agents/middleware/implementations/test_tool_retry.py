@@ -10,6 +10,7 @@ from langchain_core.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
 
 from langchain.agents.factory import create_agent
+from langchain.agents.middleware._retry import calculate_delay
 from langchain.agents.middleware.tool_retry import ToolRetryMiddleware
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
@@ -65,7 +66,7 @@ def test_tool_retry_initialization_defaults() -> None:
     assert retry.max_retries == 2
     assert retry._tool_filter is None
     assert retry.tools == []
-    assert retry.on_failure == "return_message"
+    assert retry.on_failure == "continue"
     assert retry.backoff_factor == 2.0
     assert retry.initial_delay == 1.0
     assert retry.max_delay == 60.0
@@ -78,7 +79,7 @@ def test_tool_retry_initialization_custom() -> None:
         max_retries=5,
         tools=["tool1", "tool2"],
         retry_on=(ValueError, RuntimeError),
-        on_failure="raise",
+        on_failure="error",
         backoff_factor=1.5,
         initial_delay=0.5,
         max_delay=30.0,
@@ -89,7 +90,7 @@ def test_tool_retry_initialization_custom() -> None:
     assert retry._tool_filter == ["tool1", "tool2"]
     assert retry.tools == []
     assert retry.retry_on == (ValueError, RuntimeError)
-    assert retry.on_failure == "raise"
+    assert retry.on_failure == "error"
     assert retry.backoff_factor == 1.5
     assert retry.initial_delay == 0.5
     assert retry.max_delay == 30.0
@@ -188,7 +189,7 @@ def test_tool_retry_failing_tool_returns_message() -> None:
         max_retries=2,
         initial_delay=0.01,
         jitter=False,
-        on_failure="return_message",
+        on_failure="continue",
     )
 
     agent = create_agent(
@@ -213,7 +214,7 @@ def test_tool_retry_failing_tool_returns_message() -> None:
 
 
 def test_tool_retry_failing_tool_raises() -> None:
-    """Test ToolRetryMiddlewarewith on_failure='raise' re-raises exception."""
+    """Test ToolRetryMiddlewarewith on_failure='error' re-raises exception."""
     model = FakeToolCallingModel(
         tool_calls=[
             [ToolCall(name="failing_tool", args={"input": "test"}, id="1")],
@@ -225,7 +226,7 @@ def test_tool_retry_failing_tool_raises() -> None:
         max_retries=2,
         initial_delay=0.01,
         jitter=False,
-        on_failure="raise",
+        on_failure="error",
     )
 
     agent = create_agent(
@@ -339,7 +340,7 @@ def test_tool_retry_specific_tools_only() -> None:
         tools=["failing_tool"],
         initial_delay=0.01,
         jitter=False,
-        on_failure="return_message",
+        on_failure="continue",
     )
 
     agent = create_agent(
@@ -386,7 +387,7 @@ def test_tool_retry_specific_tools_with_base_tool() -> None:
         tools=[failing_tool],  # Pass BaseTool instance
         initial_delay=0.01,
         jitter=False,
-        on_failure="return_message",
+        on_failure="continue",
     )
 
     agent = create_agent(
@@ -446,7 +447,7 @@ def test_tool_retry_specific_exceptions() -> None:
         retry_on=(ValueError,),
         initial_delay=0.01,
         jitter=False,
-        on_failure="return_message",
+        on_failure="continue",
     )
 
     agent = create_agent(
@@ -514,7 +515,7 @@ def test_tool_retry_custom_exception_filter() -> None:
         retry_on=should_retry,
         initial_delay=0.01,
         jitter=False,
-        on_failure="return_message",
+        on_failure="continue",
     )
 
     agent = create_agent(
@@ -628,19 +629,29 @@ def test_tool_retry_constant_backoff() -> None:
 
 
 def test_tool_retry_max_delay_cap() -> None:
-    """Test ToolRetryMiddlewarecaps delay at max_delay."""
-    retry = ToolRetryMiddleware(
-        max_retries=5,
-        initial_delay=1.0,
+    """Test calculate_delay caps delay at max_delay."""
+    # Test delay calculation with aggressive backoff and max_delay cap
+    delay_0 = calculate_delay(
+        0,
         backoff_factor=10.0,  # Very aggressive backoff
+        initial_delay=1.0,
         max_delay=2.0,  # Cap at 2 seconds
         jitter=False,
-    )
-
-    # Test delay calculation
-    delay_0 = retry._calculate_delay(0)  # 1.0
-    delay_1 = retry._calculate_delay(1)  # 10.0 -> capped to 2.0
-    delay_2 = retry._calculate_delay(2)  # 100.0 -> capped to 2.0
+    )  # 1.0
+    delay_1 = calculate_delay(
+        1,
+        backoff_factor=10.0,
+        initial_delay=1.0,
+        max_delay=2.0,
+        jitter=False,
+    )  # 10.0 -> capped to 2.0
+    delay_2 = calculate_delay(
+        2,
+        backoff_factor=10.0,
+        initial_delay=1.0,
+        max_delay=2.0,
+        jitter=False,
+    )  # 100.0 -> capped to 2.0
 
     assert delay_0 == 1.0
     assert delay_1 == 2.0
@@ -648,16 +659,18 @@ def test_tool_retry_max_delay_cap() -> None:
 
 
 def test_tool_retry_jitter_variation() -> None:
-    """Test ToolRetryMiddlewareadds jitter to delays."""
-    retry = ToolRetryMiddleware(
-        max_retries=1,
-        initial_delay=1.0,
-        backoff_factor=1.0,
-        jitter=True,
-    )
-
+    """Test calculate_delay adds jitter to delays."""
     # Generate multiple delays and ensure they vary
-    delays = [retry._calculate_delay(0) for _ in range(10)]
+    delays = [
+        calculate_delay(
+            0,
+            backoff_factor=1.0,
+            initial_delay=1.0,
+            max_delay=60.0,
+            jitter=True,
+        )
+        for _ in range(10)
+    ]
 
     # All delays should be within ±25% of 1.0 (i.e., between 0.75 and 1.25)
     for delay in delays:
@@ -710,7 +723,7 @@ async def test_tool_retry_async_failing_tool() -> None:
         max_retries=2,
         initial_delay=0.01,
         jitter=False,
-        on_failure="return_message",
+        on_failure="continue",
     )
 
     agent = create_agent(
@@ -828,7 +841,7 @@ def test_tool_retry_zero_retries() -> None:
 
     retry = ToolRetryMiddleware(
         max_retries=0,  # No retries
-        on_failure="return_message",
+        on_failure="continue",
     )
 
     agent = create_agent(
@@ -893,3 +906,101 @@ def test_tool_retry_multiple_middleware_composition() -> None:
     tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
     assert len(tool_messages) == 1
     assert "Success: test" in tool_messages[0].content
+
+
+def test_tool_retry_deprecated_raise_keyword() -> None:
+    """Test ToolRetryMiddleware with deprecated 'raise' keyword shows deprecation warning."""
+    with pytest.warns(DeprecationWarning, match="on_failure='raise' is deprecated"):
+        retry = ToolRetryMiddleware(
+            max_retries=2,
+            on_failure="raise",
+        )
+
+    # Should be converted to 'error'
+    assert retry.on_failure == "error"
+
+
+def test_tool_retry_deprecated_return_message_keyword() -> None:
+    """Test ToolRetryMiddleware with deprecated 'return_message' keyword shows deprecation warning."""
+    # Use string concatenation to avoid batch replace affecting test code
+    deprecated_value = "return" + "_message"
+    with pytest.warns(DeprecationWarning, match="on_failure='return_message' is deprecated"):
+        retry = ToolRetryMiddleware(
+            max_retries=2,
+            on_failure=deprecated_value,  # type: ignore[arg-type]
+        )
+
+    # Should be converted to 'continue'
+    assert retry.on_failure == "continue"
+
+
+def test_tool_retry_deprecated_raise_behavior() -> None:
+    """Test ToolRetryMiddleware with deprecated 'raise' forwards to 'error' behavior."""
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="failing_tool", args={"input": "test"}, id="1")],
+            [],
+        ]
+    )
+
+    with pytest.warns(DeprecationWarning, match="on_failure='raise' is deprecated"):
+        retry = ToolRetryMiddleware(
+            max_retries=2,
+            initial_delay=0.01,
+            jitter=False,
+            on_failure="raise",
+        )
+
+    agent = create_agent(
+        model=model,
+        tools=[failing_tool],
+        middleware=[retry],
+        checkpointer=InMemorySaver(),
+    )
+
+    # Should raise the ValueError from the tool (same as 'error')
+    with pytest.raises(ValueError, match="Failed: test"):
+        agent.invoke(
+            {"messages": [HumanMessage("Use failing tool")]},
+            {"configurable": {"thread_id": "test"}},
+        )
+
+
+def test_tool_retry_deprecated_return_message_behavior() -> None:
+    """Test ToolRetryMiddleware with deprecated 'return_message' forwards to 'continue' behavior."""
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="failing_tool", args={"input": "test"}, id="1")],
+            [],
+        ]
+    )
+
+    # Use string concatenation to avoid batch replace affecting test code
+    deprecated_value = "return" + "_message"
+    with pytest.warns(DeprecationWarning, match="on_failure='return_message' is deprecated"):
+        retry = ToolRetryMiddleware(
+            max_retries=2,
+            initial_delay=0.01,
+            jitter=False,
+            on_failure=deprecated_value,  # type: ignore[arg-type]
+        )
+
+    agent = create_agent(
+        model=model,
+        tools=[failing_tool],
+        middleware=[retry],
+        checkpointer=InMemorySaver(),
+    )
+
+    result = agent.invoke(
+        {"messages": [HumanMessage("Use failing tool")]},
+        {"configurable": {"thread_id": "test"}},
+    )
+
+    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 1
+    # Should contain error message (same as 'continue')
+    assert "failing_tool" in tool_messages[0].content
+    assert "3 attempts" in tool_messages[0].content
+    assert "ValueError" in tool_messages[0].content
+    assert tool_messages[0].status == "error"

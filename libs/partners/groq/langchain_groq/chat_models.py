@@ -12,7 +12,11 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models import (
+    LanguageModelInput,
+    ModelProfile,
+    ModelProfileRegistry,
+)
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     LangSmithParams,
@@ -63,7 +67,15 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 from langchain_groq._compat import _convert_from_v1_to_groq
+from langchain_groq.data._profiles import _PROFILES
 from langchain_groq.version import __version__
+
+_MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 class ChatGroq(BaseChatModel):
@@ -405,8 +417,11 @@ class ChatGroq(BaseChatModel):
     """Optional `httpx.Client`."""
 
     http_async_client: Any | None = None
-    """Optional `httpx.AsyncClient`. Only used for async invocations. Must specify
-        `http_client` as well if you'd like a custom client for sync invocations."""
+    """Optional `httpx.AsyncClient`.
+
+    Only used for async invocations. Must specify `http_client` as well if you'd like a
+    custom client for sync invocations.
+    """
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -488,6 +503,13 @@ class ChatGroq(BaseChatModel):
                 "Please install it with `pip install groq`."
             )
             raise ImportError(msg) from exc
+        return self
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model_name)
         return self
 
     #
@@ -807,8 +829,8 @@ class ChatGroq(BaseChatModel):
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
-                Supports any tool definition handled by
-                `langchain_core.utils.function_calling.convert_to_openai_tool`.
+
+                Supports any tool definition handled by [`convert_to_openai_tool`][langchain_core.utils.function_calling.convert_to_openai_tool].
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function,
                 `'auto'` to automatically determine which function to call
@@ -817,8 +839,7 @@ class ChatGroq(BaseChatModel):
                 `{"type": "function", "function": {"name": <<tool_name>>}}`.
             **kwargs: Any additional parameters to pass to the
                 `langchain.runnable.Runnable` constructor.
-
-        """
+        """  # noqa: E501
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None and tool_choice:
             if tool_choice == "any":
@@ -873,6 +894,7 @@ class ChatGroq(BaseChatModel):
                 when specifying a Pydantic or `TypedDict` class.
 
                 !!! warning "Behavior changed in `langchain-groq` 0.3.8"
+
                     Added support for Groq's dedicated structured output feature via
                     `method="json_schema"`.
 

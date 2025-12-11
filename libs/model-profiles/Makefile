@@ -1,4 +1,4 @@
-.PHONY: all format lint test tests integration_tests help extended_tests refresh_data
+.PHONY: all format lint test tests integration_tests help extended_tests
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -24,14 +24,6 @@ test_watch:
 
 make benchmark:
 	uv run --group test pytest ./tests -m benchmark
-
-
-######################
-# DATA MANAGEMENT
-######################
-
-refresh_data:
-	uv run --group dev python scripts/refresh_data.py
 
 ######################
 # LINTING AND FORMATTING
@@ -67,7 +59,6 @@ help:
 	@echo 'check_imports				- check imports'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
-	@echo 'refresh_data                 - download latest model data from models.dev'
 	@echo 'test                         - run unit tests'
 	@echo 'tests                        - run unit tests'
 	@echo 'test TEST_FILE=<test_file>   - run all tests in file'

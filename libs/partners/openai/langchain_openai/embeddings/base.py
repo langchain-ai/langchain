@@ -243,14 +243,17 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     tiktoken_model_name: str | None = None
     """The model name to pass to tiktoken when using this class.
+
     Tiktoken is used to count the number of tokens in documents to constrain
-    them to be under a certain limit. By default, when set to None, this will
-    be the same as the embedding model name. However, there are some cases
-    where you may want to use this Embedding class with a model name not
-    supported by tiktoken. This can include when using Azure embeddings or
-    when using one of the many model providers that expose an OpenAI-like
+    them to be under a certain limit.
+
+    By default, when set to `None`, this will be the same as the embedding model name.
+    However, there are some cases where you may want to use this `Embedding` class with
+    a model name not supported by tiktoken. This can include when using Azure embeddings
+    or when using one of the many model providers that expose an OpenAI-like
     API but with different models. In those cases, in order to avoid erroring
-    when tiktoken is called, you can specify a model name to use here."""
+    when tiktoken is called, you can specify a model name to use here.
+    """
 
     show_progress_bar: bool = False
     """Whether to show a progress bar when embedding."""
@@ -275,14 +278,18 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Max number of seconds to wait between retries"""
 
     http_client: Any | None = None
-    """Optional `httpx.Client`. Only used for sync invocations. Must specify
-        `http_async_client` as well if you'd like a custom client for async
-        invocations.
+    """Optional `httpx.Client`.
+
+    Only used for sync invocations. Must specify `http_async_client` as well if you'd
+    like a custom client for async invocations.
     """
 
     http_async_client: Any | None = None
-    """Optional `httpx.AsyncClient`. Only used for async invocations. Must specify
-        `http_client` as well if you'd like a custom client for sync invocations."""
+    """Optional `httpx.AsyncClient`.
+
+    Only used for async invocations. Must specify `http_client` as well if you'd like a
+    custom client for sync invocations.
+    """
 
     check_embedding_ctx_length: bool = True
     """Whether to check the token length of inputs and automatically split inputs
