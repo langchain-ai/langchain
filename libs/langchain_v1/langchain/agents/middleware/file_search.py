@@ -120,9 +120,9 @@ class FilesystemFileSearchMiddleware(AgentMiddleware):
 
         Args:
             root_path: Root directory to search.
-            use_ripgrep: Whether to use ripgrep for search.
+            use_ripgrep: Whether to use `ripgrep` for search.
 
-                Falls back to Python if ripgrep unavailable.
+                Falls back to Python if `ripgrep` unavailable.
             max_file_size_mb: Maximum file size to search in MB.
         """
         self.root_path = Path(root_path).resolve()

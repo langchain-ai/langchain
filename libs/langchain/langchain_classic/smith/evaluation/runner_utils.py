@@ -295,11 +295,7 @@ def _get_prompt(inputs: dict[str, Any]) -> str:
 
 
 class ChatModelInput(TypedDict):
-    """Input for a chat model.
-
-    Args:
-        messages: List of chat messages.
-    """
+    """Input for a chat model."""
 
     messages: list[BaseMessage]
 

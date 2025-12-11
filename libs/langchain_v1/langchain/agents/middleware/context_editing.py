@@ -10,6 +10,7 @@ chat model.
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Iterable, Sequence
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Literal
 
@@ -17,7 +18,6 @@ from langchain_core.messages import (
     AIMessage,
     AnyMessage,
     BaseMessage,
-    SystemMessage,
     ToolMessage,
 )
 from langchain_core.messages.utils import count_tokens_approximately
@@ -189,7 +189,7 @@ class ContextEditingMiddleware(AgentMiddleware):
     configured thresholds.
 
     Currently the `ClearToolUsesEdit` strategy is supported, aligning with Anthropic's
-    `clear_tool_uses_20250919` behavior [(read more)](https://docs.claude.com/en/docs/agents-and-tools/tool-use/memory-tool).
+    `clear_tool_uses_20250919` behavior [(read more)](https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool).
     """
 
     edits: list[ContextEdit]
@@ -229,19 +229,18 @@ class ContextEditingMiddleware(AgentMiddleware):
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return count_tokens_approximately(messages)
         else:
-            system_msg = (
-                [SystemMessage(content=request.system_prompt)] if request.system_prompt else []
-            )
+            system_msg = [request.system_message] if request.system_message else []
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return request.model.get_num_tokens_from_messages(
                     system_msg + list(messages), request.tools
                 )
 
+        edited_messages = deepcopy(list(request.messages))
         for edit in self.edits:
-            edit.apply(request.messages, count_tokens=count_tokens)
+            edit.apply(edited_messages, count_tokens=count_tokens)
 
-        return handler(request)
+        return handler(request.override(messages=edited_messages))
 
     async def awrap_model_call(
         self,
@@ -257,19 +256,18 @@ class ContextEditingMiddleware(AgentMiddleware):
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return count_tokens_approximately(messages)
         else:
-            system_msg = (
-                [SystemMessage(content=request.system_prompt)] if request.system_prompt else []
-            )
+            system_msg = [request.system_message] if request.system_message else []
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return request.model.get_num_tokens_from_messages(
                     system_msg + list(messages), request.tools
                 )
 
+        edited_messages = deepcopy(list(request.messages))
         for edit in self.edits:
-            edit.apply(request.messages, count_tokens=count_tokens)
+            edit.apply(edited_messages, count_tokens=count_tokens)
 
-        return await handler(request)
+        return await handler(request.override(messages=edited_messages))
 
 
 __all__ = [

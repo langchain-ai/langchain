@@ -94,7 +94,7 @@ from langchain_core.tracers.root_listeners import (
     AsyncRootListenersTracer,
     RootListenersTracer,
 )
-from langchain_core.utils.aiter import aclosing, atee, py_anext
+from langchain_core.utils.aiter import aclosing, atee
 from langchain_core.utils.iter import safetee
 from langchain_core.utils.pydantic import create_model_v2
 
@@ -127,10 +127,10 @@ class Runnable(ABC, Generic[Input, Output]):
     Key Methods
     ===========
 
-    - **`invoke`/`ainvoke`**: Transforms a single input into an output.
-    - **`batch`/`abatch`**: Efficiently transforms multiple inputs into outputs.
-    - **`stream`/`astream`**: Streams output from a single input as it's produced.
-    - **`astream_log`**: Streams output and selected intermediate results from an
+    - `invoke`/`ainvoke`: Transforms a single input into an output.
+    - `batch`/`abatch`: Efficiently transforms multiple inputs into outputs.
+    - `stream`/`astream`: Streams output from a single input as it's produced.
+    - `astream_log`: Streams output and selected intermediate results from an
         input.
 
     Built-in optimizations:
@@ -707,51 +707,53 @@ class Runnable(ABC, Generic[Input, Output]):
     def pick(self, keys: str | list[str]) -> RunnableSerializable[Any, Any]:
         """Pick keys from the output `dict` of this `Runnable`.
 
-        Pick a single key:
+        !!! example "Pick a single key"
 
-        ```python
-        import json
+            ```python
+            import json
 
-        from langchain_core.runnables import RunnableLambda, RunnableMap
+            from langchain_core.runnables import RunnableLambda, RunnableMap
 
-        as_str = RunnableLambda(str)
-        as_json = RunnableLambda(json.loads)
-        chain = RunnableMap(str=as_str, json=as_json)
+            as_str = RunnableLambda(str)
+            as_json = RunnableLambda(json.loads)
+            chain = RunnableMap(str=as_str, json=as_json)
 
-        chain.invoke("[1, 2, 3]")
-        # -> {"str": "[1, 2, 3]", "json": [1, 2, 3]}
+            chain.invoke("[1, 2, 3]")
+            # -> {"str": "[1, 2, 3]", "json": [1, 2, 3]}
 
-        json_only_chain = chain.pick("json")
-        json_only_chain.invoke("[1, 2, 3]")
-        # -> [1, 2, 3]
-        ```
+            json_only_chain = chain.pick("json")
+            json_only_chain.invoke("[1, 2, 3]")
+            # -> [1, 2, 3]
+            ```
 
-        Pick a list of keys:
+        !!! example "Pick a list of keys"
 
-        ```python
-        from typing import Any
+            ```python
+            from typing import Any
 
-        import json
+            import json
 
-        from langchain_core.runnables import RunnableLambda, RunnableMap
+            from langchain_core.runnables import RunnableLambda, RunnableMap
 
-        as_str = RunnableLambda(str)
-        as_json = RunnableLambda(json.loads)
-
-
-        def as_bytes(x: Any) -> bytes:
-            return bytes(x, "utf-8")
+            as_str = RunnableLambda(str)
+            as_json = RunnableLambda(json.loads)
 
 
-        chain = RunnableMap(str=as_str, json=as_json, bytes=RunnableLambda(as_bytes))
+            def as_bytes(x: Any) -> bytes:
+                return bytes(x, "utf-8")
 
-        chain.invoke("[1, 2, 3]")
-        # -> {"str": "[1, 2, 3]", "json": [1, 2, 3], "bytes": b"[1, 2, 3]"}
 
-        json_and_bytes_chain = chain.pick(["json", "bytes"])
-        json_and_bytes_chain.invoke("[1, 2, 3]")
-        # -> {"json": [1, 2, 3], "bytes": b"[1, 2, 3]"}
-        ```
+            chain = RunnableMap(
+                str=as_str, json=as_json, bytes=RunnableLambda(as_bytes)
+            )
+
+            chain.invoke("[1, 2, 3]")
+            # -> {"str": "[1, 2, 3]", "json": [1, 2, 3], "bytes": b"[1, 2, 3]"}
+
+            json_and_bytes_chain = chain.pick(["json", "bytes"])
+            json_and_bytes_chain.invoke("[1, 2, 3]")
+            # -> {"json": [1, 2, 3], "bytes": b"[1, 2, 3]"}
+            ```
 
         Args:
             keys: A key or list of keys to pick from the output dict.
@@ -1372,48 +1374,50 @@ class Runnable(ABC, Generic[Input, Output]):
         ).with_config({"run_name": "my_template", "tags": ["my_template"]})
         ```
 
-        For instance:
+        !!! example
 
-        ```python
-        from langchain_core.runnables import RunnableLambda
-
-
-        async def reverse(s: str) -> str:
-            return s[::-1]
+            ```python
+            from langchain_core.runnables import RunnableLambda
 
 
-        chain = RunnableLambda(func=reverse)
+            async def reverse(s: str) -> str:
+                return s[::-1]
 
-        events = [event async for event in chain.astream_events("hello", version="v2")]
 
-        # Will produce the following events
-        # (run_id, and parent_ids has been omitted for brevity):
-        [
-            {
-                "data": {"input": "hello"},
-                "event": "on_chain_start",
-                "metadata": {},
-                "name": "reverse",
-                "tags": [],
-            },
-            {
-                "data": {"chunk": "olleh"},
-                "event": "on_chain_stream",
-                "metadata": {},
-                "name": "reverse",
-                "tags": [],
-            },
-            {
-                "data": {"output": "olleh"},
-                "event": "on_chain_end",
-                "metadata": {},
-                "name": "reverse",
-                "tags": [],
-            },
-        ]
-        ```
+            chain = RunnableLambda(func=reverse)
 
-        ```python title="Example: Dispatch Custom Event"
+            events = [
+                event async for event in chain.astream_events("hello", version="v2")
+            ]
+
+            # Will produce the following events
+            # (run_id, and parent_ids has been omitted for brevity):
+            [
+                {
+                    "data": {"input": "hello"},
+                    "event": "on_chain_start",
+                    "metadata": {},
+                    "name": "reverse",
+                    "tags": [],
+                },
+                {
+                    "data": {"chunk": "olleh"},
+                    "event": "on_chain_stream",
+                    "metadata": {},
+                    "name": "reverse",
+                    "tags": [],
+                },
+                {
+                    "data": {"output": "olleh"},
+                    "event": "on_chain_end",
+                    "metadata": {},
+                    "name": "reverse",
+                    "tags": [],
+                },
+            ]
+            ```
+
+        ```python title="Dispatch custom event"
         from langchain_core.callbacks.manager import (
             adispatch_custom_event,
         )
@@ -1447,10 +1451,13 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             input: The input to the `Runnable`.
             config: The config to use for the `Runnable`.
-            version: The version of the schema to use either `'v2'` or `'v1'`.
+            version: The version of the schema to use, either `'v2'` or `'v1'`.
+
                 Users should use `'v2'`.
+
                 `'v1'` is for backwards compatibility and will be deprecated
                 in `0.4.0`.
+
                 No default will be assigned until the API is stabilized.
                 custom events will only be surfaced in `'v2'`.
             include_names: Only include events from `Runnable` objects with matching names.
@@ -1460,6 +1467,7 @@ class Runnable(ABC, Generic[Input, Output]):
             exclude_types: Exclude events from `Runnable` objects with matching types.
             exclude_tags: Exclude events from `Runnable` objects with matching tags.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
+
                 These will be passed to `astream_log` as this implementation
                 of `astream_events` is built on top of `astream_log`.
 
@@ -2369,7 +2377,7 @@ class Runnable(ABC, Generic[Input, Output]):
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = atee(inputs, 2)
         # Start the input iterator to ensure the input Runnable starts before this one
-        final_input: Input | None = await py_anext(input_for_tracing, None)
+        final_input: Input | None = await anext(input_for_tracing, None)
         final_input_supported = True
         final_output: Output | None = None
         final_output_supported = True
@@ -2409,7 +2417,7 @@ class Runnable(ABC, Generic[Input, Output]):
                     iterator = iterator_
                 try:
                     while True:
-                        chunk = await coro_with_context(py_anext(iterator), context)
+                        chunk = await coro_with_context(anext(iterator), context)
                         yield chunk
                         if final_output_supported:
                             if final_output is None:
@@ -2476,82 +2484,82 @@ class Runnable(ABC, Generic[Input, Output]):
         Returns:
             A `BaseTool` instance.
 
-        Typed dict input:
+        !!! example "`TypedDict` input"
 
-        ```python
-        from typing_extensions import TypedDict
-        from langchain_core.runnables import RunnableLambda
-
-
-        class Args(TypedDict):
-            a: int
-            b: list[int]
+            ```python
+            from typing_extensions import TypedDict
+            from langchain_core.runnables import RunnableLambda
 
 
-        def f(x: Args) -> str:
-            return str(x["a"] * max(x["b"]))
+            class Args(TypedDict):
+                a: int
+                b: list[int]
 
 
-        runnable = RunnableLambda(f)
-        as_tool = runnable.as_tool()
-        as_tool.invoke({"a": 3, "b": [1, 2]})
-        ```
-
-        `dict` input, specifying schema via `args_schema`:
-
-        ```python
-        from typing import Any
-        from pydantic import BaseModel, Field
-        from langchain_core.runnables import RunnableLambda
-
-        def f(x: dict[str, Any]) -> str:
-            return str(x["a"] * max(x["b"]))
-
-        class FSchema(BaseModel):
-            \"\"\"Apply a function to an integer and list of integers.\"\"\"
-
-            a: int = Field(..., description="Integer")
-            b: list[int] = Field(..., description="List of ints")
-
-        runnable = RunnableLambda(f)
-        as_tool = runnable.as_tool(FSchema)
-        as_tool.invoke({"a": 3, "b": [1, 2]})
-        ```
-
-        `dict` input, specifying schema via `arg_types`:
-
-        ```python
-        from typing import Any
-        from langchain_core.runnables import RunnableLambda
+            def f(x: Args) -> str:
+                return str(x["a"] * max(x["b"]))
 
 
-        def f(x: dict[str, Any]) -> str:
-            return str(x["a"] * max(x["b"]))
+            runnable = RunnableLambda(f)
+            as_tool = runnable.as_tool()
+            as_tool.invoke({"a": 3, "b": [1, 2]})
+            ```
+
+        !!! example "`dict` input, specifying schema via `args_schema`"
+
+            ```python
+            from typing import Any
+            from pydantic import BaseModel, Field
+            from langchain_core.runnables import RunnableLambda
+
+            def f(x: dict[str, Any]) -> str:
+                return str(x["a"] * max(x["b"]))
+
+            class FSchema(BaseModel):
+                \"\"\"Apply a function to an integer and list of integers.\"\"\"
+
+                a: int = Field(..., description="Integer")
+                b: list[int] = Field(..., description="List of ints")
+
+            runnable = RunnableLambda(f)
+            as_tool = runnable.as_tool(FSchema)
+            as_tool.invoke({"a": 3, "b": [1, 2]})
+            ```
+
+        !!! example "`dict` input, specifying schema via `arg_types`"
+
+            ```python
+            from typing import Any
+            from langchain_core.runnables import RunnableLambda
 
 
-        runnable = RunnableLambda(f)
-        as_tool = runnable.as_tool(arg_types={"a": int, "b": list[int]})
-        as_tool.invoke({"a": 3, "b": [1, 2]})
-        ```
-
-        `str` input:
-
-        ```python
-        from langchain_core.runnables import RunnableLambda
+            def f(x: dict[str, Any]) -> str:
+                return str(x["a"] * max(x["b"]))
 
 
-        def f(x: str) -> str:
-            return x + "a"
+            runnable = RunnableLambda(f)
+            as_tool = runnable.as_tool(arg_types={"a": int, "b": list[int]})
+            as_tool.invoke({"a": 3, "b": [1, 2]})
+            ```
+
+        !!! example "`str` input"
+
+            ```python
+            from langchain_core.runnables import RunnableLambda
 
 
-        def g(x: str) -> str:
-            return x + "z"
+            def f(x: str) -> str:
+                return x + "a"
 
 
-        runnable = RunnableLambda(f) | g
-        as_tool = runnable.as_tool()
-        as_tool.invoke("b")
-        ```
+            def g(x: str) -> str:
+                return x + "z"
+
+
+            runnable = RunnableLambda(f) | g
+            as_tool = runnable.as_tool()
+            as_tool.invoke("b")
+            ```
         """
         # Avoid circular import
         from langchain_core.tools import convert_runnable_to_tool  # noqa: PLC0415
@@ -2603,29 +2611,33 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         Returns:
             A new `Runnable` with the fields configured.
 
-        ```python
-        from langchain_core.runnables import ConfigurableField
-        from langchain_openai import ChatOpenAI
+        !!! example
 
-        model = ChatOpenAI(max_tokens=20).configurable_fields(
-            max_tokens=ConfigurableField(
-                id="output_token_number",
-                name="Max tokens in the output",
-                description="The maximum number of tokens in the output",
+            ```python
+            from langchain_core.runnables import ConfigurableField
+            from langchain_openai import ChatOpenAI
+
+            model = ChatOpenAI(max_tokens=20).configurable_fields(
+                max_tokens=ConfigurableField(
+                    id="output_token_number",
+                    name="Max tokens in the output",
+                    description="The maximum number of tokens in the output",
+                )
             )
-        )
 
-        # max_tokens = 20
-        print("max_tokens_20: ", model.invoke("tell me something about chess").content)
+            # max_tokens = 20
+            print(
+                "max_tokens_20: ", model.invoke("tell me something about chess").content
+            )
 
-        # max_tokens = 200
-        print(
-            "max_tokens_200: ",
-            model.with_config(configurable={"output_token_number": 200})
-            .invoke("tell me something about chess")
-            .content,
-        )
-        ```
+            # max_tokens = 200
+            print(
+                "max_tokens_200: ",
+                model.with_config(configurable={"output_token_number": 200})
+                .invoke("tell me something about chess")
+                .content,
+            )
+            ```
         """
         # Import locally to prevent circular import
         from langchain_core.runnables.configurable import (  # noqa: PLC0415
@@ -2664,29 +2676,31 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         Returns:
             A new `Runnable` with the alternatives configured.
 
-        ```python
-        from langchain_anthropic import ChatAnthropic
-        from langchain_core.runnables.utils import ConfigurableField
-        from langchain_openai import ChatOpenAI
+        !!! example
 
-        model = ChatAnthropic(
-            model_name="claude-sonnet-4-5-20250929"
-        ).configurable_alternatives(
-            ConfigurableField(id="llm"),
-            default_key="anthropic",
-            openai=ChatOpenAI(),
-        )
+            ```python
+            from langchain_anthropic import ChatAnthropic
+            from langchain_core.runnables.utils import ConfigurableField
+            from langchain_openai import ChatOpenAI
 
-        # uses the default model ChatAnthropic
-        print(model.invoke("which organization created you?").content)
+            model = ChatAnthropic(
+                model_name="claude-sonnet-4-5-20250929"
+            ).configurable_alternatives(
+                ConfigurableField(id="llm"),
+                default_key="anthropic",
+                openai=ChatOpenAI(),
+            )
 
-        # uses ChatOpenAI
-        print(
-            model.with_config(configurable={"llm": "openai"})
-            .invoke("which organization created you?")
-            .content
-        )
-        ```
+            # uses the default model ChatAnthropic
+            print(model.invoke("which organization created you?").content)
+
+            # uses ChatOpenAI
+            print(
+                model.with_config(configurable={"llm": "openai"})
+                .invoke("which organization created you?")
+                .content
+            )
+            ```
         """
         # Import locally to prevent circular import
         from langchain_core.runnables.configurable import (  # noqa: PLC0415
@@ -4011,7 +4025,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
 
         # Wrap in a coroutine to satisfy linter
         async def get_next_chunk(generator: AsyncIterator) -> Output | None:
-            return await py_anext(generator)
+            return await anext(generator)
 
         # Start the first iteration of each generator
         tasks = {

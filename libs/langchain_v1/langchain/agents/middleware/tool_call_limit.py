@@ -153,38 +153,46 @@ class ToolCallLimitMiddleware(
                 are other pending tool calls (due to parallel tool calling).
 
     Examples:
-        ```python title="Continue execution with blocked tools (default)"
-        from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
-        from langchain.agents import create_agent
+        !!! example "Continue execution with blocked tools (default)"
 
-        # Block exceeded tools but let other tools and model continue
-        limiter = ToolCallLimitMiddleware(
-            thread_limit=20,
-            run_limit=10,
-            exit_behavior="continue",  # default
-        )
+            ```python
+            from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
+            from langchain.agents import create_agent
 
-        agent = create_agent("openai:gpt-4o", middleware=[limiter])
-        ```
+            # Block exceeded tools but let other tools and model continue
+            limiter = ToolCallLimitMiddleware(
+                thread_limit=20,
+                run_limit=10,
+                exit_behavior="continue",  # default
+            )
 
-        ```python title="Stop immediately when limit exceeded"
-        # End execution immediately with an AI message
-        limiter = ToolCallLimitMiddleware(run_limit=5, exit_behavior="end")
+            agent = create_agent("openai:gpt-4o", middleware=[limiter])
+            ```
 
-        agent = create_agent("openai:gpt-4o", middleware=[limiter])
-        ```
+        !!! example "Stop immediately when limit exceeded"
 
-        ```python title="Raise exception on limit"
-        # Strict limit with exception handling
-        limiter = ToolCallLimitMiddleware(tool_name="search", thread_limit=5, exit_behavior="error")
+            ```python
+            # End execution immediately with an AI message
+            limiter = ToolCallLimitMiddleware(run_limit=5, exit_behavior="end")
 
-        agent = create_agent("openai:gpt-4o", middleware=[limiter])
+            agent = create_agent("openai:gpt-4o", middleware=[limiter])
+            ```
 
-        try:
-            result = await agent.invoke({"messages": [HumanMessage("Task")]})
-        except ToolCallLimitExceededError as e:
-            print(f"Search limit exceeded: {e}")
-        ```
+        !!! example "Raise exception on limit"
+
+            ```python
+            # Strict limit with exception handling
+            limiter = ToolCallLimitMiddleware(
+                tool_name="search", thread_limit=5, exit_behavior="error"
+            )
+
+            agent = create_agent("openai:gpt-4o", middleware=[limiter])
+
+            try:
+                result = await agent.invoke({"messages": [HumanMessage("Task")]})
+            except ToolCallLimitExceededError as e:
+                print(f"Search limit exceeded: {e}")
+            ```
 
     """
 
@@ -208,6 +216,7 @@ class ToolCallLimitMiddleware(
             run_limit: Maximum number of tool calls allowed per run.
                 `None` means no limit.
             exit_behavior: How to handle when limits are exceeded.
+
                 - `'continue'`: Block exceeded tools with error messages, let other
                     tools continue. Model decides when to end.
                 - `'error'`: Raise a `ToolCallLimitExceededError` exception
@@ -218,7 +227,7 @@ class ToolCallLimitMiddleware(
 
         Raises:
             ValueError: If both limits are `None`, if `exit_behavior` is invalid,
-                or if `run_limit` exceeds thread_limit.
+                or if `run_limit` exceeds `thread_limit`.
         """
         super().__init__()
 
@@ -451,3 +460,28 @@ class ToolCallLimitMiddleware(
             "run_tool_call_count": run_counts,
             "messages": artificial_messages,
         }
+
+    @hook_config(can_jump_to=["end"])
+    async def aafter_model(
+        self,
+        state: ToolCallLimitState[ResponseT],
+        runtime: Runtime[ContextT],
+    ) -> dict[str, Any] | None:
+        """Async increment tool call counts after a model call and check limits.
+
+        Args:
+            state: The current agent state.
+            runtime: The langgraph runtime.
+
+        Returns:
+            State updates with incremented tool call counts. If limits are exceeded
+                and exit_behavior is `'end'`, also includes a jump to end with a
+                `ToolMessage` and AI message for the single exceeded tool call.
+
+        Raises:
+            ToolCallLimitExceededError: If limits are exceeded and `exit_behavior`
+                is `'error'`.
+            NotImplementedError: If limits are exceeded, `exit_behavior` is `'end'`,
+                and there are multiple tool calls.
+        """
+        return self.after_model(state, runtime)
