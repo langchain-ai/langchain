@@ -1604,7 +1604,7 @@ class ChatAnthropic(BaseChatModel):
             [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#remote-mcp)
             for more detail.
 
-            ```python hl_lines="3-14 18 23"
+            ```python hl_lines="3-20 24 29"
             from langchain_anthropic import ChatAnthropic
 
             mcp_servers = [
