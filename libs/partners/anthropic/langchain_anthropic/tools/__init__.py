@@ -52,7 +52,7 @@ Example:
     import subprocess
 
     from langchain_anthropic import ChatAnthropic, tools
-    from langchain.messages import HumanMessage, ToolMessage
+    from langchain.messages import HumanMessage
 
 
     def execute_bash(*, command: str | None = None, restart: bool = False, **kw):
@@ -85,11 +85,9 @@ Example:
     while response.tool_calls:
         # Execute each tool call
         for tool_call in response.tool_calls:
-            # Invoke the tool with the args from the model
-            result = bash_tool.invoke(tool_call["args"])
-
-            # Add the tool result to messages
-            messages.append(ToolMessage(content=result, tool_call_id=tool_call["id"]))
+            # Invoke the tool
+            tool_msg = bash_tool.invoke(tool_call)
+            messages.append(tool_msg)
 
         # Get the next response
         response = model_with_bash.invoke(messages)

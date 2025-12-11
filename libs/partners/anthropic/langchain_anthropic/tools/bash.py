@@ -80,7 +80,7 @@ def bash_20250124(
         import subprocess
 
         from langchain_anthropic import ChatAnthropic, tools
-        from langchain.messages import HumanMessage, ToolMessage
+        from langchain.messages import HumanMessage
 
 
         def execute_bash(*, command: str | None = None, restart: bool = False, **kw):
@@ -111,8 +111,7 @@ def bash_20250124(
 
         while response.tool_calls:
             for tool_call in response.tool_calls:
-                result = bash_tool.invoke(tool_call["args"])
-                tool_msg = ToolMessage(content=result, tool_call_id=tool_call["id"])
+                tool_msg = bash_tool.invoke(tool_call)
                 messages.append(tool_msg)
 
             response = model_with_bash.invoke(messages)
