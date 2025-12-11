@@ -468,7 +468,7 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
     raise
 
 
-def _model_prefers_responses_api(model_name: str):
+def _model_prefers_responses_api(model_name: str) -> bool:
     return "gpt-5.2-pro" in model_name
 
 
