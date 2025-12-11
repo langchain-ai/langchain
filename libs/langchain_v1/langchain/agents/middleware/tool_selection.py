@@ -49,7 +49,8 @@ def _create_tool_selection_response(tools: list[BaseTool]) -> TypeAdapter:
         tools: Available tools to include in the schema.
 
     Returns:
-        TypeAdapter for a schema where each tool name is a Literal with its description.
+        `TypeAdapter` for a schema where each tool name is a `Literal` with its
+            description.
     """
     if not tools:
         msg = "Invalid usage: tools must be non-empty"
@@ -92,23 +93,25 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
     and helps the main model focus on the right tools.
 
     Examples:
-        Limit to 3 tools:
-        ```python
-        from langchain.agents.middleware import LLMToolSelectorMiddleware
+        !!! example "Limit to 3 tools"
 
-        middleware = LLMToolSelectorMiddleware(max_tools=3)
+            ```python
+            from langchain.agents.middleware import LLMToolSelectorMiddleware
 
-        agent = create_agent(
-            model="openai:gpt-4o",
-            tools=[tool1, tool2, tool3, tool4, tool5],
-            middleware=[middleware],
-        )
-        ```
+            middleware = LLMToolSelectorMiddleware(max_tools=3)
 
-        Use a smaller model for selection:
-        ```python
-        middleware = LLMToolSelectorMiddleware(model="openai:gpt-4o-mini", max_tools=2)
-        ```
+            agent = create_agent(
+                model="openai:gpt-4o",
+                tools=[tool1, tool2, tool3, tool4, tool5],
+                middleware=[middleware],
+            )
+            ```
+
+        !!! example "Use a smaller model for selection"
+
+            ```python
+            middleware = LLMToolSelectorMiddleware(model="openai:gpt-4o-mini", max_tools=2)
+            ```
     """
 
     def __init__(
@@ -122,13 +125,20 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         """Initialize the tool selector.
 
         Args:
-            model: Model to use for selection. If not provided, uses the agent's main model.
-                Can be a model identifier string or BaseChatModel instance.
+            model: Model to use for selection.
+
+                If not provided, uses the agent's main model.
+
+                Can be a model identifier string or `BaseChatModel` instance.
             system_prompt: Instructions for the selection model.
-            max_tools: Maximum number of tools to select. If the model selects more,
-                only the first max_tools will be used. No limit if not specified.
+            max_tools: Maximum number of tools to select.
+
+                If the model selects more, only the first `max_tools` will be used.
+
+                If not specified, there is no limit.
             always_include: Tool names to always include regardless of selection.
-                These do not count against the max_tools limit.
+
+                These do not count against the `max_tools` limit.
         """
         super().__init__()
         self.system_prompt = system_prompt
@@ -144,7 +154,8 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         """Prepare inputs for tool selection.
 
         Returns:
-            SelectionRequest with prepared inputs, or None if no selection is needed.
+            `SelectionRequest` with prepared inputs, or `None` if no selection is
+                needed.
         """
         # If no tools available, return None
         if not request.tools or len(request.tools) == 0:
@@ -211,7 +222,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         valid_tool_names: list[str],
         request: ModelRequest,
     ) -> ModelRequest:
-        """Process the selection response and return filtered ModelRequest."""
+        """Process the selection response and return filtered `ModelRequest`."""
         selected_tool_names: list[str] = []
         invalid_tool_selections = []
 
@@ -244,8 +255,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         # Also preserve any provider-specific tool dicts from the original request
         provider_tools = [tool for tool in request.tools if isinstance(tool, dict)]
 
-        request.tools = [*selected_tools, *provider_tools]
-        return request
+        return request.override(tools=[*selected_tools, *provider_tools])
 
     def wrap_model_call(
         self,

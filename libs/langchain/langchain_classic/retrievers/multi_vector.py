@@ -32,13 +32,18 @@ class MultiVectorRetriever(BaseRetriever):
     vectorstore: VectorStore
     """The underlying `VectorStore` to use to store small chunks
     and their embedding vectors"""
+
     byte_store: ByteStore | None = None
     """The lower-level backing storage layer for the parent documents"""
+
     docstore: BaseStore[str, Document]
     """The storage interface for the parent documents"""
+
     id_key: str = "doc_id"
+
     search_kwargs: dict = Field(default_factory=dict)
     """Keyword arguments to pass to the search function."""
+
     search_type: SearchType = SearchType.similarity
     """Type of search to perform (similarity / mmr)"""
 

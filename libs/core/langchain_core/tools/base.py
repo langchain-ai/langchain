@@ -386,6 +386,8 @@ class ToolException(Exception):  # noqa: N818
 
 ArgsSchema = TypeBaseModel | dict[str, Any]
 
+_EMPTY_SET: frozenset[str] = frozenset()
+
 
 class BaseTool(RunnableSerializable[str | dict | ToolCall, Any]):
     """Base class for all LangChain tools.
@@ -494,6 +496,24 @@ class ChildTool(BaseTool):
     two-tuple corresponding to the `(content, artifact)` of a `ToolMessage`.
     """
 
+    extras: dict[str, Any] | None = None
+    """Optional provider-specific extra fields for the tool.
+
+    This is used to pass provider-specific configuration that doesn't fit into
+    standard tool fields.
+
+    Example:
+        Anthropic-specific fields like [`cache_control`](https://docs.langchain.com/oss/python/integrations/chat/anthropic#prompt-caching),
+        [`defer_loading`](https://docs.langchain.com/oss/python/integrations/chat/anthropic#tool-search),
+        or `input_examples`.
+
+        ```python
+        @tool(extras={"defer_loading": True, "cache_control": {"type": "ephemeral"}})
+        def my_tool(x: str) -> str:
+            return x
+        ```
+    """
+
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the tool.
 
@@ -568,6 +588,11 @@ class ChildTool(BaseTool):
         return _create_subset_model(
             self.name, full_schema, fields, fn_description=self.description
         )
+
+    @functools.cached_property
+    def _injected_args_keys(self) -> frozenset[str]:
+        # base implementation doesn't manage injected args
+        return _EMPTY_SET
 
     # --- Runnable ---
 
@@ -649,6 +674,7 @@ class ChildTool(BaseTool):
             if isinstance(input_args, dict):
                 return tool_input
             if issubclass(input_args, BaseModel):
+                # Check args_schema for InjectedToolCallId
                 for k, v in get_all_basemodel_annotations(input_args).items():
                     if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
                         if tool_call_id is None:
@@ -664,6 +690,7 @@ class ChildTool(BaseTool):
                 result = input_args.model_validate(tool_input)
                 result_dict = result.model_dump()
             elif issubclass(input_args, BaseModelV1):
+                # Check args_schema for InjectedToolCallId
                 for k, v in get_all_basemodel_annotations(input_args).items():
                     if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
                         if tool_call_id is None:
@@ -683,9 +710,24 @@ class ChildTool(BaseTool):
                     f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"
                 )
                 raise NotImplementedError(msg)
-            return {
-                k: getattr(result, k) for k, v in result_dict.items() if k in tool_input
+            validated_input = {
+                k: getattr(result, k) for k in result_dict if k in tool_input
             }
+            for k in self._injected_args_keys:
+                if k in tool_input:
+                    validated_input[k] = tool_input[k]
+                elif k == "tool_call_id":
+                    if tool_call_id is None:
+                        msg = (
+                            "When tool includes an InjectedToolCallId "
+                            "argument, tool must always be invoked with a full "
+                            "model ToolCall of the form: {'args': {...}, "
+                            "'name': '...', 'type': 'tool_call', "
+                            "'tool_call_id': '...'}"
+                        )
+                        raise ValueError(msg)
+                    validated_input[k] = tool_call_id
+            return validated_input
         return tool_input
 
     @abstractmethod
@@ -853,6 +895,7 @@ class ChildTool(BaseTool):
             name=run_name,
             run_id=run_id,
             inputs=filtered_tool_input,
+            tool_call_id=tool_call_id,
             **kwargs,
         )
 
@@ -980,6 +1023,7 @@ class ChildTool(BaseTool):
             name=run_name,
             run_id=run_id,
             inputs=filtered_tool_input,
+            tool_call_id=tool_call_id,
             **kwargs,
         )
         content = None

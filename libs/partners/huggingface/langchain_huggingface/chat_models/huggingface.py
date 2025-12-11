@@ -13,7 +13,11 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models import (
+    LanguageModelInput,
+    ModelProfile,
+    ModelProfileRegistry,
+)
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     agenerate_from_stream,
@@ -61,8 +65,16 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Self
 
+from langchain_huggingface.data._profiles import _PROFILES
 from langchain_huggingface.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain_huggingface.llms.huggingface_pipeline import HuggingFacePipeline
+
+_MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 @dataclass
@@ -580,6 +592,13 @@ class ChatHuggingFace(BaseChatModel):
             raise TypeError(msg)
         return self
 
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None and self.model_id:
+            self.profile = _get_default_model_profile(self.model_id)
+        return self
+
     def _create_chat_result(self, response: dict) -> ChatResult:
         generations = []
         token_usage = response.get("usage", {})
@@ -928,8 +947,8 @@ class ChatHuggingFace(BaseChatModel):
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
-                Supports any tool definition handled by
-                `langchain_core.utils.function_calling.convert_to_openai_tool`.
+
+                Supports any tool definition handled by [`convert_to_openai_tool`][langchain_core.utils.function_calling.convert_to_openai_tool].
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function or
                 `'auto'` to automatically determine which function to call
@@ -937,8 +956,7 @@ class ChatHuggingFace(BaseChatModel):
                 {"type": "function", "function": {"name": <<tool_name>>}}.
             **kwargs: Any additional parameters to pass to the
                 `langchain.runnable.Runnable` constructor.
-
-        """
+        """  # noqa: E501
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None and tool_choice:
             if len(formatted_tools) != 1:

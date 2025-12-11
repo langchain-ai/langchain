@@ -5,11 +5,15 @@ from __future__ import annotations
 import logging
 from collections.abc import Iterator, Mapping
 from operator import itemgetter
-from typing import Any, Literal, TypeAlias
+from typing import Any, Literal, TypeAlias, cast
 
 import openai
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models import (
+    LanguageModelInput,
+    ModelProfile,
+    ModelProfileRegistry,
+)
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     generate_from_stream,
@@ -41,6 +45,7 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_perplexity.data._profiles import _PROFILES
 from langchain_perplexity.output_parsers import (
     ReasoningJsonOutputParser,
     ReasoningStructuredOutputParser,
@@ -50,6 +55,14 @@ _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[BaseModel]
 _DictOrPydantic: TypeAlias = dict | BaseModel
 
 logger = logging.getLogger(__name__)
+
+
+_MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 def _is_pydantic_class(obj: Any) -> bool:
@@ -247,6 +260,13 @@ class ChatPerplexity(BaseChatModel):
                 "due to an old version of the openai package. Try upgrading it "
                 "with `pip install --upgrade openai`."
             )
+        return self
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model)
         return self
 
     @property

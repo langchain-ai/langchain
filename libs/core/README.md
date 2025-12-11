@@ -34,7 +34,7 @@ The LangChain ecosystem is built on top of `langchain-core`. Some of the benefit
 
 ## 📖 Documentation
 
-For full documentation, see the [API reference](https://reference.langchain.com/python/langchain_core/).
+For full documentation, see the [API reference](https://reference.langchain.com/python/langchain_core/). For conceptual guides, tutorials, and examples on using LangChain, see the [LangChain Docs](https://docs.langchain.com/oss/python/langchain/overview).
 
 ## 📕 Releases & Versioning
 

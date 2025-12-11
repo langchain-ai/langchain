@@ -9,10 +9,10 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.0.0"
+version = "1.1.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0,<2.0.0",
+    "langchain-core>=1.1.0,<2.0.0",
     "groq>=0.30.0,<1.0.0"
 ]
 
@@ -88,6 +88,7 @@ addopts = "--strict-markers --strict-config --durations=5"
 markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
     "scheduled: mark tests to run in scheduled testing",
+    "retry: retry test if it fails",
 ]
 asyncio_mode = "auto"
 
