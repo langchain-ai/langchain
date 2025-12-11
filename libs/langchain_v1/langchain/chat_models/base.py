@@ -83,7 +83,7 @@ def init_chat_model(
         for supported model parameters to use as `**kwargs`.
 
     Args:
-        model: The model name, optionally prefixed with provider (e.g., `"openai:gpt-4o"`).
+        model: The model name, optionally prefixed with provider (e.g., `'openai:gpt-4o'`).
 
             Will attempt to infer `model_provider` from model if not specified.
 
