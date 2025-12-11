@@ -55,7 +55,7 @@ from langchain_core.utils.function_calling import (
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import NotRequired, Self, TypedDict
+from typing_extensions import NotRequired, Required, Self, TypedDict
 
 from langchain_anthropic._client_utils import (
     _get_default_async_httpx_client,
@@ -94,7 +94,12 @@ _FALLBACK_MAX_OUTPUT_TOKENS: Final[int] = 4096
 
 
 class AnthropicTool(TypedDict):
-    """Anthropic tool definition."""
+    """Anthropic tool definition for custom/user-defined tools.
+
+    Custom tools use ``name`` and ``input_schema`` fields to define the tool's
+    interface. These are converted from LangChain tool formats (functions, Pydantic
+    models, BaseTools) via `convert_to_anthropic_tool`.
+    """
 
     name: str
 
@@ -111,6 +116,25 @@ class AnthropicTool(TypedDict):
     input_examples: NotRequired[list[dict[str, Any]]]
 
     allowed_callers: NotRequired[list[str]]
+
+
+class AnthropicBuiltinTool(TypedDict, total=False):
+    """Anthropic built-in tool definition.
+
+    Built-in tools (bash, computer, text_editor, memory, etc.) use a `type` field
+    (e.g., `'bash_20250124'`) rather than `input_schema`. These are passed
+    directly to the API without conversion.
+
+    Uses `total=False` to allow arbitrary extra fields for tool-specific
+    parameters (e.g. `display_width_px`, `memory_profile`, etc.) without requiring
+    updates when Anthropic adds new built-in tools or fields.
+    """
+
+    type: Required[str]
+
+    name: Required[str]
+
+    cache_control: dict[str, str]
 
 
 # ---------------------------------------------------------------------------
@@ -2941,7 +2965,9 @@ class ChatAnthropic(BaseChatModel):
             method = "json_schema"
 
         if method == "function_calling":
-            formatted_tool = convert_to_anthropic_tool(schema)
+            # Structured output uses schemas, not built-in tools, so this is always
+            # AnthropicTool (has input_schema), never AnthropicBuiltinTool (has type).
+            formatted_tool = cast(AnthropicTool, convert_to_anthropic_tool(schema))
             tool_name = formatted_tool["name"]
             if self.thinking is not None and self.thinking.get("type") == "enabled":
                 llm = self._get_llm_for_structured_output_when_thinking_is_enabled(
@@ -3092,7 +3118,7 @@ def convert_to_anthropic_tool(
     tool: dict[str, Any] | type | Callable | BaseTool,
     *,
     strict: bool | None = None,
-) -> AnthropicTool:
+) -> AnthropicTool | AnthropicBuiltinTool:
     """Convert a tool-like object to an Anthropic tool definition.
 
     Args:
@@ -3105,8 +3131,22 @@ def convert_to_anthropic_tool(
                 Requires Claude Sonnet 4.5 or Opus 4.1.
 
     Returns:
-        An Anthropic tool definition dict.
+        `AnthropicTool` for custom/user-defined tools
+        `AnthropicBuiltinTool` for Anthropic's built-in tools (bash, computer,
+            text_editor, memory, etc.).
     """
+    # Check for provider tool definition in extras (client-side execution tools).
+    # Built-in tools (bash, computer, text_editor, memory) store their Anthropic-
+    # specific definition in extras. These have a different shape (type + name)
+    # than regular tools (name + input_schema), hence AnthropicBuiltinTool.
+    if (
+        isinstance(tool, BaseTool)
+        and hasattr(tool, "extras")
+        and isinstance(tool.extras, dict)
+        and "provider_tool_definition" in tool.extras
+    ):
+        return tool.extras["provider_tool_definition"]  # type: ignore[return-value]
+
     # already in Anthropic tool format
     if isinstance(tool, dict) and all(
         k in tool for k in ("name", "description", "input_schema")

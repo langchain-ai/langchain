@@ -1,25 +1,34 @@
-"""Anthropic server-side tools for `ChatAnthropic`.
+"""Claude tools for `ChatAnthropic`.
 
-Factory functions for creating typed server-side tool definitions. These tools run on
-Anthropic's infrastructure and return results directly in the response.
+Factory functions for creating typed tool definitions. These tools support both:
 
-Server-side tools include:
+- **Server-side execution**: Anthropic executes the tool on their infrastructure
+- **Client-side execution**: You provide an `execute` callback to handle tool calls
+    locally
 
-- **Bash** (`bash_20250124`): Shell command execution
+## Tools
+
+### Server tools
+
 - **Code Execution** (`code_execution_20250825`): Run code in a sandboxed environment
-- **Computer Use** (`computer_20251124`, `computer_20250124`): Desktop interaction
 - **Remote MCP Toolset** (`mcp_toolset`): Connect to remote MCP servers
-- **Text Editor** (`text_editor_20250728`, etc.): File viewing and modification
 - **Web Fetch** (`web_fetch_20250910`): Fetch content from web pages and PDFs
 - **Web Search** (`web_search_20250305`): Real-time web search with citations
-- **Memory** (`memory_20250818`): Persistent storage across conversations
 - **Tool Search** (`tool_search_regex_20251119`, `tool_search_bm25_20251119`):
     Dynamic tool discovery
 
-Example:
-    Basic usage with web search:
 
-    ```python
+### Client tools
+
+- **Bash** (`bash_20250124`): Shell command execution
+- **Computer Use** (`computer_20251124`, `computer_20250124`): Desktop interaction
+- **Text Editor** (`text_editor_20250728`, etc.): File viewing and modification
+- **Memory** (`memory_20250818`): Persistent storage across conversations
+
+Example:
+    Server-side execution ( runs the tool):
+
+    ```python title="Web search example"
     from langchain_anthropic import ChatAnthropic, tools
 
     model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
@@ -28,23 +37,89 @@ Example:
     response = model_with_search.invoke("What are today's top news stories?")
     ```
 
-    Multiple tools:
+    Client-executable tools (you provide the execution logic):
 
-    ```python
+    ```python title="Bash tool example"
+    import subprocess
+
     from langchain_anthropic import ChatAnthropic, tools
+    from langchain.messages import HumanMessage, ToolMessage
+
+
+    def execute_bash(*, command: str | None = None, restart: bool = False, **kw):
+        if restart:
+            return "Bash session restarted"
+        result = subprocess.run(
+            command,
+            shell=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout + result.stderr
+
 
     model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-    model_with_tools = model.bind_tools(
-        [
-            tools.web_search_20250305(max_uses=3),
-            tools.web_fetch_20250910(citations={"enabled": True}),
-            tools.code_execution_20250825(),
-        ]
+    bash_tool = tools.bash_20250124(execute=execute_bash)
+    model_with_bash = model.bind_tools([bash_tool])
+
+    query = HumanMessage(content="List files in the current directory")
+
+    # Initial request
+    response = model_with_bash.invoke([query])
+
+    # Process tool calls in a loop until no more tool calls
+    messages = [
+        query,
+        response,
+    ]
+
+    while response.tool_calls:
+        # Execute each tool call
+        for tool_call in response.tool_calls:
+            # Invoke the tool with the args from the model
+            result = bash_tool.invoke(tool_call["args"])
+
+            # Add the tool result to messages
+            messages.append(ToolMessage(content=result, tool_call_id=tool_call["id"]))
+
+        # Get the next response
+        response = model_with_bash.invoke(messages)
+        messages.append(response)
+
+    # Final response with the answer
+    print(response.content)
+    ```
+
+    Using with `create_agent`:
+
+    ```python title="Automatic tool execution"
+    import subprocess
+
+    from langchain.agents import create_agent
+    from langchain_anthropic import ChatAnthropic, tools
+
+
+    def execute_bash(*, command: str | None = None, restart: bool = False, **kw):
+        if restart:
+            return "Bash session restarted"
+        result = subprocess.run(
+            command,
+            shell=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout + result.stderr
+
+
+    agent = create_agent(
+        model=ChatAnthropic(model="claude-sonnet-4-5-20250929"),
+        tools=[tools.bash_20250124(execute=execute_bash)],
     )
 
-    response = model_with_tools.invoke(
-        "Search for Python tutorials, fetch the best one, and summarize it"
-    )
+    result = agent.invoke({"messages": [{"role": "user", "content": "List files"}]})
+
+    for message in result["messages"]:
+        message.pretty_print()
     ```
 """
 

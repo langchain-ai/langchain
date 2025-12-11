@@ -1,11 +1,25 @@
-"""Tests for server-side tool factories."""
+"""Tests for tool factory functions."""
+
+from typing import Any, cast
+
+from langchain_core.tools import StructuredTool
 
 from langchain_anthropic import tools
 from langchain_anthropic.chat_models import _is_builtin_tool
 
 
+# Dummy execute callbacks for client-executable tools.
+# Note: StructuredTool calls functions with **kwargs, but the type hints use TypedDicts
+# for documentation purposes. We cast to Any to satisfy mypy in tests.
+def _dummy_execute(**kwargs: Any) -> str:
+    return "executed"
+
+
+_dummy_execute_any = cast(Any, _dummy_execute)
+
+
 class TestWebSearch:
-    """Tests for web_search_20250305."""
+    """Tests for `web_search_20250305` (server-only)."""
 
     def test_default(self) -> None:
         tool = tools.web_search_20250305()
@@ -42,7 +56,7 @@ class TestWebSearch:
 
 
 class TestWebFetch:
-    """Tests for web_fetch_20250910."""
+    """Tests for `web_fetch_20250910` (server-only)."""
 
     def test_default(self) -> None:
         tool = tools.web_fetch_20250910()
@@ -88,7 +102,7 @@ class TestWebFetch:
 
 
 class TestCodeExecution:
-    """Tests for code_execution_20250825."""
+    """Tests for `code_execution_20250825` (server-only)."""
 
     def test_default(self) -> None:
         tool = tools.code_execution_20250825()
@@ -114,178 +128,238 @@ class TestCodeExecution:
 
 
 class TestMemory:
-    """Tests for memory_20250818."""
+    """Tests for `memory_20250818` (client-executable)."""
 
-    def test_default(self) -> None:
-        tool = tools.memory_20250818()
-        assert tool["type"] == "memory_20250818"
-        assert tool["name"] == "memory"
-        assert _is_builtin_tool(tool)
+    def test_returns_structured_tool(self) -> None:
+        tool = tools.memory_20250818(_dummy_execute_any)
+        assert isinstance(tool, StructuredTool)
+        assert tool.name == "memory"
+
+    def test_provider_tool_definition_in_extras(self) -> None:
+        tool = tools.memory_20250818(_dummy_execute_any)
+        assert tool.extras is not None
+        provider_def = tool.extras.get("provider_tool_definition")
+        assert provider_def is not None
+        assert provider_def["type"] == "memory_20250818"
+        assert provider_def["name"] == "memory"
 
     def test_with_cache_control(self) -> None:
-        tool = tools.memory_20250818(cache_control={"type": "ephemeral"})
-        assert tool.get("cache_control") == {"type": "ephemeral"}
+        tool = tools.memory_20250818(
+            _dummy_execute_any, cache_control={"type": "ephemeral"}
+        )
+        assert tool.extras is not None
+        provider_def = tool.extras.get("provider_tool_definition")
+        assert provider_def is not None
+        assert provider_def.get("cache_control") == {"type": "ephemeral"}
 
-        # Ensure setting default explicitly works
-        # (Omission of ttl uses default of 5m server-side)
-        tool = tools.memory_20250818(cache_control={"type": "ephemeral", "ttl": "5m"})
-        assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "5m"}
+    def test_can_invoke(self) -> None:
+        call_count = 0
 
-        tool = tools.memory_20250818(cache_control={"type": "ephemeral", "ttl": "1h"})
-        assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "1h"}
+        def my_execute(**kwargs: Any) -> str:
+            nonlocal call_count
+            call_count += 1
+            return f"executed with {kwargs}"
+
+        tool = tools.memory_20250818(cast(Any, my_execute))
+        result = tool.invoke({"command": "view", "path": "/test"})
+        assert call_count == 1
+        assert "command" in result
 
 
 class TestComputer:
-    """Tests for computer use tools."""
+    """Tests for computer use tools (client-executable)."""
 
-    def test_computer_20251124_required_params(self) -> None:
+    def test_computer_20251124_returns_structured_tool(self) -> None:
         tool = tools.computer_20251124(
+            _dummy_execute_any,
             display_width_px=1920,
             display_height_px=1080,
         )
-        assert tool["type"] == "computer_20251124"
-        assert tool["name"] == "computer"
-        assert tool["display_width_px"] == 1920
-        assert tool["display_height_px"] == 1080
-        assert _is_builtin_tool(tool)
+        assert isinstance(tool, StructuredTool)
+        assert tool.name == "computer"
+
+    def test_computer_20251124_provider_definition(self) -> None:
+        tool = tools.computer_20251124(
+            _dummy_execute_any,
+            display_width_px=1920,
+            display_height_px=1080,
+        )
+        assert tool.extras is not None
+        provider_def = tool.extras.get("provider_tool_definition")
+        assert provider_def is not None
+        assert provider_def["type"] == "computer_20251124"
+        assert provider_def["display_width_px"] == 1920
+        assert provider_def["display_height_px"] == 1080
 
     def test_computer_20251124_with_options(self) -> None:
         tool = tools.computer_20251124(
+            _dummy_execute_any,
             display_width_px=1024,
             display_height_px=768,
             display_number=1,
             enable_zoom=True,
         )
-        assert tool.get("display_number") == 1
-        assert tool.get("enable_zoom") is True
+        assert tool.extras is not None
+        provider_def = tool.extras.get("provider_tool_definition")
+        assert provider_def is not None
+        assert provider_def.get("display_number") == 1
+        assert provider_def.get("enable_zoom") is True
 
-    def test_computer_20250124_required_params(self) -> None:
+    def test_computer_20250124_returns_structured_tool(self) -> None:
         tool = tools.computer_20250124(
+            _dummy_execute_any,
             display_width_px=1920,
             display_height_px=1080,
         )
-        assert tool["type"] == "computer_20250124"
-        assert tool["name"] == "computer"
-        assert _is_builtin_tool(tool)
+        assert isinstance(tool, StructuredTool)
+        assert tool.name == "computer"
+
+    def test_computer_20250124_provider_definition(self) -> None:
+        tool = tools.computer_20250124(
+            _dummy_execute_any,
+            display_width_px=1920,
+            display_height_px=1080,
+        )
+        assert tool.extras is not None
+        provider_def = tool.extras.get("provider_tool_definition")
+        assert provider_def is not None
+        assert provider_def["type"] == "computer_20250124"
 
     def test_computer_20250124_with_display_number(self) -> None:
         tool = tools.computer_20250124(
+            _dummy_execute_any,
             display_width_px=1920,
             display_height_px=1080,
             display_number=0,
         )
-        assert tool.get("display_number") == 0
+        assert tool.extras is not None
+        provider_def = tool.extras.get("provider_tool_definition")
+        assert provider_def is not None
+        assert provider_def.get("display_number") == 0
 
     def test_computer_20251124_with_cache_control(self) -> None:
         tool = tools.computer_20251124(
+            _dummy_execute_any,
             display_width_px=1920,
             display_height_px=1080,
             cache_control={"type": "ephemeral"},
         )
-        assert tool.get("cache_control") == {"type": "ephemeral"}
-
-        # Ensure setting default explicitly works
-        # (Omission of ttl uses default of 5m server-side)
-        tool = tools.computer_20251124(
-            display_width_px=1920,
-            display_height_px=1080,
-            cache_control={"type": "ephemeral", "ttl": "5m"},
-        )
-        assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "5m"}
-
-        tool = tools.computer_20251124(
-            display_width_px=1920,
-            display_height_px=1080,
-            cache_control={"type": "ephemeral", "ttl": "1h"},
-        )
-        assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "1h"}
+        assert tool.extras is not None
+        provider_def = tool.extras.get("provider_tool_definition")
+        assert provider_def is not None
+        assert provider_def.get("cache_control") == {"type": "ephemeral"}
 
     def test_computer_20250124_with_cache_control(self) -> None:
         tool = tools.computer_20250124(
+            _dummy_execute_any,
             display_width_px=1920,
             display_height_px=1080,
             cache_control={"type": "ephemeral"},
         )
-        assert tool.get("cache_control") == {"type": "ephemeral"}
-
-        # Ensure setting default explicitly works
-        # (Omission of ttl uses default of 5m server-side)
-        tool = tools.computer_20250124(
-            display_width_px=1920,
-            display_height_px=1080,
-            cache_control={"type": "ephemeral", "ttl": "5m"},
-        )
-        assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "5m"}
-
-        tool = tools.computer_20250124(
-            display_width_px=1920,
-            display_height_px=1080,
-            cache_control={"type": "ephemeral", "ttl": "1h"},
-        )
-        assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "1h"}
+        assert tool.extras is not None
+        provider_def = tool.extras.get("provider_tool_definition")
+        assert provider_def is not None
+        assert provider_def.get("cache_control") == {"type": "ephemeral"}
 
 
 class TestTextEditor:
-    """Tests for text editor tools."""
+    """Tests for text editor tools (client-executable)."""
 
-    def test_text_editor_20250728(self) -> None:
-        tool = tools.text_editor_20250728()
-        assert tool["type"] == "text_editor_20250728"
-        assert tool["name"] == "str_replace_based_edit_tool"
-        assert _is_builtin_tool(tool)
+    def test_text_editor_20250728_returns_structured_tool(self) -> None:
+        tool = tools.text_editor_20250728(_dummy_execute_any)
+        assert isinstance(tool, StructuredTool)
+        assert tool.name == "str_replace_based_edit_tool"
 
-    def test_text_editor_20250429(self) -> None:
-        tool = tools.text_editor_20250429()
-        assert tool["type"] == "text_editor_20250429"
-        assert _is_builtin_tool(tool)
+    def test_text_editor_20250728_provider_definition(self) -> None:
+        tool = tools.text_editor_20250728(_dummy_execute_any)
+        assert tool.extras is not None
+        provider_def = tool.extras.get("provider_tool_definition")
+        assert provider_def is not None
+        assert provider_def["type"] == "text_editor_20250728"
+        assert provider_def["name"] == "str_replace_based_edit_tool"
 
-    def test_text_editor_20250124(self) -> None:
-        tool = tools.text_editor_20250124()
-        assert tool["type"] == "text_editor_20250124"
-        assert tool["name"] == "str_replace_editor"
-        assert _is_builtin_tool(tool)
+    def test_text_editor_20250429_returns_structured_tool(self) -> None:
+        tool = tools.text_editor_20250429(_dummy_execute_any)
+        assert isinstance(tool, StructuredTool)
+
+    def test_text_editor_20250429_provider_definition(self) -> None:
+        tool = tools.text_editor_20250429(_dummy_execute_any)
+        assert tool.extras is not None
+        provider_def = tool.extras.get("provider_tool_definition")
+        assert provider_def is not None
+        assert provider_def["type"] == "text_editor_20250429"
+
+    def test_text_editor_20250124_returns_structured_tool(self) -> None:
+        tool = tools.text_editor_20250124(_dummy_execute_any)
+        assert isinstance(tool, StructuredTool)
+        assert tool.name == "str_replace_editor"
+
+    def test_text_editor_20250124_provider_definition(self) -> None:
+        tool = tools.text_editor_20250124(_dummy_execute_any)
+        assert tool.extras is not None
+        provider_def = tool.extras.get("provider_tool_definition")
+        assert provider_def is not None
+        assert provider_def["type"] == "text_editor_20250124"
+        assert provider_def["name"] == "str_replace_editor"
 
     def test_text_editor_20250728_with_cache_control(self) -> None:
-        tool = tools.text_editor_20250728(cache_control={"type": "ephemeral"})
-        assert tool.get("cache_control") == {"type": "ephemeral"}
-
-        # Ensure setting default explicitly works
-        # (Omission of ttl uses default of 5m server-side)
         tool = tools.text_editor_20250728(
-            cache_control={"type": "ephemeral", "ttl": "5m"}
+            _dummy_execute_any, cache_control={"type": "ephemeral"}
         )
-        assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "5m"}
+        assert tool.extras is not None
+        provider_def = tool.extras.get("provider_tool_definition")
+        assert provider_def is not None
+        assert provider_def.get("cache_control") == {"type": "ephemeral"}
 
-        tool = tools.text_editor_20250728(
-            cache_control={"type": "ephemeral", "ttl": "1h"}
-        )
-        assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "1h"}
+    def test_text_editor_20250728_with_max_characters(self) -> None:
+        tool = tools.text_editor_20250728(_dummy_execute_any, max_characters=10000)
+        assert tool.extras is not None
+        provider_def = tool.extras.get("provider_tool_definition")
+        assert provider_def is not None
+        assert provider_def.get("max_characters") == 10000
 
 
 class TestBash:
-    """Tests for `bash_20250124`."""
+    """Tests for `bash_20250124` (client-executable)."""
 
-    def test_default(self) -> None:
-        tool = tools.bash_20250124()
-        assert tool["type"] == "bash_20250124"
-        assert tool["name"] == "bash"
-        assert _is_builtin_tool(tool)
+    def test_returns_structured_tool(self) -> None:
+        tool = tools.bash_20250124(_dummy_execute_any)
+        assert isinstance(tool, StructuredTool)
+        assert tool.name == "bash"
+
+    def test_provider_tool_definition_in_extras(self) -> None:
+        tool = tools.bash_20250124(_dummy_execute_any)
+        assert tool.extras is not None
+        provider_def = tool.extras.get("provider_tool_definition")
+        assert provider_def is not None
+        assert provider_def["type"] == "bash_20250124"
+        assert provider_def["name"] == "bash"
 
     def test_with_cache_control(self) -> None:
-        tool = tools.bash_20250124(cache_control={"type": "ephemeral"})
-        assert tool.get("cache_control") == {"type": "ephemeral"}
+        tool = tools.bash_20250124(
+            _dummy_execute_any, cache_control={"type": "ephemeral"}
+        )
+        assert tool.extras is not None
+        provider_def = tool.extras.get("provider_tool_definition")
+        assert provider_def is not None
+        assert provider_def.get("cache_control") == {"type": "ephemeral"}
 
-        # Ensure setting default explicitly works
-        # (Omission of ttl uses default of 5m server-side)
-        tool = tools.bash_20250124(cache_control={"type": "ephemeral", "ttl": "5m"})
-        assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "5m"}
+    def test_can_invoke(self) -> None:
+        call_count = 0
 
-        tool = tools.bash_20250124(cache_control={"type": "ephemeral", "ttl": "1h"})
-        assert tool.get("cache_control") == {"type": "ephemeral", "ttl": "1h"}
+        def my_execute(**kwargs: Any) -> str:
+            nonlocal call_count
+            call_count += 1
+            return f"executed with {kwargs}"
+
+        tool = tools.bash_20250124(cast(Any, my_execute))
+        result = tool.invoke({"command": "ls -la"})
+        assert call_count == 1
+        assert "command" in result
 
 
 class TestToolSearch:
-    """Tests for tool search tools."""
+    """Tests for tool search tools (server-only)."""
 
     def test_tool_search_regex(self) -> None:
         tool = tools.tool_search_regex_20251119()
@@ -329,7 +403,7 @@ class TestToolSearch:
 
 
 class TestMCPToolset:
-    """Tests for mcp_toolset."""
+    """Tests for `mcp_toolset` (server-only)."""
 
     def test_basic(self) -> None:
         tool = tools.mcp_toolset(mcp_server_name="test-server")
