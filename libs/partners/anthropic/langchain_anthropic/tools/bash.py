@@ -11,13 +11,11 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any
 
-from langchain_core.tools import BaseTool, StructuredTool
+from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
 
-from langchain_anthropic.tools.types import BashCommand
-
 if TYPE_CHECKING:
-    from anthropic.types import CacheControlEphemeralParam, ToolBash20250124Param
+    from anthropic.types import CacheControlEphemeralParam
 
 
 class BashInput(BaseModel):
@@ -31,10 +29,10 @@ class BashInput(BaseModel):
 
 
 def bash_20250124(
+    execute: Callable[..., str | Awaitable[str]],
     *,
-    execute: Callable[[BashCommand], str | Awaitable[str]] | None = None,
     cache_control: CacheControlEphemeralParam | None = None,
-) -> ToolBash20250124Param | BaseTool:
+) -> StructuredTool:
     """Create a bash tool for executing shell commands.
 
     The bash tool enables Claude to execute bash commands in a persistent
@@ -46,6 +44,13 @@ def bash_20250124(
     - Claude 4 models
     - Sonnet 3.7 (deprecated)
 
+    !!! warning
+
+        This tool can execute arbitrary shell commands on your system. Do not
+        use with untrusted input. Run in a sandboxed environment (container or VM)
+        with minimal privileges. The `execute` callback you provide is responsible
+        for any safety measures such as command filtering or resource limits.
+
     See the [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/bash-tool)
     for more details.
 
@@ -54,14 +59,12 @@ def bash_20250124(
         agentic workflows.
 
     Args:
-        execute: Optional callback function for client-side execution.
+        execute: Callback function for executing bash commands.
 
-            When provided, returns a `StructuredTool` that can be invoked locally. The
-            function receives the command input and should return the result (stdout and
-            stderr combined, or an error message).
+            See the [Claude docs](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/bash-tool#implement-the-bash-tool)
+            for implementation details.
 
-            If not provided, returns a server-side tool definition that Anthropic
-            executes.
+            Can be sync or async.
         cache_control: Enable prompt caching for this tool definition.
 
             Use `{'type': 'ephemeral'}` to enable caching.
@@ -69,39 +72,23 @@ def bash_20250124(
             Optionally specify a `ttl` of `'5m'` (default) or `'1h'`.
 
     Returns:
-        If `execute` is provided: A `StructuredTool` that can be invoked locally
-            and passed to `bind_tools`.
-
-        If `execute` is not provided: A server-side tool definition dict to pass to
+        A `StructuredTool` that can be invoked locally and passed to
             [`bind_tools`][langchain_anthropic.chat_models.ChatAnthropic.bind_tools].
 
     Example:
-        Server-side execution (Anthropic executes the tool):
-
-        ```python
-        from langchain_anthropic import ChatAnthropic, tools
-
-        model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-        model_with_bash = model.bind_tools(
-            [tools.bash_20250124(cache_control={"type": "ephemeral"})],
-        )
-
-        response = model_with_bash.invoke("List the files in the current directory")
-        ```
-
-        Client-side execution (you execute the tool):
-
-        ```python
+        ```python title="Manual tool execution loop"
         import subprocess
+
         from langchain_anthropic import ChatAnthropic, tools
+        from langchain.messages import HumanMessage, ToolMessage
 
 
-        def execute_bash(args):
-            if args.get("restart"):
+        def execute_bash(*, command: str | None = None, restart: bool = False, **kw):
+            if restart:
                 return "Bash session restarted"
             try:
                 result = subprocess.run(
-                    args["command"],
+                    command,
                     shell=True,
                     capture_output=True,
                     text=True,
@@ -116,8 +103,44 @@ def bash_20250124(
         bash_tool = tools.bash_20250124(execute=execute_bash)
         model_with_bash = model.bind_tools([bash_tool])
 
-        response = model_with_bash.invoke("List Python files in the current directory")
-        # Process tool calls and invoke bash_tool with the args
+        query = HumanMessage(content="List files in the current directory")
+        response = model_with_bash.invoke([query])
+
+        # Process tool calls in a loop until no more tool calls
+        messages = [query, response]
+
+        while response.tool_calls:
+            for tool_call in response.tool_calls:
+                result = bash_tool.invoke(tool_call["args"])
+                tool_msg = ToolMessage(content=result, tool_call_id=tool_call["id"])
+                messages.append(tool_msg)
+
+            response = model_with_bash.invoke(messages)
+            messages.append(response)
+
+        print(response.content)
+        ```
+
+        ```python title="Automatic tool execution"
+        import subprocess
+
+        from langchain.agents import create_agent
+        from langchain_anthropic import ChatAnthropic, tools
+
+
+        def execute_bash(*, command: str | None = None, restart: bool = False, **kw):
+            if restart:
+                return "Bash session restarted"
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            return result.stdout + result.stderr
+
+
+        agent = create_agent(
+            model=ChatAnthropic(model="claude-sonnet-4-5-20250929"),
+            tools=[tools.bash_20250124(execute=execute_bash)],
+        )
+
+        result = agent.invoke({"messages": [{"role": "user", "content": "List files"}]})
         ```
     """
     # Build the provider tool definition
@@ -127,10 +150,6 @@ def bash_20250124(
     }
     if cache_control is not None:
         provider_tool_def["cache_control"] = cache_control
-
-    # If no execute callback, return server-side definition
-    if execute is None:
-        return provider_tool_def  # type: ignore[return-value]
 
     # Create client-side tool with execute callback
     tool = StructuredTool.from_function(

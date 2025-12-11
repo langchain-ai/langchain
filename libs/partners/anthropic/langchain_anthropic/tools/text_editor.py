@@ -13,18 +13,11 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any, Literal
 
-from langchain_core.tools import BaseTool, StructuredTool
+from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
 
-from langchain_anthropic.tools.types import TextEditorCommand
-
 if TYPE_CHECKING:
-    from anthropic.types import (
-        CacheControlEphemeralParam,
-        ToolTextEditor20250124Param,
-        ToolTextEditor20250429Param,
-        ToolTextEditor20250728Param,
-    )
+    from anthropic.types import CacheControlEphemeralParam
 
 
 class TextEditorInput(BaseModel):
@@ -59,11 +52,11 @@ class TextEditorInput(BaseModel):
 
 
 def text_editor_20250728(
+    execute: Callable[..., str | Awaitable[str]],
     *,
-    execute: Callable[[TextEditorCommand], str | Awaitable[str]] | None = None,
     max_characters: int | None = None,
     cache_control: CacheControlEphemeralParam | None = None,
-) -> ToolTextEditor20250728Param | BaseTool:
+) -> StructuredTool:
     r"""Create a text editor tool for Claude 4.x models.
 
     The text editor tool enables Claude to view and modify files using string
@@ -75,17 +68,22 @@ def text_editor_20250728(
 
     - Claude 4.x models.
 
+    !!! warning
+
+        This tool can read and write files on your system. Do not use with
+        untrusted input. The `execute` callback you provide should validate file
+        paths and restrict access to intended directories only.
+
     See the [Claude docs](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/text-editor-tool)
     for more details.
 
     Args:
-        execute: Optional callback function for client-side execution.
+        execute: Callback function for executing text editor commands.
 
-            When provided, returns a `StructuredTool` that can be invoked locally. The
-            function receives the command input and should return the result.
+            See the [Claude docs](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/text-editor-tool#implement-the-text-editor-tool)
+            for the available commands.
 
-            If not provided, returns a server-side tool definition that Anthropic
-            executes.
+            Can be sync or async.
         max_characters: Optional maximum characters to return when viewing files.
 
             If the file content exceeds this limit, it will be truncated.
@@ -96,43 +94,26 @@ def text_editor_20250728(
             Optionally specify a `ttl` of `'5m'` (default) or `'1h'`.
 
     Returns:
-        If `execute` is provided: A `StructuredTool` that can be invoked locally
-            and passed to `bind_tools`.
-
-        If `execute` is not provided: A server-side tool definition dict to pass to
+        A `StructuredTool` that can be invoked locally and passed to
             [`bind_tools`][langchain_anthropic.chat_models.ChatAnthropic.bind_tools].
 
     Example:
-        Server-side execution (Anthropic executes the tool):
-
-        ```python
+        ```python title="Manual tool execution loop"
         from langchain_anthropic import ChatAnthropic, tools
-
-        model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-        model_with_editor = model.bind_tools(
-            [tools.text_editor_20250728(cache_control={"type": "ephemeral"})],
-        )
-
-        response = model_with_editor.invoke("View the contents of main.py")
-        ```
-
-        Client-side execution (you execute the tool):
-
-        ```python
-        from langchain_anthropic import ChatAnthropic, tools
+        from langchain.messages import HumanMessage, ToolMessage
 
 
-        def execute_editor(args):
-            if args["command"] == "view":
-                with open(args["path"]) as f:
+        def execute_editor(*, command, path, old_str=None, new_str=None, **kw):
+            if command == "view":
+                with open(path) as f:
                     content = f.read()
                 lines = content.split("\\n")
                 return "\\n".join(f"{i + 1}: {line}" for i, line in enumerate(lines))
-            elif args["command"] == "str_replace":
-                with open(args["path"]) as f:
+            elif command == "str_replace":
+                with open(path) as f:
                     content = f.read()
-                content = content.replace(args["old_str"], args["new_str"])
-                with open(args["path"], "w") as f:
+                content = content.replace(old_str, new_str)
+                with open(path, "w") as f:
                     f.write(content)
                 return "Successfully replaced text."
             # Handle other commands...
@@ -142,6 +123,55 @@ def text_editor_20250728(
         model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
         editor_tool = tools.text_editor_20250728(execute=execute_editor)
         model_with_editor = model.bind_tools([editor_tool])
+
+        query = HumanMessage(content="View the contents of ./config.py")
+        response = model_with_editor.invoke([query])
+
+        # Process tool calls in a loop until no more tool calls
+        messages = [query, response]
+
+        while response.tool_calls:
+            for tool_call in response.tool_calls:
+                print(f"Tool call args: {tool_call['args']}")
+                result = editor_tool.invoke(tool_call["args"])
+                tool_msg = ToolMessage(content=result, tool_call_id=tool_call["id"])
+                messages.append(tool_msg)
+
+            response = model_with_editor.invoke(messages)
+            messages.append(response)
+
+        print(response.content)
+        ```
+
+        ```python title="Automatic tool execution"
+        from langchain.agents import create_agent
+        from langchain_anthropic import ChatAnthropic, tools
+
+
+        def execute_editor(*, command, path, old_str=None, new_str=None, **kw):
+            if command == "view":
+                with open(path) as f:
+                    return f.read()
+            elif command == "str_replace":
+                with open(path) as f:
+                    content = f.read()
+                content = content.replace(old_str, new_str)
+                with open(path, "w") as f:
+                    f.write(content)
+                return "Successfully replaced text."
+            return "Command executed"
+
+
+        agent = create_agent(
+            model=ChatAnthropic(model="claude-sonnet-4-5-20250929"),
+            tools=[tools.text_editor_20250728(execute=execute_editor)],
+        )
+
+        query = {"messages": [{"role": "user", "content": "View ./config.py"}]}
+        result = agent.invoke(query)
+
+        for message in result["messages"]:
+            message.pretty_print()
         ```
     """
     name = "str_replace_based_edit_tool"
@@ -155,10 +185,6 @@ def text_editor_20250728(
         provider_tool_def["max_characters"] = max_characters
     if cache_control is not None:
         provider_tool_def["cache_control"] = cache_control
-
-    # If no execute callback, return server-side definition
-    if execute is None:
-        return provider_tool_def  # type: ignore[return-value]
 
     # Create client-side tool with execute callback
     tool = StructuredTool.from_function(
@@ -179,10 +205,10 @@ def text_editor_20250728(
 
 
 def text_editor_20250429(
+    execute: Callable[..., str | Awaitable[str]],
     *,
-    execute: Callable[[TextEditorCommand], str | Awaitable[str]] | None = None,
     cache_control: CacheControlEphemeralParam | None = None,
-) -> ToolTextEditor20250429Param | BaseTool:
+) -> StructuredTool:
     """Create a text editor tool (April 2025 version).
 
     Older version of `text_editor_20250728`. You should prefer using that
@@ -191,16 +217,22 @@ def text_editor_20250429(
     The text editor tool enables Claude to view and modify files using string
     replacement operations.
 
+    !!! warning
+
+        This tool can read and write files on your system. Do not use with
+        untrusted input. The `execute` callback you provide should validate file
+        paths and restrict access to intended directories only.
+
     See the [Claude docs](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/text-editor-tool)
     for more details.
 
     Args:
-        execute: Optional callback function for client-side execution.
+        execute: Callback function for executing text editor commands.
 
-            When provided, returns a `StructuredTool` that can be invoked locally.
+            See the [Claude docs](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/text-editor-tool#implement-the-text-editor-tool)
+            for the available commands.
 
-            If not provided, returns a server-side tool definition that Anthropic
-            executes.
+            Can be sync or async.
         cache_control: Enable prompt caching for this tool definition.
 
             Use `{'type': 'ephemeral'}` to enable caching.
@@ -208,10 +240,7 @@ def text_editor_20250429(
             Optionally specify a `ttl` of `'5m'` (default) or `'1h'`.
 
     Returns:
-        If `execute` is provided: A `StructuredTool` that can be invoked locally
-            and passed to `bind_tools`.
-
-        If `execute` is not provided: A server-side tool definition dict to pass to
+        A `StructuredTool` that can be invoked locally and passed to
             [`bind_tools`][langchain_anthropic.chat_models.ChatAnthropic.bind_tools].
     """
     name = "str_replace_based_edit_tool"
@@ -223,10 +252,6 @@ def text_editor_20250429(
     }
     if cache_control is not None:
         provider_tool_def["cache_control"] = cache_control
-
-    # If no execute callback, return server-side definition
-    if execute is None:
-        return provider_tool_def  # type: ignore[return-value]
 
     # Create client-side tool with execute callback
     tool = StructuredTool.from_function(
@@ -247,10 +272,10 @@ def text_editor_20250429(
 
 
 def text_editor_20250124(
+    execute: Callable[..., str | Awaitable[str]],
     *,
-    execute: Callable[[TextEditorCommand], str | Awaitable[str]] | None = None,
     cache_control: CacheControlEphemeralParam | None = None,
-) -> ToolTextEditor20250124Param | BaseTool:
+) -> StructuredTool:
     """Create a text editor tool (January 2025 version).
 
     The text editor tool enables Claude to view and modify files using string
@@ -260,16 +285,22 @@ def text_editor_20250124(
 
     - Claude Sonnet 3.7 (deprecated)
 
+    !!! warning
+
+        This tool can read and write files on your system. Do not use with
+        untrusted input. The `execute` callback you provide should validate file
+        paths and restrict access to intended directories only.
+
     See the [Claude docs](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/text-editor-tool)
     for more details.
 
     Args:
-        execute: Optional callback function for client-side execution.
+        execute: Callback function for executing text editor commands.
 
-            When provided, returns a `StructuredTool` that can be invoked locally.
+            See the [Claude docs](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/text-editor-tool#implement-the-text-editor-tool)
+            for the available commands.
 
-            If not provided, returns a server-side tool definition that Anthropic
-            executes.
+            Can be sync or async.
         cache_control: Enable prompt caching for this tool definition.
 
             Use `{'type': 'ephemeral'}` to enable caching.
@@ -277,10 +308,7 @@ def text_editor_20250124(
             Optionally specify a `ttl` of `'5m'` (default) or `'1h'`.
 
     Returns:
-        If `execute` is provided: A `StructuredTool` that can be invoked locally
-            and passed to `bind_tools`.
-
-        If `execute` is not provided: A server-side tool definition dict to pass to
+        A `StructuredTool` that can be invoked locally and passed to
             [`bind_tools`][langchain_anthropic.chat_models.ChatAnthropic.bind_tools].
     """
     name = "str_replace_editor"
@@ -292,10 +320,6 @@ def text_editor_20250124(
     }
     if cache_control is not None:
         provider_tool_def["cache_control"] = cache_control
-
-    # If no execute callback, return server-side definition
-    if execute is None:
-        return provider_tool_def  # type: ignore[return-value]
 
     # Create client-side tool with execute callback
     tool = StructuredTool.from_function(

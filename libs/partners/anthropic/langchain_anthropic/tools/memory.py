@@ -11,16 +11,11 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any, Literal
 
-from langchain_core.tools import BaseTool, StructuredTool
+from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
 
-from langchain_anthropic.tools.types import MemoryCommand
-
 if TYPE_CHECKING:
-    from anthropic.types.beta import (
-        BetaCacheControlEphemeralParam,
-        BetaMemoryTool20250818Param,
-    )
+    from anthropic.types.beta import BetaCacheControlEphemeralParam
 
 
 class MemoryInput(BaseModel):
@@ -55,28 +50,33 @@ class MemoryInput(BaseModel):
 
 
 def memory_20250818(
+    execute: Callable[..., str | Awaitable[str]],
     *,
-    execute: Callable[[MemoryCommand], str | Awaitable[str]] | None = None,
     cache_control: BetaCacheControlEphemeralParam | None = None,
-) -> BetaMemoryTool20250818Param | BaseTool:
-    """Create a memory tool for persistent storage across conversations.
+) -> StructuredTool:
+    r"""Create a memory tool for persistent storage across conversations.
 
     The memory tool enables Claude to store and retrieve information across
     conversations through a memory file directory. Claude can create, read, update, and
     delete files that persist between sessions, allowing it to build knowledge over time
     without keeping everything in the context window.
 
+    !!! warning
+
+        This tool can create, read, modify, and delete files on your system. Do not
+        use with untrusted input. The `execute` callback you provide should restrict
+        file operations to a dedicated memory directory and validate all paths.
+
     See the [Claude docs](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/memory-tool)
     for more details.
 
     Args:
-        execute: Optional callback function for client-side execution.
+        execute: Callback function for executing memory commands.
 
-            When provided, returns a `StructuredTool` that can be invoked locally. The
-            function receives the command input and should return the result.
+            See the [Claude docs](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/memory-tool#tool-commands)
+            for the available commands.
 
-            If not provided, returns a server-side tool definition that Anthropic
-            executes.
+            Can be sync or async.
         cache_control: Enable prompt caching for this tool definition.
 
             Use `{'type': 'ephemeral'}` to enable caching.
@@ -84,54 +84,161 @@ def memory_20250818(
             Optionally specify a `ttl` of `'5m'` (default) or `'1h'`.
 
     Returns:
-        If `execute` is provided: A `StructuredTool` that can be invoked locally
-            and passed to `bind_tools`.
-
-        If `execute` is not provided: A server-side tool definition dict to pass to
+        A `StructuredTool` that can be invoked locally and passed to
             [`bind_tools`][langchain_anthropic.chat_models.ChatAnthropic.bind_tools].
 
     Example:
-        Server-side execution (Anthropic executes the tool):
-
-        ```python
-        from langchain_anthropic import ChatAnthropic, tools
-
-        model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-        model_with_memory = model.bind_tools(
-            [tools.memory_20250818(cache_control={"type": "ephemeral"})],
-        )
-
-        response = model_with_memory.invoke("Remember that I like Python")
-        ```
-
-        Client-side execution (you execute the tool):
-
-        ```python
+        ```python title="Manual tool execution loop"
         import os
+        import tempfile
+
         from langchain_anthropic import ChatAnthropic, tools
+        from langchain_core.messages import HumanMessage, ToolMessage
 
-        MEMORY_DIR = "/tmp/memory"
+        # Create a temporary workspace directory for this demo.
+        # In production, use a persistent directory path.
+        memory_dir = tempfile.mkdtemp(prefix="memory-")
 
 
-        def execute_memory(args):
-            path = os.path.join(MEMORY_DIR, args["path"])
-            if args["command"] == "view":
-                with open(path) as f:
-                    return f.read()
-            elif args["command"] == "create":
-                os.makedirs(os.path.dirname(path), exist_ok=True)
-                with open(path, "w") as f:
-                    f.write(args["content"])
-                return f"Created {args['path']}"
-            elif args["command"] == "delete":
-                os.remove(path)
-                return f"Deleted {args['path']}"
-            # Handle other commands...
+        def execute_memory(
+            *,
+            command: str,
+            path: str,
+            content: str | None = None,
+            old_str: str | None = None,
+            new_str: str | None = None,
+            insert_line: int | None = None,
+            new_path: str | None = None,
+            **kw,
+        ):
+            # Claude sends absolute paths like "/memories/file.txt"
+            # Strip leading "/" to make path relative for os.path.join
+            full_path = os.path.join(memory_dir, path.lstrip("/"))
+            if command == "view":
+                if os.path.isdir(full_path):
+                    files = os.listdir(full_path)
+                    return f"Directory: {path}\\n" + "\\n".join(f"- {f}" for f in files)
+                if not os.path.exists(full_path):
+                    return f"Error: {path} does not exist"
+                with open(full_path) as f:
+                    content = f.read()
+                lines = content.split("\\n")
+                return "\\n".join(f"{i + 1}: {line}" for i, line in enumerate(lines))
+            elif command == "create":
+                os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                with open(full_path, "w") as f:
+                    f.write(content or "")
+                return f"Created {path}"
+            elif command == "str_replace" and old_str and new_str:
+                with open(full_path) as f:
+                    file_content = f.read()
+                file_content = file_content.replace(old_str, new_str)
+                with open(full_path, "w") as f:
+                    f.write(file_content)
+                return f"Replaced text in {path}"
+            elif command == "insert" and insert_line and new_str:
+                with open(full_path) as f:
+                    lines = f.readlines()
+                lines.insert(insert_line - 1, new_str + "\\n")
+                with open(full_path, "w") as f:
+                    f.writelines(lines)
+                return f"Inserted at line {insert_line} in {path}"
+            elif command == "delete":
+                os.remove(full_path)
+                return f"Deleted {path}"
+            elif command == "rename" and new_path is not None:
+                new_full_path = os.path.join(memory_dir, new_path.lstrip("/"))
+                os.makedirs(os.path.dirname(new_full_path), exist_ok=True)
+                os.rename(full_path, new_full_path)
+                return f"Renamed {path} to {new_path}"
+            return "Command executed"
 
 
         model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
         memory_tool = tools.memory_20250818(execute=execute_memory)
         model_with_memory = model.bind_tools([memory_tool])
+
+        query = HumanMessage(content="Remember that my favorite color is blue")
+        response = model_with_memory.invoke([query])
+
+        # Process tool calls in a loop until no more tool calls
+        messages = [query, response]
+
+        while response.tool_calls:
+            for tool_call in response.tool_calls:
+                print(f"Memory command: {tool_call['args'].get('command')}")
+                result = memory_tool.invoke(tool_call["args"])
+                tool_msg = ToolMessage(content=result, tool_call_id=tool_call["id"])
+                messages.append(tool_msg)
+
+            response = model_with_memory.invoke(messages)
+            messages.append(response)
+
+        print(response.content)
+        ```
+
+        ```python title="Automatic tool execution"
+        import os
+        import tempfile
+
+        from langchain.agents import create_agent
+        from langchain_anthropic import ChatAnthropic, tools
+
+        # Create a temporary workspace directory for this demo.
+        # In production, use a persistent directory path.
+        memory_dir = tempfile.mkdtemp(prefix="memory-")
+
+
+        def execute_memory(
+            *,
+            command: str,
+            path: str,
+            content: str | None = None,
+            old_str: str | None = None,
+            new_str: str | None = None,
+            insert_line: int | None = None,
+            new_path: str | None = None,
+            **kw,
+        ):
+            # Claude sends absolute paths like "/memories/file.txt"
+            # Strip leading "/" to make path relative for os.path.join
+            full_path = os.path.join(memory_dir, path.lstrip("/"))
+            if command == "view":
+                if os.path.isdir(full_path):
+                    files = os.listdir(full_path)
+                    return f"Directory: {path}\\n" + "\\n".join(f"- {f}" for f in files)
+                if not os.path.exists(full_path):
+                    return f"Error: {path} does not exist"
+                with open(full_path) as f:
+                    return f.read()
+            elif command == "create":
+                os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                with open(full_path, "w") as f:
+                    f.write(content or "")
+                return f"Created {path}"
+            elif command == "str_replace" and old_str is not None:
+                with open(full_path) as f:
+                    file_content = f.read()
+                file_content = file_content.replace(old_str, new_str or "")
+                with open(full_path, "w") as f:
+                    f.write(file_content)
+                return f"Replaced text in {path}"
+            elif command == "delete":
+                os.remove(full_path)
+                return f"Deleted {path}"
+            return "Command executed"
+
+
+        agent = create_agent(
+            model=ChatAnthropic(model="claude-sonnet-4-5-20250929"),
+            tools=[tools.memory_20250818(execute=execute_memory)],
+        )
+
+        query = {"messages": [{"role": "user", "content": "Remember my name is Alice"}]}
+        result = agent.invoke(query)
+
+        for message in result["messages"]:
+            message.pretty_print()
         ```
     """
     name = "memory"
@@ -143,10 +250,6 @@ def memory_20250818(
     }
     if cache_control is not None:
         provider_tool_def["cache_control"] = cache_control
-
-    # If no execute callback, return server-side definition
-    if execute is None:
-        return provider_tool_def  # type: ignore[return-value]
 
     # Create client-side tool with execute callback
     tool = StructuredTool.from_function(

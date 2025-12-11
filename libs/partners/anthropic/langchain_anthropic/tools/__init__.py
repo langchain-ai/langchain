@@ -6,21 +6,27 @@ Factory functions for creating typed tool definitions. These tools support both:
 - **Client-side execution**: You provide an `execute` callback to handle tool calls
     locally
 
-Tools include:
+## Tools
 
-- **Bash** (`bash_20250124`): Shell command execution
+### Server tools
+
 - **Code Execution** (`code_execution_20250825`): Run code in a sandboxed environment
-- **Computer Use** (`computer_20251124`, `computer_20250124`): Desktop interaction
 - **Remote MCP Toolset** (`mcp_toolset`): Connect to remote MCP servers
-- **Text Editor** (`text_editor_20250728`, etc.): File viewing and modification
 - **Web Fetch** (`web_fetch_20250910`): Fetch content from web pages and PDFs
 - **Web Search** (`web_search_20250305`): Real-time web search with citations
-- **Memory** (`memory_20250818`): Persistent storage across conversations
 - **Tool Search** (`tool_search_regex_20251119`, `tool_search_bm25_20251119`):
     Dynamic tool discovery
 
+
+### Client tools
+
+- **Bash** (`bash_20250124`): Shell command execution
+- **Computer Use** (`computer_20251124`, `computer_20250124`): Desktop interaction
+- **Text Editor** (`text_editor_20250728`, etc.): File viewing and modification
+- **Memory** (`memory_20250818`): Persistent storage across conversations
+
 Example:
-    Server-side execution (Anthropic runs the tool):
+    Server-side execution ( runs the tool):
 
     ```python title="Web search example"
     from langchain_anthropic import ChatAnthropic, tools
@@ -31,20 +37,20 @@ Example:
     response = model_with_search.invoke("What are today's top news stories?")
     ```
 
-    Client-side execution (you run the tool):
+    Client-executable tools (you provide the execution logic):
 
     ```python title="Bash tool example"
     import subprocess
 
     from langchain_anthropic import ChatAnthropic, tools
-    from langchain_core.messages import HumanMessage, ToolMessage
+    from langchain.messages import HumanMessage, ToolMessage
 
 
-    def execute_bash(args):
-        if args.get("restart"):
+    def execute_bash(*, command: str | None = None, restart: bool = False, **kw):
+        if restart:
             return "Bash session restarted"
         result = subprocess.run(
-            args["command"],
+            command,
             shell=True,
             capture_output=True,
             text=True,
@@ -56,12 +62,14 @@ Example:
     bash_tool = tools.bash_20250124(execute=execute_bash)
     model_with_bash = model.bind_tools([bash_tool])
 
+    query = HumanMessage(content="List files in the current directory")
+
     # Initial request
-    response = model_with_bash.invoke("List Python files in the current directory")
+    response = model_with_bash.invoke([query])
 
     # Process tool calls in a loop until no more tool calls
     messages = [
-        HumanMessage(content="List Python files in the current directory"),
+        query,
         response,
     ]
 
@@ -82,23 +90,36 @@ Example:
     print(response.content)
     ```
 
-    Binding multiple tools:
+    Using with `create_agent`:
 
-    ```python
+    ```python title="Automatic tool execution"
+    import subprocess
+
+    from langchain.agents import create_agent
     from langchain_anthropic import ChatAnthropic, tools
 
-    model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-    model_with_tools = model.bind_tools(
-        [
-            tools.web_search_20250305(max_uses=3),
-            tools.web_fetch_20250910(citations={"enabled": True}),
-            tools.code_execution_20250825(),
-        ]
+
+    def execute_bash(*, command: str | None = None, restart: bool = False, **kw):
+        if restart:
+            return "Bash session restarted"
+        result = subprocess.run(
+            command,
+            shell=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout + result.stderr
+
+
+    agent = create_agent(
+        model=ChatAnthropic(model="claude-sonnet-4-5-20250929"),
+        tools=[tools.bash_20250124(execute=execute_bash)],
     )
 
-    response = model_with_tools.invoke(
-        "Search for Python tutorials, fetch the best one, and summarize it"
-    )
+    result = agent.invoke({"messages": [{"role": "user", "content": "List files"}]})
+
+    for message in result["messages"]:
+        message.pretty_print()
     ```
 """
 

@@ -11,39 +11,11 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any, Literal
 
-from langchain_core.tools import BaseTool, StructuredTool
+from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
 
-from langchain_anthropic.tools.types import (
-    ComputerAction20250124,
-    ComputerAction20251124,
-)
-
 if TYPE_CHECKING:
-    from anthropic.types.beta import (
-        BetaCacheControlEphemeralParam,
-        BetaToolComputerUse20250124Param,
-        BetaToolComputerUse20251124Param,
-    )
-
-
-_BASE_ACTIONS = [
-    "screenshot",
-    "left_click",
-    "right_click",
-    "middle_click",
-    "double_click",
-    "triple_click",
-    "left_click_drag",
-    "left_mouse_down",
-    "left_mouse_up",
-    "scroll",
-    "type",
-    "key",
-    "mouse_move",
-    "hold_key",
-    "wait",
-]
+    from anthropic.types.beta import BetaCacheControlEphemeralParam
 
 
 class ComputerInput20250124(BaseModel):
@@ -153,14 +125,14 @@ class ComputerInput20251124(BaseModel):
 
 
 def computer_20251124(
+    execute: Callable[..., str | Awaitable[str]],
     *,
     display_width_px: int,
     display_height_px: int,
-    execute: Callable[[ComputerAction20251124], str | Awaitable[str]] | None = None,
     display_number: int | None = None,
     enable_zoom: bool | None = None,
     cache_control: BetaCacheControlEphemeralParam | None = None,
-) -> BetaToolComputerUse20251124Param | BaseTool:
+) -> StructuredTool:
     """Create a computer use tool for Claude Opus 4.5.
 
     The computer use tool enables Claude to interact with desktop environments
@@ -181,16 +153,14 @@ def computer_20251124(
     for more details.
 
     Args:
+        execute: Callback function for executing computer actions.
+
+            See the [Claude docs](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/computer-use-tool#available-actions)
+            for the available actions.
+
+            Can be sync or async.
         display_width_px: The width of the display in pixels.
         display_height_px: The height of the display in pixels.
-        execute: Optional callback function for client-side execution.
-
-            When provided, returns a `StructuredTool` that can be invoked locally. The
-            function receives the action input and should return the result (typically a
-            base64-encoded screenshot or action confirmation).
-
-            If not provided, returns a server-side tool definition that Anthropic
-            executes.
         display_number: Optional X11 display number (e.g., `0`, `1`) for the display.
         enable_zoom: Enable zoom action for detailed screen region inspection.
 
@@ -202,56 +172,133 @@ def computer_20251124(
             Optionally specify a `ttl` of `'5m'` (default) or `'1h'`.
 
     Returns:
-        If `execute` is provided: A `StructuredTool` that can be invoked locally
-            and passed to `bind_tools`.
-
-        If `execute` is not provided: A server-side tool definition dict to pass to
+        A `StructuredTool` that can be invoked locally and passed to
             [`bind_tools`][langchain_anthropic.chat_models.ChatAnthropic.bind_tools].
 
     Example:
-        Server-side execution (Anthropic executes the tool):
+        ```python title="Manual tool execution loop"
+        import base64
+        import io
 
-        ```python
         from langchain_anthropic import ChatAnthropic, tools
+        from langchain.messages import HumanMessage, ToolMessage
 
-        model = ChatAnthropic(model="claude-opus-4-5-20251101")
-        model_with_computer = model.bind_tools(
-            [
-                tools.computer_20251124(
-                    display_width_px=1024,
-                    display_height_px=768,
-                    display_number=1,
-                    enable_zoom=True,
-                    cache_control={"type": "ephemeral"},
-                )
-            ]
-        )
-        response = model_with_computer.invoke("Take a screenshot")
-        ```
-
-        Client-side execution (you execute the tool):
-
-        ```python
-        from langchain_anthropic import ChatAnthropic, tools
+        # You'll need a library like pyautogui or similar for actual implementation
+        # import pyautogui
+        # from PIL import Image
 
 
-        def execute_computer(action):
-            if action["action"] == "screenshot":
-                # Capture and return base64-encoded screenshot
-                return capture_screenshot()
-            elif action["action"] == "left_click":
-                click(action["coordinate"][0], action["coordinate"][1])
-                return capture_screenshot()
-            # Handle other actions...
+        def execute_computer(
+            *,
+            action: str,
+            coordinate: tuple[int, int] | None = None,
+            text: str | None = None,
+            key: str | None = None,
+            scroll_direction: str | None = None,
+            scroll_amount: int | None = None,
+            duration: int | None = None,
+            region: tuple[int, int, int, int] | None = None,
+            **kw,
+        ):
+            # Placeholder - replace with actual screenshot capture
+            # screenshot = pyautogui.screenshot()
+            # buffer = io.BytesIO()
+            # screenshot.save(buffer, format="PNG")
+            # screenshot_b64 = base64.b64encode(buffer.getvalue()).decode()
+
+            if action == "screenshot":
+                # Return base64-encoded screenshot
+                return "data:image/png;base64,<screenshot_data>"
+            elif action == "left_click" and coordinate:
+                # pyautogui.click(coordinate[0], coordinate[1])
+                return "data:image/png;base64,<screenshot_after_click>"
+            elif action == "type" and text:
+                # pyautogui.typewrite(text)
+                return "data:image/png;base64,<screenshot_after_type>"
+            elif action == "key" and key:
+                # pyautogui.press(key)
+                return "data:image/png;base64,<screenshot_after_key>"
+            elif action == "scroll" and scroll_direction:
+                # scroll_map = {"up": -1, "down": 1}
+                # amount = scroll_map.get(scroll_direction, 0) * (scroll_amount or 1)
+                # pyautogui.scroll(amount)
+                return "data:image/png;base64,<screenshot_after_scroll>"
+            elif action == "zoom" and region:
+                # Capture zoomed region
+                return "data:image/png;base64,<zoomed_region>"
+            elif action == "wait" and duration:
+                # time.sleep(duration)
+                return "data:image/png;base64,<screenshot_after_wait>"
+            return "data:image/png;base64,<screenshot>"
 
 
         model = ChatAnthropic(model="claude-opus-4-5-20251101")
         computer_tool = tools.computer_20251124(
+            execute=execute_computer,
             display_width_px=1024,
             display_height_px=768,
-            execute=execute_computer,
+            enable_zoom=True,
         )
         model_with_computer = model.bind_tools([computer_tool])
+
+        query = HumanMessage(content="Take a screenshot of the desktop")
+        response = model_with_computer.invoke([query])
+
+        # Process tool calls in a loop until no more tool calls
+        messages = [query, response]
+
+        while response.tool_calls:
+            for tool_call in response.tool_calls:
+                print(f"Action: {tool_call['args'].get('action')}")
+                result = computer_tool.invoke(tool_call["args"])
+                tool_msg = ToolMessage(content=result, tool_call_id=tool_call["id"])
+                messages.append(tool_msg)
+
+            response = model_with_computer.invoke(messages)
+            messages.append(response)
+
+        print(response.content)
+        ```
+
+        ```python title="Automatic tool execution"
+        from langchain.agents import create_agent
+        from langchain_anthropic import ChatAnthropic, tools
+
+
+        def execute_computer(
+            *,
+            action: str,
+            coordinate: tuple[int, int] | None = None,
+            text: str | None = None,
+            **kw,
+        ):
+            # Placeholder implementation - replace with actual screen control
+            if action == "screenshot":
+                return "data:image/png;base64,<screenshot_data>"
+            elif action == "left_click" and coordinate:
+                return "data:image/png;base64,<screenshot_after_click>"
+            elif action == "type" and text:
+                return "data:image/png;base64,<screenshot_after_type>"
+            return "data:image/png;base64,<screenshot>"
+
+
+        agent = create_agent(
+            model=ChatAnthropic(model="claude-opus-4-5-20251101"),
+            tools=[
+                tools.computer_20251124(
+                    execute=execute_computer,
+                    display_width_px=1024,
+                    display_height_px=768,
+                    enable_zoom=True,
+                )
+            ],
+        )
+
+        query = {"messages": [{"role": "user", "content": "Take a screenshot"}]}
+        result = agent.invoke(query)
+
+        for message in result["messages"]:
+            message.pretty_print()
         ```
     """
     name = "computer"
@@ -269,10 +316,6 @@ def computer_20251124(
         provider_tool_def["enable_zoom"] = enable_zoom
     if cache_control is not None:
         provider_tool_def["cache_control"] = cache_control
-
-    # If no execute callback, return server-side definition
-    if execute is None:
-        return provider_tool_def  # type: ignore[return-value]
 
     # Create client-side tool with execute callback
     tool = StructuredTool.from_function(
@@ -293,13 +336,13 @@ def computer_20251124(
 
 
 def computer_20250124(
+    execute: Callable[..., str | Awaitable[str]],
     *,
     display_width_px: int,
     display_height_px: int,
-    execute: Callable[[ComputerAction20250124], str | Awaitable[str]] | None = None,
     display_number: int | None = None,
     cache_control: BetaCacheControlEphemeralParam | None = None,
-) -> BetaToolComputerUse20250124Param | BaseTool:
+) -> StructuredTool:
     """Create a computer use tool for Claude Sonnet/Opus/Haiku models.
 
     The computer use tool enables Claude to interact with desktop environments
@@ -324,16 +367,14 @@ def computer_20250124(
     for more details.
 
     Args:
+        execute: Callback function for executing computer actions.
+
+            See the [Claude docs](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/computer-use-tool#available-actions)
+            for the available actions.
+
+            Can be sync or async.
         display_width_px: The width of the display in pixels.
         display_height_px: The height of the display in pixels.
-        execute: Optional callback function for client-side execution.
-
-            When provided, returns a `StructuredTool` that can be invoked locally. The
-            function receives the action input and should return the result (typically a
-            base64-encoded screenshot or action confirmation).
-
-            If not provided, returns a server-side tool definition that Anthropic
-            executes.
         display_number: Optional X11 display number (e.g., 0, 1) for the display.
         cache_control: Enable prompt caching for this tool definition.
 
@@ -342,54 +383,113 @@ def computer_20250124(
             Optionally specify a `ttl` of `'5m'` (default) or `'1h'`.
 
     Returns:
-        If `execute` is provided: A `StructuredTool` that can be invoked locally
-            and passed to `bind_tools`.
-
-        If `execute` is not provided: A server-side tool definition dict to pass to
+        A `StructuredTool` that can be invoked locally and passed to
             [`bind_tools`][langchain_anthropic.chat_models.ChatAnthropic.bind_tools].
 
     Example:
-        Server-side execution (Anthropic executes the tool):
-
-        ```python
+        ```python title="Manual tool execution loop"
         from langchain_anthropic import ChatAnthropic, tools
+        from langchain.messages import HumanMessage, ToolMessage
 
-        model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-        model_with_computer = model.bind_tools(
-            [
-                tools.computer_20250124(
-                    display_width_px=1024,
-                    display_height_px=768,
-                    display_number=1,
-                    cache_control={"type": "ephemeral"},
-                )
-            ]
-        )
-        response = model_with_computer.invoke("Take a screenshot")
-        ```
-
-        Client-side execution (you execute the tool):
-
-        ```python
-        from langchain_anthropic import ChatAnthropic, tools
+        # You'll need a library like pyautogui or similar for actual implementation
+        # import pyautogui
 
 
-        def execute_computer(action):
-            if action["action"] == "screenshot":
-                return capture_screenshot()
-            elif action["action"] == "left_click":
-                click(action["coordinate"][0], action["coordinate"][1])
-                return capture_screenshot()
-            # Handle other actions...
+        def execute_computer(
+            *,
+            action: str,
+            coordinate: tuple[int, int] | None = None,
+            text: str | None = None,
+            key: str | None = None,
+            scroll_direction: str | None = None,
+            scroll_amount: int | None = None,
+            duration: int | None = None,
+            **kw,
+        ):
+            # Placeholder - replace with actual screenshot capture
+            if action == "screenshot":
+                return "data:image/png;base64,<screenshot_data>"
+            elif action == "left_click" and coordinate:
+                # pyautogui.click(coordinate[0], coordinate[1])
+                return "data:image/png;base64,<screenshot_after_click>"
+            elif action == "type" and text:
+                # pyautogui.typewrite(text)
+                return "data:image/png;base64,<screenshot_after_type>"
+            elif action == "key" and key:
+                # pyautogui.press(key)
+                return "data:image/png;base64,<screenshot_after_key>"
+            elif action == "scroll" and scroll_direction:
+                return "data:image/png;base64,<screenshot_after_scroll>"
+            elif action == "wait" and duration:
+                # time.sleep(duration)
+                return "data:image/png;base64,<screenshot_after_wait>"
+            return "data:image/png;base64,<screenshot>"
 
 
         model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
         computer_tool = tools.computer_20250124(
+            execute=execute_computer,
             display_width_px=1024,
             display_height_px=768,
-            execute=execute_computer,
         )
         model_with_computer = model.bind_tools([computer_tool])
+
+        query = HumanMessage(content="Take a screenshot of the desktop")
+        response = model_with_computer.invoke([query])
+
+        # Process tool calls in a loop until no more tool calls
+        messages = [query, response]
+
+        while response.tool_calls:
+            for tool_call in response.tool_calls:
+                print(f"Action: {tool_call['args'].get('action')}")
+                result = computer_tool.invoke(tool_call["args"])
+                tool_msg = ToolMessage(content=result, tool_call_id=tool_call["id"])
+                messages.append(tool_msg)
+
+            response = model_with_computer.invoke(messages)
+            messages.append(response)
+
+        print(response.content)
+        ```
+
+        ```python title="Automatic tool execution"
+        from langchain.agents import create_agent
+        from langchain_anthropic import ChatAnthropic, tools
+
+
+        def execute_computer(
+            *,
+            action: str,
+            coordinate: tuple[int, int] | None = None,
+            text: str | None = None,
+            **kw,
+        ):
+            if action == "screenshot":
+                return "data:image/png;base64,<screenshot_data>"
+            elif action == "left_click" and coordinate:
+                return "data:image/png;base64,<screenshot_after_click>"
+            elif action == "type" and text:
+                return "data:image/png;base64,<screenshot_after_type>"
+            return "data:image/png;base64,<screenshot>"
+
+
+        agent = create_agent(
+            model=ChatAnthropic(model="claude-sonnet-4-5-20250929"),
+            tools=[
+                tools.computer_20250124(
+                    execute=execute_computer,
+                    display_width_px=1024,
+                    display_height_px=768,
+                )
+            ],
+        )
+
+        query = {"messages": [{"role": "user", "content": "Take a screenshot"}]}
+        result = agent.invoke(query)
+
+        for message in result["messages"]:
+            message.pretty_print()
         ```
     """
     name = "computer"
@@ -405,10 +505,6 @@ def computer_20250124(
         provider_tool_def["display_number"] = display_number
     if cache_control is not None:
         provider_tool_def["cache_control"] = cache_control
-
-    # If no execute callback, return server-side definition
-    if execute is None:
-        return provider_tool_def  # type: ignore[return-value]
 
     # Create client-side tool with execute callback
     tool = StructuredTool.from_function(
