@@ -121,13 +121,14 @@ class AnthropicTool(TypedDict):
 class AnthropicBuiltinTool(TypedDict, total=False):
     """Anthropic built-in tool definition.
 
-    Built-in tools (bash, computer, text_editor, memory, etc.) use a `type` field
-    (e.g., `'bash_20250124'`) rather than `input_schema`. These are passed
-    directly to the API without conversion.
+    Built-in tools (bash, computer, text_editor, memory, etc.) each use a `type` and
+    `name` field (e.g., name=`bash`, type=`'bash_20250124'`)
 
-    Uses `total=False` to allow arbitrary extra fields for tool-specific
-    parameters (e.g. `display_width_px`, `memory_profile`, etc.) without requiring
-    updates when Anthropic adds new built-in tools or fields.
+    These are passed directly to the API without conversion.
+
+    Using `total=False` to allow arbitrary extra fields for tool-specific parameters
+    (e.g. `display_width_px`, `memory_profile`, etc.) without requiring updates when
+    Anthropic adds new built-in tools or fields.
     """
 
     type: Required[str]
