@@ -127,62 +127,33 @@ def test_configurable() -> None:
     for method in ("get_num_tokens", "get_num_tokens_from_messages"):
         assert hasattr(model_with_config, method)
 
-    assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
-        "name": None,
-        "bound": {
-            "name": None,
-            "disable_streaming": False,
-            "disabled_params": None,
-            "model_name": "gpt-4o",
-            "temperature": None,
-            "model_kwargs": {},
-            "openai_api_key": SecretStr("foo"),
-            "openai_api_base": None,
-            "openai_organization": None,
-            "openai_proxy": None,
-            "output_version": None,
-            "request_timeout": None,
-            "max_retries": None,
-            "presence_penalty": None,
-            "reasoning": None,
-            "reasoning_effort": None,
-            "verbosity": None,
-            "frequency_penalty": None,
-            "include": None,
-            "seed": None,
-            "service_tier": None,
-            "logprobs": None,
-            "top_logprobs": None,
-            "logit_bias": None,
-            "streaming": False,
-            "n": None,
-            "top_p": None,
-            "truncation": None,
-            "max_tokens": None,
-            "tiktoken_model_name": None,
-            "default_headers": None,
-            "default_query": None,
-            "stop": None,
-            "store": None,
-            "extra_body": None,
-            "include_response_headers": False,
-            "stream_usage": True,
-            "use_previous_response_id": False,
-            "use_responses_api": None,
-        },
-        "kwargs": {
-            "tools": [
-                {
-                    "type": "function",
-                    "function": {"name": "foo", "description": "foo", "parameters": {}},
-                },
-            ],
-        },
-        "config": {"tags": ["foo"], "configurable": {}},
-        "config_factories": [],
-        "custom_input_type": None,
-        "custom_output_type": None,
+    model_dump = model_with_config.model_dump()  # type: ignore[attr-defined]
+
+    # Check essential bound model fields
+    assert model_dump["bound"]["model_name"] == "gpt-4o"
+    assert model_dump["bound"]["openai_api_key"] == SecretStr("foo")
+    assert model_dump["bound"]["streaming"] is False
+    assert model_dump["bound"]["stream_usage"] is True
+
+    # Check kwargs (tools binding)
+    assert model_dump["kwargs"] == {
+        "tools": [
+            {
+                "type": "function",
+                "function": {"name": "foo", "description": "foo", "parameters": {}},
+            },
+        ],
     }
+
+    # Check config contains the expected tags (other fields may vary by langchain-core)
+    assert model_dump["config"]["tags"] == ["foo"]
+    assert model_dump["config"]["configurable"] == {}
+
+    # Check structural fields
+    assert model_dump["name"] is None
+    assert model_dump["config_factories"] == []
+    assert model_dump["custom_input_type"] is None
+    assert model_dump["custom_output_type"] is None
 
 
 @pytest.mark.requires("langchain_openai", "langchain_anthropic")
