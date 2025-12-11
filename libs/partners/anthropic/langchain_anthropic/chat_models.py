@@ -160,6 +160,7 @@ _TOOL_TYPE_TO_BETA: dict[str, str] = {
     "web_fetch_20250910": "web-fetch-2025-09-10",
     "code_execution_20250522": "code-execution-2025-05-22",
     "code_execution_20250825": "code-execution-2025-08-25",
+    "mcp_toolset": "mcp-client-2025-11-20",
     "memory_20250818": "context-management-2025-06-27",
     "computer_20250124": "computer-use-2025-01-24",
     "computer_20251124": "computer-use-2025-11-24",
