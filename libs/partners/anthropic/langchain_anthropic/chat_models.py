@@ -141,6 +141,7 @@ _TOOL_TYPE_TO_BETA: dict[str, str] = {
     "web_fetch_20250910": "web-fetch-2025-09-10",
     "code_execution_20250522": "code-execution-2025-05-22",
     "code_execution_20250825": "code-execution-2025-08-25",
+    "mcp_toolset": "mcp-client-2025-11-20",
     "memory_20250818": "context-management-2025-06-27",
     "computer_20250124": "computer-use-2025-01-24",
     "computer_20251124": "computer-use-2025-11-24",
@@ -1611,11 +1612,17 @@ class ChatAnthropic(BaseChatModel):
                     "type": "url",
                     "url": "https://docs.langchain.com/mcp",
                     "name": "LangChain Docs",
-                    # "tool_configuration": {  # optional configuration
-                    #     "enabled": True,
-                    #     "allowed_tools": ["ask_question"],
-                    # },
                     # "authorization_token": "PLACEHOLDER",  # optional authorization
+                }
+            ]
+
+            # Optional: configure which tools are enabled via mcp_toolset
+            tools = [
+                {
+                    "type": "mcp_toolset",
+                    "mcp_server_name": "LangChain Docs",
+                    # "default_config": {"enabled": False},  # disable all by default
+                    # "configs": {"ask_question": {"enabled": True}},  # allowlist
                 }
             ]
 
@@ -1626,7 +1633,7 @@ class ChatAnthropic(BaseChatModel):
 
             response = model.invoke(
                 "What are LangChain content blocks?",
-                tools=[{"type": "mcp_toolset", "mcp_server_name": "LangChain Docs"}],
+                tools=tools,
             )
             ```
 
