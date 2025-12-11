@@ -3059,13 +3059,13 @@ def test_gpt_5_temperature_case_insensitive(
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
-def test_gpt_5_temperature_with_reasoning_effort_none(
+def test_gpt_5_1_temperature_with_reasoning_effort_none(
     use_responses_api: bool,
 ) -> None:
     """Test that temperature is preserved when reasoning_effort is explicitly 'none'."""
     # Test with reasoning_effort='none' explicitly set
     llm = ChatOpenAI(
-        model="gpt-5-nano",
+        model="gpt-5.1",
         temperature=0.5,
         reasoning_effort="none",
         use_responses_api=use_responses_api,
@@ -3076,7 +3076,7 @@ def test_gpt_5_temperature_with_reasoning_effort_none(
 
     # Test with reasoning={'effort': 'none'}
     llm = ChatOpenAI(
-        model="gpt-5-nano",
+        model="gpt-5.1",
         temperature=0.5,
         reasoning={"effort": "none"},
         use_responses_api=use_responses_api,
@@ -3087,7 +3087,7 @@ def test_gpt_5_temperature_with_reasoning_effort_none(
 
     # Test that temperature is restricted by default (no reasoning_effort)
     llm = ChatOpenAI(
-        model="gpt-5-nano",
+        model="gpt-5.1",
         temperature=0.5,
         use_responses_api=use_responses_api,
     )
@@ -3097,7 +3097,7 @@ def test_gpt_5_temperature_with_reasoning_effort_none(
 
     # Test that temperature is still restricted when reasoning_effort is something else
     llm = ChatOpenAI(
-        model="gpt-5-nano",
+        model="gpt-5.1",
         temperature=0.5,
         reasoning_effort="low",
         use_responses_api=use_responses_api,
@@ -3108,7 +3108,7 @@ def test_gpt_5_temperature_with_reasoning_effort_none(
 
     # Test with reasoning={'effort': 'low'}
     llm = ChatOpenAI(
-        model="gpt-5-nano",
+        model="gpt-5.1",
         temperature=0.5,
         reasoning={"effort": "low"},
         use_responses_api=use_responses_api,
