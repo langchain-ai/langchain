@@ -176,6 +176,9 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         # Also OpenAI returns None for tool invocations
         content = _dict.get("content", "") or ""
         additional_kwargs: dict = {}
+        # add reasoning blocks if available
+        if reasoning_content := _dict.get("reasoning_content"):
+            additional_kwargs["reasoning_content"] = reasoning_content
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
         tool_calls = []
@@ -390,6 +393,8 @@ def _convert_delta_to_message_chunk(
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content, id=id_)
     if role == "assistant" or default_class == AIMessageChunk:
+        if reasoning_content := _dict.get("reasoning_content"):
+            additional_kwargs["reasoning_content"] = reasoning_content
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -1054,6 +1059,9 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> ChatGenerationChunk | None:
         if chunk.get("type") == "content.delta":  # From beta.chat.completions.stream
             return None
+        # add reasoning blocks if available
+        if reasoning_content := chunk.get("reasoning_content"):
+            chunk["additional_kwargs"]["reasoning_content"] = reasoning_content
         token_usage = chunk.get("usage")
         choices = (
             chunk.get("choices", [])
