@@ -94,7 +94,12 @@ _FALLBACK_MAX_OUTPUT_TOKENS: Final[int] = 4096
 
 
 class AnthropicTool(TypedDict):
-    """Anthropic tool definition."""
+    """Anthropic tool definition for custom/user-defined tools.
+
+    Custom tools use `name` and `input_schema` fields to define the tool's
+    interface. These are converted from LangChain tool formats (functions, Pydantic
+    models, BaseTools) via `convert_to_anthropic_tool`.
+    """
 
     name: str
 
@@ -113,8 +118,25 @@ class AnthropicTool(TypedDict):
     allowed_callers: NotRequired[list[str]]
 
 
-# Some tool types require specific beta headers to be enabled
-# Mapping of tool type patterns to required beta headers
+# ---------------------------------------------------------------------------
+# Built-in Tool Support
+# ---------------------------------------------------------------------------
+# When Anthropic releases new built-in tools, two places may need updating:
+#
+# 1. _TOOL_TYPE_TO_BETA (below) - Add mapping if the tool requires a beta header.
+#     Not all tools need this; only add if API returns a beta header error.
+#
+# 2. _is_builtin_tool() - Add the tool type prefix to _builtin_tool_prefixes.
+#     This ensures the tool dict is passed through to the API unchanged (instead
+#     of being converted via convert_to_anthropic_tool, which may fail).
+#
+# 3. langchain_anthropic/tools/ - Add a factory function for better devx
+#     (IDE autocomplete, type checking, documentation).
+#     NOT required for the tool to work - users can always pass raw dicts.
+# ---------------------------------------------------------------------------
+
+# Some tool types require specific beta headers to be enabled.
+# Mapping of tool type to required beta header.
 _TOOL_TYPE_TO_BETA: dict[str, str] = {
     "web_fetch_20250910": "web-fetch-2025-09-10",
     "code_execution_20250522": "code-execution-2025-05-22",
@@ -138,7 +160,7 @@ _ANTHROPIC_EXTRA_FIELDS: set[str] = {
 def _is_builtin_tool(tool: Any) -> bool:
     """Check if a tool is a built-in Anthropic tool.
 
-    [Claude docs for built-in tools](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview)
+    [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview)
     """
     if not isinstance(tool, dict):
         return False
@@ -1134,7 +1156,7 @@ class ChatAnthropic(BaseChatModel):
 
         !!! example
 
-            ```python hl_lines="5-6"
+            ```python hl_lines="6"
             from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(
@@ -1366,6 +1388,7 @@ class ChatAnthropic(BaseChatModel):
                 ],
             }
         ]
+
         response = model.invoke(messages)
         response.content
         ```
@@ -1464,8 +1487,7 @@ class ChatAnthropic(BaseChatModel):
         See [`ChatAnthropic.with_structured_output()`][langchain_anthropic.chat_models.ChatAnthropic.with_structured_output]
         for more info, including strict output validation.
 
-        ```python hl_lines="13"
-        from typing import Optional
+        ```python hl_lines="12"
         from pydantic import BaseModel, Field
 
 
@@ -1855,7 +1877,7 @@ class ChatAnthropic(BaseChatModel):
     """List of beta features to enable. If specified, invocations will be routed
     through `client.beta.messages.create`.
 
-    Example: `#!python betas=["mcp-client-2025-04-04"]`
+    Example: `#!python betas=["token-efficient-tools-2025-02-19"]`
     """
     # Can also be passed in w/ model_kwargs, but having it as a param makes better devx
     #
@@ -2957,7 +2979,7 @@ class ChatAnthropic(BaseChatModel):
             method = "json_schema"
 
         if method == "function_calling":
-            formatted_tool = convert_to_anthropic_tool(schema)
+            formatted_tool = cast(AnthropicTool, convert_to_anthropic_tool(schema))
             tool_name = formatted_tool["name"]
             if self.thinking is not None and self.thinking.get("type") == "enabled":
                 llm = self._get_llm_for_structured_output_when_thinking_is_enabled(
@@ -3121,7 +3143,7 @@ def convert_to_anthropic_tool(
                 Requires Claude Sonnet 4.5 or Opus 4.1.
 
     Returns:
-        An Anthropic tool definition dict.
+        `AnthropicTool` for custom/user-defined tools
     """
     # already in Anthropic tool format
     if isinstance(tool, dict) and all(
