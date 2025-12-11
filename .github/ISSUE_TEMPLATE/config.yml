@@ -13,6 +13,3 @@ contact_links:
   - name: 📚 API Reference Documentation
     url: https://reference.langchain.com/python/
     about: View the official LangChain API reference documentation
-  - name: 💬 LangChain Forum
-    url: https://forum.langchain.com/
-    about: Ask questions and get help from the community
