@@ -94,11 +94,11 @@ _FALLBACK_MAX_OUTPUT_TOKENS: Final[int] = 4096
 
 
 class AnthropicTool(TypedDict):
-    """Anthropic tool definition for custom/user-defined tools.
+    """Anthropic tool definition for custom (user-defined) tools.
 
     Custom tools use `name` and `input_schema` fields to define the tool's
     interface. These are converted from LangChain tool formats (functions, Pydantic
-    models, BaseTools) via `convert_to_anthropic_tool`.
+    models, `BaseTool` objects) via `convert_to_anthropic_tool`.
     """
 
     name: str
@@ -124,19 +124,13 @@ class AnthropicTool(TypedDict):
 # When Anthropic releases new built-in tools, two places may need updating:
 #
 # 1. _TOOL_TYPE_TO_BETA (below) - Add mapping if the tool requires a beta header.
-#     Not all tools need this; only add if API returns a beta header error.
+#     Not all tools need this; only add if the API requires a beta header.
 #
-# 2. _is_builtin_tool() - Add the tool type prefix to _builtin_tool_prefixes.
+# 2. _is_builtin_tool() - Add the tool type prefix to _BUILTIN_TOOL_PREFIXES.
 #     This ensures the tool dict is passed through to the API unchanged (instead
 #     of being converted via convert_to_anthropic_tool, which may fail).
-#
-# 3. langchain_anthropic/tools/ - Add a factory function for better devx
-#     (IDE autocomplete, type checking, documentation).
-#     NOT required for the tool to work - users can always pass raw dicts.
 # ---------------------------------------------------------------------------
 
-# Some tool types require specific beta headers to be enabled.
-# Mapping of tool type to required beta header.
 _TOOL_TYPE_TO_BETA: dict[str, str] = {
     "web_fetch_20250910": "web-fetch-2025-09-10",
     "code_execution_20250522": "code-execution-2025-05-22",
@@ -148,18 +142,37 @@ _TOOL_TYPE_TO_BETA: dict[str, str] = {
     "tool_search_tool_regex_20251119": "advanced-tool-use-2025-11-20",
     "tool_search_tool_bm25_20251119": "advanced-tool-use-2025-11-20",
 }
+"""Mapping of tool type to required beta header.
 
-# Allowlist of valid Anthropic-specific extra fields
+Some tool types require specific beta headers to be enabled.
+"""
+
+_BUILTIN_TOOL_PREFIXES = [
+    "text_editor_",
+    "computer_",
+    "bash_",
+    "web_search_",
+    "web_fetch_",
+    "code_execution_",
+    "mcp_toolset",
+    "memory_",
+    "tool_search_",
+]
+
 _ANTHROPIC_EXTRA_FIELDS: set[str] = {
     "allowed_callers",
     "cache_control",
     "defer_loading",
     "input_examples",
 }
+"""Valid Anthropic-specific extra fields"""
 
 
 def _is_builtin_tool(tool: Any) -> bool:
-    """Check if a tool is a built-in Anthropic tool.
+    """Check if a tool is a built-in (server-side) Anthropic tool.
+
+    `tool` must be a `dict` and have a `type` key starting with one of the known
+    built-in tool prefixes.
 
     [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview)
     """
@@ -170,18 +183,7 @@ def _is_builtin_tool(tool: Any) -> bool:
     if not tool_type or not isinstance(tool_type, str):
         return False
 
-    _builtin_tool_prefixes = [
-        "text_editor_",
-        "computer_",
-        "bash_",
-        "web_search_",
-        "web_fetch_",
-        "code_execution_",
-        "mcp_toolset",
-        "memory_",
-        "tool_search_",
-    ]
-    return any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
+    return any(tool_type.startswith(prefix) for prefix in _BUILTIN_TOOL_PREFIXES)
 
 
 def _format_image(url: str) -> dict:
@@ -3147,10 +3149,10 @@ def convert_to_anthropic_tool(
     Returns:
         `AnthropicTool` for custom/user-defined tools
     """
-    # already in Anthropic tool format
     if isinstance(tool, dict) and all(
         k in tool for k in ("name", "description", "input_schema")
     ):
+        # Anthropic tool format
         anthropic_formatted = AnthropicTool(tool)  # type: ignore[misc]
     else:
         oai_formatted = convert_to_openai_tool(tool, strict=strict)["function"]
