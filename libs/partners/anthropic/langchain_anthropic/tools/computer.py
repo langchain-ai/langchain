@@ -143,7 +143,7 @@ def computer_20251124(
 
     Supported models: Claude Opus 4.5.
 
-    !!! warning
+    !!! warning "Security advisory"
 
         Computer use is a beta feature with unique risks. Use a dedicated virtual
         machine or container with minimal privileges. Avoid giving access to
@@ -357,7 +357,7 @@ def computer_20250124(
     - Opus 4
     - Sonnet 3.7 (deprecated)
 
-    !!! warning
+    !!! warning "Security advisory"
 
         Computer use is a beta feature with unique risks. Use a dedicated virtual
         machine or container with minimal privileges. Avoid giving access to

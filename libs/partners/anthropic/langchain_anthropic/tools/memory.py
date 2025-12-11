@@ -61,7 +61,7 @@ def memory_20250818(
     delete files that persist between sessions, allowing it to build knowledge over time
     without keeping everything in the context window.
 
-    !!! warning
+    !!! warning "Security advisory"
 
         This tool can create, read, modify, and delete files on your system. Do not
         use with untrusted input. The `execute` callback you provide should restrict

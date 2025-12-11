@@ -44,7 +44,7 @@ def bash_20250124(
     - Claude 4 models
     - Sonnet 3.7 (deprecated)
 
-    !!! warning
+    !!! warning "Security advisory"
 
         This tool can execute arbitrary shell commands on your system. Do not
         use with untrusted input. Run in a sandboxed environment (container or VM)

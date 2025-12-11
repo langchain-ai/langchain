@@ -45,7 +45,7 @@ def web_fetch_20250910(
     Claude can only fetch URLs that have been explicitly provided by the user or that
     come from previous web search or web fetch results.
 
-    !!! warning
+    !!! warning "Security advisory"
 
         Enabling the web fetch tool in environments where Claude processes
         untrusted input alongside sensitive data poses data exfiltration risks.

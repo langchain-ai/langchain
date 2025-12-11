@@ -68,7 +68,7 @@ def text_editor_20250728(
 
     - Claude 4.x models.
 
-    !!! warning
+    !!! warning "Security advisory"
 
         This tool can read and write files on your system. Do not use with
         untrusted input. The `execute` callback you provide should validate file
@@ -217,7 +217,7 @@ def text_editor_20250429(
     The text editor tool enables Claude to view and modify files using string
     replacement operations.
 
-    !!! warning
+    !!! warning "Security advisory"
 
         This tool can read and write files on your system. Do not use with
         untrusted input. The `execute` callback you provide should validate file
@@ -285,7 +285,7 @@ def text_editor_20250124(
 
     - Claude Sonnet 3.7 (deprecated)
 
-    !!! warning
+    !!! warning "Security advisory"
 
         This tool can read and write files on your system. Do not use with
         untrusted input. The `execute` callback you provide should validate file

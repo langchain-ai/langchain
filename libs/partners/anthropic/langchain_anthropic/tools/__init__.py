@@ -1,14 +1,12 @@
-"""Claude tools for `ChatAnthropic`.
+"""Claude tools for [`ChatAnthropic`][langchain_anthropic.chat_models.ChatAnthropic].
 
-Factory functions for creating typed tool definitions. These tools support both:
+These factories contain tools that support both:
 
 - **Server-side execution**: Anthropic executes the tool on their infrastructure
-- **Client-side execution**: You provide an `execute` callback to handle tool calls
-    locally
+- **Client-side execution**: You provide an `execute` callback function to handle tool
+    calls locally
 
-## Tools
-
-### Server tools
+## Server tools
 
 - **Code Execution** (`code_execution_20250825`): Run code in a sandboxed environment
 - **Remote MCP Toolset** (`mcp_toolset`): Connect to remote MCP servers
@@ -18,7 +16,7 @@ Factory functions for creating typed tool definitions. These tools support both:
     Dynamic tool discovery
 
 
-### Client tools
+## Client tools
 
 - **Bash** (`bash_20250124`): Shell command execution
 - **Computer Use** (`computer_20251124`, `computer_20250124`): Desktop interaction
@@ -26,9 +24,9 @@ Factory functions for creating typed tool definitions. These tools support both:
 - **Memory** (`memory_20250818`): Persistent storage across conversations
 
 Example:
-    Server-side execution ( runs the tool):
+    Server-side execution (Anthropic runs the tool):
 
-    ```python title="Web search example"
+    ```python title="Web search"
     from langchain_anthropic import ChatAnthropic, tools
 
     model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
@@ -39,7 +37,7 @@ Example:
 
     Client-executable tools (you provide the execution logic):
 
-    ```python title="Bash tool example"
+    ```python title="Bash tool"
     import subprocess
 
     from langchain_anthropic import ChatAnthropic, tools
@@ -90,7 +88,7 @@ Example:
     print(response.content)
     ```
 
-    Using with `create_agent`:
+    Using with [`create_agent`][langchain.agents.create_agent]:
 
     ```python title="Automatic tool execution"
     import subprocess
@@ -144,21 +142,22 @@ from langchain_anthropic.tools.tool_search import (
 from langchain_anthropic.tools.web_fetch import CitationsConfig, web_fetch_20250910
 from langchain_anthropic.tools.web_search import web_search_20250305
 
-__all__ = [
-    "CitationsConfig",
-    "MCPDefaultConfig",
-    "MCPToolConfig",
+# Custom sort for reference docs ordering
+__all__ = [  # noqa: RUF022
     "bash_20250124",
     "code_execution_20250825",
-    "computer_20250124",
     "computer_20251124",
+    "computer_20250124",
     "mcp_toolset",
-    "memory_20250818",
-    "text_editor_20250124",
-    "text_editor_20250429",
+    "MCPDefaultConfig",
+    "MCPToolConfig",
     "text_editor_20250728",
+    "text_editor_20250429",
+    "text_editor_20250124",
+    "web_fetch_20250910",
+    "CitationsConfig",
+    "web_search_20250305",
+    "memory_20250818",
     "tool_search_bm25_20251119",
     "tool_search_regex_20251119",
-    "web_fetch_20250910",
-    "web_search_20250305",
 ]
