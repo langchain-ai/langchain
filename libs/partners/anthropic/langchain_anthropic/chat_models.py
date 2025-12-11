@@ -1452,15 +1452,14 @@ class ChatAnthropic(BaseChatModel):
         for more detail.
 
         ```python hl_lines="5-6"
-        from langchain_anthropic import ChatAnthropic, tools
+        from langchain_anthropic import ChatAnthropic
 
         model = ChatAnthropic(
             model="claude-sonnet-4-5-20250929",
             betas=["context-management-2025-06-27"],
             context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
         )
-        model_with_tools = model.bind_tools([tools.web_search_20250305()])
-
+        model_with_tools = model.bind_tools([{"type": "web_search_20250305", "name": "web_search"}])
         response = model_with_tools.invoke("Search for recent developments in AI")
         ```
 
@@ -1539,11 +1538,17 @@ class ChatAnthropic(BaseChatModel):
             the LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#bash-tool)
             for more detail.
 
-            ```python hl_lines="4"
-            from langchain_anthropic import ChatAnthropic, tools
+            ```python
+            from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-            model_with_bash = model.bind_tools([tools.bash_20250124()])
+
+            bash_tool = {
+                "type": "bash_20250124",
+                "name": "bash",
+            }
+
+            model_with_bash = model.bind_tools([bash_tool])
             response = model_with_bash.invoke("List all Python files in the current directory")
             ```
 
@@ -1554,11 +1559,14 @@ class ChatAnthropic(BaseChatModel):
             LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#code-execution)
             for more detail.
 
-            ```python hl_lines="4"
-            from langchain_anthropic import ChatAnthropic, tools
-
+            ```python hl_lines="3-6"
             model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-            model_with_tools = model.bind_tools([tools.code_execution_20250825()])
+
+            tool = {
+                "type": "code_execution_20250522",
+                "name": "code_execution",
+            }
+            model_with_tools = model.bind_tools([tool])
 
             response = model_with_tools.invoke(
                 "Calculate the mean and standard deviation of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
@@ -1581,19 +1589,20 @@ class ChatAnthropic(BaseChatModel):
             [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#computer-use)
             for more detail.
 
-            ```python hl_lines="4-12"
-            from langchain_anthropic import ChatAnthropic, tools
+            ```python
+            from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-            model_with_computer = model.bind_tools(
-                [
-                    tools.computer_20250124(
-                        display_width_px=1024,
-                        display_height_px=768,
-                        display_number=1,
-                    )
-                ]
-            )
+
+            computer_tool = {
+                "type": "computer_20250124",
+                "name": "computer",
+                "display_width_px": 1024,
+                "display_height_px": 768,
+                "display_number": 1,
+            }
+
+            model_with_computer = model.bind_tools([computer_tool])
             response = model_with_computer.invoke("Take a screenshot to see what's on the screen")
 
             # response.tool_calls contains the action Claude wants to perform
@@ -1614,7 +1623,7 @@ class ChatAnthropic(BaseChatModel):
             [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#remote-mcp)
             for more detail.
 
-            ```python hl_lines="3-19 24 29"
+            ```python hl_lines="3-20 24 29"
             from langchain_anthropic import ChatAnthropic
 
             mcp_servers = [
@@ -1660,11 +1669,16 @@ class ChatAnthropic(BaseChatModel):
             LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#text-editor)
             for more detail.
 
-            ```python hl_lines="4"
-            from langchain_anthropic import ChatAnthropic, tools
+            ```python hl_lines="5-8"
+            from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-            model_with_tools = model.bind_tools([tools.text_editor_20250728()])
+
+            tool = {
+                "type": "text_editor_20250124",
+                "name": "str_replace_editor",
+            }
+            model_with_tools = model.bind_tools([tool])
 
             response = model_with_tools.invoke(
                 "There's a syntax error in my primes.py file. Can you help me fix it?"
@@ -1692,11 +1706,17 @@ class ChatAnthropic(BaseChatModel):
             [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#web-fetch)
             for more detail.
 
-            ```python hl_lines="4"
-            from langchain_anthropic import ChatAnthropic, tools
+            ```python hl_lines="5-9"
+            from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(model="claude-haiku-4-5-20251001")
-            model_with_tools = model.bind_tools([tools.web_fetch_20250910(max_uses=3)])
+
+            tool = {
+                "type": "web_fetch_20250910",
+                "name": "web_fetch",
+                "max_uses": 3,
+            }
+            model_with_tools = model.bind_tools([tool])
 
             response = model_with_tools.invoke("Please analyze the content at https://docs.langchain.com/")
             ```
@@ -1714,22 +1734,33 @@ class ChatAnthropic(BaseChatModel):
             [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#web-search)
             for more detail.
 
-            ```python hl_lines="4"
-            from langchain_anthropic import ChatAnthropic, tools
+            ```python hl_lines="5-9"
+            from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-            model_with_tools = model.bind_tools([tools.web_search_20250305(max_uses=3)])
+
+            tool = {
+                "type": "web_search_20250305",
+                "name": "web_search",
+                "max_uses": 3,
+            }
+            model_with_tools = model.bind_tools([tool])
 
             response = model_with_tools.invoke("How do I update a web app to TypeScript 5.5?")
             ```
 
         ??? example "Memory tool"
 
-            ```python hl_lines="4"
-            from langchain_anthropic import ChatAnthropic, tools
+            ```python hl_lines="5-8"
+            from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-            model_with_tools = model.bind_tools([tools.memory_20250818()])
+
+            tool = {
+                "type": "memory_20250818",
+                "name": "memory",
+            }
+            model_with_tools = model.bind_tools([tool])
 
             response = model_with_tools.invoke("What are my interests?")
             ```
@@ -1753,8 +1784,8 @@ class ChatAnthropic(BaseChatModel):
             [LangChain docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#tool-search)
             for more detail.
 
-            ```python
-            from langchain_anthropic import ChatAnthropic, tools
+            ```python hl_lines="4 10"
+            from langchain_anthropic import ChatAnthropic
             from langchain_core.tools import tool
 
             @tool(extras={"defer_loading": True})
@@ -1770,7 +1801,10 @@ class ChatAnthropic(BaseChatModel):
             model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 
             model_with_tools = model.bind_tools([
-                tools.tool_search_regex_20251119(),
+                {
+                    "type": "tool_search_tool_regex_20251119",
+                    "name": "tool_search_tool_regex",
+                },
                 get_weather,
                 search_files,
             ])
