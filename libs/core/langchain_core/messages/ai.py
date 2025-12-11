@@ -6,7 +6,7 @@ import operator
 from collections.abc import Sequence
 from typing import Any, Literal, cast, overload
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
 
 from langchain_core.messages import content as types
@@ -181,10 +181,18 @@ class AIMessage(BaseMessage):
     type: Literal["ai"] = "ai"
     """The type of the message (used for deserialization)."""
 
+    raw_response: dict[str, Any] | list[dict[str, Any]] | None = Field(
+        default=None,
+        exclude=True,  # Exclude from serialization by default
+    )
+    """Optional raw model response data, as returned directly by the LLM provider."""
+
     @overload
     def __init__(
         self,
         content: str | list[str | dict],
+        *,
+        raw_response: dict[str, Any] | list[dict[str, Any]] | None = None,
         **kwargs: Any,
     ) -> None: ...
 
@@ -192,14 +200,18 @@ class AIMessage(BaseMessage):
     def __init__(
         self,
         content: str | list[str | dict] | None = None,
+        *,
         content_blocks: list[types.ContentBlock] | None = None,
+        raw_response: dict[str, Any] | list[dict[str, Any]] | None = None,
         **kwargs: Any,
     ) -> None: ...
 
     def __init__(
         self,
         content: str | list[str | dict] | None = None,
+        *,
         content_blocks: list[types.ContentBlock] | None = None,
+        raw_response: dict[str, Any] | list[dict[str, Any]] | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize an `AIMessage`.
@@ -208,7 +220,8 @@ class AIMessage(BaseMessage):
 
         Args:
             content: The content of the message.
-            content_blocks: Typed standard content.
+            content_blocks: Typed standard content blocks.
+            raw_response: Optional raw model response data from the LLM provider.
             **kwargs: Additional arguments to pass to the parent class.
         """
         if content_blocks is not None:
@@ -226,6 +239,10 @@ class AIMessage(BaseMessage):
         else:
             super().__init__(content=content, **kwargs)
 
+        # Store raw_response if provided
+        if raw_response is not None:
+            self.raw_response = raw_response
+
     @property
     def lc_attributes(self) -> dict:
         """Attributes to be serialized.
@@ -233,10 +250,13 @@ class AIMessage(BaseMessage):
         Includes all attributes, even if they are derived from other initialization
         arguments.
         """
-        return {
+        attrs = {
             "tool_calls": self.tool_calls,
             "invalid_tool_calls": self.invalid_tool_calls,
         }
+        if self.raw_response is not None:
+            attrs["raw_response"] = self.raw_response
+        return attrs
 
     @property
     def content_blocks(self) -> list[types.ContentBlock]:
@@ -403,6 +423,12 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     If a chunk with `chunk_position="last"` is aggregated into a stream,
     `tool_call_chunks` in message content will be parsed into `tool_calls`.
     """
+
+    raw_response: dict[str, Any] | None = Field(
+        default=None,
+        exclude=True,  # Exclude from serialization by default
+    )
+    """The raw chunk response from the model, as returned directly by the provider."""
 
     @property
     def lc_attributes(self) -> dict:
@@ -679,6 +705,17 @@ def add_ai_message_chunks(
         "last" if any(x.chunk_position == "last" for x in [left, *others]) else None
     )
 
+    # Merge raw_response: collect all non-None raw_response values
+    raw_responses = [
+        c.raw_response for c in [left, *others] if c.raw_response is not None
+    ]
+    # If only one raw_response, use it directly; if multiple, keep as list
+    merged_raw_response: dict[str, Any] | list[dict[str, Any]] | None = None
+    if len(raw_responses) == 1:
+        merged_raw_response = raw_responses[0]
+    elif len(raw_responses) > 1:
+        merged_raw_response = raw_responses
+
     return left.__class__(
         content=content,
         additional_kwargs=additional_kwargs,
@@ -687,6 +724,7 @@ def add_ai_message_chunks(
         usage_metadata=usage_metadata,
         id=chunk_id,
         chunk_position=chunk_position,
+        raw_response=merged_raw_response,
     )
 
 
