@@ -2121,7 +2121,7 @@ def test_tool_search(output_version: str) -> None:
     # Test with actual API call
     input_message = {
         "role": "user",
-        "content": "What's the weather in San Francisco?",
+        "content": "What's the weather in San Francisco? Find and use a tool.",
     }
     result = agent.invoke({"messages": [input_message]})
     first_response = result["messages"][1]
