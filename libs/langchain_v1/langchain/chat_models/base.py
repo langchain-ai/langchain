@@ -73,14 +73,6 @@ def init_chat_model(
         runtime via `config`. Makes it easy to switch between models/providers without
         changing your code
 
-    !!! note "Enhanced Model Support"
-        This function has been enhanced with:
-
-        - **Improved model inference** for newer model naming patterns
-        - **Comprehensive input validation** with helpful error messages
-        - **Better error handling** with suggestions and documentation links
-        - **Support for case-insensitive** model name matching where appropriate
-
     !!! note "Installation Requirements"
         Requires the integration package for the chosen model provider to be installed.
 
@@ -91,10 +83,7 @@ def init_chat_model(
         for supported model parameters to use as `**kwargs`.
 
     Args:
-        model: The name or ID of the model, e.g. `'o3-mini'`, `'claude-sonnet-4-5-20250929'`.
-
-            You can also specify model and model provider in a single argument using
-            `'{model_provider}:{model}'` format, e.g. `'openai:o1'`.
+        model: The model name, optionally prefixed with provider (e.g., `"openai:gpt-4o"`).
 
             Will attempt to infer `model_provider` from model if not specified.
 
@@ -503,7 +492,6 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
     Returns:
         The inferred provider name, or None if no provider could be inferred.
     """
-    # Normalize model name for consistent matching
     model_lower = model_name.lower()
 
     # OpenAI models (including newer models and aliases)
@@ -561,7 +549,7 @@ def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
         model_provider: Optional explicit model provider.
 
     Returns:
-        Tuple of (parsed_model_name, model_provider).
+        Tuple of `(parsed_model_name, model_provider)`.
 
     Raises:
         ValueError: If model provider cannot be inferred or is unsupported.
