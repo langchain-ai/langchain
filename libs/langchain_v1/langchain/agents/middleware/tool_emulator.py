@@ -85,7 +85,7 @@ class LLMToolEmulator(AgentMiddleware):
         self.emulate_all = tools is None
         self.tools_to_emulate: set[str] = set()
 
-        if not self.emulate_all and tools is not None:
+        if tools is not None:
             for tool in tools:
                 if isinstance(tool, str):
                     self.tools_to_emulate.add(tool)
