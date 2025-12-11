@@ -2776,6 +2776,9 @@ class ChatAnthropic(BaseChatModel):
             See LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#strict-tool-use)
             for more detail.
         """  # noqa: E501
+        # Allows built-in tools either by their:
+        # - Raw `dict` format as
+        # - Extracting extras["provider_tool_definition"] if provided on a BaseTool
         formatted_tools = [
             tool
             if _is_builtin_tool(tool)
@@ -3171,16 +3174,13 @@ def convert_to_anthropic_tool(
         `AnthropicBuiltinTool` for Anthropic's built-in tools (bash, computer,
             text_editor, memory, etc.).
     """
-    # Check for provider tool definition in extras (client-side execution tools).
-    # Built-in tools (bash, computer, text_editor, memory) store their Anthropic-
-    # specific definition in extras. These have a different shape (type + name)
-    # than regular tools (name + input_schema), hence AnthropicBuiltinTool.
     if (
         isinstance(tool, BaseTool)
         and hasattr(tool, "extras")
         and isinstance(tool.extras, dict)
         and "provider_tool_definition" in tool.extras
     ):
+        # Pass through built-in tool definitions, use AnthropicBuiltinTool in request
         return tool.extras["provider_tool_definition"]  # type: ignore[return-value]
 
     # already in Anthropic tool format
