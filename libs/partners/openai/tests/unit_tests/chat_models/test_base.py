@@ -3095,7 +3095,7 @@ def test_gpt_5_temperature_with_reasoning_effort_none(
     payload = llm._get_request_payload(messages)
     assert "temperature" not in payload
 
-    # Test that temperature is still restricted when reasoning_effort is set to other values
+    # Test that temperature is still restricted when reasoning_effort is something else
     llm = ChatOpenAI(
         model="gpt-5-nano",
         temperature=0.5,
