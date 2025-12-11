@@ -453,7 +453,7 @@ def _init_chat_model_helper(
         from langchain_upstage import ChatUpstage
 
         return ChatUpstage(model=model, **kwargs)
-    supported = ", ".join(sorted(_SUPPORTED_PROVIDERS))
+    supported = ", ".join(_SUPPORTED_PROVIDERS)
     msg = f"Unsupported model_provider='{model_provider}'. Supported: {supported}"
     raise ValueError(msg)
 
