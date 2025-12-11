@@ -848,12 +848,25 @@ class BaseChatOpenAI(BaseChatModel):
 
         # For gpt-5 models, handle temperature restrictions
         # Note that gpt-5-chat models do support temperature
+        # Also, gpt-5 models with reasoning_effort='none'/None or
+        # reasoning={'effort': 'none'} support temperature
         if model_lower.startswith("gpt-5") and "chat" not in model_lower:
-            temperature = values.get("temperature")
-            if temperature is not None and temperature != 1:
-                # For gpt-5 (non-chat), only temperature=1 is supported
-                # So we remove any non-defaults
-                values.pop("temperature", None)
+            reasoning_effort = values.get("reasoning_effort")
+            reasoning_dict = values.get("reasoning")
+            reasoning_dict_effort = (
+                reasoning_dict.get("effort") if reasoning_dict else None
+            )
+            # Only restrict temperature if reasoning effort is set to a value other
+            # than None or 'none' (checking both reasoning_effort and reasoning dict)
+            if reasoning_effort not in (None, "none") and reasoning_dict_effort not in (
+                None,
+                "none",
+            ):
+                temperature = values.get("temperature")
+                if temperature is not None and temperature != 1:
+                    # For gpt-5 (non-chat) with reasoning effort, only temperature=1
+                    # is supported, so we remove any non-defaults
+                    values.pop("temperature", None)
 
         return values
 
