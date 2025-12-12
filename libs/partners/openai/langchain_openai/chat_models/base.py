@@ -846,9 +846,15 @@ class BaseChatOpenAI(BaseChatModel):
         if model_lower.startswith("o1") and "temperature" not in values:
             values["temperature"] = 1
 
-        # For gpt-5 models, handle temperature restrictions
-        # Note that gpt-5-chat models do support temperature
-        if model_lower.startswith("gpt-5") and "chat" not in model_lower:
+        # For gpt-5 models, handle temperature restrictions. Temperature is supported
+        # by gpt-5-chat and gpt-5 models with reasoning_effort='none' or
+        # reasoning={'effort': 'none'}.
+        if (
+            model_lower.startswith("gpt-5")
+            and ("chat" not in model_lower)
+            and values.get("reasoning_effort") != "none"
+            and (values.get("reasoning") or {}).get("effort") != "none"
+        ):
             temperature = values.get("temperature")
             if temperature is not None and temperature != 1:
                 # For gpt-5 (non-chat), only temperature=1 is supported
@@ -3745,8 +3751,14 @@ def _construct_responses_api_payload(
         payload["reasoning"] = {"effort": payload.pop("reasoning_effort")}
 
     # Remove temperature parameter for models that don't support it in responses API
+    # gpt-5-chat supports temperature, and gpt-5 models with reasoning.effort='none'
+    # also support temperature
     model = payload.get("model") or ""
-    if model.startswith("gpt-5") and "chat" not in model:  # gpt-5-chat supports
+    if (
+        model.startswith("gpt-5")
+        and ("chat" not in model)  # gpt-5-chat supports
+        and (payload.get("reasoning") or {}).get("effort") != "none"
+    ):
         payload.pop("temperature", None)
 
     payload["input"] = _construct_responses_api_input(messages)
