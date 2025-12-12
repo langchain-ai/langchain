@@ -554,9 +554,7 @@ def create_agent(
     debug: bool = False,
     name: str | None = None,
     cache: BaseCache | None = None,
-) -> CompiledStateGraph[
-    AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
-]:
+) -> CompiledStateGraph[Any, ContextT, _InputAgentState, Any]:
     """Creates an agent graph that calls tools in a loop until a stopping condition is met.
 
     For more details on using `create_agent`,
