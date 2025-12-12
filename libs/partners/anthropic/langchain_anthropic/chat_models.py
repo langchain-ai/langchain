@@ -2482,7 +2482,7 @@ class ChatAnthropic(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
+        tools: Sequence[Mapping[str, Any] | type | Callable | BaseTool],
         *,
         tool_choice: dict[str, str] | str | None = None,
         parallel_tool_calls: bool | None = None,
@@ -2758,6 +2758,9 @@ class ChatAnthropic(BaseChatModel):
             See LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#strict-tool-use)
             for more detail.
         """  # noqa: E501
+        # Allows built-in tools either by their:
+        # - Raw `dict` format
+        # - Extracting extras["provider_tool_definition"] if provided on a BaseTool
         formatted_tools = [
             tool
             if _is_builtin_tool(tool)
@@ -2984,6 +2987,8 @@ class ChatAnthropic(BaseChatModel):
 
         if method == "function_calling":
             formatted_tool = cast(AnthropicTool, convert_to_anthropic_tool(schema))
+            # The result of convert_to_anthropic_tool for 'method=function_calling' will
+            # always be an AnthropicTool
             tool_name = formatted_tool["name"]
             if self.thinking is not None and self.thinking.get("type") == "enabled":
                 llm = self._get_llm_for_structured_output_when_thinking_is_enabled(
@@ -3131,7 +3136,7 @@ class ChatAnthropic(BaseChatModel):
 
 
 def convert_to_anthropic_tool(
-    tool: dict[str, Any] | type | Callable | BaseTool,
+    tool: Mapping[str, Any] | type | Callable | BaseTool,
     *,
     strict: bool | None = None,
 ) -> AnthropicTool:
@@ -3149,6 +3154,15 @@ def convert_to_anthropic_tool(
     Returns:
         `AnthropicTool` for custom/user-defined tools
     """
+    if (
+        isinstance(tool, BaseTool)
+        and hasattr(tool, "extras")
+        and isinstance(tool.extras, dict)
+        and "provider_tool_definition" in tool.extras
+    ):
+        # Pass through built-in tool definitions
+        return tool.extras["provider_tool_definition"]  # type: ignore[return-value]
+
     if isinstance(tool, dict) and all(
         k in tool for k in ("name", "description", "input_schema")
     ):
