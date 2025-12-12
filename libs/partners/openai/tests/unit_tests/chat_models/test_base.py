@@ -3119,6 +3119,6 @@ def test_gpt_5_1_temperature_with_reasoning_effort_none(
     assert "temperature" not in payload
 
 
-def test_model_prefers_responses_api():
+def test_model_prefers_responses_api() -> None:
     assert _model_prefers_responses_api("gpt-5.2-pro")
     assert not _model_prefers_responses_api("gpt-5.1")
