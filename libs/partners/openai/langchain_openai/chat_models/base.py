@@ -468,6 +468,12 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
     raise
 
 
+def _model_prefers_responses_api(model_name: str | None) -> bool:
+    if not model_name:
+        return False
+    return "gpt-5.2-pro" in model_name
+
+
 _BM = TypeVar("_BM", bound=BaseModel)
 _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[_BM] | type
 _DictOrPydantic: TypeAlias = dict | _BM
@@ -846,9 +852,15 @@ class BaseChatOpenAI(BaseChatModel):
         if model_lower.startswith("o1") and "temperature" not in values:
             values["temperature"] = 1
 
-        # For gpt-5 models, handle temperature restrictions
-        # Note that gpt-5-chat models do support temperature
-        if model_lower.startswith("gpt-5") and "chat" not in model_lower:
+        # For gpt-5 models, handle temperature restrictions. Temperature is supported
+        # by gpt-5-chat and gpt-5 models with reasoning_effort='none' or
+        # reasoning={'effort': 'none'}.
+        if (
+            model_lower.startswith("gpt-5")
+            and ("chat" not in model_lower)
+            and values.get("reasoning_effort") != "none"
+            and (values.get("reasoning") or {}).get("effort") != "none"
+        ):
             temperature = values.get("temperature")
             if temperature is not None and temperature != 1:
                 # For gpt-5 (non-chat), only temperature=1 is supported
@@ -1385,6 +1397,7 @@ class BaseChatOpenAI(BaseChatModel):
             or self.reasoning is not None
             or self.truncation is not None
             or self.use_previous_response_id
+            or _model_prefers_responses_api(self.model_name)
         ):
             return True
         return _use_responses_api(payload)
@@ -1815,8 +1828,8 @@ class BaseChatOpenAI(BaseChatModel):
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
-                Supports any tool definition handled by
-                `langchain_core.utils.function_calling.convert_to_openai_tool`.
+
+                Supports any tool definition handled by [`convert_to_openai_tool`][langchain_core.utils.function_calling.convert_to_openai_tool].
             tool_choice: Which tool to require the model to call. Options are:
 
                 - `str` of the form `'<<tool_name>>'`: calls `<<tool_name>>` tool.
@@ -1886,9 +1899,10 @@ class BaseChatOpenAI(BaseChatModel):
             ):
                 # compat with langchain.agents.create_agent response_format, which is
                 # an approximation of OpenAI format
+                strict = response_format["json_schema"].get("strict", None)
                 response_format = cast(dict, response_format["json_schema"]["schema"])
             kwargs["response_format"] = _convert_to_openai_response_format(
-                response_format
+                response_format, strict=strict
             )
         return super().bind(tools=formatted_tools, **kwargs)
 
@@ -3744,8 +3758,14 @@ def _construct_responses_api_payload(
         payload["reasoning"] = {"effort": payload.pop("reasoning_effort")}
 
     # Remove temperature parameter for models that don't support it in responses API
+    # gpt-5-chat supports temperature, and gpt-5 models with reasoning.effort='none'
+    # also support temperature
     model = payload.get("model") or ""
-    if model.startswith("gpt-5") and "chat" not in model:  # gpt-5-chat supports
+    if (
+        model.startswith("gpt-5")
+        and ("chat" not in model)  # gpt-5-chat supports
+        and (payload.get("reasoning") or {}).get("effort") != "none"
+    ):
         payload.pop("temperature", None)
 
     payload["input"] = _construct_responses_api_input(messages)
@@ -4035,9 +4055,14 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         if block_type in ("text", "output_text", "refusal"):
                             msg_id = block.get("id")
                             if block_type in ("text", "output_text"):
+                                # Defensive check: block may not have "text" key
+                                text = block.get("text")
+                                if text is None:
+                                    # Skip blocks without text content
+                                    continue
                                 new_block = {
                                     "type": "output_text",
-                                    "text": block["text"],
+                                    "text": text,
                                     "annotations": [
                                         _format_annotation_from_lc(annotation)
                                         for annotation in block.get("annotations") or []
