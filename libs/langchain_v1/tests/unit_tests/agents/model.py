@@ -6,7 +6,6 @@ from typing import (
     Generic,
     Literal,
     TypeVar,
-    Union,
 )
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -25,7 +24,7 @@ StructuredResponseT = TypeVar("StructuredResponseT")
 
 
 class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
-    tool_calls: Union[list[list[ToolCall]], list[list[dict]]] | None = None
+    tool_calls: list[list[ToolCall]] | list[list[dict]] | None = None
     structured_response: StructuredResponseT | None = None
     index: int = 0
     tool_style: Literal["openai", "anthropic"] = "openai"
@@ -37,7 +36,7 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call"""
+        """Top Level call."""
         is_native = kwargs.get("response_format")
 
         if self.tool_calls:
@@ -74,7 +73,7 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         if len(tools) == 0:

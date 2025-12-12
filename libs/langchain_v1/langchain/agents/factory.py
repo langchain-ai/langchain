@@ -20,9 +20,9 @@ from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
 from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
-from langgraph.runtime import Runtime  # noqa: TC002
+from langgraph.runtime import Runtime
 from langgraph.types import Command, Send
-from langgraph.typing import ContextT  # noqa: TC002
+from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict
 
 from langchain.agents.middleware.types import (
@@ -538,7 +538,7 @@ def _chain_async_tool_call_wrappers(
     return result
 
 
-def create_agent(  # noqa: PLR0915
+def create_agent(
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
     *,
@@ -791,9 +791,9 @@ def create_agent(  # noqa: PLR0915
         default_tools = list(built_in_tools)
 
     # validate middleware
-    assert len({m.name for m in middleware}) == len(middleware), (  # noqa: S101
-        "Please remove duplicate middleware instances."
-    )
+    if len({m.name for m in middleware}) != len(middleware):
+        msg = "Please remove duplicate middleware instances."
+        raise AssertionError(msg)
     middleware_w_before_agent = [
         m
         for m in middleware
@@ -886,12 +886,12 @@ def create_agent(  # noqa: PLR0915
                 )
                 try:
                     structured_response = provider_strategy_binding.parse(output)
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     schema_name = getattr(
                         effective_response_format.schema_spec.schema, "__name__", "response_format"
                     )
                     validation_error = StructuredOutputValidationError(schema_name, exc, output)
-                    raise validation_error
+                    raise validation_error from exc
                 else:
                     return {"messages": [output], "structured_response": structured_response}
             return {"messages": [output]}
@@ -952,13 +952,13 @@ def create_agent(  # noqa: PLR0915
                         ],
                         "structured_response": structured_response,
                     }
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     exception = StructuredOutputValidationError(tool_call["name"], exc, output)
                     should_retry, error_message = _handle_structured_output_error(
                         exception, effective_response_format
                     )
                     if not should_retry:
-                        raise exception
+                        raise exception from exc
 
                     return {
                         "messages": [

@@ -148,16 +148,5 @@ documentation:
   - changed-files:
       - any-glob-to-any-file:
           - "**/*.md"
-          - "**/*.rst"
           - "**/README*"
 
-# Security related changes
-security:
-  - changed-files:
-      - any-glob-to-any-file:
-          - "**/*security*"
-          - "**/*auth*"
-          - "**/*credential*"
-          - "**/*secret*"
-          - "**/*token*"
-          - ".github/workflows/security*"

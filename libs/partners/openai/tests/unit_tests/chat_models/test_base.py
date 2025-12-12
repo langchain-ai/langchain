@@ -2091,6 +2091,38 @@ def test__construct_responses_api_input_multiple_message_components() -> None:
     ]
 
 
+def test__construct_responses_api_input_skips_blocks_without_text() -> None:
+    """Test that blocks without 'text' key are skipped."""
+    # Test case: block with type "text" but missing "text" key
+    messages = [
+        AIMessage(
+            content=[
+                {"type": "text", "text": "valid text", "id": "msg_123"},
+                {"type": "text", "id": "msg_123"},  # Missing "text" key
+                {"type": "output_text", "text": "valid output", "id": "msg_123"},
+                {"type": "output_text", "id": "msg_123"},  # Missing "text" key
+            ]
+        )
+    ]
+    result = _construct_responses_api_input(messages)
+
+    # Should only include blocks with valid text content
+    assert len(result) == 1
+    assert result[0]["type"] == "message"
+    assert result[0]["role"] == "assistant"
+    assert len(result[0]["content"]) == 2
+    assert result[0]["content"][0] == {
+        "type": "output_text",
+        "text": "valid text",
+        "annotations": [],
+    }
+    assert result[0]["content"][1] == {
+        "type": "output_text",
+        "text": "valid output",
+        "annotations": [],
+    }
+
+
 def test__construct_responses_api_input_human_message_with_image_url_conversion() -> (
     None
 ):
@@ -3056,3 +3088,63 @@ def test_gpt_5_temperature_case_insensitive(
         messages = [HumanMessage(content="Hello")]
         payload = llm._get_request_payload(messages)
         assert payload["temperature"] == 0.7
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_gpt_5_1_temperature_with_reasoning_effort_none(
+    use_responses_api: bool,
+) -> None:
+    """Test that temperature is preserved when reasoning_effort is explicitly 'none'."""
+    # Test with reasoning_effort='none' explicitly set
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning_effort="none",
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert payload["temperature"] == 0.5
+
+    # Test with reasoning={'effort': 'none'}
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning={"effort": "none"},
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert payload["temperature"] == 0.5
+
+    # Test that temperature is restricted by default (no reasoning_effort)
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+    # Test that temperature is still restricted when reasoning_effort is something else
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning_effort="low",
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+    # Test with reasoning={'effort': 'low'}
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning={"effort": "low"},
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload

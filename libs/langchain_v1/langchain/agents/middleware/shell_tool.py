@@ -22,7 +22,7 @@ from langchain_core.tools.base import ToolException
 from langgraph.channels.untracked_value import UntrackedValue
 from pydantic import BaseModel, model_validator
 from pydantic.json_schema import SkipJsonSchema
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, override
 
 from langchain.agents.middleware._execution import (
     SHELL_TEMP_PREFIX,
@@ -78,10 +78,10 @@ class _SessionResources:
     session: ShellSession
     tempdir: tempfile.TemporaryDirectory[str] | None
     policy: BaseExecutionPolicy
-    _finalizer: weakref.finalize = field(init=False, repr=False)
+    finalizer: weakref.finalize = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        self._finalizer = weakref.finalize(
+        self.finalizer = weakref.finalize(
             self,
             _cleanup_resources,
             self.session,
@@ -489,7 +489,8 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
             normalized[key] = str(value)
         return normalized
 
-    def before_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
+    @override
+    def before_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:
         """Start the shell session and run startup commands."""
         resources = self._get_or_create_resources(state)
         return {"shell_session_resources": resources}
@@ -498,7 +499,8 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         """Async start the shell session and run startup commands."""
         return self.before_agent(state, runtime)
 
-    def after_agent(self, state: ShellToolState, runtime: Runtime) -> None:  # noqa: ARG002
+    @override
+    def after_agent(self, state: ShellToolState, runtime: Runtime) -> None:
         """Run shutdown commands and release resources when an agent completes."""
         resources = state.get("shell_session_resources")
         if not isinstance(resources, _SessionResources):
@@ -507,7 +509,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         try:
             self._run_shutdown_commands(resources.session)
         finally:
-            resources._finalizer()
+            resources.finalizer()
 
     async def aafter_agent(self, state: ShellToolState, runtime: Runtime) -> None:
         """Async run shutdown commands and release resources when an agent completes."""

@@ -223,7 +223,7 @@ class ModelRetryMiddleware(AgentMiddleware):
         for attempt in range(self.max_retries + 1):
             try:
                 return handler(request)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 attempts_made = attempt + 1  # attempt is 0-indexed
 
                 # Check if we should retry this exception
@@ -270,7 +270,7 @@ class ModelRetryMiddleware(AgentMiddleware):
         for attempt in range(self.max_retries + 1):
             try:
                 return await handler(request)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 attempts_made = attempt + 1  # attempt is 0-indexed
 
                 # Check if we should retry this exception

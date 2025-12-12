@@ -3,6 +3,7 @@
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 
+from langchain.agents.factory import create_agent
 from langchain.agents.middleware.pii import (
     PIIDetectionError,
     PIIMiddleware,
@@ -12,10 +13,7 @@ from langchain.agents.middleware.pii import (
     detect_mac_address,
     detect_url,
 )
-from langchain.agents.factory import create_agent
-
 from tests.unit_tests.agents.model import FakeToolCallingModel
-
 
 # ============================================================================
 # Detection Function Tests
@@ -69,7 +67,6 @@ class TestCreditCardDetection:
 
     def test_detect_credit_card_with_spaces(self):
         # Valid Mastercard test number
-        content = "Card: 5425233430109903"
         # Add spaces
         spaced_content = "Card: 5425 2334 3010 9903"
         matches = detect_credit_card(spaced_content)
@@ -216,7 +213,7 @@ class TestURLDetection:
     def test_bare_domain_without_path_not_detected(self):
         # To reduce false positives, bare domains without paths are not detected
         content = "The word example.com in prose"
-        matches = detect_url(content)
+        detect_url(content)
         # May or may not detect depending on implementation
         # This is acceptable
 
@@ -354,7 +351,7 @@ class TestPIIMiddlewareIntegration:
         """Test that middleware only processes input when configured."""
         middleware = PIIMiddleware(
             "email", strategy="redact", apply_to_input=True, apply_to_output=False
-        )  # noqa: E501
+        )
 
         # Should process HumanMessage
         state = {"messages": [HumanMessage("Email: test@example.com")]}
@@ -371,7 +368,7 @@ class TestPIIMiddlewareIntegration:
         """Test that middleware only processes output when configured."""
         middleware = PIIMiddleware(
             "email", strategy="redact", apply_to_input=False, apply_to_output=True
-        )  # noqa: E501
+        )
 
         # Should not process HumanMessage
         state = {"messages": [HumanMessage("Email: test@example.com")]}
@@ -388,7 +385,7 @@ class TestPIIMiddlewareIntegration:
         """Test that middleware processes both input and output."""
         middleware = PIIMiddleware(
             "email", strategy="redact", apply_to_input=True, apply_to_output=True
-        )  # noqa: E501
+        )
 
         # Should process HumanMessage
         state = {"messages": [HumanMessage("Email: test@example.com")]}
