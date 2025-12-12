@@ -248,8 +248,14 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                     tool_call_chunk: types.ToolCallChunk = (
                         message.tool_call_chunks[0].copy()  # type: ignore[assignment]
                     )
+                    if "caller" in block:
+                        if "extras" not in tool_call_chunk:
+                            tool_call_chunk["extras"] = {}
+                        tool_call_chunk["extras"]["caller"] = block["caller"]
+
                     if "type" not in tool_call_chunk:
                         tool_call_chunk["type"] = "tool_call_chunk"
+
                     yield tool_call_chunk
                 else:
                     tool_call_block: types.ToolCall | None = None
@@ -282,6 +288,11 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                         }
                     if "index" in block:
                         tool_call_block["index"] = block["index"]
+                    if "caller" in block:
+                        if "extras" not in tool_call_block:
+                            tool_call_block["extras"] = {}
+                        tool_call_block["extras"]["caller"] = block["caller"]
+
                     yield tool_call_block
 
             elif block_type == "input_json_delta" and isinstance(

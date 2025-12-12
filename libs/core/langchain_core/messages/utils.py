@@ -15,12 +15,16 @@ import json
 import logging
 import math
 from collections.abc import Callable, Iterable, Sequence
-from functools import partial
+from functools import partial, wraps
 from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    Concatenate,
     Literal,
+    ParamSpec,
+    Protocol,
+    TypeVar,
     cast,
     overload,
 )
@@ -384,33 +388,54 @@ def convert_to_messages(
     return [_convert_to_message(m) for m in messages]
 
 
-def _runnable_support(func: Callable) -> Callable:
+_P = ParamSpec("_P")
+_R_co = TypeVar("_R_co", covariant=True)
+
+
+class _RunnableSupportCallable(Protocol[_P, _R_co]):
     @overload
-    def wrapped(
-        messages: None = None, **kwargs: Any
-    ) -> Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]]: ...
+    def __call__(
+        self,
+        messages: None = None,
+        *args: _P.args,
+        **kwargs: _P.kwargs,
+    ) -> Runnable[Sequence[MessageLikeRepresentation], _R_co]: ...
 
     @overload
-    def wrapped(
-        messages: Sequence[MessageLikeRepresentation], **kwargs: Any
-    ) -> list[BaseMessage]: ...
+    def __call__(
+        self,
+        messages: Sequence[MessageLikeRepresentation] | PromptValue,
+        *args: _P.args,
+        **kwargs: _P.kwargs,
+    ) -> _R_co: ...
 
+    def __call__(
+        self,
+        messages: Sequence[MessageLikeRepresentation] | PromptValue | None = None,
+        *args: _P.args,
+        **kwargs: _P.kwargs,
+    ) -> _R_co | Runnable[Sequence[MessageLikeRepresentation], _R_co]: ...
+
+
+def _runnable_support(
+    func: Callable[
+        Concatenate[Sequence[MessageLikeRepresentation] | PromptValue, _P], _R_co
+    ],
+) -> _RunnableSupportCallable[_P, _R_co]:
+    @wraps(func)
     def wrapped(
-        messages: Sequence[MessageLikeRepresentation] | None = None,
-        **kwargs: Any,
-    ) -> (
-        list[BaseMessage]
-        | Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]]
-    ):
+        messages: Sequence[MessageLikeRepresentation] | PromptValue | None = None,
+        *args: _P.args,
+        **kwargs: _P.kwargs,
+    ) -> _R_co | Runnable[Sequence[MessageLikeRepresentation], _R_co]:
         # Import locally to prevent circular import.
         from langchain_core.runnables.base import RunnableLambda  # noqa: PLC0415
 
         if messages is not None:
-            return func(messages, **kwargs)
+            return func(messages, *args, **kwargs)
         return RunnableLambda(partial(func, **kwargs), name=func.__name__)
 
-    wrapped.__doc__ = func.__doc__
-    return wrapped
+    return cast("_RunnableSupportCallable[_P, _R_co]", wrapped)
 
 
 @_runnable_support
@@ -738,8 +763,10 @@ def trim_messages(
             Set to `len` to count the number of **messages** in the chat history.
 
             !!! note
+
                 Use `count_tokens_approximately` to get fast, approximate token
                 counts.
+
                 This is recommended for using `trim_messages` on the hot path, where
                 exact token counting is not necessary.
 

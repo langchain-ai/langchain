@@ -58,7 +58,7 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
                 content_obj = self.structured_response
             message = AIMessage(content=json.dumps(content_obj), id=str(self.index))
         else:
-            messages_string = "-".join([m.content for m in messages])
+            messages_string = "-".join([m.text for m in messages])
             message = AIMessage(
                 content=messages_string,
                 id=str(self.index),

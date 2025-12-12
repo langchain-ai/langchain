@@ -587,3 +587,165 @@ def test_human_in_the_loop_middleware_description_as_callable() -> None:
 
         # Check string description
         assert captured_request["action_requests"][1]["description"] == "Static description"
+
+
+def test_human_in_the_loop_middleware_preserves_tool_call_order() -> None:
+    """Test that middleware preserves the original order of tool calls.
+
+    This test verifies that when mixing auto-approved and interrupt tools,
+    the final tool call order matches the original order from the AI message.
+    """
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "tool_b": {"allowed_decisions": ["approve", "edit", "reject"]},
+            "tool_d": {"allowed_decisions": ["approve", "edit", "reject"]},
+        }
+    )
+
+    # Create AI message with interleaved auto-approved and interrupt tools
+    # Order: auto (A) -> interrupt (B) -> auto (C) -> interrupt (D) -> auto (E)
+    ai_message = AIMessage(
+        content="Processing multiple tools",
+        tool_calls=[
+            {"name": "tool_a", "args": {"val": 1}, "id": "id_a"},
+            {"name": "tool_b", "args": {"val": 2}, "id": "id_b"},
+            {"name": "tool_c", "args": {"val": 3}, "id": "id_c"},
+            {"name": "tool_d", "args": {"val": 4}, "id": "id_d"},
+            {"name": "tool_e", "args": {"val": 5}, "id": "id_e"},
+        ],
+    )
+    state = {"messages": [HumanMessage(content="Test"), ai_message]}
+
+    def mock_approve_all(requests):
+        # Approve both interrupt tools (B and D)
+        return {"decisions": [{"type": "approve"}, {"type": "approve"}]}
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_approve_all
+    ):
+        result = middleware.after_model(state, None)
+        assert result is not None
+        assert "messages" in result
+
+        updated_ai_message = result["messages"][0]
+        assert len(updated_ai_message.tool_calls) == 5
+
+        # Verify original order is preserved: A -> B -> C -> D -> E
+        assert updated_ai_message.tool_calls[0]["name"] == "tool_a"
+        assert updated_ai_message.tool_calls[0]["id"] == "id_a"
+        assert updated_ai_message.tool_calls[1]["name"] == "tool_b"
+        assert updated_ai_message.tool_calls[1]["id"] == "id_b"
+        assert updated_ai_message.tool_calls[2]["name"] == "tool_c"
+        assert updated_ai_message.tool_calls[2]["id"] == "id_c"
+        assert updated_ai_message.tool_calls[3]["name"] == "tool_d"
+        assert updated_ai_message.tool_calls[3]["id"] == "id_d"
+        assert updated_ai_message.tool_calls[4]["name"] == "tool_e"
+        assert updated_ai_message.tool_calls[4]["id"] == "id_e"
+
+
+def test_human_in_the_loop_middleware_preserves_order_with_edits() -> None:
+    """Test that order is preserved when interrupt tools are edited."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "tool_b": {"allowed_decisions": ["approve", "edit", "reject"]},
+            "tool_d": {"allowed_decisions": ["approve", "edit", "reject"]},
+        }
+    )
+
+    ai_message = AIMessage(
+        content="Processing multiple tools",
+        tool_calls=[
+            {"name": "tool_a", "args": {"val": 1}, "id": "id_a"},
+            {"name": "tool_b", "args": {"val": 2}, "id": "id_b"},
+            {"name": "tool_c", "args": {"val": 3}, "id": "id_c"},
+            {"name": "tool_d", "args": {"val": 4}, "id": "id_d"},
+        ],
+    )
+    state = {"messages": [HumanMessage(content="Test"), ai_message]}
+
+    def mock_edit_responses(requests):
+        # Edit tool_b, approve tool_d
+        return {
+            "decisions": [
+                {
+                    "type": "edit",
+                    "edited_action": Action(name="tool_b", args={"val": 200}),
+                },
+                {"type": "approve"},
+            ]
+        }
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_edit_responses
+    ):
+        result = middleware.after_model(state, None)
+        assert result is not None
+
+        updated_ai_message = result["messages"][0]
+        assert len(updated_ai_message.tool_calls) == 4
+
+        # Verify order: A (auto) -> B (edited) -> C (auto) -> D (approved)
+        assert updated_ai_message.tool_calls[0]["name"] == "tool_a"
+        assert updated_ai_message.tool_calls[0]["args"] == {"val": 1}
+        assert updated_ai_message.tool_calls[1]["name"] == "tool_b"
+        assert updated_ai_message.tool_calls[1]["args"] == {"val": 200}  # Edited
+        assert updated_ai_message.tool_calls[1]["id"] == "id_b"  # ID preserved
+        assert updated_ai_message.tool_calls[2]["name"] == "tool_c"
+        assert updated_ai_message.tool_calls[2]["args"] == {"val": 3}
+        assert updated_ai_message.tool_calls[3]["name"] == "tool_d"
+        assert updated_ai_message.tool_calls[3]["args"] == {"val": 4}
+
+
+def test_human_in_the_loop_middleware_preserves_order_with_rejections() -> None:
+    """Test that order is preserved when some interrupt tools are rejected."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "tool_b": {"allowed_decisions": ["approve", "edit", "reject"]},
+            "tool_d": {"allowed_decisions": ["approve", "edit", "reject"]},
+        }
+    )
+
+    ai_message = AIMessage(
+        content="Processing multiple tools",
+        tool_calls=[
+            {"name": "tool_a", "args": {"val": 1}, "id": "id_a"},
+            {"name": "tool_b", "args": {"val": 2}, "id": "id_b"},
+            {"name": "tool_c", "args": {"val": 3}, "id": "id_c"},
+            {"name": "tool_d", "args": {"val": 4}, "id": "id_d"},
+            {"name": "tool_e", "args": {"val": 5}, "id": "id_e"},
+        ],
+    )
+    state = {"messages": [HumanMessage(content="Test"), ai_message]}
+
+    def mock_mixed_responses(requests):
+        # Reject tool_b, approve tool_d
+        return {
+            "decisions": [
+                {"type": "reject", "message": "Rejected tool B"},
+                {"type": "approve"},
+            ]
+        }
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_mixed_responses
+    ):
+        result = middleware.after_model(state, None)
+        assert result is not None
+        assert len(result["messages"]) == 2  # AI message + tool message for rejection
+
+        updated_ai_message = result["messages"][0]
+        # tool_b is still in the list (with rejection handled via tool message)
+        assert len(updated_ai_message.tool_calls) == 5
+
+        # Verify order maintained: A (auto) -> B (rejected) -> C (auto) -> D (approved) -> E (auto)
+        assert updated_ai_message.tool_calls[0]["name"] == "tool_a"
+        assert updated_ai_message.tool_calls[1]["name"] == "tool_b"
+        assert updated_ai_message.tool_calls[2]["name"] == "tool_c"
+        assert updated_ai_message.tool_calls[3]["name"] == "tool_d"
+        assert updated_ai_message.tool_calls[4]["name"] == "tool_e"
+
+        # Check rejection tool message
+        tool_message = result["messages"][1]
+        assert isinstance(tool_message, ToolMessage)
+        assert tool_message.content == "Rejected tool B"
+        assert tool_message.tool_call_id == "id_b"
