@@ -840,6 +840,9 @@ class ChatGroq(BaseChatModel):
             **kwargs: Any additional parameters to pass to the
                 `langchain.runnable.Runnable` constructor.
         """  # noqa: E501
+        # strict tool-calling not supported by Groq
+        _ = kwargs.pop("strict", None)
+
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None and tool_choice:
             if tool_choice == "any":
