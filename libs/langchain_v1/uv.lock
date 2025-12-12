@@ -1993,7 +1993,6 @@ test = [
     { name = "toml" },
 ]
 test-integration = [
-    { name = "cassio" },
     { name = "langchain-core" },
     { name = "langchain-text-splitters" },
     { name = "langchainhub" },
@@ -2031,7 +2030,7 @@ requires-dist = [
 provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
-lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
+lint = [{ name = "ruff", specifier = ">=0.14.2,<0.15.0" }]
 test = [
     { name = "langchain-openai", editable = "../partners/openai" },
     { name = "langchain-tests", editable = "../standard-tests" },
@@ -2046,7 +2045,6 @@ test = [
     { name = "toml", specifier = ">=0.10.2,<1.0.0" },
 ]
 test-integration = [
-    { name = "cassio", specifier = ">=0.1.0,<1.0.0" },
     { name = "langchain-core", editable = "../core" },
     { name = "langchain-text-splitters", editable = "../text-splitters" },
     { name = "langchainhub", specifier = ">=0.1.16,<1.0.0" },
@@ -2339,7 +2337,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.1.1"
+version = "1.1.2"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },

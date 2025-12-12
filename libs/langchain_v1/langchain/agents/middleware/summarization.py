@@ -19,6 +19,7 @@ from langgraph.graph.message import (
     REMOVE_ALL_MESSAGES,
 )
 from langgraph.runtime import Runtime
+from typing_extensions import override
 
 from langchain.agents.middleware.types import AgentMiddleware, AgentState
 from langchain.chat_models import BaseChatModel, init_chat_model
@@ -121,7 +122,7 @@ Example:
 
 def _get_approximate_token_counter(model: BaseChatModel) -> TokenCounter:
     """Tune parameters of approximate token counter based on model type."""
-    if model._llm_type == "anthropic-chat":
+    if model._llm_type == "anthropic-chat":  # noqa: SLF001
         # 3.3 was estimated in an offline experiment, comparing with Claude's token-counting
         # API: https://platform.claude.com/docs/en/build-with-claude/token-counting
         return partial(count_tokens_approximately, chars_per_token=3.3)
@@ -263,7 +264,8 @@ class SummarizationMiddleware(AgentMiddleware):
             )
             raise ValueError(msg)
 
-    def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
+    @override
+    def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
         """Process messages before model invocation, potentially triggering summarization."""
         messages = state["messages"]
         self._ensure_message_ids(messages)
@@ -290,7 +292,8 @@ class SummarizationMiddleware(AgentMiddleware):
             ]
         }
 
-    async def abefore_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
+    @override
+    async def abefore_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
         """Process messages before model invocation, potentially triggering summarization."""
         messages = state["messages"]
         self._ensure_message_ids(messages)
@@ -526,7 +529,7 @@ class SummarizationMiddleware(AgentMiddleware):
         try:
             response = self.model.invoke(self.summary_prompt.format(messages=trimmed_messages))
             return response.text.strip()
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             return f"Error generating summary: {e!s}"
 
     async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
@@ -543,7 +546,7 @@ class SummarizationMiddleware(AgentMiddleware):
                 self.summary_prompt.format(messages=trimmed_messages)
             )
             return response.text.strip()
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             return f"Error generating summary: {e!s}"
 
     def _trim_messages_for_summary(self, messages: list[AnyMessage]) -> list[AnyMessage]:
@@ -563,5 +566,5 @@ class SummarizationMiddleware(AgentMiddleware):
                     include_system=True,
                 ),
             )
-        except Exception:  # noqa: BLE001
+        except Exception:
             return messages[-_DEFAULT_FALLBACK_MESSAGE_COUNT:]

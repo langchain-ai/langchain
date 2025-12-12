@@ -245,17 +245,20 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                     and message.chunk_position != "last"
                 ):
                     # Isolated chunk
-                    tool_call_chunk: types.ToolCallChunk = (
-                        message.tool_call_chunks[0].copy()  # type: ignore[assignment]
+                    chunk = message.tool_call_chunks[0]
+
+                    tool_call_chunk = types.ToolCallChunk(
+                        name=chunk.get("name"),
+                        id=chunk.get("id"),
+                        args=chunk.get("args"),
+                        type="tool_call_chunk",
                     )
                     if "caller" in block:
-                        if "extras" not in tool_call_chunk:
-                            tool_call_chunk["extras"] = {}
-                        tool_call_chunk["extras"]["caller"] = block["caller"]
+                        tool_call_chunk["extras"] = {"caller": block["caller"]}
 
-                    if "type" not in tool_call_chunk:
-                        tool_call_chunk["type"] = "tool_call_chunk"
-
+                    index = chunk.get("index")
+                    if index is not None:
+                        tool_call_chunk["index"] = index
                     yield tool_call_chunk
                 else:
                     tool_call_block: types.ToolCall | None = None
@@ -299,11 +302,16 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                 message, AIMessageChunk
             ):
                 if len(message.tool_call_chunks) == 1:
-                    tool_call_chunk = (
-                        message.tool_call_chunks[0].copy()  # type: ignore[assignment]
+                    chunk = message.tool_call_chunks[0]
+                    tool_call_chunk = types.ToolCallChunk(
+                        name=chunk.get("name"),
+                        id=chunk.get("id"),
+                        args=chunk.get("args"),
+                        type="tool_call_chunk",
                     )
-                    if "type" not in tool_call_chunk:
-                        tool_call_chunk["type"] = "tool_call_chunk"
+                    index = chunk.get("index")
+                    if index is not None:
+                        tool_call_chunk["index"] = index
                     yield tool_call_chunk
 
                 else:
