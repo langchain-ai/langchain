@@ -1505,6 +1505,7 @@ def test_cache_control_kwarg() -> None:
             ],
         },
     ]
+    assert isinstance(messages[-1].content, str)  # test no mutation
 
     messages = [
         HumanMessage("foo"),
@@ -1528,6 +1529,7 @@ def test_cache_control_kwarg() -> None:
             ],
         },
     ]
+    assert "cache_control" not in messages[-1].content[-1]  # test no mutation
 
 
 def test_cache_control_kwarg_skips_empty_messages() -> None:
