@@ -102,6 +102,7 @@ def init_chat_model(
             - `deepseek...`                       -> `deepseek`
             - `grok...`                           -> `xai`
             - `sonar...`                          -> `perplexity`
+            - `solar...`                          -> `upstage`
         model_provider: The model provider if not specified as part of the model arg
             (see above).
 
@@ -129,6 +130,7 @@ def init_chat_model(
             - `nvidia`                  -> [`langchain-nvidia-ai-endpoints`](https://docs.langchain.com/oss/python/integrations/providers/nvidia)
             - `xai`                     -> [`langchain-xai`](https://docs.langchain.com/oss/python/integrations/providers/xai)
             - `perplexity`              -> [`langchain-perplexity`](https://docs.langchain.com/oss/python/integrations/providers/perplexity)
+            - `upstage`                 -> [`langchain-upstage`](https://docs.langchain.com/oss/python/integrations/providers/upstage)
 
         configurable_fields: Which model parameters are configurable at runtime:
 
@@ -449,6 +451,11 @@ def _init_chat_model_helper(
         from langchain_perplexity import ChatPerplexity
 
         return ChatPerplexity(model=model, **kwargs)
+    if model_provider == "upstage":
+        _check_pkg("langchain_upstage")
+        from langchain_upstage import ChatUpstage
+
+        return ChatUpstage(model=model, **kwargs)
     supported = ", ".join(_SUPPORTED_PROVIDERS)
     msg = f"Unsupported {model_provider=}.\n\nSupported model providers are: {supported}"
     raise ValueError(msg)
@@ -475,6 +482,7 @@ _SUPPORTED_PROVIDERS = {
     "ibm",
     "xai",
     "perplexity",
+    "upstage",
 }
 
 
@@ -499,12 +507,18 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
         return "xai"
     if model_name.startswith("sonar"):
         return "perplexity"
+    if model_name.startswith("solar"):
+        return "upstage"
     return None
 
 
 def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
-    if not model_provider and ":" in model and model.split(":")[0] in _SUPPORTED_PROVIDERS:
-        model_provider = model.split(":")[0]
+    if (
+        not model_provider
+        and ":" in model
+        and model.split(":", maxsplit=1)[0] in _SUPPORTED_PROVIDERS
+    ):
+        model_provider = model.split(":", maxsplit=1)[0]
         model = ":".join(model.split(":")[1:])
     model_provider = model_provider or _attempt_infer_model_provider(model)
     if not model_provider:
@@ -633,6 +647,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         )
 
     @property
+    @override
     def InputType(self) -> TypeAlias:
         """Get the input type for this `Runnable`."""
         from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
@@ -817,6 +832,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             yield x
 
     @overload
+    @override
     def astream_log(
         self,
         input: Any,
@@ -834,6 +850,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     ) -> AsyncIterator[RunLogPatch]: ...
 
     @overload
+    @override
     def astream_log(
         self,
         input: Any,

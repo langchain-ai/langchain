@@ -2,22 +2,21 @@
 
 from __future__ import annotations
 
-from functools import partial
 from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, Field
 
+from langchain_core.callbacks import Callbacks
+from langchain_core.documents import Document
 from langchain_core.prompts import (
     BasePromptTemplate,
     PromptTemplate,
     aformat_document,
     format_document,
 )
-from langchain_core.tools.simple import Tool
+from langchain_core.tools.structured import StructuredTool
 
 if TYPE_CHECKING:
-    from langchain_core.callbacks import Callbacks
-    from langchain_core.documents import Document
     from langchain_core.retrievers import BaseRetriever
 
 
@@ -25,43 +24,6 @@ class RetrieverInput(BaseModel):
     """Input to the retriever."""
 
     query: str = Field(description="query to look up in retriever")
-
-
-def _get_relevant_documents(
-    query: str,
-    retriever: BaseRetriever,
-    document_prompt: BasePromptTemplate,
-    document_separator: str,
-    callbacks: Callbacks = None,
-    response_format: Literal["content", "content_and_artifact"] = "content",
-) -> str | tuple[str, list[Document]]:
-    docs = retriever.invoke(query, config={"callbacks": callbacks})
-    content = document_separator.join(
-        format_document(doc, document_prompt) for doc in docs
-    )
-    if response_format == "content_and_artifact":
-        return (content, docs)
-
-    return content
-
-
-async def _aget_relevant_documents(
-    query: str,
-    retriever: BaseRetriever,
-    document_prompt: BasePromptTemplate,
-    document_separator: str,
-    callbacks: Callbacks = None,
-    response_format: Literal["content", "content_and_artifact"] = "content",
-) -> str | tuple[str, list[Document]]:
-    docs = await retriever.ainvoke(query, config={"callbacks": callbacks})
-    content = document_separator.join(
-        [await aformat_document(doc, document_prompt) for doc in docs]
-    )
-
-    if response_format == "content_and_artifact":
-        return (content, docs)
-
-    return content
 
 
 def create_retriever_tool(
@@ -72,7 +34,7 @@ def create_retriever_tool(
     document_prompt: BasePromptTemplate | None = None,
     document_separator: str = "\n\n",
     response_format: Literal["content", "content_and_artifact"] = "content",
-) -> Tool:
+) -> StructuredTool:
     r"""Create a tool to do retrieval of documents.
 
     Args:
@@ -93,22 +55,31 @@ def create_retriever_tool(
     Returns:
         Tool class to pass to an agent.
     """
-    document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
-    func = partial(
-        _get_relevant_documents,
-        retriever=retriever,
-        document_prompt=document_prompt,
-        document_separator=document_separator,
-        response_format=response_format,
-    )
-    afunc = partial(
-        _aget_relevant_documents,
-        retriever=retriever,
-        document_prompt=document_prompt,
-        document_separator=document_separator,
-        response_format=response_format,
-    )
-    return Tool(
+    document_prompt_ = document_prompt or PromptTemplate.from_template("{page_content}")
+
+    def func(
+        query: str, callbacks: Callbacks = None
+    ) -> str | tuple[str, list[Document]]:
+        docs = retriever.invoke(query, config={"callbacks": callbacks})
+        content = document_separator.join(
+            format_document(doc, document_prompt_) for doc in docs
+        )
+        if response_format == "content_and_artifact":
+            return (content, docs)
+        return content
+
+    async def afunc(
+        query: str, callbacks: Callbacks = None
+    ) -> str | tuple[str, list[Document]]:
+        docs = await retriever.ainvoke(query, config={"callbacks": callbacks})
+        content = document_separator.join(
+            [await aformat_document(doc, document_prompt_) for doc in docs]
+        )
+        if response_format == "content_and_artifact":
+            return (content, docs)
+        return content
+
+    return StructuredTool(
         name=name,
         description=description,
         func=func,

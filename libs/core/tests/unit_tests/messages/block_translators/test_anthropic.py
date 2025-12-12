@@ -14,6 +14,16 @@ def test_convert_to_v1_from_anthropic() -> None:
                 "input": {"location": "San Francisco"},
             },
             {
+                "type": "tool_use",
+                "id": "abc_234",
+                "name": "get_weather_programmatic",
+                "input": {"location": "Boston"},
+                "caller": {
+                    "type": "code_execution_20250825",
+                    "tool_id": "srvtoolu_abc234",
+                },
+            },
+            {
                 "type": "text",
                 "text": "It's sunny.",
                 "citations": [
@@ -87,6 +97,18 @@ def test_convert_to_v1_from_anthropic() -> None:
             "id": "abc_123",
             "name": "get_weather",
             "args": {"location": "San Francisco"},
+        },
+        {
+            "type": "tool_call",
+            "id": "abc_234",
+            "name": "get_weather_programmatic",
+            "args": {"location": "Boston"},
+            "extras": {
+                "caller": {
+                    "type": "code_execution_20250825",
+                    "tool_id": "srvtoolu_abc234",
+                }
+            },
         },
         {
             "type": "text",
