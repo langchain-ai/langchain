@@ -94,7 +94,12 @@ _FALLBACK_MAX_OUTPUT_TOKENS: Final[int] = 4096
 
 
 class AnthropicTool(TypedDict):
-    """Anthropic tool definition."""
+    """Anthropic tool definition for custom (user-defined) tools.
+
+    Custom tools use `name` and `input_schema` fields to define the tool's
+    interface. These are converted from LangChain tool formats (functions, Pydantic
+    models, `BaseTool` objects) via `convert_to_anthropic_tool`.
+    """
 
     name: str
 
@@ -113,32 +118,63 @@ class AnthropicTool(TypedDict):
     allowed_callers: NotRequired[list[str]]
 
 
-# Some tool types require specific beta headers to be enabled
-# Mapping of tool type patterns to required beta headers
+# ---------------------------------------------------------------------------
+# Built-in Tool Support
+# ---------------------------------------------------------------------------
+# When Anthropic releases new built-in tools, two places may need updating:
+#
+# 1. _TOOL_TYPE_TO_BETA (below) - Add mapping if the tool requires a beta header.
+#     Not all tools need this; only add if the API requires a beta header.
+#
+# 2. _is_builtin_tool() - Add the tool type prefix to _BUILTIN_TOOL_PREFIXES.
+#     This ensures the tool dict is passed through to the API unchanged (instead
+#     of being converted via convert_to_anthropic_tool, which may fail).
+# ---------------------------------------------------------------------------
+
 _TOOL_TYPE_TO_BETA: dict[str, str] = {
     "web_fetch_20250910": "web-fetch-2025-09-10",
     "code_execution_20250522": "code-execution-2025-05-22",
     "code_execution_20250825": "code-execution-2025-08-25",
+    "mcp_toolset": "mcp-client-2025-11-20",
     "memory_20250818": "context-management-2025-06-27",
     "computer_20250124": "computer-use-2025-01-24",
     "computer_20251124": "computer-use-2025-11-24",
     "tool_search_tool_regex_20251119": "advanced-tool-use-2025-11-20",
     "tool_search_tool_bm25_20251119": "advanced-tool-use-2025-11-20",
 }
+"""Mapping of tool type to required beta header.
 
-# Allowlist of valid Anthropic-specific extra fields
+Some tool types require specific beta headers to be enabled.
+"""
+
+_BUILTIN_TOOL_PREFIXES = [
+    "text_editor_",
+    "computer_",
+    "bash_",
+    "web_search_",
+    "web_fetch_",
+    "code_execution_",
+    "mcp_toolset",
+    "memory_",
+    "tool_search_",
+]
+
 _ANTHROPIC_EXTRA_FIELDS: set[str] = {
     "allowed_callers",
     "cache_control",
     "defer_loading",
     "input_examples",
 }
+"""Valid Anthropic-specific extra fields"""
 
 
 def _is_builtin_tool(tool: Any) -> bool:
-    """Check if a tool is a built-in Anthropic tool.
+    """Check if a tool is a built-in (server-side) Anthropic tool.
 
-    [Claude docs for built-in tools](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview)
+    `tool` must be a `dict` and have a `type` key starting with one of the known
+    built-in tool prefixes.
+
+    [Claude docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview)
     """
     if not isinstance(tool, dict):
         return False
@@ -147,18 +183,7 @@ def _is_builtin_tool(tool: Any) -> bool:
     if not tool_type or not isinstance(tool_type, str):
         return False
 
-    _builtin_tool_prefixes = [
-        "text_editor_",
-        "computer_",
-        "bash_",
-        "web_search_",
-        "web_fetch_",
-        "code_execution_",
-        "mcp_toolset",
-        "memory_",
-        "tool_search_",
-    ]
-    return any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
+    return any(tool_type.startswith(prefix) for prefix in _BUILTIN_TOOL_PREFIXES)
 
 
 def _format_image(url: str) -> dict:
@@ -882,18 +907,13 @@ class ChatAnthropic(BaseChatModel):
             See LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#token-efficient-tool-use)
             for more detail.
 
-            ```python hl_lines="9"
+            ```python hl_lines="6"
             from langchain_anthropic import ChatAnthropic
             from langchain_core.tools import tool
 
             model = ChatAnthropic(
                 model="claude-sonnet-4-5-20250929",
-                temperature=0,
-                model_kwargs={
-                    "extra_headers": {
-                        "anthropic-beta": "token-efficient-tools-2025-02-19"
-                    }
-                }
+                betas=["token-efficient-tools-2025-02-19"]
             )
 
             @tool
@@ -1134,7 +1154,7 @@ class ChatAnthropic(BaseChatModel):
 
         !!! example
 
-            ```python hl_lines="5-6"
+            ```python hl_lines="6"
             from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(
@@ -1366,6 +1386,7 @@ class ChatAnthropic(BaseChatModel):
                 ],
             }
         ]
+
         response = model.invoke(messages)
         response.content
         ```
@@ -1464,8 +1485,7 @@ class ChatAnthropic(BaseChatModel):
         See [`ChatAnthropic.with_structured_output()`][langchain_anthropic.chat_models.ChatAnthropic.with_structured_output]
         for more info, including strict output validation.
 
-        ```python hl_lines="13"
-        from typing import Optional
+        ```python hl_lines="12"
         from pydantic import BaseModel, Field
 
 
@@ -1586,7 +1606,7 @@ class ChatAnthropic(BaseChatModel):
             [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#remote-mcp)
             for more detail.
 
-            ```python hl_lines="3-14 18 23"
+            ```python hl_lines="3-20 24 29"
             from langchain_anthropic import ChatAnthropic
 
             mcp_servers = [
@@ -1594,11 +1614,17 @@ class ChatAnthropic(BaseChatModel):
                     "type": "url",
                     "url": "https://docs.langchain.com/mcp",
                     "name": "LangChain Docs",
-                    # "tool_configuration": {  # optional configuration
-                    #     "enabled": True,
-                    #     "allowed_tools": ["ask_question"],
-                    # },
                     # "authorization_token": "PLACEHOLDER",  # optional authorization
+                }
+            ]
+
+            # Optional: configure which tools are enabled via mcp_toolset
+            tools = [
+                {
+                    "type": "mcp_toolset",
+                    "mcp_server_name": "LangChain Docs",
+                    # "default_config": {"enabled": False},  # disable all by default
+                    # "configs": {"ask_question": {"enabled": True}},  # allowlist
                 }
             ]
 
@@ -1609,7 +1635,7 @@ class ChatAnthropic(BaseChatModel):
 
             response = model.invoke(
                 "What are LangChain content blocks?",
-                tools=[{"type": "mcp_toolset", "mcp_server_name": "LangChain Docs"}],
+                tools=tools,
             )
             ```
 
@@ -1855,7 +1881,7 @@ class ChatAnthropic(BaseChatModel):
     """List of beta features to enable. If specified, invocations will be routed
     through `client.beta.messages.create`.
 
-    Example: `#!python betas=["mcp-client-2025-04-04"]`
+    Example: `#!python betas=["token-efficient-tools-2025-02-19"]`
     """
     # Can also be passed in w/ model_kwargs, but having it as a param makes better devx
     #
@@ -2957,7 +2983,7 @@ class ChatAnthropic(BaseChatModel):
             method = "json_schema"
 
         if method == "function_calling":
-            formatted_tool = convert_to_anthropic_tool(schema)
+            formatted_tool = cast(AnthropicTool, convert_to_anthropic_tool(schema))
             tool_name = formatted_tool["name"]
             if self.thinking is not None and self.thinking.get("type") == "enabled":
                 llm = self._get_llm_for_structured_output_when_thinking_is_enabled(
@@ -3121,12 +3147,12 @@ def convert_to_anthropic_tool(
                 Requires Claude Sonnet 4.5 or Opus 4.1.
 
     Returns:
-        An Anthropic tool definition dict.
+        `AnthropicTool` for custom/user-defined tools
     """
-    # already in Anthropic tool format
     if isinstance(tool, dict) and all(
         k in tool for k in ("name", "description", "input_schema")
     ):
+        # Anthropic tool format
         anthropic_formatted = AnthropicTool(tool)  # type: ignore[misc]
     else:
         oai_formatted = convert_to_openai_tool(tool, strict=strict)["function"]
