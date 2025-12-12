@@ -884,3 +884,39 @@ def test_summarization_middleware_cutoff_at_start_of_tool_sequence() -> None:
     # Index 2 is an AIMessage (safe cutoff point), so no adjustment needed
     cutoff = middleware._find_safe_cutoff(messages, messages_to_keep=4)
     assert cutoff == 2
+
+
+def test_summarization_middleware_orphaned_tool_prevention() -> None:
+    """Test that middleware prevents orphaned ToolMessages by preserving parent AIMessages."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(), trigger=("messages", 2), keep=("messages", 2)
+    )
+
+    # Scenario: AIMessage -> HumanMessage -> ToolMessage
+    # Standard summarization keeping 1 message would only keep the ToolMessage,
+    # causing an orphan. Fix should force keeping the AIMessage too.
+    messages: list[AnyMessage] = [
+        HumanMessage(content="context"),
+        AIMessage(content="call", tool_calls=[{"name": "tool", "args": {}, "id": "call-1"}]),
+        HumanMessage(content="interruption"),
+        ToolMessage(content="result", tool_call_id="call-1"),
+    ]
+
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)  # type: ignore[arg-type]
+
+    assert result is not None
+    assert "messages" in result
+
+    # We expect 3 preserved messages: AI, Human, Tool
+    # Plus the RemoveMessage and the summary HumanMessage
+    # Total messages in result: Remove + Summary + [AI, Human, Tool] = 5
+
+    preserved_messages = result["messages"][2:]
+    assert len(preserved_messages) == 3
+    assert isinstance(preserved_messages[0], AIMessage)
+    assert isinstance(preserved_messages[1], HumanMessage)
+    assert isinstance(preserved_messages[2], ToolMessage)
+
+    assert preserved_messages[0].tool_calls[0]["id"] == "call-1"
+    assert preserved_messages[2].tool_call_id == "call-1"
