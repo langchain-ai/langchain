@@ -1,5 +1,6 @@
 from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.messages.utils import as_message_state, to_message_state
+from langchain_core.messages.utils import to_message_state
+from langchain_core.runnables import RunnableLambda
 
 
 def test_string_to_message_state() -> None:
@@ -50,8 +51,13 @@ def test_none_returns_empty_list() -> None:
 
 
 def test_as_message_state_wrapper() -> None:
-    fn = as_message_state()
-    out = fn("yo")
-    msg = out["messages"][0]
-    assert isinstance(msg, HumanMessage)
-    assert msg.content == "yo"
+    def fake_chat_model(input_str: str) -> AIMessage:
+        return AIMessage(content=f"Echo: {input_str}")
+
+    chain = RunnableLambda(fake_chat_model) | to_message_state
+
+    result = chain.invoke("Hello")
+    msgs = result["messages"]
+    assert len(msgs) == 1
+    assert isinstance(msgs[0], AIMessage)
+    assert msgs[0].content == "Echo: Hello"

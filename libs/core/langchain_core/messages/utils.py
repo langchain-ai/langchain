@@ -27,6 +27,7 @@ from typing import (
 
 from pydantic import Discriminator, Field, Tag
 
+from langchain_core._api.beta_decorator import beta
 from langchain_core.exceptions import ErrorCode, create_message
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
@@ -1747,7 +1748,10 @@ def count_tokens_approximately(
     return math.ceil(token_count)
 
 
-def to_message_state(obj: Any) -> dict[str, list[BaseMessage]]:
+@beta()
+def to_message_state(
+    obj: MessageLikeRepresentation | Sequence[MessageLikeRepresentation] | None,
+) -> dict[Literal["messages"], list[BaseMessage]]:
     """Normalize various inputs into a canonical message state.
 
     Supported inputs:
@@ -1766,42 +1770,16 @@ def to_message_state(obj: Any) -> dict[str, list[BaseMessage]]:
 
     # Already message-state
     if isinstance(obj, dict) and "messages" in obj:
-        return obj
+        return obj  # type: ignore[return-value]
 
-    # A single BaseMessage
-    if isinstance(obj, BaseMessage):
-        return {"messages": [obj]}
-
-    # A single string -> HumanMessage
-    if isinstance(obj, str):
-        return {"messages": [HumanMessage(content=obj)]}
+    # A single message
+    if isinstance(obj, (str, BaseMessage)):
+        return {"messages": [_convert_to_message(obj)]}
 
     # A list of items -> normalize each element
     if isinstance(obj, list):
-        msgs: list[BaseMessage] = []
-        for item in obj:
-            if isinstance(item, BaseMessage):
-                msgs.append(item)
-            elif isinstance(item, str):
-                msgs.append(HumanMessage(content=item))
-            else:
-                msg = f"Unsupported element in list for to_message_state: {type(item)}"
-                raise TypeError(msg)
-        return {"messages": msgs}
+        return {"messages": convert_to_messages(obj)}
 
     # Unsupported type
     msg = f"Unsupported type for to_message_state: {type(obj)}"
     raise TypeError(msg)
-
-
-def as_message_state() -> Callable[[Any], dict[str, list[BaseMessage]]]:
-    """Return an LCEL-friendly wrapper that normalizes outputs into message state.
-
-    Returns:
-        callable that transforms any LCEL output into {"messages": [...]}
-    """
-
-    def _inner(x: Any) -> dict[str, list[BaseMessage]]:
-        return to_message_state(x)
-
-    return _inner
