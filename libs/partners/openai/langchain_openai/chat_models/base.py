@@ -480,6 +480,12 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
     raise
 
 
+def _model_prefers_responses_api(model_name: str | None) -> bool:
+    if not model_name:
+        return False
+    return "gpt-5.2-pro" in model_name
+
+
 _BM = TypeVar("_BM", bound=BaseModel)
 _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[_BM] | type
 _DictOrPydantic: TypeAlias = dict | _BM
@@ -1403,6 +1409,7 @@ class BaseChatOpenAI(BaseChatModel):
             or self.reasoning is not None
             or self.truncation is not None
             or self.use_previous_response_id
+            or _model_prefers_responses_api(self.model_name)
         ):
             return True
         return _use_responses_api(payload)
@@ -4065,9 +4072,14 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         if block_type in ("text", "output_text", "refusal"):
                             msg_id = block.get("id")
                             if block_type in ("text", "output_text"):
+                                # Defensive check: block may not have "text" key
+                                text = block.get("text")
+                                if text is None:
+                                    # Skip blocks without text content
+                                    continue
                                 new_block = {
                                     "type": "output_text",
-                                    "text": block["text"],
+                                    "text": text,
                                     "annotations": [
                                         _format_annotation_from_lc(annotation)
                                         for annotation in block.get("annotations") or []

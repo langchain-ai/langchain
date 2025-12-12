@@ -7,9 +7,7 @@ from typing import Any
 
 import pytest
 from langchain_core.messages import HumanMessage
-from langgraph._internal._typing import StateLike
 from langgraph.graph.state import CompiledStateGraph
-from typing_extensions import TypedDict
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.shell_tool import ShellToolMiddleware
@@ -22,13 +20,12 @@ def _get_model(provider: str) -> Any:
         from langchain_anthropic import ChatAnthropic
 
         return ChatAnthropic(model="claude-sonnet-4-5-20250929")
-    elif provider == "openai":
+    if provider == "openai":
         from langchain_openai import ChatOpenAI
 
         return ChatOpenAI(model="gpt-4o-mini")
-    else:
-        msg = f"Unknown provider: {provider}"
-        raise ValueError(msg)
+    msg = f"Unknown provider: {provider}"
+    raise ValueError(msg)
 
 
 @pytest.mark.parametrize("provider", ["anthropic", "openai"])
