@@ -1926,6 +1926,8 @@ lint = [
     { name = "ruff" },
 ]
 test = [
+    { name = "langchain-azure-ai" },
+    { name = "langchain-huggingface" },
     { name = "langchain-openai" },
     { name = "langchain-tests" },
     { name = "pytest" },
@@ -1963,7 +1965,7 @@ requires-dist = [
     { name = "langchain-google-genai", marker = "extra == 'google-genai'" },
     { name = "langchain-google-vertexai", marker = "extra == 'google-vertexai'" },
     { name = "langchain-groq", marker = "extra == 'groq'" },
-    { name = "langchain-huggingface", marker = "extra == 'huggingface'" },
+    { name = "langchain-huggingface", marker = "extra == 'huggingface'", editable = "../partners/huggingface" },
     { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
     { name = "langchain-ollama", marker = "extra == 'ollama'" },
     { name = "langchain-openai", marker = "extra == 'openai'", editable = "../partners/openai" },
@@ -1978,6 +1980,8 @@ provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-verte
 [package.metadata.requires-dev]
 lint = [{ name = "ruff", specifier = ">=0.14.2,<0.15.0" }]
 test = [
+    { name = "langchain-azure-ai" },
+    { name = "langchain-huggingface", editable = "../partners/huggingface" },
     { name = "langchain-openai", editable = "../partners/openai" },
     { name = "langchain-tests", editable = "../standard-tests" },
     { name = "pytest", specifier = ">=8.0.0,<9.0.0" },
@@ -2240,16 +2244,48 @@ wheels = [
 
 [[package]]
 name = "langchain-huggingface"
-version = "1.0.1"
-source = { registry = "https://pypi.org/simple" }
+version = "1.1.0"
+source = { editable = "../partners/huggingface" }
 dependencies = [
     { name = "huggingface-hub" },
     { name = "langchain-core" },
     { name = "tokenizers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ae/85/8ae6fa9e70a4d2647151df59abf8bc658c159936fcb1e508b86c4f6f23b6/langchain_huggingface-1.0.1.tar.gz", hash = "sha256:9e54b81303b60656f88f45e9a876fb4e3ea0bfb5d40715f802c26811fd8cd72b", size = 248461, upload-time = "2025-11-03T19:53:43.072Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/bd/9d/90dc488e426e4dfef63a77b04a06ef816297a1b036075e5fd34a98436875/langchain_huggingface-1.0.1-py3-none-any.whl", hash = "sha256:032325539dd6b2970910356ecfc363283e8b4e51fb1890de40666a52e95e7d53", size = 27920, upload-time = "2025-11-03T19:53:42.173Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "huggingface-hub", specifier = ">=0.33.4,<1.0.0" },
+    { name = "langchain-core", editable = "../core" },
+    { name = "sentence-transformers", marker = "extra == 'full'", specifier = ">=2.6.0,<3.0.0" },
+    { name = "tokenizers", specifier = ">=0.19.1,<1.0.0" },
+    { name = "transformers", marker = "extra == 'full'", specifier = ">=4.39.0,<5.0.0" },
+]
+provides-extras = ["full"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "ipykernel", specifier = ">=6.29.2,<7.0.0" },
+    { name = "langchain-core", editable = "../core" },
+]
+lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
+test = [
+    { name = "langchain-community" },
+    { name = "langchain-core", editable = "../core" },
+    { name = "langchain-tests", editable = "../standard-tests" },
+    { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
+    { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
+    { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
+    { name = "scipy", marker = "python_full_version < '3.12'", specifier = ">=1.0.0,<2.0.0" },
+    { name = "scipy", marker = "python_full_version == '3.12.*'", specifier = ">=1.7.0,<2.0.0" },
+    { name = "scipy", marker = "python_full_version >= '3.13'", specifier = ">=1.14.1,<2.0.0" },
+    { name = "sentence-transformers", specifier = ">=2.6.0,<3.0.0" },
+    { name = "transformers", specifier = ">=4.39.0,<5.0.0" },
+]
+test-integration = []
+typing = [
+    { name = "langchain-core", editable = "../core" },
+    { name = "mypy", specifier = ">=1.10.0,<2.0.0" },
 ]
 
 [[package]]
