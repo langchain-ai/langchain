@@ -1071,6 +1071,35 @@ fn main() {
     assert chunks == ["fn main() {", 'println!("Hello', ",", 'World!");', "}"]
 
 
+def test_r_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.R, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+library(dplyr)
+
+my_func <- function(x) {
+    return(x + 1)
+}
+
+if (TRUE) {
+    print("Hello")
+}
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "library(dplyr)",
+        "my_func <-",
+        "function(x) {",
+        "return(x +",
+        "1)",
+        "}",
+        "if (TRUE) {",
+        'print("Hello")',
+        "}",
+    ]
+
+
 def test_markdown_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.MARKDOWN, chunk_size=CHUNK_SIZE, chunk_overlap=0

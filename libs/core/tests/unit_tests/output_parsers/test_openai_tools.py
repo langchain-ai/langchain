@@ -16,6 +16,7 @@ from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     JsonOutputToolsParser,
     PydanticToolsParser,
+    parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration
 
@@ -1345,3 +1346,76 @@ def test_pydantic_tools_parser_with_optional_fields() -> None:
     assert result_mixed[1].username == "alice"
     assert result_mixed[1].bio is None
     assert result_mixed[1].age == 35
+
+
+def test_parse_tool_call_with_none_arguments() -> None:
+    """Test parse_tool_call handles None arguments for parameter-less tools.
+
+    When an LLM calls a tool that has no parameters, some providers return
+    None for the arguments field instead of an empty string or "{}".
+    This should not raise an error.
+
+    See: https://github.com/langchain-ai/langchain/issues/34123
+    """
+    # Test case from issue #34123: arguments is None
+    raw_tool_call = {
+        "function": {"arguments": None, "name": "orderStatus"},
+        "id": "chatcmpl-tool-8b1f759d874b412e931e64cf6f57bdcc",
+        "type": "function",
+    }
+
+    # This should not raise an error - should return parsed tool call with empty args
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["name"] == "orderStatus"
+    assert result["args"] == {}
+    assert result["id"] == "chatcmpl-tool-8b1f759d874b412e931e64cf6f57bdcc"
+
+
+def test_parse_tool_call_with_empty_string_arguments() -> None:
+    """Test parse_tool_call handles empty string arguments."""
+    raw_tool_call = {
+        "function": {"arguments": "", "name": "getStatus"},
+        "id": "call_123",
+        "type": "function",
+    }
+
+    # Empty string should be treated as empty args
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["name"] == "getStatus"
+    assert result["args"] == {}
+    assert result["id"] == "call_123"
+
+
+def test_parse_tool_call_with_valid_arguments() -> None:
+    """Test parse_tool_call works normally with valid JSON arguments."""
+    raw_tool_call = {
+        "function": {"arguments": '{"param": "value"}', "name": "myTool"},
+        "id": "call_456",
+        "type": "function",
+    }
+
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["name"] == "myTool"
+    assert result["args"] == {"param": "value"}
+    assert result["id"] == "call_456"
+
+
+def test_parse_tool_call_partial_mode_with_none_arguments() -> None:
+    """Test parse_tool_call in partial mode handles None arguments."""
+    raw_tool_call = {
+        "function": {"arguments": None, "name": "streamingTool"},
+        "id": "call_789",
+        "type": "function",
+    }
+
+    # Partial mode should return None for None arguments (existing behavior)
+    result = parse_tool_call(raw_tool_call, partial=True, return_id=True)
+
+    # In partial mode, None arguments returns None (incomplete tool call)
+    assert result is None

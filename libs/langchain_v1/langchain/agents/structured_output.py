@@ -128,7 +128,7 @@ class _SchemaSpec(Generic[SchemaT]):
     json_schema: dict[str, Any]
     """JSON schema associated with the schema."""
 
-    strict: bool = False
+    strict: bool | None = None
     """Whether to enforce strict validation of the schema."""
 
     def __init__(
@@ -137,7 +137,7 @@ class _SchemaSpec(Generic[SchemaT]):
         *,
         name: str | None = None,
         description: str | None = None,
-        strict: bool = False,
+        strict: bool | None = None,
     ) -> None:
         """Initialize SchemaSpec with schema and optional parameters."""
         self.schema = schema
@@ -227,7 +227,7 @@ class ToolStrategy(Generic[SchemaT]):
 
         def _iter_variants(schema: Any) -> Iterable[Any]:
             """Yield leaf variants from Union and JSON Schema oneOf."""
-            if get_origin(schema) in (UnionType, Union):
+            if get_origin(schema) in {UnionType, Union}:
                 for arg in get_args(schema):
                     yield from _iter_variants(arg)
                 return
@@ -255,21 +255,32 @@ class ProviderStrategy(Generic[SchemaT]):
     def __init__(
         self,
         schema: type[SchemaT],
+        *,
+        strict: bool | None = None,
     ) -> None:
-        """Initialize ProviderStrategy with schema."""
+        """Initialize ProviderStrategy with schema.
+
+        Args:
+            schema: Schema to enforce via the provider's native structured output.
+            strict: Whether to request strict provider-side schema enforcement.
+        """
         self.schema = schema
-        self.schema_spec = _SchemaSpec(schema)
+        self.schema_spec = _SchemaSpec(schema, strict=strict)
 
     def to_model_kwargs(self) -> dict[str, Any]:
         """Convert to kwargs to bind to a model to force structured output."""
         # OpenAI:
         # - see https://platform.openai.com/docs/guides/structured-outputs
-        response_format = {
+        json_schema: dict[str, Any] = {
+            "name": self.schema_spec.name,
+            "schema": self.schema_spec.json_schema,
+        }
+        if self.schema_spec.strict:
+            json_schema["strict"] = True
+
+        response_format: dict[str, Any] = {
             "type": "json_schema",
-            "json_schema": {
-                "name": self.schema_spec.name,
-                "schema": self.schema_spec.json_schema,
-            },
+            "json_schema": json_schema,
         }
         return {"response_format": response_format}
 

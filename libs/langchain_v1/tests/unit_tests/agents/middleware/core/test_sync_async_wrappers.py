@@ -12,8 +12,7 @@ from langchain_core.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
 
 from langchain.agents.factory import create_agent
-from langchain.agents.middleware.types import AgentMiddleware, wrap_tool_call
-from langchain.agents.middleware.types import ToolCallRequest
+from langchain.agents.middleware.types import AgentMiddleware, ToolCallRequest, wrap_tool_call
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
@@ -182,7 +181,7 @@ class TestSyncAsyncMiddlewareComposition:
 
         # Sync path
         call_log.clear()
-        result_sync = agent.invoke(
+        agent.invoke(
             {"messages": [HumanMessage("Search")]},
             {"configurable": {"thread_id": "test1"}},
         )
@@ -220,7 +219,7 @@ class TestSyncAsyncMiddlewareComposition:
 
         # Async path
         call_log.clear()
-        result_async = await agent.ainvoke(
+        await agent.ainvoke(
             {"messages": [HumanMessage("Search")]},
             {"configurable": {"thread_id": "test2"}},
         )

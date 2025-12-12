@@ -2,21 +2,20 @@
 
 import typing
 from itertools import cycle
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 import pytest
-from pydantic import BaseModel
-
-from langchain.agents import create_agent
-from langchain.agents.middleware import LLMToolSelectorMiddleware, ModelRequest, wrap_model_call
-from langchain.agents.middleware.tool_selection import _create_tool_selection_response
-from langchain.agents.middleware.types import AgentState
-from langchain.messages import AIMessage
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool, tool
+from pydantic import BaseModel
+
+from langchain.agents import create_agent
+from langchain.agents.middleware import LLMToolSelectorMiddleware, wrap_model_call
+from langchain.agents.middleware.tool_selection import _create_tool_selection_response
+from langchain.messages import AIMessage
 
 
 @tool
@@ -54,7 +53,7 @@ class FakeModel(GenericFakeChatModel):
 
     def bind_tools(
         self,
-        tools: typing.Sequence[Union[dict[str, Any], type[BaseModel], typing.Callable, BaseTool]],
+        tools: typing.Sequence[dict[str, Any] | type[BaseModel] | typing.Callable | BaseTool],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         if len(tools) == 0:
@@ -62,11 +61,11 @@ class FakeModel(GenericFakeChatModel):
             raise ValueError(msg)
 
         tool_dicts = []
-        for tool in tools:
-            if isinstance(tool, dict):
-                tool_dicts.append(tool)
+        for tool_ in tools:
+            if isinstance(tool_, dict):
+                tool_dicts.append(tool_)
                 continue
-            if not isinstance(tool, BaseTool):
+            if not isinstance(tool_, BaseTool):
                 msg = "Only BaseTool and dict is supported by FakeToolCallingModel.bind_tools"
                 raise TypeError(msg)
 
@@ -76,14 +75,14 @@ class FakeModel(GenericFakeChatModel):
                     {
                         "type": "function",
                         "function": {
-                            "name": tool.name,
+                            "name": tool_.name,
                         },
                     }
                 )
             elif self.tool_style == "anthropic":
                 tool_dicts.append(
                     {
-                        "name": tool.name,
+                        "name": tool_.name,
                     }
                 )
 
@@ -97,16 +96,6 @@ class TestLLMToolSelectorBasic:
         """Test synchronous tool selection."""
         # First call: selector picks tools
         # Second call: agent uses selected tools
-        tool_calls = [
-            [
-                {
-                    "name": "ToolSelectionResponse",
-                    "id": "1",
-                    "args": {"tools": ["get_weather", "calculate"]},
-                }
-            ],
-            [{"name": "get_weather", "id": "2", "args": {"location": "Paris"}}],
-        ]
 
         model_requests = []
 

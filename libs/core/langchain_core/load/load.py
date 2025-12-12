@@ -1,4 +1,9 @@
-"""Load LangChain objects from JSON strings or objects."""
+"""Load LangChain objects from JSON strings or objects.
+
+!!! warning
+    `load` and `loads` are vulnerable to remote code execution. Never use with untrusted
+    input.
+"""
 
 import importlib
 import json
@@ -193,6 +198,10 @@ def loads(
 ) -> Any:
     """Revive a LangChain class from a JSON string.
 
+    !!! warning
+        This function is vulnerable to remote code execution. Never use with untrusted
+        input.
+
     Equivalent to `load(json.loads(text))`.
 
     Args:
@@ -235,6 +244,10 @@ def load(
     ignore_unserializable_fields: bool = False,
 ) -> Any:
     """Revive a LangChain class from a JSON object.
+
+    !!! warning
+        This function is vulnerable to remote code execution. Never use with untrusted
+        input.
 
     Use this if you already have a parsed JSON object,
     eg. from `json.load` or `orjson.loads`.

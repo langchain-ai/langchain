@@ -21,9 +21,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langgraph.runtime import Runtime
 
 from langchain.agents.factory import create_agent
-from langchain.agents.middleware.types import ModelRequest, ModelResponse
-
-from .model import FakeToolCallingModel
+from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
 
 
 def _fake_runtime(context: dict | None = None) -> Runtime:
@@ -34,8 +32,8 @@ def _fake_runtime(context: dict | None = None) -> Runtime:
             def __init__(self):
                 self.context = type("Context", (), context)()
 
-        return cast(Runtime, FakeRuntime())
-    return cast(Runtime, object())
+        return cast("Runtime", FakeRuntime())
+    return cast("Runtime", object())
 
 
 def _make_request(
@@ -439,7 +437,7 @@ class TestSystemMessageUpdateViaMiddleware:
         append_with_metadata_middleware(request, mock_handler)
 
         assert captured_request is not None
-        assert "Base prompt Additional instructions." == captured_request.system_message.text
+        assert captured_request.system_message.text == "Base prompt Additional instructions."
         assert captured_request.system_message.additional_kwargs["base"] == "value"
         assert captured_request.system_message.additional_kwargs["middleware"] == "applied"
 
@@ -544,7 +542,7 @@ class TestMultipleMiddlewareChaining:
         )
 
         def final_handler(req: ModelRequest) -> ModelResponse:
-            assert "String prompt + SystemMessage" == req.system_message.text
+            assert req.system_message.text == "String prompt + SystemMessage"
             assert req.system_message.additional_kwargs["metadata"] == "added"
             return ModelResponse(result=[AIMessage(content="response")])
 
@@ -619,7 +617,7 @@ class TestCacheControlPreservation:
         def second_middleware_appends(request: ModelRequest, handler) -> ModelResponse:
             """Append to system message while preserving cache control."""
             existing_content = request.system_message.content_blocks
-            new_content = existing_content + [{"type": "text", "text": "Additional text"}]
+            new_content = [*existing_content, {"type": "text", "text": "Additional text"}]
 
             new_message = SystemMessage(content=new_content)
             new_request = request.override(system_message=new_message)
@@ -923,9 +921,8 @@ class TestSystemMessageMiddlewareIntegration:
             if request.system_message:
                 new_message = SystemMessage(content=request.system_message.text + " [modified]")
                 return request.override(system_message=new_message)
-            else:
-                new_message = SystemMessage(content="[created]")
-                return request.override(system_message=new_message)
+            new_message = SystemMessage(content="[created]")
+            return request.override(system_message=new_message)
 
         if isinstance(initial_value, SystemMessage):
             request = _make_request(system_message=initial_value)

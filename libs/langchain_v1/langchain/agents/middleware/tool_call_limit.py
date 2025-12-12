@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 from langgraph.channels.untracked_value import UntrackedValue
 from langgraph.typing import ContextT
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, override
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -322,10 +322,11 @@ class ToolCallLimitMiddleware(
         return allowed_calls, blocked_calls, temp_thread_count, temp_run_count
 
     @hook_config(can_jump_to=["end"])
+    @override
     def after_model(
         self,
         state: ToolCallLimitState[ResponseT],
-        runtime: Runtime[ContextT],  # noqa: ARG002
+        runtime: Runtime[ContextT],
     ) -> dict[str, Any] | None:
         """Increment tool call counts after a model call and check limits.
 

@@ -1830,10 +1830,7 @@ def test_tool_inherited_injected_arg() -> None:
             "type": "tool_call",
         }
     ) == ToolMessage("bar", tool_call_id="123", name="foo")
-    expected_error = (
-        ValidationError if not isinstance(tool_, InjectedTool) else TypeError
-    )
-    with pytest.raises(expected_error):
+    with pytest.raises(ValidationError):
         tool_.invoke({"x": 5})
 
     assert convert_to_openai_function(tool_) == {

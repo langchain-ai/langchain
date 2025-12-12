@@ -312,6 +312,7 @@ class Language(str, Enum):
     PHP = "php"
     PROTO = "proto"
     PYTHON = "python"
+    R = "r"
     RST = "rst"
     RUBY = "ruby"
     RUST = "rust"
