@@ -2458,15 +2458,16 @@ class ChatAnthropic(BaseChatModel):
         formatted_tool: AnthropicTool,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         thinking_admonition = (
-            "Anthropic structured output relies on forced tool calling, "
-            "which is not supported when `thinking` is enabled. This method will raise "
-            "langchain_core.exceptions.OutputParserException if tool calls are not "
-            "generated. Consider disabling `thinking` or adjust your prompt to ensure "
-            "the tool is called."
+            "You are attempting to use structured output via forced tool calling, "
+            "which is not guaranteed when `thinking` is enabled. This method will "
+            "raise an OutputParserException if tool calls are not generated. Consider "
+            "disabling `thinking` or adjust your prompt to ensure the tool is called."
         )
         warnings.warn(thinking_admonition, stacklevel=2)
         llm = self.bind_tools(
             [schema],
+            # We don't specify tool_choice here since the API will reject attempts to
+            # force tool calls when thinking=true
             ls_structured_output_format={
                 "kwargs": {"method": "function_calling"},
                 "schema": formatted_tool,
@@ -2998,7 +2999,7 @@ class ChatAnthropic(BaseChatModel):
             else:
                 llm = self.bind_tools(
                     [schema],
-                    tool_choice=tool_name,
+                    tool_choice=tool_name,  # Force tool call
                     ls_structured_output_format={
                         "kwargs": {"method": "function_calling"},
                         "schema": formatted_tool,
