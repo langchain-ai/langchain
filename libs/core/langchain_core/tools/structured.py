@@ -204,7 +204,10 @@ class StructuredTool(BaseTool):
             )
         description_ = description
         if description is None and not parse_docstring:
-            description_ = source_function.__doc__ or None
+            if isinstance(source_function, type) and "__doc__" not in source_function.__dict__:
+                description_ = ""
+            else:
+                description_ = source_function.__doc__ or None
         if description_ is None and args_schema:
             if isinstance(args_schema, type) and is_basemodel_subclass(args_schema):
                 description_ = args_schema.__doc__
