@@ -74,6 +74,7 @@ from langchain_openai.chat_models.base import (
     _format_message_content,
     _get_last_messages,
     _make_computer_call_output_from_message,
+    _model_prefers_responses_api,
     _oai_structured_outputs_parser,
 )
 
@@ -3148,3 +3149,8 @@ def test_gpt_5_1_temperature_with_reasoning_effort_none(
     messages = [HumanMessage(content="Hello")]
     payload = llm._get_request_payload(messages)
     assert "temperature" not in payload
+
+
+def test_model_prefers_responses_api() -> None:
+    assert _model_prefers_responses_api("gpt-5.2-pro")
+    assert not _model_prefers_responses_api("gpt-5.1")
