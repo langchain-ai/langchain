@@ -73,7 +73,6 @@ def test_test_group_dependencies(uv_conf: Mapping[str, Any]) -> None:
             "pytest-socket",
             "pytest-watcher",
             "pytest-xdist",
-            "blockbuster",
             "responses",
             "syrupy",
             "toml",
