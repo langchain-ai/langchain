@@ -164,6 +164,29 @@ def test_anthropic_model_param() -> None:
 
 
 @pytest.mark.requires("anthropic")
+def test_anthropic_model_positional_arg() -> None:
+    """Test that model can be passed as the first positional argument."""
+    # Test positional argument
+    llm = ChatAnthropic(MODEL_NAME)
+    assert llm.model == MODEL_NAME
+
+    # Test positional argument with additional kwargs
+    llm = ChatAnthropic(MODEL_NAME, temperature=0.5, max_tokens=100)
+    assert llm.model == MODEL_NAME
+    assert llm.temperature == 0.5
+    assert llm.max_tokens == 100
+
+    # Test that keyword argument still works
+    llm = ChatAnthropic(model=MODEL_NAME)
+    assert llm.model == MODEL_NAME
+
+    # Test positional and keyword args are equivalent
+    llm_positional = ChatAnthropic(MODEL_NAME)
+    llm_keyword = ChatAnthropic(model=MODEL_NAME)
+    assert llm_positional.model == llm_keyword.model
+
+
+@pytest.mark.requires("anthropic")
 def test_anthropic_model_kwargs() -> None:
     llm = ChatAnthropic(model_name=MODEL_NAME, model_kwargs={"foo": "bar"})  # type: ignore[call-arg, call-arg]
     assert llm.model_kwargs == {"foo": "bar"}
