@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 import yaml
+from langchain_core._api.deprecation import deprecated
 from vcr import VCR
 from vcr.persisters.filesystem import CassetteNotFoundError
 from vcr.request import Request
@@ -98,8 +99,7 @@ _BASE_FILTER_HEADERS = [
 ]
 
 
-@pytest.fixture(scope="session")
-def _base_vcr_config() -> dict:
+def base_vcr_config() -> dict:
     """Return VCR configuration that every cassette will receive.
 
     (Anything permitted by `vcr.VCR(**kwargs)` can be put here.)
@@ -116,6 +116,12 @@ def _base_vcr_config() -> dict:
 
 
 @pytest.fixture(scope="session")
-def vcr_config(_base_vcr_config: dict) -> dict:
+@deprecated("1.0.3", alternative="base_vcr_config", removal="2.0")
+def _base_vcr_config() -> dict:
+    return base_vcr_config()
+
+
+@pytest.fixture(scope="session")
+def vcr_config() -> dict:
     """VCR config fixture."""
-    return _base_vcr_config
+    return base_vcr_config()
