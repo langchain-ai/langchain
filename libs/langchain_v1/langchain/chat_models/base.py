@@ -405,7 +405,7 @@ def _init_chat_model_helper(
         _check_pkg("langchain_huggingface")
         from langchain_huggingface import ChatHuggingFace
 
-        return ChatHuggingFace(model_id=model, **kwargs)
+        return ChatHuggingFace.from_model_id(model_id=model, **kwargs)
     if model_provider == "groq":
         _check_pkg("langchain_groq")
         from langchain_groq import ChatGroq
