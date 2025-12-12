@@ -35,7 +35,7 @@ jobs:
     timeout-minutes: 20
     name: "Python ${{ inputs.python-version }}"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: "🐍 Set up Python ${{ inputs.python-version }} + UV"
         uses: "./.github/actions/uv_setup"

@@ -319,9 +319,11 @@ def init_chat_model(
         ```
 
     !!! warning "Behavior changed in `langchain` 0.2.8"
+
         Support for `configurable_fields` and `config_prefix` added.
 
     !!! warning "Behavior changed in `langchain` 0.2.12"
+
         Support for Ollama via langchain-ollama package added
         (`langchain_ollama.ChatOllama`). Previously,
         the now-deprecated langchain-community version of Ollama was imported
@@ -331,9 +333,11 @@ def init_chat_model(
         (`model_provider="bedrock_converse"`).
 
     !!! warning "Behavior changed in `langchain` 0.3.5"
+
         Out of beta.
 
     !!! warning "Behavior changed in `langchain` 0.3.19"
+
         Support for Deepseek, IBM, Nvidia, and xAI models added.
 
     """  # noqa: E501
@@ -440,61 +444,9 @@ def _init_chat_model_helper(
 
     if model_provider == "huggingface":
         _check_pkg("langchain_huggingface")
-        from langchain_huggingface import ChatHuggingFace, HuggingFacePipeline
+        from langchain_huggingface import ChatHuggingFace
 
-        # Extract task parameter, default to "text-generation" for chat models
-        task = kwargs.pop("task", "text-generation")
-
-        # Separate pipeline-specific kwargs from ChatHuggingFace kwargs
-        # Parameters that should go to HuggingFacePipeline.from_model_id
-        pipeline_specific_kwargs = {}
-
-        # Extract pipeline-specific parameters
-        pipeline_keys = [
-            "backend",
-            "device",
-            "device_map",
-            "model_kwargs",
-            "pipeline_kwargs",
-            "batch_size",
-        ]
-        for key in pipeline_keys:
-            if key in kwargs:
-                pipeline_specific_kwargs[key] = kwargs.pop(key)
-
-        # Remaining kwargs (temperature, max_tokens, etc.) should go to
-        # pipeline_kwargs for generation parameters, which ChatHuggingFace
-        # will inherit from the LLM
-        if "pipeline_kwargs" not in pipeline_specific_kwargs:
-            pipeline_specific_kwargs["pipeline_kwargs"] = {}
-
-        # Add generation parameters to pipeline_kwargs
-        # Map max_tokens to max_new_tokens for HuggingFace pipeline
-        generation_params = {}
-        for k, v in list(kwargs.items()):
-            if k == "max_tokens":
-                generation_params["max_new_tokens"] = v
-                kwargs.pop(k)
-            elif k in (
-                "temperature",
-                "max_new_tokens",
-                "top_p",
-                "top_k",
-                "repetition_penalty",
-                "do_sample",
-            ):
-                generation_params[k] = v
-                kwargs.pop(k)
-
-        pipeline_specific_kwargs["pipeline_kwargs"].update(generation_params)
-
-        # Create the HuggingFacePipeline
-        llm = HuggingFacePipeline.from_model_id(
-            model_id=model, task=task, **pipeline_specific_kwargs
-        )
-
-        # Create ChatHuggingFace with remaining kwargs (timeout, max_retries, etc.)
-        return ChatHuggingFace(llm=llm, **kwargs)
+        return ChatHuggingFace.from_model_id(model_id=model, **kwargs)
 
     if model_provider == "groq":
         _check_pkg("langchain_groq")
@@ -598,13 +550,17 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
 
 
 def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
-    if (
-        not model_provider
-        and ":" in model
-        and model.split(":")[0] in _SUPPORTED_PROVIDERS
-    ):
-        model_provider = model.split(":")[0]
-        model = ":".join(model.split(":")[1:])
+    if not model_provider and ":" in model:
+        prefix, suffix = model.split(":", 1)
+        if prefix in _SUPPORTED_PROVIDERS:
+            model_provider = prefix
+            model = suffix
+        else:
+            inferred = _attempt_infer_model_provider(prefix)
+            if inferred:
+                model_provider = inferred
+                model = suffix
+
     model_provider = model_provider or _attempt_infer_model_provider(model)
     if not model_provider:
         msg = (

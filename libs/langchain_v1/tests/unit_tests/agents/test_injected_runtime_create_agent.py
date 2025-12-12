@@ -16,16 +16,16 @@ configurations.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 
-import pytest
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.tools import tool
+from langgraph.prebuilt import InjectedStore
 from langgraph.store.memory import InMemoryStore
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.types import AgentState
-from langchain.tools import ToolRuntime
+from langchain.tools import InjectedState, ToolRuntime
 
 from .model import FakeToolCallingModel
 
@@ -280,8 +280,6 @@ def test_tool_runtime_config_access() -> None:
 
 def test_tool_runtime_with_custom_state() -> None:
     """Test ToolRuntime works with custom state schemas."""
-    from typing_extensions import Annotated, TypedDict
-
     from langchain.agents.middleware.types import AgentMiddleware
 
     class CustomState(AgentState):
@@ -311,7 +309,10 @@ def test_tool_runtime_with_custom_state() -> None:
     )
 
     result = agent.invoke(
-        {"messages": [HumanMessage("Test custom state")], "custom_field": "custom_value"}
+        {
+            "messages": [HumanMessage("Test custom state")],
+            "custom_field": "custom_value",
+        }
     )
 
     # Verify custom field was accessible
@@ -428,9 +429,9 @@ def test_tool_runtime_error_handling() -> None:
         try:
             if x == 0:
                 return "Error: Cannot process zero"
-            return f"Processed: {x}"
         except Exception as e:
             return f"Error: {e}"
+        return f"Processed: {x}"
 
     agent = create_agent(
         model=FakeToolCallingModel(
@@ -459,8 +460,6 @@ def test_tool_runtime_error_handling() -> None:
 
 def test_tool_runtime_with_middleware() -> None:
     """Test ToolRuntime injection works with agent middleware."""
-    from typing import Any
-
     from langchain.agents.middleware.types import AgentMiddleware
 
     middleware_calls = []
@@ -538,7 +537,8 @@ def test_tool_runtime_type_hints() -> None:
 
     result = agent.invoke({"messages": [HumanMessage("Test")]})
 
-    # Verify typed runtime worked - should see 2 messages (HumanMessage + AIMessage) before tool executes
+    # Verify typed runtime worked -
+    # should see 2 messages (HumanMessage + AIMessage) before tool executes
     assert typed_runtime["message_count"] == 2
 
     tool_message = result["messages"][2]
@@ -589,3 +589,243 @@ def test_tool_runtime_name_based_injection() -> None:
     assert injected_data["tool_call_id"] == "name_call_123"
     assert injected_data["state"] is not None
     assert "messages" in injected_data["state"]
+
+
+def test_combined_injected_state_runtime_store() -> None:
+    """Test that all injection mechanisms work together in create_agent.
+
+    This test verifies that a tool can receive injected state, tool runtime,
+    and injected store simultaneously when specified in the function signature
+    but not in the explicit args schema. This is modeled after the pattern
+    from mre.py where multiple injection types are combined.
+    """
+    # Track what was injected
+    injected_data = {}
+
+    # Custom state schema with additional fields
+    class CustomState(AgentState):
+        user_id: str
+        session_id: str
+
+    # Define explicit args schema that only includes LLM-controlled parameters
+    weather_schema = {
+        "type": "object",
+        "properties": {
+            "location": {"type": "string", "description": "The location to get weather for"},
+        },
+        "required": ["location"],
+    }
+
+    @tool(args_schema=weather_schema)
+    def multi_injection_tool(
+        location: str,
+        state: Annotated[Any, InjectedState],
+        runtime: ToolRuntime,
+        store: Annotated[Any, InjectedStore()],
+    ) -> str:
+        """Tool that uses injected state, runtime, and store together.
+
+        Args:
+            location: The location to get weather for (LLM-controlled).
+            state: The graph state (injected).
+            runtime: The tool runtime context (injected).
+            store: The persistent store (injected).
+        """
+        # Capture all injected parameters
+        injected_data["state"] = state
+        injected_data["user_id"] = state.get("user_id", "unknown")
+        injected_data["session_id"] = state.get("session_id", "unknown")
+        injected_data["runtime"] = runtime
+        injected_data["tool_call_id"] = runtime.tool_call_id
+        injected_data["store"] = store
+        injected_data["store_is_none"] = store is None
+
+        # Verify runtime.state matches the state parameter
+        injected_data["runtime_state_matches"] = runtime.state == state
+
+        return f"Weather info for {location}"
+
+    # Create model that calls the tool
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                {
+                    "name": "multi_injection_tool",
+                    "args": {"location": "San Francisco"},  # Only LLM-controlled arg
+                    "id": "call_weather_123",
+                }
+            ],
+            [],  # End the loop
+        ]
+    )
+
+    # Create agent with custom state and store
+    agent = create_agent(
+        model=model,
+        tools=[multi_injection_tool],
+        state_schema=CustomState,
+        store=InMemoryStore(),
+    )
+
+    # Verify the tool's args schema only includes LLM-controlled parameters
+    tool_args_schema = multi_injection_tool.args_schema
+    assert "location" in tool_args_schema["properties"]
+    assert "state" not in tool_args_schema["properties"]
+    assert "runtime" not in tool_args_schema["properties"]
+    assert "store" not in tool_args_schema["properties"]
+
+    # Invoke with custom state fields
+    result = agent.invoke(
+        {
+            "messages": [HumanMessage("What's the weather like?")],
+            "user_id": "user_42",
+            "session_id": "session_abc123",
+        }
+    )
+
+    # Verify tool executed successfully
+    tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
+    assert len(tool_messages) == 1
+    tool_message = tool_messages[0]
+    assert tool_message.content == "Weather info for San Francisco"
+    assert tool_message.tool_call_id == "call_weather_123"
+
+    # Verify all injections worked correctly
+    assert injected_data["state"] is not None
+    assert "messages" in injected_data["state"]
+
+    # Verify custom state fields were accessible
+    assert injected_data["user_id"] == "user_42"
+    assert injected_data["session_id"] == "session_abc123"
+
+    # Verify runtime was injected
+    assert injected_data["runtime"] is not None
+    assert injected_data["tool_call_id"] == "call_weather_123"
+
+    # Verify store was injected
+    assert injected_data["store_is_none"] is False
+    assert injected_data["store"] is not None
+
+    # Verify runtime.state matches the injected state
+    assert injected_data["runtime_state_matches"] is True
+
+
+async def test_combined_injected_state_runtime_store_async() -> None:
+    """Test that all injection mechanisms work together in async execution.
+
+    This async version verifies that injected state, tool runtime, and injected
+    store all work correctly with async tools in create_agent.
+    """
+    # Track what was injected
+    injected_data = {}
+
+    # Custom state schema
+    class CustomState(AgentState):
+        api_key: str
+        request_id: str
+
+    # Define explicit args schema that only includes LLM-controlled parameters
+    # Note: state, runtime, and store are NOT in this schema
+    search_schema = {
+        "type": "object",
+        "properties": {
+            "query": {"type": "string", "description": "The search query"},
+            "max_results": {"type": "integer", "description": "Maximum number of results"},
+        },
+        "required": ["query", "max_results"],
+    }
+
+    @tool(args_schema=search_schema)
+    async def async_multi_injection_tool(
+        query: str,
+        max_results: int,
+        state: Annotated[Any, InjectedState],
+        runtime: ToolRuntime,
+        store: Annotated[Any, InjectedStore()],
+    ) -> str:
+        """Async tool with multiple injection types.
+
+        Args:
+            query: The search query (LLM-controlled).
+            max_results: Maximum number of results (LLM-controlled).
+            state: The graph state (injected).
+            runtime: The tool runtime context (injected).
+            store: The persistent store (injected).
+        """
+        # Capture all injected parameters
+        injected_data["state"] = state
+        injected_data["api_key"] = state.get("api_key", "unknown")
+        injected_data["request_id"] = state.get("request_id", "unknown")
+        injected_data["runtime"] = runtime
+        injected_data["tool_call_id"] = runtime.tool_call_id
+        injected_data["config"] = runtime.config
+        injected_data["store"] = store
+
+        # Verify we can write to the store
+        if store is not None:
+            await store.aput(("test", "namespace"), "test_key", {"query": query})
+            # Read back to verify it worked
+            item = await store.aget(("test", "namespace"), "test_key")
+            injected_data["store_write_success"] = item is not None
+
+        return f"Found {max_results} results for '{query}'"
+
+    # Create model that calls the async tool
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                {
+                    "name": "async_multi_injection_tool",
+                    "args": {"query": "test search", "max_results": 10},
+                    "id": "call_search_456",
+                }
+            ],
+            [],
+        ]
+    )
+
+    # Create agent with custom state and store
+    agent = create_agent(
+        model=model,
+        tools=[async_multi_injection_tool],
+        state_schema=CustomState,
+        store=InMemoryStore(),
+    )
+
+    # Verify the tool's args schema only includes LLM-controlled parameters
+    tool_args_schema = async_multi_injection_tool.args_schema
+    assert "query" in tool_args_schema["properties"]
+    assert "max_results" in tool_args_schema["properties"]
+    assert "state" not in tool_args_schema["properties"]
+    assert "runtime" not in tool_args_schema["properties"]
+    assert "store" not in tool_args_schema["properties"]
+
+    # Invoke async
+    result = await agent.ainvoke(
+        {
+            "messages": [HumanMessage("Search for something")],
+            "api_key": "sk-test-key-xyz",
+            "request_id": "req_999",
+        }
+    )
+
+    # Verify tool executed successfully
+    tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
+    assert len(tool_messages) == 1
+    tool_message = tool_messages[0]
+    assert tool_message.content == "Found 10 results for 'test search'"
+    assert tool_message.tool_call_id == "call_search_456"
+
+    # Verify all injections worked correctly
+    assert injected_data["state"] is not None
+    assert injected_data["api_key"] == "sk-test-key-xyz"
+    assert injected_data["request_id"] == "req_999"
+
+    # Verify runtime was injected
+    assert injected_data["runtime"] is not None
+    assert injected_data["tool_call_id"] == "call_search_456"
+    assert injected_data["config"] is not None
+
+    # Verify store was injected and writable
+    assert injected_data["store"] is not None
+    assert injected_data["store_write_success"] is True

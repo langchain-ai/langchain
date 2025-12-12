@@ -12,6 +12,8 @@ import httpx
 import pytest
 import requests
 from anthropic import BadRequestError
+from langchain.agents import create_agent
+from langchain.agents.structured_output import ProviderStrategy
 from langchain_core.callbacks import CallbackManager
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import (
@@ -27,6 +29,7 @@ from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
+from typing_extensions import TypedDict
 
 from langchain_anthropic import ChatAnthropic
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
@@ -533,7 +536,7 @@ def test_tool_use() -> None:
     assert content_blocks[1]["args"]
 
     # Testing token-efficient tools
-    # https://docs.claude.com/en/docs/agents-and-tools/tool-use/token-efficient-tool-use
+    # https://platform.claude.com/docs/en/agents-and-tools/tool-use/token-efficient-tool-use
     assert gathered.usage_metadata
     assert response.usage_metadata
     assert (
@@ -577,6 +580,47 @@ def test_builtin_tools_text_editor() -> None:
     assert content_blocks[0]["text"]
     assert content_blocks[1]["type"] == "tool_call"
     assert content_blocks[1]["name"] == "str_replace_based_edit_tool"
+
+
+def test_builtin_tools_computer_use() -> None:
+    """Test computer use tool integration.
+
+    Beta header should be automatically appended based on tool type.
+
+    This test only verifies tool call generation.
+    """
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
+    )
+    tool = {
+        "type": "computer_20250124",
+        "name": "computer",
+        "display_width_px": 1024,
+        "display_height_px": 768,
+        "display_number": 1,
+    }
+    llm_with_tools = llm.bind_tools([tool])
+    response = llm_with_tools.invoke(
+        "Can you take a screenshot to see what's on the screen?",
+    )
+    assert isinstance(response, AIMessage)
+    assert response.tool_calls
+
+    content_blocks = response.content_blocks
+    assert len(content_blocks) >= 2
+    assert content_blocks[0]["type"] == "text"
+    assert content_blocks[0]["text"]
+
+    # Check that we have a tool_call for computer use
+    tool_call_blocks = [b for b in content_blocks if b["type"] == "tool_call"]
+    assert len(tool_call_blocks) >= 1
+    assert tool_call_blocks[0]["name"] == "computer"
+
+    # Verify tool call has expected action (screenshot in this case)
+    tool_call = response.tool_calls[0]
+    assert tool_call["name"] == "computer"
+    assert "action" in tool_call["args"]
+    assert tool_call["args"]["action"] == "screenshot"
 
 
 class GenerateUsername(BaseModel):
@@ -661,6 +705,91 @@ def test_with_structured_output() -> None:
     response = structured_llm.invoke("what's the weather in san francisco, ca")
     assert isinstance(response, dict)
     assert response["location"]
+
+
+class Person(BaseModel):
+    """Person data."""
+
+    name: str
+    age: int
+    nicknames: list[str] | None
+
+
+class PersonDict(TypedDict):
+    """Person data as a TypedDict."""
+
+    name: str
+    age: int
+    nicknames: list[str] | None
+
+
+@pytest.mark.parametrize("schema", [Person, Person.model_json_schema(), PersonDict])
+def test_response_format(schema: dict | type) -> None:
+    model = ChatAnthropic(
+        model="claude-sonnet-4-5",  # type: ignore[call-arg]
+        betas=["structured-outputs-2025-11-13"],
+    )
+    query = "Chester (a.k.a. Chet) is 100 years old."
+
+    response = model.invoke(query, response_format=schema)
+    parsed = json.loads(response.text)
+    if isinstance(schema, type) and issubclass(schema, BaseModel):
+        schema.model_validate(parsed)
+    else:
+        assert isinstance(parsed, dict)
+        assert parsed["name"]
+        assert parsed["age"]
+
+
+@pytest.mark.vcr
+def test_response_format_in_agent() -> None:
+    class Weather(BaseModel):
+        temperature: float
+        units: str
+
+    # no tools
+    agent = create_agent(
+        "anthropic:claude-sonnet-4-5", response_format=ProviderStrategy(Weather)
+    )
+    result = agent.invoke({"messages": [{"role": "user", "content": "75 degrees F."}]})
+    assert len(result["messages"]) == 2
+    parsed = json.loads(result["messages"][-1].text)
+    assert Weather(**parsed) == result["structured_response"]
+
+    # with tools
+    def get_weather(location: str) -> str:
+        """Get the weather at a location."""
+        return "75 degrees Fahrenheit."
+
+    agent = create_agent(
+        "anthropic:claude-sonnet-4-5",
+        tools=[get_weather],
+        response_format=ProviderStrategy(Weather),
+    )
+    result = agent.invoke(
+        {"messages": [{"role": "user", "content": "What's the weather in SF?"}]},
+    )
+    assert len(result["messages"]) == 4
+    assert result["messages"][1].tool_calls
+    parsed = json.loads(result["messages"][-1].text)
+    assert Weather(**parsed) == result["structured_response"]
+
+
+@pytest.mark.vcr
+def test_strict_tool_use() -> None:
+    model = ChatAnthropic(
+        model="claude-sonnet-4-5",  # type: ignore[call-arg]
+        betas=["structured-outputs-2025-11-13"],
+    )
+
+    def get_weather(location: str, unit: Literal["C", "F"]) -> str:
+        """Get the weather at a location."""
+        return "75 degrees Fahrenheit."
+
+    model_with_tools = model.bind_tools([get_weather], strict=True)
+
+    response = model_with_tools.invoke("What's the weather in Boston, in Celsius?")
+    assert response.tool_calls
 
 
 def test_get_num_tokens_from_messages() -> None:
@@ -1062,6 +1191,30 @@ def test_structured_output_thinking_force_tool_use() -> None:
     )
     with pytest.raises(BadRequestError):
         llm.invoke("Generate a username for Sally with green hair")
+
+
+def test_effort_parameter() -> None:
+    """Test that effort parameter can be passed without errors.
+
+    Only Opus 4.5 supports currently.
+    """
+    llm = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        effort="medium",
+        max_tokens=100,
+    )
+
+    result = llm.invoke("Say hello in one sentence")
+
+    # Verify we got a response
+    assert isinstance(result.content, str)
+    assert len(result.content) > 0
+
+    # Verify response metadata is present
+    assert "model_name" in result.response_metadata
+    assert result.usage_metadata is not None
+    assert result.usage_metadata["input_tokens"] > 0
+    assert result.usage_metadata["output_tokens"] > 0
 
 
 def test_image_tool_calling() -> None:
@@ -1511,7 +1664,7 @@ def test_code_execution_old(output_version: Literal["v0", "v1"]) -> None:
     See the `test_code_execution` test below to test the current
     `code_execution_20250825` tool.
 
-    Migration guide: https://docs.claude.com/en/docs/agents-and-tools/tool-use/code-execution-tool#upgrade-to-latest-tool-version
+    Migration guide: https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool#upgrade-to-latest-tool-version
     """
     llm = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]
@@ -1648,18 +1801,15 @@ def test_remote_mcp(output_version: Literal["v0", "v1"]) -> None:
             "type": "url",
             "url": "https://mcp.deepwiki.com/mcp",
             "name": "deepwiki",
-            "tool_configuration": {"enabled": True, "allowed_tools": ["ask_question"]},
             "authorization_token": "PLACEHOLDER",
         },
     ]
 
     llm = ChatAnthropic(
         model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
-        betas=["mcp-client-2025-04-04"],
         mcp_servers=mcp_servers,
-        max_tokens=10_000,  # type: ignore[call-arg]
         output_version=output_version,
-    )
+    ).bind_tools([{"type": "mcp_toolset", "mcp_server_name": "deepwiki"}])
 
     input_message = {
         "role": "user",
@@ -1927,7 +2077,335 @@ def test_context_management() -> None:
     assert full.response_metadata.get("context_management")
 
 
+@pytest.mark.default_cassette("test_tool_search.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_tool_search(output_version: str) -> None:
+    """Test tool search with LangChain tools using extras parameter."""
+
+    @tool(extras={"defer_loading": True})
+    def get_weather(location: str, unit: str = "fahrenheit") -> str:
+        """Get the current weather for a location.
+
+        Args:
+            location: City name
+            unit: Temperature unit (celsius or fahrenheit)
+        """
+        return f"The weather in {location} is sunny and 72°{unit[0].upper()}"
+
+    @tool(extras={"defer_loading": True})
+    def search_files(query: str) -> str:
+        """Search through files in the workspace.
+
+        Args:
+            query: Search query
+        """
+        return f"Found 3 files matching '{query}'"
+
+    model = ChatAnthropic(
+        model="claude-opus-4-5-20251101", output_version=output_version
+    )
+
+    agent = create_agent(  # type: ignore[var-annotated]
+        model,
+        tools=[
+            {
+                "type": "tool_search_tool_regex_20251119",
+                "name": "tool_search_tool_regex",
+            },
+            get_weather,
+            search_files,
+        ],
+    )
+
+    # Test with actual API call
+    input_message = {
+        "role": "user",
+        "content": "What's the weather in San Francisco? Find and use a tool.",
+    }
+    result = agent.invoke({"messages": [input_message]})
+    first_response = result["messages"][1]
+    content_types = [block["type"] for block in first_response.content]
+    if output_version == "v0":
+        assert content_types == [
+            "text",
+            "server_tool_use",
+            "tool_search_tool_result",
+            "text",
+            "tool_use",
+        ]
+    else:
+        # v1
+        assert content_types == [
+            "text",
+            "server_tool_call",
+            "server_tool_result",
+            "text",
+            "tool_call",
+        ]
+
+    answer = result["messages"][-1]
+    assert not answer.tool_calls
+    assert answer.text
+
+
+@pytest.mark.default_cassette("test_programmatic_tool_use.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_programmatic_tool_use(output_version: str) -> None:
+    """Test programmatic tool use.
+
+    Implicitly checks that `allowed_callers` in tool extras works.
+    """
+
+    @tool(extras={"allowed_callers": ["code_execution_20250825"]})
+    def get_weather(location: str) -> str:
+        """Get the weather at a location."""
+        return "It's sunny."
+
+    tools: list = [
+        {"type": "code_execution_20250825", "name": "code_execution"},
+        get_weather,
+    ]
+
+    model = ChatAnthropic(
+        model="claude-sonnet-4-5",
+        betas=["advanced-tool-use-2025-11-20"],
+        reuse_last_container=True,
+        output_version=output_version,
+    )
+
+    agent = create_agent(model, tools=tools)  # type: ignore[var-annotated]
+
+    input_query = {
+        "role": "user",
+        "content": "What's the weather in Boston?",
+    }
+
+    result = agent.invoke({"messages": [input_query]})
+    assert len(result["messages"]) == 4
+    tool_call_message = result["messages"][1]
+    response_message = result["messages"][-1]
+
+    if output_version == "v0":
+        server_tool_use_block = next(
+            block
+            for block in tool_call_message.content
+            if block["type"] == "server_tool_use"
+        )
+        assert server_tool_use_block
+
+        tool_use_block = next(
+            block for block in tool_call_message.content if block["type"] == "tool_use"
+        )
+        assert "caller" in tool_use_block
+
+        code_execution_result = next(
+            block
+            for block in response_message.content
+            if block["type"] == "code_execution_tool_result"
+        )
+        assert code_execution_result["content"]["return_code"] == 0
+    else:
+        server_tool_call_block = next(
+            block
+            for block in tool_call_message.content
+            if block["type"] == "server_tool_call"
+        )
+        assert server_tool_call_block
+
+        tool_call_block = next(
+            block for block in tool_call_message.content if block["type"] == "tool_call"
+        )
+        assert "caller" in tool_call_block["extras"]
+
+        server_tool_result = next(
+            block
+            for block in response_message.content
+            if block["type"] == "server_tool_result"
+        )
+        assert server_tool_result["output"]["return_code"] == 0
+
+
+@pytest.mark.default_cassette("test_programmatic_tool_use_streaming.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_programmatic_tool_use_streaming(output_version: str) -> None:
+    @tool(extras={"allowed_callers": ["code_execution_20250825"]})
+    def get_weather(location: str) -> str:
+        """Get the weather at a location."""
+        return "It's sunny."
+
+    tools: list = [
+        {"type": "code_execution_20250825", "name": "code_execution"},
+        get_weather,
+    ]
+
+    model = ChatAnthropic(
+        model="claude-sonnet-4-5",
+        betas=["advanced-tool-use-2025-11-20"],
+        reuse_last_container=True,
+        streaming=True,
+        output_version=output_version,
+    )
+
+    agent = create_agent(model, tools=tools)  # type: ignore[var-annotated]
+
+    input_query = {
+        "role": "user",
+        "content": "What's the weather in Boston?",
+    }
+
+    result = agent.invoke({"messages": [input_query]})
+    assert len(result["messages"]) == 4
+    tool_call_message = result["messages"][1]
+    response_message = result["messages"][-1]
+
+    if output_version == "v0":
+        server_tool_use_block = next(
+            block
+            for block in tool_call_message.content
+            if block["type"] == "server_tool_use"
+        )
+        assert server_tool_use_block
+
+        tool_use_block = next(
+            block for block in tool_call_message.content if block["type"] == "tool_use"
+        )
+        assert "caller" in tool_use_block
+
+        code_execution_result = next(
+            block
+            for block in response_message.content
+            if block["type"] == "code_execution_tool_result"
+        )
+        assert code_execution_result["content"]["return_code"] == 0
+    else:
+        server_tool_call_block = next(
+            block
+            for block in tool_call_message.content
+            if block["type"] == "server_tool_call"
+        )
+        assert server_tool_call_block
+
+        tool_call_block = next(
+            block for block in tool_call_message.content if block["type"] == "tool_call"
+        )
+        assert "caller" in tool_call_block["extras"]
+
+        server_tool_result = next(
+            block
+            for block in response_message.content
+            if block["type"] == "server_tool_result"
+        )
+        assert server_tool_result["output"]["return_code"] == 0
+
+
 def test_async_shared_client() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
     _ = asyncio.run(llm.ainvoke("Hello"))
     _ = asyncio.run(llm.ainvoke("Hello"))
+
+
+def test_fine_grained_tool_streaming() -> None:
+    """Test fine-grained tool streaming reduces latency for tool parameter streaming.
+
+    Fine-grained tool streaming enables Claude to stream tool parameter values.
+
+    https://platform.claude.com/docs/en/agents-and-tools/tool-use/fine-grained-tool-streaming
+    """
+    llm = ChatAnthropic(
+        model=MODEL_NAME,  # type: ignore[call-arg]
+        temperature=0,
+        betas=["fine-grained-tool-streaming-2025-05-14"],
+    )
+
+    # Define a tool that requires a longer text parameter
+    tool_definition = {
+        "name": "write_document",
+        "description": "Write a document with the given content",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "Document title"},
+                "content": {
+                    "type": "string",
+                    "description": "The full document content",
+                },
+            },
+            "required": ["title", "content"],
+        },
+    }
+
+    llm_with_tools = llm.bind_tools([tool_definition])
+    query = (
+        "Write a document about the benefits of streaming APIs. "
+        "Include at least 3 paragraphs."
+    )
+
+    # Test streaming with fine-grained tool streaming
+    first = True
+    chunks: list[BaseMessage | BaseMessageChunk] = []
+    tool_call_chunks = []
+
+    for chunk in llm_with_tools.stream(query):
+        chunks.append(chunk)
+        if first:
+            gathered = chunk
+            first = False
+        else:
+            gathered = gathered + chunk  # type: ignore[assignment]
+
+        # Collect tool call chunks
+        tool_call_chunks.extend(
+            [
+                block
+                for block in chunk.content_blocks
+                if block["type"] == "tool_call_chunk"
+            ]
+        )
+
+    # Verify we got chunks
+    assert len(chunks) > 1
+
+    # Verify final message has tool call
+    assert isinstance(gathered, AIMessageChunk)
+    assert isinstance(gathered.tool_calls, list)
+    assert len(gathered.tool_calls) >= 1
+
+    # Find the write_document tool call
+    write_doc_call = None
+    for tool_call in gathered.tool_calls:
+        if tool_call["name"] == "write_document":
+            write_doc_call = tool_call
+            break
+
+    assert write_doc_call is not None, "write_document tool call not found"
+    assert isinstance(write_doc_call["args"], dict)
+    assert "title" in write_doc_call["args"]
+    assert "content" in write_doc_call["args"]
+    assert (
+        len(write_doc_call["args"]["content"]) > 100
+    )  # Should have substantial content
+
+    # Verify tool_call_chunks were received
+    # With fine-grained streaming, we should get tool call chunks
+    assert len(tool_call_chunks) > 0
+
+    # Verify content_blocks in final message
+    content_blocks = gathered.content_blocks
+    assert len(content_blocks) >= 1
+
+    # Should have at least one tool_call block
+    tool_call_blocks = [b for b in content_blocks if b["type"] == "tool_call"]
+    assert len(tool_call_blocks) >= 1
+
+    write_doc_block = None
+    for block in tool_call_blocks:
+        if block["name"] == "write_document":
+            write_doc_block = block
+            break
+
+    assert write_doc_block is not None
+    assert write_doc_block["name"] == "write_document"
+    assert "args" in write_doc_block
