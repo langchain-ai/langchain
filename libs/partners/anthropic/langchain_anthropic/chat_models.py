@@ -1015,11 +1015,9 @@ class ChatAnthropic(BaseChatModel):
         if cache_control and formatted_messages:
             for formatted_message in reversed(formatted_messages):
                 content = formatted_message.get("content")
-                if isinstance(content, list):
-                    if content:
-                        content[-1]["cache_control"] = cache_control
-                        break
-                    continue
+                if isinstance(content, list) and content:
+                    content[-1]["cache_control"] = cache_control
+                    break
                 if isinstance(content, str):
                     formatted_message["content"] = [
                         {
