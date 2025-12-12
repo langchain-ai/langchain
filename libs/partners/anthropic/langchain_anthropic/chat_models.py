@@ -2779,7 +2779,7 @@ class ChatAnthropic(BaseChatModel):
             for more detail.
         """  # noqa: E501
         # Allows built-in tools either by their:
-        # - Raw `dict` format as
+        # - Raw `dict` format
         # - Extracting extras["provider_tool_definition"] if provided on a BaseTool
         formatted_tools = [
             tool
@@ -3006,9 +3006,9 @@ class ChatAnthropic(BaseChatModel):
             method = "json_schema"
 
         if method == "function_calling":
-            # Structured output uses schemas, not built-in tools, so this is always
-            # AnthropicTool (has input_schema), never AnthropicBuiltinTool (has type).
             formatted_tool = cast(AnthropicTool, convert_to_anthropic_tool(schema))
+            # The result of convert_to_anthropic_tool for 'method=function_calling' will
+            # always be an AnthropicTool
             tool_name = formatted_tool["name"]
             if self.thinking is not None and self.thinking.get("type") == "enabled":
                 llm = self._get_llm_for_structured_output_when_thinking_is_enabled(
