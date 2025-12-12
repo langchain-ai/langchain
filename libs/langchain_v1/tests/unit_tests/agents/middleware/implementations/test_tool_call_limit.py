@@ -50,7 +50,7 @@ def test_middleware_initialization_validation():
     # Test run_limit exceeding thread_limit
     with pytest.raises(
         ValueError,
-        match="run_limit .* cannot exceed thread_limit",
+        match=r"run_limit .* cannot exceed thread_limit",
     ):
         ToolCallLimitMiddleware(thread_limit=3, run_limit=5)
 
@@ -163,7 +163,10 @@ def test_middleware_unit_functionality():
 
 
 def test_middleware_end_behavior_with_unrelated_parallel_tool_calls():
-    """Test that 'end' behavior raises NotImplementedError when there are parallel calls to unrelated tools.
+    """Test middleware 'end' behavior with unrelated parallel tool calls.
+
+    Test that 'end' behavior raises NotImplementedError when there are parallel calls
+    to unrelated tools.
 
     When limiting a specific tool with "end" behavior and the model proposes parallel calls
     to BOTH the limited tool AND other tools, we can't handle this scenario (we'd be stopping
@@ -227,7 +230,11 @@ def test_middleware_with_specific_tool():
 
 
 def test_middleware_error_behavior():
-    """Test that middleware raises ToolCallLimitExceededError when configured with exit_behavior='error'."""
+    """Test middleware error behavior.
+
+    Test that middleware raises ToolCallLimitExceededError when configured with
+    exit_behavior='error'.
+    """
     middleware = ToolCallLimitMiddleware(thread_limit=2, exit_behavior="error")
     runtime = None
 
@@ -749,7 +756,8 @@ def test_parallel_tool_calls_with_limit_end_mode():
         assert "Tool call limit exceeded" in error_msg.content
         assert "Do not" in error_msg.content
 
-    # Verify AI message explaining why execution stopped (displayed to user - includes thread/run details)
+    # Verify AI message explaining why execution stopped
+    # (displayed to user - includes thread/run details)
     ai_limit_messages = [
         msg
         for msg in messages
