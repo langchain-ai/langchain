@@ -1,4 +1,3 @@
-from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -840,7 +839,7 @@ def test_summarization_middleware_find_safe_cutoff_advances_past_tools() -> None
         model=MockChatModel(), trigger=("messages", 10), keep=("messages", 3)
     )
 
-    # Messages: [Human, AI, Tool, Tool, Tool, Human]
+    # Messages list: [Human, AI, Tool, Tool, Tool, Human]
     messages: list[AnyMessage] = [
         HumanMessage(content="msg1"),
         AIMessage(

@@ -147,7 +147,7 @@ def test_inference_to_tool_output(*, use_responses_api: bool) -> None:
 @pytest.mark.requires("langchain_openai")
 @pytest.mark.vcr
 @pytest.mark.parametrize("use_responses_api", [False, True])
-def test_strict_mode(use_responses_api: bool) -> None:
+def test_strict_mode(*, use_responses_api: bool) -> None:
     from langchain_openai import ChatOpenAI
 
     model_kwargs = {"model": "gpt-5", "use_responses_api": use_responses_api}

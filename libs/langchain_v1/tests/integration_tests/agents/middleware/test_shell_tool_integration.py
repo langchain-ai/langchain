@@ -7,9 +7,7 @@ from typing import Any
 
 import pytest
 from langchain_core.messages import HumanMessage
-from langgraph._internal._typing import StateLike
 from langgraph.graph.state import CompiledStateGraph
-from typing_extensions import TypedDict
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.shell_tool import ShellToolMiddleware
