@@ -75,7 +75,7 @@ def _get_joke_class(  # noqa: RET503
 
 
 class _TestCallbackHandler(BaseCallbackHandler):
-    options: list[dict | None]
+    options: list[dict[str, Any] | None]
 
     def __init__(self) -> None:
         super().__init__()
@@ -739,7 +739,7 @@ class ChatModelIntegrationTests(ChatModelTests):
     '''  # noqa: E501
 
     @property
-    def standard_chat_model_params(self) -> dict:
+    def standard_chat_model_params(self) -> dict[str, Any]:
         """Standard parameters for chat model."""
         return {}
 
@@ -3072,7 +3072,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             "cache_control": {"type": "ephemeral"},
         }
 
-        human_content: list[dict] = [
+        human_content = [
             {
                 "type": "text",
                 "text": "what's your favorite color in this image",

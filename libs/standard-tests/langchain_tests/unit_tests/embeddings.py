@@ -2,6 +2,7 @@
 
 import os
 from abc import abstractmethod
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -20,7 +21,7 @@ class EmbeddingsTests(BaseStandardTests):
         """Embeddings class."""
 
     @property
-    def embedding_model_params(self) -> dict:
+    def embedding_model_params(self) -> dict[str, Any]:
         """Embeddings model parameters."""
         return {}
 
@@ -100,7 +101,9 @@ class EmbeddingsUnitTests(EmbeddingsTests):
         assert model is not None
 
     @property
-    def init_from_env_params(self) -> tuple[dict, dict, dict]:
+    def init_from_env_params(
+        self,
+    ) -> tuple[dict[str, str], dict[str, Any], dict[str, Any]]:
         """Init from env params.
 
         This property is used in unit tests to test initialization from environment
