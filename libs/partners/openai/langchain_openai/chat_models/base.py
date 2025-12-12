@@ -190,8 +190,13 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                     )
         if audio := _dict.get("audio"):
             additional_kwargs["audio"] = audio
+        # Handle OpenRouter reasoning_details (provider-specific metadata)
+        # Store as-is in additional_kwargs, do not convert to content blocks
+        reasoning_details = _dict.get("reasoning_details")
+        if isinstance(reasoning_details, dict):
+            additional_kwargs["reasoning_details"] = reasoning_details
         return AIMessage(
-            content=content,
+            content=content,  # type: ignore[arg-type]
             additional_kwargs=additional_kwargs,
             name=name,
             id=id_,
@@ -365,7 +370,7 @@ def _convert_delta_to_message_chunk(
     """Convert to a LangChain message chunk."""
     id_ = _dict.get("id")
     role = cast(str, _dict.get("role"))
-    content = cast(str, _dict.get("content") or "")
+    content: Any = _dict.get("content") or ""
     additional_kwargs: dict = {}
     if _dict.get("function_call"):
         function_call = dict(_dict["function_call"])
@@ -386,6 +391,13 @@ def _convert_delta_to_message_chunk(
             ]
         except KeyError:
             pass
+    # Handle OpenRouter reasoning_details in streaming (provider-specific metadata)
+    # Store as-is in additional_kwargs, do not convert to content blocks.
+    # When chunks are merged via AIMessageChunk.__add__(), merge_dicts() will
+    # automatically handle nested dict/list merging for reasoning_details.
+    reasoning_details = _dict.get("reasoning_details")
+    if isinstance(reasoning_details, dict):
+        additional_kwargs["reasoning_details"] = reasoning_details
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content, id=id_)
@@ -1458,7 +1470,12 @@ class BaseChatOpenAI(BaseChatModel):
         service_tier = response_dict.get("service_tier")
 
         for res in choices:
-            message = _convert_dict_to_message(res["message"])
+            message_dict = dict(res["message"])
+            # Handle OpenRouter reasoning_details at response level
+            reasoning_details = response_dict.get("reasoning_details")
+            if isinstance(reasoning_details, dict):
+                message_dict["reasoning_details"] = reasoning_details
+            message = _convert_dict_to_message(message_dict)
             if token_usage and isinstance(message, AIMessage):
                 message.usage_metadata = _create_usage_metadata(
                     token_usage, service_tier

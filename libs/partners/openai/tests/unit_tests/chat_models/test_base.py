@@ -3116,3 +3116,125 @@ def test_gpt_5_1_temperature_with_reasoning_effort_none(
     messages = [HumanMessage(content="Hello")]
     payload = llm._get_request_payload(messages)
     assert "temperature" not in payload
+
+
+def test_openrouter_reasoning_details() -> None:
+    """Test OpenRouter reasoning_details support in AIMessage.
+
+    This test verifies that OpenRouter's reasoning_details field is correctly
+    stored as provider-specific metadata in additional_kwargs, without
+    modifying the content structure.
+    """
+    from langchain_openai.chat_models.base import (
+        _convert_delta_to_message_chunk,
+        _convert_dict_to_message,
+    )
+
+    # Test non-streaming: reasoning_details in message
+    response_dict = {
+        "role": "assistant",
+        "content": "The answer is 42.",
+        "reasoning_details": {
+            "tokens": [{"token": "Let", "logprob": -0.1}],
+            "steps": ["step1", "step2"],
+        },
+    }
+    message = _convert_dict_to_message(response_dict)
+    assert isinstance(message, AIMessage)
+    # Content should remain unchanged (string, not converted to blocks)
+    assert message.content == "The answer is 42."
+    # reasoning_details should be in additional_kwargs
+    assert "reasoning_details" in message.additional_kwargs
+    assert message.additional_kwargs["reasoning_details"] == {
+        "tokens": [{"token": "Let", "logprob": -0.1}],
+        "steps": ["step1", "step2"],
+    }
+
+    # Test non-streaming: reasoning_details with content as list
+    response_dict_list = {
+        "role": "assistant",
+        "content": [{"type": "text", "text": "Final answer."}],
+        "reasoning_details": {
+            "reasoning": "Thinking process...",
+            "id": "rs_123",
+        },
+    }
+    message_list = _convert_dict_to_message(response_dict_list)
+    assert isinstance(message_list, AIMessage)
+    # Content should remain unchanged (list, not modified)
+    assert isinstance(message_list.content, list)
+    content_list = cast(list[dict[str, Any]], message_list.content)
+    assert len(content_list) == 1
+    assert content_list[0]["type"] == "text"
+    # reasoning_details should be in additional_kwargs
+    assert "reasoning_details" in message_list.additional_kwargs
+
+    # Test streaming: reasoning_details in delta
+    delta_dict = {
+        "role": "assistant",
+        "content": "Streaming response.",
+        "reasoning_details": {
+            "steps": ["step1"],
+        },
+    }
+    chunk = _convert_delta_to_message_chunk(delta_dict, AIMessageChunk)
+    assert isinstance(chunk, AIMessageChunk)
+    # Content should remain unchanged (string, not converted to blocks)
+    assert chunk.content == "Streaming response."
+    # reasoning_details should be in additional_kwargs
+    assert "reasoning_details" in chunk.additional_kwargs
+    assert chunk.additional_kwargs["reasoning_details"] == {"steps": ["step1"]}
+
+    # Test reasoning_details with complex structure
+    response_dict_complex = {
+        "role": "assistant",
+        "content": "Answer",
+        "reasoning_details": {
+            "tokens": [{"token": "test", "logprob": -0.5}],
+            "metadata": {"provider": "openrouter"},
+        },
+    }
+    message_complex = _convert_dict_to_message(response_dict_complex)
+    assert isinstance(message_complex, AIMessage)
+    assert message_complex.content == "Answer"
+    assert "reasoning_details" in message_complex.additional_kwargs
+    assert "tokens" in message_complex.additional_kwargs["reasoning_details"]
+    assert "metadata" in message_complex.additional_kwargs["reasoning_details"]
+
+    # Test streaming delta merging via AIMessageChunk.__add__()
+    chunk1 = _convert_delta_to_message_chunk(
+        {
+            "role": "assistant",
+            "content": "Step 1",
+            "reasoning_details": {"steps": ["step1"], "tokens": [{"token": "a"}]},
+        },
+        AIMessageChunk,
+    )
+    chunk2 = _convert_delta_to_message_chunk(
+        {
+            "role": "assistant",
+            "content": " Step 2",
+            "reasoning_details": {"steps": ["step2"], "tokens": [{"token": "b"}]},
+        },
+        AIMessageChunk,
+    )
+    chunk3 = _convert_delta_to_message_chunk(
+        {
+            "role": "assistant",
+            "content": " Done",
+            "reasoning_details": {"final": True},
+        },
+        AIMessageChunk,
+    )
+    merged = chunk1 + chunk2 + chunk3
+    assert isinstance(merged, AIMessageChunk)
+    assert "reasoning_details" in merged.additional_kwargs
+    merged_details = merged.additional_kwargs["reasoning_details"]
+    # Lists should be merged
+    assert "steps" in merged_details
+    assert len(merged_details["steps"]) == 2
+    assert "step1" in merged_details["steps"]
+    assert "step2" in merged_details["steps"]
+    # Dict values should be merged
+    assert "final" in merged_details
+    assert merged_details["final"] is True
