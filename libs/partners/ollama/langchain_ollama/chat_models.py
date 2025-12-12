@@ -44,7 +44,6 @@ from __future__ import annotations
 import ast
 import json
 import logging
-import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import Any, Literal, cast
@@ -1248,14 +1247,6 @@ class ChatOllama(BaseChatModel):
             kwargs: Any additional parameters are passed directly to
                 `self.bind(**kwargs)`.
         """  # noqa: E501
-        strict_parameter = kwargs.pop("strict", None)
-        response_format_parameter = kwargs.pop("response_format", None)
-        if strict_parameter is not None:
-            warnings.warn("strict parameter is not supported by Ollama", stacklevel=1)
-        if response_format_parameter is not None:
-            warnings.warn(
-                "response_format parameter is not supported by Ollama", stacklevel=1
-            )
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         return super().bind(tools=formatted_tools, **kwargs)
 
