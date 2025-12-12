@@ -1300,6 +1300,56 @@ def test_anthropic_bind_tools_tool_choice() -> None:
     }
 
 
+def test_fine_grained_tool_streaming_beta() -> None:
+    """Test that fine-grained tool streaming beta can be enabled."""
+    # Test with betas parameter at initialization
+    model = ChatAnthropic(
+        model=MODEL_NAME, betas=["fine-grained-tool-streaming-2025-05-14"]
+    )
+
+    # Create a simple tool
+    def get_weather(city: str) -> str:
+        """Get the weather for a city."""
+        return f"Weather in {city}"
+
+    model_with_tools = model.bind_tools([get_weather])
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "What's the weather in SF?",
+        stream=True,
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+
+    # Verify beta header is in payload
+    assert "fine-grained-tool-streaming-2025-05-14" in payload["betas"]
+    assert payload["stream"] is True
+
+    # Test combining with other betas
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        betas=["context-1m-2025-08-07", "fine-grained-tool-streaming-2025-05-14"],
+    )
+    model_with_tools = model.bind_tools([get_weather])
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "What's the weather?",
+        stream=True,
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+    assert set(payload["betas"]) == {
+        "context-1m-2025-08-07",
+        "fine-grained-tool-streaming-2025-05-14",
+    }
+
+    # Test that _create routes to beta client when betas are present
+    model = ChatAnthropic(
+        model=MODEL_NAME, betas=["fine-grained-tool-streaming-2025-05-14"]
+    )
+    payload = {"betas": ["fine-grained-tool-streaming-2025-05-14"], "stream": True}
+
+    with patch.object(model._client.beta.messages, "create") as mock_beta_create:
+        model._create(payload)
+        mock_beta_create.assert_called_once_with(**payload)
+
+
 def test_optional_description() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
@@ -2178,3 +2228,137 @@ def test_output_config_without_effort() -> None:
     assert payload.get("betas") is None or "effort-2025-11-24" not in payload.get(
         "betas", []
     )
+
+
+def test_extras_with_defer_loading() -> None:
+    """Test that extras with `defer_loading` are merged into tool definitions."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"defer_loading": True})
+    def get_weather(location: str) -> str:
+        """Get weather for a location."""
+        return f"Weather in {location}"
+
+    model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    model_with_tools = model.bind_tools([get_weather])
+
+    # Get the payload to check if defer_loading was merged
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+
+    # Find the get_weather tool in the payload
+    weather_tool = None
+    for tool_def in payload["tools"]:
+        if isinstance(tool_def, dict) and tool_def.get("name") == "get_weather":
+            weather_tool = tool_def
+            break
+
+    assert weather_tool is not None
+    assert weather_tool.get("defer_loading") is True
+
+
+def test_extras_with_cache_control() -> None:
+    """Test that extras with `cache_control` are merged into tool definitions."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"cache_control": {"type": "ephemeral"}})
+    def search_files(query: str) -> str:
+        """Search files."""
+        return f"Results for {query}"
+
+    model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    model_with_tools = model.bind_tools([search_files])
+
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+
+    search_tool = None
+    for tool_def in payload["tools"]:
+        if isinstance(tool_def, dict) and tool_def.get("name") == "search_files":
+            search_tool = tool_def
+            break
+
+    assert search_tool is not None
+    assert search_tool.get("cache_control") == {"type": "ephemeral"}
+
+
+def test_extras_with_input_examples() -> None:
+    """Test that extras with `input_examples` are merged into tool definitions."""
+    from langchain_core.tools import tool
+
+    @tool(
+        extras={
+            "input_examples": [
+                {"location": "San Francisco, CA", "unit": "fahrenheit"},
+                {"location": "Tokyo, Japan", "unit": "celsius"},
+            ]
+        }
+    )
+    def get_weather(location: str, unit: str = "fahrenheit") -> str:
+        """Get weather for a location."""
+        return f"Weather in {location}"
+
+    model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    model_with_tools = model.bind_tools([get_weather])
+
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+
+    weather_tool = None
+    for tool_def in payload["tools"]:
+        if isinstance(tool_def, dict) and tool_def.get("name") == "get_weather":
+            weather_tool = tool_def
+            break
+
+    assert weather_tool is not None
+    assert "input_examples" in weather_tool
+    assert len(weather_tool["input_examples"]) == 2
+    assert weather_tool["input_examples"][0] == {
+        "location": "San Francisco, CA",
+        "unit": "fahrenheit",
+    }
+
+    # Beta header is required
+    assert "betas" in payload
+    assert "advanced-tool-use-2025-11-20" in payload["betas"]
+
+
+def test_extras_with_multiple_fields() -> None:
+    """Test that multiple extra fields can be specified together."""
+    from langchain_core.tools import tool
+
+    @tool(
+        extras={
+            "defer_loading": True,
+            "cache_control": {"type": "ephemeral"},
+            "input_examples": [{"query": "python files"}],
+        }
+    )
+    def search_code(query: str) -> str:
+        """Search code."""
+        return f"Code for {query}"
+
+    model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    model_with_tools = model.bind_tools([search_code])
+
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+
+    tool_def = None
+    for t in payload["tools"]:
+        if isinstance(t, dict) and t.get("name") == "search_code":
+            tool_def = t
+            break
+
+    assert tool_def is not None
+    assert tool_def.get("defer_loading") is True
+    assert tool_def.get("cache_control") == {"type": "ephemeral"}
+    assert "input_examples" in tool_def

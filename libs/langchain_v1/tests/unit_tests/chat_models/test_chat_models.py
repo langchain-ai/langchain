@@ -57,7 +57,7 @@ def test_init_missing_dep() -> None:
 
 
 def test_init_unknown_provider() -> None:
-    with pytest.raises(ValueError, match="Unsupported model_provider='bar'."):
+    with pytest.raises(ValueError, match="Unsupported model_provider='bar'"):
         init_chat_model("foo", model_provider="bar")
 
 
@@ -269,6 +269,7 @@ def test_configurable_with_default() -> None:
             "betas": None,
             "default_headers": None,
             "model_kwargs": {},
+            "reuse_last_container": None,
             "streaming": False,
             "stream_usage": True,
             "output_version": None,

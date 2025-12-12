@@ -88,18 +88,18 @@ def is_pydantic_v2_subclass(cls: type) -> bool:
     """Check if the given class is Pydantic v2-like.
 
     Returns:
-        `True` if the given class is a subclass of Pydantic BaseModel 2.x.
+        `True` if the given class is a subclass of Pydantic `BaseModel` 2.x.
     """
     return issubclass(cls, BaseModel)
 
 
 def is_basemodel_subclass(cls: type) -> bool:
-    """Check if the given class is a subclass of Pydantic BaseModel.
+    """Check if the given class is a subclass of Pydantic `BaseModel`.
 
     Check if the given class is a subclass of any of the following:
 
-    * pydantic.BaseModel in Pydantic 2.x
-    * pydantic.v1.BaseModel in Pydantic 2.x
+    * `pydantic.BaseModel` in Pydantic 2.x
+    * `pydantic.v1.BaseModel` in Pydantic 2.x
 
     Returns:
         `True` if the given class is a subclass of Pydantic `BaseModel`.
@@ -112,12 +112,12 @@ def is_basemodel_subclass(cls: type) -> bool:
 
 
 def is_basemodel_instance(obj: Any) -> bool:
-    """Check if the given class is an instance of Pydantic BaseModel.
+    """Check if the given class is an instance of Pydantic `BaseModel`.
 
     Check if the given class is an instance of any of the following:
 
-    * pydantic.BaseModel in Pydantic 2.x
-    * pydantic.v1.BaseModel in Pydantic 2.x
+    * `pydantic.BaseModel` in Pydantic 2.x
+    * `pydantic.v1.BaseModel` in Pydantic 2.x
 
     Returns:
         `True` if the given class is an instance of Pydantic `BaseModel`.

@@ -17,6 +17,7 @@ from typing import (
     Literal,
     TypeVar,
     cast,
+    get_type_hints,
 )
 
 import pytest
@@ -1829,10 +1830,7 @@ def test_tool_inherited_injected_arg() -> None:
             "type": "tool_call",
         }
     ) == ToolMessage("bar", tool_call_id="123", name="foo")
-    expected_error = (
-        ValidationError if not isinstance(tool_, InjectedTool) else TypeError
-    )
-    with pytest.raises(expected_error):
+    with pytest.raises(ValidationError):
         tool_.invoke({"x": 5})
 
     assert convert_to_openai_function(tool_) == {
@@ -2243,6 +2241,32 @@ def test_create_retriever_tool() -> None:
         tool_call_id="123",
         name="retriever_tool_artifact",
     )
+
+
+def test_create_retriever_tool_get_type_hints() -> None:
+    """Verify get_type_hints works on retriever tool's func.
+
+    This test ensures compatibility with Python 3.12+ where get_type_hints()
+    raises TypeError on functools.partial objects. Tools like LangGraph's
+    ToolNode call get_type_hints(tool.func) to generate schemas.
+    """
+
+    class MyRetriever(BaseRetriever):
+        @override
+        def _get_relevant_documents(
+            self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        ) -> list[Document]:
+            return [Document(page_content="test")]
+
+    retriever = MyRetriever()
+    retriever_tool = tools.create_retriever_tool(
+        retriever, "test_tool", "Test tool for type hints"
+    )
+
+    # This should not raise TypeError (as it did with functools.partial)
+    hints = get_type_hints(retriever_tool.func)
+    assert "query" in hints
+    assert hints["query"] is str
 
 
 def test_tool_args_schema_pydantic_v2_with_metadata() -> None:

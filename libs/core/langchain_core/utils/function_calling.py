@@ -8,6 +8,7 @@ import logging
 import types
 import typing
 import uuid
+from collections.abc import Mapping
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -327,7 +328,7 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
 
 
 def convert_to_openai_function(
-    function: dict[str, Any] | type | Callable | BaseTool,
+    function: Mapping[str, Any] | type | Callable | BaseTool,
     *,
     strict: bool | None = None,
 ) -> dict[str, Any]:
@@ -454,7 +455,7 @@ _WellKnownOpenAITools = (
 
 
 def convert_to_openai_tool(
-    tool: dict[str, Any] | type[BaseModel] | Callable | BaseTool,
+    tool: Mapping[str, Any] | type[BaseModel] | Callable | BaseTool,
     *,
     strict: bool | None = None,
 ) -> dict[str, Any]:
