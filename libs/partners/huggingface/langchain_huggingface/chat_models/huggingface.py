@@ -7,7 +7,7 @@ import json
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Literal, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 if TYPE_CHECKING:
     from langchain_huggingface.llms.huggingface_endpoint import HuggingFaceEndpoint
@@ -619,14 +619,16 @@ class ChatHuggingFace(BaseChatModel):
             backend: The backend to use. One of "pipeline", "endpoint", "text-gen".
             **kwargs: Additional arguments to pass to the backend or ChatHuggingFace.
         """
-        llm: Any  # Union of HuggingFacePipeline | HuggingFaceEndpoint | HuggingFaceTextGenInference
+        llm: (
+            Any  # HuggingFacePipeline, HuggingFaceEndpoint, HuggingFaceTextGenInference
+        )
         if backend == "pipeline":
             from langchain_huggingface.llms.huggingface_pipeline import (
                 HuggingFacePipeline,
             )
 
             llm = HuggingFacePipeline.from_model_id(
-                model_id=model_id, task=task, **kwargs
+                model_id=model_id, task=cast(str, task), **kwargs
             )
         elif backend == "endpoint":
             from langchain_huggingface.llms.huggingface_endpoint import (
