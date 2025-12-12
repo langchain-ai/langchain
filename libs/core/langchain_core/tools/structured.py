@@ -204,7 +204,10 @@ class StructuredTool(BaseTool):
             )
         description_ = description
         if description is None and not parse_docstring:
-            if isinstance(source_function, type) and "__doc__" not in source_function.__dict__:
+            if (
+                isinstance(source_function, type)
+                and "__doc__" not in source_function.__dict__
+            ):
                 description_ = ""
             else:
                 description_ = source_function.__doc__ or None
