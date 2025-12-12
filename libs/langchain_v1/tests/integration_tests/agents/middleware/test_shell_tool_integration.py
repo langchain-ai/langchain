@@ -7,9 +7,13 @@ from typing import Any
 
 import pytest
 from langchain_core.messages import HumanMessage
+from langgraph._internal._typing import StateLike
+from langgraph.graph.state import CompiledStateGraph
+from typing_extensions import TypedDict
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.shell_tool import ShellToolMiddleware
+from langchain.agents.middleware.types import _InputAgentState
 
 
 def _get_model(provider: str) -> Any:
@@ -33,7 +37,7 @@ def test_shell_tool_basic_execution(tmp_path: Path, provider: str) -> None:
     pytest.importorskip(f"langchain_{provider}")
 
     workspace = tmp_path / "workspace"
-    agent = create_agent(
+    agent: CompiledStateGraph[Any, Any, _InputAgentState, Any] = create_agent(
         model=_get_model(provider),
         middleware=[ShellToolMiddleware(workspace_root=workspace)],
     )
@@ -55,7 +59,7 @@ def test_shell_tool_basic_execution(tmp_path: Path, provider: str) -> None:
 def test_shell_session_persistence(tmp_path: Path) -> None:
     """Test shell session state persists across multiple tool calls."""
     workspace = tmp_path / "workspace"
-    agent = create_agent(
+    agent: CompiledStateGraph[Any, Any, _InputAgentState, Any] = create_agent(
         model=_get_model("anthropic"),
         middleware=[ShellToolMiddleware(workspace_root=workspace)],
     )
@@ -82,7 +86,7 @@ def test_shell_session_persistence(tmp_path: Path) -> None:
 def test_shell_tool_error_handling(tmp_path: Path) -> None:
     """Test shell tool captures command errors."""
     workspace = tmp_path / "workspace"
-    agent = create_agent(
+    agent: CompiledStateGraph[Any, Any, _InputAgentState, Any] = create_agent(
         model=_get_model("anthropic"),
         middleware=[ShellToolMiddleware(workspace_root=workspace)],
     )
@@ -121,7 +125,7 @@ def test_shell_tool_with_custom_tools(tmp_path: Path) -> None:
         """Greet someone by name."""
         return f"Hello, {name}!"
 
-    agent = create_agent(
+    agent: CompiledStateGraph[Any, Any, _InputAgentState, Any] = create_agent(
         model=_get_model("anthropic"),
         tools=[custom_greeting],
         middleware=[ShellToolMiddleware(workspace_root=workspace)],
