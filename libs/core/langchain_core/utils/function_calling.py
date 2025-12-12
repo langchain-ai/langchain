@@ -8,6 +8,7 @@ import logging
 import types
 import typing
 import uuid
+from collections.abc import Mapping
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -327,7 +328,7 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
 
 
 def convert_to_openai_function(
-    function: dict[str, Any] | type | Callable | BaseTool,
+    function: Mapping[str, Any] | type | Callable | BaseTool,
     *,
     strict: bool | None = None,
 ) -> dict[str, Any]:
@@ -353,6 +354,7 @@ def convert_to_openai_function(
         ValueError: If function is not in a supported format.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.16"
+
         `description` and `parameters` keys are now optional. Only `name` is
         required and guaranteed to be part of the output.
     """
@@ -453,7 +455,7 @@ _WellKnownOpenAITools = (
 
 
 def convert_to_openai_tool(
-    tool: dict[str, Any] | type[BaseModel] | Callable | BaseTool,
+    tool: Mapping[str, Any] | type[BaseModel] | Callable | BaseTool,
     *,
     strict: bool | None = None,
 ) -> dict[str, Any]:
@@ -477,15 +479,18 @@ def convert_to_openai_tool(
         OpenAI tool-calling API.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.16"
+
         `description` and `parameters` keys are now optional. Only `name` is
         required and guaranteed to be part of the output.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.44"
+
         Return OpenAI Responses API-style tools unchanged. This includes
         any dict with `"type"` in `"file_search"`, `"function"`,
         `"computer_use_preview"`, `"web_search_preview"`.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.63"
+
         Added support for OpenAI's image generation built-in tool.
     """
     # Import locally to prevent circular import

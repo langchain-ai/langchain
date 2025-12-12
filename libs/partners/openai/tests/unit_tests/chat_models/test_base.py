@@ -74,7 +74,9 @@ from langchain_openai.chat_models.base import (
     _format_message_content,
     _get_last_messages,
     _make_computer_call_output_from_message,
+    _model_prefers_responses_api,
     _oai_structured_outputs_parser,
+    _resize,
 )
 
 
@@ -118,6 +120,30 @@ def test_openai_client_caching() -> None:
 
     llm7 = ChatOpenAI(model="gpt-4.1-mini", timeout=(5, 1))
     assert llm1.root_client._client is not llm7.root_client._client
+
+
+def test_profile() -> None:
+    model = ChatOpenAI(model="gpt-4")
+    assert model.profile
+    assert not model.profile["structured_output"]
+
+    model = ChatOpenAI(model="gpt-5")
+    assert model.profile
+    assert model.profile["structured_output"]
+    assert model.profile["tool_calling"]
+
+    # Test overwriting a field
+    model.profile["tool_calling"] = False
+    assert not model.profile["tool_calling"]
+
+    # Test we didn't mutate
+    model = ChatOpenAI(model="gpt-5")
+    assert model.profile
+    assert model.profile["tool_calling"]
+
+    # Test passing in profile
+    model = ChatOpenAI(model="gpt-5", profile={"tool_calling": False})
+    assert model.profile == {"tool_calling": False}
 
 
 def test_openai_o1_temperature() -> None:
@@ -1041,6 +1067,12 @@ def test__create_usage_metadata_responses() -> None:
         input_token_details={"cache_read": 50},
         output_token_details={"reasoning": 10},
     )
+
+
+def test__resize_caps_dimensions_preserving_ratio() -> None:
+    """Larger side capped at 2048 then smaller at 768 keeping aspect ratio."""
+    assert _resize(2048, 4096) == (768, 1536)
+    assert _resize(4096, 2048) == (1536, 768)
 
 
 def test__convert_to_openai_response_format() -> None:
@@ -2067,6 +2099,38 @@ def test__construct_responses_api_input_multiple_message_components() -> None:
     ]
 
 
+def test__construct_responses_api_input_skips_blocks_without_text() -> None:
+    """Test that blocks without 'text' key are skipped."""
+    # Test case: block with type "text" but missing "text" key
+    messages = [
+        AIMessage(
+            content=[
+                {"type": "text", "text": "valid text", "id": "msg_123"},
+                {"type": "text", "id": "msg_123"},  # Missing "text" key
+                {"type": "output_text", "text": "valid output", "id": "msg_123"},
+                {"type": "output_text", "id": "msg_123"},  # Missing "text" key
+            ]
+        )
+    ]
+    result = _construct_responses_api_input(messages)
+
+    # Should only include blocks with valid text content
+    assert len(result) == 1
+    assert result[0]["type"] == "message"
+    assert result[0]["role"] == "assistant"
+    assert len(result[0]["content"]) == 2
+    assert result[0]["content"][0] == {
+        "type": "output_text",
+        "text": "valid text",
+        "annotations": [],
+    }
+    assert result[0]["content"][1] == {
+        "type": "output_text",
+        "text": "valid output",
+        "annotations": [],
+    }
+
+
 def test__construct_responses_api_input_human_message_with_image_url_conversion() -> (
     None
 ):
@@ -3002,3 +3066,98 @@ def test_gpt_5_temperature(use_responses_api: bool) -> None:
     messages = [HumanMessage(content="Hello")]
     payload = llm._get_request_payload(messages)
     assert payload["temperature"] == 0.5  # gpt-5-chat is exception
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+@pytest.mark.parametrize(
+    "model_name",
+    [
+        "GPT-5-NANO",
+        "GPT-5-2025-01-01",
+        "Gpt-5-Turbo",
+        "gPt-5-mini",
+    ],
+)
+def test_gpt_5_temperature_case_insensitive(
+    use_responses_api: bool, model_name: str
+) -> None:
+    llm = ChatOpenAI(
+        model=model_name, temperature=0.5, use_responses_api=use_responses_api
+    )
+
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+    for chat_model in ["GPT-5-CHAT", "Gpt-5-Chat", "gpt-5-chat"]:
+        llm = ChatOpenAI(
+            model=chat_model, temperature=0.7, use_responses_api=use_responses_api
+        )
+        messages = [HumanMessage(content="Hello")]
+        payload = llm._get_request_payload(messages)
+        assert payload["temperature"] == 0.7
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_gpt_5_1_temperature_with_reasoning_effort_none(
+    use_responses_api: bool,
+) -> None:
+    """Test that temperature is preserved when reasoning_effort is explicitly 'none'."""
+    # Test with reasoning_effort='none' explicitly set
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning_effort="none",
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert payload["temperature"] == 0.5
+
+    # Test with reasoning={'effort': 'none'}
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning={"effort": "none"},
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert payload["temperature"] == 0.5
+
+    # Test that temperature is restricted by default (no reasoning_effort)
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+    # Test that temperature is still restricted when reasoning_effort is something else
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning_effort="low",
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+    # Test with reasoning={'effort': 'low'}
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning={"effort": "low"},
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+
+def test_model_prefers_responses_api() -> None:
+    assert _model_prefers_responses_api("gpt-5.2-pro")
+    assert not _model_prefers_responses_api("gpt-5.1")
