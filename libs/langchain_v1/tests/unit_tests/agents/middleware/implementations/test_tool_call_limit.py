@@ -675,10 +675,11 @@ def test_parallel_tool_calls_with_limit_end_mode():
     """Test parallel tool calls with a limit of 1 in 'end' mode.
 
     When the model proposes 3 tool calls with a limit of 1:
-    - The first call would be allowed (within limit)
+    - The first call would be allowed (within limit) but gets a "skipped" ToolMessage
     - The 2nd and 3rd calls exceed the limit and get blocked with error ToolMessages
     - Execution stops immediately (jump_to: end) so NO tools actually execute
     - An AI message explains why execution stopped
+    - All tool_calls get corresponding ToolMessages to maintain valid chat history
     """
 
     @tool
@@ -710,18 +711,23 @@ def test_parallel_tool_calls_with_limit_end_mode():
 
     # Verify tool message counts
     # With "end" behavior, when we jump to end, NO tools execute (not even allowed ones)
-    # We only get error ToolMessages for the 2 blocked calls
+    # We get error ToolMessages for ALL tool calls to maintain valid chat history:
+    # - 1 "skipped" message for q1 (allowed but not executed due to jump)
+    # - 2 "limit exceeded" messages for q2 and q3 (blocked)
     tool_messages = [msg for msg in messages if isinstance(msg, ToolMessage)]
     successful_tool_messages = [msg for msg in tool_messages if msg.status != "error"]
     error_tool_messages = [msg for msg in tool_messages if msg.status == "error"]
 
     assert len(successful_tool_messages) == 0, "No tools execute when we jump to end"
-    assert len(error_tool_messages) == 2, "Should have 2 blocked tool messages (q2, q3)"
+    assert len(error_tool_messages) == 3, (
+        "Should have 3 error tool messages: 1 skipped (q1), 2 blocked (q2, q3)"
+    )
 
-    # Verify error tool messages (sent to model - include "Do not" instruction)
-    for error_msg in error_tool_messages:
-        assert "Tool call limit exceeded" in error_msg.content
-        assert "Do not" in error_msg.content
+    # Verify we have both types of error messages
+    skipped_messages = [m for m in error_tool_messages if "skipped" in m.content.lower()]
+    blocked_messages = [m for m in error_tool_messages if "limit exceeded" in m.content.lower()]
+    assert len(skipped_messages) == 1, "Should have 1 skipped message for q1"
+    assert len(blocked_messages) == 2, "Should have 2 blocked messages for q2, q3"
 
     # Verify AI message explaining why execution stopped
     # (displayed to user - includes thread/run details)

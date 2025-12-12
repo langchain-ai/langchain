@@ -435,6 +435,21 @@ class ToolCallLimitMiddleware(
                 )
                 raise NotImplementedError(msg)
 
+            # When jumping to end, allowed tool calls also won't execute, so we need
+            # to add dummy ToolMessages for them to maintain valid chat history.
+            # Without this, the AIMessage would have tool_calls without corresponding
+            # ToolMessages, which violates the API contract for providers like OpenAI.
+            for tool_call in allowed_calls:
+                artificial_messages.insert(
+                    0,
+                    ToolMessage(
+                        content="Tool execution skipped due to tool call limit.",
+                        tool_call_id=tool_call["id"],
+                        name=tool_call.get("name"),
+                        status="error",
+                    ),
+                )
+
             # Build final AI message content (displayed to user - includes thread/run details)
             # Use hypothetical thread count (what it would have been if call wasn't blocked)
             # to show which limit was actually exceeded
