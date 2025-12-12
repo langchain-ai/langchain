@@ -1,3 +1,4 @@
+import re
 from typing import Any
 from unittest.mock import patch
 
@@ -14,7 +15,6 @@ from langchain.agents.middleware.types import AgentState
 
 def test_human_in_the_loop_middleware_initialization() -> None:
     """Test HumanInTheLoopMiddleware initialization."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}},
         description_prefix="Custom prefix",
@@ -28,7 +28,6 @@ def test_human_in_the_loop_middleware_initialization() -> None:
 
 def test_human_in_the_loop_middleware_no_interrupts_needed() -> None:
     """Test HumanInTheLoopMiddleware when no interrupts are needed."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
@@ -55,7 +54,6 @@ def test_human_in_the_loop_middleware_no_interrupts_needed() -> None:
 
 def test_human_in_the_loop_middleware_single_tool_accept() -> None:
     """Test HumanInTheLoopMiddleware with single tool accept response."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
@@ -123,7 +121,6 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
 
 def test_human_in_the_loop_middleware_single_tool_response() -> None:
     """Test HumanInTheLoopMiddleware with single tool response with custom message."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
@@ -153,7 +150,6 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
 
 def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
     """Test HumanInTheLoopMiddleware with multiple tools and mixed response types."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
             "get_forecast": {"allowed_decisions": ["approve", "edit", "reject"]},
@@ -203,7 +199,6 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
 
 def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
     """Test HumanInTheLoopMiddleware with multiple tools and edit responses."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
             "get_forecast": {"allowed_decisions": ["approve", "edit", "reject"]},
@@ -257,7 +252,6 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
 
 def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
     """Test HumanInTheLoopMiddleware with edit action that includes modified args."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
@@ -311,17 +305,23 @@ def test_human_in_the_loop_middleware_unknown_response_type() -> None:
     def mock_unknown(requests):
         return {"decisions": [{"type": "unknown"}]}
 
-    with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_unknown):
-        with pytest.raises(
+    with (
+        patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_unknown),
+        pytest.raises(
             ValueError,
-            match=r"Unexpected human decision: {'type': 'unknown'}. Decision type 'unknown' is not allowed for tool 'test_tool'. Expected one of \['approve', 'edit', 'reject'\] based on the tool's configuration.",
-        ):
-            middleware.after_model(state, None)
+            match=re.escape(
+                "Unexpected human decision: {'type': 'unknown'}. "
+                "Decision type 'unknown' is not allowed for tool 'test_tool'. "
+                "Expected one of ['approve', 'edit', 'reject'] based on the tool's "
+                "configuration."
+            ),
+        ),
+    ):
+        middleware.after_model(state, None)
 
 
 def test_human_in_the_loop_middleware_disallowed_action() -> None:
     """Test HumanInTheLoopMiddleware with action not allowed by tool config."""
-
     # edit is not allowed by tool config
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "reject"]}}
@@ -346,20 +346,27 @@ def test_human_in_the_loop_middleware_disallowed_action() -> None:
             ]
         }
 
-    with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt",
-        side_effect=mock_disallowed_action,
-    ):
-        with pytest.raises(
+    with (
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            side_effect=mock_disallowed_action,
+        ),
+        pytest.raises(
             ValueError,
-            match=r"Unexpected human decision: {'type': 'edit', 'edited_action': {'name': 'test_tool', 'args': {'input': 'modified'}}}. Decision type 'edit' is not allowed for tool 'test_tool'. Expected one of \['approve', 'reject'\] based on the tool's configuration.",
-        ):
-            middleware.after_model(state, None)
+            match=re.escape(
+                "Unexpected human decision: {'type': 'edit', 'edited_action': "
+                "{'name': 'test_tool', 'args': {'input': 'modified'}}}. "
+                "Decision type 'edit' is not allowed for tool 'test_tool'. "
+                "Expected one of ['approve', 'reject'] based on the tool's "
+                "configuration."
+            ),
+        ),
+    ):
+        middleware.after_model(state, None)
 
 
 def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> None:
     """Test HumanInTheLoopMiddleware with mix of auto-approved and interrupt tools."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"interrupt_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
@@ -391,7 +398,6 @@ def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> Non
 
 def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
     """Test that interrupt requests are structured correctly."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}},
         description_prefix="Custom prefix",
@@ -493,31 +499,39 @@ def test_human_in_the_loop_middleware_sequence_mismatch() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     # Test with too few responses
-    with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value={"decisions": []},  # No responses for 1 tool call
-    ):
-        with pytest.raises(
+    with (
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            return_value={"decisions": []},  # No responses for 1 tool call
+        ),
+        pytest.raises(
             ValueError,
-            match=r"Number of human decisions \(0\) does not match number of hanging tool calls \(1\)\.",
-        ):
-            middleware.after_model(state, None)
+            match=re.escape(
+                "Number of human decisions (0) does not match number of hanging tool calls (1)."
+            ),
+        ),
+    ):
+        middleware.after_model(state, None)
 
     # Test with too many responses
-    with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value={
-            "decisions": [
-                {"type": "approve"},
-                {"type": "approve"},
-            ]
-        },  # 2 responses for 1 tool call
-    ):
-        with pytest.raises(
+    with (
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            return_value={
+                "decisions": [
+                    {"type": "approve"},
+                    {"type": "approve"},
+                ]
+            },  # 2 responses for 1 tool call
+        ),
+        pytest.raises(
             ValueError,
-            match=r"Number of human decisions \(2\) does not match number of hanging tool calls \(1\)\.",
-        ):
-            middleware.after_model(state, None)
+            match=re.escape(
+                "Number of human decisions (2) does not match number of hanging tool calls (1)."
+            ),
+        ),
+    ):
+        middleware.after_model(state, None)
 
 
 def test_human_in_the_loop_middleware_description_as_callable() -> None:
