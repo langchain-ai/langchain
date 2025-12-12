@@ -55,7 +55,7 @@ from langchain_core.utils.function_calling import (
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import NotRequired, Required, Self, TypedDict
+from typing_extensions import NotRequired, Self, TypedDict
 
 from langchain_anthropic._client_utils import (
     _get_default_async_httpx_client,
@@ -116,26 +116,6 @@ class AnthropicTool(TypedDict):
     input_examples: NotRequired[list[dict[str, Any]]]
 
     allowed_callers: NotRequired[list[str]]
-
-
-class AnthropicBuiltinTool(TypedDict, total=False):
-    """Anthropic built-in tool definition.
-
-    Built-in tools (bash, computer, text_editor, memory, etc.) each use a `type` and
-    `name` field (e.g., name=`bash`, type=`'bash_20250124'`)
-
-    These are passed directly to the API without conversion.
-
-    Using `total=False` to allow arbitrary extra fields for tool-specific parameters
-    (e.g. `display_width_px`, `memory_profile`, etc.) without requiring updates when
-    Anthropic adds new built-in tools or fields.
-    """
-
-    type: Required[str]
-
-    name: Required[str]
-
-    cache_control: dict[str, str]
 
 
 # ---------------------------------------------------------------------------
@@ -3159,7 +3139,7 @@ def convert_to_anthropic_tool(
     tool: Mapping[str, Any] | type | Callable | BaseTool,
     *,
     strict: bool | None = None,
-) -> AnthropicTool | AnthropicBuiltinTool:
+) -> AnthropicTool:
     """Convert a tool-like object to an Anthropic tool definition.
 
     Args:
@@ -3173,8 +3153,6 @@ def convert_to_anthropic_tool(
 
     Returns:
         `AnthropicTool` for custom/user-defined tools
-        `AnthropicBuiltinTool` for Anthropic's built-in tools (bash, computer,
-            text_editor, memory, etc.).
     """
     if (
         isinstance(tool, BaseTool)
@@ -3182,7 +3160,7 @@ def convert_to_anthropic_tool(
         and isinstance(tool.extras, dict)
         and "provider_tool_definition" in tool.extras
     ):
-        # Pass through built-in tool definitions, use AnthropicBuiltinTool in request
+        # Pass through built-in tool definitions
         return tool.extras["provider_tool_definition"]  # type: ignore[return-value]
 
     if isinstance(tool, dict) and all(
