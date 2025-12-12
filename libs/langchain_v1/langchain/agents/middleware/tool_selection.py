@@ -57,7 +57,7 @@ def _create_tool_selection_response(tools: list[BaseTool]) -> TypeAdapter:
         raise AssertionError(msg)
 
     # Create a Union of Annotated Literal types for each tool name with description
-    # Example: Union[Annotated[Literal["tool1"], Field(description="...")], ...] noqa: ERA001
+    # For instance: Union[Annotated[Literal["tool1"], Field(description="...")], ...]
     literals = [
         Annotated[Literal[tool.name], Field(description=tool.description)] for tool in tools
     ]
@@ -255,8 +255,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         # Also preserve any provider-specific tool dicts from the original request
         provider_tools = [tool for tool in request.tools if isinstance(tool, dict)]
 
-        request.tools = [*selected_tools, *provider_tools]
-        return request
+        return request.override(tools=[*selected_tools, *provider_tools])
 
     def wrap_model_call(
         self,
@@ -283,7 +282,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         # Response should be a dict since we're passing a schema (not a Pydantic model class)
         if not isinstance(response, dict):
             msg = f"Expected dict response, got {type(response)}"
-            raise AssertionError(msg)
+            raise AssertionError(msg)  # noqa: TRY004
         modified_request = self._process_selection_response(
             response, selection_request.available_tools, selection_request.valid_tool_names, request
         )
@@ -314,7 +313,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         # Response should be a dict since we're passing a schema (not a Pydantic model class)
         if not isinstance(response, dict):
             msg = f"Expected dict response, got {type(response)}"
-            raise AssertionError(msg)
+            raise AssertionError(msg)  # noqa: TRY004
         modified_request = self._process_selection_response(
             response, selection_request.available_tools, selection_request.valid_tool_names, request
         )

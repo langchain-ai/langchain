@@ -82,12 +82,17 @@ def test_anthropic_prompt_caching_middleware_initialization() -> None:
         model_settings={},
     )
 
+    modified_request: ModelRequest | None = None
+
     def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal modified_request
+        modified_request = req
         return ModelResponse(result=[AIMessage(content="mock response")])
 
     middleware.wrap_model_call(fake_request, mock_handler)
     # Check that model_settings were passed through via the request
-    assert fake_request.model_settings == {
+    assert modified_request is not None
+    assert modified_request.model_settings == {
         "cache_control": {"type": "ephemeral", "ttl": "5m"}
     }
 
@@ -162,13 +167,18 @@ async def test_anthropic_prompt_caching_middleware_async() -> None:
         model_settings={},
     )
 
+    modified_request: ModelRequest | None = None
+
     async def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal modified_request
+        modified_request = req
         return ModelResponse(result=[AIMessage(content="mock response")])
 
     result = await middleware.awrap_model_call(fake_request, mock_handler)
     assert isinstance(result, ModelResponse)
     # Check that model_settings were passed through via the request
-    assert fake_request.model_settings == {
+    assert modified_request is not None
+    assert modified_request.model_settings == {
         "cache_control": {"type": "ephemeral", "ttl": "1h"}
     }
 
@@ -237,13 +247,18 @@ async def test_anthropic_prompt_caching_middleware_async_min_messages() -> None:
         model_settings={},
     )
 
+    modified_request: ModelRequest | None = None
+
     async def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal modified_request
+        modified_request = req
         return ModelResponse(result=[AIMessage(content="mock response")])
 
     result = await middleware.awrap_model_call(fake_request, mock_handler)
     assert isinstance(result, ModelResponse)
     # Cache control should NOT be added when message count is below minimum
-    assert fake_request.model_settings == {}
+    assert modified_request is not None
+    assert modified_request.model_settings == {}
 
 
 async def test_anthropic_prompt_caching_middleware_async_with_system_prompt() -> None:
@@ -268,13 +283,18 @@ async def test_anthropic_prompt_caching_middleware_async_with_system_prompt() ->
         model_settings={},
     )
 
+    modified_request: ModelRequest | None = None
+
     async def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal modified_request
+        modified_request = req
         return ModelResponse(result=[AIMessage(content="mock response")])
 
     result = await middleware.awrap_model_call(fake_request, mock_handler)
     assert isinstance(result, ModelResponse)
     # Cache control should be added when system prompt pushes count to minimum
-    assert fake_request.model_settings == {
+    assert modified_request is not None
+    assert modified_request.model_settings == {
         "cache_control": {"type": "ephemeral", "ttl": "1h"}
     }
 
@@ -300,12 +320,17 @@ async def test_anthropic_prompt_caching_middleware_async_default_values() -> Non
         model_settings={},
     )
 
+    modified_request: ModelRequest | None = None
+
     async def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal modified_request
+        modified_request = req
         return ModelResponse(result=[AIMessage(content="mock response")])
 
     result = await middleware.awrap_model_call(fake_request, mock_handler)
     assert isinstance(result, ModelResponse)
     # Check that model_settings were added with default values
-    assert fake_request.model_settings == {
+    assert modified_request is not None
+    assert modified_request.model_settings == {
         "cache_control": {"type": "ephemeral", "ttl": "5m"}
     }

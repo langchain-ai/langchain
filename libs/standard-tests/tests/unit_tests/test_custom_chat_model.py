@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -21,7 +21,7 @@ class TestChatParrotLinkUnit(ChatModelUnitTests):
         return ChatParrotLink
 
     @property
-    def chat_model_params(self) -> dict:
+    def chat_model_params(self) -> dict[str, Any]:
         return {"model": "bird-brain-001", "temperature": 0, "parrot_buffer_length": 50}
 
 
@@ -31,7 +31,7 @@ class TestChatParrotLinkIntegration(ChatModelIntegrationTests):
         return ChatParrotLink
 
     @property
-    def chat_model_params(self) -> dict:
+    def chat_model_params(self) -> dict[str, Any]:
         return {"model": "bird-brain-001", "temperature": 0, "parrot_buffer_length": 50}
 
     @pytest.mark.xfail(reason="ChatParrotLink doesn't implement bind_tools method")

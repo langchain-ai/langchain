@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import cast
 
 import pytest
@@ -9,17 +10,16 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
+from langgraph.runtime import Runtime
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
-from langchain.agents.middleware.types import ModelRequest, ModelResponse
-from langgraph.runtime import Runtime
-
-from ...model import FakeToolCallingModel
+from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 def _fake_runtime() -> Runtime:
-    return cast(Runtime, object())
+    return cast("Runtime", object())
 
 
 def _make_request() -> ModelRequest:
@@ -32,7 +32,7 @@ def _make_request() -> ModelRequest:
         tool_choice=None,
         tools=[],
         response_format=None,
-        state=cast("AgentState", {}),  # type: ignore[name-defined]
+        state=cast("AgentState", {}),
         runtime=_fake_runtime(),
         model_settings={},
     )
@@ -45,7 +45,7 @@ def test_primary_model_succeeds() -> None:
 
     middleware = ModelFallbackMiddleware(fallback_model)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     def mock_handler(req: ModelRequest) -> ModelResponse:
         # Simulate successful model call
@@ -63,14 +63,15 @@ def test_fallback_on_primary_failure() -> None:
 
     class FailingPrimaryModel(GenericFakeChatModel):
         def _generate(self, messages, **kwargs):
-            raise ValueError("Primary model failed")
+            msg = "Primary model failed"
+            raise ValueError(msg)
 
     primary_model = FailingPrimaryModel(messages=iter([AIMessage(content="should not see")]))
     fallback_model = GenericFakeChatModel(messages=iter([AIMessage(content="fallback response")]))
 
     middleware = ModelFallbackMiddleware(fallback_model)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     def mock_handler(req: ModelRequest) -> ModelResponse:
         result = req.model.invoke([])
@@ -87,7 +88,8 @@ def test_multiple_fallbacks() -> None:
 
     class FailingModel(GenericFakeChatModel):
         def _generate(self, messages, **kwargs):
-            raise ValueError("Model failed")
+            msg = "Model failed"
+            raise ValueError(msg)
 
     primary_model = FailingModel(messages=iter([AIMessage(content="should not see")]))
     fallback1 = FailingModel(messages=iter([AIMessage(content="fallback1")]))
@@ -95,7 +97,7 @@ def test_multiple_fallbacks() -> None:
 
     middleware = ModelFallbackMiddleware(fallback1, fallback2)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     def mock_handler(req: ModelRequest) -> ModelResponse:
         result = req.model.invoke([])
@@ -112,14 +114,15 @@ def test_all_models_fail() -> None:
 
     class AlwaysFailingModel(GenericFakeChatModel):
         def _generate(self, messages, **kwargs):
-            raise ValueError("Model failed")
+            msg = "Model failed"
+            raise ValueError(msg)
 
     primary_model = AlwaysFailingModel(messages=iter([]))
     fallback_model = AlwaysFailingModel(messages=iter([]))
 
     middleware = ModelFallbackMiddleware(fallback_model)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     def mock_handler(req: ModelRequest) -> ModelResponse:
         result = req.model.invoke([])
@@ -136,7 +139,7 @@ async def test_primary_model_succeeds_async() -> None:
 
     middleware = ModelFallbackMiddleware(fallback_model)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     async def mock_handler(req: ModelRequest) -> ModelResponse:
         # Simulate successful async model call
@@ -154,14 +157,15 @@ async def test_fallback_on_primary_failure_async() -> None:
 
     class AsyncFailingPrimaryModel(GenericFakeChatModel):
         async def _agenerate(self, messages, **kwargs):
-            raise ValueError("Primary model failed")
+            msg = "Primary model failed"
+            raise ValueError(msg)
 
     primary_model = AsyncFailingPrimaryModel(messages=iter([AIMessage(content="should not see")]))
     fallback_model = GenericFakeChatModel(messages=iter([AIMessage(content="fallback response")]))
 
     middleware = ModelFallbackMiddleware(fallback_model)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     async def mock_handler(req: ModelRequest) -> ModelResponse:
         result = await req.model.ainvoke([])
@@ -178,7 +182,8 @@ async def test_multiple_fallbacks_async() -> None:
 
     class AsyncFailingModel(GenericFakeChatModel):
         async def _agenerate(self, messages, **kwargs):
-            raise ValueError("Model failed")
+            msg = "Model failed"
+            raise ValueError(msg)
 
     primary_model = AsyncFailingModel(messages=iter([AIMessage(content="should not see")]))
     fallback1 = AsyncFailingModel(messages=iter([AIMessage(content="fallback1")]))
@@ -186,7 +191,7 @@ async def test_multiple_fallbacks_async() -> None:
 
     middleware = ModelFallbackMiddleware(fallback1, fallback2)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     async def mock_handler(req: ModelRequest) -> ModelResponse:
         result = await req.model.ainvoke([])
@@ -203,14 +208,15 @@ async def test_all_models_fail_async() -> None:
 
     class AsyncAlwaysFailingModel(GenericFakeChatModel):
         async def _agenerate(self, messages, **kwargs):
-            raise ValueError("Model failed")
+            msg = "Model failed"
+            raise ValueError(msg)
 
     primary_model = AsyncAlwaysFailingModel(messages=iter([]))
     fallback_model = AsyncAlwaysFailingModel(messages=iter([]))
 
     middleware = ModelFallbackMiddleware(fallback_model)
     request = _make_request()
-    request.model = primary_model
+    request = request.override(model=primary_model)
 
     async def mock_handler(req: ModelRequest) -> ModelResponse:
         result = await req.model.ainvoke([])
@@ -227,7 +233,8 @@ def test_model_fallback_middleware_with_agent() -> None:
         """Model that always fails."""
 
         def _generate(self, messages, **kwargs):
-            raise ValueError("Primary model failed")
+            msg = "Primary model failed"
+            raise ValueError(msg)
 
         @property
         def _llm_type(self):
@@ -271,7 +278,8 @@ def test_model_fallback_middleware_exhausted_with_agent() -> None:
             self.name = name
 
         def _generate(self, messages, **kwargs):
-            raise ValueError(f"{self.name} failed")
+            msg = f"{self.name} failed"
+            raise ValueError(msg)
 
         @property
         def _llm_type(self):
@@ -293,7 +301,6 @@ def test_model_fallback_middleware_exhausted_with_agent() -> None:
 
 def test_model_fallback_middleware_initialization() -> None:
     """Test ModelFallbackMiddleware initialization."""
-
     # Test with no models - now a TypeError (missing required argument)
     with pytest.raises(TypeError):
         ModelFallbackMiddleware()  # type: ignore[call-arg]
@@ -305,3 +312,46 @@ def test_model_fallback_middleware_initialization() -> None:
     # Test with multiple fallback models
     middleware = ModelFallbackMiddleware(FakeToolCallingModel(), FakeToolCallingModel())
     assert len(middleware.models) == 2
+
+
+def test_model_request_is_frozen() -> None:
+    """Test that ModelRequest raises deprecation warning on direct attribute assignment."""
+    request = _make_request()
+    new_model = GenericFakeChatModel(messages=iter([AIMessage(content="new model")]))
+
+    # Direct attribute assignment should raise DeprecationWarning but still work
+    with pytest.warns(
+        DeprecationWarning, match="Direct attribute assignment to ModelRequest.model is deprecated"
+    ):
+        request.model = new_model  # type: ignore[misc]
+
+    # Verify the assignment actually worked
+    assert request.model == new_model
+
+    with pytest.warns(
+        DeprecationWarning,
+        match="Direct attribute assignment to ModelRequest.system_prompt is deprecated",
+    ):
+        request.system_prompt = "new prompt"  # type: ignore[misc]
+
+    assert request.system_prompt == "new prompt"
+
+    with pytest.warns(
+        DeprecationWarning,
+        match="Direct attribute assignment to ModelRequest.messages is deprecated",
+    ):
+        request.messages = []  # type: ignore[misc]
+
+    assert request.messages == []
+
+    # Using override method should work without warnings
+    request2 = _make_request()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # Turn warnings into errors
+        new_request = request2.override(model=new_model, system_prompt="override prompt")
+
+    assert new_request.model == new_model
+    assert new_request.system_prompt == "override prompt"
+    # Original request should be unchanged
+    assert request2.model != new_model
+    assert request2.system_prompt != "override prompt"
