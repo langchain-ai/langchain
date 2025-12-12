@@ -447,3 +447,29 @@ def test_reasoning_param_passed_to_client() -> None:
 
         call_kwargs = mock_client.chat.call_args[1]
         assert call_kwargs["think"] is True
+
+
+def test_chat_ollama_ignores_strict_arg() -> None:
+    """Test that ChatOllama ignores the 'strict' argument."""
+    response = [
+        {
+            "model": "test-model",
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "done": True,
+            "done_reason": "stop",
+            "message": {"role": "assistant", "content": "Hello!"},
+        }
+    ]
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = response
+
+        llm = ChatOllama(model="test-model")
+        # Invoke with strict=True
+        llm.invoke([HumanMessage("Hello")], strict=True)
+
+        # Check that 'strict' was NOT passed to the client
+        call_kwargs = mock_client.chat.call_args[1]
+        assert "strict" not in call_kwargs
