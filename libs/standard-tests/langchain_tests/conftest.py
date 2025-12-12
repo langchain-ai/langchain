@@ -122,6 +122,6 @@ def _base_vcr_config() -> dict[str, Any]:
 
 
 @pytest.fixture(scope="session")
-def vcr_config() -> dict:
+def vcr_config() -> dict[str, Any]:
     """VCR config fixture."""
     return base_vcr_config()
