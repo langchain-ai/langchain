@@ -87,6 +87,24 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
 
         return split_text_on_tokens(text=text, tokenizer=tokenizer)
 
+
+def encode(self, *, text: str, strip_special_tokens: bool = True) -> list[int]:
+    """Encode text into token IDs using the sentence-transformers tokenizer.
+
+    Args:
+        text: The input text to encode.
+        strip_special_tokens: Whether to remove start/end special tokens.
+
+    Returns:
+        A list of token IDs.
+    """
+    token_ids = self._encode(text)
+
+    if strip_special_tokens and len(token_ids) >= 2:
+        return token_ids[1:-1]
+
+    return token_ids
+
     def count_tokens(self, *, text: str) -> int:
         """Counts the number of tokens in the given text.
 
