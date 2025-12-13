@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage, ToolMessage
 
-from langchain.agents.middleware.types import AgentMiddleware
+from langchain.agents.middleware.types import AgentMiddleware, ContextT, StateT
 from langchain.chat_models.base import init_chat_model
 
 if TYPE_CHECKING:
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from langchain.tools import BaseTool
 
 
-class LLMToolEmulator(AgentMiddleware):
+class LLMToolEmulator(AgentMiddleware[StateT, ContextT]):
     """Emulates specified tools using an LLM instead of executing them.
 
     This middleware allows selective emulation of tools for testing purposes.
