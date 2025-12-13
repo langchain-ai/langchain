@@ -1517,6 +1517,6 @@ def test_pretty_repr_verbose_mode() -> None:
     # Verbose mode should include more details
     assert (
         "data: detailed information" in result_verbose or "count: 5" in result_verbose
-    )  # noqa: E501
+    )
     # Normal mode should be more concise
     assert "Server Tool Result" in result_normal
