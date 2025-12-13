@@ -26,9 +26,8 @@ class CharacterTextSplitter(TextSplitter):
         """Split into chunks without re-inserting lookaround separators."""
         # 🔒 Defensive validation
         if self._chunk_overlap > self._chunk_size:
-          raise ValueError(
-            "chunk_overlap must be smaller than chunk_size"
-          )
+          error_msg = "chunk_overlap must be less than or equal to chunk_size"
+          raise ValueError(error_msg)
 
         # 1. Determine split pattern: raw regex or escaped literal
         sep_pattern = (
