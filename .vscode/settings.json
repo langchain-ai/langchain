@@ -74,16 +74,4 @@
     {
       "file": ".github/workflows/pr_lint.yml"
     }
-  ],
-  "cursorpyright.analysis.autoImportCompletions": true,
-  "cursorpyright.analysis.exclude": [
-    "**/node_modules",
-    "**/__pycache__",
-    "**/.pytest_cache",
-    "**/.*"
-  ],
-  "cursorpyright.analysis.include": [
-    "libs/**"
-  ],
-  "cursorpyright.analysis.typeCheckingMode": "basic"
-}
+  ]
