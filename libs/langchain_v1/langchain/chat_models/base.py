@@ -542,7 +542,10 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
 
 
 def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
-
+    """Parse model name and provider, inferring provider if necessary."""
+    # Handle provider:model format
+    if not model_provider and ":" in model and model.split(":")[0] in _SUPPORTED_PROVIDERS:
+        model_provider = model.split(":")[0]
         model = ":".join(model.split(":")[1:])
 
     # Attempt to infer provider if not specified
