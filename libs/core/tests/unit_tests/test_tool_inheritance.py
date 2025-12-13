@@ -1,11 +1,13 @@
-from langchain_core.tools import tool
 from pydantic import BaseModel
+
+from langchain_core.tools import tool
+
 
 def test_tool_docstring_no_inheritance() -> None:
     """Test that class-based tools do not inherit docstrings from parents."""
 
     class ParentTool(BaseModel):
-        """Parent Tool Description"""
+        """Parent Tool Description."""
         foo: str
 
     @tool
