@@ -528,7 +528,7 @@ requires-dist = [
 provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
-lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
+lint = [{ name = "ruff", specifier = ">=0.14.2,<0.15.0" }]
 test = [
     { name = "langchain-openai", editable = "../openai" },
     { name = "langchain-tests", editable = "../../standard-tests" },
@@ -543,7 +543,6 @@ test = [
     { name = "toml", specifier = ">=0.10.2,<1.0.0" },
 ]
 test-integration = [
-    { name = "cassio", specifier = ">=0.1.0,<1.0.0" },
     { name = "langchain-core", editable = "../../core" },
     { name = "langchain-text-splitters", editable = "../../text-splitters" },
     { name = "langchainhub", specifier = ">=0.1.16,<1.0.0" },
@@ -558,7 +557,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.2.0"
+version = "1.3.1"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
@@ -643,7 +642,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.1.3"
+version = "1.2.0"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -703,7 +702,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.0.2"
+version = "1.1.0"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },

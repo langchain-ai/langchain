@@ -10,17 +10,16 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
+from langgraph.runtime import Runtime
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
-from langchain.agents.middleware.types import ModelRequest, ModelResponse
-from langgraph.runtime import Runtime
-
-from ...model import FakeToolCallingModel
+from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 def _fake_runtime() -> Runtime:
-    return cast(Runtime, object())
+    return cast("Runtime", object())
 
 
 def _make_request() -> ModelRequest:
@@ -33,7 +32,7 @@ def _make_request() -> ModelRequest:
         tool_choice=None,
         tools=[],
         response_format=None,
-        state=cast("AgentState", {}),  # type: ignore[name-defined]
+        state=cast("AgentState", {}),
         runtime=_fake_runtime(),
         model_settings={},
     )
@@ -64,7 +63,8 @@ def test_fallback_on_primary_failure() -> None:
 
     class FailingPrimaryModel(GenericFakeChatModel):
         def _generate(self, messages, **kwargs):
-            raise ValueError("Primary model failed")
+            msg = "Primary model failed"
+            raise ValueError(msg)
 
     primary_model = FailingPrimaryModel(messages=iter([AIMessage(content="should not see")]))
     fallback_model = GenericFakeChatModel(messages=iter([AIMessage(content="fallback response")]))
@@ -88,7 +88,8 @@ def test_multiple_fallbacks() -> None:
 
     class FailingModel(GenericFakeChatModel):
         def _generate(self, messages, **kwargs):
-            raise ValueError("Model failed")
+            msg = "Model failed"
+            raise ValueError(msg)
 
     primary_model = FailingModel(messages=iter([AIMessage(content="should not see")]))
     fallback1 = FailingModel(messages=iter([AIMessage(content="fallback1")]))
@@ -113,7 +114,8 @@ def test_all_models_fail() -> None:
 
     class AlwaysFailingModel(GenericFakeChatModel):
         def _generate(self, messages, **kwargs):
-            raise ValueError("Model failed")
+            msg = "Model failed"
+            raise ValueError(msg)
 
     primary_model = AlwaysFailingModel(messages=iter([]))
     fallback_model = AlwaysFailingModel(messages=iter([]))
@@ -155,7 +157,8 @@ async def test_fallback_on_primary_failure_async() -> None:
 
     class AsyncFailingPrimaryModel(GenericFakeChatModel):
         async def _agenerate(self, messages, **kwargs):
-            raise ValueError("Primary model failed")
+            msg = "Primary model failed"
+            raise ValueError(msg)
 
     primary_model = AsyncFailingPrimaryModel(messages=iter([AIMessage(content="should not see")]))
     fallback_model = GenericFakeChatModel(messages=iter([AIMessage(content="fallback response")]))
@@ -179,7 +182,8 @@ async def test_multiple_fallbacks_async() -> None:
 
     class AsyncFailingModel(GenericFakeChatModel):
         async def _agenerate(self, messages, **kwargs):
-            raise ValueError("Model failed")
+            msg = "Model failed"
+            raise ValueError(msg)
 
     primary_model = AsyncFailingModel(messages=iter([AIMessage(content="should not see")]))
     fallback1 = AsyncFailingModel(messages=iter([AIMessage(content="fallback1")]))
@@ -204,7 +208,8 @@ async def test_all_models_fail_async() -> None:
 
     class AsyncAlwaysFailingModel(GenericFakeChatModel):
         async def _agenerate(self, messages, **kwargs):
-            raise ValueError("Model failed")
+            msg = "Model failed"
+            raise ValueError(msg)
 
     primary_model = AsyncAlwaysFailingModel(messages=iter([]))
     fallback_model = AsyncAlwaysFailingModel(messages=iter([]))
@@ -228,7 +233,8 @@ def test_model_fallback_middleware_with_agent() -> None:
         """Model that always fails."""
 
         def _generate(self, messages, **kwargs):
-            raise ValueError("Primary model failed")
+            msg = "Primary model failed"
+            raise ValueError(msg)
 
         @property
         def _llm_type(self):
@@ -272,7 +278,8 @@ def test_model_fallback_middleware_exhausted_with_agent() -> None:
             self.name = name
 
         def _generate(self, messages, **kwargs):
-            raise ValueError(f"{self.name} failed")
+            msg = f"{self.name} failed"
+            raise ValueError(msg)
 
         @property
         def _llm_type(self):
@@ -294,7 +301,6 @@ def test_model_fallback_middleware_exhausted_with_agent() -> None:
 
 def test_model_fallback_middleware_initialization() -> None:
     """Test ModelFallbackMiddleware initialization."""
-
     # Test with no models - now a TypeError (missing required argument)
     with pytest.raises(TypeError):
         ModelFallbackMiddleware()  # type: ignore[call-arg]

@@ -402,7 +402,7 @@ def _init_chat_model_helper(
         _check_pkg("langchain_huggingface")
         from langchain_huggingface import ChatHuggingFace
 
-        return ChatHuggingFace(model_id=model, **kwargs)
+        return ChatHuggingFace.from_model_id(model_id=model, **kwargs)
     if model_provider == "groq":
         _check_pkg("langchain_groq")
         from langchain_groq import ChatGroq
@@ -542,21 +542,7 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
 
 
 def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
-    """Parse model name and provider, inferring provider if necessary.
 
-    Args:
-        model: The model name, optionally prefixed with provider (e.g., `'openai:gpt-4o'`).
-        model_provider: Optional explicit model provider.
-
-    Returns:
-        Tuple of `(parsed_model_name, model_provider)`.
-
-    Raises:
-        ValueError: If model provider cannot be inferred or is unsupported.
-    """
-    # Handle provider:model format
-    if not model_provider and ":" in model and model.split(":")[0] in _SUPPORTED_PROVIDERS:
-        model_provider = model.split(":")[0]
         model = ":".join(model.split(":")[1:])
 
     # Attempt to infer provider if not specified
@@ -698,6 +684,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         )
 
     @property
+    @override
     def InputType(self) -> TypeAlias:
         """Get the input type for this `Runnable`."""
         from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
@@ -882,6 +869,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             yield x
 
     @overload
+    @override
     def astream_log(
         self,
         input: Any,
@@ -899,6 +887,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     ) -> AsyncIterator[RunLogPatch]: ...
 
     @overload
+    @override
     def astream_log(
         self,
         input: Any,
