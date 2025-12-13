@@ -15,6 +15,4 @@ def test_tool_docstring_no_inheritance() -> None:
         bar: str
 
     # Assert that the description is NOT the parent's docstring
-    # It should be empty or default, but definitely not "Parent Tool Description"
     assert "Parent Tool Description" not in ChildTool.description
-
