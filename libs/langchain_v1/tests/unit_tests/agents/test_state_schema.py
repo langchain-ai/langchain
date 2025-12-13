@@ -8,8 +8,6 @@ from __future__ import annotations
 
 from typing import Any
 
-import pytest
-
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
 
@@ -181,7 +179,10 @@ async def test_state_schema_async() -> None:
     )
 
     result = await agent.ainvoke(
-        {"messages": [HumanMessage("Test async")], "async_field": "async_value"}
+        {
+            "messages": [HumanMessage("Test async")],
+            "async_field": "async_value",
+        }
     )
 
     assert result["async_field"] == "async_value"

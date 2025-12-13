@@ -1,6 +1,6 @@
 import sys
 from collections.abc import Callable
-from typing import Any
+from typing import Annotated, Any
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
@@ -9,23 +9,21 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
 from pydantic import BaseModel, Field
 from syrupy.assertion import SnapshotAssertion
-from typing_extensions import Annotated
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
-    hook_config,
     ModelRequest,
     OmitFromInput,
     OmitFromOutput,
     PrivateStateAttr,
+    hook_config,
 )
 from langchain.agents.structured_output import ToolStrategy
 from langchain.tools import InjectedState
-
-from ...messages import _AnyIdHumanMessage, _AnyIdToolMessage
-from ...model import FakeToolCallingModel
+from tests.unit_tests.agents.messages import _AnyIdHumanMessage, _AnyIdToolMessage
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 def test_create_agent_invoke(
@@ -65,16 +63,16 @@ def test_create_agent_invoke(
             calls.append("NoopEight.after_model")
 
     @tool
-    def my_tool(input: str) -> str:
-        """A great tool"""
+    def my_tool(value: str) -> str:
+        """A great tool."""
         calls.append("my_tool")
-        return input.upper()
+        return value.upper()
 
     agent_one = create_agent(
         model=FakeToolCallingModel(
             tool_calls=[
                 [
-                    {"args": {"input": "yo"}, "id": "1", "name": "my_tool"},
+                    {"args": {"value": "yo"}, "id": "1", "name": "my_tool"},
                 ],
                 [],
             ]
@@ -97,7 +95,7 @@ def test_create_agent_invoke(
                 tool_calls=[
                     {
                         "name": "my_tool",
-                        "args": {"input": "yo"},
+                        "args": {"value": "yo"},
                         "id": "1",
                         "type": "tool_call",
                     }
@@ -168,14 +166,14 @@ def test_create_agent_jump(
             calls.append("NoopEight.after_model")
 
     @tool
-    def my_tool(input: str) -> str:
-        """A great tool"""
+    def my_tool(value: str) -> str:
+        """A great tool."""
         calls.append("my_tool")
-        return input.upper()
+        return value.upper()
 
     agent_one = create_agent(
         model=FakeToolCallingModel(
-            tool_calls=[[ToolCall(id="1", name="my_tool", args={"input": "yo"})]],
+            tool_calls=[[ToolCall(id="1", name="my_tool", args={"value": "yo"})]],
         ),
         tools=[my_tool],
         system_prompt="You are a helpful assistant.",
@@ -265,7 +263,11 @@ def test_on_model_call() -> None:
 
 
 def test_tools_to_model_edge_with_structured_and_regular_tool_calls():
-    """Test that when there are both structured and regular tool calls, we execute regular and jump to END."""
+    """Test tools to model edge with structured and regular tool calls.
+
+    Test that when there are both structured and regular tool calls, we execute regular
+    and jump to END.
+    """
 
     class WeatherResponse(BaseModel):
         """Weather response."""
@@ -376,7 +378,6 @@ def test_runtime_injected_into_middleware() -> None:
     class CustomMiddleware(AgentMiddleware):
         def before_model(self, state: AgentState, runtime: Runtime) -> None:
             assert runtime is not None
-            return None
 
         def wrap_model_call(
             self,
@@ -388,9 +389,6 @@ def test_runtime_injected_into_middleware() -> None:
 
         def after_model(self, state: AgentState, runtime: Runtime) -> None:
             assert runtime is not None
-            return None
-
-    middleware = CustomMiddleware()
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[CustomMiddleware()])
     agent.invoke({"messages": [HumanMessage("Hello")]})
@@ -435,7 +433,6 @@ agent = create_agent(
 )
 def test_injected_state_in_middleware_agent() -> None:
     """Test that custom state is properly injected into tools when using middleware."""
-
     result = agent.invoke(
         {"custom_state": "I love pizza", "messages": [HumanMessage("Call the test state tool")]}
     )
@@ -527,7 +524,7 @@ def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
         middleware=[MixedMiddleware()],
     )
 
-    result = agent.invoke({"messages": [HumanMessage("hello")]})
+    agent.invoke({"messages": [HumanMessage("hello")]})
 
     # In sync mode, only sync methods should be called
     assert calls == [
@@ -564,15 +561,15 @@ async def test_create_agent_async_invoke() -> None:
             calls.append("AsyncMiddleware.aafter_model")
 
     @tool
-    def my_tool_async(input: str) -> str:
-        """A great tool"""
+    def my_tool_async(value: str) -> str:
+        """A great tool."""
         calls.append("my_tool_async")
-        return input.upper()
+        return value.upper()
 
     agent = create_agent(
         model=FakeToolCallingModel(
             tool_calls=[
-                [{"args": {"input": "yo"}, "id": "1", "name": "my_tool_async"}],
+                [{"args": {"value": "yo"}, "id": "1", "name": "my_tool_async"}],
                 [],
             ]
         ),
@@ -647,7 +644,7 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
         middleware=[AsyncMiddlewareOne(), AsyncMiddlewareTwo()],
     )
 
-    result = await agent.ainvoke({"messages": [HumanMessage("hello")]})
+    await agent.ainvoke({"messages": [HumanMessage("hello")]})
 
     assert calls == [
         "AsyncMiddlewareOne.abefore_model",
@@ -676,14 +673,14 @@ async def test_create_agent_async_jump() -> None:
             return {"jump_to": "end"}
 
     @tool
-    def my_tool_jump(input: str) -> str:
-        """A great tool"""
+    def my_tool_jump(value: str) -> str:
+        """A great tool."""
         calls.append("my_tool_jump")
-        return input.upper()
+        return value.upper()
 
     agent = create_agent(
         model=FakeToolCallingModel(
-            tool_calls=[[ToolCall(id="1", name="my_tool_jump", args={"input": "yo"})]],
+            tool_calls=[[ToolCall(id="1", name="my_tool_jump", args={"value": "yo"})]],
         ),
         tools=[my_tool_jump],
         system_prompt="You are a helpful assistant.",
@@ -774,7 +771,7 @@ class TestAgentMiddlewareHooks:
 
     @pytest.mark.parametrize("is_async", [False, True])
     @pytest.mark.parametrize("hook_type", ["before", "after"])
-    async def test_hook_execution(self, is_async: bool, hook_type: str) -> None:
+    async def test_hook_execution(self, *, is_async: bool, hook_type: str) -> None:
         """Test that agent hooks are called in both sync and async modes."""
         from langchain.agents.middleware import after_agent, before_agent
 
@@ -795,21 +792,20 @@ class TestAgentMiddlewareHooks:
                     execution_log.append(f"{hook_type}_agent_called")
                     execution_log.append(f"message_count: {len(state['messages'])}")
                     return None
+        elif hook_type == "before":
+
+            @before_agent
+            def log_hook(state: AgentState, runtime) -> dict[str, Any] | None:
+                execution_log.append(f"{hook_type}_agent_called")
+                execution_log.append(f"message_count: {len(state['messages'])}")
+                return None
         else:
-            if hook_type == "before":
 
-                @before_agent
-                def log_hook(state: AgentState, runtime) -> dict[str, Any] | None:
-                    execution_log.append(f"{hook_type}_agent_called")
-                    execution_log.append(f"message_count: {len(state['messages'])}")
-                    return None
-            else:
-
-                @after_agent
-                def log_hook(state: AgentState, runtime) -> dict[str, Any] | None:
-                    execution_log.append(f"{hook_type}_agent_called")
-                    execution_log.append(f"message_count: {len(state['messages'])}")
-                    return None
+            @after_agent
+            def log_hook(state: AgentState, runtime) -> dict[str, Any] | None:
+                execution_log.append(f"{hook_type}_agent_called")
+                execution_log.append(f"message_count: {len(state['messages'])}")
+                return None
 
         from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 
@@ -826,7 +822,7 @@ class TestAgentMiddlewareHooks:
 
     @pytest.mark.parametrize("is_async", [False, True])
     @pytest.mark.parametrize("hook_type", ["before", "after"])
-    async def test_hook_with_class_inheritance(self, is_async: bool, hook_type: str) -> None:
+    async def test_hook_with_class_inheritance(self, *, is_async: bool, hook_type: str) -> None:
         """Test agent hooks using class inheritance in both sync and async modes."""
         execution_log: list[str] = []
 
@@ -873,7 +869,7 @@ class TestAgentHooksCombined:
     """Test before_agent and after_agent hooks working together."""
 
     @pytest.mark.parametrize("is_async", [False, True])
-    async def test_execution_order(self, is_async: bool) -> None:
+    async def test_execution_order(self, *, is_async: bool) -> None:
         """Test that before_agent executes before after_agent in both sync and async modes."""
         from langchain.agents.middleware import after_agent, before_agent
 
@@ -912,8 +908,9 @@ class TestAgentHooksCombined:
 
     def test_state_passthrough(self) -> None:
         """Test that state modifications in before_agent are visible to after_agent."""
-        from langchain.agents.middleware import before_agent
         from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+
+        from langchain.agents.middleware import before_agent
 
         @before_agent
         def modify_in_before(state: AgentState, runtime) -> dict[str, Any]:
@@ -928,8 +925,9 @@ class TestAgentHooksCombined:
 
     def test_multiple_middleware_instances(self) -> None:
         """Test multiple before_agent and after_agent middleware instances."""
-        from langchain.agents.middleware import after_agent, before_agent
         from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+
+        from langchain.agents.middleware import after_agent, before_agent
 
         execution_log = []
 
@@ -971,7 +969,6 @@ class TestAgentHooksCombined:
             before_agent,
             before_model,
         )
-        from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 
         execution_log = []
 
