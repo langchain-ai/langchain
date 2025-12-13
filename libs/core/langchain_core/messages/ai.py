@@ -345,44 +345,83 @@ class AIMessage(BaseMessage):
         return values
 
     @override
-    def pretty_repr(self, html: bool = False) -> str:
+    def pretty_repr(
+        self, html: bool = False, verbose: bool = False  # noqa: FBT001,FBT002
+    ) -> str:
         """Return a pretty representation of the message for display.
 
         Args:
             html: Whether to return an HTML-formatted string.
+            verbose: Whether to include verbose details for content blocks.
 
         Returns:
             A pretty representation of the message.
 
         """
-        base = super().pretty_repr(html=html)
+        # Use the base implementation which now handles content blocks
+        base = super().pretty_repr(html=html, verbose=verbose)
         lines = []
 
         def _format_tool_args(tc: ToolCall | InvalidToolCall) -> list[str]:
-            lines = [
+            formatted_lines = [
                 f"  {tc.get('name', 'Tool')} ({tc.get('id')})",
                 f" Call ID: {tc.get('id')}",
             ]
             if tc.get("error"):
-                lines.append(f"  Error: {tc.get('error')}")
-            lines.append("  Args:")
+                formatted_lines.append(f"  Error: {tc.get('error')}")
+            formatted_lines.append("  Args:")
             args = tc.get("args")
             if isinstance(args, str):
-                lines.append(f"    {args}")
+                formatted_lines.append(f"    {args}")
             elif isinstance(args, dict):
                 for arg, value in args.items():
-                    lines.append(f"    {arg}: {value}")
-            return lines
+                    formatted_lines.append(f"    {arg}: {value}")
+            return formatted_lines
 
+        # Add tool_calls and invalid_tool_calls if they exist and aren't already
+        # in the content blocks
         if self.tool_calls:
-            lines.append("Tool Calls:")
-            for tc in self.tool_calls:
-                lines.extend(_format_tool_args(tc))
+            # Check if tool_calls are already represented in content blocks
+            content_blocks = self.content_blocks
+            content_tool_call_ids = {
+                block.get("id")
+                for block in content_blocks
+                if isinstance(block, dict) and block.get("type") == "tool_call"
+            }
+            # Only add tool_calls that aren't in content blocks
+            missing_tool_calls = [
+                tc
+                for tc in self.tool_calls
+                if tc.get("id") not in content_tool_call_ids
+            ]
+            if missing_tool_calls:
+                lines.append("Tool Calls:")
+                for tc in missing_tool_calls:
+                    lines.extend(_format_tool_args(tc))
+
         if self.invalid_tool_calls:
-            lines.append("Invalid Tool Calls:")
-            for itc in self.invalid_tool_calls:
-                lines.extend(_format_tool_args(itc))
-        return (base.strip() + "\n" + "\n".join(lines)).strip()
+            # Check if invalid_tool_calls are already represented in content blocks
+            content_blocks = self.content_blocks
+            content_invalid_tool_call_ids = {
+                block.get("id")
+                for block in content_blocks
+                if isinstance(block, dict)
+                and block.get("type") == "invalid_tool_call"
+            }
+            # Only add invalid_tool_calls that aren't in content blocks
+            missing_invalid_tool_calls = [
+                itc
+                for itc in self.invalid_tool_calls
+                if itc.get("id") not in content_invalid_tool_call_ids
+            ]
+            if missing_invalid_tool_calls:
+                lines.append("Invalid Tool Calls:")
+                for itc in missing_invalid_tool_calls:
+                    lines.extend(_format_tool_args(itc))
+
+        if lines:
+            return (base.strip() + "\n" + "\n".join(lines)).strip()
+        return base
 
 
 class AIMessageChunk(AIMessage, BaseMessageChunk):
