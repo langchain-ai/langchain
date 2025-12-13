@@ -473,8 +473,8 @@ class BaseMessage(Serializable):
 
     def pretty_repr(
         self,
-        html: bool = False,  # noqa: FBT001
-        verbose: bool = False,  # noqa: FBT001
+        html: bool = False,  # noqa: FBT001,FBT002
+        verbose: bool = False,  # noqa: FBT001,FBT002
     ) -> str:
         """Get a pretty representation of the message.
 
