@@ -4422,7 +4422,7 @@ def _convert_responses_chunk_to_generation_chunk(
         content.append(
             {
                 "type": "text",
-                "text": chunk.text,
+                "text": "",
                 "id": chunk.item_id,
                 "index": current_index,
             }
