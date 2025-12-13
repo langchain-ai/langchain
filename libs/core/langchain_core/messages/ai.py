@@ -345,17 +345,18 @@ class AIMessage(BaseMessage):
         return values
 
     @override
-    def pretty_repr(self, html: bool = False) -> str:
+    def pretty_repr(self, html: bool = False, verbose: bool = False) -> str:
         """Return a pretty representation of the message for display.
 
         Args:
             html: Whether to return an HTML-formatted string.
+            verbose: Whether to include verbose details for content blocks.
 
         Returns:
             A pretty representation of the message.
 
         """
-        base = super().pretty_repr(html=html)
+        base = super().pretty_repr(html=html, verbose=verbose)
         lines = []
 
         def _format_tool_args(tc: ToolCall | InvalidToolCall) -> list[str]:
