@@ -7,13 +7,12 @@ from typing import Any
 
 import pytest
 
+from langchain.agents.middleware import _execution
 from langchain.agents.middleware.shell_tool import (
-    HostExecutionPolicy,
     CodexSandboxExecutionPolicy,
     DockerExecutionPolicy,
+    HostExecutionPolicy,
 )
-
-from langchain.agents.middleware import _execution
 
 
 def _make_resource(
@@ -78,7 +77,7 @@ def test_host_policy_applies_prlimit(monkeypatch: pytest.MonkeyPatch, tmp_path: 
     class DummyProcess:
         pid = 1234
 
-    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):  # noqa: ANN001
+    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):
         recorded["command"] = list(command)
         recorded["env"] = dict(env)
         recorded["cwd"] = cwd
@@ -112,7 +111,7 @@ def test_host_policy_uses_preexec_on_macos(monkeypatch: pytest.MonkeyPatch, tmp_
     class DummyProcess:
         pid = 4321
 
-    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):  # noqa: ANN001
+    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):
         captured["preexec_fn"] = preexec_fn
         captured["start_new_session"] = start_new_session
         return DummyProcess()
@@ -147,7 +146,7 @@ def test_host_policy_respects_process_group_flag(
     class DummyProcess:
         pid = 1111
 
-    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):  # noqa: ANN001
+    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):
         recorded["start_new_session"] = start_new_session
         return DummyProcess()
 
@@ -170,7 +169,7 @@ def test_host_policy_falls_back_to_rlimit_data(
     class DummyProcess:
         pid = 2222
 
-    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):  # noqa: ANN001
+    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):
         return DummyProcess()
 
     monkeypatch.setattr(_execution, "_launch_subprocess", fake_launch)
@@ -195,7 +194,7 @@ def test_codex_policy_spawns_codex_cli(monkeypatch, tmp_path: Path) -> None:
     class DummyProcess:
         pass
 
-    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):  # noqa: ANN001
+    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):
         recorded["command"] = list(command)
         assert cwd == tmp_path
         assert env["TEST_VAR"] == "1"
@@ -286,7 +285,7 @@ def test_docker_policy_spawns_docker_run(monkeypatch, tmp_path: Path) -> None:
     class DummyProcess:
         pass
 
-    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):  # noqa: ANN001
+    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):
         recorded["command"] = list(command)
         assert cwd == tmp_path
         assert "PATH" in env  # host environment should retain system PATH
@@ -339,7 +338,7 @@ def test_docker_policy_skips_mount_for_temp_workspace(
     class DummyProcess:
         pass
 
-    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):  # noqa: ANN001
+    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):
         recorded["command"] = list(command)
         assert cwd == workspace
         return DummyProcess()
@@ -380,7 +379,7 @@ def test_docker_policy_read_only_and_user(monkeypatch: pytest.MonkeyPatch, tmp_p
     class DummyProcess:
         pass
 
-    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):  # noqa: ANN001
+    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):
         recorded["command"] = list(command)
         return DummyProcess()
 
