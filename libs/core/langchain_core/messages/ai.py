@@ -395,9 +395,9 @@ class AIMessage(BaseMessage):
                 if tc.get("id") not in content_tool_call_ids
             ]
             if missing_tool_calls:
-                lines.append("Tool Calls:")
+            lines.append("Tool Calls:")
                 for tc in missing_tool_calls:
-                    lines.extend(_format_tool_args(tc))
+                lines.extend(_format_tool_args(tc))
 
         if self.invalid_tool_calls:
             # Check if invalid_tool_calls are already represented in content blocks
@@ -415,12 +415,12 @@ class AIMessage(BaseMessage):
                 if itc.get("id") not in content_invalid_tool_call_ids
             ]
             if missing_invalid_tool_calls:
-                lines.append("Invalid Tool Calls:")
+            lines.append("Invalid Tool Calls:")
                 for itc in missing_invalid_tool_calls:
-                    lines.extend(_format_tool_args(itc))
+                lines.extend(_format_tool_args(itc))
 
         if lines:
-            return (base.strip() + "\n" + "\n".join(lines)).strip()
+        return (base.strip() + "\n" + "\n".join(lines)).strip()
         return base
 
 

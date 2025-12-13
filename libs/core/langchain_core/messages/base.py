@@ -45,17 +45,19 @@ def _extract_reasoning_from_additional_kwargs(
     return None
 
 
+# Maximum length for truncated output in non-verbose mode
+_MAX_OUTPUT_LENGTH = 200
+
+
 def _format_content_block(
     block: str | dict,
     *,
-    html: bool = False,  # noqa: FBT001,FBT002
-    verbose: bool = False,  # noqa: FBT001,FBT002
+    verbose: bool = False,
 ) -> str:
     """Format a content block for pretty printing.
 
     Args:
         block: The content block to format. Can be a string or a dict.
-        html: Whether to format with HTML tags.
         verbose: Whether to include verbose details.
 
     Returns:
@@ -141,7 +143,7 @@ def _format_content_block(
         tool_call_id = block.get("tool_call_id", "")
         status = block.get("status", "unknown")
         output = block.get("output", {})
-        lines = [f"[Server Tool Result]"]
+        lines = ["[Server Tool Result]"]
         if tool_call_id:
             lines.append(f"  Tool Call ID: {tool_call_id}")
         lines.append(f"  Status: {status}")
@@ -153,7 +155,6 @@ def _format_content_block(
                     result_lines = []
                     for item in output["content"]:
                         if isinstance(item, dict):
-                            item_type = item.get("type", "")
                             title = item.get("title", "")
                             url = item.get("url", "")
                             if title or url:
@@ -173,8 +174,8 @@ def _format_content_block(
             else:
                 # For non-dict output, show a summary
                 output_str = str(output)
-                if len(output_str) > 200 and not verbose:
-                    lines.append(f"  Output: {output_str[:200]}...")
+                if len(output_str) > _MAX_OUTPUT_LENGTH and not verbose:
+                    lines.append(f"  Output: {output_str[:_MAX_OUTPUT_LENGTH]}...")
                 else:
                     lines.append(f"  Output: {output_str}")
         return "\n".join(lines)
@@ -191,8 +192,8 @@ def _format_content_block(
             lines.append(f"  Title: {block['title']}")
         if block_type == "text-plain" and "text" in block:
             text = block["text"]
-            if len(text) > 200 and not verbose:
-                lines.append(f"  Text: {text[:200]}...")
+            if len(text) > _MAX_OUTPUT_LENGTH and not verbose:
+                lines.append(f"  Text: {text[:_MAX_OUTPUT_LENGTH]}...")
             else:
                 lines.append(f"  Text: {text}")
         return "\n".join(lines)
@@ -472,8 +473,8 @@ class BaseMessage(Serializable):
 
     def pretty_repr(
         self,
-        html: bool = False,  # noqa: FBT001,FBT002
-        verbose: bool = False,  # noqa: FBT001,FBT002
+        html: bool = False,  # noqa: FBT001
+        verbose: bool = False,  # noqa: FBT001
     ) -> str:
         """Get a pretty representation of the message.
 
@@ -499,7 +500,7 @@ class BaseMessage(Serializable):
         if isinstance(self.content, list):
             content_lines = []
             for block in self.content:
-                formatted = _format_content_block(block, html=html, verbose=verbose)
+                formatted = _format_content_block(block, verbose=verbose)
                 if formatted:
                     content_lines.append(formatted)
             content_str = "\n\n".join(content_lines) if content_lines else ""
