@@ -28,14 +28,14 @@ from typing_extensions import NotRequired, Required, TypedDict
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
+    InputAgentState,
     JumpTo,
     ModelRequest,
     ModelResponse,
     OmitFromSchema,
+    OutputAgentState,
     ResponseT,
     StateT_co,
-    _InputAgentState,
-    _OutputAgentState,
 )
 from langchain.agents.structured_output import (
     AutoStrategy,
@@ -554,7 +554,7 @@ def create_agent(
     debug: bool = False,
     name: str | None = None,
     cache: BaseCache | None = None,
-) -> CompiledStateGraph[Any, ContextT, _InputAgentState, Any]:
+) -> CompiledStateGraph[Any, ContextT, InputAgentState, Any]:
     """Creates an agent graph that calls tools in a loop until a stopping condition is met.
 
     For more details on using `create_agent`,
@@ -858,7 +858,7 @@ def create_agent(
 
     # create graph, add nodes
     graph: StateGraph[
-        AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
+        AgentState[ResponseT], ContextT, InputAgentState, OutputAgentState[ResponseT]
     ] = StateGraph(
         state_schema=resolved_state_schema,
         input_schema=input_schema,
@@ -1629,7 +1629,7 @@ def _make_tools_to_model_edge(
 
 def _add_middleware_edge(
     graph: StateGraph[
-        AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
+        AgentState[ResponseT], ContextT, InputAgentState, OutputAgentState[ResponseT]
     ],
     *,
     name: str,
