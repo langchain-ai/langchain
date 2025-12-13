@@ -1515,6 +1515,9 @@ def test_pretty_repr_verbose_mode() -> None:
     result_verbose = msg.pretty_repr(verbose=True)
     result_normal = msg.pretty_repr(verbose=False)
     # Verbose mode should include more details
-    assert "data: detailed information" in result_verbose or "count: 5" in result_verbose
+    assert (
+        "data: detailed information" in result_verbose
+        or "count: 5" in result_verbose
+    )
     # Normal mode should be more concise
     assert "Server Tool Result" in result_normal
