@@ -372,6 +372,12 @@ def _convert_delta_to_message_chunk(
         if "name" in function_call and function_call["name"] is None:
             function_call["name"] = ""
         additional_kwargs["function_call"] = function_call
+    extra = {}
+    if _dict.get("reasoning_content"):
+        extra["reasoning_content"] = cast(str, _dict.get("reasoning_content") or "")
+    if _dict.get("reasoning"):
+        extra["reasoning"] = cast(str, _dict.get("reasoning") or "")
+
     tool_call_chunks = []
     if raw_tool_calls := _dict.get("tool_calls"):
         try:
@@ -395,6 +401,7 @@ def _convert_delta_to_message_chunk(
             additional_kwargs=additional_kwargs,
             id=id_,
             tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
+            **extra
         )
     if role in ("system", "developer") or default_class == SystemMessageChunk:
         if role == "developer":
