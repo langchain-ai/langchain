@@ -15,6 +15,7 @@ from typing_extensions import NotRequired, TypedDict
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
+    ContextT,
     ModelCallResult,
     ModelRequest,
     ModelResponse,
@@ -126,7 +127,7 @@ def write_todos(todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCall
     )
 
 
-class TodoListMiddleware(AgentMiddleware):
+class TodoListMiddleware(AgentMiddleware[PlanningState, ContextT]):
     """Middleware that provides todo list management capabilities to agents.
 
     This middleware adds a `write_todos` tool that allows agents to create and manage
