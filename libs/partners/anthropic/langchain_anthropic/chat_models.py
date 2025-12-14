@@ -837,6 +837,21 @@ class ChatAnthropic(BaseChatModel):
     invocations.
     """
 
+    def __init__(self, model: str | None = None, **kwargs: Any) -> None:
+        """Initialize `ChatAnthropic`.
+
+        Args:
+            model: Model name to use.
+
+                Can be passed as the first positional argument or as a keyword argument.
+            kwargs: Additional model configuration parameters.
+
+                See class docstring for available options.
+        """
+        if model is not None:
+            kwargs["model"] = model
+        super().__init__(**kwargs)
+
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
