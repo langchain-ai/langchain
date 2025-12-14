@@ -2825,7 +2825,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         `ChatOpenAI` can be used with OpenAI-compatible APIs like
         [LM Studio](https://lmstudio.ai/), [vLLM](https://github.com/vllm-project/vllm),
-        [Ollama](https://ollama.com/), and others.
+        [Ollama](https://ollama.com/), [AI Badgr](https://aibadgr.com/), and others.
 
         To use custom parameters specific to these providers, use the `extra_body` parameter.
 
@@ -2855,6 +2855,29 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 extra_body={"use_beam_search": True, "best_of": 4},
             )
             ```
+
+        !!! example "AI Badgr (Budget/Utility, OpenAI-compatible)"
+
+            [AI Badgr](https://aibadgr.com/) provides budget-friendly OpenAI-compatible
+            API access with tier-based model selection.
+
+            ```python
+            import os
+            from langchain_openai import ChatOpenAI
+
+            model = ChatOpenAI(
+                base_url="https://aibadgr.com/api/v1",
+                api_key=os.environ.get("AIBADGR_API_KEY"),
+                model="premium",  # Tier-based: "basic", "normal", or "premium"
+                temperature=0,
+            )
+            ```
+
+            ??? note "Advanced: Power-user model names"
+
+                You can also use specific model names like `phi-3-mini` (maps to basic),
+                `mistral-7b` (maps to normal), or `llama3-8b-instruct` (maps to premium).
+                OpenAI model names are also accepted and automatically mapped to tiers.
 
     ??? info "`model_kwargs` vs `extra_body`"
 
