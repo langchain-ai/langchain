@@ -206,7 +206,11 @@ def _infer_arg_descriptions(
             fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
         )
     else:
-        description = inspect.getdoc(fn) or ""
+        if isinstance(fn, type) and "__doc__" not in fn.__dict__:
+            description = ""
+        else:
+            description = inspect.getdoc(fn) or ""
+
         arg_descriptions = {}
     if parse_docstring:
         _validate_docstring_args_against_annotations(arg_descriptions, annotations)
