@@ -77,6 +77,7 @@ from langchain_core.messages.block_translators.openai import (
     _convert_from_v03_ai_message,
     convert_to_openai_data_block,
 )
+from langchain_core.messages.content import ReasoningContentBlock
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.openai_tools import (
@@ -372,6 +373,17 @@ def _convert_delta_to_message_chunk(
         if "name" in function_call and function_call["name"] is None:
             function_call["name"] = ""
         additional_kwargs["function_call"] = function_call
+
+    reasoning_content_block : ReasoningContentBlock | None = None
+    if _dict.get("reasoning_content"):
+        reasoning_content_block = ReasoningContentBlock(reasoning=cast(
+            str, _dict.get("reasoning_content") or ""
+        ))
+    elif _dict.get("reasoning"):
+        reasoning_content_block = ReasoningContentBlock(reasoning=cast(
+            str, _dict.get("reasoning") or ""
+        ))
+
     tool_call_chunks = []
     if raw_tool_calls := _dict.get("tool_calls"):
         try:
@@ -392,6 +404,7 @@ def _convert_delta_to_message_chunk(
     if role == "assistant" or default_class == AIMessageChunk:
         return AIMessageChunk(
             content=content,
+            content_blocks=[ reasoning_content_block ] if reasoning_content_block else None,
             additional_kwargs=additional_kwargs,
             id=id_,
             tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
