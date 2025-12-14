@@ -893,10 +893,12 @@ def before_model(
             @before_model
             async def notify_model_call(state: AgentState, runtime: Runtime) -> None:
                 '''Notify user before model is called.'''
-                runtime.stream_writer({
-                    "type": "status",
-                    "message": "Thinking...",
-                })
+                runtime.stream_writer(
+                    {
+                        "type": "status",
+                        "message": "Thinking...",
+                    }
+                )
             ```
     """
 
@@ -1051,10 +1053,12 @@ def after_model(
                 '''Notify user after model has responded.'''
                 last_message = state["messages"][-1]
                 has_tool_calls = hasattr(last_message, "tool_calls") and last_message.tool_calls
-                runtime.stream_writer({
-                    "type": "status",
-                    "message": "Using tools..." if has_tool_calls else "Response ready!",
-                })
+                runtime.stream_writer(
+                    {
+                        "type": "status",
+                        "message": "Using tools..." if has_tool_calls else "Response ready!",
+                    }
+                )
             ```
     """
 
@@ -1222,15 +1226,11 @@ def before_agent(
             @before_agent
             async def notify_start(state: AgentState, runtime: Runtime) -> None:
                 '''Notify user that agent is starting.'''
-                runtime.stream_writer({
-                    "type": "status",
-                    "message": "Initializing agent session..."
-                })
+                runtime.stream_writer(
+                    {"type": "status", "message": "Initializing agent session..."}
+                )
                 # Perform prerequisite tasks here
-                runtime.stream_writer({
-                    "type": "status",
-                    "message": "Agent ready!"
-                })
+                runtime.stream_writer({"type": "status", "message": "Agent ready!"})
 
 
             agent = create_agent(
@@ -1400,11 +1400,13 @@ def after_agent(
             @after_agent
             async def notify_completion(state: AgentState, runtime: Runtime) -> None:
                 '''Notify user that agent has completed.'''
-                runtime.stream_writer({
-                    "type": "status",
-                    "message": "Agent execution complete!",
-                    "total_messages": len(state["messages"]),
-                })
+                runtime.stream_writer(
+                    {
+                        "type": "status",
+                        "message": "Agent execution complete!",
+                        "total_messages": len(state["messages"]),
+                    }
+                )
             ```
     """
 
