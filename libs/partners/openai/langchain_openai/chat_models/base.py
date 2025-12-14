@@ -2939,6 +2939,16 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         cached tokens.
     """  # noqa: E501
 
+    def __repr__(self) -> str:
+        """Safe string representation that avoids leaking API keys."""
+        masked_key = "***" if self.openai_api_key else None
+        return (
+            f"ChatOpenAI("
+            f"model_name={self.model_name!r}, "
+            f"openai_api_key={masked_key}, "
+            f"openai_proxy={self.openai_proxy!r})"
+        )
+
     max_tokens: int | None = Field(default=None, alias="max_completion_tokens")
     """Maximum number of tokens to generate."""
 
