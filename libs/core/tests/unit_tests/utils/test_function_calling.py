@@ -4,7 +4,6 @@ from typing import Annotated as ExtensionsAnnotated
 from typing import (
     Any,
     Literal,
-    NotRequired,
     TypeAlias,
 )
 from typing import TypedDict as TypingTypedDict
@@ -12,6 +11,7 @@ from typing import TypedDict as TypingTypedDict
 import pytest
 from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
 from pydantic import Field as FieldV2Maybe  # pydantic: ignore
+from typing_extensions import NotRequired
 from typing_extensions import TypedDict as ExtensionsTypedDict
 
 try:

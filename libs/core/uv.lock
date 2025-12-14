@@ -1078,7 +1078,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.0.2"
+version = "1.1.0"
 source = { directory = "../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -1123,7 +1123,7 @@ typing = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "1.0.0"
+version = "1.1.0"
 source = { directory = "../text-splitters" }
 dependencies = [
     { name = "langchain-core" },
