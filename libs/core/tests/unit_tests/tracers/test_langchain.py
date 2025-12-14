@@ -145,3 +145,59 @@ def test_correct_get_tracer_project(
         )
         tracer.wait_for_futures()
         assert projects == [expected_project_name]
+
+
+def test_exclude_inputs_for_normal_invocations() -> None:
+    """Test that normal invocations exclude inputs from PATCH."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    # Track patch calls
+    patch_calls = []
+    _original_patch = RunTree.patch
+
+    def mock_patch(_self: Any, **kwargs: Any) -> Any:
+        patch_calls.append(kwargs)
+        return None
+
+    with unittest.mock.patch.object(RunTree, "patch", new=mock_patch):
+        run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+        # Normal invocation with real inputs
+        tracer.on_chain_start(
+            {"name": "test_chain"}, {"input": "real input"}, run_id=run_id
+        )
+        tracer.on_chain_end({"output": "result"}, run_id=run_id)
+        tracer.wait_for_futures()
+
+    # Verify that exclude_inputs was True for normal invocation
+    assert len(patch_calls) == 1
+    assert patch_calls[0].get("exclude_inputs") is True
+
+
+def test_include_inputs_for_streaming_invocations() -> None:
+    """Test that streaming invocations include inputs in PATCH."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    # Track patch calls
+    patch_calls = []
+    _original_patch = RunTree.patch
+
+    def mock_patch(_self: Any, **kwargs: Any) -> Any:
+        patch_calls.append(kwargs)
+        return None
+
+    with unittest.mock.patch.object(RunTree, "patch", new=mock_patch):
+        run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160b")
+        # Streaming invocation with placeholder inputs
+        tracer.on_chain_start({"name": "test_chain"}, {"input": ""}, run_id=run_id)
+        tracer.on_chain_end(
+            {"output": "result"}, run_id=run_id, inputs={"input": "accumulated input"}
+        )
+        tracer.wait_for_futures()
+
+    # Verify that exclude_inputs was False for streaming invocation
+    assert len(patch_calls) == 1
+    assert patch_calls[0].get("exclude_inputs") is False

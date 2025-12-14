@@ -214,6 +214,12 @@ class LangChainTracer(BaseTracer):
             run.tags = self._get_tags(run)
             if run.ls_client is not self.client:
                 run.ls_client = self.client
+            # Mark whether inputs are real (not placeholder) so we can exclude them
+            # from PATCH for normal invocations.
+            #
+            # Streaming invocations use {"input": ""} as placeholder in POST and send
+            # real inputs in PATCH.
+            run.extra["inputs_is_truthy"] = run.inputs != {"input": ""}
             run.post()
         except Exception as e:
             # Errors are swallowed by the thread executor so we need to log them here
