@@ -408,3 +408,66 @@ def test_explicit_options_dict_preserved() -> None:
 
         # Explicit options should be preserved as-is
         assert options == {"temperature": 0.5, "custom_param": None}
+
+
+def test_reasoning_param_passed_to_client() -> None:
+    """Test that the reasoning parameter is correctly passed to the Ollama client."""
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = [
+            {
+                "model": "deepseek-r1",
+                "created_at": "2025-01-01T00:00:00.000000000Z",
+                "message": {"role": "assistant", "content": "I am thinking..."},
+                "done": True,
+                "done_reason": "stop",
+            }
+        ]
+
+        # Case 1: reasoning=True in init
+        llm = ChatOllama(model="deepseek-r1", reasoning=True)
+        llm.invoke([HumanMessage("Hello")])
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert call_kwargs["think"] is True
+
+        # Case 2: reasoning=False in init
+        llm = ChatOllama(model="deepseek-r1", reasoning=False)
+        llm.invoke([HumanMessage("Hello")])
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert call_kwargs["think"] is False
+
+        # Case 3: reasoning passed in invoke
+        llm = ChatOllama(model="deepseek-r1")
+        llm.invoke([HumanMessage("Hello")], reasoning=True)
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert call_kwargs["think"] is True
+
+
+def test_chat_ollama_ignores_strict_arg() -> None:
+    """Test that ChatOllama ignores the 'strict' argument."""
+    response = [
+        {
+            "model": "test-model",
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "done": True,
+            "done_reason": "stop",
+            "message": {"role": "assistant", "content": "Hello!"},
+        }
+    ]
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = response
+
+        llm = ChatOllama(model="test-model")
+        # Invoke with strict=True
+        llm.invoke([HumanMessage("Hello")], strict=True)
+
+        # Check that 'strict' was NOT passed to the client
+        call_kwargs = mock_client.chat.call_args[1]
+        assert "strict" not in call_kwargs
