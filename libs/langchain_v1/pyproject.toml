@@ -58,6 +58,8 @@ test = [
     "toml>=0.10.2,<1.0.0",
     "langchain-tests",
     "langchain-openai",
+    "langchain-huggingface",
+    "langchain-azure-ai",
 ]
 lint = [
     "ruff>=0.14.2,<0.15.0",
@@ -84,6 +86,7 @@ langchain-core = { path = "../core", editable = true }
 langchain-tests = { path = "../standard-tests", editable = true }
 langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
+langchain-huggingface = { path = "../partners/huggingface", editable = true }
 
 [tool.ruff]
 line-length = 100
