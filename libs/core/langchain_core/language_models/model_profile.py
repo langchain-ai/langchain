@@ -74,6 +74,10 @@ class ModelProfile(TypedDict, total=False):
     tool_choice: bool
     """Whether the model supports [tool choice](https://docs.langchain.com/oss/python/langchain/models#forcing-tool-calls)"""
 
+    code_execution: bool
+    """Whether the model supports [code execution](https://docs.langchain.com/oss/python/langchain/models#code-execution)
+    (e.g., code interpreter, code execution tools)."""
+
     # --- Structured output ---
     structured_output: bool
     """Whether the model supports a native [structured output](https://docs.langchain.com/oss/python/langchain/models#structured-outputs)

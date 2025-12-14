@@ -356,6 +356,20 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         arbitrary_types_allowed=True,
     )
 
+    @property
+    def _supports_code_execution(self) -> bool:
+        """Whether the model supports code execution.
+
+        Checks the model profile for code execution support. Returns `False` if
+        the profile is not available or does not specify code execution support.
+
+        Returns:
+            `True` if the model supports code execution, `False` otherwise.
+        """
+        if self.profile is None:
+            return False
+        return self.profile.get("code_execution", False)
+
     @cached_property
     def _serialized(self) -> dict[str, Any]:
         return dumpd(self)
