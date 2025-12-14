@@ -4,6 +4,7 @@ from typing import Annotated as ExtensionsAnnotated
 from typing import (
     Any,
     Literal,
+    NotRequired,
     TypeAlias,
 )
 from typing import TypedDict as TypingTypedDict
@@ -1168,3 +1169,27 @@ def test_convert_to_openai_function_strict_required() -> None:
     func = convert_to_openai_function(MyModel, strict=True)
     actual = func["parameters"]["required"]
     assert actual == expected
+
+
+def test_convert_to_openai_function_typed_dict_with_not_required() -> None:
+    class MyTypedDict(TypingTypedDict):
+        """NotRequired field."""
+
+        required_field: str
+        optional_field: NotRequired[str]
+
+    result = convert_to_openai_function(MyTypedDict)
+    assert "required_field" in result["parameters"]["required"]
+    assert "optional_field" not in result["parameters"]["required"]
+
+
+def test_convert_to_openai_function_typed_dict_mixed_required() -> None:
+    class MyTypedDict(TypingTypedDict):
+        """Required fields."""
+
+        name: str
+        email: NotRequired[str]
+        age: int
+
+    result = convert_to_openai_function(MyTypedDict)
+    assert set(result["parameters"]["required"]) == {"name", "age"}

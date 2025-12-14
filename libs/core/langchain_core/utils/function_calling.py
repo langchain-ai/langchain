@@ -20,7 +20,7 @@ from typing import (
     get_origin,
 )
 
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as Field_v1
 from pydantic.v1 import create_model as create_model_v1
@@ -207,13 +207,9 @@ def _convert_python_function_to_openai_function(
 
 
 def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescription:
-    visited: dict = {}
-
-    model = cast(
-        "type[BaseModel]",
-        _convert_any_typed_dicts_to_pydantic(typed_dict, visited=visited),
-    )
-    return _convert_pydantic_to_openai_function(model)
+    adapter = TypeAdapter(typed_dict)
+    schema = adapter.json_schema()
+    return _convert_json_schema_to_openai_function(schema)
 
 
 _MAX_TYPED_DICT_RECURSION = 25
