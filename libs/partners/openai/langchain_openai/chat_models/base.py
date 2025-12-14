@@ -404,7 +404,11 @@ def _convert_delta_to_message_chunk(
     if role == "assistant" or default_class == AIMessageChunk:
         return AIMessageChunk(
             content=content,
-            content_blocks=[ reasoning_content_block ] if reasoning_content_block else None,
+            content_blocks=(
+                [ reasoning_content_block ]
+                if reasoning_content_block
+                else None
+            ),
             additional_kwargs=additional_kwargs,
             id=id_,
             tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
