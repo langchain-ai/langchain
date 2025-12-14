@@ -377,13 +377,11 @@ def _convert_delta_to_message_chunk(
     reasoning_content_block: ReasoningContentBlock | None = None
     if _dict.get("reasoning_content"):
         reasoning_content_block = ReasoningContentBlock(
-            type="reasoning",
-            reasoning=cast(str, _dict.get("reasoning_content") or "")
+            type="reasoning", reasoning=cast(str, _dict.get("reasoning_content") or "")
         )
     elif _dict.get("reasoning"):
         reasoning_content_block = ReasoningContentBlock(
-            type="reasoning",
-            reasoning=cast(str, _dict.get("reasoning") or "")
+            type="reasoning", reasoning=cast(str, _dict.get("reasoning") or "")
         )
 
     tool_call_chunks = []
