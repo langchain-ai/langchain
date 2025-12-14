@@ -5,6 +5,8 @@ Location: Minas Gerais, Brasil
 GitHub: https://github.com/anderson-ufrj
 """
 
+import os
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -16,6 +18,9 @@ from langchain_maritaca.chat_models import (
     _convert_message_to_dict,
     _create_usage_metadata,
 )
+
+if "MARITACA_API_KEY" not in os.environ:
+    os.environ["MARITACA_API_KEY"] = "fake-key"
 
 
 class TestChatMaritaca:
@@ -32,7 +37,7 @@ class TestChatMaritaca:
     def test_initialization_with_params(self) -> None:
         """Test initialization with custom parameters."""
         model = ChatMaritaca(
-            api_key="test-key",
+            api_key="test-key",  # type: ignore[arg-type]
             model="sabiazinho-3",
             temperature=0.5,
             max_tokens=1000,
@@ -46,7 +51,7 @@ class TestChatMaritaca:
     def test_initialization_with_alias(self) -> None:
         """Test initialization using parameter aliases."""
         model = ChatMaritaca(
-            api_key="test-key",
+            api_key="test-key",  # type: ignore[arg-type]
             model="sabia-3",
             timeout=30.0,
             base_url="https://custom.api.com",
@@ -56,7 +61,7 @@ class TestChatMaritaca:
 
     def test_llm_type(self) -> None:
         """Test _llm_type property."""
-        model = ChatMaritaca(api_key="test-key")
+        model = ChatMaritaca(api_key="test-key")  # type: ignore[arg-type]
         assert model._llm_type == "maritaca-chat"
 
     def test_is_lc_serializable(self) -> None:
@@ -65,13 +70,13 @@ class TestChatMaritaca:
 
     def test_lc_secrets(self) -> None:
         """Test lc_secrets property."""
-        model = ChatMaritaca(api_key="test-key")
+        model = ChatMaritaca(api_key="test-key")  # type: ignore[arg-type]
         assert model.lc_secrets == {"maritaca_api_key": "MARITACA_API_KEY"}
 
     def test_default_params(self) -> None:
         """Test _default_params property."""
         model = ChatMaritaca(
-            api_key="test-key",
+            api_key="test-key",  # type: ignore[arg-type]
             model="sabia-3",
             temperature=0.8,
             max_tokens=500,
@@ -85,18 +90,18 @@ class TestChatMaritaca:
 
     def test_temperature_zero_adjustment(self) -> None:
         """Test that temperature=0 is adjusted to avoid API issues."""
-        model = ChatMaritaca(api_key="test-key", temperature=0)
+        model = ChatMaritaca(api_key="test-key", temperature=0)  # type: ignore[arg-type]
         assert model.temperature == 1e-8
 
     def test_n_validation(self) -> None:
         """Test that n must be at least 1."""
         with pytest.raises(ValueError, match="n must be at least 1"):
-            ChatMaritaca(api_key="test-key", n=0)
+            ChatMaritaca(api_key="test-key", n=0)  # type: ignore[arg-type]
 
     def test_streaming_n_validation(self) -> None:
         """Test that n must be 1 when streaming."""
         with pytest.raises(ValueError, match="n must be 1 when streaming"):
-            ChatMaritaca(api_key="test-key", n=2, streaming=True)
+            ChatMaritaca(api_key="test-key", n=2, streaming=True)  # type: ignore[arg-type]
 
 
 class TestMessageConversion:
@@ -171,7 +176,7 @@ class TestChatMaritacaIntegration:
     """Integration-style unit tests using mocked HTTP responses."""
 
     @pytest.fixture
-    def mock_response(self) -> dict:
+    def mock_response(self) -> dict[str, Any]:
         """Create a mock API response."""
         return {
             "id": "chatcmpl-123",
@@ -195,9 +200,9 @@ class TestChatMaritacaIntegration:
             },
         }
 
-    def test_invoke_with_mock(self, mock_response: dict) -> None:
+    def test_invoke_with_mock(self, mock_response: dict[str, Any]) -> None:
         """Test invoke method with mocked HTTP client."""
-        model = ChatMaritaca(api_key="test-key")
+        model = ChatMaritaca(api_key="test-key")  # type: ignore[arg-type]
 
         # Mock the HTTP client
         mock_http_response = MagicMock()
@@ -215,21 +220,22 @@ class TestChatMaritacaIntegration:
         assert result.usage_metadata["input_tokens"] == 15
         assert result.usage_metadata["output_tokens"] == 10
 
-    def test_create_chat_result(self, mock_response: dict) -> None:
+    def test_create_chat_result(self, mock_response: dict[str, Any]) -> None:
         """Test _create_chat_result method."""
-        model = ChatMaritaca(api_key="test-key")
+        model = ChatMaritaca(api_key="test-key")  # type: ignore[arg-type]
         result = model._create_chat_result(mock_response)
 
         assert len(result.generations) == 1
         assert isinstance(result.generations[0].message, AIMessage)
         expected_content = "A capital do Brasil é Brasília."
         assert result.generations[0].message.content == expected_content
+        assert result.llm_output is not None
         assert result.llm_output["model"] == "sabia-3"
         assert result.llm_output["token_usage"]["total_tokens"] == 25
 
     def test_create_message_dicts(self) -> None:
         """Test _create_message_dicts method."""
-        model = ChatMaritaca(api_key="test-key")
+        model = ChatMaritaca(api_key="test-key")  # type: ignore[arg-type]
         messages = [
             SystemMessage(content="You are helpful"),
             HumanMessage(content="Hello"),
@@ -249,7 +255,7 @@ class TestChatMaritacaLangSmith:
     def test_get_ls_params(self) -> None:
         """Test _get_ls_params method."""
         model = ChatMaritaca(
-            api_key="test-key",
+            api_key="test-key",  # type: ignore[arg-type]
             model="sabia-3",
             temperature=0.5,
             max_tokens=100,

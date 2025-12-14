@@ -10,7 +10,7 @@ GitHub: https://github.com/anderson-ufrj
 import os
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
 from langchain_maritaca import ChatMaritaca
 
@@ -18,7 +18,7 @@ from langchain_maritaca import ChatMaritaca
 @pytest.fixture
 def chat_model() -> ChatMaritaca:
     """Create a ChatMaritaca instance for testing."""
-    return ChatMaritaca(model="sabia-3", temperature=0.0)
+    return ChatMaritaca(model="sabia-3", temperature=0.0)  # type: ignore[arg-type]
 
 
 @pytest.mark.skipif(
@@ -32,6 +32,7 @@ class TestChatMaritacaIntegration:
         """Test simple invoke."""
         response = chat_model.invoke([HumanMessage(content="Olá, tudo bem?")])
         assert isinstance(response, AIMessage)
+        assert isinstance(response.content, str)
         assert len(response.content) > 0
 
     def test_invoke_with_system_message(self, chat_model: ChatMaritaca) -> None:
@@ -42,7 +43,9 @@ class TestChatMaritacaIntegration:
         ]
         response = chat_model.invoke(messages)
         assert isinstance(response, AIMessage)
-        assert "Brasília" in response.content or "brasília" in response.content.lower()
+        assert isinstance(response.content, str)
+        content_lower = response.content.lower()
+        assert "brasília" in content_lower or "Brasília" in response.content
 
     def test_invoke_with_conversation(self, chat_model: ChatMaritaca) -> None:
         """Test invoke with multi-turn conversation."""
@@ -53,19 +56,23 @@ class TestChatMaritacaIntegration:
         ]
         response = chat_model.invoke(messages)
         assert isinstance(response, AIMessage)
+        assert isinstance(response.content, str)
         assert "João" in response.content
 
     async def test_ainvoke_simple(self, chat_model: ChatMaritaca) -> None:
         """Test async invoke."""
         response = await chat_model.ainvoke([HumanMessage(content="Olá!")])
         assert isinstance(response, AIMessage)
+        assert isinstance(response.content, str)
         assert len(response.content) > 0
 
     def test_stream_simple(self, chat_model: ChatMaritaca) -> None:
         """Test streaming."""
         chunks = list(chat_model.stream([HumanMessage(content="Conte até 5.")]))
         assert len(chunks) > 0
-        full_response = "".join(chunk.content for chunk in chunks)
+        full_response = "".join(
+            str(chunk.content) for chunk in chunks if chunk.content
+        )
         assert len(full_response) > 0
 
     async def test_astream_simple(self, chat_model: ChatMaritaca) -> None:
@@ -74,16 +81,18 @@ class TestChatMaritacaIntegration:
         async for chunk in chat_model.astream([HumanMessage(content="Conte até 3.")]):
             chunks.append(chunk)
         assert len(chunks) > 0
-        full_response = "".join(chunk.content for chunk in chunks)
+        full_response = "".join(
+            str(chunk.content) for chunk in chunks if chunk.content
+        )
         assert len(full_response) > 0
 
     def test_batch_invoke(self, chat_model: ChatMaritaca) -> None:
         """Test batch invoke."""
-        messages_list = [
+        messages_list: list[list[BaseMessage]] = [
             [HumanMessage(content="1 + 1 = ?")],
             [HumanMessage(content="2 + 2 = ?")],
         ]
-        responses = chat_model.batch(messages_list)
+        responses = chat_model.batch(messages_list)  # type: ignore[arg-type]
         assert len(responses) == 2
         for response in responses:
             assert isinstance(response, AIMessage)
@@ -106,12 +115,12 @@ class TestChatMaritacaModels:
 
     def test_sabia_3(self) -> None:
         """Test sabia-3 model."""
-        model = ChatMaritaca(model="sabia-3", temperature=0.0)
+        model = ChatMaritaca(model="sabia-3", temperature=0.0)  # type: ignore[arg-type]
         response = model.invoke([HumanMessage(content="Olá!")])
         assert isinstance(response, AIMessage)
 
     def test_sabiazinho_3(self) -> None:
         """Test sabiazinho-3 model."""
-        model = ChatMaritaca(model="sabiazinho-3", temperature=0.0)
+        model = ChatMaritaca(model="sabiazinho-3", temperature=0.0)  # type: ignore[arg-type]
         response = model.invoke([HumanMessage(content="Olá!")])
         assert isinstance(response, AIMessage)
