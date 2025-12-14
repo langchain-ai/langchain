@@ -22,7 +22,7 @@ from langchain_core.tools.base import ToolException
 from langgraph.channels.untracked_value import UntrackedValue
 from pydantic import BaseModel, model_validator
 from pydantic.json_schema import SkipJsonSchema
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, override
 
 from langchain.agents.middleware._execution import (
     SHELL_TEMP_PREFIX,
@@ -78,10 +78,10 @@ class _SessionResources:
     session: ShellSession
     tempdir: tempfile.TemporaryDirectory[str] | None
     policy: BaseExecutionPolicy
-    _finalizer: weakref.finalize = field(init=False, repr=False)
+    finalizer: weakref.finalize = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        self._finalizer = weakref.finalize(
+        self.finalizer = weakref.finalize(
             self,
             _cleanup_resources,
             self.session,
@@ -248,6 +248,10 @@ class ShellSession:
             if source == "stdout" and data.startswith(marker):
                 _, _, status = data.partition(" ")
                 exit_code = self._safe_int(status.strip())
+                # Drain any remaining stderr that may have arrived concurrently.
+                # The stderr reader thread runs independently, so output might
+                # still be in flight when the stdout marker arrives.
+                self._drain_remaining_stderr(collected, deadline)
                 break
 
             total_lines += 1
@@ -322,6 +326,37 @@ class ShellSession:
                 self._queue.get_nowait()
             except queue.Empty:
                 break
+
+    def _drain_remaining_stderr(
+        self, collected: list[str], deadline: float, drain_timeout: float = 0.05
+    ) -> None:
+        """Drain any stderr output that arrived concurrently with the done marker.
+
+        The stdout and stderr reader threads run independently. When a command writes to
+        stderr just before exiting, the stderr output may still be in transit when the
+        done marker arrives on stdout. This method briefly polls the queue to capture
+        such output.
+
+        Args:
+            collected: The list to append collected stderr lines to.
+            deadline: The original command deadline (used as an upper bound).
+            drain_timeout: Maximum time to wait for additional stderr output.
+        """
+        drain_deadline = min(time.monotonic() + drain_timeout, deadline)
+        while True:
+            remaining = drain_deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            try:
+                source, data = self._queue.get(timeout=remaining)
+            except queue.Empty:
+                break
+            if data is None or source != "stderr":
+                continue
+            stripped = data.rstrip("\n")
+            collected.append(f"[stderr] {stripped}")
+            if data.endswith("\n"):
+                collected.append("\n")
 
     @staticmethod
     def _safe_int(value: str) -> int | None:
@@ -489,7 +524,8 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
             normalized[key] = str(value)
         return normalized
 
-    def before_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
+    @override
+    def before_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:
         """Start the shell session and run startup commands."""
         resources = self._get_or_create_resources(state)
         return {"shell_session_resources": resources}
@@ -498,7 +534,8 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         """Async start the shell session and run startup commands."""
         return self.before_agent(state, runtime)
 
-    def after_agent(self, state: ShellToolState, runtime: Runtime) -> None:  # noqa: ARG002
+    @override
+    def after_agent(self, state: ShellToolState, runtime: Runtime) -> None:
         """Run shutdown commands and release resources when an agent completes."""
         resources = state.get("shell_session_resources")
         if not isinstance(resources, _SessionResources):
@@ -507,7 +544,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         try:
             self._run_shutdown_commands(resources.session)
         finally:
-            resources._finalizer()
+            resources.finalizer()
 
     async def aafter_agent(self, state: ShellToolState, runtime: Runtime) -> None:
         """Async run shutdown commands and release resources when an agent completes."""

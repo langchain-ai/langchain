@@ -444,10 +444,9 @@ def _init_chat_model_helper(
 
     if model_provider == "huggingface":
         _check_pkg("langchain_huggingface")
-        from langchain_huggingface import ChatHuggingFace, HuggingFacePipeline
+        from langchain_huggingface import ChatHuggingFace
 
-        llm = HuggingFacePipeline.from_model_id(model_id=model, **kwargs)
-        return ChatHuggingFace(llm=llm)
+        return ChatHuggingFace.from_model_id(model_id=model, **kwargs)
 
     if model_provider == "groq":
         _check_pkg("langchain_groq")

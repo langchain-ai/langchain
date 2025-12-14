@@ -239,7 +239,7 @@ async def test_openai_abatch_tags(use_responses_api: bool) -> None:
 def test_openai_invoke() -> None:
     """Test invoke tokens from ChatOpenAI."""
     llm = ChatOpenAI(
-        model="gpt-5-nano",
+        model="gpt-5-mini",
         service_tier="flex",  # Also test service_tier
         max_retries=3,  # Add retries for 503 capacity errors
     )
@@ -272,7 +272,7 @@ def test_openai_invoke() -> None:
 def test_stream() -> None:
     """Test streaming tokens from OpenAI."""
     llm = ChatOpenAI(
-        model="gpt-5-nano",
+        model="gpt-5-mini",
         service_tier="flex",  # Also test service_tier
         max_retries=3,  # Add retries for 503 capacity errors
     )
@@ -399,7 +399,7 @@ async def test_astream() -> None:
 @pytest.mark.parametrize("streaming", [False, True])
 def test_flex_usage_responses(streaming: bool) -> None:
     llm = ChatOpenAI(
-        model="gpt-5-nano",
+        model="gpt-5-mini",
         service_tier="flex",
         max_retries=3,
         use_responses_api=True,

@@ -2083,7 +2083,7 @@ def test_context_management() -> None:
 def test_tool_search(output_version: str) -> None:
     """Test tool search with LangChain tools using extras parameter."""
 
-    @tool(extras={"defer_loading": True})
+    @tool(parse_docstring=True, extras={"defer_loading": True})
     def get_weather(location: str, unit: str = "fahrenheit") -> str:
         """Get the current weather for a location.
 
@@ -2093,7 +2093,7 @@ def test_tool_search(output_version: str) -> None:
         """
         return f"The weather in {location} is sunny and 72°{unit[0].upper()}"
 
-    @tool(extras={"defer_loading": True})
+    @tool(parse_docstring=True, extras={"defer_loading": True})
     def search_files(query: str) -> str:
         """Search through files in the workspace.
 

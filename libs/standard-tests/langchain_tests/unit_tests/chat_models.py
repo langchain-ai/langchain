@@ -49,12 +49,12 @@ class ChatModelTests(BaseStandardTests):
         ...
 
     @property
-    def chat_model_params(self) -> dict:
+    def chat_model_params(self) -> dict[str, Any]:
         """Initialization parameters for the chat model."""
         return {}
 
     @property
-    def standard_chat_model_params(self) -> dict:
+    def standard_chat_model_params(self) -> dict[str, Any]:
         """Standard chat model parameters."""
         return {
             "temperature": 0,
@@ -112,7 +112,7 @@ class ChatModelTests(BaseStandardTests):
         ) or self.has_tool_calling
 
     @property
-    def structured_output_kwargs(self) -> dict:
+    def structured_output_kwargs(self) -> dict[str, Any]:
         """Additional kwargs to pass to `with_structured_output()` in tests.
 
         Override this property to customize how structured output is generated
@@ -759,9 +759,7 @@ class ChatModelUnitTests(ChatModelTests):
 
             ```python title="tests/conftest.py"
             import pytest
-            from langchain_tests.conftest import (
-                _base_vcr_config as _base_vcr_config,
-            )
+            from langchain_tests.conftest import base_vcr_config
 
             _EXTRA_HEADERS = [
                 # Specify additional headers to redact
@@ -776,9 +774,9 @@ class ChatModelUnitTests(ChatModelTests):
 
 
             @pytest.fixture(scope="session")
-            def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
+            def vcr_config() -> dict:
                 """Extend the default configuration from langchain_tests."""
-                config = _base_vcr_config.copy()
+                config = base_vcr_config()
                 config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
                 config["before_record_response"] = remove_response_headers
 
@@ -798,9 +796,7 @@ class ChatModelUnitTests(ChatModelTests):
                     CustomPersister,
                     CustomSerializer,
                 )
-                from langchain_tests.conftest import (
-                    _base_vcr_config as _base_vcr_config,
-                )
+                from langchain_tests.conftest import base_vcr_config
                 from vcr import VCR
 
                 _EXTRA_HEADERS = [
@@ -816,9 +812,9 @@ class ChatModelUnitTests(ChatModelTests):
 
 
                 @pytest.fixture(scope="session")
-                def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
+                def vcr_config() -> dict:
                     """Extend the default configuration from langchain_tests."""
-                    config = _base_vcr_config.copy()
+                    config = base_vcr_config()
                     config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
                     config["before_record_response"] = remove_response_headers
                     # New: enable serializer and set file extension
@@ -906,14 +902,16 @@ class ChatModelUnitTests(ChatModelTests):
     '''  # noqa: E501,D214
 
     @property
-    def standard_chat_model_params(self) -> dict:
+    def standard_chat_model_params(self) -> dict[str, Any]:
         """Standard chat model parameters."""
         params = super().standard_chat_model_params
         params["api_key"] = "test"
         return params
 
     @property
-    def init_from_env_params(self) -> tuple[dict, dict, dict]:
+    def init_from_env_params(
+        self,
+    ) -> tuple[dict[str, str], dict[str, Any], dict[str, Any]]:
         """Init from env params.
 
         Environment variables, additional initialization args, and expected instance
