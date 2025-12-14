@@ -64,7 +64,10 @@ class LLMToolEmulator(AgentMiddleware):
     """
 
     def __init__(
-        self, *, model: str | BaseChatModel, tools: list[str | BaseTool] | None = None
+        self,
+        *,
+        model: str | BaseChatModel | None = None,
+        tools: list[str | BaseTool] | None = None,
     ) -> None:
         """Initialize the tool emulator.
 
@@ -93,7 +96,10 @@ class LLMToolEmulator(AgentMiddleware):
                     # Assume BaseTool with .name attribute
                     self.tools_to_emulate.add(tool.name)
 
-        if isinstance(model, BaseChatModel):
+        # Initialize emulator model
+        if model is None:
+            self.model = init_chat_model("anthropic:claude-sonnet-4-5-20250929", temperature=1)
+        elif isinstance(model, BaseChatModel):
             self.model = model
         else:
             self.model = init_chat_model(model, temperature=1)
