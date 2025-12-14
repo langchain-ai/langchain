@@ -70,9 +70,7 @@ class TestChatMaritacaIntegration:
         """Test streaming."""
         chunks = list(chat_model.stream([HumanMessage(content="Conte até 5.")]))
         assert len(chunks) > 0
-        full_response = "".join(
-            str(chunk.content) for chunk in chunks if chunk.content
-        )
+        full_response = "".join(str(chunk.content) for chunk in chunks if chunk.content)
         assert len(full_response) > 0
 
     async def test_astream_simple(self, chat_model: ChatMaritaca) -> None:
@@ -81,9 +79,7 @@ class TestChatMaritacaIntegration:
         async for chunk in chat_model.astream([HumanMessage(content="Conte até 3.")]):
             chunks.append(chunk)
         assert len(chunks) > 0
-        full_response = "".join(
-            str(chunk.content) for chunk in chunks if chunk.content
-        )
+        full_response = "".join(str(chunk.content) for chunk in chunks if chunk.content)
         assert len(full_response) > 0
 
     def test_batch_invoke(self, chat_model: ChatMaritaca) -> None:

@@ -105,8 +105,10 @@ class ChatMaritaca(BaseChatModel):
         model.invoke(messages)
         ```
         ```python
-        AIMessage(content='A capital do Brasil é Brasília.',
-        response_metadata={'model': 'sabia-3', 'finish_reason': 'stop'})
+        AIMessage(
+            content="A capital do Brasil é Brasília.",
+            response_metadata={"model": "sabia-3", "finish_reason": "stop"},
+        )
         ```
 
     Stream:
@@ -199,9 +201,7 @@ class ChatMaritaca(BaseChatModel):
 
         # Initialize HTTP clients
         api_key = (
-            self.maritaca_api_key.get_secret_value()
-            if self.maritaca_api_key
-            else ""
+            self.maritaca_api_key.get_secret_value() if self.maritaca_api_key else ""
         )
         headers = {
             "Authorization": f"Bearer {api_key}",
