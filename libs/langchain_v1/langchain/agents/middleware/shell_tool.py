@@ -642,7 +642,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         payload: dict[str, Any],
         *,
         tool_call_id: str | None,
-    ) -> Any:
+    ) -> ToolMessage | str:
         session = resources.session
 
         if payload.get("restart"):

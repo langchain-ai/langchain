@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field, replace
-from inspect import iscoroutinefunction
+from inspect import isawaitable, iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -715,11 +715,25 @@ class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):  # typ
     `AIMessage`.
     """
 
+    @overload
     def __call__(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], ModelResponse],
-    ) -> ModelCallResult:
+    ) -> ModelCallResult: ...
+
+    @overload
+    def __call__(
+        self,
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> Awaitable[ModelCallResult]: ...
+
+    def __call__(
+        self,
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], ModelResponse | Awaitable[ModelResponse]],
+    ) -> ModelCallResult | Awaitable[ModelCallResult]:
         """Intercept model execution via handler callback."""
         ...
 
@@ -731,11 +745,27 @@ class _CallableReturningToolResponse(Protocol):
     `Command`.
     """
 
+    @overload
+    def __call__(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
+    ) -> Awaitable[ToolMessage | Command]: ...
+
+    @overload
     def __call__(
         self,
         request: ToolCallRequest,
         handler: Callable[[ToolCallRequest], ToolMessage | Command],
-    ) -> ToolMessage | Command:
+    ) -> ToolMessage | Command: ...
+
+    def __call__(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[
+            [ToolCallRequest], ToolMessage | Command | Awaitable[ToolMessage | Command]
+        ],
+    ) -> ToolMessage | Command | Awaitable[ToolMessage | Command]:
         """Intercept tool execution via handler callback."""
         ...
 
@@ -901,7 +931,10 @@ def before_model(
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
-                return await func(state, runtime)  # type: ignore[misc]
+                result = func(state, runtime)
+                if isawaitable(result):
+                    return await result
+                return result
 
             # Preserve can_jump_to metadata on the wrapped function
             if func_can_jump_to:
@@ -911,15 +944,18 @@ def before_model(
                 "str", getattr(func, "__name__", "BeforeModelMiddleware")
             )
 
-            return type(
-                middleware_name,
-                (AgentMiddleware,),
-                {
-                    "state_schema": state_schema or AgentState,
-                    "tools": tools or [],
-                    "abefore_model": async_wrapped,
-                },
-            )()
+            return cast(
+                "AgentMiddleware[StateT, ContextT]",
+                type(
+                    middleware_name,
+                    (AgentMiddleware,),
+                    {
+                        "state_schema": state_schema or AgentState,
+                        "tools": tools or [],
+                        "abefore_model": async_wrapped,
+                    },
+                )(),
+            )
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
@@ -935,15 +971,18 @@ def before_model(
         # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "BeforeModelMiddleware"))
 
-        return type(
-            middleware_name,
-            (AgentMiddleware,),
-            {
-                "state_schema": state_schema or AgentState,
-                "tools": tools or [],
-                "before_model": wrapped,
-            },
-        )()
+        return cast(
+            "AgentMiddleware[StateT, ContextT]",
+            type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": state_schema or AgentState,
+                    "tools": tools or [],
+                    "before_model": wrapped,
+                },
+            )(),
+        )
 
     if func is not None:
         return decorator(func)
@@ -1042,7 +1081,10 @@ def after_model(
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
-                return await func(state, runtime)  # type: ignore[misc]
+                result = func(state, runtime)
+                if isawaitable(result):
+                    return await result
+                return result
 
             # Preserve can_jump_to metadata on the wrapped function
             if func_can_jump_to:
@@ -1050,15 +1092,18 @@ def after_model(
 
             middleware_name = name or cast("str", getattr(func, "__name__", "AfterModelMiddleware"))
 
-            return type(
-                middleware_name,
-                (AgentMiddleware,),
-                {
-                    "state_schema": state_schema or AgentState,
-                    "tools": tools or [],
-                    "aafter_model": async_wrapped,
-                },
-            )()
+            return cast(
+                "AgentMiddleware[StateT, ContextT]",
+                type(
+                    middleware_name,
+                    (AgentMiddleware,),
+                    {
+                        "state_schema": state_schema or AgentState,
+                        "tools": tools or [],
+                        "aafter_model": async_wrapped,
+                    },
+                )(),
+            )
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
@@ -1074,15 +1119,18 @@ def after_model(
         # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "AfterModelMiddleware"))
 
-        return type(
-            middleware_name,
-            (AgentMiddleware,),
-            {
-                "state_schema": state_schema or AgentState,
-                "tools": tools or [],
-                "after_model": wrapped,
-            },
-        )()
+        return cast(
+            "AgentMiddleware[StateT, ContextT]",
+            type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": state_schema or AgentState,
+                    "tools": tools or [],
+                    "after_model": wrapped,
+                },
+            )(),
+        )
 
     if func is not None:
         return decorator(func)
@@ -1193,7 +1241,10 @@ def before_agent(
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
-                return await func(state, runtime)  # type: ignore[misc]
+                result = func(state, runtime)
+                if isawaitable(result):
+                    return await result
+                return result
 
             # Preserve can_jump_to metadata on the wrapped function
             if func_can_jump_to:
@@ -1203,15 +1254,18 @@ def before_agent(
                 "str", getattr(func, "__name__", "BeforeAgentMiddleware")
             )
 
-            return type(
-                middleware_name,
-                (AgentMiddleware,),
-                {
-                    "state_schema": state_schema or AgentState,
-                    "tools": tools or [],
-                    "abefore_agent": async_wrapped,
-                },
-            )()
+            return cast(
+                "AgentMiddleware[StateT, ContextT]",
+                type(
+                    middleware_name,
+                    (AgentMiddleware,),
+                    {
+                        "state_schema": state_schema or AgentState,
+                        "tools": tools or [],
+                        "abefore_agent": async_wrapped,
+                    },
+                )(),
+            )
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
@@ -1227,15 +1281,18 @@ def before_agent(
         # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "BeforeAgentMiddleware"))
 
-        return type(
-            middleware_name,
-            (AgentMiddleware,),
-            {
-                "state_schema": state_schema or AgentState,
-                "tools": tools or [],
-                "before_agent": wrapped,
-            },
-        )()
+        return cast(
+            "AgentMiddleware[StateT, ContextT]",
+            type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": state_schema or AgentState,
+                    "tools": tools or [],
+                    "before_agent": wrapped,
+                },
+            )(),
+        )
 
     if func is not None:
         return decorator(func)
@@ -1336,7 +1393,10 @@ def after_agent(
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
-                return await func(state, runtime)  # type: ignore[misc]
+                result = func(state, runtime)
+                if isawaitable(result):
+                    return await result
+                return result
 
             # Preserve can_jump_to metadata on the wrapped function
             if func_can_jump_to:
@@ -1344,15 +1404,18 @@ def after_agent(
 
             middleware_name = name or cast("str", getattr(func, "__name__", "AfterAgentMiddleware"))
 
-            return type(
-                middleware_name,
-                (AgentMiddleware,),
-                {
-                    "state_schema": state_schema or AgentState,
-                    "tools": tools or [],
-                    "aafter_agent": async_wrapped,
-                },
-            )()
+            return cast(
+                "AgentMiddleware[StateT, ContextT]",
+                type(
+                    middleware_name,
+                    (AgentMiddleware,),
+                    {
+                        "state_schema": state_schema or AgentState,
+                        "tools": tools or [],
+                        "aafter_agent": async_wrapped,
+                    },
+                )(),
+            )
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
@@ -1368,15 +1431,18 @@ def after_agent(
         # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "AfterAgentMiddleware"))
 
-        return type(
-            middleware_name,
-            (AgentMiddleware,),
-            {
-                "state_schema": state_schema or AgentState,
-                "tools": tools or [],
-                "after_agent": wrapped,
-            },
-        )()
+        return cast(
+            "AgentMiddleware[StateT, ContextT]",
+            type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": state_schema or AgentState,
+                    "tools": tools or [],
+                    "after_agent": wrapped,
+                },
+            )(),
+        )
 
     if func is not None:
         return decorator(func)
@@ -1476,15 +1542,18 @@ def dynamic_prompt(
 
             middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
 
-            return type(
-                middleware_name,
-                (AgentMiddleware,),
-                {
-                    "state_schema": AgentState,
-                    "tools": [],
-                    "awrap_model_call": async_wrapped,
-                },
-            )()
+            return cast(
+                "AgentMiddleware[StateT, ContextT]",
+                type(
+                    middleware_name,
+                    (AgentMiddleware,),
+                    {
+                        "state_schema": AgentState,
+                        "tools": [],
+                        "awrap_model_call": async_wrapped,
+                    },
+                )(),
+            )
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
@@ -1513,16 +1582,19 @@ def dynamic_prompt(
 
         middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
 
-        return type(
-            middleware_name,
-            (AgentMiddleware,),
-            {
-                "state_schema": AgentState,
-                "tools": [],
-                "wrap_model_call": wrapped,
-                "awrap_model_call": async_wrapped_from_sync,
-            },
-        )()
+        return cast(
+            "AgentMiddleware[StateT, ContextT]",
+            type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": AgentState,
+                    "tools": [],
+                    "wrap_model_call": wrapped,
+                    "awrap_model_call": async_wrapped_from_sync,
+                },
+            )(),
+        )
 
     if func is not None:
         return decorator(func)
@@ -1648,21 +1720,24 @@ def wrap_model_call(
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
             ) -> ModelCallResult:
-                return await func(request, handler)  # type: ignore[misc, arg-type]
+                return await func(request, handler)
 
             middleware_name = name or cast(
                 "str", getattr(func, "__name__", "WrapModelCallMiddleware")
             )
 
-            return type(
-                middleware_name,
-                (AgentMiddleware,),
-                {
-                    "state_schema": state_schema or AgentState,
-                    "tools": tools or [],
-                    "awrap_model_call": async_wrapped,
-                },
-            )()
+            return cast(
+                "AgentMiddleware[StateT, ContextT]",
+                type(
+                    middleware_name,
+                    (AgentMiddleware,),
+                    {
+                        "state_schema": state_schema or AgentState,
+                        "tools": tools or [],
+                        "awrap_model_call": async_wrapped,
+                    },
+                )(),
+            )
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
@@ -1673,15 +1748,18 @@ def wrap_model_call(
 
         middleware_name = name or cast("str", getattr(func, "__name__", "WrapModelCallMiddleware"))
 
-        return type(
-            middleware_name,
-            (AgentMiddleware,),
-            {
-                "state_schema": state_schema or AgentState,
-                "tools": tools or [],
-                "wrap_model_call": wrapped,
-            },
-        )()
+        return cast(
+            "AgentMiddleware[StateT, ContextT]",
+            type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": state_schema or AgentState,
+                    "tools": tools or [],
+                    "wrap_model_call": wrapped,
+                },
+            )(),
+        )
 
     if func is not None:
         return decorator(func)
@@ -1808,21 +1886,24 @@ def wrap_tool_call(
                 request: ToolCallRequest,
                 handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
             ) -> ToolMessage | Command:
-                return await func(request, handler)  # type: ignore[arg-type,misc]
+                return await func(request, handler)
 
             middleware_name = name or cast(
                 "str", getattr(func, "__name__", "WrapToolCallMiddleware")
             )
 
-            return type(
-                middleware_name,
-                (AgentMiddleware,),
-                {
-                    "state_schema": AgentState,
-                    "tools": tools or [],
-                    "awrap_tool_call": async_wrapped,
-                },
-            )()
+            return cast(
+                "AgentMiddleware",
+                type(
+                    middleware_name,
+                    (AgentMiddleware,),
+                    {
+                        "state_schema": AgentState,
+                        "tools": tools or [],
+                        "awrap_tool_call": async_wrapped,
+                    },
+                )(),
+            )
 
         def wrapped(
             _self: AgentMiddleware,
@@ -1833,15 +1914,18 @@ def wrap_tool_call(
 
         middleware_name = name or cast("str", getattr(func, "__name__", "WrapToolCallMiddleware"))
 
-        return type(
-            middleware_name,
-            (AgentMiddleware,),
-            {
-                "state_schema": AgentState,
-                "tools": tools or [],
-                "wrap_tool_call": wrapped,
-            },
-        )()
+        return cast(
+            "AgentMiddleware",
+            type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": AgentState,
+                    "tools": tools or [],
+                    "wrap_tool_call": wrapped,
+                },
+            )(),
+        )
 
     if func is not None:
         return decorator(func)
