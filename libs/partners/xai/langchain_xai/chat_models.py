@@ -336,13 +336,51 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         )
         ```
 
-    Live Search:
+    Agentic Tool Calling (Recommended):
+        xAI supports [agentic tool calling](https://docs.x.ai/docs/guides/tools/overview)
+        where the model autonomously manages reasoning and tool execution on the server side.
+        This enables capabilities like web search, X search, and code execution.
+
+        ```python
+        from langchain_xai import ChatXAI
+
+        # Enable web search
+        model = ChatXAI(
+            model="grok-4",
+            server_tools=[{"type": "web_search"}],
+        )
+
+        response = model.invoke("What are the latest developments in AI?")
+        # The model will autonomously search the web and provide up-to-date information
+
+        # Enable multiple tools
+        model_multi = ChatXAI(
+            model="grok-4",
+            server_tools=[
+                {"type": "web_search"},
+                {"type": "x_search"},
+                {"type": "code_execution"},
+            ],
+        )
+        ```
+
+        Available server tools:
+        - `web_search`: Autonomous web search capability
+        - `x_search`: Search posts on X (formerly Twitter)
+        - `code_execution`: Execute code to solve complex problems
+
+    Live Search (Deprecated):
+        !!! warning "Deprecated"
+            The Live Search API will be deprecated by December 15, 2025.
+            Use `server_tools` with the agentic tool calling API instead.
+
         xAI supports a [Live Search](https://docs.x.ai/docs/guides/live-search)
         feature that enables Grok to ground its answers using results from web searches.
 
         ```python
         from langchain_xai import ChatXAI
 
+        # Old approach (deprecated)
         model = ChatXAI(
             model="grok-4",
             search_parameters={
@@ -422,8 +460,38 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     """
     xai_api_base: str = Field(default="https://api.x.ai/v1/")
     """Base URL path for API requests."""
+    server_tools: list[dict[str, Any]] | None = None
+    """Server-side tools for agentic tool calling.
+
+    Example: `[{"type": "web_search"}, {"type": "x_search"}]`.
+
+    Available tools:
+    - `{"type": "web_search"}`: Enables autonomous web search
+    - `{"type": "x_search"}`: Enables autonomous X (Twitter) search
+    - `{"type": "code_execution"}`: Enables autonomous code execution
+
+    !!! note
+
+        This replaces the deprecated `search_parameters`. Set this to enable
+        x.ai's new agentic tool calling API.
+    """
     search_parameters: dict[str, Any] | None = None
-    """Parameters for search requests. Example: `{"mode": "auto"}`."""
+    """Parameters for search requests. Example: `{"mode": "auto"}`.
+
+    !!! warning "Deprecated"
+
+        The Live Search API will be deprecated by December 15, 2025.
+        Use `server_tools` instead with the new agentic tool calling API.
+
+        Migration example:
+        ```python
+        # Old (deprecated)
+        model = ChatXAI(search_parameters={"mode": "on"})
+
+        # New (recommended)
+        model = ChatXAI(server_tools=[{"type": "web_search"}])
+        ```
+    """
 
     openai_api_key: SecretStr | None = None
     openai_api_base: str | None = None
@@ -492,6 +560,25 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             msg = "n must be 1 when streaming."
             raise ValueError(msg)
 
+        # Warn about search_parameters deprecation
+        if self.search_parameters is not None:
+            warnings.warn(
+                "The 'search_parameters' field is deprecated and will be removed "
+                "after December 15, 2025. Please migrate to 'server_tools' for "
+                "the new agentic tool calling API. "
+                "Example: server_tools=[{'type': 'web_search'}]",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        # Validate that both aren't set simultaneously
+        if self.search_parameters is not None and self.server_tools is not None:
+            msg = (
+                "Cannot set both 'search_parameters' and 'server_tools'. "
+                "Please use 'server_tools' for the new agentic tool calling API."
+            )
+            raise ValueError(msg)
+
         client_params: dict = {
             "api_key": (
                 self.xai_api_key.get_secret_value() if self.xai_api_key else None
@@ -539,6 +626,12 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     def _default_params(self) -> dict[str, Any]:
         """Get default parameters."""
         params = super()._default_params
+
+        # Handle server_tools (new agentic API)
+        if self.server_tools:
+            params["server_tools"] = self.server_tools
+
+        # Handle search_parameters (deprecated API)
         if self.search_parameters:
             if "extra_body" in params:
                 params["extra_body"]["search_parameters"] = self.search_parameters
