@@ -1536,6 +1536,72 @@ def test_get_buffer_string_with_empty_content() -> None:
     assert actual == expected
 
 
+def test_get_buffer_string_with_tool_calls() -> None:
+    """Test get_buffer_string with modern tool_calls field."""
+    messages = [
+        HumanMessage(content="What's the weather?"),
+        AIMessage(
+            content="Let me check the weather",
+            tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": {"city": "NYC"},
+                    "id": "call_1",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+    ]
+    result = get_buffer_string(messages)
+    assert "Human: What's the weather?" in result
+    assert "AI: Let me check the weather" in result
+    assert "get_weather" in result
+    assert "NYC" in result
+
+
+def test_get_buffer_string_with_tool_calls_empty_content() -> None:
+    """Test get_buffer_string with tool_calls and empty content."""
+    messages = [
+        AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": "search",
+                    "args": {"query": "test"},
+                    "id": "call_2",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+    ]
+    result = get_buffer_string(messages)
+    assert "AI: " in result
+    assert "search" in result
+
+
+def test_get_buffer_string_tool_calls_preferred_over_function_call() -> None:
+    """Test that tool_calls takes precedence over legacy function_call."""
+    messages = [
+        AIMessage(
+            content="Calling tools",
+            tool_calls=[
+                {
+                    "name": "modern_tool",
+                    "args": {"key": "value"},
+                    "id": "call_3",
+                    "type": "tool_call",
+                }
+            ],
+            additional_kwargs={
+                "function_call": {"name": "legacy_function", "arguments": "{}"}
+            },
+        ),
+    ]
+    result = get_buffer_string(messages)
+    assert "modern_tool" in result
+    assert "legacy_function" not in result
+
+
 def test_convert_to_openai_messages_reasoning_content() -> None:
     """Test convert_to_openai_messages with reasoning content blocks."""
     # Test reasoning block with empty summary

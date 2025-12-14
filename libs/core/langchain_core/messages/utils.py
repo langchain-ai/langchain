@@ -139,8 +139,11 @@ def get_buffer_string(
             msg = f"Got unsupported message type: {m}"
             raise ValueError(msg)  # noqa: TRY004
         message = f"{role}: {m.text}"
-        if isinstance(m, AIMessage) and "function_call" in m.additional_kwargs:
-            message += f"{m.additional_kwargs['function_call']}"
+        if isinstance(m, AIMessage):
+            if m.tool_calls:
+                message += f"{m.tool_calls}"
+            elif "function_call" in m.additional_kwargs:
+                message += f"{m.additional_kwargs['function_call']}"
         string_messages.append(message)
 
     return "\n".join(string_messages)
