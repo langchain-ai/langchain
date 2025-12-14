@@ -1438,6 +1438,14 @@ def _convert_to_message_template(
             message_ = _create_template_from_message_type(
                 message_type_str, template, template_format=template_format
             )
+        elif (
+            hasattr(message_type_str, "model_fields")
+            and "type" in message_type_str.model_fields
+        ):
+            message_type = message_type_str.model_fields["type"].default
+            message_ = _create_template_from_message_type(
+                message_type, template, template_format=template_format
+            )
         else:
             message_ = message_type_str(
                 prompt=PromptTemplate.from_template(
