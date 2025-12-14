@@ -284,7 +284,7 @@ def create_schema_from_function(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = False,
     include_injected: bool = True,
-) -> type[BaseModel]:
+) -> TypeBaseModel:
     """Create a Pydantic schema from a function's signature.
 
     Args:
@@ -557,11 +557,8 @@ class ChildTool(BaseTool):
         """
         if isinstance(self.args_schema, dict):
             json_schema = self.args_schema
-        elif self.args_schema and issubclass(self.args_schema, BaseModelV1):
-            json_schema = self.args_schema.schema()
         else:
-            input_schema = self.get_input_schema()
-            json_schema = input_schema.model_json_schema()
+            json_schema = self.get_input_jsonschema()
         return json_schema["properties"]
 
     @property
@@ -597,7 +594,7 @@ class ChildTool(BaseTool):
     # --- Runnable ---
 
     @override
-    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         """The tool's input schema.
 
         Args:
@@ -673,6 +670,7 @@ class ChildTool(BaseTool):
         if input_args is not None:
             if isinstance(input_args, dict):
                 return tool_input
+            result: BaseModel | BaseModelV1
             if issubclass(input_args, BaseModel):
                 # Check args_schema for InjectedToolCallId
                 for k, v in get_all_basemodel_annotations(input_args).items():
@@ -687,8 +685,9 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
-                result = input_args.model_validate(tool_input)
-                result_dict = result.model_dump()
+                result_v2 = input_args.model_validate(tool_input)
+                result_dict = result_v2.model_dump()
+                result = result_v2
             elif issubclass(input_args, BaseModelV1):
                 # Check args_schema for InjectedToolCallId
                 for k, v in get_all_basemodel_annotations(input_args).items():
@@ -703,8 +702,9 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
-                result = input_args.parse_obj(tool_input)
-                result_dict = result.dict()
+                result_v1 = input_args.parse_obj(tool_input)
+                result_dict = result_v1.dict()
+                result = result_v1
             else:
                 msg = (
                     f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"
