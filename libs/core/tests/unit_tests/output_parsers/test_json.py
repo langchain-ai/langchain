@@ -628,3 +628,25 @@ def test_unicode_handling() -> None:
     assert "科学文章的标题" in format_instructions, (
         "Unicode characters should not be escaped"
     )
+
+
+def test_json_parser_uses_serialization_schema_mode() -> None:
+    """Ensure FieldInfo metadata is stripped via serialization-mode schemas."""
+    pytest.importorskip("pydantic", minversion="2")
+
+    class Sample(BaseModel):
+        title: str = Field(description="A title field")
+
+        @classmethod
+        def model_json_schema(cls, *args: Any, **kwargs: Any) -> dict[str, Any]:
+            """Inject non-serializable data when mode='validation'."""
+            schema = super().model_json_schema(*args, **kwargs)
+            mode = kwargs.get("mode", "validation")
+            if mode == "validation":
+                schema["field_info"] = Field(description="not JSON serializable")
+            return schema
+
+    parser = SimpleJsonOutputParser(pydantic_object=Sample)
+
+    instructions = parser.get_format_instructions()
+    assert '"field_info"' not in instructions
