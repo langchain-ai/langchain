@@ -140,6 +140,10 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
             always_include: Tool names to always include regardless of selection.
 
                 These do not count against the `max_tools` limit.
+            disable_streaming: Whether to disable streaming for the tool selection.
+
+                Defaults to True. If True, the internal tool selection call will
+                not emit events to the parent callback manager.
         """
         super().__init__()
         self.system_prompt = system_prompt
