@@ -27,6 +27,7 @@ from langchain_core.tools.base import (
     ArgsSchema,
     BaseTool,
     _get_runnable_config_param,
+    _get_type_hints_with_extras,
     _is_injected_arg_type,
     create_schema_from_function,
 )
@@ -249,11 +250,30 @@ class StructuredTool(BaseTool):
         fn = self.func or self.coroutine
         if fn is None:
             return _EMPTY_SET
-        return frozenset(
-            k
-            for k, v in signature(fn).parameters.items()
-            if _is_injected_arg_type(v.annotation)
+
+        # First try signature-based detection (fast path).
+        # This works when annotations are already resolved types.
+        params = signature(fn).parameters
+        injected = frozenset(
+            k for k, v in params.items() if _is_injected_arg_type(v.annotation)
         )
+        if injected:
+            return injected
+
+        # If no injected args found and there are string annotations,
+        # use get_type_hints to resolve them (PEP 563 compatibility).
+        # This is more expensive but only runs when needed.
+        has_string_annotations = any(
+            isinstance(v.annotation, str) for v in params.values()
+        )
+        if has_string_annotations:
+            type_hints = _get_type_hints_with_extras(fn)
+            if type_hints:
+                return frozenset(
+                    k for k, v in type_hints.items() if _is_injected_arg_type(v)
+                )
+
+        return _EMPTY_SET
 
 
 def _filter_schema_args(func: Callable) -> list[str]:
