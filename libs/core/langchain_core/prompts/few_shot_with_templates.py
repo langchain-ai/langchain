@@ -6,6 +6,7 @@ from typing import Any
 from pydantic import ConfigDict, model_validator
 from typing_extensions import Self
 
+from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
@@ -21,7 +22,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
     """Examples to format into the prompt.
     Either this or example_selector should be provided."""
 
-    example_selector: Any = None
+    example_selector: BaseExampleSelector | None = None
     """ExampleSelector to choose the examples to format into the prompt.
     Either this or examples should be provided."""
 

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 try:
     import numpy as np
@@ -94,7 +94,7 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
             msg = "NaN values found, please remove the NaN values and try again"
             raise ValueError(msg) from None
         similarity[np.isnan(similarity) | np.isinf(similarity)] = 0.0
-        return similarity
+        return cast("np.ndarray", similarity)
 
     x = np.array(x, dtype=np.float32)
     y = np.array(y, dtype=np.float32)

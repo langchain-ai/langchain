@@ -358,7 +358,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     @cached_property
     def _serialized(self) -> dict[str, Any]:
-        return dumpd(self)
+        return cast("dict[str, Any]", dumpd(self))
 
     # --- Runnable methods ---
 
@@ -461,7 +461,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         # Check if a runtime streaming flag has been passed in.
         if "stream" in kwargs:
-            return kwargs["stream"]
+            return bool(kwargs["stream"])
 
         if "streaming" in self.model_fields_set:
             streaming_value = getattr(self, "streaming", None)
