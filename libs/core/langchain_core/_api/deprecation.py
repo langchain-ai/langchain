@@ -28,6 +28,27 @@ from pydantic.v1.fields import FieldInfo as FieldInfoV1
 from langchain_core._api.internal import is_caller_internal
 
 
+def _build_deprecation_message(
+    *,
+    alternative: str = "",
+    alternative_import: str = "",
+) -> str:
+    """Build a simple deprecation message for __deprecated__ attribute (PEP 702).
+
+    Args:
+        alternative: An alternative API name.
+        alternative_import: A fully qualified import path for the alternative.
+
+    Returns:
+        A deprecation message string for IDE/type checker display.
+    """
+    if alternative_import:
+        return f"Use {alternative_import} instead."
+    if alternative:
+        return f"Use {alternative} instead."
+    return "Deprecated."
+
+
 class LangChainDeprecationWarning(DeprecationWarning):
     """A class for issuing deprecation warnings for LangChain users."""
 
@@ -223,6 +244,11 @@ def deprecated(
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
                     warn_if_direct_instance
                 )
+                # Set __deprecated__ for PEP 702 (IDE/type checker support)
+                obj.__deprecated__ = _build_deprecation_message(  # type: ignore[attr-defined]
+                    alternative=_alternative,
+                    alternative_import=_alternative_import,
+                )
                 return obj
 
         elif isinstance(obj, FieldInfoV1):
@@ -315,12 +341,15 @@ def deprecated(
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 """Finalize the property."""
-                return cast(
-                    "T",
-                    _DeprecatedProperty(
-                        fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
-                    ),
+                prop = _DeprecatedProperty(
+                    fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
                 )
+                # Set __deprecated__ for PEP 702 (IDE/type checker support)
+                prop.__deprecated__ = _build_deprecation_message(  # type: ignore[attr-defined]
+                    alternative=_alternative,
+                    alternative_import=_alternative_import,
+                )
+                return cast("T", prop)
 
         else:
             _name = _name or cast("type | Callable", obj).__qualname__
@@ -343,6 +372,11 @@ def deprecated(
                 """
                 wrapper = functools.wraps(wrapped)(wrapper)
                 wrapper.__doc__ = new_doc
+                # Set __deprecated__ for PEP 702 (IDE/type checker support)
+                wrapper.__deprecated__ = _build_deprecation_message(  # type: ignore[attr-defined]
+                    alternative=_alternative,
+                    alternative_import=_alternative_import,
+                )
                 return cast("T", wrapper)
 
         old_doc = inspect.cleandoc(old_doc or "").strip("\n")
