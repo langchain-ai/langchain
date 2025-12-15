@@ -51,7 +51,7 @@ from langchain.agents.structured_output import (
 from langchain.chat_models import init_chat_model
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Sequence
+    from collections.abc import Awaitable, Callable, Iterator, Sequence
 
     from langchain_core.runnables import Runnable
     from langgraph.cache.base import BaseCache
@@ -622,6 +622,35 @@ def create_agent(
             Generally, it's recommended to use `state_schema` extensions via middleware
             to keep relevant extensions scoped to corresponding hooks / tools.
         context_schema: An optional schema for runtime context.
+
+            When provided, this schema defines the structure of runtime context
+            that can be passed to the agent's invoke/stream/ainvoke/astream methods
+            via the `context` parameter. The context provides static runtime information
+            such as user IDs, session IDs, database connections, etc.
+
+            The schema should be a `TypedDict` or `dataclass`:
+
+            ```python
+            from typing import TypedDict
+
+            class Context(TypedDict):
+                user_id: str
+                session_id: str
+
+            agent = create_agent(
+                model=model,
+                tools=tools,
+                context_schema=Context
+            )
+
+            # Pass context when invoking
+            result = agent.invoke(
+                {"messages": [{"role": "user", "content": "Hello"}]},
+                context={"user_id": "123", "session_id": "abc"}
+            )
+            ```
+
+            The context is accessible in middleware and tools via `runtime.context`.
         checkpointer: An optional checkpoint saver object.
 
             Used for persisting the state of the graph (e.g., as chat memory) for a
@@ -664,6 +693,7 @@ def create_agent(
     Example:
         ```python
         from langchain.agents import create_agent
+        from typing import TypedDict
 
 
         def check_weather(location: str) -> str:
@@ -671,6 +701,7 @@ def create_agent(
             return f"It's always sunny in {location}"
 
 
+        # Basic usage without context
         graph = create_agent(
             model="anthropic:claude-sonnet-4-5-20250929",
             tools=[check_weather],
@@ -679,6 +710,21 @@ def create_agent(
         inputs = {"messages": [{"role": "user", "content": "what is the weather in sf"}]}
         for chunk in graph.stream(inputs, stream_mode="updates"):
             print(chunk)
+
+        # Usage with context schema
+        class Context(TypedDict):
+            user_id: str
+            session_id: str
+
+        graph_with_context = create_agent(
+            model="anthropic:claude-sonnet-4-5-20250929",
+            tools=[check_weather],
+            context_schema=Context,
+        )
+        result = graph_with_context.invoke(
+            {"messages": [{"role": "user", "content": "Hello"}]},
+            context={"user_id": "123", "session_id": "abc"}
+        )
         ```
     """
     # init chat model
@@ -1472,7 +1518,7 @@ def create_agent(
             can_jump_to=_get_can_jump_to(middleware_w_after_agent[0], "after_agent"),
         )
 
-    return graph.compile(
+    compiled_graph = graph.compile(
         checkpointer=checkpointer,
         store=store,
         interrupt_before=interrupt_before,
@@ -1481,6 +1527,11 @@ def create_agent(
         name=name,
         cache=cache,
     ).with_config({"recursion_limit": 10_000})
+
+    # Wrap the compiled graph to support context parameter
+    if context_schema is not None:
+        return _AgentWithContext(compiled_graph, context_schema)
+    return compiled_graph
 
 
 def _resolve_jump(
@@ -1675,6 +1726,167 @@ def _add_middleware_edge(
 
     else:
         graph.add_edge(name, default_destination)
+
+
+class _AgentWithContext:
+    """Wrapper for CompiledStateGraph that supports context parameter.
+
+    This wrapper allows passing context as a direct parameter to invoke/stream/ainvoke/astream
+    methods, converting it to the format expected by LangGraph's Runtime.
+    """
+
+    def __init__(
+        self,
+        compiled_graph: CompiledStateGraph[AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]],
+        context_schema: type[ContextT],
+    ) -> None:
+        """Initialize the wrapper.
+
+        Args:
+            compiled_graph: The compiled state graph to wrap.
+            context_schema: The context schema type.
+        """
+        self._graph = compiled_graph
+        self._context_schema = context_schema
+
+    def invoke(
+        self,
+        input: dict[str, Any],
+        config: RunnableConfig | None = None,
+        *,
+        context: ContextT | dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Invoke the agent with optional context.
+
+        Args:
+            input: The input state for the agent.
+            config: Optional configuration.
+            context: Optional context object or dict matching context_schema.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            The output state from the agent.
+        """
+        config = self._prepare_config_with_context(config, context)
+        return self._graph.invoke(input, config=config, **kwargs)
+
+    def stream(
+        self,
+        input: dict[str, Any],
+        config: RunnableConfig | None = None,
+        *,
+        context: ContextT | dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> Iterator[dict[str, Any]]:
+        """Stream the agent execution with optional context.
+
+        Args:
+            input: The input state for the agent.
+            config: Optional configuration.
+            context: Optional context object or dict matching context_schema.
+            **kwargs: Additional keyword arguments.
+
+        Yields:
+            State updates from the agent execution.
+        """
+        config = self._prepare_config_with_context(config, context)
+        yield from self._graph.stream(input, config=config, **kwargs)
+
+    async def ainvoke(
+        self,
+        input: dict[str, Any],
+        config: RunnableConfig | None = None,
+        *,
+        context: ContextT | dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Async invoke the agent with optional context.
+
+        Args:
+            input: The input state for the agent.
+            config: Optional configuration.
+            context: Optional context object or dict matching context_schema.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            The output state from the agent.
+        """
+        config = self._prepare_config_with_context(config, context)
+        return await self._graph.ainvoke(input, config=config, **kwargs)
+
+    async def astream(
+        self,
+        input: dict[str, Any],
+        config: RunnableConfig | None = None,
+        *,
+        context: ContextT | dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[dict[str, Any]]:
+        """Async stream the agent execution with optional context.
+
+        Args:
+            input: The input state for the agent.
+            config: Optional configuration.
+            context: Optional context object or dict matching context_schema.
+            **kwargs: Additional keyword arguments.
+
+        Yields:
+            State updates from the agent execution.
+        """
+        config = self._prepare_config_with_context(config, context)
+        async for item in self._graph.astream(input, config=config, **kwargs):
+            yield item
+
+    def _prepare_config_with_context(
+        self,
+        config: RunnableConfig | None,
+        context: ContextT | dict[str, Any] | None,
+    ) -> RunnableConfig:
+        """Prepare config with context.
+
+        LangGraph's Runtime expects context to be passed via config["configurable"]["__context__"].
+        This method converts the context parameter to the expected format.
+
+        Args:
+            config: The original config.
+            context: The context to add. Can be a dict, dataclass instance, or TypedDict instance.
+
+        Returns:
+            Config with context added to configurable.
+        """
+        from langchain_core.runnables.config import ensure_config
+
+        config = ensure_config(config)
+
+        if context is not None:
+            # Convert context to dict if it's not already
+            if isinstance(context, dict):
+                context_dict = context
+            else:
+                # Try to convert dataclass or other object to dict
+                if hasattr(context, "__dict__"):
+                    context_dict = context.__dict__
+                elif hasattr(context, "_asdict"):  # namedtuple
+                    context_dict = context._asdict()
+                else:
+                    # Try to get fields from TypedDict or dataclass
+                    context_dict = {}
+                    if hasattr(self._context_schema, "__annotations__"):
+                        for key in self._context_schema.__annotations__:
+                            if hasattr(context, key):
+                                context_dict[key] = getattr(context, key)
+
+            # Add context to configurable - LangGraph Runtime will pick this up
+            if "configurable" not in config:
+                config["configurable"] = {}
+            config["configurable"]["__context__"] = context_dict
+
+        return config
+
+    def __getattr__(self, name: str) -> Any:
+        """Delegate other attributes to the wrapped graph."""
+        return getattr(self._graph, name)
 
 
 __all__ = [
