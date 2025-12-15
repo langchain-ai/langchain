@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
+from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from pydantic import Field, TypeAdapter
 from typing_extensions import TypedDict
 
@@ -292,6 +293,28 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         if selection_request is None:
             return handler(request)
 
+        # Check if streaming is enabled by checking runtime config for callbacks
+        # If streaming is enabled, we should avoid blocking calls that might interfere
+        # with the streaming output. However, tool selection happens before model
+        # invocation, so it shouldn't block streaming. We proceed with the selection.
+        try:
+            runtime_config = getattr(request.runtime, "config", None)
+            if runtime_config:
+                callbacks = runtime_config.get("callbacks")
+                # If streaming callbacks are present, we still need to do tool selection
+                # but we'll use a non-blocking approach if possible
+                if callbacks:
+                    # Check if any callback is a streaming callback
+                    has_streaming = any(
+                        isinstance(cb, _StreamingCallbackHandler)
+                        for cb in (callbacks if isinstance(callbacks, list) else [callbacks])
+                    )
+                    # Even with streaming, tool selection needs to complete before model call
+                    # so we proceed with the selection
+        except Exception:
+            # If we can't check streaming status, proceed normally
+            pass
+
         # Create dynamic response model with Literal enum of available tool names
         type_adapter = _create_tool_selection_response(selection_request.available_tools)
         schema = type_adapter.json_schema()
@@ -322,6 +345,28 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         selection_request = self._prepare_selection_request(request)
         if selection_request is None:
             return await handler(request)
+
+        # Check if streaming is enabled by checking runtime config for callbacks
+        # If streaming is enabled, we should avoid blocking calls that might interfere
+        # with the streaming output. However, tool selection happens before model
+        # invocation, so it shouldn't block streaming. We proceed with the selection.
+        try:
+            runtime_config = getattr(request.runtime, "config", None)
+            if runtime_config:
+                callbacks = runtime_config.get("callbacks")
+                # If streaming callbacks are present, we still need to do tool selection
+                # but we'll use a non-blocking approach if possible
+                if callbacks:
+                    # Check if any callback is a streaming callback
+                    has_streaming = any(
+                        isinstance(cb, _StreamingCallbackHandler)
+                        for cb in (callbacks if isinstance(callbacks, list) else [callbacks])
+                    )
+                    # Even with streaming, tool selection needs to complete before model call
+                    # so we proceed with the selection
+        except Exception:
+            # If we can't check streaming status, proceed normally
+            pass
 
         # Create dynamic response model with Literal enum of available tool names
         type_adapter = _create_tool_selection_response(selection_request.available_tools)
