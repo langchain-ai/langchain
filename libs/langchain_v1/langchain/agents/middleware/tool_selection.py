@@ -226,7 +226,23 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         selected_tool_names: list[str] = []
         invalid_tool_selections = []
 
-        for tool_name in response["tools"]:
+        # Handle missing or invalid 'tools' key in response
+        if "tools" not in response:
+            logger.warning(
+                "Model response missing 'tools' key. Using all available tools for selection."
+            )
+            # Use all available tools when response is malformed
+            tools_list = valid_tool_names
+        elif not isinstance(response["tools"], list):
+            logger.warning(
+                f"Model response 'tools' key is not a list (got {type(response['tools'])}). "
+                "Using all available tools for selection."
+            )
+            tools_list = valid_tool_names
+        else:
+            tools_list = response["tools"]
+
+        for tool_name in tools_list:
             if tool_name not in valid_tool_names:
                 invalid_tool_selections.append(tool_name)
                 continue
