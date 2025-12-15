@@ -997,6 +997,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 for future in futures:
                     future.cancel()
 
+    @overload
     async def abatch(
         self,
         inputs: list[Input],
@@ -1004,7 +1005,26 @@ class Runnable(ABC, Generic[Input, Output]):
         *,
         return_exceptions: bool = False,
         **kwargs: Any | None,
-    ) -> list[Output]:
+    ) -> list[Output]: ...
+
+    @overload
+    async def abatch(
+        self,
+        inputs: list[Input],
+        config: RunnableConfig | list[RunnableConfig] | None = None,
+        *,
+        return_exceptions: Literal[True],
+        **kwargs: Any | None,
+    ) -> list[Output | Exception]: ...
+
+    async def abatch(
+        self,
+        inputs: list[Input],
+        config: RunnableConfig | list[RunnableConfig] | None = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Any | None,
+    ) -> list[Output | Exception]:
         """Default implementation runs `ainvoke` in parallel using `asyncio.gather`.
 
         The default implementation of `batch` works well for IO bound runnables.
@@ -3189,6 +3209,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             await run_manager.on_chain_end(input_)
             return cast("Output", input_)
 
+    @overload
     @override
     def batch(
         self,
@@ -3197,7 +3218,28 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         *,
         return_exceptions: bool = False,
         **kwargs: Any | None,
-    ) -> list[Output]:
+    ) -> list[Output]: ...
+
+    @overload
+    @override
+    def batch(
+        self,
+        inputs: list[Input],
+        config: RunnableConfig | list[RunnableConfig] | None = None,
+        *,
+        return_exceptions: Literal[True],
+        **kwargs: Any | None,
+    ) -> list[Output | Exception]: ...
+
+    @override
+    def batch(
+        self,
+        inputs: list[Input],
+        config: RunnableConfig | list[RunnableConfig] | None = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Any | None,
+    ) -> list[Output | Exception]:
         if not inputs:
             return []
 
@@ -3325,7 +3367,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         *,
         return_exceptions: bool = False,
         **kwargs: Any | None,
-    ) -> list[Output]:
+    ) -> list[Output | Exception]:
         if not inputs:
             return []
 
@@ -5564,6 +5606,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
             **{**self.kwargs, **kwargs},
         )
 
+    @overload
     @override
     def batch(
         self,
@@ -5572,7 +5615,28 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         *,
         return_exceptions: bool = False,
         **kwargs: Any | None,
-    ) -> list[Output]:
+    ) -> list[Output]: ...
+
+    @overload
+    @override
+    def batch(
+        self,
+        inputs: list[Input],
+        config: RunnableConfig | list[RunnableConfig] | None = None,
+        *,
+        return_exceptions: Literal[True],
+        **kwargs: Any | None,
+    ) -> list[Output | Exception]: ...
+
+    @override
+    def batch(
+        self,
+        inputs: list[Input],
+        config: RunnableConfig | list[RunnableConfig] | None = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Any | None,
+    ) -> list[Output | Exception]:
         if isinstance(config, list):
             configs = cast(
                 "list[RunnableConfig]",
@@ -5587,6 +5651,18 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
             **{**self.kwargs, **kwargs},
         )
 
+    @overload
+    @override
+    async def abatch(
+        self,
+        inputs: list[Input],
+        config: RunnableConfig | list[RunnableConfig] | None = None,
+        *,
+        return_exceptions: Literal[True],
+        **kwargs: Any | None,
+    ) -> list[Output | Exception]: ...
+
+    @overload
     @override
     async def abatch(
         self,
@@ -5595,7 +5671,17 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         *,
         return_exceptions: bool = False,
         **kwargs: Any | None,
-    ) -> list[Output]:
+    ) -> list[Output]: ...
+
+    @override
+    async def abatch(
+        self,
+        inputs: list[Input],
+        config: RunnableConfig | list[RunnableConfig] | None = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Any | None,
+    ) -> list[Output | Exception]:
         if isinstance(config, list):
             configs = cast(
                 "list[RunnableConfig]",
