@@ -2944,6 +2944,38 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     max_tokens: int | None = Field(default=None, alias="max_completion_tokens")
     """Maximum number of tokens to generate."""
 
+    def __repr__(self) -> str:
+        """Return a string representation with API key redacted."""
+        # Get the default repr from Pydantic
+        repr_str = super().__repr__()
+
+        # If openai_api_key is present and not None, redact it
+        if self.openai_api_key is not None:
+            # Handle SecretStr case
+            if hasattr(self.openai_api_key, "get_secret_value"):
+                # Replace the actual key value with a redacted version
+                secret_value = self.openai_api_key.get_secret_value()
+                if secret_value:
+                    if len(secret_value) > 7:
+                        redacted = f"{secret_value[:3]}...{secret_value[-4:]}"
+                    else:
+                        redacted = "***"
+
+                    if "SecretStr('**********')" in repr_str:
+                        repr_str = repr_str.replace(
+                            "SecretStr('**********')", f"SecretStr('{redacted}')"
+                        )
+                    else:
+                        repr_str = repr_str.replace(secret_value, redacted)
+            # Handle callable case (sync or async)
+            elif callable(self.openai_api_key):
+                # Don't expose callable details
+                repr_str = repr_str.replace(
+                    f"openai_api_key={self.openai_api_key!r}", "openai_api_key='***'"
+                )
+
+        return repr_str
+
     @property
     def lc_secrets(self) -> dict[str, str]:
         """Mapping of secret environment variables."""

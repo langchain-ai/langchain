@@ -409,6 +409,32 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             ).embeddings
         return self
 
+    def __repr__(self) -> str:
+        """Return a string representation with API key redacted."""
+        repr_str = super().__repr__()
+
+        if self.openai_api_key is not None:
+            if hasattr(self.openai_api_key, "get_secret_value"):
+                secret_value = self.openai_api_key.get_secret_value()
+                if secret_value:
+                    if len(secret_value) > 7:
+                        redacted = f"{secret_value[:3]}...{secret_value[-4:]}"
+                    else:
+                        redacted = "***"
+
+                    if "SecretStr('**********')" in repr_str:
+                        repr_str = repr_str.replace(
+                            "SecretStr('**********')", f"SecretStr('{redacted}')"
+                        )
+                    else:
+                        repr_str = repr_str.replace(secret_value, redacted)
+            elif callable(self.openai_api_key):
+                repr_str = repr_str.replace(
+                    f"openai_api_key={self.openai_api_key!r}", "openai_api_key='***'"
+                )
+
+        return repr_str
+
     @property
     def _invocation_params(self) -> dict[str, Any]:
         params: dict = {"model": self.model, **self.model_kwargs}

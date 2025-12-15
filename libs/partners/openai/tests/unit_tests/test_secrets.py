@@ -23,16 +23,46 @@ def test_chat_openai_secrets() -> None:
     assert "foo" not in s
 
 
+def test_chat_openai_repr_redacts_api_key() -> None:
+    """Test that __repr__ redacts the API key properly."""
+    o = ChatOpenAI(openai_api_key="sk-1234567890abcdefghijklmnopqrstuvwxyz")  # type: ignore[call-arg]
+    repr_str = repr(o)
+    # Full key should not be in repr
+    assert "sk-1234567890abcdefghijklmnopqrstuvwxyz" not in repr_str
+    # Redacted version should be present (first 3 + last 4 chars)
+    assert "sk-...wxyz" in repr_str
+
+
 def test_openai_secrets() -> None:
     o = OpenAI(openai_api_key="foo")  # type: ignore[call-arg]
     s = str(o)
     assert "foo" not in s
 
 
+def test_openai_repr_redacts_api_key() -> None:
+    """Test that __repr__ redacts the API key properly."""
+    o = OpenAI(openai_api_key="sk-1234567890abcdefghijklmnopqrstuvwxyz")  # type: ignore[call-arg]
+    repr_str = repr(o)
+    # Full key should not be in repr
+    assert "sk-1234567890abcdefghijklmnopqrstuvwxyz" not in repr_str
+    # Redacted version should be present (first 3 + last 4 chars)
+    assert "sk-...wxyz" in repr_str
+
+
 def test_openai_embeddings_secrets() -> None:
     o = OpenAIEmbeddings(openai_api_key="foo")  # type: ignore[call-arg]
     s = str(o)
     assert "foo" not in s
+
+
+def test_openai_embeddings_repr_redacts_api_key() -> None:
+    """Test that __repr__ redacts the API key properly."""
+    o = OpenAIEmbeddings(openai_api_key="sk-1234567890abcdefghijklmnopqrstuvwxyz")  # type: ignore[call-arg]
+    repr_str = repr(o)
+    # Full key should not be in repr
+    assert "sk-1234567890abcdefghijklmnopqrstuvwxyz" not in repr_str
+    # Redacted version should be present (first 3 + last 4 chars)
+    assert "sk-...wxyz" in repr_str
 
 
 def test_azure_chat_openai_secrets() -> None:
@@ -197,6 +227,32 @@ def test_openai_api_key_accepts_callable(model_class: type) -> None:
     model = model_class(openai_api_key=get_api_key)
     assert callable(model.openai_api_key)
     assert model.openai_api_key() == "secret-api-key-from-callable"
+
+
+@pytest.mark.parametrize("model_class", [ChatOpenAI, OpenAI, OpenAIEmbeddings])
+def test_openai_repr_with_callable_api_key(model_class: type) -> None:
+    """Test that __repr__ handles callable API keys properly."""
+
+    def get_api_key() -> str:
+        return "sk-secret-callable-key"
+
+    model = model_class(openai_api_key=get_api_key)
+    repr_str = repr(model)
+    # The actual key value should not be in repr
+    assert "sk-secret-callable-key" not in repr_str
+    # Should show that it's redacted
+    assert "***" in repr_str or "openai_api_key" in repr_str
+
+
+@pytest.mark.parametrize("model_class", [ChatOpenAI, OpenAI, OpenAIEmbeddings])
+def test_openai_repr_with_short_api_key(model_class: type) -> None:
+    """Test that __repr__ handles short API keys (less than 8 chars) properly."""
+    model = model_class(openai_api_key="short")  # type: ignore[call-arg]
+    repr_str = repr(model)
+    # Short key should not be in repr
+    assert "short" not in repr_str
+    # Should be replaced with ***
+    assert "***" in repr_str
 
 
 @pytest.mark.parametrize("model_class", [AzureChatOpenAI, AzureOpenAI])
