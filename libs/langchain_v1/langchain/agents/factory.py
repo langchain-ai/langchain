@@ -20,9 +20,9 @@ from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
 from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
-from langgraph.runtime import Runtime
+from langgraph.runtime import Runtime  # noqa: TC002
 from langgraph.types import Command, Send
-from langgraph.typing import ContextT
+from langgraph.typing import ContextT  # noqa: TC002
 from typing_extensions import NotRequired, Required, TypedDict
 
 from langchain.agents.middleware.types import (
@@ -51,9 +51,11 @@ from langchain.agents.structured_output import (
 from langchain.chat_models import init_chat_model
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Iterator, Sequence
+    from collections.abc import Awaitable, Callable, Iterator, Sequence, AsyncIterator
 
     from langchain_core.runnables import Runnable
+    # RunnableConfig 定义在 langchain_core.runnables.config 模块（确保模块路径一致）
+    from langchain_core.runnables.config import RunnableConfig
     from langgraph.cache.base import BaseCache
     from langgraph.graph.state import CompiledStateGraph
     from langgraph.store.base import BaseStore
@@ -62,18 +64,6 @@ if TYPE_CHECKING:
     from langchain.agents.middleware.types import ToolCallRequest, ToolCallWrapper
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
-
-FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
-    # if model profile data are not available, these models are assumed to support
-    # structured output
-    "grok",
-    "gpt-5",
-    "gpt-4.1",
-    "gpt-4o",
-    "gpt-oss",
-    "o3-pro",
-    "o3-mini",
-]
 
 
 def _normalize_to_model_response(result: ModelResponse | AIMessage) -> ModelResponse:
@@ -361,13 +351,11 @@ def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> l
     return []
 
 
-def _supports_provider_strategy(model: str | BaseChatModel, tools: list | None = None) -> bool:
+def _supports_provider_strategy(model: str | BaseChatModel) -> bool:
     """Check if a model supports provider-specific structured output.
 
     Args:
         model: Model name string or `BaseChatModel` instance.
-        tools: Optional list of tools provided to the agent. Needed because some models
-            don't support structured output together with tool calling.
 
     Returns:
         `True` if the model supports provider-specific structured output, `False` otherwise.
@@ -376,23 +364,11 @@ def _supports_provider_strategy(model: str | BaseChatModel, tools: list | None =
     if isinstance(model, str):
         model_name = model
     elif isinstance(model, BaseChatModel):
-        model_name = (
-            getattr(model, "model_name", None)
-            or getattr(model, "model", None)
-            or getattr(model, "model_id", "")
-        )
-        model_profile = model.profile
-        if (
-            model_profile is not None
-            and model_profile.get("structured_output")
-            # We make an exception for Gemini models, which currently do not support
-            # simultaneous tool use with structured output
-            and not (tools and isinstance(model_name, str) and "gemini" in model_name.lower())
-        ):
-            return True
+        model_name = getattr(model, "model_name", None)
 
     return (
-        any(part in model_name.lower() for part in FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT)
+        "grok" in model_name.lower()
+        or any(part in model_name for part in ["gpt-5", "gpt-4.1", "gpt-oss", "o3-pro", "o3-mini"])
         if model_name
         else False
     )
@@ -538,11 +514,11 @@ def _chain_async_tool_call_wrappers(
     return result
 
 
-def create_agent(
+def create_agent(  # noqa: PLR0915
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
     *,
-    system_prompt: str | SystemMessage | None = None,
+    system_prompt: str | None = None,
     middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
     response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
     state_schema: type[AgentState[ResponseT]] | None = None,
@@ -588,9 +564,9 @@ def create_agent(
                 docs for more information.
         system_prompt: An optional system prompt for the LLM.
 
-            Can be a `str` (which will be converted to a `SystemMessage`) or a
-            `SystemMessage` instance directly. The system message is added to the
-            beginning of the message list when calling the model.
+            Prompts are converted to a
+            [`SystemMessage`][langchain.messages.SystemMessage] and added to the
+            beginning of the message list.
         middleware: A sequence of middleware instances to apply to the agent.
 
             Middleware can intercept and modify agent behavior at various stages.
@@ -622,8 +598,7 @@ def create_agent(
             Generally, it's recommended to use `state_schema` extensions via middleware
             to keep relevant extensions scoped to corresponding hooks / tools.
         context_schema: An optional schema for runtime context.
-
-            When provided, this schema defines the structure of runtime context
+        When provided, this schema defines the structure of runtime context
             that can be passed to the agent's invoke/stream/ainvoke/astream methods
             via the `context` parameter. The context provides static runtime information
             such as user IDs, session IDs, database connections, etc.
@@ -700,7 +675,6 @@ def create_agent(
             '''Return the weather forecast for the specified location.'''
             return f"It's always sunny in {location}"
 
-
         # Basic usage without context
         graph = create_agent(
             model="anthropic:claude-sonnet-4-5-20250929",
@@ -730,14 +704,6 @@ def create_agent(
     # init chat model
     if isinstance(model, str):
         model = init_chat_model(model)
-
-    # Convert system_prompt to SystemMessage if needed
-    system_message: SystemMessage | None = None
-    if system_prompt is not None:
-        if isinstance(system_prompt, SystemMessage):
-            system_message = system_prompt
-        else:
-            system_message = SystemMessage(content=system_prompt)
 
     # Handle tools being None or empty
     if tools is None:
@@ -837,9 +803,9 @@ def create_agent(
         default_tools = list(built_in_tools)
 
     # validate middleware
-    if len({m.name for m in middleware}) != len(middleware):
-        msg = "Please remove duplicate middleware instances."
-        raise AssertionError(msg)
+    assert len({m.name for m in middleware}) == len(middleware), (  # noqa: S101
+        "Please remove duplicate middleware instances."
+    )
     middleware_w_before_agent = [
         m
         for m in middleware
@@ -932,12 +898,12 @@ def create_agent(
                 )
                 try:
                     structured_response = provider_strategy_binding.parse(output)
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     schema_name = getattr(
                         effective_response_format.schema_spec.schema, "__name__", "response_format"
                     )
                     validation_error = StructuredOutputValidationError(schema_name, exc, output)
-                    raise validation_error from exc
+                    raise validation_error
                 else:
                     return {"messages": [output], "structured_response": structured_response}
             return {"messages": [output]}
@@ -998,13 +964,13 @@ def create_agent(
                         ],
                         "structured_response": structured_response,
                     }
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     exception = StructuredOutputValidationError(tool_call["name"], exc, output)
                     should_retry, error_message = _handle_structured_output_error(
                         exception, effective_response_format
                     )
                     if not should_retry:
-                        raise exception from exc
+                        raise exception
 
                     return {
                         "messages": [
@@ -1068,7 +1034,7 @@ def create_agent(
         effective_response_format: ResponseFormat | None
         if isinstance(request.response_format, AutoStrategy):
             # User provided raw schema via AutoStrategy - auto-detect best strategy based on model
-            if _supports_provider_strategy(request.model, tools=request.tools):
+            if _supports_provider_strategy(request.model):
                 # Model supports provider strategy - use it
                 effective_response_format = ProviderStrategy(schema=request.response_format.schema)
             else:
@@ -1089,7 +1055,7 @@ def create_agent(
 
         # Bind model based on effective response format
         if isinstance(effective_response_format, ProviderStrategy):
-            # (Backward compatibility) Use OpenAI format structured output
+            # Use provider-specific structured output
             kwargs = effective_response_format.to_model_kwargs()
             return (
                 request.model.bind_tools(
@@ -1142,12 +1108,10 @@ def create_agent(
         # Get the bound model (with auto-detection if needed)
         model_, effective_response_format = _get_bound_model(request)
         messages = request.messages
-        if request.system_message:
-            messages = [request.system_message, *messages]
+        if request.system_prompt:
+            messages = [SystemMessage(request.system_prompt), *messages]
 
         output = model_.invoke(messages)
-        if name:
-            output.name = name
 
         # Handle model output to get messages and structured_response
         handled_output = _handle_model_output(output, effective_response_format)
@@ -1164,7 +1128,7 @@ def create_agent(
         request = ModelRequest(
             model=model,
             tools=default_tools,
-            system_message=system_message,
+            system_prompt=system_prompt,
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
@@ -1197,12 +1161,10 @@ def create_agent(
         # Get the bound model (with auto-detection if needed)
         model_, effective_response_format = _get_bound_model(request)
         messages = request.messages
-        if request.system_message:
-            messages = [request.system_message, *messages]
+        if request.system_prompt:
+            messages = [SystemMessage(request.system_prompt), *messages]
 
         output = await model_.ainvoke(messages)
-        if name:
-            output.name = name
 
         # Handle model output to get messages and structured_response
         handled_output = _handle_model_output(output, effective_response_format)
@@ -1219,7 +1181,7 @@ def create_agent(
         request = ModelRequest(
             model=model,
             tools=default_tools,
-            system_message=system_message,
+            system_prompt=system_prompt,
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
@@ -1527,12 +1489,10 @@ def create_agent(
         name=name,
         cache=cache,
     ).with_config({"recursion_limit": 10_000})
-
     # Wrap the compiled graph to support context parameter
     if context_schema is not None:
         return _AgentWithContext(compiled_graph, context_schema)
     return compiled_graph
-
 
 def _resolve_jump(
     jump_to: JumpTo | None,
@@ -1727,7 +1687,6 @@ def _add_middleware_edge(
     else:
         graph.add_edge(name, default_destination)
 
-
 class _AgentWithContext:
     """Wrapper for CompiledStateGraph that supports context parameter.
 
@@ -1736,10 +1695,15 @@ class _AgentWithContext:
     """
 
     def __init__(
-        self,
-        compiled_graph: CompiledStateGraph[AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]],
-        context_schema: type[ContextT],
-    ) -> None:
+    self,
+    compiled_graph: CompiledStateGraph[
+        AgentState[ResponseT],
+        ContextT,
+        _InputAgentState,
+        _OutputAgentState[ResponseT],
+    ],
+    context_schema: type[ContextT],
+) -> None:
         """Initialize the wrapper.
 
         Args:
@@ -1750,93 +1714,49 @@ class _AgentWithContext:
         self._context_schema = context_schema
 
     def invoke(
-        self,
-        input: dict[str, Any],
-        config: RunnableConfig | None = None,
-        *,
-        context: ContextT | dict[str, Any] | None = None,
-        **kwargs: Any,
-    ) -> dict[str, Any]:
-        """Invoke the agent with optional context.
-
-        Args:
-            input: The input state for the agent.
-            config: Optional configuration.
-            context: Optional context object or dict matching context_schema.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            The output state from the agent.
-        """
-        config = self._prepare_config_with_context(config, context)
-        return self._graph.invoke(input, config=config, **kwargs)
+    self,
+    input_state: dict[str, Any],
+    config: RunnableConfig | None = None,
+    *,
+    context: ContextT | dict[str, Any] | None = None,
+    **kwargs: Any,
+) -> dict[str, Any]:
+    config = self._prepare_config_with_context(config, context)
+    return self._graph.invoke(input_state, config=config, **kwargs)
 
     def stream(
-        self,
-        input: dict[str, Any],
-        config: RunnableConfig | None = None,
-        *,
-        context: ContextT | dict[str, Any] | None = None,
-        **kwargs: Any,
-    ) -> Iterator[dict[str, Any]]:
-        """Stream the agent execution with optional context.
-
-        Args:
-            input: The input state for the agent.
-            config: Optional configuration.
-            context: Optional context object or dict matching context_schema.
-            **kwargs: Additional keyword arguments.
-
-        Yields:
-            State updates from the agent execution.
-        """
-        config = self._prepare_config_with_context(config, context)
-        yield from self._graph.stream(input, config=config, **kwargs)
+    self,
+    input_state: dict[str, Any],
+    config: RunnableConfig | None = None,
+    *,
+    context: ContextT | dict[str, Any] | None = None,
+    **kwargs: Any,
+) -> Iterator[dict[str, Any]]:
+    config = self._prepare_config_with_context(config, context)
+    yield from self._graph.stream(input_state, config=config, **kwargs)
 
     async def ainvoke(
-        self,
-        input: dict[str, Any],
-        config: RunnableConfig | None = None,
-        *,
-        context: ContextT | dict[str, Any] | None = None,
-        **kwargs: Any,
-    ) -> dict[str, Any]:
-        """Async invoke the agent with optional context.
-
-        Args:
-            input: The input state for the agent.
-            config: Optional configuration.
-            context: Optional context object or dict matching context_schema.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            The output state from the agent.
-        """
-        config = self._prepare_config_with_context(config, context)
-        return await self._graph.ainvoke(input, config=config, **kwargs)
+    self,
+    input_state: dict[str, Any],
+    config: RunnableConfig | None = None,
+    *,
+    context: ContextT | dict[str, Any] | None = None,
+    **kwargs: Any,
+) -> dict[str, Any]:
+    config = self._prepare_config_with_context(config, context)
+    return await self._graph.ainvoke(input_state, config=config, **kwargs)
 
     async def astream(
-        self,
-        input: dict[str, Any],
-        config: RunnableConfig | None = None,
-        *,
-        context: ContextT | dict[str, Any] | None = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[dict[str, Any]]:
-        """Async stream the agent execution with optional context.
-
-        Args:
-            input: The input state for the agent.
-            config: Optional configuration.
-            context: Optional context object or dict matching context_schema.
-            **kwargs: Additional keyword arguments.
-
-        Yields:
-            State updates from the agent execution.
-        """
-        config = self._prepare_config_with_context(config, context)
-        async for item in self._graph.astream(input, config=config, **kwargs):
-            yield item
+    self,
+    input_state: dict[str, Any],
+    config: RunnableConfig | None = None,
+    *,
+    context: ContextT | dict[str, Any] | None = None,
+    **kwargs: Any,
+) -> AsyncIterator[dict[str, Any]]:
+    config = self._prepare_config_with_context(config, context)
+    async for item in self._graph.astream(input_state, config=config, **kwargs):
+        yield item
 
     def _prepare_config_with_context(
         self,
@@ -1863,19 +1783,17 @@ class _AgentWithContext:
             # Convert context to dict if it's not already
             if isinstance(context, dict):
                 context_dict = context
+            elif hasattr(context, "__dict__"):
+                context_dict = context.__dict__
+            elif hasattr(context, "_asdict"):  # namedtuple
+                context_dict = context._asdict()
             else:
-                # Try to convert dataclass or other object to dict
-                if hasattr(context, "__dict__"):
-                    context_dict = context.__dict__
-                elif hasattr(context, "_asdict"):  # namedtuple
-                    context_dict = context._asdict()
-                else:
-                    # Try to get fields from TypedDict or dataclass
-                    context_dict = {}
-                    if hasattr(self._context_schema, "__annotations__"):
-                        for key in self._context_schema.__annotations__:
-                            if hasattr(context, key):
-                                context_dict[key] = getattr(context, key)
+                # Try to get fields from TypedDict or dataclass
+                context_dict = {}
+                if hasattr(self._context_schema, "__annotations__"):
+                    for key in self._context_schema.__annotations__:
+                        if hasattr(context, key):
+                            context_dict[key] = getattr(context, key)
 
             # Add context to configurable - LangGraph Runtime will pick this up
             if "configurable" not in config:
