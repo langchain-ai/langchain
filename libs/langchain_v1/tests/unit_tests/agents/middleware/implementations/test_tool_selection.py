@@ -234,7 +234,7 @@ class TestMaxToolsLimiting:
             )
         )
 
-        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        model = FakeModel(messages=[AIMessage(content="Done")])
 
         # But max_tools=2, so only first 2 should be used
         tool_selector = LLMToolSelectorMiddleware(max_tools=2, model=tool_selection_model)
@@ -288,7 +288,7 @@ class TestMaxToolsLimiting:
             )
         )
 
-        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        model = FakeModel(messages=[AIMessage(content="Done")])
 
         # No max_tools specified
         tool_selector = LLMToolSelectorMiddleware(model=tool_selection_model)
@@ -344,7 +344,7 @@ class TestAlwaysInclude:
             )
         )
 
-        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        model = FakeModel(messages=[AIMessage(content="Done")])
 
         # But send_email is always included
         tool_selector = LLMToolSelectorMiddleware(
@@ -394,7 +394,7 @@ class TestAlwaysInclude:
             )
         )
 
-        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        model = FakeModel(messages=[AIMessage(content="Done")])
 
         # max_tools=2, but we also have 2 always_include tools
         tool_selector = LLMToolSelectorMiddleware(
@@ -448,7 +448,7 @@ class TestAlwaysInclude:
             )
         )
 
-        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        model = FakeModel(messages=[AIMessage(content="Done")])
 
         tool_selector = LLMToolSelectorMiddleware(
             max_tools=1,
@@ -512,7 +512,7 @@ class TestDuplicateAndInvalidTools:
             )
         )
 
-        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        model = FakeModel(messages=[AIMessage(content="Done")])
 
         tool_selector = LLMToolSelectorMiddleware(max_tools=5, model=tool_selection_model)
 
@@ -566,7 +566,7 @@ class TestDuplicateAndInvalidTools:
             )
         )
 
-        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        model = FakeModel(messages=[AIMessage(content="Done")])
 
         tool_selector = LLMToolSelectorMiddleware(max_tools=2, model=tool_selection_model)
 
@@ -616,7 +616,7 @@ class TestEdgeCases:
             messages=cycle([AIMessage(content="")])
         )
 
-        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        model = FakeModel(messages=[AIMessage(content="Done")])
 
         tool_selector = LLMToolSelectorMiddleware(max_tools=2, model=tool_selection_model)
 
@@ -659,7 +659,7 @@ class TestEdgeCases:
             messages=cycle([AIMessage(content="")])
         )
 
-        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        model = FakeModel(messages=[AIMessage(content="Done")])
 
         tool_selector = LLMToolSelectorMiddleware(max_tools=2, model=tool_selection_model)
 
