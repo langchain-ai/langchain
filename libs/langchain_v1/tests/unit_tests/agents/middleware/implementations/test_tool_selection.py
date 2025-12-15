@@ -594,3 +594,65 @@ class TestEdgeCases:
         """Test that empty tools list raises an error in schema creation."""
         with pytest.raises(AssertionError, match="tools must be non-empty"):
             _create_tool_selection_response([])
+
+    def test_missing_tools_key_in_response(self) -> None:
+        """Test that missing 'tools' key in response doesn't raise KeyError."""
+        from langchain.agents.middleware.types import ModelRequest
+
+        middleware = LLMToolSelectorMiddleware(max_tools=2)
+
+        # Create a mock request
+        request = ModelRequest(
+            model=FakeModel(messages=iter([AIMessage(content="Done")])),
+            tools=[get_weather, search_web, calculate],
+            messages=[HumanMessage("test")],
+        )
+
+        # Test with response missing 'tools' key
+        response_missing_key = {"some_other_key": "value"}
+
+        # Should not raise KeyError
+        modified_request = middleware._process_selection_response(
+            response_missing_key,
+            [get_weather, search_web, calculate],
+            ["get_weather", "search_web", "calculate"],
+            request,
+        )
+
+        # Should fallback to using all tools (respecting max_tools limit)
+        assert modified_request.tools is not None
+        tool_names = [tool.name for tool in modified_request.tools if hasattr(tool, "name")]
+        # Should have at most max_tools (2) tools
+        assert len(tool_names) <= 2
+        assert all(name in ["get_weather", "search_web", "calculate"] for name in tool_names)
+
+    def test_tools_key_not_list_in_response(self) -> None:
+        """Test that 'tools' key with non-list value doesn't raise TypeError."""
+        from langchain.agents.middleware.types import ModelRequest
+
+        middleware = LLMToolSelectorMiddleware(max_tools=2)
+
+        # Create a mock request
+        request = ModelRequest(
+            model=FakeModel(messages=iter([AIMessage(content="Done")])),
+            tools=[get_weather, search_web, calculate],
+            messages=[HumanMessage("test")],
+        )
+
+        # Test with 'tools' as non-list value
+        response_invalid_type = {"tools": "not_a_list"}
+
+        # Should not raise TypeError
+        modified_request = middleware._process_selection_response(
+            response_invalid_type,
+            [get_weather, search_web, calculate],
+            ["get_weather", "search_web", "calculate"],
+            request,
+        )
+
+        # Should fallback to using all tools (respecting max_tools limit)
+        assert modified_request.tools is not None
+        tool_names = [tool.name for tool in modified_request.tools if hasattr(tool, "name")]
+        # Should have at most max_tools (2) tools
+        assert len(tool_names) <= 2
+        assert all(name in ["get_weather", "search_web", "calculate"] for name in tool_names)
