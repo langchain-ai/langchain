@@ -235,7 +235,8 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
             tools_list = valid_tool_names
         elif not isinstance(response["tools"], list):
             logger.warning(
-                "Model response 'tools' key is not a list (got %s). Using all available tools for selection.",
+                "Model response 'tools' key is not a list (got %s). "
+                "Using all available tools for selection.",
                 type(response["tools"]),
             )
             tools_list = valid_tool_names
