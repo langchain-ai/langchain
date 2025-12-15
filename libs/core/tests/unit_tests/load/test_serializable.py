@@ -145,8 +145,15 @@ def test_simple_deserialization() -> None:
         "lc": 1,
         "type": "constructor",
     }
-    new_foo = load(serialized_foo, valid_namespaces=["tests"])
+    new_foo = load(serialized_foo, allowed_objects=[Foo], valid_namespaces=["tests"])
     assert new_foo == foo
+
+
+def test_disallowed_deserialization() -> None:
+    foo = Foo(bar=1, baz="hello")
+    serialized_foo = dumpd(foo)
+    with pytest.raises(ValueError, match="not allowed"):
+        load(serialized_foo, allowed_objects=[], valid_namespaces=["tests"])
 
 
 class Foo2(Serializable):
@@ -170,6 +177,7 @@ def test_simple_deserialization_with_additional_imports() -> None:
     }
     new_foo = load(
         serialized_foo,
+        allowed_objects=[Foo2],
         valid_namespaces=["tests"],
         additional_import_mappings={
             ("tests", "unit_tests", "load", "test_serializable", "Foo"): (
@@ -223,7 +231,7 @@ def test_serialization_with_pydantic() -> None:
         )
     )
     ser = dumpd(llm_response)
-    deser = load(ser)
+    deser = load(ser, allowed_objects=[ChatGeneration, AIMessage])
     assert isinstance(deser, ChatGeneration)
     assert deser.message.content
     assert deser.message.additional_kwargs["parsed"] == my_model.model_dump()
@@ -261,7 +269,7 @@ def test_serialization_with_ignore_unserializable_fields() -> None:
         ]
     }
     ser = dumpd(data)
-    deser = load(ser, ignore_unserializable_fields=True)
+    deser = load(ser, allowed_objects=[AIMessage], ignore_unserializable_fields=True)
     assert deser == {
         "messages": [
             [

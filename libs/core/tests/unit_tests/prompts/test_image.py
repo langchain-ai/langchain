@@ -1,6 +1,7 @@
 import json
 
 from langchain_core.load import dump, loads
+from langchain_core.load.serializable import Serializable
 from langchain_core.prompts import ChatPromptTemplate
 
 
@@ -11,7 +12,8 @@ def test_image_prompt_template_deserializable() -> None:
             ChatPromptTemplate.from_messages(
                 [("system", [{"type": "image", "image_url": "{img}"}])]
             )
-        )
+        ),
+        allowed_objects=[Serializable],
     )
 
 
@@ -105,5 +107,6 @@ def test_image_prompt_template_deserializable_old() -> None:
                     "input_variables": ["img", "input"],
                 },
             }
-        )
+        ),
+        allowed_objects=[Serializable],
     )

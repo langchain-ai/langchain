@@ -34,6 +34,7 @@ from langchain_core.language_models import (
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.load import dumpd, dumps
 from langchain_core.load.load import loads
+from langchain_core.load.serializable import Serializable
 from langchain_core.messages import AIMessageChunk, HumanMessage, SystemMessage
 from langchain_core.messages.base import BaseMessage
 from langchain_core.output_parsers import (
@@ -3453,7 +3454,7 @@ async def test_map_astream_iterator_input() -> None:
     assert final_value.get("passthrough") == llm_res
 
     simple_map = RunnableMap(passthrough=RunnablePassthrough())
-    assert loads(dumps(simple_map)) == simple_map
+    assert loads(dumps(simple_map), allowed_objects=[Serializable]) == simple_map
 
 
 def test_with_config_with_config() -> None:

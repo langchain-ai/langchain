@@ -8,6 +8,7 @@
 import importlib
 import json
 import os
+from collections.abc import Iterable
 from typing import Any
 
 from langchain_core._api import beta
@@ -49,12 +50,56 @@ ALL_SERIALIZABLE_MAPPINGS = {
     **_JS_SERIALIZABLE_MAPPING,
 }
 
+AllowedObject = type[Serializable]
+
+
+def _compute_allowed_lc_ids(
+    allowed_objects: Iterable[AllowedObject],
+    import_mappings: dict[tuple[str, ...], tuple[str, ...]],
+) -> set[tuple[str, ...]] | None:
+    """Return allowed lc_ids; None means allow any Serializable subclass.
+
+    Examples:
+        # Allow any Serializable subclass
+        _compute_allowed_lc_ids([Serializable], {}) -> None
+
+        # Allow a specific class
+        _compute_allowed_lc_ids([MyPrompt], {}) ->
+            {tuple(MyPrompt.lc_id())}
+            # e.g. {("langchain_core", "prompts", "MyPrompt")}
+
+        # Include legacy ids that map to the same class
+        import_mappings = {("old", "Prompt"): tuple(MyPrompt.lc_id())}
+        _compute_allowed_lc_ids([MyPrompt], import_mappings) ->
+            {tuple(MyPrompt.lc_id()), ("old", "Prompt")}
+    """
+    allowed_objects_list = list(allowed_objects)
+    if any(obj is Serializable for obj in allowed_objects_list):
+        return None
+
+    allowed_lc_ids: set[tuple[str, ...]] = set()
+    for allowed_obj in allowed_objects_list:
+        if not isinstance(allowed_obj, type) or not issubclass(
+            allowed_obj, Serializable
+        ):
+            msg = "allowed_objects must contain Serializable subclasses."
+            raise TypeError(msg)
+
+        lc_id = tuple(allowed_obj.lc_id())
+        allowed_lc_ids.add(lc_id)
+        # Add legacy ids that map to the same class.
+        for mapping_key, mapping_value in import_mappings.items():
+            if tuple(mapping_value) == lc_id:
+                allowed_lc_ids.add(mapping_key)
+    return allowed_lc_ids
+
 
 class Reviver:
     """Reviver for JSON objects."""
 
     def __init__(
         self,
+        allowed_objects: Iterable[AllowedObject],
         secrets_map: dict[str, str] | None = None,
         valid_namespaces: list[str] | None = None,
         secrets_from_env: bool = True,  # noqa: FBT001,FBT002
@@ -66,6 +111,9 @@ class Reviver:
         """Initialize the reviver.
 
         Args:
+            allowed_objects: Allowed LangChain objects to deserialize. Each entry must
+                be a Serializable subclass. Include the base Serializable class to
+                allow all Serializable subclasses.
             secrets_map: A map of secrets to load.
 
                 If a secret is not found in the map, it will be loaded from the
@@ -94,6 +142,9 @@ class Reviver:
             }
             if self.additional_import_mappings
             else ALL_SERIALIZABLE_MAPPINGS
+        )
+        self.allowed_lc_ids = _compute_allowed_lc_ids(
+            allowed_objects, self.import_mappings
         )
         self.ignore_unserializable_fields = ignore_unserializable_fields
 
@@ -147,6 +198,16 @@ class Reviver:
             mapping_key = tuple(value["id"])
 
             if (
+                self.allowed_lc_ids is not None
+                and mapping_key not in self.allowed_lc_ids
+            ):
+                msg = (
+                    "Deserialization of the requested object is not allowed. "
+                    f"Update allowed_objects to include {mapping_key!r}."
+                )
+                raise ValueError(msg)
+
+            if (
                 namespace[0] not in self.valid_namespaces
                 # The root namespace ["langchain"] is not a valid identifier.
                 or namespace == ["langchain"]
@@ -190,6 +251,7 @@ class Reviver:
 def loads(
     text: str,
     *,
+    allowed_objects: Iterable[AllowedObject],
     secrets_map: dict[str, str] | None = None,
     valid_namespaces: list[str] | None = None,
     secrets_from_env: bool = True,
@@ -206,6 +268,9 @@ def loads(
 
     Args:
         text: The string to load.
+        allowed_objects: Allowed LangChain objects to deserialize. Each entry must be
+            a Serializable subclass. Include the base Serializable class to allow all
+            Serializable subclasses.
         secrets_map: A map of secrets to load.
 
             If a secret is not found in the map, it will be loaded from the environment
@@ -224,6 +289,7 @@ def loads(
     return json.loads(
         text,
         object_hook=Reviver(
+            allowed_objects,
             secrets_map,
             valid_namespaces,
             secrets_from_env,
@@ -237,6 +303,7 @@ def loads(
 def load(
     obj: Any,
     *,
+    allowed_objects: Iterable[AllowedObject],
     secrets_map: dict[str, str] | None = None,
     valid_namespaces: list[str] | None = None,
     secrets_from_env: bool = True,
@@ -254,6 +321,9 @@ def load(
 
     Args:
         obj: The object to load.
+        allowed_objects: Allowed LangChain objects to deserialize. Each entry must be
+            a Serializable subclass. Include the base Serializable class to allow all
+            Serializable subclasses.
         secrets_map: A map of secrets to load.
 
             If a secret is not found in the map, it will be loaded from the environment
@@ -270,6 +340,7 @@ def load(
         Revived LangChain objects.
     """
     reviver = Reviver(
+        allowed_objects,
         secrets_map,
         valid_namespaces,
         secrets_from_env,

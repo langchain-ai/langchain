@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from syrupy.assertion import SnapshotAssertion
 
 from langchain_core.load import dumpd, load
+from langchain_core.load.serializable import Serializable
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -922,9 +923,11 @@ def test_chat_prompt_w_msgs_placeholder_ser_des(snapshot: SnapshotAssertion) -> 
         ]
     )
     assert dumpd(MessagesPlaceholder("bar")) == snapshot(name="placeholder")
-    assert load(dumpd(MessagesPlaceholder("bar"))) == MessagesPlaceholder("bar")
+    assert load(
+        dumpd(MessagesPlaceholder("bar")), allowed_objects=[Serializable]
+    ) == MessagesPlaceholder("bar")
     assert dumpd(prompt) == snapshot(name="chat_prompt")
-    assert load(dumpd(prompt)) == prompt
+    assert load(dumpd(prompt), allowed_objects=[Serializable]) == prompt
 
 
 def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
@@ -980,7 +983,7 @@ def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
         ]
     )
     assert dumpd(template) == snapshot()
-    assert load(dumpd(template)) == template
+    assert load(dumpd(template), allowed_objects=[Serializable]) == template
 
 
 @pytest.mark.xfail(
@@ -1123,7 +1126,8 @@ def test_data_prompt_template_deserializable() -> None:
                     )
                 ]
             )
-        )
+        ),
+        allowed_objects=[Serializable],
     )
 
 
@@ -1521,7 +1525,7 @@ def test_rendering_prompt_with_conditionals_no_empty_text_blocks() -> None:
     }
 
     # Load the ChatPromptTemplate from the manifest
-    template = load(manifest)
+    template = load(manifest, allowed_objects=[Serializable])
 
     # Format with conditional data - rules is empty, so mustache conditionals
     # should not render

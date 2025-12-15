@@ -14,6 +14,7 @@ from typing_extensions import override
 
 from langchain_core.documents import Document
 from langchain_core.load import dumpd, load
+from langchain_core.load.serializable import Serializable
 from langchain_core.vectorstores import VectorStore
 from langchain_core.vectorstores.utils import _cosine_similarity as cosine_similarity
 from langchain_core.vectorstores.utils import maximal_marginal_relevance
@@ -528,7 +529,7 @@ class InMemoryVectorStore(VectorStore):
         """
         path_: Path = Path(path)
         with path_.open("r", encoding="utf-8") as f:
-            store = load(json.load(f))
+            store = load(json.load(f), allowed_objects=[Serializable])
         vectorstore = cls(embedding=embedding, **kwargs)
         vectorstore.store = store
         return vectorstore

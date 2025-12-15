@@ -22,6 +22,7 @@ from typing_extensions import NotRequired, TypedDict, override
 from langchain_core.callbacks.base import BaseCallbackManager
 from langchain_core.load import dumps
 from langchain_core.load.load import load
+from langchain_core.load.serializable import Serializable
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
@@ -563,7 +564,7 @@ def _get_standardized_inputs(
         )
         raise NotImplementedError(msg)
 
-    inputs = load(run.inputs)
+    inputs = load(run.inputs, allowed_objects=[Serializable])
 
     if run.run_type in {"retriever", "llm", "chat_model"}:
         return inputs
@@ -595,7 +596,7 @@ def _get_standardized_outputs(
     Returns:
         An output if returned, otherwise a None
     """
-    outputs = load(run.outputs)
+    outputs = load(run.outputs, allowed_objects=[Serializable])
     if schema_format == "original":
         if run.run_type == "prompt" and "output" in outputs:
             # These were previously dumped before the tracer.
