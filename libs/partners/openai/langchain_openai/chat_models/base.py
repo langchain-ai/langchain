@@ -468,6 +468,12 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
     raise
 
 
+def _model_prefers_responses_api(model_name: str | None) -> bool:
+    if not model_name:
+        return False
+    return "gpt-5.2-pro" in model_name
+
+
 _BM = TypeVar("_BM", bound=BaseModel)
 _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[_BM] | type
 _DictOrPydantic: TypeAlias = dict | _BM
@@ -647,14 +653,17 @@ class BaseChatOpenAI(BaseChatModel):
 
     tiktoken_model_name: str | None = None
     """The model name to pass to tiktoken when using this class.
+
     Tiktoken is used to count the number of tokens in documents to constrain
-    them to be under a certain limit. By default, when set to None, this will
-    be the same as the embedding model name. However, there are some cases
-    where you may want to use this Embedding class with a model name not
-    supported by tiktoken. This can include when using Azure embeddings or
-    when using one of the many model providers that expose an OpenAI-like
+    them to be under a certain limit.
+
+    By default, when set to `None`, this will be the same as the embedding model name.
+    However, there are some cases where you may want to use this `Embedding` class with
+    a model name not supported by tiktoken. This can include when using Azure embeddings
+    or when using one of the many model providers that expose an OpenAI-like
     API but with different models. In those cases, in order to avoid erroring
-    when tiktoken is called, you can specify a model name to use here."""
+    when tiktoken is called, you can specify a model name to use here.
+    """
 
     default_headers: Mapping[str, str] | None = None
 
@@ -663,13 +672,18 @@ class BaseChatOpenAI(BaseChatModel):
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Any | None = Field(default=None, exclude=True)
-    """Optional `httpx.Client`. Only used for sync invocations. Must specify
-    `http_async_client` as well if you'd like a custom client for async invocations.
+    """Optional `httpx.Client`.
+
+    Only used for sync invocations. Must specify `http_async_client` as well if you'd
+    like a custom client for async invocations.
     """
 
     http_async_client: Any | None = Field(default=None, exclude=True)
-    """Optional `httpx.AsyncClient`. Only used for async invocations. Must specify
-    `http_client` as well if you'd like a custom client for sync invocations."""
+    """Optional `httpx.AsyncClient`.
+
+    Only used for async invocations. Must specify `http_client` as well if you'd like a
+    custom client for sync invocations.
+    """
 
     stop: list[str] | str | None = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
@@ -729,7 +743,10 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     service_tier: str | None = None
-    """Latency tier for request. Options are `'auto'`, `'default'`, or `'flex'`.
+    """Latency tier for request.
+
+    Options are `'auto'`, `'default'`, or `'flex'`.
+
     Relevant for users of OpenAI's scale tier service.
     """
 
@@ -742,7 +759,10 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     truncation: str | None = None
-    """Truncation strategy (Responses API). Can be `'auto'` or `'disabled'` (default).
+    """Truncation strategy (Responses API).
+
+    Can be `'auto'` or `'disabled'` (default).
+
     If `'auto'`, model may drop input items from the middle of the message sequence to
     fit the context window.
 
@@ -832,9 +852,15 @@ class BaseChatOpenAI(BaseChatModel):
         if model_lower.startswith("o1") and "temperature" not in values:
             values["temperature"] = 1
 
-        # For gpt-5 models, handle temperature restrictions
-        # Note that gpt-5-chat models do support temperature
-        if model_lower.startswith("gpt-5") and "chat" not in model_lower:
+        # For gpt-5 models, handle temperature restrictions. Temperature is supported
+        # by gpt-5-chat and gpt-5 models with reasoning_effort='none' or
+        # reasoning={'effort': 'none'}.
+        if (
+            model_lower.startswith("gpt-5")
+            and ("chat" not in model_lower)
+            and values.get("reasoning_effort") != "none"
+            and (values.get("reasoning") or {}).get("effort") != "none"
+        ):
             temperature = values.get("temperature")
             if temperature is not None and temperature != 1:
                 # For gpt-5 (non-chat), only temperature=1 is supported
@@ -1371,6 +1397,7 @@ class BaseChatOpenAI(BaseChatModel):
             or self.reasoning is not None
             or self.truncation is not None
             or self.use_previous_response_id
+            or _model_prefers_responses_api(self.model_name)
         ):
             return True
         return _use_responses_api(payload)
@@ -1801,8 +1828,8 @@ class BaseChatOpenAI(BaseChatModel):
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
-                Supports any tool definition handled by
-                `langchain_core.utils.function_calling.convert_to_openai_tool`.
+
+                Supports any tool definition handled by [`convert_to_openai_tool`][langchain_core.utils.function_calling.convert_to_openai_tool].
             tool_choice: Which tool to require the model to call. Options are:
 
                 - `str` of the form `'<<tool_name>>'`: calls `<<tool_name>>` tool.
@@ -1872,9 +1899,10 @@ class BaseChatOpenAI(BaseChatModel):
             ):
                 # compat with langchain.agents.create_agent response_format, which is
                 # an approximation of OpenAI format
+                strict = response_format["json_schema"].get("strict", None)
                 response_format = cast(dict, response_format["json_schema"]["schema"])
             kwargs["response_format"] = _convert_to_openai_response_format(
-                response_format
+                response_format, strict=strict
             )
         return super().bind(tools=formatted_tools, **kwargs)
 
@@ -3004,6 +3032,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         method: Literal["function_calling", "json_mode", "json_schema"] = "json_schema",
         include_raw: bool = False,
         strict: bool | None = None,
+        tools: list | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         r"""Model wrapper that returns outputs formatted to match the given schema.
@@ -3397,7 +3426,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         """  # noqa: E501
         return super().with_structured_output(
-            schema, method=method, include_raw=include_raw, strict=strict, **kwargs
+            schema,
+            method=method,
+            include_raw=include_raw,
+            strict=strict,
+            tools=tools,
+            **kwargs,
         )
 
 
@@ -3495,7 +3529,7 @@ def _resize(width: int, height: int) -> tuple[int, int]:
             width = (width * 768) // height
             height = 768
         else:
-            height = (width * 768) // height
+            height = (height * 768) // width
             width = 768
     return width, height
 
@@ -3724,8 +3758,14 @@ def _construct_responses_api_payload(
         payload["reasoning"] = {"effort": payload.pop("reasoning_effort")}
 
     # Remove temperature parameter for models that don't support it in responses API
+    # gpt-5-chat supports temperature, and gpt-5 models with reasoning.effort='none'
+    # also support temperature
     model = payload.get("model") or ""
-    if model.startswith("gpt-5") and "chat" not in model:  # gpt-5-chat supports
+    if (
+        model.startswith("gpt-5")
+        and ("chat" not in model)  # gpt-5-chat supports
+        and (payload.get("reasoning") or {}).get("effort") != "none"
+    ):
         payload.pop("temperature", None)
 
     payload["input"] = _construct_responses_api_input(messages)
@@ -3750,7 +3790,7 @@ def _construct_responses_api_payload(
                     if payload.get("stream") and "partial_images" not in tool:
                         # OpenAI requires this parameter be set; we ignore it during
                         # streaming.
-                        tool["partial_images"] = 1
+                        tool = {**tool, "partial_images": 1}
                     else:
                         pass
 
@@ -4015,9 +4055,14 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         if block_type in ("text", "output_text", "refusal"):
                             msg_id = block.get("id")
                             if block_type in ("text", "output_text"):
+                                # Defensive check: block may not have "text" key
+                                text = block.get("text")
+                                if text is None:
+                                    # Skip blocks without text content
+                                    continue
                                 new_block = {
                                     "type": "output_text",
-                                    "text": block["text"],
+                                    "text": text,
                                     "annotations": [
                                         _format_annotation_from_lc(annotation)
                                         for annotation in block.get("annotations") or []
