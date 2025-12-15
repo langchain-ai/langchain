@@ -594,3 +594,69 @@ class TestEdgeCases:
         """Test that empty tools list raises an error in schema creation."""
         with pytest.raises(AssertionError, match="tools must be non-empty"):
             _create_tool_selection_response([])
+
+    def test_malformed_response_missing_tools_key(self) -> None:
+        """Test that malformed LLM response without 'tools' key raises ValueError."""
+        # Selector returns response without 'tools' key
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {},  # Missing 'tools' key
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+
+        tool_selector = LLMToolSelectorMiddleware(max_tools=2, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector],
+        )
+
+        with pytest.raises(ValueError, match="LLM returned invalid response"):
+            agent.invoke({"messages": [HumanMessage("test")]})
+
+    def test_malformed_response_null_tools(self) -> None:
+        """Test that LLM response with null 'tools' value raises ValueError."""
+        # Selector returns response with null 'tools'
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {"tools": None},  # null value
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+
+        tool_selector = LLMToolSelectorMiddleware(max_tools=2, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector],
+        )
+
+        with pytest.raises(ValueError, match="LLM returned invalid response"):
+            agent.invoke({"messages": [HumanMessage("test")]})
