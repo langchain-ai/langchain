@@ -12,8 +12,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 
 from langchain.agents.factory import create_agent
-from langchain.agents.middleware.types import wrap_tool_call
-from langchain.agents.middleware.types import ToolCallRequest
+from langchain.agents.middleware.types import ToolCallRequest, wrap_tool_call
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
@@ -30,9 +29,9 @@ def calculator(expression: str) -> str:
 
 
 @tool
-def failing_tool(input: str) -> str:
+def failing_tool(value: str) -> str:
     """Tool that always fails."""
-    msg = f"Failed: {input}"
+    msg = f"Failed: {value}"
     raise ValueError(msg)
 
 
@@ -229,7 +228,7 @@ def test_wrap_tool_call_retry_on_error() -> None:
                 if attempt == max_retries - 1:
                     # Return error message instead of raising
                     return ToolMessage(
-                        content=f"Error after {max_retries} attempts: {str(last_error)}",
+                        content=f"Error after {max_retries} attempts: {last_error}",
                         tool_call_id=request.tool_call["id"],
                         name=request.tool_call["name"],
                         status="error",
@@ -237,7 +236,7 @@ def test_wrap_tool_call_retry_on_error() -> None:
                 # Continue to retry
         # This line should never be reached due to return above
         return ToolMessage(
-            content=f"Unexpected error: {str(last_error)}",
+            content=f"Unexpected error: {last_error}",
             tool_call_id=request.tool_call["id"],
             name=request.tool_call["name"],
             status="error",
@@ -245,7 +244,7 @@ def test_wrap_tool_call_retry_on_error() -> None:
 
     model = FakeToolCallingModel(
         tool_calls=[
-            [ToolCall(name="failing_tool", args={"input": "test"}, id="1")],
+            [ToolCall(name="failing_tool", args={"value": "test"}, id="1")],
             [],
         ]
     )
@@ -319,12 +318,11 @@ def test_wrap_tool_call_response_modification() -> None:
 
         # Modify the response
         if isinstance(response, ToolMessage):
-            modified = ToolMessage(
+            return ToolMessage(
                 content=f"MODIFIED: {response.content}",
                 tool_call_id=response.tool_call_id,
                 name=response.name,
             )
-            return modified
         return response
 
     model = FakeToolCallingModel(
@@ -450,9 +448,9 @@ def test_wrap_tool_call_with_tools_parameter() -> None:
     """Test wrap_tool_call decorator with tools parameter."""
 
     @tool
-    def extra_tool(input: str) -> str:
+    def extra_tool(value: str) -> str:
         """Extra tool registered with middleware."""
-        return f"Extra: {input}"
+        return f"Extra: {value}"
 
     @wrap_tool_call(tools=[extra_tool])
     def wrapper_with_tools(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
@@ -527,7 +525,7 @@ def test_wrap_tool_call_outer_intercepts_inner() -> None:
     @wrap_tool_call(name="InterceptingOuter")
     def intercepting_outer(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
         call_log.append("outer_before")
-        response = handler(request)
+        handler(request)
         call_log.append("outer_after")
 
         # Return modified message
