@@ -26,7 +26,6 @@ def test_parse_model_string(model_string: str, expected_provider: str, expected_
     )
 
 
-
 def test_parse_model_string_errors() -> None:
     """Test error cases for model string parsing."""
     with pytest.raises(ValueError, match="Model name must be"):
