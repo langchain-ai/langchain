@@ -1,7 +1,6 @@
 """Test embeddings base module."""
 
 import pytest
-
 from langchain_classic.embeddings.base import (
     _SUPPORTED_PROVIDERS,
     _infer_model_and_provider,
@@ -17,7 +16,11 @@ from langchain_classic.embeddings.base import (
         ("google_genai:gemini-embedding-001", "google_genai", "gemini-embedding-001"),
     ]
 )
-def test_parse_model_string(model_string, expected_provider, expected_model) -> None:
+def test_parse_model_string(
+    model_string: str,
+    expected_provider: str, 
+    expected_model: str,
+) -> None:
     """Test parsing model strings into provider and model components."""
     assert _parse_model_string(model_string) == (
         expected_model,
