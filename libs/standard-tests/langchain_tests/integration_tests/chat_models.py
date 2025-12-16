@@ -2187,11 +2187,12 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         stream_callback = _TestCallbackHandler()
 
+        chunk = None
         for chunk in chat.stream(
             "Tell me a joke about cats.", config={"callbacks": [stream_callback]}
         ):
             validation_function(chunk)
-        assert chunk
+        assert chunk is not None, "Stream returned no chunks - possible API issue"
 
         assert len(stream_callback.options) == 1, (
             "Expected on_chat_model_start to be called once"
@@ -2268,11 +2269,12 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         astream_callback = _TestCallbackHandler()
 
+        chunk = None
         async for chunk in chat.astream(
             "Tell me a joke about cats.", config={"callbacks": [astream_callback]}
         ):
             validation_function(chunk)
-        assert chunk
+        assert chunk is not None, "Stream returned no chunks - possible API issue"
 
         assert len(astream_callback.options) == 1, (
             "Expected on_chat_model_start to be called once"
@@ -2338,8 +2340,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, Joke)
 
+        chunk = None
         for chunk in chat.stream("Tell me a joke about cats."):
             assert isinstance(chunk, Joke)
+        assert chunk is not None, "Stream returned no chunks - possible API issue"
 
         # Schema
         chat = model.with_structured_output(
@@ -2349,9 +2353,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result, dict)
         assert set(result.keys()) == {"setup", "punchline"}
 
+        chunk = None
         for chunk in chat.stream("Tell me a joke about cats."):
             assert isinstance(chunk, dict)
-        assert isinstance(chunk, dict)  # for mypy
+        assert chunk is not None, "Stream returned no chunks - possible API issue"
         assert set(chunk.keys()) == {"setup", "punchline"}
 
     def test_structured_output_optional_param(self, model: BaseChatModel) -> None:
@@ -2473,8 +2478,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = chat.invoke(msg)
         assert isinstance(result, Joke)
 
+        chunk = None
         for chunk in chat.stream(msg):
             assert isinstance(chunk, Joke)
+        assert chunk is not None, "Stream returned no chunks - possible API issue"
 
         # Schema
         chat = model.with_structured_output(
@@ -2484,9 +2491,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result, dict)
         assert set(result.keys()) == {"setup", "punchline"}
 
+        chunk = None
         for chunk in chat.stream(msg):
             assert isinstance(chunk, dict)
-        assert isinstance(chunk, dict)  # for mypy
+        assert chunk is not None, "Stream returned no chunks - possible API issue"
         assert set(chunk.keys()) == {"setup", "punchline"}
 
     def test_pdf_inputs(self, model: BaseChatModel) -> None:
