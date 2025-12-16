@@ -359,7 +359,7 @@ def convert_to_openai_function(
         required and guaranteed to be part of the output.
     """
     # an Anthropic format tool
-    if isinstance(function, dict) and all(
+    if isinstance(function, Mapping) and all(
         k in function for k in ("name", "input_schema")
     ):
         oai_function = {
@@ -369,7 +369,7 @@ def convert_to_openai_function(
         if "description" in function:
             oai_function["description"] = function["description"]
     # an Amazon Bedrock Converse format tool
-    elif isinstance(function, dict) and "toolSpec" in function:
+    elif isinstance(function, Mapping) and "toolSpec" in function:
         oai_function = {
             "name": function["toolSpec"]["name"],
             "parameters": function["toolSpec"]["inputSchema"]["json"],
@@ -377,15 +377,15 @@ def convert_to_openai_function(
         if "description" in function["toolSpec"]:
             oai_function["description"] = function["toolSpec"]["description"]
     # already in OpenAI function format
-    elif isinstance(function, dict) and "name" in function:
+    elif isinstance(function, Mapping) and "name" in function:
         oai_function = {
             k: v
             for k, v in function.items()
             if k in {"name", "description", "parameters", "strict"}
         }
     # a JSON schema with title and description
-    elif isinstance(function, dict) and "title" in function:
-        function_copy = function.copy()
+    elif isinstance(function, Mapping) and "title" in function:
+        function_copy = dict(function)
         oai_function = {"name": function_copy.pop("title")}
         if "description" in function_copy:
             oai_function["description"] = function_copy.pop("description")
@@ -496,12 +496,12 @@ def convert_to_openai_tool(
     # Import locally to prevent circular import
     from langchain_core.tools import Tool  # noqa: PLC0415
 
-    if isinstance(tool, dict):
+    if isinstance(tool, Mapping):
         if tool.get("type") in _WellKnownOpenAITools:
-            return tool
+            return dict(tool)
         # As of 03.12.25 can be "web_search_preview" or "web_search_preview_2025_03_11"
         if (tool.get("type") or "").startswith("web_search_preview"):
-            return tool
+            return dict(tool)
     if isinstance(tool, Tool) and (tool.metadata or {}).get("type") == "custom_tool":
         oai_tool = {
             "type": "custom",
@@ -516,7 +516,7 @@ def convert_to_openai_tool(
 
 
 def convert_to_json_schema(
-    schema: dict[str, Any] | type[BaseModel] | Callable | BaseTool,
+    schema: Mapping[str, Any] | type[BaseModel] | Callable | BaseTool,
     *,
     strict: bool | None = None,
 ) -> dict[str, Any]:

@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import builtins
 import inspect
 import json
-import typing
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterator, Callable, Iterator, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, overload
 
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import override
@@ -72,6 +72,10 @@ from langchain_core.utils.function_calling import (
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from langchain_core.utils.utils import LC_ID_PREFIX, from_env
+
+# TypeVar for with_structured_output overloads. Enables precise return type inference
+# when a Pydantic BaseModel or TypedDict is passed as the schema argument.
+_ModelT = TypeVar("_ModelT", bound=BaseModel | Mapping)
 
 if TYPE_CHECKING:
     import uuid
@@ -224,7 +228,7 @@ async def agenerate_from_stream(
     return await run_in_executor(None, generate_from_stream, iter(chunks))
 
 
-def _format_ls_structured_output(ls_structured_output_format: dict | None) -> dict:
+def _format_ls_structured_output(ls_structured_output_format: Mapping | None) -> dict:
     if ls_structured_output_format:
         try:
             ls_structured_output_format_dict = {
@@ -730,7 +734,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     # --- Custom methods ---
 
-    def _combine_llm_outputs(self, llm_outputs: list[dict | None]) -> dict:  # noqa: ARG002
+    def _combine_llm_outputs(self, llm_outputs: list[Mapping | None]) -> builtins.dict:  # noqa: ARG002
         return {}
 
     def _convert_cached_generations(self, cache_val: list) -> list[ChatGeneration]:
@@ -776,7 +780,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         self,
         stop: list[str] | None = None,
         **kwargs: Any,
-    ) -> dict:
+    ) -> builtins.dict:
         params = self.dict()
         params["stop"] = stop
         return {**params, **kwargs}
@@ -1492,7 +1496,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """Return type of chat model."""
 
     @override
-    def dict(self, **kwargs: Any) -> dict:
+    def dict(self, **kwargs: Any) -> builtins.dict:
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
@@ -1500,9 +1504,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     def bind_tools(
         self,
-        tools: Sequence[
-            typing.Dict[str, Any] | type | Callable | BaseTool  # noqa: UP006
-        ],
+        tools: Sequence[Mapping[str, Any] | type | Callable | BaseTool],
         *,
         tool_choice: str | None = None,
         **kwargs: Any,
@@ -1519,13 +1521,44 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """
         raise NotImplementedError
 
+    # Overloads for with_structured_output provide precise return type inference:
+    # - Mapping schema (JSON/dict) -> returns dict
+    # - type[_ModelT] schema (Pydantic/TypedDict) -> returns that specific type
+    # - include_raw=True -> returns dict (with raw response included)
+    @overload
     def with_structured_output(
         self,
-        schema: typing.Dict | type,  # noqa: UP006
+        schema: Mapping[str, Any],
+        *,
+        include_raw: Literal[False] = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, builtins.dict]: ...
+
+    @overload
+    def with_structured_output(
+        self,
+        schema: type[_ModelT],
+        *,
+        include_raw: Literal[False] = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, _ModelT]: ...
+
+    @overload
+    def with_structured_output(
+        self,
+        schema: Mapping[str, Any] | type[_ModelT],
+        *,
+        include_raw: Literal[True],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, builtins.dict]: ...
+
+    def with_structured_output(
+        self,
+        schema: Mapping | type,
         *,
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, typing.Dict | BaseModel]:  # noqa: UP006
+    ) -> Runnable[LanguageModelInput, Any]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
