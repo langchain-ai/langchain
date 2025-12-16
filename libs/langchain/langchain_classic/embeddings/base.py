@@ -211,7 +211,7 @@ def init_embeddings(
         return AzureOpenAIEmbeddings(model=model_name, **kwargs)
     if provider == "google_genai":
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
-        
+
         return GoogleGenerativeAIEmbeddings(model=model_name, **kwargs)
     if provider == "google_vertexai":
         from langchain_google_vertexai import VertexAIEmbeddings
