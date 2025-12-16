@@ -21,6 +21,7 @@ from typing import (
     get_type_hints,
 )
 
+import typing_extensions
 from pydantic import BaseModel
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as Field_v1
@@ -246,7 +247,7 @@ def _convert_any_typed_dicts_to_pydantic(
         )
         fields: dict = {}
         for arg, arg_type in annotations_.items():
-            if get_origin(arg_type) is Annotated:
+            if get_origin(arg_type) in (Annotated, typing_extensions.Annotated):
                 annotated_args = get_args(arg_type)
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     annotated_args[0], depth=depth + 1, visited=visited
