@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Annotated, Literal, cast
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
+    from langchain_core.tools import BaseTool
+
 from langchain_core.messages import SystemMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.types import Command
@@ -115,15 +117,35 @@ Writing todos takes time and tokens, use it when it is helpful for managing comp
 - Don't be afraid to revise the To-Do list as you go. New information may reveal new tasks that need to be done, or old tasks that are irrelevant."""  # noqa: E501
 
 
-@tool(description=WRITE_TODOS_TOOL_DESCRIPTION)
-def write_todos(todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
-    """Create and manage a structured task list for your current work session."""
-    return Command(
-        update={
-            "todos": todos,
-            "messages": [ToolMessage(f"Updated todo list to {todos}", tool_call_id=tool_call_id)],
-        }
-    )
+def _create_write_todos_tool(
+    description: str = WRITE_TODOS_TOOL_DESCRIPTION,
+) -> BaseTool:
+    """Factory function to create a write_todos tool with custom description.
+
+    Args:
+        description: The description for the tool.
+
+    Returns:
+        A configured write_todos tool instance.
+    """
+
+    @tool(description=description)
+    def write_todos(todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
+        """Create and manage a structured task list for your current work session."""
+        return Command(
+            update={
+                "todos": todos,
+                "messages": [
+                    ToolMessage(f"Updated todo list to {todos}", tool_call_id=tool_call_id)
+                ],
+            }
+        )
+
+    return write_todos
+
+
+# Module-level tool with default description
+write_todos = _create_write_todos_tool()
 
 
 class TodoListMiddleware(AgentMiddleware):
@@ -169,23 +191,7 @@ class TodoListMiddleware(AgentMiddleware):
         super().__init__()
         self.system_prompt = system_prompt
         self.tool_description = tool_description
-
-        # Dynamically create the write_todos tool with the custom description
-        @tool(description=self.tool_description)
-        def write_todos(
-            todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCallId]
-        ) -> Command:
-            """Create and manage a structured task list for your current work session."""
-            return Command(
-                update={
-                    "todos": todos,
-                    "messages": [
-                        ToolMessage(f"Updated todo list to {todos}", tool_call_id=tool_call_id)
-                    ],
-                }
-            )
-
-        self.tools = [write_todos]
+        self.tools = [_create_write_todos_tool(self.tool_description)]
 
     def wrap_model_call(
         self,
