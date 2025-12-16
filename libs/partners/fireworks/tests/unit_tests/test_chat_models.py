@@ -20,7 +20,8 @@ def test_convert_dict_to_message_with_reasoning_content() -> None:
     assert isinstance(message, AIMessage)
     assert message.content == "The answer is 42."
     assert "reasoning_content" in message.additional_kwargs
-    assert message.additional_kwargs["reasoning_content"] == "Let me think about this step by step..."
+    expected_reasoning = "Let me think about this step by step..."
+    assert message.additional_kwargs["reasoning_content"] == expected_reasoning
 
 
 def test_convert_dict_to_message_without_reasoning_content() -> None:

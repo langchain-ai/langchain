@@ -19,7 +19,7 @@ _MODEL = "accounts/fireworks/models/llama-v3p1-8b-instruct"
 
 
 @pytest.mark.parametrize("strict", [None, True, False])
-def test_tool_choice_bool(strict: bool | None) -> None:
+def test_tool_choice_bool(strict: bool | None) -> None:  # noqa: FBT001
     """Test that tool choice is respected with different strict values."""
     llm = ChatFireworks(model="fireworks/kimi-k2-instruct-0905")
 
