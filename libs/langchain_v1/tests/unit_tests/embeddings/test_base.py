@@ -18,9 +18,7 @@ from langchain.embeddings.base import (
         ("google_genai:gemini-embedding-001", "google_genai", "gemini-embedding-001"),
     ],
 )
-def test_parse_model_string(
-    model_string: str, expected_provider: str, expected_model: str
-) -> None:
+def test_parse_model_string(model_string: str, expected_provider: str, expected_model: str) -> None:
     """Test parsing model strings into provider and model components."""
     assert _parse_model_string(model_string) == (
         expected_provider,
