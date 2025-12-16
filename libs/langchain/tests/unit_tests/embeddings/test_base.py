@@ -1,11 +1,13 @@
 """Test embeddings base module."""
 
 import pytest
+
 from langchain_classic.embeddings.base import (
     _SUPPORTED_PROVIDERS,
     _infer_model_and_provider,
     _parse_model_string,
 )
+
 
 @pytest.mark.parametrize(
     ("model_string", "expected_provider", "expected_model"),
@@ -14,12 +16,10 @@ from langchain_classic.embeddings.base import (
         ("bedrock:amazon.titan-embed-text-v1", "bedrock", "amazon.titan-embed-text-v1"),
         ("huggingface:BAAI/bge-base-en:v1.5", "huggingface", "BAAI/bge-base-en:v1.5"),
         ("google_genai:gemini-embedding-001", "google_genai", "gemini-embedding-001"),
-    ]
+    ],
 )
 def test_parse_model_string(
-    model_string: str,
-    expected_provider: str, 
-    expected_model: str,
+    model_string: str, expected_provider: str, expected_model: str
 ) -> None:
     """Test parsing model strings into provider and model components."""
     assert _parse_model_string(model_string) == (
