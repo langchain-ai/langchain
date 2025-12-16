@@ -23,8 +23,8 @@ def test_parse_model_string(
 ) -> None:
     """Test parsing model strings into provider and model components."""
     assert _parse_model_string(model_string) == (
-        expected_model,
         expected_provider,
+        expected_model,
     )
 
 
