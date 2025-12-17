@@ -239,7 +239,10 @@ def _format_message_content(
                 and "type" in block
                 and (
                     block["type"] in ("tool_use", "thinking", "reasoning_content")
-                    or (block["type"] == "function_call" and api == "chat/completions")
+                    or (
+                        block["type"] in ("function_call", "code_interpreter_call")
+                        and api == "chat/completions"
+                    )
                 )
             ):
                 continue
