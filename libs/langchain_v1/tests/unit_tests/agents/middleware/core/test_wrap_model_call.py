@@ -1269,3 +1269,107 @@ class TestEdgeCases:
 
         assert attempts == ["first-attempt", "retry-attempt"]
         assert result["messages"][1].content == "Success"
+
+
+class TestMissingAwaitAutoFix:
+    """Test auto-await functionality for middleware that forgets to await handler.
+
+    This tests the fix for GitHub issue #34234 where async middleware returning
+    a coroutine (forgetting to await) caused:
+    `AttributeError: 'coroutine' object has no attribute 'result'`
+    """
+
+    async def test_async_middleware_missing_await_emits_warning(self) -> None:
+        """Test that middleware forgetting to await handler works with warning.
+
+        When middleware returns `handler(request)` instead of `await handler(request)`,
+        the framework should auto-await and emit a helpful warning.
+        """
+        import warnings as warnings_module
+
+        class MissingAwaitMiddleware(AgentMiddleware):
+            async def awrap_model_call(self, request, handler):
+                # BUG: Missing await - returns coroutine instead of ModelResponse
+                return handler(request)  # Should be: return await handler(request)
+
+        model = GenericFakeChatModel(messages=iter([AIMessage(content="Auto-await works")]))
+        agent = create_agent(model=model, middleware=[MissingAwaitMiddleware()])
+
+        with warnings_module.catch_warnings(record=True) as w:
+            warnings_module.simplefilter("always")
+            result = await agent.ainvoke({"messages": [HumanMessage("Test")]})
+
+            # Verify warning was emitted
+            assert len(w) >= 1
+            warning_messages = [str(warning.message) for warning in w]
+            assert any(
+                "coroutine" in msg and "await" in msg for msg in warning_messages
+            ), f"Expected warning about coroutine/await but got: {warning_messages}"
+
+        # Verify the call still succeeds despite missing await
+        assert result["messages"][1].content == "Auto-await works"
+
+    async def test_async_middleware_missing_await_multiple_middleware(self) -> None:
+        """Test missing await with multiple middleware layers."""
+        import warnings as warnings_module
+
+        call_order = []
+
+        class FirstMiddleware(AgentMiddleware):
+            async def awrap_model_call(self, request, handler):
+                call_order.append("first-before")
+                result = await handler(request)
+                call_order.append("first-after")
+                return result
+
+        class SecondMiddlewareMissingAwait(AgentMiddleware):
+            async def awrap_model_call(self, request, handler):
+                call_order.append("second-before")
+                # BUG: Missing await
+                return handler(request)
+
+        model = GenericFakeChatModel(
+            messages=iter([AIMessage(content="Multi-middleware works")])
+        )
+        agent = create_agent(
+            model=model, middleware=[FirstMiddleware(), SecondMiddlewareMissingAwait()]
+        )
+
+        with warnings_module.catch_warnings(record=True) as w:
+            warnings_module.simplefilter("always")
+            result = await agent.ainvoke({"messages": [HumanMessage("Test")]})
+
+            # Should have warning about the missing await
+            assert len(w) >= 1
+
+        # Both middleware should be called in order
+        assert "first-before" in call_order
+        assert "second-before" in call_order
+        assert result["messages"][1].content == "Multi-middleware works"
+
+    async def test_proper_await_does_not_emit_warning(self) -> None:
+        """Test that properly awaited middleware does not emit warning."""
+        import warnings as warnings_module
+
+        class ProperMiddleware(AgentMiddleware):
+            async def awrap_model_call(self, request, handler):
+                # Correct: properly awaits handler
+                return await handler(request)
+
+        model = GenericFakeChatModel(messages=iter([AIMessage(content="No warning")]))
+        agent = create_agent(model=model, middleware=[ProperMiddleware()])
+
+        with warnings_module.catch_warnings(record=True) as w:
+            warnings_module.simplefilter("always")
+            result = await agent.ainvoke({"messages": [HumanMessage("Test")]})
+
+            # Filter for our specific warning about coroutines
+            coroutine_warnings = [
+                warning for warning in w
+                if "coroutine" in str(warning.message).lower()
+            ]
+            assert len(coroutine_warnings) == 0, (
+                f"Did not expect coroutine warning but got: {coroutine_warnings}"
+            )
+
+        assert result["messages"][1].content == "No warning"

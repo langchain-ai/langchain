@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import itertools
+import warnings
+from collections.abc import Awaitable
+from inspect import iscoroutine
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -51,7 +54,7 @@ from langchain.agents.structured_output import (
 from langchain.chat_models import init_chat_model
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Sequence
+    from collections.abc import Callable, Sequence
 
     from langchain_core.runnables import Runnable
     from langgraph.cache.base import BaseCache
@@ -81,6 +84,41 @@ def _normalize_to_model_response(result: ModelResponse | AIMessage) -> ModelResp
     if isinstance(result, AIMessage):
         return ModelResponse(result=[result], structured_response=None)
     return result
+
+
+async def _normalize_to_model_response_async(
+    result: ModelResponse | AIMessage | Awaitable[ModelResponse | AIMessage],
+) -> ModelResponse:
+    """Normalize middleware return value to ModelResponse, auto-awaiting if needed.
+
+    This function handles the case where middleware incorrectly returns a coroutine
+    (i.e., forgets to `await handler(request)`). When this happens, it auto-awaits
+    the coroutine and emits a warning to help users fix their code.
+
+    Args:
+        result: The return value from middleware. Can be ModelResponse, AIMessage,
+            or a coroutine/awaitable if the user forgot to await.
+
+    Returns:
+        Normalized ModelResponse.
+    """
+    if iscoroutine(result):
+        warnings.warn(
+            "Middleware returned a coroutine instead of ModelResponse or AIMessage. "
+            "This usually means you forgot to 'await' the handler in your middleware. "
+            "Change 'return handler(request)' to 'return await handler(request)'. "
+            "Auto-awaiting is provided for convenience but may be removed in a future "
+            "version.",
+            UserWarning,
+            stacklevel=4,
+        )
+        awaited_result: ModelResponse | AIMessage = await result
+        if isinstance(awaited_result, AIMessage):
+            return ModelResponse(result=[awaited_result], structured_response=None)
+        return awaited_result
+    if isinstance(result, AIMessage):
+        return ModelResponse(result=[result], structured_response=None)
+    return cast(ModelResponse, result)
 
 
 def _chain_model_call_handlers(
@@ -229,7 +267,7 @@ def _chain_async_model_call_handlers(
             handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
         ) -> ModelResponse:
             result = await single_handler(request, handler)
-            return _normalize_to_model_response(result)
+            return await _normalize_to_model_response_async(result)
 
         return normalized_single
 
@@ -255,11 +293,11 @@ def _chain_async_model_call_handlers(
             # Create a wrapper that calls inner with the base handler and normalizes
             async def inner_handler(req: ModelRequest) -> ModelResponse:
                 inner_result = await inner(req, handler)
-                return _normalize_to_model_response(inner_result)
+                return await _normalize_to_model_response_async(inner_result)
 
             # Call outer with the wrapped inner as its handler and normalize
             outer_result = await outer(request, inner_handler)
-            return _normalize_to_model_response(outer_result)
+            return await _normalize_to_model_response_async(outer_result)
 
         return composed
 
@@ -275,7 +313,7 @@ def _chain_async_model_call_handlers(
     ) -> ModelResponse:
         # result here is typed as returning ModelResponse | AIMessage but compose_two normalizes
         final_result = await result(request, handler)
-        return _normalize_to_model_response(final_result)
+        return await _normalize_to_model_response_async(final_result)
 
     return final_normalized
 
