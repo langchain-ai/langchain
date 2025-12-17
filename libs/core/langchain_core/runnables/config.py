@@ -4,7 +4,15 @@ from __future__ import annotations
 import asyncio
 import uuid
 import warnings
-from collections.abc import Awaitable, Callable, Generator, Iterable, Iterator, Sequence
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Generator,
+    Iterable,
+    Iterator,
+    Sequence,
+)
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import Context, ContextVar, Token, copy_context
@@ -12,8 +20,6 @@ from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
-    Iterator,
     ParamSpec,
     TypeVar,
     cast,

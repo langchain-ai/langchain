@@ -36,12 +36,12 @@ if TYPE_CHECKING:
     from langchain_core.runnables.branch import RunnableBranch
     from langchain_core.runnables.config import (
         RunnableConfig,
+        aisolate_config,
         ensure_config,
         get_config_list,
+        isolate_config,
         patch_config,
         run_in_executor,
-        isolate_config,
-        aisolate_config,
     )
     from langchain_core.runnables.fallbacks import RunnableWithFallbacks
     from langchain_core.runnables.history import RunnableWithMessageHistory
@@ -86,13 +86,13 @@ __all__ = (
     "RunnableWithMessageHistory",
     "aadd",
     "add",
+    "aisolate_config",
     "chain",
     "ensure_config",
     "get_config_list",
+    "isolate_config",
     "patch_config",
     "run_in_executor",
-    "isolate_config",
-    "aisolate_config",
 )
 
 _dynamic_imports = {
