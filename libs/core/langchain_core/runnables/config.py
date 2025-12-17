@@ -1,5 +1,4 @@
 """Configuration utilities for Runnables."""
-
 from __future__ import annotations
 
 import asyncio
@@ -7,13 +6,14 @@ import uuid
 import warnings
 from collections.abc import Awaitable, Callable, Generator, Iterable, Iterator, Sequence
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
-from contextlib import contextmanager, asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from contextvars import Context, ContextVar, Token, copy_context
 from functools import partial
-from typing import Iterator, AsyncIterator
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
+    Iterator,
     ParamSpec,
     TypeVar,
     cast,
