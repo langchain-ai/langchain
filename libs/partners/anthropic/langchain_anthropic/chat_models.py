@@ -1868,7 +1868,7 @@ def _make_message_chunk_from_anthropic_event(
     message_chunk: AIMessageChunk | None = None
     # Reference: Anthropic SDK streaming implementation
     # https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
-    if event.type == "message_start" and stream_usage:
+    if event.type == "message_start":
         # Capture model name, but don't include usage_metadata yet
         # as it will be properly reported in message_delta with complete info
         if hasattr(event.message, "model"):
@@ -1876,10 +1876,52 @@ def _make_message_chunk_from_anthropic_event(
         else:
             response_metadata = {}
 
-        message_chunk = AIMessageChunk(
-            content="" if coerce_content_to_string else [],
-            response_metadata=response_metadata,
-        )
+        # Check for pre-completed content blocks in message_start event
+        # This happens with programmatic tool calling (e.g., code_execution_20250825)
+        # where tool_use blocks are returned directly instead of being streamed
+        pre_completed_content = getattr(event.message, "content", None)
+        if pre_completed_content and not coerce_content_to_string:
+            content_blocks = []
+            tool_call_chunks = []
+            for idx, block in enumerate(pre_completed_content):
+                if hasattr(block, "model_dump"):
+                    content_block = block.model_dump()
+                else:
+                    content_block = dict(block) if hasattr(block, "items") else {}
+                content_block["index"] = idx
+
+                # Handle tool_use blocks
+                if getattr(block, "type", None) == "tool_use":
+                    tool_id = getattr(block, "id", None)
+                    tool_name = getattr(block, "name", None)
+                    tool_input = getattr(block, "input", {})
+                    args = json.dumps(tool_input) if tool_input else ""
+                    tool_call_chunk = create_tool_call_chunk(
+                        index=idx,
+                        id=tool_id,
+                        name=tool_name,
+                        args=args,
+                    )
+                    tool_call_chunks.append(tool_call_chunk)
+
+                content_blocks.append(content_block)
+
+            if content_blocks:
+                message_chunk = AIMessageChunk(
+                    content=content_blocks,
+                    tool_call_chunks=tool_call_chunks if tool_call_chunks else [],
+                    response_metadata=response_metadata,
+                )
+            else:
+                message_chunk = AIMessageChunk(
+                    content=[],
+                    response_metadata=response_metadata,
+                )
+        elif stream_usage:
+            message_chunk = AIMessageChunk(
+                content="" if coerce_content_to_string else [],
+                response_metadata=response_metadata,
+            )
 
     elif (
         event.type == "content_block_start"
