@@ -29,6 +29,7 @@ from .playbook import (
     add_bullet_to_playbook,
     extract_bullet_ids,
     extract_playbook_bullets,
+    get_max_bullet_id,
     get_playbook_stats,
     initialize_empty_playbook,
     prune_harmful_bullets,
@@ -206,9 +207,11 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         playbook_data = state.get("ace_playbook")
         if playbook_data:
             return ACEPlaybook.from_dict(playbook_data)
+        # Scan initial playbook for existing bullet IDs to avoid duplicates
+        max_id = get_max_bullet_id(self.initial_playbook)
         return ACEPlaybook(
             content=self.initial_playbook,
-            next_global_id=1,
+            next_global_id=max_id + 1,
             stats=get_playbook_stats(self.initial_playbook),
         )
 
@@ -266,9 +269,11 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
     ) -> dict[str, Any] | None:
         """Initialize ACE state at the start of agent execution."""
         if state.get("ace_playbook") is None:
+            # Scan initial playbook for existing bullet IDs to avoid duplicates
+            max_id = get_max_bullet_id(self.initial_playbook)
             playbook = ACEPlaybook(
                 content=self.initial_playbook,
-                next_global_id=1,
+                next_global_id=max_id + 1,
                 stats=get_playbook_stats(self.initial_playbook),
             )
             return {
