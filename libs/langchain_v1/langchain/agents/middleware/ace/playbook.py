@@ -16,6 +16,10 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+# Thresholds for classifying bullet performance
+_HIGH_PERFORMING_HELPFUL_MIN = 5  # Minimum helpful count for high-performing bullets
+_HIGH_PERFORMING_HARMFUL_MAX = 2  # Maximum harmful count for high-performing bullets
+
 # Section slug mappings for bullet ID generation
 _SECTION_SLUGS: dict[str, str] = {
     "strategies_and_insights": "str",
@@ -312,7 +316,6 @@ def add_bullet_to_playbook(
 
     # Simple approach: find section and append after header
     result_lines: list[str] = []
-    found_section = False
 
     for i, line in enumerate(lines):
         result_lines.append(line)
@@ -321,7 +324,6 @@ def add_bullet_to_playbook(
             header = line.strip()[2:].strip()
             normalized = header.lower().replace(" ", "_").replace("&", "and")
             if normalized == section_normalized:
-                found_section = True
                 # Add the new bullet right after the section header
                 result_lines.append(new_line)
                 added = True
@@ -350,7 +352,7 @@ def get_playbook_stats(playbook_text: str) -> dict[str, Any]:
     Returns:
         Dictionary with statistics including:
         - total_bullets: Total number of bullets
-        - high_performing: Bullets with helpful > 5 and harmful < 2
+        - high_performing: Bullets exceeding helpful threshold with low harmful count
         - problematic: Bullets where harmful >= helpful
         - unused: Bullets with no helpful or harmful counts
         - by_section: Breakdown by section
@@ -375,7 +377,10 @@ def get_playbook_stats(playbook_text: str) -> dict[str, Any]:
         if parsed:
             stats["total_bullets"] += 1
 
-            if parsed.helpful > 5 and parsed.harmful < 2:
+            if (
+                parsed.helpful > _HIGH_PERFORMING_HELPFUL_MIN
+                and parsed.harmful < _HIGH_PERFORMING_HARMFUL_MAX
+            ):
                 stats["high_performing"] += 1
             elif parsed.harmful >= parsed.helpful and parsed.harmful > 0:
                 stats["problematic"] += 1

@@ -80,7 +80,8 @@ Only include bullets in bullet_tags that were actually referenced. Tag options:
 
 
 # Curator prompt for updating the playbook
-CURATOR_PROMPT = """You are a curator responsible for maintaining and improving a knowledge playbook.
+CURATOR_PROMPT = """You are a curator responsible for maintaining and improving \
+a knowledge playbook.
 Based on recent interactions and reflections, decide what updates to make.
 
 ## Current State

@@ -8,11 +8,11 @@ from __future__ import annotations
 
 import json
 from collections.abc import Awaitable, Callable
-from typing import TYPE_CHECKING, Annotated, Any, Generic
+from typing import TYPE_CHECKING, Annotated, Any
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langgraph.runtime import Runtime
-from typing_extensions import NotRequired, Required, TypedDict, override
+from typing_extensions import NotRequired, override
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -42,7 +42,6 @@ from .prompts import (
 
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
-    from langgraph.typing import ContextT
 
 
 # Private state annotation
