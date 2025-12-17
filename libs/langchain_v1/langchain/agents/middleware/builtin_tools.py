@@ -95,7 +95,7 @@ def _detect_provider(model: Any) -> str:
     # Check for specific model classes
     if "Anthropic" in model_class_name:
         return "anthropic"
-    if "OpenAI" in model_class_name or "AzureChatOpenAI" == model_class_name:
+    if "OpenAI" in model_class_name or model_class_name == "AzureChatOpenAI":
         return "openai"
     if "Google" in model_class_name or "Vertex" in model_class_name:
         return "google_genai"
@@ -120,9 +120,7 @@ class BuiltinToolsMiddleware(AgentMiddleware):
             from langchain.agents.middleware import BuiltinToolsMiddleware
             from langchain.agents import create_agent
 
-            middleware = BuiltinToolsMiddleware(
-                include_tools=["web_search", "code_execution"]
-            )
+            middleware = BuiltinToolsMiddleware(include_tools=["web_search", "code_execution"])
 
             agent = create_agent(
                 model="openai:gpt-4o",
@@ -217,7 +215,7 @@ class BuiltinToolsMiddleware(AgentMiddleware):
             Provider-specific tool definition dict, or None if unsupported.
         """
         if tool_name not in BUILTIN_TOOL_REGISTRY:
-            logger.warning(f"Unknown builtin tool: {tool_name}")
+            logger.warning("Unknown builtin tool: %s", tool_name)
             return None
 
         provider_tools = BUILTIN_TOOL_REGISTRY[tool_name]
@@ -264,8 +262,8 @@ class BuiltinToolsMiddleware(AgentMiddleware):
 
         if provider == "unknown":
             logger.warning(
-                f"Could not detect provider for model {request.model.__class__.__name__}. "
-                "Builtin tools will not be added."
+                "Could not detect provider for model %s. Builtin tools will not be added.",
+                request.model.__class__.__name__,
             )
             return handler(request)
 
@@ -333,8 +331,8 @@ class BuiltinToolsMiddleware(AgentMiddleware):
 
         if provider == "unknown":
             logger.warning(
-                f"Could not detect provider for model {request.model.__class__.__name__}. "
-                "Builtin tools will not be added."
+                "Could not detect provider for model %s. Builtin tools will not be added.",
+                request.model.__class__.__name__,
             )
             return await handler(request)
 
@@ -378,4 +376,3 @@ class BuiltinToolsMiddleware(AgentMiddleware):
         modified_request = request.override(tools=combined_tools)
 
         return await handler(modified_request)
-
