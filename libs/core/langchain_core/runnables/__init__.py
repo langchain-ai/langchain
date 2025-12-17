@@ -40,6 +40,8 @@ if TYPE_CHECKING:
         get_config_list,
         patch_config,
         run_in_executor,
+        isolate_config,
+        aisolate_config,
     )
     from langchain_core.runnables.fallbacks import RunnableWithFallbacks
     from langchain_core.runnables.history import RunnableWithMessageHistory
@@ -89,6 +91,8 @@ __all__ = (
     "get_config_list",
     "patch_config",
     "run_in_executor",
+    "isolate_config",
+    "aisolate_config",
 )
 
 _dynamic_imports = {
