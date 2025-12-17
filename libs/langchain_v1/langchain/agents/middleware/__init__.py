@@ -1,5 +1,6 @@
 """Entrypoint to using [middleware](https://docs.langchain.com/oss/python/langchain/middleware) plugins with [Agents](https://docs.langchain.com/oss/python/langchain/agents)."""  # noqa: E501
 
+from .ace import ACEMiddleware
 from .context_editing import (
     ClearToolUsesEdit,
     ContextEditingMiddleware,
@@ -42,6 +43,7 @@ from .types import (
 )
 
 __all__ = [
+    "ACEMiddleware",
     "AgentMiddleware",
     "AgentState",
     "ClearToolUsesEdit",

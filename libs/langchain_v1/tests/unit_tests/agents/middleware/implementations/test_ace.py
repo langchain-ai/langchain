@@ -1,0 +1,842 @@
+"""Tests for ACE (Agentic Context Engineering) middleware."""
+
+from __future__ import annotations
+
+import json
+from typing import Any
+from unittest.mock import patch
+
+import pytest
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
+
+from langchain.agents.middleware.ace import (
+    ACEMiddleware,
+    ACEPlaybook,
+    extract_bullet_ids,
+    format_playbook_line,
+    get_playbook_stats,
+    initialize_empty_playbook,
+    parse_playbook_line,
+    update_bullet_counts,
+)
+from langchain.agents.middleware.ace.playbook import (
+    add_bullet_to_playbook,
+    extract_playbook_bullets,
+    get_section_slug,
+    prune_harmful_bullets,
+)
+from langchain.agents.middleware.ace.prompts import (
+    build_curator_prompt,
+    build_reflector_prompt,
+    build_system_prompt_with_playbook,
+)
+
+
+class MockReflectorModel(BaseChatModel):
+    """Mock model that returns reflector-style JSON responses."""
+
+    def _generate(self, messages: Any, **kwargs: Any) -> ChatResult:
+        response = json.dumps(
+            {
+                "analysis": "Good response",
+                "what_worked": "Used correct approach",
+                "what_failed": "Nothing significant",
+                "key_insight": "Always verify inputs before processing",
+                "bullet_tags": [{"id": "str-00001", "tag": "helpful"}],
+            }
+        )
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(content=response))])
+
+    @property
+    def _llm_type(self) -> str:
+        return "mock-reflector"
+
+
+class MockCuratorModel(BaseChatModel):
+    """Mock model that returns curator-style JSON responses."""
+
+    def _generate(self, messages: Any, **kwargs: Any) -> ChatResult:
+        response = json.dumps(
+            {
+                "reasoning": "Adding new insight from reflection",
+                "operations": [
+                    {
+                        "type": "ADD",
+                        "section": "STRATEGIES & INSIGHTS",
+                        "content": "New strategy learned from interaction",
+                        "reason": "Derived from reflection",
+                    }
+                ],
+            }
+        )
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(content=response))])
+
+    @property
+    def _llm_type(self) -> str:
+        return "mock-curator"
+
+
+class MockEmptyResponseModel(BaseChatModel):
+    """Mock model that returns empty/invalid responses."""
+
+    def _generate(self, messages: Any, **kwargs: Any) -> ChatResult:
+        return ChatResult(
+            generations=[ChatGeneration(message=AIMessage(content="Invalid response"))]
+        )
+
+    @property
+    def _llm_type(self) -> str:
+        return "mock-empty"
+
+
+# =============================================================================
+# Playbook Utility Tests
+# =============================================================================
+
+
+class TestPlaybookParsing:
+    """Tests for playbook parsing utilities."""
+
+    def test_parse_playbook_line_valid(self) -> None:
+        """Test parsing a valid playbook line."""
+        line = "[str-00001] helpful=5 harmful=2 :: Always verify data types"
+        result = parse_playbook_line(line)
+
+        assert result is not None
+        assert result.id == "str-00001"
+        assert result.helpful == 5
+        assert result.harmful == 2
+        assert result.content == "Always verify data types"
+
+    def test_parse_playbook_line_with_whitespace(self) -> None:
+        """Test parsing with extra whitespace."""
+        line = "  [cal-00042] helpful=10 harmful=0 :: Use formula X = Y + Z  "
+        result = parse_playbook_line(line)
+
+        assert result is not None
+        assert result.id == "cal-00042"
+        assert result.helpful == 10
+        assert result.harmful == 0
+
+    def test_parse_playbook_line_invalid(self) -> None:
+        """Test parsing invalid lines returns None."""
+        assert parse_playbook_line("## SECTION HEADER") is None
+        assert parse_playbook_line("") is None
+        assert parse_playbook_line("Just some text") is None
+        assert parse_playbook_line("[invalid format] content") is None
+
+    def test_format_playbook_line(self) -> None:
+        """Test formatting a playbook line."""
+        result = format_playbook_line("str-00001", 5, 2, "Test content")
+        assert result == "[str-00001] helpful=5 harmful=2 :: Test content"
+
+    def test_extract_bullet_ids(self) -> None:
+        """Test extracting bullet IDs from text."""
+        text = "I used [str-00001] and [cal-00002] for this answer."
+        ids = extract_bullet_ids(text)
+
+        assert len(ids) == 2
+        assert "str-00001" in ids
+        assert "cal-00002" in ids
+
+    def test_extract_bullet_ids_no_matches(self) -> None:
+        """Test extracting when no bullet IDs present."""
+        text = "No bullet references here."
+        ids = extract_bullet_ids(text)
+        assert len(ids) == 0
+
+    def test_get_section_slug(self) -> None:
+        """Test section slug mapping."""
+        assert get_section_slug("strategies_and_insights") == "str"
+        assert get_section_slug("STRATEGIES & INSIGHTS") == "str"
+        assert get_section_slug("formulas_and_calculations") == "cal"
+        assert get_section_slug("common_mistakes_to_avoid") == "mis"
+        assert get_section_slug("unknown_section") == "oth"
+
+
+class TestPlaybookOperations:
+    """Tests for playbook modification operations."""
+
+    def test_initialize_empty_playbook(self) -> None:
+        """Test creating an empty playbook."""
+        playbook = initialize_empty_playbook()
+
+        assert "## STRATEGIES & INSIGHTS" in playbook
+        assert "## FORMULAS & CALCULATIONS" in playbook
+        assert "## COMMON MISTAKES TO AVOID" in playbook
+        assert "## OTHERS" in playbook
+
+    def test_update_bullet_counts_helpful(self) -> None:
+        """Test updating bullet counts with helpful tag."""
+        playbook = """## STRATEGIES & INSIGHTS
+[str-00001] helpful=0 harmful=0 :: Test bullet"""
+
+        tags = [{"id": "str-00001", "tag": "helpful"}]
+        updated = update_bullet_counts(playbook, tags)
+
+        assert "helpful=1" in updated
+        assert "harmful=0" in updated
+
+    def test_update_bullet_counts_harmful(self) -> None:
+        """Test updating bullet counts with harmful tag."""
+        playbook = """## STRATEGIES & INSIGHTS
+[str-00001] helpful=0 harmful=0 :: Test bullet"""
+
+        tags = [{"id": "str-00001", "tag": "harmful"}]
+        updated = update_bullet_counts(playbook, tags)
+
+        assert "helpful=0" in updated
+        assert "harmful=1" in updated
+
+    def test_update_bullet_counts_neutral(self) -> None:
+        """Test that neutral tag doesn't change counts."""
+        playbook = """## STRATEGIES & INSIGHTS
+[str-00001] helpful=5 harmful=2 :: Test bullet"""
+
+        tags = [{"id": "str-00001", "tag": "neutral"}]
+        updated = update_bullet_counts(playbook, tags)
+
+        assert "helpful=5" in updated
+        assert "harmful=2" in updated
+
+    def test_update_bullet_counts_empty_tags(self) -> None:
+        """Test with empty tags list."""
+        playbook = """## STRATEGIES & INSIGHTS
+[str-00001] helpful=0 harmful=0 :: Test bullet"""
+
+        updated = update_bullet_counts(playbook, [])
+        assert updated == playbook
+
+    def test_add_bullet_to_playbook(self) -> None:
+        """Test adding a new bullet to the playbook."""
+        playbook = initialize_empty_playbook()
+
+        updated, next_id = add_bullet_to_playbook(
+            playbook, "STRATEGIES & INSIGHTS", "New strategy content", 1
+        )
+
+        assert "[str-00001]" in updated
+        assert "New strategy content" in updated
+        assert next_id == 2
+
+    def test_add_bullet_to_unknown_section(self) -> None:
+        """Test adding bullet to non-existent section falls back to OTHERS."""
+        playbook = initialize_empty_playbook()
+
+        updated, next_id = add_bullet_to_playbook(
+            playbook, "NONEXISTENT SECTION", "Test content", 1
+        )
+
+        # Should be added somewhere (falls back to OTHERS)
+        assert "Test content" in updated
+        assert next_id == 2
+
+    def test_extract_playbook_bullets(self) -> None:
+        """Test extracting specific bullets from playbook."""
+        playbook = """## STRATEGIES & INSIGHTS
+[str-00001] helpful=5 harmful=0 :: First strategy
+[str-00002] helpful=3 harmful=1 :: Second strategy
+
+## FORMULAS & CALCULATIONS
+[cal-00003] helpful=2 harmful=0 :: Important formula"""
+
+        result = extract_playbook_bullets(playbook, ["str-00001", "cal-00003"])
+
+        assert "[str-00001]" in result
+        assert "First strategy" in result
+        assert "[cal-00003]" in result
+        assert "Important formula" in result
+        assert "[str-00002]" not in result
+
+    def test_extract_playbook_bullets_empty_ids(self) -> None:
+        """Test extracting with empty ID list."""
+        playbook = initialize_empty_playbook()
+        result = extract_playbook_bullets(playbook, [])
+        assert "No bullets referenced" in result
+
+    def test_prune_harmful_bullets(self) -> None:
+        """Test pruning predominantly harmful bullets."""
+        playbook = """## STRATEGIES & INSIGHTS
+[str-00001] helpful=1 harmful=5 :: Bad advice
+[str-00002] helpful=5 harmful=1 :: Good advice"""
+
+        pruned = prune_harmful_bullets(playbook, threshold=0.5, min_interactions=3)
+
+        assert "[str-00001]" not in pruned
+        assert "[str-00002]" in pruned
+
+    def test_prune_harmful_bullets_min_interactions(self) -> None:
+        """Test that bullets with few interactions are not pruned."""
+        playbook = """## STRATEGIES & INSIGHTS
+[str-00001] helpful=0 harmful=2 :: New but harmful"""
+
+        # With min_interactions=5, should not be pruned
+        pruned = prune_harmful_bullets(playbook, threshold=0.5, min_interactions=5)
+        assert "[str-00001]" in pruned
+
+
+class TestPlaybookStats:
+    """Tests for playbook statistics."""
+
+    def test_get_playbook_stats_empty(self) -> None:
+        """Test stats for empty playbook."""
+        playbook = initialize_empty_playbook()
+        stats = get_playbook_stats(playbook)
+
+        assert stats["total_bullets"] == 0
+        assert stats["high_performing"] == 0
+        assert stats["problematic"] == 0
+        assert stats["unused"] == 0
+
+    def test_get_playbook_stats_with_bullets(self) -> None:
+        """Test stats with various bullet types."""
+        playbook = """## STRATEGIES & INSIGHTS
+[str-00001] helpful=10 harmful=0 :: High performer
+[str-00002] helpful=0 harmful=5 :: Problematic
+[str-00003] helpful=0 harmful=0 :: Unused"""
+
+        stats = get_playbook_stats(playbook)
+
+        assert stats["total_bullets"] == 3
+        assert stats["high_performing"] == 1
+        assert stats["problematic"] == 1
+        assert stats["unused"] == 1
+
+    def test_get_playbook_stats_by_section(self) -> None:
+        """Test stats are broken down by section."""
+        playbook = """## STRATEGIES & INSIGHTS
+[str-00001] helpful=5 harmful=0 :: Strategy
+
+## FORMULAS & CALCULATIONS
+[cal-00001] helpful=3 harmful=1 :: Formula"""
+
+        stats = get_playbook_stats(playbook)
+
+        assert "STRATEGIES & INSIGHTS" in stats["by_section"]
+        assert "FORMULAS & CALCULATIONS" in stats["by_section"]
+        assert stats["by_section"]["STRATEGIES & INSIGHTS"]["count"] == 1
+
+
+class TestACEPlaybookDataclass:
+    """Tests for ACEPlaybook dataclass."""
+
+    def test_default_values(self) -> None:
+        """Test default initialization."""
+        playbook = ACEPlaybook()
+
+        assert "## STRATEGIES & INSIGHTS" in playbook.content
+        assert playbook.next_global_id == 1
+        assert playbook.stats == {}
+
+    def test_to_dict(self) -> None:
+        """Test conversion to dictionary."""
+        playbook = ACEPlaybook(
+            content="test content",
+            next_global_id=5,
+            stats={"total_bullets": 3},
+        )
+
+        d = playbook.to_dict()
+
+        assert d["content"] == "test content"
+        assert d["next_global_id"] == 5
+        assert d["stats"]["total_bullets"] == 3
+
+    def test_from_dict(self) -> None:
+        """Test creation from dictionary."""
+        data = {
+            "content": "test content",
+            "next_global_id": 10,
+            "stats": {"total": 5},
+        }
+
+        playbook = ACEPlaybook.from_dict(data)
+
+        assert playbook.content == "test content"
+        assert playbook.next_global_id == 10
+        assert playbook.stats["total"] == 5
+
+
+# =============================================================================
+# Prompt Tests
+# =============================================================================
+
+
+class TestPrompts:
+    """Tests for ACE prompt generation."""
+
+    def test_build_system_prompt_with_playbook_string(self) -> None:
+        """Test building prompt from string."""
+        result = build_system_prompt_with_playbook(
+            original_prompt="You are helpful.",
+            playbook="[str-00001] helpful=1 harmful=0 :: Test",
+            reflection="",
+        )
+
+        assert "You are helpful." in result
+        assert "ACE PLAYBOOK" in result
+        assert "[str-00001]" in result
+
+    def test_build_system_prompt_with_playbook_none(self) -> None:
+        """Test building prompt with None original."""
+        from langchain_core.messages import SystemMessage
+
+        result = build_system_prompt_with_playbook(
+            original_prompt=None,
+            playbook="Test playbook",
+            reflection="",
+        )
+
+        assert "helpful AI assistant" in result
+        assert "Test playbook" in result
+
+    def test_build_system_prompt_with_reflection(self) -> None:
+        """Test including reflection in prompt."""
+        result = build_system_prompt_with_playbook(
+            original_prompt="Base prompt",
+            playbook="Playbook content",
+            reflection="Previous attempt failed because of X",
+        )
+
+        assert "PREVIOUS REFLECTION" in result
+        assert "Previous attempt failed because of X" in result
+
+    def test_build_system_prompt_empty_reflection(self) -> None:
+        """Test that empty reflection is not included."""
+        result = build_system_prompt_with_playbook(
+            original_prompt="Base prompt",
+            playbook="Playbook content",
+            reflection="(empty)",
+        )
+
+        assert "PREVIOUS REFLECTION" not in result
+
+    def test_build_reflector_prompt(self) -> None:
+        """Test building reflector prompt."""
+        result = build_reflector_prompt(
+            question="What is 2+2?",
+            reasoning_trace="Let me calculate...",
+            feedback="Response was correct",
+            bullets_used="[str-00001] :: Test bullet",
+        )
+
+        assert "What is 2+2?" in result
+        assert "Let me calculate" in result
+        assert "Response was correct" in result
+        assert "[str-00001]" in result
+
+    def test_build_curator_prompt(self) -> None:
+        """Test building curator prompt."""
+        result = build_curator_prompt(
+            current_step=5,
+            total_samples=100,
+            token_budget=50000,
+            playbook_stats='{"total_bullets": 10}',
+            recent_reflection="Learned something new",
+            current_playbook="## STRATEGIES\n[str-00001]...",
+        )
+
+        assert "Step 5 of 100" in result
+        assert "50000" in result
+        assert "Learned something new" in result
+
+
+# =============================================================================
+# Middleware Tests
+# =============================================================================
+
+
+class TestACEMiddlewareInitialization:
+    """Tests for ACE middleware initialization."""
+
+    def test_default_initialization(self) -> None:
+        """Test middleware with default settings."""
+        middleware = ACEMiddleware()
+
+        assert middleware.curator_frequency == 5
+        assert middleware.playbook_token_budget == 80000
+        assert middleware.enable_reflection is False  # No reflector model
+        assert middleware.enable_curation is False  # No curator model
+        assert middleware.auto_prune is False
+
+    def test_initialization_with_models(self) -> None:
+        """Test middleware with model specifications."""
+        with patch(
+            "langchain.agents.middleware.ace.middleware.init_chat_model",
+            return_value=MockReflectorModel(),
+        ):
+            middleware = ACEMiddleware(
+                reflector_model="gpt-4o-mini",
+                curator_model="gpt-4o-mini",
+                curator_frequency=10,
+            )
+
+            assert middleware.enable_reflection is True
+            assert middleware.enable_curation is True
+            assert middleware.curator_frequency == 10
+
+    def test_initialization_with_initial_playbook(self) -> None:
+        """Test middleware with custom initial playbook."""
+        custom_playbook = """## STRATEGIES & INSIGHTS
+[str-00001] helpful=5 harmful=0 :: Custom strategy"""
+
+        middleware = ACEMiddleware(initial_playbook=custom_playbook)
+
+        assert "[str-00001]" in middleware.initial_playbook
+        assert "Custom strategy" in middleware.initial_playbook
+
+    def test_initialization_with_auto_prune(self) -> None:
+        """Test middleware with auto-pruning enabled."""
+        middleware = ACEMiddleware(
+            auto_prune=True,
+            prune_threshold=0.6,
+            prune_min_interactions=5,
+        )
+
+        assert middleware.auto_prune is True
+        assert middleware.prune_threshold == 0.6
+        assert middleware.prune_min_interactions == 5
+
+
+class TestACEMiddlewareHooks:
+    """Tests for ACE middleware hook methods."""
+
+    def test_before_agent_initializes_state(self) -> None:
+        """Test that before_agent initializes ACE state fields."""
+        middleware = ACEMiddleware()
+
+        state: dict[str, Any] = {"messages": []}
+        result = middleware.before_agent(state, None)  # type: ignore[arg-type]
+
+        assert result is not None
+        assert "ace_playbook" in result
+        assert "ace_last_reflection" in result
+        assert "ace_interaction_count" in result
+        assert result["ace_interaction_count"] == 0
+
+    def test_before_agent_does_not_reinitialize(self) -> None:
+        """Test that before_agent doesn't overwrite existing state."""
+        middleware = ACEMiddleware()
+
+        state: dict[str, Any] = {
+            "messages": [],
+            "ace_playbook": {"content": "existing", "next_global_id": 5, "stats": {}},
+        }
+        result = middleware.before_agent(state, None)  # type: ignore[arg-type]
+
+        assert result is None
+
+    def test_wrap_model_call_injects_playbook(self) -> None:
+        """Test that wrap_model_call injects playbook into system prompt."""
+        middleware = ACEMiddleware(
+            initial_playbook="[str-00001] helpful=1 harmful=0 :: Test strategy"
+        )
+
+        from langchain_core.messages import SystemMessage
+
+        from langchain.agents.middleware.types import ModelRequest, ModelResponse
+
+        # Create mock request
+        class MockModel:
+            pass
+
+        request = ModelRequest(
+            model=MockModel(),  # type: ignore[arg-type]
+            messages=[HumanMessage(content="Hello")],
+            system_message=SystemMessage(content="Be helpful"),
+            state={
+                "messages": [],
+                "ace_playbook": middleware._get_playbook({}).to_dict(),  # type: ignore[arg-type]
+                "ace_last_reflection": "",
+            },
+        )
+
+        # Track what gets passed to handler
+        captured_request = None
+
+        def mock_handler(req: ModelRequest) -> ModelResponse:
+            nonlocal captured_request
+            captured_request = req
+            return ModelResponse(result=[AIMessage(content="Response")])
+
+        middleware.wrap_model_call(request, mock_handler)
+
+        assert captured_request is not None
+        assert captured_request.system_message is not None
+        system_content = captured_request.system_message.content
+        assert "ACE PLAYBOOK" in system_content
+        assert "[str-00001]" in system_content
+
+    def test_after_model_increments_count_without_reflection(self) -> None:
+        """Test that after_model increments count when reflection disabled."""
+        middleware = ACEMiddleware(enable_reflection=False)
+
+        state: dict[str, Any] = {
+            "messages": [AIMessage(content="Response")],
+            "ace_interaction_count": 5,
+        }
+
+        result = middleware.after_model(state, None)  # type: ignore[arg-type]
+
+        assert result is not None
+        assert result["ace_interaction_count"] == 6
+
+    def test_after_model_with_reflection(self) -> None:
+        """Test after_model runs reflector and updates state."""
+        middleware = ACEMiddleware(
+            reflector_model=MockReflectorModel(),
+            initial_playbook="""## STRATEGIES & INSIGHTS
+[str-00001] helpful=0 harmful=0 :: Test strategy""",
+        )
+
+        state: dict[str, Any] = {
+            "messages": [
+                HumanMessage(content="What is the answer?"),
+                AIMessage(content="The answer uses [str-00001] strategy."),
+            ],
+            "ace_playbook": middleware._get_playbook({}).to_dict(),  # type: ignore[arg-type]
+            "ace_last_reflection": "",
+            "ace_interaction_count": 0,
+        }
+
+        result = middleware.after_model(state, None)  # type: ignore[arg-type]
+
+        assert result is not None
+        assert "ace_playbook" in result
+        assert "ace_last_reflection" in result
+        assert result["ace_interaction_count"] == 1
+
+        # Check that reflection was captured
+        assert "verify inputs" in result["ace_last_reflection"]
+
+    def test_after_model_handles_non_ai_message(self) -> None:
+        """Test after_model handles case where last message is not AI."""
+        middleware = ACEMiddleware(reflector_model=MockReflectorModel())
+
+        state: dict[str, Any] = {
+            "messages": [HumanMessage(content="User message")],
+            "ace_interaction_count": 0,
+        }
+
+        result = middleware.after_model(state, None)  # type: ignore[arg-type]
+
+        # Should just increment count
+        assert result["ace_interaction_count"] == 1
+
+
+class TestACEMiddlewareCuration:
+    """Tests for ACE middleware curation functionality."""
+
+    def test_curator_runs_at_frequency(self) -> None:
+        """Test that curator runs at specified frequency."""
+        middleware = ACEMiddleware(
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
+            curator_frequency=2,
+            initial_playbook=initialize_empty_playbook(),
+        )
+
+        state: dict[str, Any] = {
+            "messages": [
+                HumanMessage(content="Question"),
+                AIMessage(content="Answer"),
+            ],
+            "ace_playbook": middleware._get_playbook({}).to_dict(),  # type: ignore[arg-type]
+            "ace_last_reflection": "",
+            "ace_interaction_count": 1,  # Next will be 2, triggering curator
+        }
+
+        result = middleware.after_model(state, None)  # type: ignore[arg-type]
+
+        assert result is not None
+        # Check that curator added a new bullet
+        playbook_content = result["ace_playbook"]["content"]
+        assert "New strategy learned" in playbook_content
+
+    def test_curator_does_not_run_before_frequency(self) -> None:
+        """Test that curator doesn't run before frequency threshold."""
+        middleware = ACEMiddleware(
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
+            curator_frequency=5,
+            initial_playbook=initialize_empty_playbook(),
+        )
+
+        state: dict[str, Any] = {
+            "messages": [
+                HumanMessage(content="Question"),
+                AIMessage(content="Answer"),
+            ],
+            "ace_playbook": middleware._get_playbook({}).to_dict(),  # type: ignore[arg-type]
+            "ace_last_reflection": "",
+            "ace_interaction_count": 2,  # Next will be 3, not triggering
+        }
+
+        result = middleware.after_model(state, None)  # type: ignore[arg-type]
+
+        # Curator should not have run
+        playbook_content = result["ace_playbook"]["content"]
+        assert "New strategy learned" not in playbook_content
+
+
+class TestACEMiddlewareJSONParsing:
+    """Tests for JSON parsing in middleware."""
+
+    def test_extract_json_direct_parse(self) -> None:
+        """Test extracting JSON from direct JSON string."""
+        middleware = ACEMiddleware()
+
+        json_str = '{"key": "value", "nested": {"a": 1}}'
+        result = middleware._extract_json_from_response(json_str)
+
+        assert result is not None
+        assert result["key"] == "value"
+        assert result["nested"]["a"] == 1
+
+    def test_extract_json_from_code_block(self) -> None:
+        """Test extracting JSON from code block."""
+        middleware = ACEMiddleware()
+
+        text = """Here is the response:
+```json
+{"analysis": "good", "score": 10}
+```
+End of response."""
+
+        result = middleware._extract_json_from_response(text)
+
+        assert result is not None
+        assert result["analysis"] == "good"
+        assert result["score"] == 10
+
+    def test_extract_json_from_embedded(self) -> None:
+        """Test extracting JSON embedded in text."""
+        middleware = ACEMiddleware()
+
+        text = 'Some text before {"data": "value"} some text after'
+        result = middleware._extract_json_from_response(text)
+
+        assert result is not None
+        assert result["data"] == "value"
+
+    def test_extract_json_invalid_returns_none(self) -> None:
+        """Test that invalid JSON returns None."""
+        middleware = ACEMiddleware()
+
+        result = middleware._extract_json_from_response("Not JSON at all")
+        assert result is None
+
+
+class TestACEMiddlewareAsync:
+    """Tests for async middleware methods."""
+
+    @pytest.mark.asyncio
+    async def test_abefore_agent(self) -> None:
+        """Test async before_agent."""
+        middleware = ACEMiddleware()
+
+        state: dict[str, Any] = {"messages": []}
+        result = await middleware.abefore_agent(state, None)  # type: ignore[arg-type]
+
+        assert result is not None
+        assert "ace_playbook" in result
+
+    @pytest.mark.asyncio
+    async def test_awrap_model_call(self) -> None:
+        """Test async wrap_model_call."""
+        middleware = ACEMiddleware(
+            initial_playbook="[str-00001] helpful=1 harmful=0 :: Strategy"
+        )
+
+        from langchain_core.messages import SystemMessage
+
+        from langchain.agents.middleware.types import ModelRequest, ModelResponse
+
+        class MockModel:
+            pass
+
+        request = ModelRequest(
+            model=MockModel(),  # type: ignore[arg-type]
+            messages=[HumanMessage(content="Hello")],
+            system_message=SystemMessage(content="Be helpful"),
+            state={
+                "messages": [],
+                "ace_playbook": middleware._get_playbook({}).to_dict(),  # type: ignore[arg-type]
+                "ace_last_reflection": "",
+            },
+        )
+
+        async def mock_handler(req: ModelRequest) -> ModelResponse:
+            return ModelResponse(result=[AIMessage(content="Response")])
+
+        result = await middleware.awrap_model_call(request, mock_handler)
+
+        assert result is not None
+
+
+# =============================================================================
+# Integration-style Tests
+# =============================================================================
+
+
+class TestACEMiddlewareIntegration:
+    """Integration-style tests for ACE middleware."""
+
+    def test_full_workflow_without_reflection(self) -> None:
+        """Test complete workflow with reflection disabled."""
+        middleware = ACEMiddleware(
+            initial_playbook="""## STRATEGIES & INSIGHTS
+[str-00001] helpful=5 harmful=0 :: Use systematic approach""",
+            enable_reflection=False,
+        )
+
+        # Initialize state
+        state: dict[str, Any] = {"messages": []}
+        init_result = middleware.before_agent(state, None)  # type: ignore[arg-type]
+        state.update(init_result or {})
+
+        # Verify initialization
+        assert state["ace_interaction_count"] == 0
+        assert "[str-00001]" in state["ace_playbook"]["content"]
+
+        # Simulate after model call
+        state["messages"] = [
+            HumanMessage(content="Question"),
+            AIMessage(content="Answer"),
+        ]
+        after_result = middleware.after_model(state, None)  # type: ignore[arg-type]
+        state.update(after_result or {})
+
+        # Verify interaction count incremented
+        assert state["ace_interaction_count"] == 1
+
+    def test_playbook_evolution_over_interactions(self) -> None:
+        """Test that playbook evolves across multiple interactions."""
+        middleware = ACEMiddleware(
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
+            curator_frequency=1,  # Curate every interaction
+            initial_playbook="""## STRATEGIES & INSIGHTS
+[str-00001] helpful=0 harmful=0 :: Initial strategy""",
+        )
+
+        state: dict[str, Any] = {"messages": []}
+        init_result = middleware.before_agent(state, None)  # type: ignore[arg-type]
+        state.update(init_result or {})
+
+        # First interaction
+        state["messages"] = [
+            HumanMessage(content="Q1"),
+            AIMessage(content="A1 using [str-00001]"),
+        ]
+        result1 = middleware.after_model(state, None)  # type: ignore[arg-type]
+        state.update(result1 or {})
+
+        # Check that curator added new content
+        assert "New strategy learned" in state["ace_playbook"]["content"]
+
+        # Check that bullet count was updated
+        assert "helpful=1" in state["ace_playbook"]["content"]
+
