@@ -317,7 +317,7 @@ def add_bullet_to_playbook(
     # Simple approach: find section and append after header
     result_lines: list[str] = []
 
-    for i, line in enumerate(lines):
+    for line in lines:
         result_lines.append(line)
 
         if line.strip().startswith("##"):

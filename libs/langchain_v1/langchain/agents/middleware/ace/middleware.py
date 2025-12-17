@@ -219,7 +219,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
                 content = msg.content
                 if isinstance(content, str):
                     return content
-                elif isinstance(content, list):
+                if isinstance(content, list):
                     return " ".join(
                         part if isinstance(part, str) else str(part) for part in content
                     )
