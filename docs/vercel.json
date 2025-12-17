@@ -26,6 +26,7 @@
       "source": "/docs/troubleshooting/errors/GRAPH_RECURSION_LIMIT/",
       "destination": "https://docs.langchain.com/oss/python/langgraph/errors/GRAPH_RECURSION_LIMIT"
     },
+
     {
       "source": "/docs/troubleshooting/errors/INVALID_CONCURRENT_GRAPH_UPDATE",
       "destination": "https://docs.langchain.com/oss/python/langgraph/errors/INVALID_CONCURRENT_GRAPH_UPDATE"
@@ -599,12 +600,24 @@
       "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
     },
     {
+      "source": "/docs/how_to/chat_model_rate_limiting(/?)",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models#rate-limiting"
+    },
+    {
+      "source": "/docs/how_to/structured_output(/?)",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
       "source": "/docs/how_to/graph_prompting(/?)",
       "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
     },
     {
       "source": "/docs/how_to/multimodal_inputs(/?)",
       "destination": "https://docs.langchain.com/oss/python/langchain/messages#multimodal"
+    },
+    {
+      "source": "/docs/concepts/chat_models(/?)",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
     },
     {
       "source": "/docs/langgraph(/?)",
