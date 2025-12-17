@@ -158,6 +158,15 @@ When `auto_prune=True`, bullets with high harmful-to-helpful ratios are removed:
 [str-00005] helpful=1 harmful=5 :: Bad advice  # REMOVED
 ```
 
+## Running the Demo
+
+```bash
+cd libs/langchain_v1/langchain/agents/middleware/ace
+uv run --env-file .env python examples/ace_playbook_demo.py
+```
+
+This runs an interactive demo that shows the playbook evolving as the agent solves math problems.
+
 ## Usage Example
 
 ### Basic Usage

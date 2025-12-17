@@ -178,6 +178,22 @@ def extract_bullet_ids(text: str) -> list[str]:
     return re.findall(pattern, text)
 
 
+def get_max_bullet_id(playbook_text: str) -> int:
+    """Find the maximum numeric ID used in the playbook.
+
+    Args:
+        playbook_text: The playbook content.
+
+    Returns:
+        The highest ID number found, or 0 if none found.
+    """
+    pattern = r"\[[a-z]{3}-(\d{5})\]"
+    matches = re.findall(pattern, playbook_text)
+    if not matches:
+        return 0
+    return max(int(m) for m in matches)
+
+
 def extract_playbook_bullets(playbook_text: str, bullet_ids: list[str]) -> str:
     """Extract specific bullet points from playbook based on IDs.
 
