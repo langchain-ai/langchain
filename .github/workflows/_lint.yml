@@ -50,7 +50,7 @@ jobs:
       - name: "🔒 Verify Lockfile is Up-to-Date"
         working-directory: ${{ inputs.working-directory }}
         env:
-          UV_FROZEN: ""
+          UV_FROZEN: "false"
         run: uv lock --check
 
       - name: "📦 Install Lint & Typing Dependencies"
