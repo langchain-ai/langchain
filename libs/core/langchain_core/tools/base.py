@@ -711,9 +711,17 @@ class ChildTool(BaseTool):
                     f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"
                 )
                 raise NotImplementedError(msg)
-            validated_input = {
-                k: getattr(result, k) for k in result_dict if k in tool_input
-            }
+            # Include fields from tool_input, plus fields with non-None defaults.
+            # This applies Pydantic defaults (like Field(default=1)) while excluding
+            # synthetic fields from *args/*kwargs which have default=None.
+            validated_input = {}
+            for k in result_dict:
+                if k in tool_input:
+                    # Field was provided in input - include it (validated)
+                    validated_input[k] = getattr(result, k)
+                elif getattr(result, k) is not None:
+                    # Field has a non-None default - include it
+                    validated_input[k] = getattr(result, k)
             for k in self._injected_args_keys:
                 if k in tool_input:
                     validated_input[k] = tool_input[k]

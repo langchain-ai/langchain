@@ -3345,3 +3345,68 @@ async def test_tool_call_id_passed_via_run_method(method: str) -> None:
     assert handler.tool_starts == 1
     assert len(handler.captured_tool_call_ids) == 1
     assert handler.captured_tool_call_ids[0] == "run_method_tool_call_id"
+
+
+def test_tool_args_schema_default_values() -> None:
+    """Test that Pydantic default values from args_schema are applied.
+
+    When a tool has an args_schema with default values, those defaults
+    should be passed to the tool function when the caller omits them.
+    This is useful when an LLM omits optional arguments.
+
+    Fixes: https://github.com/langchain-ai/langchain/issues/34384
+    """
+
+    class SearchArgs(BaseModel):
+        """Schema for search tool arguments."""
+
+        query: str = Field(..., description="The search query")
+        page: int = Field(default=1, description="Page number")
+        size: int = Field(default=10, description="Results per page")
+
+    @tool("search", args_schema=SearchArgs)
+    def search_tool(query: str, page: int, size: int) -> str:
+        """Perform a search with pagination.
+
+        Args:
+            query: The search query.
+            page: Page number.
+            size: Results per page.
+        """
+        return f"query={query}, page={page}, size={size}"
+
+    # Invoke with only required argument - defaults should be applied
+    result = search_tool.invoke({"query": "test"})
+    assert result == "query=test, page=1, size=10"
+
+    # Invoke with partial defaults - mix of provided and default values
+    result = search_tool.invoke({"query": "test", "page": 5})
+    assert result == "query=test, page=5, size=10"
+
+    # Invoke with all arguments explicitly provided
+    result = search_tool.invoke({"query": "test", "page": 3, "size": 20})
+    assert result == "query=test, page=3, size=20"
+
+
+async def test_tool_args_schema_default_values_async() -> None:
+    """Test that Pydantic defaults work with async tool invocation."""
+
+    class SearchArgs(BaseModel):
+        """Schema for search tool arguments."""
+
+        query: str = Field(..., description="The search query")
+        limit: int = Field(default=5, description="Max results")
+
+    @tool("async_search", args_schema=SearchArgs)
+    async def async_search_tool(query: str, limit: int) -> str:
+        """Async search tool.
+
+        Args:
+            query: The search query.
+            limit: Max results.
+        """
+        return f"query={query}, limit={limit}"
+
+    # Invoke with only required argument - default should be applied
+    result = await async_search_tool.ainvoke({"query": "hello"})
+    assert result == "query=hello, limit=5"
