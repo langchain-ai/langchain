@@ -2425,19 +2425,26 @@ def test_message_start_with_pre_completed_tool_use() -> None:
     )
 
     # Verify the chunk is not empty and contains the tool use
-    assert chunk is not None, "message_start with pre-completed content should produce chunk"
+    assert chunk is not None, (
+        "message_start with pre-completed content should produce chunk"
+    )
     assert chunk.content, "Chunk content should not be empty"
+    assert isinstance(chunk.content, list), "Content should be a list"
     assert len(chunk.content) == 1, "Should have one content block"
-    assert chunk.content[0]["type"] == "tool_use"
-    assert chunk.content[0]["id"] == "toolu_01ABC123"
-    assert chunk.content[0]["name"] == "get_weather"
+    content_block = chunk.content[0]
+    assert isinstance(content_block, dict), "Content block should be a dict"
+    assert content_block["type"] == "tool_use"
+    assert content_block["id"] == "toolu_01ABC123"
+    assert content_block["name"] == "get_weather"
 
     # Verify tool_call_chunks are populated
     assert chunk.tool_call_chunks, "Tool call chunks should be populated"
     assert len(chunk.tool_call_chunks) == 1
     assert chunk.tool_call_chunks[0]["name"] == "get_weather"
     assert chunk.tool_call_chunks[0]["id"] == "toolu_01ABC123"
-    assert '"location": "San Francisco"' in chunk.tool_call_chunks[0]["args"]
+    args = chunk.tool_call_chunks[0]["args"]
+    assert args is not None
+    assert '"location": "San Francisco"' in args
 
 
 def test_message_start_with_multiple_pre_completed_blocks() -> None:
@@ -2485,9 +2492,14 @@ def test_message_start_with_multiple_pre_completed_blocks() -> None:
     )
 
     assert chunk is not None
+    assert isinstance(chunk.content, list), "Content should be a list"
     assert len(chunk.content) == 2
-    assert chunk.content[0]["type"] == "text"
-    assert chunk.content[1]["type"] == "tool_use"
+    text_block = chunk.content[0]
+    tool_block = chunk.content[1]
+    assert isinstance(text_block, dict)
+    assert text_block["type"] == "text"
+    assert isinstance(tool_block, dict)
+    assert tool_block["type"] == "tool_use"
     assert len(chunk.tool_call_chunks) == 1
     assert chunk.tool_call_chunks[0]["name"] == "search"
 
