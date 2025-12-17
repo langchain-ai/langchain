@@ -1,13 +1,7 @@
 """Unit tests for ToolCallLimitMiddleware."""
 
 import pytest
-from langchain_core.language_models.chat_models import BaseChatModel
-from typing import Any
-
-from langchain_core.callbacks import AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolCall, ToolMessage
-from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
 
@@ -743,7 +737,7 @@ def test_parallel_tool_calls_with_limit_end_mode():
 
     # Verify tool message counts
     # With "end" behavior, when we jump to end, NO tools execute (not even allowed ones)
-    # We only get error ToolMessages for the 2 blocked calls
+    # All 3 proposed tool calls are replaced with error ToolMessages
     tool_messages = [msg for msg in messages if isinstance(msg, ToolMessage)]
     successful_tool_messages = [msg for msg in tool_messages if msg.status != "error"]
     error_tool_messages = [msg for msg in tool_messages if msg.status == "error"]
