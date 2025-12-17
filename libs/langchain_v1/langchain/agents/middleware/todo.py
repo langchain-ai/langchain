@@ -33,10 +33,27 @@ class Todo(TypedDict):
     """The current status of the todo item."""
 
 
+def _todos_reducer(_current: list[Todo] | None, new: list[Todo]) -> list[Todo]:
+    """Reducer for todos state - last write wins.
+
+    This reducer is required by LangGraph to handle concurrent state updates.
+    Since write_todos replaces the entire todo list rather than appending,
+    we use last-write-wins semantics.
+
+    Args:
+        _current: The current todo list (unused - last write wins).
+        new: The new todo list to use.
+
+    Returns:
+        The new todo list.
+    """
+    return new
+
+
 class PlanningState(AgentState):
     """State schema for the todo middleware."""
 
-    todos: Annotated[NotRequired[list[Todo]], OmitFromInput]
+    todos: NotRequired[Annotated[list[Todo], _todos_reducer, OmitFromInput]]
     """List of todo items for tracking task progress."""
 
 

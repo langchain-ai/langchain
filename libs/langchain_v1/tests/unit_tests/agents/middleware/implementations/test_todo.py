@@ -15,6 +15,7 @@ from langchain.agents.middleware.todo import (
     WRITE_TODOS_TOOL_DESCRIPTION,
     PlanningState,
     TodoListMiddleware,
+    _todos_reducer,
     write_todos,
 )
 from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
@@ -52,6 +53,39 @@ def test_todo_middleware_initialization() -> None:
     assert middleware.state_schema == PlanningState
     assert len(middleware.tools) == 1
     assert middleware.tools[0].name == "write_todos"
+
+
+def test_todos_reducer_replaces_list() -> None:
+    """Test that _todos_reducer implements last-write-wins semantics."""
+    current = [{"content": "Task 1", "status": "pending"}]
+    new = [{"content": "Task 2", "status": "in_progress"}]
+
+    result = _todos_reducer(current, new)
+
+    # Reducer should return the new list, not merge
+    assert result == new
+    assert result is new
+
+
+def test_todos_reducer_handles_none_current() -> None:
+    """Test that _todos_reducer handles None as current value."""
+    new = [{"content": "Task 1", "status": "pending"}]
+
+    result = _todos_reducer(None, new)
+
+    assert result == new
+    assert result is new
+
+
+def test_todos_reducer_handles_empty_lists() -> None:
+    """Test that _todos_reducer handles empty lists correctly."""
+    current = [{"content": "Task 1", "status": "completed"}]
+    new: list = []
+
+    result = _todos_reducer(current, new)
+
+    # Empty list should replace current list
+    assert result == []
 
 
 def test_has_write_todos_tool() -> None:
