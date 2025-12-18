@@ -69,6 +69,31 @@ def _get_executor() -> ThreadPoolExecutor:
     return _EXECUTOR
 
 
+def _get_usage_metadata_from_generations(
+    generations: list[list[dict[str, Any]]],
+) -> dict[str, Any] | None:
+    """Extract usage_metadata from generations.
+
+    Iterates through generations to find and return the first usage_metadata
+    found in a message. This is typically present in chat model outputs.
+
+    Args:
+        generations: List of generation batches, where each batch is a list
+            of generation dicts that may contain a "message" key with
+            "usage_metadata".
+
+    Returns:
+        The usage_metadata dict if found, otherwise None.
+    """
+    for generation_batch in generations:
+        for generation in generation_batch:
+            if isinstance(generation, dict) and "message" in generation:
+                message = generation["message"]
+                if isinstance(message, dict) and "usage_metadata" in message:
+                    return message["usage_metadata"]
+    return None
+
+
 class LangChainTracer(BaseTracer):
     """Implementation of the SharedTracer that POSTS to the LangChain endpoint."""
 
@@ -266,6 +291,15 @@ class LangChainTracer(BaseTracer):
 
     def _on_llm_end(self, run: Run) -> None:
         """Process the LLM Run."""
+        # Extract usage_metadata from outputs and store in extra.metadata
+        if run.outputs and "generations" in run.outputs:
+            usage_metadata = _get_usage_metadata_from_generations(
+                run.outputs["generations"]
+            )
+            if usage_metadata is not None:
+                if "metadata" not in run.extra:
+                    run.extra["metadata"] = {}
+                run.extra["metadata"]["usage_metadata"] = usage_metadata
         self._update_run_single(run)
 
     def _on_llm_error(self, run: Run) -> None:
