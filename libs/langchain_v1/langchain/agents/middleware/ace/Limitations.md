@@ -1,4 +1,4 @@
-# ACE Middleware Limitations
+# ACE Middleware Design Trade-offs and Limitations
 
 This document outlines current limitations of the LangChain ACE middleware compared to
 the full ACE framework, along with potential future enhancements.
