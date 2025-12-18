@@ -47,6 +47,12 @@ jobs:
           cache-suffix: lint-${{ inputs.working-directory }}
           working-directory: ${{ inputs.working-directory }}
 
+      - name: "🔒 Verify Lockfile is Up-to-Date"
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          unset UV_FROZEN
+          uv lock --check
+
       - name: "📦 Install Lint & Typing Dependencies"
         working-directory: ${{ inputs.working-directory }}
         run: |
