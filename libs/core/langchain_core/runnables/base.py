@@ -2267,6 +2267,8 @@ class Runnable(ABC, Generic[Input, Output]):
         ],
         config: RunnableConfig | None,
         run_type: str | None = None,
+        *,
+        defers_inputs: bool = False,
         **kwargs: Any | None,
     ) -> Iterator[Output]:
         """Transform a stream with config.
@@ -2293,7 +2295,7 @@ class Runnable(ABC, Generic[Input, Output]):
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
-            defers_inputs=True,
+            defers_inputs=defers_inputs,
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -2365,6 +2367,8 @@ class Runnable(ABC, Generic[Input, Output]):
         ],
         config: RunnableConfig | None,
         run_type: str | None = None,
+        *,
+        defers_inputs: bool = False,
         **kwargs: Any | None,
     ) -> AsyncIterator[Output]:
         """Transform a stream with config.
@@ -2391,7 +2395,7 @@ class Runnable(ABC, Generic[Input, Output]):
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
-            defers_inputs=True,
+            defers_inputs=defers_inputs,
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -4325,6 +4329,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             input,
             self._transform,  # type: ignore[arg-type]
             config,
+            defers_inputs=True,
             **kwargs,
         )
 
@@ -4358,7 +4363,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             raise NotImplementedError(msg)
 
         return self._atransform_stream_with_config(
-            input, self._atransform, config, **kwargs
+            input, self._atransform, config, defers_inputs=True, **kwargs
         )
 
     @override
