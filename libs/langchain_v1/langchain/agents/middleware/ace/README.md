@@ -161,6 +161,15 @@ Every `curator_frequency` interactions, the **Curator** model:
 }
 ```
 
+### 5. Automatic Pruning (Optional)
+
+When `auto_prune=True`, bullets with high harmful-to-helpful ratios are removed:
+
+```python
+# Bullet with harmful > helpful gets pruned
+[str-00005] helpful=1 harmful=5 :: Bad advice  # REMOVED
+```
+
 ## Why Helpful/Harmful Counts Improve Accuracy
 
 The core insight of ACE: instead of retraining models, accumulate and refine contextual
@@ -178,12 +187,11 @@ knowledge that gets injected into prompts. The count system makes this work.
 
 The playbook evolves like a genetic algorithm:
 
-- **Selection**: High helpful/harmful ratio bullets get prioritized
+- **Selection**: High helpful/harmful ratio bullets survive
 - **Mutation**: Curator adds new strategies based on reflections
-- **Noise tolerance**: One bad outcome doesn't kill a good strategy
+- **Extinction**: Harmful bullets get pruned
 
 Over many interactions, the playbook converges on strategies that actually work.
-
 
 ### Signal Visibility
 
@@ -256,7 +264,21 @@ ace = ACEMiddleware(
 
 ## COMMON MISTAKES TO AVOID
 [mis-00001] helpful=8 harmful=0 :: Don't forget to handle timezone conversions
+[mis-00002] helpful=6 harmful=0 :: Validate user inputs before processing
 """,
+)
+```
+
+### With Auto-Pruning
+
+```python
+ace = ACEMiddleware(
+    reflector_model="gpt-4o-mini",
+    curator_model="gpt-4o-mini",
+    curator_frequency=10,
+    auto_prune=True,           # Enable automatic pruning
+    prune_threshold=0.5,       # Prune if harmful/(helpful+harmful) > 0.5
+    prune_min_interactions=5,  # Only prune after 5+ interactions
 )
 ```
 
@@ -278,6 +300,11 @@ ace = ACEMiddleware(
     # Feature toggles
     enable_reflection=True,             # Run reflector after model calls
     enable_curation=True,               # Run curator periodically
+
+    # Pruning settings
+    auto_prune=False,                   # Auto-remove harmful bullets
+    prune_threshold=0.5,                # Harmful ratio threshold
+    prune_min_interactions=3,           # Min interactions before pruning
 )
 ```
 
@@ -363,6 +390,7 @@ which playbook bullets helped or hurt. Here's what it receives:
 **Playbook Bullets Referenced:**
 [str-00001] helpful=0 harmful=0 :: Break word problems into steps
 [mis-00001] helpful=0 harmful=0 :: Convert percentages to decimals
+```
 
 ### How Tagging Works
 
@@ -389,16 +417,15 @@ The reflector receives feedback from:
 
 ### Current Limitations
 
-Without ground truth (the correct answer), the reflector must **infer** correctness base
-d on:
+Without ground truth (the correct answer), the reflector must **infer** correctness based on:
 - Tool results and errors (extracted from message history)
 - Reasoning quality analysis
 - LLM's domain knowledge
 
-This is less accurate than the original ACE which compares `predicted_answer` vs `ground
-_truth`.
+This is less accurate than the original ACE which compares `predicted_answer` vs `ground_truth`.
 See [Limitations.md](Limitations.md) for details.
 
+---
 
 ## Design Notes: Bullet ID Tracking
 
