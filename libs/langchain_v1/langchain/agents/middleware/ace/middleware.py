@@ -10,7 +10,13 @@ import json
 from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Annotated, Any
 
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from langgraph.runtime import Runtime
 from typing_extensions import NotRequired, override
 
@@ -229,6 +235,54 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
                     )
         return ""
 
+    def _extract_tool_feedback(self, messages: list[BaseMessage]) -> str:
+        """Extract tool results and errors from messages for reflector feedback.
+
+        Scans recent messages for tool calls and their results, providing
+        valuable context for the reflector to understand what worked or failed.
+
+        Args:
+            messages: List of messages from the conversation.
+
+        Returns:
+            Formatted string describing tool results and any errors.
+        """
+        tool_results: list[str] = []
+        errors: list[str] = []
+
+        for msg in messages:
+            # Check for tool call results
+            if isinstance(msg, ToolMessage):
+                tool_name = getattr(msg, "name", "unknown_tool")
+                content = msg.content if isinstance(msg.content, str) else str(msg.content)
+
+                # Check for errors in tool results
+                if "error" in content.lower() or "exception" in content.lower():
+                    errors.append(f"Tool '{tool_name}' error: {content[:200]}")
+                else:
+                    # Truncate long results
+                    result_preview = content[:150] + "..." if len(content) > 150 else content
+                    tool_results.append(f"Tool '{tool_name}': {result_preview}")
+
+            # Check for tool calls in AI messages (to understand what was attempted)
+            if isinstance(msg, AIMessage) and msg.tool_calls:
+                for tool_call in msg.tool_calls:
+                    tool_name = tool_call.get("name", "unknown")
+                    tool_args = tool_call.get("args", {})
+                    args_str = str(tool_args)[:100]
+                    tool_results.append(f"Called '{tool_name}' with: {args_str}")
+
+        # Build feedback string
+        parts = []
+        if errors:
+            parts.append("**Errors encountered:**\n" + "\n".join(f"- {e}" for e in errors))
+        if tool_results:
+            parts.append("**Tool usage:**\n" + "\n".join(f"- {r}" for r in tool_results[-5:]))
+
+        if parts:
+            return "\n\n".join(parts)
+        return "Response generated successfully (no tools used)"
+
     def _extract_json_from_response(self, text: str) -> dict[str, Any] | None:
         """Extract JSON from model response text."""
         # Try direct JSON parse
@@ -263,6 +317,47 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
                         except json.JSONDecodeError:
                             break
         return None
+
+    def _build_reflection_summary(self, parsed: dict[str, Any]) -> str:
+        """Build a comprehensive reflection summary from parsed reflector output.
+
+        Args:
+            parsed: Parsed JSON from reflector response.
+
+        Returns:
+            Formatted reflection string for display and storage.
+        """
+        parts = []
+
+        # Error analysis (if present)
+        error_id = parsed.get("error_identification", "")
+        if error_id and error_id != "N/A - response was correct":
+            parts.append(f"**Error:** {error_id}")
+
+            root_cause = parsed.get("root_cause_analysis", "")
+            if root_cause and root_cause != "N/A - response was correct":
+                parts.append(f"**Root Cause:** {root_cause}")
+
+            correct_approach = parsed.get("correct_approach", "")
+            if correct_approach and correct_approach != "N/A - response was correct":
+                parts.append(f"**Correct Approach:** {correct_approach}")
+
+        # Key insight (always included)
+        key_insight = parsed.get("key_insight", "")
+        if key_insight:
+            parts.append(f"**Key Insight:** {key_insight}")
+
+        # Bullet tags summary
+        bullet_tags = parsed.get("bullet_tags", [])
+        if bullet_tags:
+            helpful = [t["id"] for t in bullet_tags if t.get("tag") == "helpful"]
+            harmful = [t["id"] for t in bullet_tags if t.get("tag") == "harmful"]
+            if helpful:
+                parts.append(f"**Helpful bullets:** {', '.join(helpful)}")
+            if harmful:
+                parts.append(f"**Harmful bullets:** {', '.join(harmful)}")
+
+        return "\n".join(parts) if parts else parsed.get("key_insight", "")
 
     @override
     def before_agent(
@@ -373,12 +468,13 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             bullet_ids = extract_bullet_ids(ai_content)
         bullets_used = extract_playbook_bullets(playbook.content, bullet_ids)
 
-        # Build reflector prompt
+        # Build reflector prompt with tool feedback
         user_question = self._get_last_user_message(messages[:-1])
+        tool_feedback = self._extract_tool_feedback(messages)
         reflector_prompt = build_reflector_prompt(
             question=user_question,
             reasoning_trace=ai_content,
-            feedback="Response generated successfully",  # Can be enhanced with tool feedback
+            feedback=tool_feedback,
             bullets_used=bullets_used,
         )
 
@@ -401,8 +497,8 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         bullet_tags = parsed.get("bullet_tags", [])
         updated_content = update_bullet_counts(playbook.content, bullet_tags)
 
-        # Get reflection for next iteration
-        reflection = parsed.get("key_insight", "")
+        # Build comprehensive reflection from parsed fields
+        reflection = self._build_reflection_summary(parsed)
 
         # Auto-prune if enabled
         if self.auto_prune:
@@ -469,10 +565,11 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         bullets_used = extract_playbook_bullets(playbook.content, bullet_ids)
 
         user_question = self._get_last_user_message(messages[:-1])
+        tool_feedback = self._extract_tool_feedback(messages)
         reflector_prompt = build_reflector_prompt(
             question=user_question,
             reasoning_trace=ai_content,
-            feedback="Response generated successfully",
+            feedback=tool_feedback,
             bullets_used=bullets_used,
         )
 
@@ -492,7 +589,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
 
         bullet_tags = parsed.get("bullet_tags", [])
         updated_content = update_bullet_counts(playbook.content, bullet_tags)
-        reflection = parsed.get("key_insight", "")
+        reflection = self._build_reflection_summary(parsed)
 
         if self.auto_prune:
             updated_content = prune_harmful_bullets(

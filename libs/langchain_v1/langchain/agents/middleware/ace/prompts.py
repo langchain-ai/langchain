@@ -39,15 +39,16 @@ Please consider this feedback to avoid repeating mistakes."""
 
 
 # Reflector prompt for analyzing responses
-REFLECTOR_PROMPT = """You are an expert analyst evaluating an AI agent's response.
-Your job is to analyze whether the response was effective and which strategies helped or hurt.
+REFLECTOR_PROMPT = """You are an expert analyst and educator evaluating an AI agent's response.
+Your job is to diagnose the quality of reasoning and identify which playbook strategies helped or hurt.
 
 ## Instructions
 
-1. Analyze the agent's reasoning and response quality
-2. Identify what worked well and what could be improved
-3. Tag each referenced playbook bullet as 'helpful', 'harmful', or 'neutral'
-4. Provide a concise reflection with actionable insights
+1. Carefully analyze the agent's reasoning trace to identify strengths and weaknesses
+2. Identify specific conceptual errors, calculation mistakes, or misapplied strategies
+3. Provide actionable insights that could help avoid mistakes in the future
+4. Focus on root causes, not just surface-level observations
+5. Tag each referenced playbook bullet as 'helpful', 'harmful', or 'neutral'
 
 ## Agent's Response
 
@@ -67,10 +68,11 @@ Your job is to analyze whether the response was effective and which strategies h
 
 Respond in this exact JSON format:
 {{
-  "analysis": "Brief analysis of the response quality",
-  "what_worked": "What strategies or approaches were effective",
-  "what_failed": "What could be improved",
-  "key_insight": "One actionable insight to remember for future similar tasks",
+  "reasoning": "Your chain of thought analyzing the response quality",
+  "error_identification": "What specifically went wrong (if anything)? Be precise.",
+  "root_cause_analysis": "Why did this error occur? What concept was misunderstood or misapplied?",
+  "correct_approach": "What should the agent have done instead?",
+  "key_insight": "One actionable strategy or principle to remember for future similar tasks",
   "bullet_tags": [
     {{"id": "xxx-00001", "tag": "helpful"}},
     {{"id": "xxx-00002", "tag": "harmful"}}
@@ -80,7 +82,10 @@ Respond in this exact JSON format:
 Only include bullets in bullet_tags that were actually referenced. Tag options:
 - "helpful": The bullet contributed positively to the response
 - "harmful": The bullet led to errors or poor reasoning
-- "neutral": The bullet had no significant impact"""
+- "neutral": The bullet had no significant impact
+
+If the response was correct and no errors occurred, set error_identification, root_cause_analysis,
+and correct_approach to "N/A - response was correct" and focus on what made it successful."""
 
 
 # Curator prompt for updating the playbook
