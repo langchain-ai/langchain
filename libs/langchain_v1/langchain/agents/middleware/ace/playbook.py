@@ -150,6 +150,25 @@ def parse_playbook_line(line: str) -> ParsedBullet | None:
     return None
 
 
+def _sanitize_bullet_content(content: str) -> str:
+    """Sanitize bullet content to ensure it stays on a single line.
+
+    Curator output may contain newlines ("First insight.\\nSecond sentence.")
+    which would break the playbook format since parsing assumes one bullet per line.
+
+    Args:
+        content: Raw bullet content that may contain newlines.
+
+    Returns:
+        Content with newlines replaced by spaces and whitespace collapsed.
+    """
+    # Replace newlines and tabs with spaces
+    sanitized = content.replace("\n", " ").replace("\r", " ").replace("\t", " ")
+    # Collapse multiple spaces to single space
+    sanitized = " ".join(sanitized.split())
+    return sanitized.strip()
+
+
 def format_playbook_line(bullet_id: str, helpful: int, harmful: int, content: str) -> str:
     """Format a bullet into playbook line format.
 
@@ -160,9 +179,10 @@ def format_playbook_line(bullet_id: str, helpful: int, harmful: int, content: st
         content: The bullet content.
 
     Returns:
-        Formatted playbook line.
+        Formatted playbook line (always single line).
     """
-    return f"[{bullet_id}] helpful={helpful} harmful={harmful} :: {content}"
+    sanitized = _sanitize_bullet_content(content)
+    return f"[{bullet_id}] helpful={helpful} harmful={harmful} :: {sanitized}"
 
 
 def extract_bullet_ids(text: str) -> list[str]:

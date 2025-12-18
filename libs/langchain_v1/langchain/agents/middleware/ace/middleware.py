@@ -140,6 +140,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         auto_prune: bool = False,
         prune_threshold: float = 0.5,
         prune_min_interactions: int = 3,
+        expected_interactions: int | None = None,
     ) -> None:
         """Initialize ACE middleware.
 
@@ -160,6 +161,9 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             auto_prune: Whether to automatically prune harmful bullets.
             prune_threshold: Harmful ratio threshold for pruning (0-1).
             prune_min_interactions: Minimum interactions before pruning.
+            expected_interactions: Expected total interactions for training progress.
+                Used to inform the curator of training progress (e.g., "Step 50 of 100").
+                If not provided, defaults to 100.
         """
         super().__init__()
 
@@ -180,6 +184,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         self.auto_prune = auto_prune
         self.prune_threshold = prune_threshold
         self.prune_min_interactions = prune_min_interactions
+        self.expected_interactions = expected_interactions or 100
 
     def _get_reflector_model(self) -> BaseChatModel | None:
         """Get or initialize the reflector model."""
@@ -560,12 +565,16 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         return updated_playbook, reflection, interaction_count
 
     def _prepare_curator_prompt(
-        self, playbook: ACEPlaybook, reflection: str, question_context: str
+        self,
+        playbook: ACEPlaybook,
+        reflection: str,
+        question_context: str,
+        interaction_count: int,
     ) -> str:
         """Build the curator prompt (shared by sync/async)."""
         return build_curator_prompt(
-            current_step=1,
-            total_samples=100,
+            current_step=interaction_count,
+            total_samples=self.expected_interactions,
             token_budget=self.playbook_token_budget,
             playbook_stats=json.dumps(playbook.stats, indent=2),
             recent_reflection=reflection,
@@ -686,7 +695,9 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
 
         # Run curator if threshold reached
         if self.enable_curation and interaction_count % self.curator_frequency == 0:
-            curated = self._run_curator(updated_playbook, reflection, user_question)
+            curated = self._run_curator(
+                updated_playbook, reflection, user_question, interaction_count
+            )
             if curated:
                 updates["ace_playbook"] = curated.to_dict()
 
@@ -737,7 +748,9 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
 
         # Run curator if threshold reached (async)
         if self.enable_curation and interaction_count % self.curator_frequency == 0:
-            curated = await self._arun_curator(updated_playbook, reflection, user_question)
+            curated = await self._arun_curator(
+                updated_playbook, reflection, user_question, interaction_count
+            )
             if curated:
                 updates["ace_playbook"] = curated.to_dict()
 
@@ -750,14 +763,20 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         }
 
     def _run_curator(
-        self, playbook: ACEPlaybook, reflection: str, question_context: str = ""
+        self,
+        playbook: ACEPlaybook,
+        reflection: str,
+        question_context: str,
+        interaction_count: int,
     ) -> ACEPlaybook | None:
         """Run the curator to update the playbook with new insights."""
         curator = self._get_curator_model()
         if curator is None:
             return None
 
-        curator_prompt = self._prepare_curator_prompt(playbook, reflection, question_context)
+        curator_prompt = self._prepare_curator_prompt(
+            playbook, reflection, question_context, interaction_count
+        )
 
         try:
             response = curator.invoke(curator_prompt)
@@ -777,14 +796,20 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         return self._process_curator_response(playbook, parsed)
 
     async def _arun_curator(
-        self, playbook: ACEPlaybook, reflection: str, question_context: str = ""
+        self,
+        playbook: ACEPlaybook,
+        reflection: str,
+        question_context: str,
+        interaction_count: int,
     ) -> ACEPlaybook | None:
         """Async version of curator."""
         curator = self._get_curator_model()
         if curator is None:
             return None
 
-        curator_prompt = self._prepare_curator_prompt(playbook, reflection, question_context)
+        curator_prompt = self._prepare_curator_prompt(
+            playbook, reflection, question_context, interaction_count
+        )
 
         try:
             response = await curator.ainvoke(curator_prompt)
