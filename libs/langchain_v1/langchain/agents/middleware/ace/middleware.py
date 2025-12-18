@@ -385,8 +385,10 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
                 if isinstance(part, str):
                     text_parts.append(part)
                 # Handle {"type": "text", "text": "..."} or direct {"text": "..."} format
-                elif isinstance(part, dict) and "text" in part and (
-                    part.get("type") == "text" or "type" not in part
+                elif (
+                    isinstance(part, dict)
+                    and "text" in part
+                    and (part.get("type") == "text" or "type" not in part)
                 ):
                     text_parts.append(part["text"])
             return "\n".join(text_parts)
