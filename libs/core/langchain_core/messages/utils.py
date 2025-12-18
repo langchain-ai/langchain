@@ -1049,6 +1049,7 @@ def convert_to_openai_messages(
     *,
     text_format: Literal["string", "block"] = "string",
     include_id: bool = False,
+    pass_through_unknown_blocks: bool = True,
 ) -> dict | list[dict]:
     """Convert LangChain messages into OpenAI message dicts.
 
@@ -1068,6 +1069,9 @@ def convert_to_openai_messages(
                 content blocks these are left as is.
         include_id: Whether to include message IDs in the openai messages, if they
             are present in the source messages.
+        pass_through_unknown_blocks: Whether to include content blocks with unknown
+            formats in the output. If `False`, an error is raised if an unknown
+            content block is encountered.
 
     Raises:
         ValueError: if an unrecognized `text_format` is specified, or if a message
@@ -1317,6 +1321,36 @@ def convert_to_openai_messages(
                                 },
                             }
                         )
+                elif block.get("type") == "function_call":  # OpenAI Responses
+                    if not any(
+                        tool_call["id"] == block.get("call_id")
+                        for tool_call in cast("AIMessage", message).tool_calls
+                    ):
+                        if missing := [
+                            k
+                            for k in ("call_id", "name", "arguments")
+                            if k not in block
+                        ]:
+                            err = (
+                                f"Unrecognized content block at "
+                                f"messages[{i}].content[{j}] has 'type': "
+                                f"'tool_use', but is missing expected key(s) "
+                                f"{missing}. Full content block:\n\n{block}"
+                            )
+                            raise ValueError(err)
+                        oai_msg["tool_calls"] = oai_msg.get("tool_calls", [])
+                        oai_msg["tool_calls"].append(
+                            {
+                                "type": "function",
+                                "id": block.get("call_id"),
+                                "function": {
+                                    "name": block.get("name"),
+                                    "arguments": block.get("arguments"),
+                                },
+                            }
+                        )
+                    if pass_through_unknown_blocks:
+                        content.append(block)
                 elif block.get("type") == "tool_result":
                     if missing := [
                         k for k in ("content", "tool_use_id") if k not in block
@@ -1397,7 +1431,10 @@ def convert_to_openai_messages(
                             },
                         }
                     )
-                elif block.get("type") in ["thinking", "reasoning"]:
+                elif (
+                    block.get("type") in ["thinking", "reasoning"]
+                    or pass_through_unknown_blocks
+                ):
                     content.append(block)
                 else:
                     err = (
