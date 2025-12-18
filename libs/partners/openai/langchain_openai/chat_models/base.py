@@ -1107,8 +1107,6 @@ class BaseChatOpenAI(BaseChatModel):
                 generation_info["system_fingerprint"] = system_fingerprint
             if service_tier := chunk.get("service_tier"):
                 generation_info["service_tier"] = service_tier
-            if isinstance(message_chunk, AIMessageChunk):
-                message_chunk.chunk_position = "last"
 
         logprobs = choice.get("logprobs")
         if logprobs:
