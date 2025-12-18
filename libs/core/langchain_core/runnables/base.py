@@ -2267,8 +2267,6 @@ class Runnable(ABC, Generic[Input, Output]):
         ],
         config: RunnableConfig | None,
         run_type: str | None = None,
-        *,
-        defers_inputs: bool = False,
         **kwargs: Any | None,
     ) -> Iterator[Output]:
         """Transform a stream with config.
@@ -2279,6 +2277,9 @@ class Runnable(ABC, Generic[Input, Output]):
         Use this to implement `stream` or `transform` in `Runnable` subclasses.
 
         """
+        # Extract defers_inputs from kwargs if present
+        defers_inputs = kwargs.pop("defers_inputs", False)
+
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = tee(inputs, 2)
         # Start the input iterator to ensure the input Runnable starts before this one
@@ -2367,8 +2368,6 @@ class Runnable(ABC, Generic[Input, Output]):
         ],
         config: RunnableConfig | None,
         run_type: str | None = None,
-        *,
-        defers_inputs: bool = False,
         **kwargs: Any | None,
     ) -> AsyncIterator[Output]:
         """Transform a stream with config.
@@ -2379,6 +2378,9 @@ class Runnable(ABC, Generic[Input, Output]):
         Use this to implement `astream` or `atransform` in `Runnable` subclasses.
 
         """
+        # Extract defers_inputs from kwargs if present
+        defers_inputs = kwargs.pop("defers_inputs", False)
+
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = atee(inputs, 2)
         # Start the input iterator to ensure the input Runnable starts before this one
