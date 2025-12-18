@@ -238,9 +238,7 @@ def extract_playbook_bullets(playbook_text: str, bullet_ids: list[str]) -> str:
             parsed = parse_playbook_line(line)
             if parsed and parsed.id in bullet_ids:
                 found_bullets.append(
-                    format_playbook_line(
-                        parsed.id, parsed.helpful, parsed.harmful, parsed.content
-                    )
+                    format_playbook_line(parsed.id, parsed.helpful, parsed.harmful, parsed.content)
                 )
 
     if not found_bullets:
@@ -474,4 +472,3 @@ def prune_harmful_bullets(
         filtered_lines.append(line)
 
     return "\n".join(filtered_lines)
-

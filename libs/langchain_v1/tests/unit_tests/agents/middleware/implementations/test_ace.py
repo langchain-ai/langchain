@@ -381,8 +381,6 @@ class TestPrompts:
 
     def test_build_system_prompt_with_playbook_none(self) -> None:
         """Test building prompt with None original."""
-        from langchain_core.messages import SystemMessage
-
         result = build_system_prompt_with_playbook(
             original_prompt=None,
             playbook="Test playbook",
@@ -746,9 +744,7 @@ class TestACEMiddlewareAsync:
     @pytest.mark.asyncio
     async def test_awrap_model_call(self) -> None:
         """Test async wrap_model_call."""
-        middleware = ACEMiddleware(
-            initial_playbook="[str-00001] helpful=1 harmful=0 :: Strategy"
-        )
+        middleware = ACEMiddleware(initial_playbook="[str-00001] helpful=1 harmful=0 :: Strategy")
 
         from langchain_core.messages import SystemMessage
 
@@ -839,4 +835,3 @@ class TestACEMiddlewareIntegration:
 
         # Check that bullet count was updated
         assert "helpful=1" in state["ace_playbook"]["content"]
-

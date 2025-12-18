@@ -52,4 +52,3 @@ __all__ = [
     "parse_playbook_line",
     "update_bullet_counts",
 ]
-

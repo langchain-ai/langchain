@@ -360,9 +360,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         return "\n".join(parts) if parts else parsed.get("key_insight", "")
 
     @override
-    def before_agent(
-        self, state: ACEState, runtime: Runtime
-    ) -> dict[str, Any] | None:
+    def before_agent(self, state: ACEState, runtime: Runtime) -> dict[str, Any] | None:
         """Initialize ACE state at the start of agent execution."""
         if state.get("ace_playbook") is None:
             # Scan initial playbook for existing bullet IDs to avoid duplicates
@@ -380,9 +378,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         return None
 
     @override
-    async def abefore_agent(
-        self, state: ACEState, runtime: Runtime
-    ) -> dict[str, Any] | None:
+    async def abefore_agent(self, state: ACEState, runtime: Runtime) -> dict[str, Any] | None:
         """Async version of before_agent."""
         return self.before_agent(state, runtime)
 
@@ -405,9 +401,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         )
 
         # Override system message and call handler
-        modified_request = request.override(
-            system_message=SystemMessage(content=enhanced_prompt)
-        )
+        modified_request = request.override(system_message=SystemMessage(content=enhanced_prompt))
 
         return handler(modified_request)
 
@@ -428,16 +422,12 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             reflection=last_reflection,
         )
 
-        modified_request = request.override(
-            system_message=SystemMessage(content=enhanced_prompt)
-        )
+        modified_request = request.override(system_message=SystemMessage(content=enhanced_prompt))
 
         return await handler(modified_request)
 
     @override
-    def after_model(
-        self, state: ACEState, runtime: Runtime
-    ) -> dict[str, Any] | None:
+    def after_model(self, state: ACEState, runtime: Runtime) -> dict[str, Any] | None:
         """Analyze response and update playbook after model call."""
         if not self.enable_reflection:
             return self._increment_interaction_count(state)
@@ -458,9 +448,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         # Get playbook and extract bullet IDs
         playbook = self._get_playbook(state)
         ai_content = (
-            latest_msg.content
-            if isinstance(latest_msg.content, str)
-            else str(latest_msg.content)
+            latest_msg.content if isinstance(latest_msg.content, str) else str(latest_msg.content)
         )
         # Try comment-based extraction first, fall back to inline citations
         bullet_ids = extract_bullet_ids_from_comment(ai_content)
@@ -482,9 +470,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         try:
             response = reflector.invoke(reflector_prompt)
             response_text = (
-                response.content
-                if isinstance(response.content, str)
-                else str(response.content)
+                response.content if isinstance(response.content, str) else str(response.content)
             )
             parsed = self._extract_json_from_response(response_text)
         except Exception:
@@ -533,9 +519,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         return updates
 
     @override
-    async def aafter_model(
-        self, state: ACEState, runtime: Runtime
-    ) -> dict[str, Any] | None:
+    async def aafter_model(self, state: ACEState, runtime: Runtime) -> dict[str, Any] | None:
         """Async version of after_model."""
         if not self.enable_reflection:
             return self._increment_interaction_count(state)
@@ -554,9 +538,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
 
         playbook = self._get_playbook(state)
         ai_content = (
-            latest_msg.content
-            if isinstance(latest_msg.content, str)
-            else str(latest_msg.content)
+            latest_msg.content if isinstance(latest_msg.content, str) else str(latest_msg.content)
         )
         # Try comment-based extraction first, fall back to inline citations
         bullet_ids = extract_bullet_ids_from_comment(ai_content)
@@ -576,9 +558,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         try:
             response = await reflector.ainvoke(reflector_prompt)
             response_text = (
-                response.content
-                if isinstance(response.content, str)
-                else str(response.content)
+                response.content if isinstance(response.content, str) else str(response.content)
             )
             parsed = self._extract_json_from_response(response_text)
         except Exception:
@@ -625,9 +605,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             "ace_interaction_count": state.get("ace_interaction_count", 0) + 1,
         }
 
-    def _run_curator(
-        self, playbook: ACEPlaybook, reflection: str
-    ) -> ACEPlaybook | None:
+    def _run_curator(self, playbook: ACEPlaybook, reflection: str) -> ACEPlaybook | None:
         """Run the curator to update the playbook with new insights."""
         curator = self._get_curator_model()
         if curator is None:
@@ -645,9 +623,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         try:
             response = curator.invoke(curator_prompt)
             response_text = (
-                response.content
-                if isinstance(response.content, str)
-                else str(response.content)
+                response.content if isinstance(response.content, str) else str(response.content)
             )
             parsed = self._extract_json_from_response(response_text)
         except Exception:
@@ -675,9 +651,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             stats=get_playbook_stats(updated_content),
         )
 
-    async def _arun_curator(
-        self, playbook: ACEPlaybook, reflection: str
-    ) -> ACEPlaybook | None:
+    async def _arun_curator(self, playbook: ACEPlaybook, reflection: str) -> ACEPlaybook | None:
         """Async version of curator."""
         curator = self._get_curator_model()
         if curator is None:
@@ -695,9 +669,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         try:
             response = await curator.ainvoke(curator_prompt)
             response_text = (
-                response.content
-                if isinstance(response.content, str)
-                else str(response.content)
+                response.content if isinstance(response.content, str) else str(response.content)
             )
             parsed = self._extract_json_from_response(response_text)
         except Exception:
@@ -724,4 +696,3 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             next_global_id=next_id,
             stats=get_playbook_stats(updated_content),
         )
-
