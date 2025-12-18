@@ -5,12 +5,10 @@ import os
 import pytest
 from langchain_core.documents import Document
 
-from langchain_perplexity import PerplexitySearchRetriever, PerplexitySearchResults
+from langchain_perplexity import PerplexitySearchResults, PerplexitySearchRetriever
 
 
-@pytest.mark.skipif(
-    not os.environ.get("PPLX_API_KEY"), reason="PPLX_API_KEY not set"
-)
+@pytest.mark.skipif(not os.environ.get("PPLX_API_KEY"), reason="PPLX_API_KEY not set")
 class TestPerplexitySearchAPI:
     def test_search_retriever_basic(self) -> None:
         """Test basic search with retriever."""
@@ -26,9 +24,7 @@ class TestPerplexitySearchAPI:
         """Test search with filters."""
         # Search for recent news (recency filter)
         retriever = PerplexitySearchRetriever(
-            k=3,
-            search_recency_filter="month",
-            search_domain_filter=["wikipedia.org"]
+            k=3, search_recency_filter="month", search_domain_filter=["wikipedia.org"]
         )
         docs = retriever.invoke("Python programming language")
         assert len(docs) > 0
@@ -58,4 +54,3 @@ class TestPerplexitySearchAPI:
         assert isinstance(results, list)
         # Should have results for both (combined)
         assert len(results) > 0
-

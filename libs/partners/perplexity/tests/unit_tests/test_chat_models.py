@@ -121,7 +121,7 @@ def test_perplexity_stream_includes_videos_and_reasoning(mocker: MockerFixture) 
     mock_chunk_0 = {
         "choices": [{"delta": {"content": "Thinking... "}, "finish_reason": None}],
         "videos": [{"url": "http://video.com", "thumbnail_url": "http://thumb.com"}],
-        "reasoning_steps": [{"thought": "I should search", "type": "web_search"}]
+        "reasoning_steps": [{"thought": "I should search", "type": "web_search"}],
     }
     mock_chunk_1 = {
         "choices": [{"delta": {}, "finish_reason": "stop"}],
@@ -130,9 +130,7 @@ def test_perplexity_stream_includes_videos_and_reasoning(mocker: MockerFixture) 
     mock_chunks: list[dict[str, Any]] = [mock_chunk_0, mock_chunk_1]
     mock_stream = MagicMock()
     mock_stream.__iter__.return_value = mock_chunks
-    mocker.patch.object(
-        llm.client.chat.completions, "create", return_value=mock_stream
-    )
+    mocker.patch.object(llm.client.chat.completions, "create", return_value=mock_stream)
 
     stream = list(llm.stream("test"))
     first_chunk = stream[0]
@@ -140,7 +138,10 @@ def test_perplexity_stream_includes_videos_and_reasoning(mocker: MockerFixture) 
     assert "videos" in first_chunk.additional_kwargs
     assert first_chunk.additional_kwargs["videos"][0]["url"] == "http://video.com"
     assert "reasoning_steps" in first_chunk.additional_kwargs
-    assert first_chunk.additional_kwargs["reasoning_steps"][0]["thought"] == "I should search"
+    assert (
+        first_chunk.additional_kwargs["reasoning_steps"][0]["thought"]
+        == "I should search"
+    )
 
 
 def test_create_usage_metadata_basic() -> None:

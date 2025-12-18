@@ -3,14 +3,12 @@
 import os
 
 import pytest
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage
 
 from langchain_perplexity import ChatPerplexity, MediaResponse, WebSearchOptions
 
 
-@pytest.mark.skipif(
-    not os.environ.get("PPLX_API_KEY"), reason="PPLX_API_KEY not set"
-)
+@pytest.mark.skipif(not os.environ.get("PPLX_API_KEY"), reason="PPLX_API_KEY not set")
 class TestChatPerplexityIntegration:
     def test_standard_generation(self) -> None:
         """Test standard generation."""
@@ -35,8 +33,7 @@ class TestChatPerplexityIntegration:
             model="sonar-pro",
             temperature=0,
             web_search_options=WebSearchOptions(search_type="pro"),
-            # Pro search often requires streaming to get steps, but let's check non-streaming first or just use streaming
-            streaming=True
+            streaming=True,
         )
         message = HumanMessage(content="Who won the 2024 US election and why?")
 
@@ -47,11 +44,10 @@ class TestChatPerplexityIntegration:
 
         # Check if any chunk has reasoning_steps
         has_reasoning = any("reasoning_steps" in c.additional_kwargs for c in chunks)
-        # Note: reasoning_steps might not be guaranteed for every query, but "why" usually triggers it in pro search
         if has_reasoning:
             assert True
         else:
-            # Fallback assertion if no reasoning steps returned (could be query specific)
+            # Fallback assertion if no reasoning steps returned
             assert len(chunks) > 0
 
     async def test_streaming(self) -> None:
@@ -77,38 +73,26 @@ class TestChatPerplexityIntegration:
     def test_search_control(self) -> None:
         """Test search control parameters."""
         # Test disabled search (should complete without citations)
-        chat = ChatPerplexity(
-            model="sonar",
-            disable_search=True
-        )
+        chat = ChatPerplexity(model="sonar", disable_search=True)
         message = HumanMessage(content="What is 2+2?")
         response = chat.invoke([message])
         assert response.content
 
         # Test search classifier
-        chat_classifier = ChatPerplexity(
-            model="sonar",
-            enable_search_classifier=True
-        )
+        chat_classifier = ChatPerplexity(model="sonar", enable_search_classifier=True)
         response_classifier = chat_classifier.invoke([message])
         assert response_classifier.content
 
     def test_search_recency_filter(self) -> None:
         """Test search_recency_filter parameter."""
-        chat = ChatPerplexity(
-            model="sonar",
-            search_recency_filter="month"
-        )
+        chat = ChatPerplexity(model="sonar", search_recency_filter="month")
         message = HumanMessage(content="Latest AI news")
         response = chat.invoke([message])
         assert response.content
 
     def test_search_domain_filter(self) -> None:
         """Test search_domain_filter parameter."""
-        chat = ChatPerplexity(
-            model="sonar",
-            search_domain_filter=["wikipedia.org"]
-        )
+        chat = ChatPerplexity(model="sonar", search_domain_filter=["wikipedia.org"])
         message = HumanMessage(content="Python programming language")
         response = chat.invoke([message])
 
@@ -123,7 +107,7 @@ class TestChatPerplexityIntegration:
             return_related_questions=True,
             return_images=True,
             # Media response overrides for video
-            media_response=MediaResponse(overrides={"return_videos": True})
+            media_response=MediaResponse(overrides={"return_videos": True}),
         )
         message = HumanMessage(content="Apollo 11 moon landing")
         response = chat.invoke([message])

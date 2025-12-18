@@ -11,6 +11,7 @@ def initialize_client(values: dict[str, Any]) -> dict[str, Any]:
         values.get("pplx_api_key")
         or os.environ.get("PPLX_API_KEY")
         or os.environ.get("PERPLEXITY_API_KEY")
+        or ""
     )
     values["pplx_api_key"] = convert_to_secret_str(pplx_api_key)
 
@@ -22,4 +23,3 @@ def initialize_client(values: dict[str, Any]) -> dict[str, Any]:
         values["client"] = Perplexity(api_key=api_key)
 
     return values
-

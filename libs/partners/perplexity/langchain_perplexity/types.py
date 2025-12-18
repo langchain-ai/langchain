@@ -27,4 +27,3 @@ class MediaResponseOverrides(BaseModel):
 
 class MediaResponse(BaseModel):
     overrides: MediaResponseOverrides | None = None
-

@@ -353,7 +353,9 @@ class ChatPerplexity(BaseChatModel):
         if self.media_response:
             if "extra_body" not in params:
                 params["extra_body"] = {}
-            params["extra_body"]["media_response"] = self.media_response.model_dump(exclude_none=True)
+            params["extra_body"]["media_response"] = self.media_response.model_dump(
+                exclude_none=True
+            )
 
         return {**params, **self.model_kwargs}
 
@@ -404,9 +406,7 @@ class ChatPerplexity(BaseChatModel):
         elif role == "function" or default_class == FunctionMessageChunk:
             return FunctionMessageChunk(content=content, name=_dict["name"])
         elif role == "tool" or default_class == ToolMessageChunk:
-            return ToolMessageChunk(
-                content=content, tool_call_id=_dict["tool_call_id"]
-            )
+            return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
         elif role or default_class == ChatMessageChunk:
             return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
         else:
