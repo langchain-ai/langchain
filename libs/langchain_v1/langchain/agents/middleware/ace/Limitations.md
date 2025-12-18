@@ -3,6 +3,81 @@
 This document outlines current limitations of the LangChain ACE middleware compared to
 the full ACE framework, along with potential future enhancements.
 
+## Architectural Differences: Middleware vs Dedicated Generator
+
+The original ACE uses a **dedicated generator** that completely controls
+the agent's input/output format, while LangChain ACE uses **middleware that injects
+the playbook into the system prompt**.
+
+### Original ACE: Dedicated Generator
+
+```python
+GENERATOR_PROMPT = """You are an analysis expert...
+
+Your output should be a json object:
+- reasoning: your chain of thought
+- bullet_ids: bulletpoints you used
+- final_answer: your concise final answer
+
+**Playbook:**
+{playbook}
+"""
+```
+The generator IS the agent - it replaces the entire agent with ACE-specific behavior.
+
+### LangChain ACE: System Prompt Injection
+
+```python
+PLAYBOOK_INJECTION_TEMPLATE = """{original_prompt}
+
+---
+
+## ACE PLAYBOOK
+{playbook}
+
+**IMPORTANT**: Include bullet IDs in: <!-- bullet_ids: [...] -->
+"""
+```
+
+The middleware wraps an existing agent - it augments but doesn't replace.
+
+### Tradeoff Comparison
+
+| Aspect | Dedicated Generator | System Prompt Injection |
+|--------|---------------------|------------------------|
+| **Bullet Tracking** | ✅ Guaranteed (structured JSON) | ⚠️ Unreliable (agent may ignore) |
+| **Composability** | ❌ Must use ACE's generator | ✅ Works with any agent/tools |
+| **Tool Support** | ❌ Single-shot, no tools | ✅ Full tool support |
+| **Multi-turn** | ❌ Designed for single Q&A | ✅ Works across conversation |
+| **Integration Effort** | High (replace agent) | Low (add middleware) |
+| **Best For** | Training/benchmarks | Production agents |
+
+### When to Use Which
+
+**Dedicated Generator is better for:**
+- Training on structured benchmarks (finance QA, math problems)
+- Guaranteed bullet ID tracking for accurate helpful/harmful counts
+- Single-shot Q&A evaluation
+
+**System Prompt Injection is better for:**
+- Production agents with existing tools and workflows
+- Multi-turn conversational agents
+- Minimal integration effort with existing LangGraph agents
+
+### Reliability of Bullet Tracking
+
+The main limitation of the middleware approach is **unreliable bullet tracking**:
+
+1. The agent is instructed to include `<!-- bullet_ids: [...] -->` comments
+2. The agent may not follow this instruction consistently
+3. Without bullet IDs, the reflector cannot accurately attribute helpful/harmful tags
+
+**Potential mitigations** (not yet implemented):
+- Use `with_structured_output()` on final responses
+- Register a `report_bullets` tool the agent must call
+
+---
+
 ## Current Feedback Sources
 
 The reflector currently receives feedback from:
