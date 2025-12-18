@@ -14,6 +14,7 @@ Usage:
 
 import ast
 import operator
+import re
 import uuid
 from typing import Any, Callable
 
@@ -139,8 +140,8 @@ def main() -> None:
     print("The curator periodically adds new insights to the playbook.")
     print()
 
-    # Track all reflections for final summary
-    all_reflections: list[tuple[int, str, str]] = []  # (problem_num, problem, reflection)
+    # Track previous playbook to detect new insights (start with initial playbook)
+    previous_playbook_content: str = ace.initial_playbook
 
     for i, problem in enumerate(problems, 1):
         print(f"\n{'─' * 60}")
@@ -165,15 +166,35 @@ def main() -> None:
         print(f"\n📊 Interaction count: {ace_count}")
 
         # Show if curator ran
-        if ace_count % ace.curator_frequency == 0:
-            print("✨ Curator ran - new insights may have been added!")
+        curator_ran = ace_count % ace.curator_frequency == 0
+        if curator_ran:
+            print("✨ Curator ran - checking for new insights...")
 
         # Show the current playbook state from the full state
         playbook_data = full_state.get("ace_playbook")
         if playbook_data:
+            content = playbook_data.get("content", "")
+
+            # Detect new insights by comparing bullet IDs
+            if curator_ran:
+                # Extract bullet IDs from previous and current playbook
+                prev_ids = set(re.findall(r"\[[a-z]{3}-\d{5}\]", previous_playbook_content))
+                curr_ids = set(re.findall(r"\[[a-z]{3}-\d{5}\]", content))
+                new_ids = curr_ids - prev_ids
+
+                if new_ids:
+                    print("\n🆕 New insights added:")
+                    for line in content.split("\n"):
+                        for new_id in new_ids:
+                            if new_id in line:
+                                print(f"  + {line.strip()}")
+                                break
+
+            # Update previous playbook for next iteration
+            previous_playbook_content = content
+
             print("\n📖 Current Playbook:")
             print("─" * 40)
-            content = playbook_data.get("content", "")
             # Print each non-empty line
             for line in content.split("\n"):
                 if line.strip():
@@ -189,28 +210,11 @@ def main() -> None:
                 if line.strip():
                     print(f"  {line}")
             print("─" * 40)
-            # Store for final summary
-            all_reflections.append((i, problem, last_reflection))
 
     print()
     print("=" * 60)
     print("Demo Complete!")
     print("=" * 60)
-
-    # Print reflection summary
-    if all_reflections:
-        print()
-        print("📋 REFLECTION SUMMARY")
-        print("=" * 60)
-        for prob_num, prob_text, reflection in all_reflections:
-            print(f"\nProblem {prob_num}: {prob_text[:50]}...")
-            print("─" * 40)
-            for line in reflection.split("\n"):
-                if line.strip():
-                    print(f"  {line}")
-        print()
-        print("=" * 60)
-
     print()
     print("The playbook has evolved based on the agent's performance.")
     print("Bullets with higher 'helpful' counts were effective.")
