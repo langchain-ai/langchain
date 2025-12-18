@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# ruff: noqa: T201
 """ACE Middleware Demo: Watch the Playbook Evolve.
 
 This example demonstrates how the ACE (Agentic Context Engineering) middleware
@@ -12,6 +12,8 @@ Usage:
     python examples/ace_playbook_demo.py
 """
 
+import ast
+import operator
 import uuid
 
 from langchain_core.messages import HumanMessage
@@ -21,19 +23,63 @@ from langgraph.checkpoint.memory import MemorySaver
 from langchain.agents import create_agent
 from langchain.agents.middleware import ACEMiddleware
 
+# Safe math operators for the calculator
+_SAFE_OPERATORS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.Pow: operator.pow,
+    ast.USub: operator.neg,
+    ast.UAdd: operator.pos,
+    ast.Mod: operator.mod,
+    ast.FloorDiv: operator.floordiv,
+}
+
+
+def _safe_eval(node: ast.AST) -> float:
+    """Safely evaluate an AST node containing only math operations."""
+    if isinstance(node, ast.Constant):
+        if isinstance(node.value, (int, float)):
+            return node.value
+        msg = f"Unsupported constant type: {type(node.value)}"
+        raise ValueError(msg)
+    elif isinstance(node, ast.BinOp):
+        left = _safe_eval(node.left)
+        right = _safe_eval(node.right)
+        op = _SAFE_OPERATORS.get(type(node.op))
+        if op is None:
+            msg = f"Unsupported operator: {type(node.op).__name__}"
+            raise ValueError(msg)
+        return op(left, right)
+    elif isinstance(node, ast.UnaryOp):
+        operand = _safe_eval(node.operand)
+        op = _SAFE_OPERATORS.get(type(node.op))
+        if op is None:
+            msg = f"Unsupported unary operator: {type(node.op).__name__}"
+            raise ValueError(msg)
+        return op(operand)
+    elif isinstance(node, ast.Expression):
+        return _safe_eval(node.body)
+    else:
+        msg = f"Unsupported expression type: {type(node).__name__}"
+        raise ValueError(msg)
+
 
 @tool
 def calculator(expression: str) -> str:
     """Evaluate a mathematical expression using Python syntax.
 
     Args:
-        expression: A valid Python math expression (e.g., "15 * 0.20" or "1000 * 1.05 ** 3")
+        expression: A valid Python math expression
+            (e.g., "15 * 0.20" or "1000 * 1.05 ** 3").
 
     Returns:
         The result of the calculation as a string.
     """
     try:
-        result = eval(expression)
+        tree = ast.parse(expression, mode="eval")
+        result = _safe_eval(tree)
         return str(result)
     except Exception as e:
         return f"Error: {e}"
