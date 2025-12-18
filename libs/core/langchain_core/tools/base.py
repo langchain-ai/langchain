@@ -22,6 +22,7 @@ from typing import (
     get_type_hints,
 )
 
+import typing_extensions
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -94,7 +95,7 @@ def _is_annotated_type(typ: type[Any]) -> bool:
     Returns:
         `True` if the type is an Annotated type, `False` otherwise.
     """
-    return get_origin(typ) is typing.Annotated
+    return get_origin(typ) in (typing.Annotated, typing_extensions.Annotated)
 
 
 def _get_annotation_description(arg_type: type) -> str | None:
@@ -494,6 +495,24 @@ class ChildTool(BaseTool):
     If `'content'` then the output of the tool is interpreted as the contents of a
     `ToolMessage`. If `'content_and_artifact'` then the output is expected to be a
     two-tuple corresponding to the `(content, artifact)` of a `ToolMessage`.
+    """
+
+    extras: dict[str, Any] | None = None
+    """Optional provider-specific extra fields for the tool.
+
+    This is used to pass provider-specific configuration that doesn't fit into
+    standard tool fields.
+
+    Example:
+        Anthropic-specific fields like [`cache_control`](https://docs.langchain.com/oss/python/integrations/chat/anthropic#prompt-caching),
+        [`defer_loading`](https://docs.langchain.com/oss/python/integrations/chat/anthropic#tool-search),
+        or `input_examples`.
+
+        ```python
+        @tool(extras={"defer_loading": True, "cache_control": {"type": "ephemeral"}})
+        def my_tool(x: str) -> str:
+            return x
+        ```
     """
 
     def __init__(self, **kwargs: Any) -> None:

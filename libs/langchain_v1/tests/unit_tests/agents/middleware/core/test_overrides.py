@@ -1,12 +1,9 @@
 """Unit tests for override() methods on ModelRequest and ToolCallRequest."""
 
-import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.tools import BaseTool
 
-from langchain.agents.middleware.types import ModelRequest
-from langchain.agents.middleware.types import ToolCallRequest
+from langchain.agents.middleware.types import ModelRequest, ToolCallRequest
 
 
 class TestModelRequestOverride:

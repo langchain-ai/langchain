@@ -1505,6 +1505,7 @@ def test_cache_control_kwarg() -> None:
             ],
         },
     ]
+    assert isinstance(messages[-1].content, str)  # test no mutation
 
     messages = [
         HumanMessage("foo"),
@@ -1527,6 +1528,23 @@ def test_cache_control_kwarg() -> None:
                 {"type": "text", "text": "qux", "cache_control": {"type": "ephemeral"}},
             ],
         },
+    ]
+    assert "cache_control" not in messages[-1].content[-1]  # test no mutation
+
+
+def test_cache_control_kwarg_skips_empty_messages() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    messages = [HumanMessage("foo"), AIMessage(content=[])]
+    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
+    assert payload["messages"] == [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}}
+            ],
+        },
+        {"role": "assistant", "content": []},
     ]
 
 
@@ -2228,3 +2246,137 @@ def test_output_config_without_effort() -> None:
     assert payload.get("betas") is None or "effort-2025-11-24" not in payload.get(
         "betas", []
     )
+
+
+def test_extras_with_defer_loading() -> None:
+    """Test that extras with `defer_loading` are merged into tool definitions."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"defer_loading": True})
+    def get_weather(location: str) -> str:
+        """Get weather for a location."""
+        return f"Weather in {location}"
+
+    model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    model_with_tools = model.bind_tools([get_weather])
+
+    # Get the payload to check if defer_loading was merged
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+
+    # Find the get_weather tool in the payload
+    weather_tool = None
+    for tool_def in payload["tools"]:
+        if isinstance(tool_def, dict) and tool_def.get("name") == "get_weather":
+            weather_tool = tool_def
+            break
+
+    assert weather_tool is not None
+    assert weather_tool.get("defer_loading") is True
+
+
+def test_extras_with_cache_control() -> None:
+    """Test that extras with `cache_control` are merged into tool definitions."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"cache_control": {"type": "ephemeral"}})
+    def search_files(query: str) -> str:
+        """Search files."""
+        return f"Results for {query}"
+
+    model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    model_with_tools = model.bind_tools([search_files])
+
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+
+    search_tool = None
+    for tool_def in payload["tools"]:
+        if isinstance(tool_def, dict) and tool_def.get("name") == "search_files":
+            search_tool = tool_def
+            break
+
+    assert search_tool is not None
+    assert search_tool.get("cache_control") == {"type": "ephemeral"}
+
+
+def test_extras_with_input_examples() -> None:
+    """Test that extras with `input_examples` are merged into tool definitions."""
+    from langchain_core.tools import tool
+
+    @tool(
+        extras={
+            "input_examples": [
+                {"location": "San Francisco, CA", "unit": "fahrenheit"},
+                {"location": "Tokyo, Japan", "unit": "celsius"},
+            ]
+        }
+    )
+    def get_weather(location: str, unit: str = "fahrenheit") -> str:
+        """Get weather for a location."""
+        return f"Weather in {location}"
+
+    model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    model_with_tools = model.bind_tools([get_weather])
+
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+
+    weather_tool = None
+    for tool_def in payload["tools"]:
+        if isinstance(tool_def, dict) and tool_def.get("name") == "get_weather":
+            weather_tool = tool_def
+            break
+
+    assert weather_tool is not None
+    assert "input_examples" in weather_tool
+    assert len(weather_tool["input_examples"]) == 2
+    assert weather_tool["input_examples"][0] == {
+        "location": "San Francisco, CA",
+        "unit": "fahrenheit",
+    }
+
+    # Beta header is required
+    assert "betas" in payload
+    assert "advanced-tool-use-2025-11-20" in payload["betas"]
+
+
+def test_extras_with_multiple_fields() -> None:
+    """Test that multiple extra fields can be specified together."""
+    from langchain_core.tools import tool
+
+    @tool(
+        extras={
+            "defer_loading": True,
+            "cache_control": {"type": "ephemeral"},
+            "input_examples": [{"query": "python files"}],
+        }
+    )
+    def search_code(query: str) -> str:
+        """Search code."""
+        return f"Code for {query}"
+
+    model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    model_with_tools = model.bind_tools([search_code])
+
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+
+    tool_def = None
+    for t in payload["tools"]:
+        if isinstance(t, dict) and t.get("name") == "search_code":
+            tool_def = t
+            break
+
+    assert tool_def is not None
+    assert tool_def.get("defer_loading") is True
+    assert tool_def.get("cache_control") == {"type": "ephemeral"}
+    assert "input_examples" in tool_def

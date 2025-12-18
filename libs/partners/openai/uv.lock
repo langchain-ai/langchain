@@ -544,7 +544,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.1.2"
+version = "1.2.0"
 source = { editable = "../../langchain_v1" }
 dependencies = [
     { name = "langchain-core" },
@@ -577,7 +577,7 @@ requires-dist = [
 provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
-lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
+lint = [{ name = "ruff", specifier = ">=0.14.2,<0.15.0" }]
 test = [
     { name = "langchain-openai", editable = "." },
     { name = "langchain-tests", editable = "../../standard-tests" },
@@ -592,7 +592,6 @@ test = [
     { name = "toml", specifier = ">=0.10.2,<1.0.0" },
 ]
 test-integration = [
-    { name = "cassio", specifier = ">=0.1.0,<1.0.0" },
     { name = "langchain-core", editable = "../../core" },
     { name = "langchain-text-splitters", editable = "../../text-splitters" },
     { name = "langchainhub", specifier = ">=0.1.16,<1.0.0" },
@@ -607,7 +606,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.1.1"
+version = "1.2.2"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -667,7 +666,7 @@ typing = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.1.1"
+version = "1.1.5"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -754,7 +753,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.0.2"
+version = "1.1.1"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -1239,7 +1238,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "2.9.0"
+version = "2.13.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -1251,9 +1250,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/09/48/516290f38745cc1e72856f50e8afed4a7f9ac396a5a18f39e892ab89dfc2/openai-2.9.0.tar.gz", hash = "sha256:b52ec65727fc8f1eed2fbc86c8eac0998900c7ef63aa2eb5c24b69717c56fa5f", size = 608202, upload-time = "2025-12-04T18:15:09.01Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0f/39/8e347e9fda125324d253084bb1b82407e5e3c7777a03dc398f79b2d95626/openai-2.13.0.tar.gz", hash = "sha256:9ff633b07a19469ec476b1e2b5b26c5ef700886524a7a72f65e6f0b5203142d5", size = 626583, upload-time = "2025-12-16T18:19:44.387Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/59/fd/ae2da789cd923dd033c99b8d544071a827c92046b150db01cfa5cea5b3fd/openai-2.9.0-py3-none-any.whl", hash = "sha256:0d168a490fbb45630ad508a6f3022013c155a68fd708069b6a1a01a5e8f0ffad", size = 1030836, upload-time = "2025-12-04T18:15:07.063Z" },
+    { url = "https://files.pythonhosted.org/packages/bb/d5/eb52edff49d3d5ea116e225538c118699ddeb7c29fa17ec28af14bc10033/openai-2.13.0-py3-none-any.whl", hash = "sha256:746521065fed68df2f9c2d85613bb50844343ea81f60009b60e6a600c9352c79", size = 1066837, upload-time = "2025-12-16T18:19:43.124Z" },
 ]
 
 [[package]]
