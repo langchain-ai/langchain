@@ -213,7 +213,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         """Get playbook from state or create default."""
         playbook_data = state.get("ace_playbook")
         if playbook_data:
-            return ACEPlaybook.from_dict(playbook_data)
+            return ACEPlaybook.from_dict(cast("dict[str, Any]", playbook_data))
         # Scan initial playbook for existing bullet IDs to avoid duplicates
         max_id = get_max_bullet_id(self.initial_playbook)
         return ACEPlaybook(

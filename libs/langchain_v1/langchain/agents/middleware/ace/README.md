@@ -161,9 +161,9 @@ Every `curator_frequency` interactions, the **Curator** model:
 }
 ```
 
-### 5. Automatic Pruning (Optional)
+### 5. Automatic Pruning (TODO and Optional)
 
-TODO: When `auto_prune=True`, bullets with high harmful-to-helpful ratios are removed:
+When `auto_prune=True`, bullets with high harmful-to-helpful ratios are removed:
 
 ```python
 # Bullet with harmful > helpful gets pruned

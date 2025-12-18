@@ -20,9 +20,9 @@ from collections.abc import Callable
 from typing import Any
 
 from langchain_core.messages import HumanMessage
+from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
 from langgraph.checkpoint.memory import MemorySaver
-from langgraph.types import RunnableConfig
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import ACEMiddleware
