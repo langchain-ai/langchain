@@ -121,8 +121,7 @@ def main() -> None:
         "A shirt costs $45 with 20% off. What's the sale price?",
         "A car travels 180 miles using 6 gallons of gas. "
         "What is its fuel efficiency in miles per gallon?",
-        "If 8 workers can complete a job in 12 days, "
-        "how many days would it take 6 workers?",
+        "If 8 workers can complete a job in 12 days, how many days would it take 6 workers?",
     ]
 
     print("=" * 60)
