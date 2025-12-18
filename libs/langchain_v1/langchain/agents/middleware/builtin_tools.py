@@ -27,14 +27,21 @@ BUILTIN_TOOL_REGISTRY: dict[str, dict[str, dict[str, Any] | None]] = {
         "anthropic": {"type": "web_search_20250305", "name": "web_search"},
         "openai": {"type": "web_search"},
         "google_genai": {"google_search": {}},
-        "xai": None,  # Configured via search_parameters on model
+        "xai": {"type": "web_search"},
     },
-    # Code Execution
+    # Code Execution / Code Interpreter
     "code_execution": {
         "anthropic": {"type": "code_execution_20250825", "name": "code_execution"},
         "openai": {"type": "code_interpreter", "container": {"type": "auto"}},
         "google_genai": {"code_execution": {}},
-        "xai": None,
+        "xai": {"type": "code_interpreter"},
+    },
+    # X Search (xAI/Grok only - search X/Twitter posts)
+    "x_search": {
+        "anthropic": None,
+        "openai": None,
+        "google_genai": None,
+        "xai": {"type": "x_search"},
     },
     # Web Fetch (Anthropic only)
     "web_fetch": {
@@ -111,7 +118,7 @@ class BuiltinToolsMiddleware(AgentMiddleware):
 
     This middleware intercepts model calls and injects builtin tool definitions
     based on the detected model provider. It abstracts away the different tool
-    formats required by Anthropic, OpenAI, and Google.
+    formats required by Anthropic, OpenAI, Google, and xAI (Grok).
 
     Examples:
         !!! example "Basic usage with common tools"
@@ -124,6 +131,19 @@ class BuiltinToolsMiddleware(AgentMiddleware):
 
             agent = create_agent(
                 model="openai:gpt-4o",
+                middleware=[middleware],
+            )
+            ```
+
+        !!! example "Using xAI/Grok with X search"
+
+            ```python
+            middleware = BuiltinToolsMiddleware(
+                include_tools=["web_search", "x_search", "code_execution"]
+            )
+
+            agent = create_agent(
+                model="xai:grok-2-latest",
                 middleware=[middleware],
             )
             ```
