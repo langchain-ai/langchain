@@ -411,6 +411,139 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
 
         return "\n".join(parts) if parts else parsed.get("key_insight", "")
 
+    # -------------------------------------------------------------------------
+    # Shared helpers to reduce sync/async duplication
+    # -------------------------------------------------------------------------
+
+    def _prepare_model_request(self, request: ModelRequest) -> ModelRequest:
+        """Prepare model request with playbook injection (shared by sync/async)."""
+        state = request.state
+        playbook = self._get_playbook(state)
+        last_reflection = cast("str", state.get("ace_last_reflection", ""))
+
+        enhanced_prompt = build_system_prompt_with_playbook(
+            original_prompt=request.system_message,
+            playbook=playbook.content,
+            reflection=last_reflection,
+        )
+
+        return request.override(system_message=SystemMessage(content=enhanced_prompt))
+
+    def _prepare_reflection_context(
+        self, state: ACEState
+    ) -> tuple[ACEPlaybook, str, str, str] | None:
+        """Prepare context for reflection.
+
+        Returns:
+            Tuple of (playbook, reflector_prompt, user_question, bullets_used) or None
+            if reflection should be skipped.
+        """
+        messages = state.get("messages", [])
+        if not messages:
+            return None
+
+        latest_msg = messages[-1]
+        if not isinstance(latest_msg, AIMessage):
+            return None
+
+        playbook = self._get_playbook(state)
+        ai_content = (
+            latest_msg.content if isinstance(latest_msg.content, str) else str(latest_msg.content)
+        )
+
+        # Try comment-based extraction first, fall back to inline citations
+        bullet_ids = extract_bullet_ids_from_comment(ai_content)
+        if not bullet_ids:
+            bullet_ids = extract_bullet_ids(ai_content)
+        bullets_used = extract_playbook_bullets(playbook.content, bullet_ids)
+
+        # Build full trajectory for reflector
+        full_trajectory = self._build_full_trajectory(messages)
+        user_question = self._get_last_user_message(messages[:-1])
+        tool_feedback = self._extract_tool_feedback(messages)
+
+        reflector_prompt = build_reflector_prompt(
+            question=user_question,
+            reasoning_trace=full_trajectory,
+            feedback=tool_feedback,
+            bullets_used=bullets_used,
+        )
+
+        return playbook, reflector_prompt, user_question, bullets_used
+
+    def _process_reflection_response(
+        self,
+        state: ACEState,
+        playbook: ACEPlaybook,
+        parsed: dict[str, Any],
+    ) -> tuple[ACEPlaybook, str, int]:
+        """Process reflector response and return updated state components.
+
+        Returns:
+            Tuple of (updated_playbook, reflection_summary, interaction_count).
+        """
+        bullet_tags = parsed.get("bullet_tags", [])
+        updated_content = update_bullet_counts(playbook.content, bullet_tags)
+        reflection = self._build_reflection_summary(parsed)
+
+        if self.auto_prune:
+            updated_content = prune_harmful_bullets(
+                updated_content,
+                threshold=self.prune_threshold,
+                min_interactions=self.prune_min_interactions,
+            )
+
+        interaction_count = state.get("ace_interaction_count", 0) + 1
+
+        updated_playbook = ACEPlaybook(
+            content=updated_content,
+            next_global_id=playbook.next_global_id,
+            stats=get_playbook_stats(updated_content),
+        )
+
+        return updated_playbook, reflection, interaction_count
+
+    def _prepare_curator_prompt(
+        self, playbook: ACEPlaybook, reflection: str, question_context: str
+    ) -> str:
+        """Build the curator prompt (shared by sync/async)."""
+        return build_curator_prompt(
+            current_step=1,
+            total_samples=100,
+            token_budget=self.playbook_token_budget,
+            playbook_stats=json.dumps(playbook.stats, indent=2),
+            recent_reflection=reflection,
+            current_playbook=playbook.content,
+            question_context=question_context,
+        )
+
+    def _process_curator_response(
+        self, playbook: ACEPlaybook, parsed: dict[str, Any]
+    ) -> ACEPlaybook:
+        """Process curator response and return updated playbook."""
+        operations = parsed.get("operations", [])
+        updated_content = playbook.content
+        next_id = playbook.next_global_id
+
+        for op in operations:
+            if op.get("type") == "ADD":
+                section = op.get("section", "OTHERS")
+                content = op.get("content", "")
+                if content:
+                    updated_content, next_id = add_bullet_to_playbook(
+                        updated_content, section, content, next_id
+                    )
+
+        return ACEPlaybook(
+            content=updated_content,
+            next_global_id=next_id,
+            stats=get_playbook_stats(updated_content),
+        )
+
+    # -------------------------------------------------------------------------
+    # Middleware hooks
+    # -------------------------------------------------------------------------
+
     @override
     def before_agent(self, state: ACEState, runtime: Runtime) -> dict[str, Any] | None:
         """Initialize ACE state at the start of agent execution."""
@@ -441,21 +574,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
         """Inject playbook into system prompt before model call."""
-        state = request.state
-        playbook = self._get_playbook(state)
-        last_reflection = cast("str", state.get("ace_last_reflection", ""))
-
-        # Build enhanced system prompt
-        enhanced_prompt = build_system_prompt_with_playbook(
-            original_prompt=request.system_message,
-            playbook=playbook.content,
-            reflection=last_reflection,
-        )
-
-        # Override system message and call handler
-        modified_request = request.override(system_message=SystemMessage(content=enhanced_prompt))
-
-        return handler(modified_request)
+        return handler(self._prepare_model_request(request))
 
     @override
     async def awrap_model_call(
@@ -464,19 +583,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
         """Async version of wrap_model_call."""
-        state = request.state
-        playbook = self._get_playbook(state)
-        last_reflection = cast("str", state.get("ace_last_reflection", ""))
-
-        enhanced_prompt = build_system_prompt_with_playbook(
-            original_prompt=request.system_message,
-            playbook=playbook.content,
-            reflection=last_reflection,
-        )
-
-        modified_request = request.override(system_message=SystemMessage(content=enhanced_prompt))
-
-        return await handler(modified_request)
+        return await handler(self._prepare_model_request(request))
 
     @override
     def after_model(self, state: ACEState, runtime: Runtime) -> dict[str, Any] | None:
@@ -488,39 +595,13 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         if reflector is None:
             return self._increment_interaction_count(state)
 
-        messages = state.get("messages", [])
-        if not messages:
+        context = self._prepare_reflection_context(state)
+        if context is None:
             return self._increment_interaction_count(state)
 
-        # Get latest AI message
-        latest_msg = messages[-1]
-        if not isinstance(latest_msg, AIMessage):
-            return self._increment_interaction_count(state)
+        playbook, reflector_prompt, user_question, _ = context
 
-        # Get playbook and extract bullet IDs from final response
-        playbook = self._get_playbook(state)
-        ai_content = (
-            latest_msg.content if isinstance(latest_msg.content, str) else str(latest_msg.content)
-        )
-        # Try comment-based extraction first, fall back to inline citations
-        bullet_ids = extract_bullet_ids_from_comment(ai_content)
-        if not bullet_ids:
-            bullet_ids = extract_bullet_ids(ai_content)
-        bullets_used = extract_playbook_bullets(playbook.content, bullet_ids)
-
-        # Build full trajectory for reflector (all messages, not just final)
-        full_trajectory = self._build_full_trajectory(messages)
-        user_question = self._get_last_user_message(messages[:-1])
-        tool_feedback = self._extract_tool_feedback(messages)
-
-        reflector_prompt = build_reflector_prompt(
-            question=user_question,
-            reasoning_trace=full_trajectory,
-            feedback=tool_feedback,
-            bullets_used=bullets_used,
-        )
-
-        # Call reflector
+        # Call reflector (sync)
         try:
             response = reflector.invoke(reflector_prompt)
             response_text = (
@@ -533,29 +614,9 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         if not parsed:
             return self._increment_interaction_count(state)
 
-        # Update bullet counts
-        bullet_tags = parsed.get("bullet_tags", [])
-        updated_content = update_bullet_counts(playbook.content, bullet_tags)
-
-        # Build comprehensive reflection from parsed fields
-        reflection = self._build_reflection_summary(parsed)
-
-        # Auto-prune if enabled
-        if self.auto_prune:
-            updated_content = prune_harmful_bullets(
-                updated_content,
-                threshold=self.prune_threshold,
-                min_interactions=self.prune_min_interactions,
-            )
-
-        # Increment interaction count
-        interaction_count = state.get("ace_interaction_count", 0) + 1
-
-        # Prepare base updates
-        updated_playbook = ACEPlaybook(
-            content=updated_content,
-            next_global_id=playbook.next_global_id,
-            stats=get_playbook_stats(updated_content),
+        # Process response
+        updated_playbook, reflection, interaction_count = self._process_reflection_response(
+            state, playbook, parsed
         )
 
         updates: dict[str, Any] = {
@@ -582,36 +643,13 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         if reflector is None:
             return self._increment_interaction_count(state)
 
-        messages = state.get("messages", [])
-        if not messages:
+        context = self._prepare_reflection_context(state)
+        if context is None:
             return self._increment_interaction_count(state)
 
-        latest_msg = messages[-1]
-        if not isinstance(latest_msg, AIMessage):
-            return self._increment_interaction_count(state)
+        playbook, reflector_prompt, user_question, _ = context
 
-        playbook = self._get_playbook(state)
-        ai_content = (
-            latest_msg.content if isinstance(latest_msg.content, str) else str(latest_msg.content)
-        )
-        # Try comment-based extraction first, fall back to inline citations
-        bullet_ids = extract_bullet_ids_from_comment(ai_content)
-        if not bullet_ids:
-            bullet_ids = extract_bullet_ids(ai_content)
-        bullets_used = extract_playbook_bullets(playbook.content, bullet_ids)
-
-        # Build full trajectory for reflector (all messages, not just final)
-        full_trajectory = self._build_full_trajectory(messages)
-        user_question = self._get_last_user_message(messages[:-1])
-        tool_feedback = self._extract_tool_feedback(messages)
-
-        reflector_prompt = build_reflector_prompt(
-            question=user_question,
-            reasoning_trace=full_trajectory,
-            feedback=tool_feedback,
-            bullets_used=bullets_used,
-        )
-
+        # Call reflector (async)
         try:
             response = await reflector.ainvoke(reflector_prompt)
             response_text = (
@@ -624,23 +662,9 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         if not parsed:
             return self._increment_interaction_count(state)
 
-        bullet_tags = parsed.get("bullet_tags", [])
-        updated_content = update_bullet_counts(playbook.content, bullet_tags)
-        reflection = self._build_reflection_summary(parsed)
-
-        if self.auto_prune:
-            updated_content = prune_harmful_bullets(
-                updated_content,
-                threshold=self.prune_threshold,
-                min_interactions=self.prune_min_interactions,
-            )
-
-        interaction_count = state.get("ace_interaction_count", 0) + 1
-
-        updated_playbook = ACEPlaybook(
-            content=updated_content,
-            next_global_id=playbook.next_global_id,
-            stats=get_playbook_stats(updated_content),
+        # Process response
+        updated_playbook, reflection, interaction_count = self._process_reflection_response(
+            state, playbook, parsed
         )
 
         updates: dict[str, Any] = {
@@ -649,6 +673,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             "ace_interaction_count": interaction_count,
         }
 
+        # Run curator if threshold reached (async)
         if self.enable_curation and interaction_count % self.curator_frequency == 0:
             curated = await self._arun_curator(updated_playbook, reflection, user_question)
             if curated:
@@ -670,15 +695,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         if curator is None:
             return None
 
-        curator_prompt = build_curator_prompt(
-            current_step=1,  # Could track this in state
-            total_samples=100,  # Estimate
-            token_budget=self.playbook_token_budget,
-            playbook_stats=json.dumps(playbook.stats, indent=2),
-            recent_reflection=reflection,
-            current_playbook=playbook.content,
-            question_context=question_context,
-        )
+        curator_prompt = self._prepare_curator_prompt(playbook, reflection, question_context)
 
         try:
             response = curator.invoke(curator_prompt)
@@ -692,24 +709,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         if not parsed:
             return None
 
-        operations = parsed.get("operations", [])
-        updated_content = playbook.content
-        next_id = playbook.next_global_id
-
-        for op in operations:
-            if op.get("type") == "ADD":
-                section = op.get("section", "OTHERS")
-                content = op.get("content", "")
-                if content:
-                    updated_content, next_id = add_bullet_to_playbook(
-                        updated_content, section, content, next_id
-                    )
-
-        return ACEPlaybook(
-            content=updated_content,
-            next_global_id=next_id,
-            stats=get_playbook_stats(updated_content),
-        )
+        return self._process_curator_response(playbook, parsed)
 
     async def _arun_curator(
         self, playbook: ACEPlaybook, reflection: str, question_context: str = ""
@@ -719,15 +719,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         if curator is None:
             return None
 
-        curator_prompt = build_curator_prompt(
-            current_step=1,
-            total_samples=100,
-            token_budget=self.playbook_token_budget,
-            playbook_stats=json.dumps(playbook.stats, indent=2),
-            recent_reflection=reflection,
-            current_playbook=playbook.content,
-            question_context=question_context,
-        )
+        curator_prompt = self._prepare_curator_prompt(playbook, reflection, question_context)
 
         try:
             response = await curator.ainvoke(curator_prompt)
@@ -741,21 +733,4 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         if not parsed:
             return None
 
-        operations = parsed.get("operations", [])
-        updated_content = playbook.content
-        next_id = playbook.next_global_id
-
-        for op in operations:
-            if op.get("type") == "ADD":
-                section = op.get("section", "OTHERS")
-                content = op.get("content", "")
-                if content:
-                    updated_content, next_id = add_bullet_to_playbook(
-                        updated_content, section, content, next_id
-                    )
-
-        return ACEPlaybook(
-            content=updated_content,
-            next_global_id=next_id,
-            stats=get_playbook_stats(updated_content),
-        )
+        return self._process_curator_response(playbook, parsed)
