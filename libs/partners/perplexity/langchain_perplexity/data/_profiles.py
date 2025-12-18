@@ -16,18 +16,6 @@ https://docs.langchain.com/oss/python/langchain/models#updating-or-overwriting-p
 from typing import Any
 
 _PROFILES: dict[str, dict[str, Any]] = {
-    "sonar-reasoning": {
-        "max_input_tokens": 128000,
-        "max_output_tokens": 4096,
-        "image_inputs": False,
-        "audio_inputs": False,
-        "video_inputs": False,
-        "image_outputs": False,
-        "audio_outputs": False,
-        "video_outputs": False,
-        "reasoning_output": True,
-        "tool_calling": False,
-    },
     "sonar": {
         "max_input_tokens": 128000,
         "max_output_tokens": 4096,
@@ -55,6 +43,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
     "sonar-reasoning-pro": {
         "max_input_tokens": 128000,
         "max_output_tokens": 4096,
+        "image_inputs": True,
+        "audio_inputs": False,
+        "video_inputs": False,
+        "image_outputs": False,
+        "audio_outputs": False,
+        "video_outputs": False,
+        "reasoning_output": True,
+        "tool_calling": False,
+    },
+    "sonar-deep-research": {
+        "max_input_tokens": 128000,
+        "max_output_tokens": 8192,
         "image_inputs": True,
         "audio_inputs": False,
         "video_inputs": False,
