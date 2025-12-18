@@ -21,6 +21,7 @@ from typing_extensions import override
 
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
+from langchain_core.messages.ai import add_usage
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
@@ -72,10 +73,10 @@ def _get_executor() -> ThreadPoolExecutor:
 def _get_usage_metadata_from_generations(
     generations: list[list[dict[str, Any]]],
 ) -> dict[str, Any] | None:
-    """Extract usage_metadata from generations.
+    """Extract and aggregate usage_metadata from generations.
 
-    Iterates through generations to find and return the first usage_metadata
-    found in a message. This is typically present in chat model outputs.
+    Iterates through generations to find and aggregate all usage_metadata
+    found in messages. This is typically present in chat model outputs.
 
     Args:
         generations: List of generation batches, where each batch is a list
@@ -83,15 +84,16 @@ def _get_usage_metadata_from_generations(
             "usage_metadata".
 
     Returns:
-        The usage_metadata dict if found, otherwise None.
+        The aggregated usage_metadata dict if found, otherwise None.
     """
+    output: dict[str, Any] | None = None
     for generation_batch in generations:
         for generation in generation_batch:
             if isinstance(generation, dict) and "message" in generation:
                 message = generation["message"]
                 if isinstance(message, dict) and "usage_metadata" in message:
-                    return message["usage_metadata"]
-    return None
+                    output = add_usage(output, message["usage_metadata"])
+    return output
 
 
 class LangChainTracer(BaseTracer):

@@ -179,7 +179,7 @@ def test_correct_get_tracer_project(
         # Returns None for empty generations
         ([], None),
         ([[]], None),
-        # Returns first usage_metadata from multiple generations
+        # Aggregates usage_metadata across multiple generations
         (
             [
                 [
@@ -207,7 +207,7 @@ def test_correct_get_tracer_project(
                     },
                 ]
             ],
-            {"input_tokens": 5, "output_tokens": 10, "total_tokens": 15},
+            {"input_tokens": 55, "output_tokens": 110, "total_tokens": 165},
         ),
         # Finds usage_metadata across multiple batches
         (
@@ -236,7 +236,7 @@ def test_correct_get_tracer_project(
         "returns_none_when_no_message",
         "returns_none_for_empty_list",
         "returns_none_for_empty_batch",
-        "returns_first_from_multiple_generations",
+        "aggregates_across_multiple_generations",
         "finds_across_multiple_batches",
     ],
 )
