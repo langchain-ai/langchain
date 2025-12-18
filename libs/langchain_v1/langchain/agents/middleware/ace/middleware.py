@@ -7,6 +7,7 @@ playbook of strategies and insights learned from interactions.
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Awaitable, Callable, Sequence
 from typing import TYPE_CHECKING, Annotated, Any, cast
 
@@ -51,6 +52,7 @@ from .prompts import (
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
 
+logger = logging.getLogger(__name__)
 
 # Private state annotation
 _PrivateState = OmitFromSchema(input=True, output=True)
@@ -356,6 +358,37 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             return "\n\n".join(parts)
         return "Response generated successfully (no tools used)"
 
+    def _extract_text_content(self, content: str | list[Any]) -> str:
+        """Extract text from potentially multimodal message content.
+
+        Modern models (e.g., GPT-4o) may return content as a list of parts
+        like [{"type": "text", "text": "..."}]. This method extracts and
+        concatenates all text segments.
+
+        Args:
+            content: Message content - either a string or list of content parts.
+
+        Returns:
+            Extracted text content as a single string.
+        """
+        if isinstance(content, str):
+            return content
+
+        if isinstance(content, list):
+            text_parts: list[str] = []
+            for part in content:
+                if isinstance(part, str):
+                    text_parts.append(part)
+                # Handle {"type": "text", "text": "..."} or direct {"text": "..."} format
+                elif isinstance(part, dict) and "text" in part and (
+                    part.get("type") == "text" or "type" not in part
+                ):
+                    text_parts.append(part["text"])
+            return "\n".join(text_parts)
+
+        # Fallback for unexpected types
+        return str(content)
+
     def _extract_json_from_response(self, text: str) -> dict[str, Any] | None:
         """Extract JSON from model response text."""
         # Try direct JSON parse
@@ -627,14 +660,17 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         # Call reflector (sync)
         try:
             response = reflector.invoke(reflector_prompt)
-            response_text = (
-                response.content if isinstance(response.content, str) else str(response.content)
-            )
+            response_text = self._extract_text_content(response.content)
             parsed = self._extract_json_from_response(response_text)
-        except Exception:
+        except Exception as e:
+            logger.warning("ACE reflector invocation failed: %s", e)
             return self._increment_interaction_count(state)
 
         if not parsed:
+            logger.warning(
+                "ACE reflector returned unparseable response: %s",
+                response_text[:200] if response_text else "(empty)",
+            )
             return self._increment_interaction_count(state)
 
         # Process response
@@ -675,14 +711,17 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         # Call reflector (async)
         try:
             response = await reflector.ainvoke(reflector_prompt)
-            response_text = (
-                response.content if isinstance(response.content, str) else str(response.content)
-            )
+            response_text = self._extract_text_content(response.content)
             parsed = self._extract_json_from_response(response_text)
-        except Exception:
+        except Exception as e:
+            logger.warning("ACE reflector invocation failed: %s", e)
             return self._increment_interaction_count(state)
 
         if not parsed:
+            logger.warning(
+                "ACE reflector returned unparseable response: %s",
+                response_text[:200] if response_text else "(empty)",
+            )
             return self._increment_interaction_count(state)
 
         # Process response
@@ -722,14 +761,17 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
 
         try:
             response = curator.invoke(curator_prompt)
-            response_text = (
-                response.content if isinstance(response.content, str) else str(response.content)
-            )
+            response_text = self._extract_text_content(response.content)
             parsed = self._extract_json_from_response(response_text)
-        except Exception:
+        except Exception as e:
+            logger.warning("ACE curator invocation failed: %s", e)
             return None
 
         if not parsed:
+            logger.warning(
+                "ACE curator returned unparseable response: %s",
+                response_text[:200] if response_text else "(empty)",
+            )
             return None
 
         return self._process_curator_response(playbook, parsed)
@@ -746,14 +788,17 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
 
         try:
             response = await curator.ainvoke(curator_prompt)
-            response_text = (
-                response.content if isinstance(response.content, str) else str(response.content)
-            )
+            response_text = self._extract_text_content(response.content)
             parsed = self._extract_json_from_response(response_text)
-        except Exception:
+        except Exception as e:
+            logger.warning("ACE curator invocation failed: %s", e)
             return None
 
         if not parsed:
+            logger.warning(
+                "ACE curator returned unparseable response: %s",
+                response_text[:200] if response_text else "(empty)",
+            )
             return None
 
         return self._process_curator_response(playbook, parsed)
