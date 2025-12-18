@@ -15,16 +15,18 @@ Usage:
 import ast
 import operator
 import uuid
+from typing import Any, Callable
 
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.types import RunnableConfig
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import ACEMiddleware
 
 # Safe math operators for the calculator
-_SAFE_OPERATORS = {
+_SAFE_OPERATORS: dict[type, Callable[..., float]] = {
     ast.Add: operator.add,
     ast.Sub: operator.sub,
     ast.Mult: operator.mul,
@@ -41,7 +43,7 @@ def _safe_eval(node: ast.AST) -> float:
     """Safely evaluate an AST node containing only math operations."""
     if isinstance(node, ast.Constant):
         if isinstance(node.value, (int, float)):
-            return node.value
+            return float(node.value)
         msg = f"Unsupported constant type: {type(node.value)}"
         raise ValueError(msg)
     if isinstance(node, ast.BinOp):
@@ -51,14 +53,14 @@ def _safe_eval(node: ast.AST) -> float:
         if op is None:
             msg = f"Unsupported operator: {type(node.op).__name__}"
             raise ValueError(msg)
-        return op(left, right)
+        return float(op(left, right))
     if isinstance(node, ast.UnaryOp):
         operand = _safe_eval(node.operand)
         op = _SAFE_OPERATORS.get(type(node.op))
         if op is None:
             msg = f"Unsupported unary operator: {type(node.op).__name__}"
             raise ValueError(msg)
-        return op(operand)
+        return float(op(operand))
     if isinstance(node, ast.Expression):
         return _safe_eval(node.body)
     msg = f"Unsupported expression type: {type(node).__name__}"
@@ -102,7 +104,7 @@ def main() -> None:
     checkpointer = MemorySaver()
 
     # Create agent with ACE middleware and checkpointer
-    agent = create_agent(
+    agent: Any = create_agent(
         model="gpt-4.1",
         tools=[calculator],
         middleware=[ace],
@@ -111,7 +113,7 @@ def main() -> None:
 
     # Use a consistent thread ID to maintain state across invocations
     thread_id = str(uuid.uuid4())
-    config = {"configurable": {"thread_id": thread_id}}
+    config: RunnableConfig = {"configurable": {"thread_id": thread_id}}
 
     # Math problems to solve - the agent will learn from each one
     problems = [

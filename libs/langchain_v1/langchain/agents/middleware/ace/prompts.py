@@ -158,15 +158,20 @@ def build_system_prompt_with_playbook(
         Enhanced system prompt with playbook injected.
     """
     # Extract text from SystemMessage if needed
+    original_text: str
     if original_prompt is None:
         original_text = "You are a helpful AI assistant."
     elif isinstance(original_prompt, SystemMessage):
-        original_text = original_prompt.content
-        if isinstance(original_text, list):
+        content = original_prompt.content
+        if isinstance(content, list):
             # Handle multi-part content
             original_text = " ".join(
-                part if isinstance(part, str) else str(part) for part in original_text
+                part if isinstance(part, str) else str(part) for part in content
             )
+        elif isinstance(content, str):
+            original_text = content
+        else:
+            original_text = str(content)
     else:
         original_text = str(original_prompt)
 

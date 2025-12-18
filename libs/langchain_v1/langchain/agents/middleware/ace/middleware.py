@@ -7,8 +7,8 @@ playbook of strategies and insights learned from interactions.
 from __future__ import annotations
 
 import json
-from collections.abc import Awaitable, Callable
-from typing import TYPE_CHECKING, Annotated, Any
+from collections.abc import Awaitable, Callable, Sequence
+from typing import TYPE_CHECKING, Annotated, Any, cast
 
 from langchain_core.messages import (
     AIMessage,
@@ -209,7 +209,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
 
         return self._curator_model
 
-    def _get_playbook(self, state: ACEState) -> ACEPlaybook:
+    def _get_playbook(self, state: AgentState[Any]) -> ACEPlaybook:
         """Get playbook from state or create default."""
         playbook_data = state.get("ace_playbook")
         if playbook_data:
@@ -222,7 +222,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             stats=get_playbook_stats(self.initial_playbook),
         )
 
-    def _get_last_user_message(self, messages: list[BaseMessage]) -> str:
+    def _get_last_user_message(self, messages: Sequence[BaseMessage]) -> str:
         """Extract the last user message from the conversation."""
         for msg in reversed(messages):
             if isinstance(msg, HumanMessage):
@@ -235,7 +235,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
                     )
         return ""
 
-    def _extract_tool_feedback(self, messages: list[BaseMessage]) -> str:
+    def _extract_tool_feedback(self, messages: Sequence[BaseMessage]) -> str:
         """Extract tool results and errors from messages for reflector feedback.
 
         Scans recent messages for tool calls and their results, providing
@@ -395,7 +395,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         """Inject playbook into system prompt before model call."""
         state = request.state
         playbook = self._get_playbook(state)
-        last_reflection = state.get("ace_last_reflection", "")
+        last_reflection = cast(str, state.get("ace_last_reflection", ""))
 
         # Build enhanced system prompt
         enhanced_prompt = build_system_prompt_with_playbook(
@@ -418,7 +418,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         """Async version of wrap_model_call."""
         state = request.state
         playbook = self._get_playbook(state)
-        last_reflection = state.get("ace_last_reflection", "")
+        last_reflection = cast(str, state.get("ace_last_reflection", ""))
 
         enhanced_prompt = build_system_prompt_with_playbook(
             original_prompt=request.system_message,
