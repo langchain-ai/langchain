@@ -2293,6 +2293,7 @@ class Runnable(ABC, Generic[Input, Output]):
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
+            defers_inputs=True,
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -2390,6 +2391,7 @@ class Runnable(ABC, Generic[Input, Output]):
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
+            defers_inputs=True,
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
