@@ -355,7 +355,7 @@ def test_on_llm_end_preserves_existing_metadata() -> None:
 
 
 def test_on_llm_end_flattens_single_generation() -> None:
-    """Test that outputs are flattened when generations is a 1x1 matrix."""
+    """Test that outputs are flattened to just the message when generations is 1x1."""
     client = unittest.mock.MagicMock(spec=Client)
     client.tracing_queue = None
     tracer = LangChainTracer(client=client)
@@ -364,7 +364,8 @@ def test_on_llm_end_flattens_single_generation() -> None:
     tracer.on_llm_start({"name": "test_llm"}, ["foo"], run_id=run_id)
 
     run = tracer.run_map[str(run_id)]
-    generation = {"text": "Hello!", "message": {"content": "Hello!"}}
+    message = {"content": "Hello!"}
+    generation = {"text": "Hello!", "message": message}
     run.outputs = {"generations": [[generation]]}
 
     captured_run = None
@@ -377,8 +378,36 @@ def test_on_llm_end_flattens_single_generation() -> None:
         tracer._on_llm_end(run)
 
     assert captured_run is not None
-    # Should be flattened to just the generation object
-    assert captured_run.outputs == generation
+    # Should be flattened to just the message
+    assert captured_run.outputs == message
+
+
+def test_on_llm_end_does_not_flatten_single_generation_without_message() -> None:
+    """Test that outputs are not flattened when single generation has no message."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_llm_start({"name": "test_llm"}, ["foo"], run_id=run_id)
+
+    run = tracer.run_map[str(run_id)]
+    # Generation with only text, no message
+    generation = {"text": "Hello!"}
+    run.outputs = {"generations": [[generation]]}
+
+    captured_run = None
+
+    def capture_run(r: Run) -> None:
+        nonlocal captured_run
+        captured_run = r
+
+    with unittest.mock.patch.object(tracer, "_update_run_single", capture_run):
+        tracer._on_llm_end(run)
+
+    assert captured_run is not None
+    # Should NOT be flattened - keep original structure when no message
+    assert captured_run.outputs == {"generations": [[generation]]}
 
 
 def test_on_llm_end_does_not_flatten_multiple_generations_in_batch() -> None:
