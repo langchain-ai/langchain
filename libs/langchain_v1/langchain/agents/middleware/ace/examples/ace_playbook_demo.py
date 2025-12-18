@@ -44,7 +44,7 @@ def _safe_eval(node: ast.AST) -> float:
             return node.value
         msg = f"Unsupported constant type: {type(node.value)}"
         raise ValueError(msg)
-    elif isinstance(node, ast.BinOp):
+    if isinstance(node, ast.BinOp):
         left = _safe_eval(node.left)
         right = _safe_eval(node.right)
         op = _SAFE_OPERATORS.get(type(node.op))
@@ -52,18 +52,17 @@ def _safe_eval(node: ast.AST) -> float:
             msg = f"Unsupported operator: {type(node.op).__name__}"
             raise ValueError(msg)
         return op(left, right)
-    elif isinstance(node, ast.UnaryOp):
+    if isinstance(node, ast.UnaryOp):
         operand = _safe_eval(node.operand)
         op = _SAFE_OPERATORS.get(type(node.op))
         if op is None:
             msg = f"Unsupported unary operator: {type(node.op).__name__}"
             raise ValueError(msg)
         return op(operand)
-    elif isinstance(node, ast.Expression):
+    if isinstance(node, ast.Expression):
         return _safe_eval(node.body)
-    else:
-        msg = f"Unsupported expression type: {type(node).__name__}"
-        raise ValueError(msg)
+    msg = f"Unsupported expression type: {type(node).__name__}"
+    raise ValueError(msg)
 
 
 @tool

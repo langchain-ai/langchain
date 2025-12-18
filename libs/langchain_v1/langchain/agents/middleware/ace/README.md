@@ -31,6 +31,18 @@ Traditional agents use static prompts that don't learn from experience. ACE solv
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+## Quick Start
+
+Run the demo to see ACE in action:
+
+```bash
+cd libs/langchain_v1/langchain/agents/middleware/ace
+uv run --env-file .env python examples/ace_playbook_demo.py
+```
+
+This shows the playbook evolving as the agent solves math problems, with the reflector
+analyzing each response and the curator adding new insights.
+
 ## Design
 
 ### Three-Role Architecture
@@ -210,15 +222,6 @@ stats = {
     'unused': 5,            # helpful + harmful = 0
 }
 ```
-
-## Running the Demo
-
-```bash
-cd libs/langchain_v1/langchain/agents/middleware/ace
-uv run --env-file .env python examples/ace_playbook_demo.py
-```
-
-This runs an interactive demo that shows the playbook evolving as the agent solves math problems.
 
 ## Usage Example
 
