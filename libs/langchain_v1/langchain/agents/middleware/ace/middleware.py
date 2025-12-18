@@ -395,7 +395,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         """Inject playbook into system prompt before model call."""
         state = request.state
         playbook = self._get_playbook(state)
-        last_reflection = cast(str, state.get("ace_last_reflection", ""))
+        last_reflection = cast("str", state.get("ace_last_reflection", ""))
 
         # Build enhanced system prompt
         enhanced_prompt = build_system_prompt_with_playbook(
@@ -418,7 +418,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         """Async version of wrap_model_call."""
         state = request.state
         playbook = self._get_playbook(state)
-        last_reflection = cast(str, state.get("ace_last_reflection", ""))
+        last_reflection = cast("str", state.get("ace_last_reflection", ""))
 
         enhanced_prompt = build_system_prompt_with_playbook(
             original_prompt=request.system_message,

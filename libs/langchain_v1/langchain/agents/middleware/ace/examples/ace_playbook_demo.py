@@ -16,7 +16,8 @@ import ast
 import operator
 import re
 import uuid
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
