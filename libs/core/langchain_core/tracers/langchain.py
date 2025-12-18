@@ -21,7 +21,7 @@ from typing_extensions import override
 
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
-from langchain_core.messages.ai import add_usage
+from langchain_core.messages.ai import UsageMetadata, add_usage
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
@@ -72,7 +72,7 @@ def _get_executor() -> ThreadPoolExecutor:
 
 def _get_usage_metadata_from_generations(
     generations: list[list[dict[str, Any]]],
-) -> dict[str, Any] | None:
+) -> UsageMetadata | None:
     """Extract and aggregate usage_metadata from generations.
 
     Iterates through generations to find and aggregate all usage_metadata
@@ -86,7 +86,7 @@ def _get_usage_metadata_from_generations(
     Returns:
         The aggregated usage_metadata dict if found, otherwise None.
     """
-    output: dict[str, Any] | None = None
+    output: UsageMetadata | None = None
     for generation_batch in generations:
         for generation in generation_batch:
             if isinstance(generation, dict) and "message" in generation:
