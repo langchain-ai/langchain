@@ -16,6 +16,7 @@ from langgraph.runtime import Runtime
 from langchain.agents.middleware.context_editing import (
     ClearToolUsesEdit,
     ContextEditingMiddleware,
+    SummarizeToolUsesEdit,
 )
 from langchain.agents.middleware.types import AgentState, ModelRequest
 
@@ -122,7 +123,7 @@ def test_clear_tool_outputs_and_inputs() -> None:
         keep=0,
         placeholder="[cleared output]",
     )
-    middleware = ContextEditingMiddleware(edits=[edit])
+    middleware = ContextEditingMiddleware(edits=[edit], persist_edits=False)
 
     modified_request = None
 
@@ -314,7 +315,7 @@ async def test_clear_tool_outputs_and_inputs_async() -> None:
         keep=0,
         placeholder="[cleared output]",
     )
-    middleware = ContextEditingMiddleware(edits=[edit])
+    middleware = ContextEditingMiddleware(edits=[edit], persist_edits=False)
 
     modified_request = None
 
@@ -449,3 +450,185 @@ async def test_exclude_tools_prevents_clearing_async() -> None:
 
     assert isinstance(calc_tool, ToolMessage)
     assert calc_tool.content == "[cleared]"
+
+
+# =============================================================================
+# Tests for SummarizeToolUsesEdit
+# =============================================================================
+
+
+class _SummarizingChatModel(FakeChatModel):
+    """Fake chat model that returns a fixed summary for testing."""
+
+    def _call(self, *args: object, **kwargs: object) -> str:
+        return "This is a summary of the tool output."
+
+    async def _acall(self, *args: object, **kwargs: object) -> str:
+        return "This is an async summary of the tool output."
+
+
+def test_summarize_no_edit_when_below_trigger() -> None:
+    """Test that summarization does not occur when below trigger."""
+    tool_call_id = "call-1"
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[{"id": tool_call_id, "name": "search", "args": {}}],
+    )
+    tool_message = ToolMessage(content="x" * 300, tool_call_id=tool_call_id)
+
+    _state, request = _make_state_and_request([ai_message, tool_message])
+    middleware = ContextEditingMiddleware(
+        edits=[
+            SummarizeToolUsesEdit(
+                summarization_model=_SummarizingChatModel(),
+                trigger=1000,
+                keep=0,
+            )
+        ],
+    )
+
+    modified_request = None
+
+    def mock_handler(req: ModelRequest) -> AIMessage:
+        nonlocal modified_request
+        modified_request = req
+        return AIMessage(content="mock response")
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    assert modified_request is not None
+    assert modified_request.messages[1].content == "x" * 300
+
+
+def test_summarize_tool_outputs() -> None:
+    """Test that tool outputs are summarized when above trigger."""
+    tool_call_id = "call-1"
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[{"id": tool_call_id, "name": "search", "args": {}}],
+    )
+    original_content = "x" * 300
+    tool_message = ToolMessage(content=original_content, tool_call_id=tool_call_id)
+
+    _state, request = _make_state_and_request([ai_message, tool_message])
+    middleware = ContextEditingMiddleware(
+        edits=[
+            SummarizeToolUsesEdit(
+                summarization_model=_SummarizingChatModel(),
+                trigger=1,
+                keep=0,
+                min_content_length=100,
+            )
+        ],
+    )
+
+    modified_request = None
+
+    def mock_handler(req: ModelRequest) -> AIMessage:
+        nonlocal modified_request
+        modified_request = req
+        return AIMessage(content="mock response")
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    assert modified_request is not None
+    summarized_tool = modified_request.messages[1]
+    assert isinstance(summarized_tool, ToolMessage)
+    assert summarized_tool.content.startswith("[Summary] ")
+    assert "This is a summary" in summarized_tool.content
+    assert summarized_tool.response_metadata["context_editing"]["summarized"] is True
+    assert summarized_tool.response_metadata["context_editing"]["original_length"] == 300
+
+
+def test_summarize_respects_keep_and_exclude() -> None:
+    """Test that summarization respects keep and exclude_tools parameters."""
+    conversation: list[AIMessage | ToolMessage] = []
+    tool_data = [
+        ("call-a", "search", "search-results" * 50),
+        ("call-b", "calculator", "calculator-output" * 50),
+        ("call-c", "browser", "browser-output" * 50),
+    ]
+
+    for call_id, tool_name, content in tool_data:
+        conversation.append(
+            AIMessage(
+                content="",
+                tool_calls=[{"id": call_id, "name": tool_name, "args": {}}],
+            )
+        )
+        conversation.append(ToolMessage(content=content, tool_call_id=call_id, name=tool_name))
+
+    _state, request = _make_state_and_request(conversation)
+
+    middleware = ContextEditingMiddleware(
+        edits=[
+            SummarizeToolUsesEdit(
+                summarization_model=_SummarizingChatModel(),
+                trigger=1,
+                keep=1,
+                exclude_tools=("search",),
+                min_content_length=100,
+            )
+        ],
+    )
+
+    modified_request = None
+
+    def mock_handler(req: ModelRequest) -> AIMessage:
+        nonlocal modified_request
+        modified_request = req
+        return AIMessage(content="mock response")
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    assert modified_request is not None
+
+    search_tool = modified_request.messages[1]
+    assert isinstance(search_tool, ToolMessage)
+    assert not search_tool.content.startswith("[Summary] ")
+
+    calc_tool = modified_request.messages[3]
+    assert isinstance(calc_tool, ToolMessage)
+    assert calc_tool.content.startswith("[Summary] ")
+
+    browser_tool = modified_request.messages[5]
+    assert isinstance(browser_tool, ToolMessage)
+    assert not browser_tool.content.startswith("[Summary] ")
+
+
+async def test_summarize_async() -> None:
+    """Test async summarization via awrap_model_call."""
+    tool_call_id = "call-1"
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[{"id": tool_call_id, "name": "search", "args": {}}],
+    )
+    original_content = "x" * 300
+    tool_message = ToolMessage(content=original_content, tool_call_id=tool_call_id)
+
+    _state, request = _make_state_and_request([ai_message, tool_message])
+    middleware = ContextEditingMiddleware(
+        edits=[
+            SummarizeToolUsesEdit(
+                summarization_model=_SummarizingChatModel(),
+                trigger=1,
+                keep=0,
+                min_content_length=100,
+            )
+        ],
+    )
+
+    modified_request = None
+
+    async def mock_handler(req: ModelRequest) -> AIMessage:
+        nonlocal modified_request
+        modified_request = req
+        return AIMessage(content="mock response")
+
+    await middleware.awrap_model_call(request, mock_handler)
+
+    assert modified_request is not None
+    summarized_tool = modified_request.messages[1]
+    assert isinstance(summarized_tool, ToolMessage)
+    assert summarized_tool.content.startswith("[Summary] ")
+    assert summarized_tool.response_metadata["context_editing"]["summarized"] is True

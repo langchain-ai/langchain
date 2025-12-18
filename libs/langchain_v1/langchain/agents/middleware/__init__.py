@@ -3,6 +3,7 @@
 from .context_editing import (
     ClearToolUsesEdit,
     ContextEditingMiddleware,
+    SummarizeToolUsesEdit,
 )
 from .file_search import FilesystemFileSearchMiddleware
 from .human_in_the_loop import (
@@ -64,6 +65,7 @@ __all__ = [
     "RedactionRule",
     "ShellToolMiddleware",
     "SummarizationMiddleware",
+    "SummarizeToolUsesEdit",
     "TodoListMiddleware",
     "ToolCallLimitMiddleware",
     "ToolRetryMiddleware",
