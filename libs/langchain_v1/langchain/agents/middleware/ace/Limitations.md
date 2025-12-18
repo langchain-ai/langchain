@@ -1,7 +1,6 @@
 # ACE Middleware Design Trade-offs and Limitations
 
-This document outlines current limitations of the LangChain ACE middleware compared to
-the full ACE framework, along with potential future enhancements.
+This document outlines current design tradeoffs and limitations of the LangChain ACE middleware compared to the full ACE framework, along with potential future enhancements.
 
 ## Architectural Differences: Middleware vs Dedicated Generator
 
@@ -52,18 +51,6 @@ The middleware wraps an existing agent - it augments but doesn't replace.
 | **Integration Effort** | High (replace agent) | Low (add middleware) |
 | **Best For** | Training/benchmarks | Production agents |
 
-### When to Use Which
-
-**Dedicated Generator is better for:**
-- Training on structured benchmarks (finance QA, math problems)
-- Guaranteed bullet ID tracking for accurate helpful/harmful counts
-- Single-shot Q&A evaluation
-
-**System Prompt Injection is better for:**
-- Production agents with existing tools and workflows
-- Multi-turn conversational agents
-- Minimal integration effort with existing LangGraph agents
-
 ### Reliability of Bullet Tracking
 
 The main limitation of the middleware approach is **unreliable bullet tracking**:
@@ -80,7 +67,7 @@ The main limitation of the middleware approach is **unreliable bullet tracking**
 
 ## Current Feedback Sources
 
-The reflector is currently "unsupervised" in that it uses the following information to determine the following:
+The reflector is currently "unsupervised" in that is does not use ground truth for training. Instead, it learns onelinu using the following information:
 
 Did tools error? → Harmful
 Did reasoning look sound? → Helpful
@@ -132,8 +119,7 @@ ace.record_feedback(thread_id="...", rating="negative", correction="...")
 for training/evaluation scenarios.
 
 **Why it matters**: The original ACE framework uses ground truth to provide precise
-error analysis. Without it, the reflector is essentially "guessing" what went wrong
-based on reasoning quality alone.
+error analysis for training.
 
 **Potential implementation**:
 ```python
@@ -180,15 +166,3 @@ caught with ground truth or user feedback.
 - **BulletpointAnalyzer**: Semantic deduplication of similar playbook bullets using
   embeddings. The original ACE uses this to prevent playbook bloat by merging
   semantically similar strategies. Could be added as an optional post-curation step.
-
-## Recommendations
-
-1. **For production agents**: Implement user feedback collection to improve
-   reflection accuracy over time.
-
-2. **For training/fine-tuning**: Add ground truth support to enable precise
-   error analysis and faster playbook convergence.
-
-3. **For debugging**: Tool feedback is already sufficient to identify most
-   execution errors and failed strategies.
-

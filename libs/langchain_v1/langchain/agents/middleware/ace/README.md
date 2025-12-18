@@ -3,6 +3,28 @@
 **ACE (Agentic Context Engineering)** is a middleware that enables LangChain agents to self-improve by maintaining an evolving "playbook" of strategies, insights, and patterns learned from interactions.
 
 Based on the research paper: [Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models](https://arxiv.org/abs/2510.04618)
+and [original implementation](https://github.com/ace-agent/ace)
+
+(Note: it is not a "one-to-one mapping" of components and architecture in the original
+implementation to the implementation in LangGraph. See [Design Tradeoffs](Limitations.md) for details.)
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Quick Start](#quick-start)
+- [Design](#design)
+  - [Three-Role Architecture](#three-role-architecture)
+  - [The Playbook](#the-playbook)
+  - [Middleware Hooks](#middleware-hooks)
+- [How Trajectories Update the Playbook](#how-trajectories-update-the-playbook)
+- [Usage Example](#usage-example)
+- [State Schema](#state-schema)
+- [Playbook Sections](#playbook-sections)
+- [API Reference](#api-reference)
+- [References](#references)
+- [Appendix](#appendix)
+  - [Why Helpful/Harmful Counts Improve Accuracy](#why-helpfulharmful-counts-improve-accuracy)
+  - [How the Reflector Determines Helpful/Harmful](#how-the-reflector-determines-helpfulharmful)
 
 ## Overview
 
@@ -170,58 +192,6 @@ When `auto_prune=True`, bullets with high harmful-to-helpful ratios are removed:
 [str-00005] helpful=1 harmful=5 :: Bad advice  # REMOVED
 ```
 
-## Why Helpful/Harmful Counts Improve Accuracy
-
-The core insight of ACE: instead of retraining models, accumulate and refine contextual
-knowledge that gets injected into prompts. The count system makes this work.
-
-### Count Semantics
-
-| Tag | Meaning | Count Update |
-|-----|---------|--------------|
-| `helpful` | Bullet contributed to correct response | `helpful += 1` |
-| `harmful` | Bullet led to errors or wrong approach | `harmful += 1` |
-| `neutral` | Bullet was used but had no significant impact | No change |
-
-### Evolutionary Optimization
-
-The playbook evolves like a genetic algorithm:
-
-- **Selection**: High helpful/harmful ratio bullets survive
-- **Mutation**: Curator adds new strategies based on reflections
-- **Extinction**: Harmful bullets get pruned
-
-Over many interactions, the playbook converges on strategies that actually work.
-
-### Signal Visibility
-
-Counts are visible in the playbook, so the agent can see reliability:
-
-```
-[str-00001] helpful=50 harmful=1 :: Proven reliable strategy
-[str-00002] helpful=2 harmful=8 :: Risky approach (will be pruned)
-```
-
-### Noise Tolerance
-
-Unlike binary keep/delete, counts provide:
-
-- **Confidence**: `helpful=50 harmful=2` is very reliable
-- **Noise tolerance**: One bad outcome doesn't kill a good strategy
-- **Trend detection**: Rising harmful count signals degrading usefulness
-
-### Playbook Statistics
-
-The system tracks aggregate stats for the curator:
-
-```python
-stats = {
-    'total_bullets': 25,
-    'high_performing': 8,   # helpful > 5, harmful < 2
-    'problematic': 3,       # harmful >= helpful
-    'unused': 5,            # helpful + harmful = 0
-}
-```
 
 ## Usage Example
 
@@ -269,7 +239,7 @@ ace = ACEMiddleware(
 )
 ```
 
-### With Auto-Pruning
+<!-- ### With Auto-Pruning
 
 ```python
 ace = ACEMiddleware(
@@ -280,7 +250,7 @@ ace = ACEMiddleware(
     prune_threshold=0.5,       # Prune if harmful/(helpful+harmful) > 0.5
     prune_min_interactions=5,  # Only prune after 5+ interactions
 )
-```
+``` -->
 
 ### Full Configuration
 
@@ -370,6 +340,67 @@ from langchain.agents.middleware.ace import (
     get_playbook_stats,       # Get playbook statistics
 )
 ```
+---
+
+## References
+
+- **Paper**: [Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models](https://arxiv.org/abs/2510.04618)
+- **Original Implementation**: [github.com/ace-agent/ace](https://github.com/ace-agent/ace)
+
+## Appendix
+
+## Why Helpful/Harmful Counts Improve Accuracy
+
+The core insight of ACE: instead of retraining models, accumulate and refine contextual
+knowledge that gets injected into prompts. The count system makes this work.
+
+### Count Semantics
+
+| Tag | Meaning | Count Update |
+|-----|---------|--------------|
+| `helpful` | Bullet contributed to correct response | `helpful += 1` |
+| `harmful` | Bullet led to errors or wrong approach | `harmful += 1` |
+| `neutral` | Bullet was used but had no significant impact | No change |
+
+### Evolutionary Optimization
+
+The playbook evolves like a genetic algorithm:
+
+- **Selection**: High helpful/harmful ratio bullets survive
+- **Mutation**: Curator adds new strategies based on reflections
+- **Extinction**: Harmful bullets get pruned
+
+Over many interactions, the playbook converges on strategies that actually work.
+
+### Signal Visibility
+
+Counts are visible in the playbook, so the agent can see reliability:
+
+```
+[str-00001] helpful=50 harmful=1 :: Proven reliable strategy
+[str-00002] helpful=2 harmful=8 :: Risky approach (will be pruned)
+```
+
+### Noise Tolerance
+
+Unlike binary keep/delete, counts provide:
+
+- **Confidence**: `helpful=50 harmful=2` is very reliable
+- **Noise tolerance**: One bad outcome doesn't kill a good strategy
+- **Trend detection**: Rising harmful count signals degrading usefulness
+
+### Playbook Statistics
+
+The system tracks aggregate stats for the curator:
+
+```python
+stats = {
+    'total_bullets': 25,
+    'high_performing': 8,   # helpful > 5, harmful < 2
+    'problematic': 3,       # harmful >= helpful
+    'unused': 5,            # helpful + harmful = 0
+}
+```
 
 ## How the Reflector Determines Helpful/Harmful
 
@@ -425,70 +456,4 @@ Without ground truth (the correct answer), the reflector must **infer** correctn
 This is less accurate than the original ACE which compares `predicted_answer` vs `ground_truth`.
 See [Limitations.md](Limitations.md) for details.
 
----
-
-## Design Notes: Bullet ID Tracking
-
-The ACE framework requires tracking which playbook bullets are applied by the agent
-so the reflector can tag them as helpful/harmful and update counts. The original ACE
-implementation uses a custom generator that outputs structured JSON with an explicit
-`bullet_ids` field. In the LangChain middleware context, we cannot easily modify
-the agent's output format since it uses tool calling.
-
-### Approaches Considered
-
-#### 1. Regex Extraction from Response
-
-**How it works**: Search for `[xxx-00001]` patterns in the agent's response text.
-
-| Pros | Cons |
-|------|------|
-| Simple implementation | Agent rarely includes citations naturally |
-| No changes to agent | Unreliable - counts stay at 0 |
-| Works with any model | Requires agent to cite IDs in prose |
-
-**Status**: Implemented as fallback.
-
-#### 2. Comment-Based Tracking (Currently Implemented)
-
-**How it works**: System prompt instructs agent to include bullet IDs in an HTML comment:
-
-```
-<!-- bullet_ids: ["str-00001", "mis-00002"] -->
-```
-
-| Pros | Cons |
-|------|------|
-| Works with all response types | Relies on agent following instructions |
-| Doesn't interfere with tool calling | Comment may be omitted |
-| Simple regex parsing | Visible in response (though minimal) |
-
-**Status**: Currently implemented in `prompts.py` and `playbook.py`.
-
-#### 3. Report Bullets Tool (Planned)
-
-**How it works**: Register a `report_bullets(bullet_ids)` tool that the agent calls
-to explicitly report which bullets it applied.
-
-| Pros | Cons |
-|------|------|
-| Structured tool call - reliable | Agent must remember to call it |
-| Native integration with tool calling | Adds tool call to message history |
-
-**Status**: Planned for implementation.
-
-### Current Implementation
-
-The middleware uses **Comment-Based Tracking** with **Regex Extraction** as fallback:
-
-1. Parse `<!-- bullet_ids: [...] -->` comment from response
-2. If not found, search for `[xxx-00001]` patterns in text
-3. Pass identified bullets to reflector for tagging
-
----
-
-## References
-
-- **Paper**: [Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models](https://arxiv.org/abs/2510.04618)
-- **Original Implementation**: [github.com/ace-agent/ace](https://github.com/ace-agent/ace)
 
