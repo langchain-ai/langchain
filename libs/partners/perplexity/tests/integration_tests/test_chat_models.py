@@ -39,7 +39,7 @@ class TestChatPerplexityIntegration:
 
         # We need to collect chunks to check reasoning steps
         chunks = list(chat.stream([message]))
-        full_content = "".join([c.content for c in chunks])
+        full_content = "".join(c.content for c in chunks if isinstance(c.content, str))
         assert full_content
 
         # Check if any chunk has reasoning_steps
