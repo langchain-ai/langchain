@@ -221,6 +221,121 @@ def test_builtin_tools_middleware_openai_code_execution() -> None:
     assert isinstance(result, ModelResponse)
 
 
+def test_builtin_tools_middleware_xai_web_search() -> None:
+    """Test adding web_search tool for xAI/Grok."""
+    middleware = BuiltinToolsMiddleware(include_tools=["web_search"])
+
+    model = ChatXAI()
+    request = ModelRequest(
+        model=model,
+        messages=[],
+        tools=[],
+    )
+
+    def handler(req: ModelRequest) -> ModelResponse:
+        assert len(req.tools) == 1
+        tool = req.tools[0]
+        assert isinstance(tool, dict)
+        assert tool["type"] == "web_search"
+        return ModelResponse(result=[AIMessage(content="test")])
+
+    result = middleware.wrap_model_call(request, handler)
+    assert isinstance(result, ModelResponse)
+
+
+def test_builtin_tools_middleware_xai_code_interpreter() -> None:
+    """Test adding code_execution tool for xAI/Grok."""
+    middleware = BuiltinToolsMiddleware(include_tools=["code_execution"])
+
+    model = ChatXAI()
+    request = ModelRequest(
+        model=model,
+        messages=[],
+        tools=[],
+    )
+
+    def handler(req: ModelRequest) -> ModelResponse:
+        assert len(req.tools) == 1
+        tool = req.tools[0]
+        assert isinstance(tool, dict)
+        assert tool["type"] == "code_interpreter"
+        return ModelResponse(result=[AIMessage(content="test")])
+
+    result = middleware.wrap_model_call(request, handler)
+    assert isinstance(result, ModelResponse)
+
+
+def test_builtin_tools_middleware_xai_x_search() -> None:
+    """Test adding x_search tool for xAI/Grok."""
+    middleware = BuiltinToolsMiddleware(include_tools=["x_search"])
+
+    model = ChatXAI()
+    request = ModelRequest(
+        model=model,
+        messages=[],
+        tools=[],
+    )
+
+    def handler(req: ModelRequest) -> ModelResponse:
+        assert len(req.tools) == 1
+        tool = req.tools[0]
+        assert isinstance(tool, dict)
+        assert tool["type"] == "x_search"
+        return ModelResponse(result=[AIMessage(content="test")])
+
+    result = middleware.wrap_model_call(request, handler)
+    assert isinstance(result, ModelResponse)
+
+
+def test_builtin_tools_middleware_xai_multiple_tools() -> None:
+    """Test adding multiple tools for xAI/Grok including x_search."""
+    middleware = BuiltinToolsMiddleware(include_tools=["web_search", "x_search", "code_execution"])
+
+    model = ChatXAI()
+    request = ModelRequest(
+        model=model,
+        messages=[],
+        tools=[],
+    )
+
+    def handler(req: ModelRequest) -> ModelResponse:
+        assert len(req.tools) == 3
+        # Check web_search
+        assert req.tools[0]["type"] == "web_search"
+        # Check x_search
+        assert req.tools[1]["type"] == "x_search"
+        # Check code_execution
+        assert req.tools[2]["type"] == "code_interpreter"
+        return ModelResponse(result=[AIMessage(content="test")])
+
+    result = middleware.wrap_model_call(request, handler)
+    assert isinstance(result, ModelResponse)
+
+
+def test_builtin_tools_middleware_x_search_unsupported_on_other_providers() -> None:
+    """Test that x_search is not supported on non-xAI providers."""
+    middleware = BuiltinToolsMiddleware(
+        include_tools=["x_search"],
+        unsupported_behavior="remove",
+    )
+
+    # Test with OpenAI
+    model = ChatOpenAI()
+    request = ModelRequest(
+        model=model,
+        messages=[],
+        tools=[],
+    )
+
+    def handler(req: ModelRequest) -> ModelResponse:
+        # x_search should be removed for non-xAI providers
+        assert len(req.tools) == 0
+        return ModelResponse(result=[AIMessage(content="test")])
+
+    result = middleware.wrap_model_call(request, handler)
+    assert isinstance(result, ModelResponse)
+
+
 def test_builtin_tools_middleware_multiple_tools() -> None:
     """Test adding multiple builtin tools."""
     middleware = BuiltinToolsMiddleware(include_tools=["web_search", "code_execution"])
@@ -520,6 +635,30 @@ def test_builtin_tools_middleware_all_openai_tools() -> None:
     assert isinstance(result, ModelResponse)
 
 
+def test_builtin_tools_middleware_all_xai_tools() -> None:
+    """Test all xAI/Grok-specific tools."""
+    tools = ["web_search", "code_execution", "x_search"]
+    middleware = BuiltinToolsMiddleware(include_tools=tools)
+
+    model = ChatXAI()
+    request = ModelRequest(
+        model=model,
+        messages=[],
+        tools=[],
+    )
+
+    def handler(req: ModelRequest) -> ModelResponse:
+        assert len(req.tools) == 3
+        tool_types = [t["type"] for t in req.tools]
+        assert "web_search" in tool_types
+        assert "code_interpreter" in tool_types
+        assert "x_search" in tool_types
+        return ModelResponse(result=[AIMessage(content="test")])
+
+    result = middleware.wrap_model_call(request, handler)
+    assert isinstance(result, ModelResponse)
+
+
 def test_builtin_tools_middleware_invalid_tool_spec() -> None:
     """Test that invalid tool spec raises ValueError."""
     middleware = BuiltinToolsMiddleware(
@@ -581,6 +720,29 @@ async def test_builtin_tools_middleware_async_unsupported_error() -> None:
 
     with pytest.raises(ValueError, match="not supported by openai"):
         await middleware.awrap_model_call(request, handler)
+
+
+@pytest.mark.asyncio
+async def test_builtin_tools_middleware_async_xai() -> None:
+    """Test async version with xAI/Grok including x_search."""
+    middleware = BuiltinToolsMiddleware(include_tools=["web_search", "x_search", "code_execution"])
+
+    model = ChatXAI()
+    request = ModelRequest(
+        model=model,
+        messages=[],
+        tools=[],
+    )
+
+    async def handler(req: ModelRequest) -> ModelResponse:
+        assert len(req.tools) == 3
+        assert req.tools[0]["type"] == "web_search"
+        assert req.tools[1]["type"] == "x_search"
+        assert req.tools[2]["type"] == "code_interpreter"
+        return ModelResponse(result=[AIMessage(content="test")])
+
+    result = await middleware.awrap_model_call(request, handler)
+    assert isinstance(result, ModelResponse)
 
 
 def test_tool_registry_completeness() -> None:
