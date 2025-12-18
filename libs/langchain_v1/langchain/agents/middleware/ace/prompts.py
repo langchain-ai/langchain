@@ -20,10 +20,19 @@ interactions. Apply relevant entries to improve your responses.
 
 {playbook}
 
-**IMPORTANT**: After each response, include the IDs of playbook bullets you applied:
+## RESPONSE FORMAT
+
+Structure your final response with these clearly labeled sections:
+
+**REASONING**: Your step-by-step thought process, including any strategies from the
+playbook you applied. Be explicit about your approach.
+
+**ANSWER**: Your final, concise answer to the user's question.
+
+**BULLET_IDS**: Include the IDs of playbook bullets you applied in an HTML comment:
 <!-- bullet_ids: ["str-00001", "mis-00002"] -->
 
-If no bullets were applied, use an empty list: <!-- bullet_ids: [] -->
+If no bullets were applied, use: <!-- bullet_ids: [] -->
 
 ---
 

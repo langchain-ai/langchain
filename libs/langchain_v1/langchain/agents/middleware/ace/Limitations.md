@@ -80,10 +80,13 @@ The main limitation of the middleware approach is **unreliable bullet tracking**
 
 ## Current Feedback Sources
 
-The reflector currently receives feedback from:
+The reflector is currently "unsupervised" in that it uses the following information to determine the following:
 
-- **Tool Results**: ✅ Implemented - Tool call results and errors are extracted from
-  the message history and passed to the reflector for analysis.
+Did tools error? → Harmful
+Did reasoning look sound? → Helpful
+Did the agent seem confident? → Neutral/Helpful
+
+We can certainly change the agent to be trainable to use gold labels and/or user feedback.
 
 ## Missing Feedback Sources
 

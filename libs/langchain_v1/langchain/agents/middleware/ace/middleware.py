@@ -235,6 +235,52 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
                     )
         return ""
 
+    def _build_full_trajectory(self, messages: Sequence[BaseMessage]) -> str:
+        """Build a complete trajectory from all messages for the reflector.
+
+        Constructs a formatted trace showing the full conversation including
+        user messages, agent reasoning, tool calls, and tool results.
+
+        Args:
+            messages: List of messages from the conversation.
+
+        Returns:
+            Formatted string showing the complete reasoning trajectory.
+        """
+        trajectory_parts: list[str] = []
+        max_content_len = 500  # Limit individual message lengths
+
+        for msg in messages:
+            if isinstance(msg, HumanMessage):
+                content = msg.content if isinstance(msg.content, str) else str(msg.content)
+                trajectory_parts.append(f"[USER]: {content[:max_content_len]}")
+
+            elif isinstance(msg, AIMessage):
+                content = msg.content if isinstance(msg.content, str) else str(msg.content)
+                if content:
+                    trajectory_parts.append(f"[AGENT]: {content[:max_content_len]}")
+
+                # Show tool calls made
+                if msg.tool_calls:
+                    for tc in msg.tool_calls:
+                        tool_name = tc.get("name", "unknown")
+                        tool_args = str(tc.get("args", {}))[:200]
+                        trajectory_parts.append(f"  → TOOL CALL: {tool_name}({tool_args})")
+
+            elif isinstance(msg, ToolMessage):
+                tool_name = getattr(msg, "name", "unknown_tool")
+                content = msg.content if isinstance(msg.content, str) else str(msg.content)
+                # Truncate long tool results
+                if len(content) > 300:
+                    content = content[:300] + "..."
+                trajectory_parts.append(f"  ← TOOL RESULT ({tool_name}): {content}")
+
+            elif isinstance(msg, SystemMessage):
+                # Skip system messages (they contain the playbook)
+                continue
+
+        return "\n".join(trajectory_parts)
+
     def _extract_tool_feedback(self, messages: Sequence[BaseMessage]) -> str:
         """Extract tool results and errors from messages for reflector feedback.
 
@@ -449,7 +495,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         if not isinstance(latest_msg, AIMessage):
             return self._increment_interaction_count(state)
 
-        # Get playbook and extract bullet IDs
+        # Get playbook and extract bullet IDs from final response
         playbook = self._get_playbook(state)
         ai_content = (
             latest_msg.content if isinstance(latest_msg.content, str) else str(latest_msg.content)
@@ -460,12 +506,14 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             bullet_ids = extract_bullet_ids(ai_content)
         bullets_used = extract_playbook_bullets(playbook.content, bullet_ids)
 
-        # Build reflector prompt with tool feedback
+        # Build full trajectory for reflector (all messages, not just final)
+        full_trajectory = self._build_full_trajectory(messages)
         user_question = self._get_last_user_message(messages[:-1])
         tool_feedback = self._extract_tool_feedback(messages)
+
         reflector_prompt = build_reflector_prompt(
             question=user_question,
-            reasoning_trace=ai_content,
+            reasoning_trace=full_trajectory,
             feedback=tool_feedback,
             bullets_used=bullets_used,
         )
@@ -550,11 +598,14 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             bullet_ids = extract_bullet_ids(ai_content)
         bullets_used = extract_playbook_bullets(playbook.content, bullet_ids)
 
+        # Build full trajectory for reflector (all messages, not just final)
+        full_trajectory = self._build_full_trajectory(messages)
         user_question = self._get_last_user_message(messages[:-1])
         tool_feedback = self._extract_tool_feedback(messages)
+
         reflector_prompt = build_reflector_prompt(
             question=user_question,
-            reasoning_trace=ai_content,
+            reasoning_trace=full_trajectory,
             feedback=tool_feedback,
             bullets_used=bullets_used,
         )
