@@ -516,7 +516,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
 
         # Run curator if threshold reached
         if self.enable_curation and interaction_count % self.curator_frequency == 0:
-            curated = self._run_curator(updated_playbook, reflection)
+            curated = self._run_curator(updated_playbook, reflection, user_question)
             if curated:
                 updates["ace_playbook"] = curated.to_dict()
 
@@ -597,7 +597,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         }
 
         if self.enable_curation and interaction_count % self.curator_frequency == 0:
-            curated = await self._arun_curator(updated_playbook, reflection)
+            curated = await self._arun_curator(updated_playbook, reflection, user_question)
             if curated:
                 updates["ace_playbook"] = curated.to_dict()
 
@@ -609,7 +609,9 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             "ace_interaction_count": state.get("ace_interaction_count", 0) + 1,
         }
 
-    def _run_curator(self, playbook: ACEPlaybook, reflection: str) -> ACEPlaybook | None:
+    def _run_curator(
+        self, playbook: ACEPlaybook, reflection: str, question_context: str = ""
+    ) -> ACEPlaybook | None:
         """Run the curator to update the playbook with new insights."""
         curator = self._get_curator_model()
         if curator is None:
@@ -622,6 +624,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             playbook_stats=json.dumps(playbook.stats, indent=2),
             recent_reflection=reflection,
             current_playbook=playbook.content,
+            question_context=question_context,
         )
 
         try:
@@ -655,7 +658,9 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             stats=get_playbook_stats(updated_content),
         )
 
-    async def _arun_curator(self, playbook: ACEPlaybook, reflection: str) -> ACEPlaybook | None:
+    async def _arun_curator(
+        self, playbook: ACEPlaybook, reflection: str, question_context: str = ""
+    ) -> ACEPlaybook | None:
         """Async version of curator."""
         curator = self._get_curator_model()
         if curator is None:
@@ -668,6 +673,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             playbook_stats=json.dumps(playbook.stats, indent=2),
             recent_reflection=reflection,
             current_playbook=playbook.content,
+            question_context=question_context,
         )
 
         try:

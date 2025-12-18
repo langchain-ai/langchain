@@ -100,6 +100,11 @@ Based on recent interactions and reflections, decide what updates to make.
 **Playbook Statistics:**
 {playbook_stats}
 
+## Question Context
+
+The following question was just processed:
+{question_context}
+
 ## Recent Reflection
 
 {recent_reflection}
@@ -220,6 +225,7 @@ def build_curator_prompt(
     playbook_stats: str,
     recent_reflection: str,
     current_playbook: str,
+    question_context: str = "",
 ) -> str:
     """Build the curator prompt for updating the playbook.
 
@@ -230,6 +236,7 @@ def build_curator_prompt(
         playbook_stats: JSON string of playbook statistics.
         recent_reflection: Most recent reflection content.
         current_playbook: Current playbook content.
+        question_context: The question that was just processed.
 
     Returns:
         Formatted curator prompt.
@@ -241,4 +248,5 @@ def build_curator_prompt(
         playbook_stats=playbook_stats,
         recent_reflection=recent_reflection,
         current_playbook=current_playbook,
+        question_context=question_context or "(No question context available)",
     )
