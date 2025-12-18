@@ -261,7 +261,11 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
                     errors.append(f"Tool '{tool_name}' error: {content[:200]}")
                 else:
                     # Truncate long results
-                    result_preview = content[:150] + "..." if len(content) > 150 else content
+                    max_preview_len = 150
+                    if len(content) > max_preview_len:
+                        result_preview = content[:max_preview_len] + "..."
+                    else:
+                        result_preview = content
                     tool_results.append(f"Tool '{tool_name}': {result_preview}")
 
             # Check for tool calls in AI messages (to understand what was attempted)

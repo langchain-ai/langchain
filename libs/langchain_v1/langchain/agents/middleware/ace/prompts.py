@@ -40,7 +40,7 @@ Please consider this feedback to avoid repeating mistakes."""
 
 # Reflector prompt for analyzing responses
 REFLECTOR_PROMPT = """You are an expert analyst and educator evaluating an AI agent's response.
-Your job is to diagnose the quality of reasoning and identify which playbook strategies helped or hurt.
+Your job is to diagnose reasoning quality and identify which playbook strategies helped or hurt.
 
 ## Instructions
 

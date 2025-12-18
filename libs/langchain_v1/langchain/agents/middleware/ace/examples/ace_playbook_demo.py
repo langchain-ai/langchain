@@ -116,10 +116,13 @@ def main() -> None:
     # Math problems to solve - the agent will learn from each one
     problems = [
         "What is 15% of 240?",
-        "If I invest $1000 at 5% annual interest compounded yearly, how much will I have after 3 years?",
+        "If I invest $1000 at 5% annual interest compounded yearly, "
+        "how much will I have after 3 years?",
         "A shirt costs $45 with 20% off. What's the sale price?",
-        "A car travels 180 miles using 6 gallons of gas. What is its fuel efficiency in miles per gallon?",
-        "If 8 workers can complete a job in 12 days, how many days would it take 6 workers?",
+        "A car travels 180 miles using 6 gallons of gas. "
+        "What is its fuel efficiency in miles per gallon?",
+        "If 8 workers can complete a job in 12 days, "
+        "how many days would it take 6 workers?",
     ]
 
     print("=" * 60)
