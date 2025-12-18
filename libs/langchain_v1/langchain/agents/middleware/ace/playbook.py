@@ -178,6 +178,29 @@ def extract_bullet_ids(text: str) -> list[str]:
     return re.findall(pattern, text)
 
 
+def extract_bullet_ids_from_comment(text: str) -> list[str]:
+    """Extract bullet IDs from HTML comment format.
+
+    The agent is instructed to include bullet IDs in a comment like:
+    <!-- bullet_ids: ["str-00001", "mis-00002"] -->
+
+    Args:
+        text: Text that may contain a bullet_ids comment.
+
+    Returns:
+        List of bullet IDs found in the comment, or empty list if none.
+    """
+    pattern = r"<!--\s*bullet_ids:\s*\[(.*?)\]\s*-->"
+    match = re.search(pattern, text, re.DOTALL)
+    if match:
+        # Extract the content inside the brackets
+        ids_str = match.group(1)
+        # Extract individual IDs (handles both quoted and unquoted)
+        id_pattern = r'"?([a-z]{3}-\d{5})"?'
+        return re.findall(id_pattern, ids_str)
+    return []
+
+
 def get_max_bullet_id(playbook_text: str) -> int:
     """Find the maximum numeric ID used in the playbook.
 

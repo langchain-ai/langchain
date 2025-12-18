@@ -28,6 +28,7 @@ from .playbook import (
     ACEPlaybook,
     add_bullet_to_playbook,
     extract_bullet_ids,
+    extract_bullet_ids_from_comment,
     extract_playbook_bullets,
     get_max_bullet_id,
     get_playbook_stats,
@@ -366,7 +367,10 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             if isinstance(latest_msg.content, str)
             else str(latest_msg.content)
         )
-        bullet_ids = extract_bullet_ids(ai_content)
+        # Try comment-based extraction first, fall back to inline citations
+        bullet_ids = extract_bullet_ids_from_comment(ai_content)
+        if not bullet_ids:
+            bullet_ids = extract_bullet_ids(ai_content)
         bullets_used = extract_playbook_bullets(playbook.content, bullet_ids)
 
         # Build reflector prompt
@@ -458,7 +462,10 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             if isinstance(latest_msg.content, str)
             else str(latest_msg.content)
         )
-        bullet_ids = extract_bullet_ids(ai_content)
+        # Try comment-based extraction first, fall back to inline citations
+        bullet_ids = extract_bullet_ids_from_comment(ai_content)
+        if not bullet_ids:
+            bullet_ids = extract_bullet_ids(ai_content)
         bullets_used = extract_playbook_bullets(playbook.content, bullet_ids)
 
         user_question = self._get_last_user_message(messages[:-1])

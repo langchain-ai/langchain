@@ -15,11 +15,15 @@ PLAYBOOK_INJECTION_TEMPLATE = """{original_prompt}
 
 ## ACE PLAYBOOK
 
-The following playbook contains accumulated strategies, insights, and patterns
-learned from previous interactions. Use relevant entries to improve your responses.
-Each entry has helpful/harmful counts indicating its effectiveness.
+The following playbook contains strategies and insights learned from previous
+interactions. Apply relevant entries to improve your responses.
 
 {playbook}
+
+**IMPORTANT**: After each response, include the IDs of playbook bullets you applied:
+<!-- bullet_ids: ["str-00001", "mis-00002"] -->
+
+If no bullets were applied, use an empty list: <!-- bullet_ids: [] -->
 
 ---
 
