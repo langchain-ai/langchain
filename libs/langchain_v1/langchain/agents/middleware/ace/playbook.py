@@ -151,9 +151,9 @@ def parse_playbook_line(line: str) -> ParsedBullet | None:
 
 
 def _sanitize_bullet_content(content: str) -> str:
-    """Sanitize bullet content to ensure it stays on a single line.
+    r"""Sanitize bullet content to ensure it stays on a single line.
 
-    Curator output may contain newlines ("First insight.\\nSecond sentence.")
+    Curator output may contain newlines ("First insight.\nSecond sentence.")
     which would break the playbook format since parsing assumes one bullet per line.
 
     Args:
