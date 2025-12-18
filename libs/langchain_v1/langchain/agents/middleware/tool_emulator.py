@@ -64,10 +64,7 @@ class LLMToolEmulator(AgentMiddleware):
     """
 
     def __init__(
-        self,
-        *,
-        model: str | BaseChatModel | None = None,
-        tools: list[str | BaseTool] | None = None,
+        self, *, tools: list[str | BaseTool] | None = None, model: str | BaseChatModel | None = None
     ) -> None:
         """Initialize the tool emulator.
 
@@ -78,6 +75,8 @@ class LLMToolEmulator(AgentMiddleware):
 
                 If empty list, no tools will be emulated.
             model: Model to use for emulation.
+
+                Defaults to `'anthropic:claude-sonnet-4-5-20250929'`.
 
                 Can be a model identifier string or `BaseChatModel` instance.
         """
