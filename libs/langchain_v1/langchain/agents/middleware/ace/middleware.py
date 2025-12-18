@@ -235,17 +235,38 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
                     )
         return ""
 
-    def _build_full_trajectory(self, messages: Sequence[BaseMessage]) -> str:
-        """Build a complete trajectory from all messages for the reflector.
+    def _get_last_exchange(self, messages: Sequence[BaseMessage]) -> Sequence[BaseMessage]:
+        """Extract messages from the last user question onwards.
 
-        Constructs a formatted trace showing the full conversation including
+        Returns the slice of messages starting from the last HumanMessage
+        through the end, representing the current exchange being analyzed.
+        This prevents the reflector from seeing/conflating prior exchanges
+        in long-running conversations.
+
+        Args:
+            messages: Full message history.
+
+        Returns:
+            Slice of messages from last HumanMessage to end.
+        """
+        # Find the index of the last HumanMessage
+        for i in range(len(messages) - 1, -1, -1):
+            if isinstance(messages[i], HumanMessage):
+                return messages[i:]
+        # Fallback: return all messages if no HumanMessage found
+        return messages
+
+    def _build_trajectory(self, messages: Sequence[BaseMessage]) -> str:
+        """Build a trajectory from messages for the reflector.
+
+        Constructs a formatted trace showing the conversation including
         user messages, agent reasoning, tool calls, and tool results.
 
         Args:
-            messages: List of messages from the conversation.
+            messages: List of messages (typically the last exchange only).
 
         Returns:
-            Formatted string showing the complete reasoning trajectory.
+            Formatted string showing the reasoning trajectory.
         """
         trajectory_parts: list[str] = []
         max_content_len = 500  # Limit individual message lengths
@@ -457,14 +478,16 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             bullet_ids = extract_bullet_ids(ai_content)
         bullets_used = extract_playbook_bullets(playbook.content, bullet_ids)
 
-        # Build full trajectory for reflector
-        full_trajectory = self._build_full_trajectory(messages)
+        # Slice to last exchange only (last user message through current response)
+        # This prevents context window blowup and conflating prior tasks
+        last_exchange = self._get_last_exchange(messages)
+        trajectory = self._build_trajectory(last_exchange)
         user_question = self._get_last_user_message(messages[:-1])
-        tool_feedback = self._extract_tool_feedback(messages)
+        tool_feedback = self._extract_tool_feedback(last_exchange)
 
         reflector_prompt = build_reflector_prompt(
             question=user_question,
-            reasoning_trace=full_trajectory,
+            reasoning_trace=trajectory,
             feedback=tool_feedback,
             bullets_used=bullets_used,
         )
