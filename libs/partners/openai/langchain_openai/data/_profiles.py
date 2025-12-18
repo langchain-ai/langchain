@@ -106,7 +106,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
     },
     "gpt-5.1-codex": {
-        "max_input_tokens": 400000,
+        "max_input_tokens": 272000,
         "max_output_tokens": 128000,
         "image_inputs": True,
         "audio_inputs": False,
@@ -195,7 +195,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
     },
     "gpt-5.2-pro": {
-        "max_input_tokens": 400000,
+        "max_input_tokens": 272000,
         "max_output_tokens": 128000,
         "image_inputs": True,
         "audio_inputs": False,
@@ -265,7 +265,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
     },
     "gpt-5.1-codex-mini": {
-        "max_input_tokens": 400000,
+        "max_input_tokens": 272000,
         "max_output_tokens": 128000,
         "image_inputs": True,
         "audio_inputs": False,
@@ -301,7 +301,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
     },
     "gpt-5.2-chat-latest": {
-        "max_input_tokens": 128000,
+        "max_input_tokens": 272000,
         "max_output_tokens": 16384,
         "image_inputs": True,
         "audio_inputs": False,
@@ -319,7 +319,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
     },
     "gpt-5.1": {
-        "max_input_tokens": 400000,
+        "max_input_tokens": 272000,
         "max_output_tokens": 128000,
         "image_inputs": True,
         "audio_inputs": False,
@@ -353,7 +353,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
     },
     "gpt-5-nano": {
-        "max_input_tokens": 400000,
+        "max_input_tokens": 272000,
         "max_output_tokens": 128000,
         "image_inputs": True,
         "audio_inputs": False,
@@ -371,7 +371,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
     },
     "gpt-5-codex": {
-        "max_input_tokens": 400000,
+        "max_input_tokens": 272000,
         "max_output_tokens": 128000,
         "image_inputs": True,
         "audio_inputs": False,
@@ -461,7 +461,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
     },
     "gpt-5-mini": {
-        "max_input_tokens": 400000,
+        "max_input_tokens": 272000,
         "max_output_tokens": 128000,
         "image_inputs": True,
         "audio_inputs": False,
@@ -550,7 +550,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
     },
     "gpt-5.1-codex-max": {
-        "max_input_tokens": 400000,
+        "max_input_tokens": 272000,
         "max_output_tokens": 128000,
         "image_inputs": True,
         "audio_inputs": False,
@@ -603,7 +603,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
     },
     "gpt-5-chat-latest": {
-        "max_input_tokens": 400000,
+        "max_input_tokens": 272000,
         "max_output_tokens": 128000,
         "image_inputs": True,
         "audio_inputs": False,
@@ -639,7 +639,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
     },
     "gpt-5": {
-        "max_input_tokens": 400000,
+        "max_input_tokens": 272000,
         "max_output_tokens": 128000,
         "image_inputs": True,
         "audio_inputs": False,
@@ -657,7 +657,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
     },
     "gpt-5-pro": {
-        "max_input_tokens": 400000,
+        "max_input_tokens": 272000,
         "max_output_tokens": 272000,
         "image_inputs": True,
         "audio_inputs": False,
@@ -675,7 +675,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
     },
     "gpt-5.2": {
-        "max_input_tokens": 400000,
+        "max_input_tokens": 272000,
         "max_output_tokens": 128000,
         "image_inputs": True,
         "audio_inputs": False,
@@ -692,7 +692,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
     },
     "gpt-5.1-chat-latest": {
-        "max_input_tokens": 128000,
+        "max_input_tokens": 272000,
         "max_output_tokens": 16384,
         "image_inputs": True,
         "audio_inputs": False,
