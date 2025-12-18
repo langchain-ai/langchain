@@ -166,7 +166,7 @@ def test_on_chain_start_skips_persist_when_defers_inputs() -> None:
 
     persist_called = False
 
-    def mock_persist(r: Run) -> None:
+    def mock_persist() -> None:
         nonlocal persist_called
         persist_called = True
 
@@ -195,7 +195,7 @@ def test_on_chain_start_persists_when_not_defers_inputs() -> None:
 
     persist_called = False
 
-    def mock_persist(r: Run) -> None:
+    def mock_persist() -> None:
         nonlocal persist_called
         persist_called = True
 
@@ -227,11 +227,11 @@ def test_on_chain_end_persists_when_defers_inputs() -> None:
     persist_called = False
     update_called = False
 
-    def mock_persist(r: Run) -> None:
+    def mock_persist() -> None:
         nonlocal persist_called
         persist_called = True
 
-    def mock_update(r: Run) -> None:
+    def mock_update() -> None:
         nonlocal update_called
         update_called = True
 
@@ -265,11 +265,11 @@ def test_on_chain_end_updates_when_not_defers_inputs() -> None:
     persist_called = False
     update_called = False
 
-    def mock_persist(r: Run) -> None:
+    def mock_persist() -> None:
         nonlocal persist_called
         persist_called = True
 
-    def mock_update(r: Run) -> None:
+    def mock_update() -> None:
         nonlocal update_called
         update_called = True
 
@@ -305,11 +305,11 @@ def test_on_chain_error_persists_when_defers_inputs() -> None:
     persist_called = False
     update_called = False
 
-    def mock_persist(r: Run) -> None:
+    def mock_persist() -> None:
         nonlocal persist_called
         persist_called = True
 
-    def mock_update(r: Run) -> None:
+    def mock_update() -> None:
         nonlocal update_called
         update_called = True
 
@@ -343,11 +343,11 @@ def test_on_chain_error_updates_when_not_defers_inputs() -> None:
     persist_called = False
     update_called = False
 
-    def mock_persist(r: Run) -> None:
+    def mock_persist() -> None:
         nonlocal persist_called
         persist_called = True
 
-    def mock_update(r: Run) -> None:
+    def mock_update() -> None:
         nonlocal update_called
         update_called = True
 
