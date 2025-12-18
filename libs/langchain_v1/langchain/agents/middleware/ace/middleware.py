@@ -249,6 +249,8 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         """
         trajectory_parts: list[str] = []
         max_content_len = 500  # Limit individual message lengths
+        max_tool_result_len = 300  # Limit tool result lengths
+        max_tool_args_len = 200  # Limit tool args preview
 
         for msg in messages:
             if isinstance(msg, HumanMessage):
@@ -264,15 +266,15 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
                 if msg.tool_calls:
                     for tc in msg.tool_calls:
                         tool_name = tc.get("name", "unknown")
-                        tool_args = str(tc.get("args", {}))[:200]
+                        tool_args = str(tc.get("args", {}))[:max_tool_args_len]
                         trajectory_parts.append(f"  → TOOL CALL: {tool_name}({tool_args})")
 
             elif isinstance(msg, ToolMessage):
                 tool_name = getattr(msg, "name", "unknown_tool")
                 content = msg.content if isinstance(msg.content, str) else str(msg.content)
                 # Truncate long tool results
-                if len(content) > 300:
-                    content = content[:300] + "..."
+                if len(content) > max_tool_result_len:
+                    content = content[:max_tool_result_len] + "..."
                 trajectory_parts.append(f"  ← TOOL RESULT ({tool_name}): {content}")
 
             elif isinstance(msg, SystemMessage):
