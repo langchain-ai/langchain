@@ -83,7 +83,7 @@ class _ModelRequestOverrides(TypedDict, total=False):
 
 
 @dataclass(init=False)
-class ModelRequest:
+class ModelRequest(Generic[ContextT]):
     """Model request information for the agent."""
 
     model: BaseChatModel
@@ -93,7 +93,7 @@ class ModelRequest:
     tools: list[BaseTool | dict]
     response_format: ResponseFormat | None
     state: AgentState
-    runtime: Runtime[ContextT]  # type: ignore[valid-type]
+    runtime: Runtime[ContextT]
     model_settings: dict[str, Any] = field(default_factory=dict)
 
     def __init__(
@@ -189,7 +189,7 @@ class ModelRequest:
         )
         object.__setattr__(self, name, value)
 
-    def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest:
+    def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest[ContextT]:
         """Replace the request with a new request with the given overrides.
 
         Returns a new `ModelRequest` instance with the specified attributes replaced.
@@ -383,8 +383,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
     def wrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse],
     ) -> ModelCallResult:
         """Intercept and control model execution via handler callback.
 
@@ -478,8 +478,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
     async def awrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
         """Intercept and control async model execution via handler callback.
 
@@ -698,18 +698,24 @@ class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
         ...
 
 
-class _CallableReturningSystemMessage(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
-    """Callable that returns a prompt string or SystemMessage given `ModelRequest`."""
+class _SyncCallableReturningSystemMessage(Protocol[ContextT]):
+    """Sync callable that returns a prompt string or SystemMessage given `ModelRequest`."""
 
-    def __call__(
-        self, request: ModelRequest
-    ) -> str | SystemMessage | Awaitable[str | SystemMessage]:
+    def __call__(self, request: ModelRequest[ContextT]) -> str | SystemMessage:
         """Generate a system prompt string or SystemMessage based on the request."""
         ...
 
 
-class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
-    """Callable for model call interception with handler callback.
+class _AsyncCallableReturningSystemMessage(Protocol[ContextT]):
+    """Async callable that returns a prompt string or SystemMessage given `ModelRequest`."""
+
+    def __call__(self, request: ModelRequest[ContextT]) -> Awaitable[str | SystemMessage]:
+        """Generate a system prompt string or SystemMessage based on the request."""
+        ...
+
+
+class _SyncCallableReturningModelResponse(Protocol[ContextT]):
+    """Sync callable for model call interception with handler callback.
 
     Receives handler callback to execute model and returns `ModelResponse` or
     `AIMessage`.
@@ -717,15 +723,31 @@ class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):  # typ
 
     def __call__(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse],
     ) -> ModelCallResult:
         """Intercept model execution via handler callback."""
         ...
 
 
-class _CallableReturningToolResponse(Protocol):
-    """Callable for tool call interception with handler callback.
+class _AsyncCallableReturningModelResponse(Protocol[ContextT]):
+    """Async callable for model call interception with handler callback.
+
+    Receives async handler callback to execute model and returns `ModelResponse` or
+    `AIMessage`.
+    """
+
+    def __call__(
+        self,
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
+    ) -> Awaitable[ModelCallResult]:
+        """Intercept model execution via async handler callback."""
+        ...
+
+
+class _SyncCallableReturningToolResponse(Protocol):
+    """Sync callable for tool call interception with handler callback.
 
     Receives handler callback to execute tool and returns final `ToolMessage` or
     `Command`.
@@ -737,6 +759,22 @@ class _CallableReturningToolResponse(Protocol):
         handler: Callable[[ToolCallRequest], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Intercept tool execution via handler callback."""
+        ...
+
+
+class _AsyncCallableReturningToolResponse(Protocol):
+    """Async callable for tool call interception with handler callback.
+
+    Receives async handler callback to execute tool and returns final `ToolMessage` or
+    `Command`.
+    """
+
+    def __call__(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
+    ) -> Awaitable[ToolMessage | Command]:
+        """Intercept tool execution via async handler callback."""
         ...
 
 
@@ -1385,27 +1423,43 @@ def after_agent(
 
 @overload
 def dynamic_prompt(
-    func: _CallableReturningSystemMessage[StateT, ContextT],
-) -> AgentMiddleware[StateT, ContextT]: ...
+    func: _SyncCallableReturningSystemMessage[ContextT],
+) -> AgentMiddleware[AgentState, ContextT]: ...
+
+
+@overload
+def dynamic_prompt(
+    func: _AsyncCallableReturningSystemMessage[ContextT],
+) -> AgentMiddleware[AgentState, ContextT]: ...
 
 
 @overload
 def dynamic_prompt(
     func: None = None,
 ) -> Callable[
-    [_CallableReturningSystemMessage[StateT, ContextT]],
-    AgentMiddleware[StateT, ContextT],
+    [
+        _SyncCallableReturningSystemMessage[ContextT]
+        | _AsyncCallableReturningSystemMessage[ContextT]
+    ],
+    AgentMiddleware[AgentState, ContextT],
 ]: ...
 
 
 def dynamic_prompt(
-    func: _CallableReturningSystemMessage[StateT, ContextT] | None = None,
+    func: (
+        _SyncCallableReturningSystemMessage[ContextT]
+        | _AsyncCallableReturningSystemMessage[ContextT]
+        | None
+    ) = None,
 ) -> (
     Callable[
-        [_CallableReturningSystemMessage[StateT, ContextT]],
-        AgentMiddleware[StateT, ContextT],
+        [
+            _SyncCallableReturningSystemMessage[ContextT]
+            | _AsyncCallableReturningSystemMessage[ContextT]
+        ],
+        AgentMiddleware[AgentState, ContextT],
     ]
-    | AgentMiddleware[StateT, ContextT]
+    | AgentMiddleware[AgentState, ContextT]
 ):
     """Decorator used to dynamically generate system prompts for the model.
 
@@ -1456,18 +1510,22 @@ def dynamic_prompt(
     """
 
     def decorator(
-        func: _CallableReturningSystemMessage[StateT, ContextT],
-    ) -> AgentMiddleware[StateT, ContextT]:
+        func: (
+            _SyncCallableReturningSystemMessage[ContextT]
+            | _AsyncCallableReturningSystemMessage[ContextT]
+        ),
+    ) -> AgentMiddleware[AgentState, ContextT]:
         is_async = iscoroutinefunction(func)
 
         if is_async:
+            async_func = cast("_AsyncCallableReturningSystemMessage[ContextT]", func)
 
             async def async_wrapped(
-                _self: AgentMiddleware[StateT, ContextT],
-                request: ModelRequest,
-                handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+                _self: AgentMiddleware[AgentState, ContextT],
+                request: ModelRequest[ContextT],
+                handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
             ) -> ModelCallResult:
-                prompt = await func(request)  # type: ignore[misc]
+                prompt = await async_func(request)
                 if isinstance(prompt, SystemMessage):
                     request = request.override(system_message=prompt)
                 else:
@@ -1486,12 +1544,14 @@ def dynamic_prompt(
                 },
             )()
 
+        sync_func = cast("_SyncCallableReturningSystemMessage[ContextT]", func)
+
         def wrapped(
-            _self: AgentMiddleware[StateT, ContextT],
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
+            _self: AgentMiddleware[AgentState, ContextT],
+            request: ModelRequest[ContextT],
+            handler: Callable[[ModelRequest[ContextT]], ModelResponse],
         ) -> ModelCallResult:
-            prompt = cast("Callable[[ModelRequest], SystemMessage | str]", func)(request)
+            prompt = sync_func(request)
             if isinstance(prompt, SystemMessage):
                 request = request.override(system_message=prompt)
             else:
@@ -1499,12 +1559,12 @@ def dynamic_prompt(
             return handler(request)
 
         async def async_wrapped_from_sync(
-            _self: AgentMiddleware[StateT, ContextT],
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+            _self: AgentMiddleware[AgentState, ContextT],
+            request: ModelRequest[ContextT],
+            handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
         ) -> ModelCallResult:
             # Delegate to sync function
-            prompt = cast("Callable[[ModelRequest], SystemMessage | str]", func)(request)
+            prompt = sync_func(request)
             if isinstance(prompt, SystemMessage):
                 request = request.override(system_message=prompt)
             else:
@@ -1531,8 +1591,14 @@ def dynamic_prompt(
 
 @overload
 def wrap_model_call(
-    func: _CallableReturningModelResponse[StateT, ContextT],
-) -> AgentMiddleware[StateT, ContextT]: ...
+    func: _SyncCallableReturningModelResponse[ContextT],
+) -> AgentMiddleware[AgentState, ContextT]: ...
+
+
+@overload
+def wrap_model_call(
+    func: _AsyncCallableReturningModelResponse[ContextT],
+) -> AgentMiddleware[AgentState, ContextT]: ...
 
 
 @overload
@@ -1543,20 +1609,30 @@ def wrap_model_call(
     tools: list[BaseTool] | None = None,
     name: str | None = None,
 ) -> Callable[
-    [_CallableReturningModelResponse[StateT, ContextT]],
+    [
+        _SyncCallableReturningModelResponse[ContextT]
+        | _AsyncCallableReturningModelResponse[ContextT]
+    ],
     AgentMiddleware[StateT, ContextT],
 ]: ...
 
 
 def wrap_model_call(
-    func: _CallableReturningModelResponse[StateT, ContextT] | None = None,
+    func: (
+        _SyncCallableReturningModelResponse[ContextT]
+        | _AsyncCallableReturningModelResponse[ContextT]
+        | None
+    ) = None,
     *,
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     name: str | None = None,
 ) -> (
     Callable[
-        [_CallableReturningModelResponse[StateT, ContextT]],
+        [
+            _SyncCallableReturningModelResponse[ContextT]
+            | _AsyncCallableReturningModelResponse[ContextT]
+        ],
         AgentMiddleware[StateT, ContextT],
     ]
     | AgentMiddleware[StateT, ContextT]
@@ -1637,18 +1713,22 @@ def wrap_model_call(
     """
 
     def decorator(
-        func: _CallableReturningModelResponse[StateT, ContextT],
+        func: (
+            _SyncCallableReturningModelResponse[ContextT]
+            | _AsyncCallableReturningModelResponse[ContextT]
+        ),
     ) -> AgentMiddleware[StateT, ContextT]:
         is_async = iscoroutinefunction(func)
 
         if is_async:
+            async_func = cast("_AsyncCallableReturningModelResponse[ContextT]", func)
 
             async def async_wrapped(
                 _self: AgentMiddleware[StateT, ContextT],
-                request: ModelRequest,
-                handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+                request: ModelRequest[ContextT],
+                handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
             ) -> ModelCallResult:
-                return await func(request, handler)  # type: ignore[misc, arg-type]
+                return await async_func(request, handler)
 
             middleware_name = name or cast(
                 "str", getattr(func, "__name__", "WrapModelCallMiddleware")
@@ -1664,12 +1744,14 @@ def wrap_model_call(
                 },
             )()
 
+        sync_func = cast("_SyncCallableReturningModelResponse[ContextT]", func)
+
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
+            request: ModelRequest[ContextT],
+            handler: Callable[[ModelRequest[ContextT]], ModelResponse],
         ) -> ModelCallResult:
-            return func(request, handler)
+            return sync_func(request, handler)
 
         middleware_name = name or cast("str", getattr(func, "__name__", "WrapModelCallMiddleware"))
 
@@ -1690,8 +1772,14 @@ def wrap_model_call(
 
 @overload
 def wrap_tool_call(
-    func: _CallableReturningToolResponse,
-) -> AgentMiddleware: ...
+    func: _SyncCallableReturningToolResponse,
+) -> AgentMiddleware[AgentState, None]: ...
+
+
+@overload
+def wrap_tool_call(
+    func: _AsyncCallableReturningToolResponse,
+) -> AgentMiddleware[AgentState, None]: ...
 
 
 @overload
@@ -1701,22 +1789,22 @@ def wrap_tool_call(
     tools: list[BaseTool] | None = None,
     name: str | None = None,
 ) -> Callable[
-    [_CallableReturningToolResponse],
-    AgentMiddleware,
+    [_SyncCallableReturningToolResponse | _AsyncCallableReturningToolResponse],
+    AgentMiddleware[AgentState, None],
 ]: ...
 
 
 def wrap_tool_call(
-    func: _CallableReturningToolResponse | None = None,
+    func: _SyncCallableReturningToolResponse | _AsyncCallableReturningToolResponse | None = None,
     *,
     tools: list[BaseTool] | None = None,
     name: str | None = None,
 ) -> (
     Callable[
-        [_CallableReturningToolResponse],
-        AgentMiddleware,
+        [_SyncCallableReturningToolResponse | _AsyncCallableReturningToolResponse],
+        AgentMiddleware[AgentState, None],
     ]
-    | AgentMiddleware
+    | AgentMiddleware[AgentState, None]
 ):
     """Create middleware with `wrap_tool_call` hook from a function.
 
@@ -1797,18 +1885,19 @@ def wrap_tool_call(
     """
 
     def decorator(
-        func: _CallableReturningToolResponse,
-    ) -> AgentMiddleware:
+        func: _SyncCallableReturningToolResponse | _AsyncCallableReturningToolResponse,
+    ) -> AgentMiddleware[AgentState, None]:
         is_async = iscoroutinefunction(func)
 
         if is_async:
+            async_func = cast("_AsyncCallableReturningToolResponse", func)
 
             async def async_wrapped(
-                _self: AgentMiddleware,
+                _self: AgentMiddleware[AgentState, None],
                 request: ToolCallRequest,
                 handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
             ) -> ToolMessage | Command:
-                return await func(request, handler)  # type: ignore[arg-type,misc]
+                return await async_func(request, handler)
 
             middleware_name = name or cast(
                 "str", getattr(func, "__name__", "WrapToolCallMiddleware")
@@ -1824,12 +1913,14 @@ def wrap_tool_call(
                 },
             )()
 
+        sync_func = cast("_SyncCallableReturningToolResponse", func)
+
         def wrapped(
-            _self: AgentMiddleware,
+            _self: AgentMiddleware[AgentState, None],
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
         ) -> ToolMessage | Command:
-            return func(request, handler)
+            return sync_func(request, handler)
 
         middleware_name = name or cast("str", getattr(func, "__name__", "WrapToolCallMiddleware"))
 
