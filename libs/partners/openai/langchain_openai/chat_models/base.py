@@ -237,7 +237,13 @@ def _format_message_content(
             if (
                 isinstance(block, dict)
                 and "type" in block
-                and block["type"] in ("tool_use", "thinking", "reasoning_content")
+                and (
+                    block["type"] in ("tool_use", "thinking", "reasoning_content")
+                    or (
+                        block["type"] in ("function_call", "code_interpreter_call")
+                        and api == "chat/completions"
+                    )
+                )
             ):
                 continue
             if (
@@ -1107,8 +1113,6 @@ class BaseChatOpenAI(BaseChatModel):
                 generation_info["system_fingerprint"] = system_fingerprint
             if service_tier := chunk.get("service_tier"):
                 generation_info["service_tier"] = service_tier
-            if isinstance(message_chunk, AIMessageChunk):
-                message_chunk.chunk_position = "last"
 
         logprobs = choice.get("logprobs")
         if logprobs:
@@ -3060,16 +3064,16 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
                 - `'json_schema'`:
                     Uses OpenAI's [Structured Output API](https://platform.openai.com/docs/guides/structured-outputs).
-                    See the docs for a list of supported models.
+                    See the docs for [supported models](https://platform.openai.com/docs/guides/structured-outputs#supported-models).
                 - `'function_calling'`:
                     Uses OpenAI's [tool-calling API](https://platform.openai.com/docs/guides/function-calling)
                     (formerly called function calling).
                 - `'json_mode'`:
-                    Uses OpenAI's [JSON mode](https://platform.openai.com/docs/guides/structured-outputs/json-mode).
+                    Uses OpenAI's [JSON mode](https://platform.openai.com/docs/guides/structured-outputs#json-mode).
                     Note that if using JSON mode then you must include instructions for
                     formatting the output into the desired schema into the model call.
 
-                Learn more about the [differences between methods](https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format).
+                Learn more about the [differences between methods](https://platform.openai.com/docs/guides/structured-outputs#function-calling-vs-response-format).
 
             include_raw:
                 If `False` then only the parsed structured output is returned.
@@ -3089,7 +3093,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 - `True`:
                     Model output is guaranteed to exactly match the schema.
                     The input schema will also be validated according to the
-                    [supported schemas](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas).
+                    [supported schemas](https://platform.openai.com/docs/guides/structured-outputs#supported-schemas).
                 - `False`:
                     Input schema will not be validated and model output will not be
                     validated.
@@ -3181,7 +3185,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             specify any Field metadata (like min/max constraints) and fields cannot
             have default values.
 
-            See [all constraints](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas).
+            See [all constraints](https://platform.openai.com/docs/guides/structured-outputs#supported-schemas).
 
             ```python
             from langchain_openai import ChatOpenAI

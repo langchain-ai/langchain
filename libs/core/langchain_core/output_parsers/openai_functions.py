@@ -37,7 +37,7 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
             The parsed JSON object.
 
         Raises:
-            `OutputParserException`: If the output is not valid JSON.
+            OutputParserException: If the output is not valid JSON.
         """
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
@@ -88,7 +88,7 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
             The parsed JSON object.
 
         Raises:
-            OutputParserExcept`ion: If the output is not valid JSON.
+            OutputParserException: If the output is not valid JSON.
         """
         if len(result) != 1:
             msg = f"Expected exactly one result, but got {len(result)}"
