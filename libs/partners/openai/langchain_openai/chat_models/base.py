@@ -1791,13 +1791,11 @@ class BaseChatOpenAI(BaseChatModel):
                                 num_tokens += _count_image_tokens(*image_size)
                         # Tool/function call token counting is not documented by OpenAI.
                         # This is an approximation.
-                        elif val["type"] in {"function", "function_call"}:
-                            function_data = val.get("function", {})
-                            num_tokens += len(encoding.encode(function_data.get("arguments", ""))
-                            )
+                        elif val["type"] == "function":
                             num_tokens += len(
-                                encoding.encode(function_data.get("name", ""))
+                                encoding.encode(val["function"]["arguments"])
                             )
+                            num_tokens += len(encoding.encode(val["function"]["name"]))
                         elif val["type"] == "file":
                             warnings.warn(
                                 "Token counts for file inputs are not supported. "
