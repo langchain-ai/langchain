@@ -5,6 +5,11 @@ This example demonstrates how the ACE (Agentic Context Engineering) middleware
 enables agents to self-improve by maintaining an evolving playbook of strategies
 and insights learned from interactions.
 
+The demo shows two modes:
+1. **Training mode**: Uses ground truth answers (from ~/dev/ace data) to provide
+   richer feedback to the reflector, enabling faster learning.
+2. **Inference mode**: Normal usage without ground truth.
+
 Run this script to see the playbook evolve as the agent solves math problems.
 
 Usage:
@@ -27,6 +32,50 @@ from langgraph.checkpoint.memory import MemorySaver
 from langchain.agents import create_agent
 from langchain.agents.middleware import ACEMiddleware
 from langchain.agents.middleware.ace import SectionName
+
+# Training data with ground truth (adapted from ~/dev/ace/finance/data/)
+# These are financial word problems where we know the correct answer.
+TRAINING_DATA: list[dict[str, str]] = [
+    {
+        "question": (
+            "A software development firm lists its current assets at $1,000,000 "
+            "and its current liabilities at $500,000. Find the current ratio."
+        ),
+        "ground_truth": "2.0",
+    },
+    {
+        "question": (
+            "Calculate the ROI for an investor who buys property for $200,000 "
+            "and spends an additional $50,000 on renovations, then sells the "
+            "property for $300,000."
+        ),
+        "ground_truth": "0.2",
+    },
+    {
+        "question": (
+            "If the return of a portfolio was 8% and the risk-free rate was 2%, "
+            "and the standard deviation of the portfolio's excess return was 10%, "
+            "calculate the Sharpe Ratio."
+        ),
+        "ground_truth": "0.6",
+    },
+    {
+        "question": (
+            "A pet supplies store had $75,000 in net credit sales and an average "
+            "accounts receivable of $15,000 last year. Compute the accounts "
+            "receivable turnover."
+        ),
+        "ground_truth": "5.0",
+    },
+]
+
+# Inference problems (no ground truth - simulates real usage)
+INFERENCE_PROBLEMS: list[str] = [
+    "What is 15% of 240?",
+    "A shirt costs $45 with 20% off. What's the sale price?",
+    "A car travels 180 miles using 6 gallons of gas. "
+    "What is its fuel efficiency in miles per gallon?",
+]
 
 # Safe math operators for the calculator
 _SAFE_OPERATORS: dict[type, Callable[..., float]] = {
@@ -89,6 +138,53 @@ def calculator(expression: str) -> str:
         return f"Error: {e}"
 
 
+def _print_playbook_state(
+    full_state: dict[str, Any],
+    previous_playbook_content: str,
+    *,
+    curator_ran: bool,
+) -> str:
+    """Print playbook state and return current content for next iteration."""
+    playbook_data = full_state.get("ace_playbook")
+    if not playbook_data:
+        return previous_playbook_content
+
+    content = playbook_data.get("content", "")
+
+    # Detect new insights by comparing bullet IDs
+    if curator_ran:
+        prev_ids = set(re.findall(r"\[[a-z]{3}-\d{5}\]", previous_playbook_content))
+        curr_ids = set(re.findall(r"\[[a-z]{3}-\d{5}\]", content))
+        new_ids = curr_ids - prev_ids
+
+        if new_ids:
+            print("\n🆕 New insights added:")
+            for line in content.split("\n"):
+                for new_id in new_ids:
+                    if new_id in line:
+                        print(f"  + {line.strip()}")
+                        break
+
+    print("\n📖 Current Playbook:")
+    print("─" * 40)
+    for line in content.split("\n"):
+        if line.strip():
+            print(f"  {line}")
+    print("─" * 40)
+
+    # Show the last reflection
+    last_reflection = full_state.get("ace_last_reflection", "")
+    if last_reflection and last_reflection.strip():
+        print("\n💡 Reflection:")
+        print("─" * 40)
+        for line in last_reflection.split("\n"):
+            if line.strip():
+                print(f"  {line}")
+        print("─" * 40)
+
+    return content
+
+
 def main() -> None:
     """Run the ACE playbook evolution demo."""
     # Create ACE middleware with reflection and curation
@@ -119,53 +215,65 @@ def main() -> None:
     thread_id = str(uuid.uuid4())
     config: RunnableConfig = {"configurable": {"thread_id": thread_id}}
 
-    # Math problems to solve - the agent will learn from each one
-    problems = [
-        "What is 15% of 240?",
-        "If I invest $1000 at 5% annual interest compounded yearly, "
-        "how much will I have after 3 years?",
-        "A shirt costs $45 with 20% off. What's the sale price?",
-        "A car travels 180 miles using 6 gallons of gas. "
-        "What is its fuel efficiency in miles per gallon?",
-        "If 8 workers can complete a job in 12 days, how many days would it take 6 workers?",
-    ]
-
     print("=" * 60)
     print("ACE Middleware Demo: Watch the Playbook Evolve")
     print("=" * 60)
     print()
     print("This demo shows how ACE learns from each interaction.")
-    print("The reflector analyzes responses with detailed error analysis:")
-    print("  - Identifies what went wrong (if anything)")
-    print("  - Finds root causes of errors")
-    print("  - Suggests correct approaches")
-    print("  - Tags playbook bullets as helpful/harmful/neutral")
-    print("The curator periodically adds new insights to the playbook.")
+    print()
+    print("PHASE 1: TRAINING (with ground truth)")
+    print("  - Ground truth enables richer reflector feedback")
+    print("  - The reflector can compare agent answers to known correct answers")
+    print("  - Faster learning from clear success/failure signals")
+    print()
+    print("PHASE 2: INFERENCE (without ground truth)")
+    print("  - Normal usage after training")
+    print("  - Reflector analyzes reasoning quality without ground truth")
     print()
 
-    # Track previous playbook to detect new insights (start with initial playbook)
+    # Track previous playbook to detect new insights
     previous_playbook_content: str = ace.initial_playbook
+    total_problems = len(TRAINING_DATA) + len(INFERENCE_PROBLEMS)
+    problem_num = 0
 
-    for i, problem in enumerate(problems, 1):
+    # =========================================================================
+    # PHASE 1: Training with ground truth
+    # =========================================================================
+    print("\n" + "=" * 60)
+    print("📚 PHASE 1: TRAINING (with ground truth)")
+    print("=" * 60)
+
+    for item in TRAINING_DATA:
+        problem_num += 1
+        question = item["question"]
+        ground_truth = item["ground_truth"]
+
         print(f"\n{'─' * 60}")
-        print(f"Problem {i}/{len(problems)}")
+        print(f"Training Problem {problem_num}/{total_problems}")
         print(f"{'─' * 60}")
-        print(f"Q: {problem}")
+        print(f"Q: {question}")
+        print(f"📋 Ground Truth: {ground_truth}")
         print()
 
-        # Invoke the agent with config to use checkpointer
-        result = agent.invoke({"messages": [HumanMessage(content=problem)]}, config)
+        # Invoke with ground_truth for enhanced reflection
+        result = agent.invoke(
+            {
+                "messages": [HumanMessage(content=question)],
+                "ground_truth": ground_truth,
+            },
+            config,
+        )
 
         # Get the answer
         answer = result["messages"][-1].content
         print(f"A: {answer}")
 
-        # Access the full state from the checkpointer (includes private fields)
+        # Access the full state from the checkpointer
         state_snapshot = agent.get_state(config)
         full_state = state_snapshot.values
 
         # Show interaction count
-        ace_count = full_state.get("ace_interaction_count", i)
+        ace_count = full_state.get("ace_interaction_count", problem_num)
         print(f"\n📊 Interaction count: {ace_count}")
 
         # Show if curator ran
@@ -173,46 +281,55 @@ def main() -> None:
         if curator_ran:
             print("✨ Curator ran - checking for new insights...")
 
-        # Show the current playbook state from the full state
-        playbook_data = full_state.get("ace_playbook")
-        if playbook_data:
-            content = playbook_data.get("content", "")
+        # Print playbook state
+        previous_playbook_content = _print_playbook_state(
+            full_state, previous_playbook_content, curator_ran=curator_ran
+        )
 
-            # Detect new insights by comparing bullet IDs
-            if curator_ran:
-                # Extract bullet IDs from previous and current playbook
-                prev_ids = set(re.findall(r"\[[a-z]{3}-\d{5}\]", previous_playbook_content))
-                curr_ids = set(re.findall(r"\[[a-z]{3}-\d{5}\]", content))
-                new_ids = curr_ids - prev_ids
+    # =========================================================================
+    # PHASE 2: Inference without ground truth
+    # =========================================================================
+    print("\n" + "=" * 60)
+    print("🚀 PHASE 2: INFERENCE (without ground truth)")
+    print("=" * 60)
+    print("Now using the playbook learned during training...")
 
-                if new_ids:
-                    print("\n🆕 New insights added:")
-                    for line in content.split("\n"):
-                        for new_id in new_ids:
-                            if new_id in line:
-                                print(f"  + {line.strip()}")
-                                break
+    for question in INFERENCE_PROBLEMS:
+        problem_num += 1
 
-            # Update previous playbook for next iteration
-            previous_playbook_content = content
+        print(f"\n{'─' * 60}")
+        print(f"Inference Problem {problem_num}/{total_problems}")
+        print(f"{'─' * 60}")
+        print(f"Q: {question}")
+        print()
 
-            print("\n📖 Current Playbook:")
-            print("─" * 40)
-            # Print each non-empty line
-            for line in content.split("\n"):
-                if line.strip():
-                    print(f"  {line}")
-            print("─" * 40)
+        # Invoke WITHOUT ground_truth - normal inference
+        result = agent.invoke(
+            {"messages": [HumanMessage(content=question)]},
+            config,
+        )
 
-        # Show the last reflection (now includes error analysis if applicable)
-        last_reflection = full_state.get("ace_last_reflection", "")
-        if last_reflection and last_reflection.strip():
-            print("\n💡 Reflection:")
-            print("─" * 40)
-            for line in last_reflection.split("\n"):
-                if line.strip():
-                    print(f"  {line}")
-            print("─" * 40)
+        # Get the answer
+        answer = result["messages"][-1].content
+        print(f"A: {answer}")
+
+        # Access the full state from the checkpointer
+        state_snapshot = agent.get_state(config)
+        full_state = state_snapshot.values
+
+        # Show interaction count
+        ace_count = full_state.get("ace_interaction_count", problem_num)
+        print(f"\n📊 Interaction count: {ace_count}")
+
+        # Show if curator ran
+        curator_ran = ace_count % ace.curator_frequency == 0
+        if curator_ran:
+            print("✨ Curator ran - checking for new insights...")
+
+        # Print playbook state
+        previous_playbook_content = _print_playbook_state(
+            full_state, previous_playbook_content, curator_ran=curator_ran
+        )
 
     print()
     print("=" * 60)
@@ -220,6 +337,7 @@ def main() -> None:
     print("=" * 60)
     print()
     print("The playbook has evolved based on the agent's performance.")
+    print("Training with ground truth enabled faster, more accurate learning.")
     print("Bullets with higher 'helpful' counts were effective.")
     print("In a real application, you would persist the playbook state")
     print("to continue learning across sessions.")
