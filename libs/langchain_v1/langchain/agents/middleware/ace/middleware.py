@@ -657,10 +657,18 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
 
     @override
     def after_model(self, state: ACEState, runtime: Runtime) -> dict[str, Any] | None:
-        """Analyze response and update playbook after model call."""
+        """Analyze response and update playbook after model call.
+
+        The interaction counter is only incremented for terminal responses (completed
+        agent interactions), not for intermediate tool loop steps. This ensures that
+        curator_frequency, expected_interactions, and pruning thresholds are based on
+        actual completed interactions rather than raw LLM invocations.
+        """
         context = self._prepare_reflection_context(state)
         if context is None:
-            return self._increment_interaction_count(state)
+            # Skip incrementing counter for non-terminal responses (e.g., pending tool calls)
+            # or when there's no AI response to analyze
+            return None
 
         playbook, reflector_prompt, user_question, _ = context
         reflector = self._get_reflector_model()
@@ -671,6 +679,9 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             response_text = self._extract_text_content(response.content)
             parsed = self._extract_json_from_response(response_text)
         except Exception as e:
+            # Why increment on exception? We got a terminal response from the agent
+            # (not a tool-calling step), so it's a legitimate "completed interaction"
+            # even if reflection failed. This keeps the counter meaningful.
             logger.warning("ACE reflector invocation failed: %s", e)
             return self._increment_interaction_count(state)
 
@@ -704,10 +715,16 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
 
     @override
     async def aafter_model(self, state: ACEState, runtime: Runtime) -> dict[str, Any] | None:
-        """Async version of after_model."""
+        """Async version of after_model.
+
+        The interaction counter is only incremented for terminal responses (completed
+        agent interactions), not for intermediate tool loop steps.
+        """
         context = self._prepare_reflection_context(state)
         if context is None:
-            return self._increment_interaction_count(state)
+            # Skip incrementing counter for non-terminal responses (e.g., pending tool calls)
+            # or when there's no AI response to analyze
+            return None
 
         playbook, reflector_prompt, user_question, _ = context
         reflector = self._get_reflector_model()

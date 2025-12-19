@@ -749,8 +749,45 @@ class TestACEMiddlewareHooks:
 
         result = middleware.after_model(state, None)  # type: ignore[arg-type]
 
-        # Should just increment count
-        assert result["ace_interaction_count"] == 1
+        # Should return None (no state updates) when there's no AI response to analyze
+        assert result is None
+
+    def test_after_model_skips_counter_for_pending_tool_calls(self) -> None:
+        """Test that interaction counter is NOT incremented when AI message has pending tool_calls.
+
+        This is critical: ace_interaction_count should measure "completed agent interactions",
+        not "raw LLM invocations". When the agent is in a tool loop (has pending tool_calls),
+        the counter should not advance, ensuring curator_frequency, expected_interactions,
+        and pruning thresholds work correctly.
+        """
+        middleware = ACEMiddleware(
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
+        )
+
+        # AI message with pending tool calls (non-terminal response)
+        state: dict[str, Any] = {
+            "messages": [
+                HumanMessage(content="What's the weather?"),
+                AIMessage(
+                    content="Let me check the weather for you.",
+                    tool_calls=[
+                        {
+                            "id": "call_123",
+                            "name": "get_weather",
+                            "args": {"location": "NYC"},
+                        }
+                    ],
+                ),
+            ],
+            "ace_interaction_count": 5,
+        }
+
+        result = middleware.after_model(state, None)  # type: ignore[arg-type]
+
+        # Should return None (no state updates) - counter should NOT increment
+        # This prevents counter drift during tool loops
+        assert result is None
 
 
 class TestACEMiddlewareCuration:
