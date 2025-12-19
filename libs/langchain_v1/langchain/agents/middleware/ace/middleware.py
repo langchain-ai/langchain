@@ -40,6 +40,7 @@ from .playbook import (
     get_max_bullet_id,
     get_playbook_stats,
     initialize_empty_playbook,
+    limit_playbook_to_budget,
     prune_harmful_bullets,
     update_bullet_counts,
 )
@@ -463,14 +464,26 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
     # -------------------------------------------------------------------------
 
     def _prepare_model_request(self, request: ModelRequest) -> ModelRequest:
-        """Prepare model request with playbook injection (shared by sync/async)."""
+        """Prepare model request with playbook injection (shared by sync/async).
+
+        The playbook content is limited to the configured token budget before
+        injection. When the playbook exceeds the budget, the highest-priority
+        bullets (based on helpful-harmful score) are retained while lower-priority
+        bullets are dropped. This prevents context window overflow.
+        """
         state = request.state
         playbook = self._get_playbook(state)
         last_reflection = cast("str", state.get("ace_last_reflection", ""))
 
+        # Enforce token budget before injection to prevent prompt bloat
+        limited_content = limit_playbook_to_budget(
+            playbook.content,
+            self.playbook_token_budget,
+        )
+
         enhanced_prompt = build_system_prompt_with_playbook(
             original_prompt=request.system_message,
-            playbook=playbook.content,
+            playbook=limited_content,
             reflection=last_reflection,
         )
 

@@ -529,3 +529,134 @@ def prune_harmful_bullets(
         filtered_lines.append(line)
 
     return "\n".join(filtered_lines)
+
+
+# Token counting constants
+_CHARS_PER_TOKEN = 4.0  # Approximate: ~4 chars per token for English text
+
+
+def count_tokens_approximate(text: str) -> int:
+    """Approximate token count for text.
+
+    Uses the standard approximation of ~4 characters per token for English text.
+    This matches the approach used in the original ACE implementation.
+
+    Args:
+        text: Text to count tokens for.
+
+    Returns:
+        Approximate number of tokens.
+    """
+    return int(len(text) / _CHARS_PER_TOKEN)
+
+
+def _compute_bullet_priority(bullet: ParsedBullet) -> tuple[float, int]:
+    """Compute priority score for a bullet for sorting.
+
+    Bullets are prioritized by:
+    1. Net score (helpful - harmful), higher is better
+    2. Total interactions as tiebreaker (more tested = more reliable)
+
+    Args:
+        bullet: Parsed bullet to score.
+
+    Returns:
+        Tuple of (net_score, total_interactions) for sorting.
+        Higher values = higher priority.
+    """
+    net_score = bullet.helpful - bullet.harmful
+    total_interactions = bullet.helpful + bullet.harmful
+    return (net_score, total_interactions)
+
+
+def limit_playbook_to_budget(
+    playbook_text: str,
+    token_budget: int,
+    *,
+    reserve_tokens: int = 1000,
+) -> str:
+    """Limit playbook content to fit within a token budget.
+
+    When the playbook exceeds the token budget, this function retains
+    the highest-priority bullets (based on helpful-harmful score) while
+    preserving the section structure. This prevents context window
+    overflow and prompt bloat.
+
+    Args:
+        playbook_text: The full playbook content.
+        token_budget: Maximum tokens allowed for the playbook.
+        reserve_tokens: Tokens to reserve for section headers and overhead.
+            Default 1000 provides buffer for headers and formatting.
+
+    Returns:
+        Playbook content trimmed to fit within the budget.
+        If already under budget, returns the original content unchanged.
+    """
+    current_tokens = count_tokens_approximate(playbook_text)
+    if current_tokens <= token_budget:
+        return playbook_text
+
+    # Parse playbook into sections and bullets
+    lines = playbook_text.strip().split("\n")
+
+    # Track sections and their bullets
+    sections: list[tuple[str, list[tuple[ParsedBullet, str]]]] = []
+    current_section_header: str | None = None
+    current_section_bullets: list[tuple[ParsedBullet, str]] = []
+
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("##"):
+            # Save previous section if exists
+            if current_section_header is not None:
+                sections.append((current_section_header, current_section_bullets))
+            current_section_header = line
+            current_section_bullets = []
+        elif stripped:
+            parsed = parse_playbook_line(line)
+            if parsed:
+                current_section_bullets.append((parsed, line))
+        # Empty lines are skipped for budget calculation
+
+    # Don't forget the last section
+    if current_section_header is not None:
+        sections.append((current_section_header, current_section_bullets))
+
+    # Collect all bullets with their metadata for prioritization
+    all_bullets: list[tuple[ParsedBullet, str, str]] = []  # (parsed, line, section_header)
+    for section_header, bullets in sections:
+        for parsed, line in bullets:
+            all_bullets.append((parsed, line, section_header))
+
+    # Sort bullets by priority (highest first)
+    all_bullets.sort(key=lambda x: _compute_bullet_priority(x[0]), reverse=True)
+
+    # Calculate token budget for bullets (reserve space for headers)
+    section_headers = [s[0] for s in sections]
+    header_tokens = count_tokens_approximate("\n".join(section_headers))
+    available_for_bullets = token_budget - header_tokens - reserve_tokens
+
+    if available_for_bullets <= 0:
+        # Not enough budget even for headers, return just headers
+        return "\n\n".join(section_headers)
+
+    # Select bullets that fit within budget
+    selected_bullets: set[str] = set()  # Track by bullet ID
+    used_tokens = 0
+
+    for parsed, line, _ in all_bullets:
+        line_tokens = count_tokens_approximate(line)
+        if used_tokens + line_tokens <= available_for_bullets:
+            selected_bullets.add(parsed.id)
+            used_tokens += line_tokens
+        # Once budget exhausted, stop adding
+
+    # Rebuild playbook preserving section order, only including selected bullets
+    result_lines: list[str] = []
+    for section_header, bullets in sections:
+        result_lines.append(section_header)
+        for parsed, line in bullets:
+            if parsed.id in selected_bullets:
+                result_lines.append(line)
+
+    return "\n".join(result_lines)

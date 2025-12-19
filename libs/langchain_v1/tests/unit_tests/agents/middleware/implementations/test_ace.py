@@ -25,8 +25,10 @@ from langchain.agents.middleware.ace import (
 from langchain.agents.middleware.ace.playbook import (
     _normalize_section_name,
     add_bullet_to_playbook,
+    count_tokens_approximate,
     extract_playbook_bullets,
     get_section_slug,
+    limit_playbook_to_budget,
     prune_harmful_bullets,
 )
 from langchain.agents.middleware.ace.prompts import (
@@ -400,6 +402,58 @@ class TestPlaybookOperations:
         # With min_interactions=5, should not be pruned
         pruned = prune_harmful_bullets(playbook, threshold=0.5, min_interactions=5)
         assert "[str-00001]" in pruned
+
+    def test_count_tokens_approximate(self) -> None:
+        """Test approximate token counting."""
+        # ~4 chars per token
+        text = "a" * 100  # Should be ~25 tokens
+        tokens = count_tokens_approximate(text)
+        assert tokens == 25
+
+        # Empty string
+        assert count_tokens_approximate("") == 0
+
+        # Longer text
+        text = "a" * 400  # Should be ~100 tokens
+        assert count_tokens_approximate(text) == 100
+
+    def test_limit_playbook_to_budget_under_budget(self) -> None:
+        """Test that playbook under budget is returned unchanged."""
+        playbook = """## strategies_and_insights
+[str-00001] helpful=5 harmful=0 :: Short insight"""
+
+        # Budget of 1000 tokens should keep everything
+        result = limit_playbook_to_budget(playbook, token_budget=1000)
+        assert result == playbook
+
+    def test_limit_playbook_to_budget_prioritizes_helpful(self) -> None:
+        """Test that limiting prioritizes high-performing bullets."""
+        playbook = """## strategies_and_insights
+[str-00001] helpful=10 harmful=0 :: Best bullet
+[str-00002] helpful=5 harmful=3 :: Medium bullet
+[str-00003] helpful=0 harmful=5 :: Worst bullet"""
+
+        # Very low budget to force trimming
+        # Header: ~6 tokens, each bullet: ~12 tokens
+        # With budget of 25 and reserve of 5, only ~14 tokens available for bullets
+        # Should keep only the best bullet (str-00001)
+        result = limit_playbook_to_budget(playbook, token_budget=25, reserve_tokens=5)
+
+        assert "[str-00001]" in result  # Best bullet kept
+        assert "[str-00003]" not in result  # Worst bullet dropped
+
+    def test_limit_playbook_to_budget_preserves_sections(self) -> None:
+        """Test that section structure is preserved when limiting."""
+        playbook = """## strategies_and_insights
+[str-00001] helpful=5 harmful=0 :: Strategy
+## common_mistakes_to_avoid
+[mis-00001] helpful=3 harmful=0 :: Mistake"""
+
+        # Enough budget to keep both
+        result = limit_playbook_to_budget(playbook, token_budget=500)
+
+        assert "## strategies_and_insights" in result
+        assert "## common_mistakes_to_avoid" in result
 
 
 class TestPlaybookStats:

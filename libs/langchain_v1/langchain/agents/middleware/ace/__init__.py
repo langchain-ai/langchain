@@ -36,10 +36,12 @@ from langchain.agents.middleware.ace.middleware import ACEMiddleware
 from langchain.agents.middleware.ace.playbook import (
     ACEPlaybook,
     SectionName,
+    count_tokens_approximate,
     extract_bullet_ids,
     format_playbook_line,
     get_playbook_stats,
     initialize_empty_playbook,
+    limit_playbook_to_budget,
     parse_playbook_line,
     update_bullet_counts,
 )
@@ -48,10 +50,12 @@ __all__ = [
     "ACEMiddleware",
     "ACEPlaybook",
     "SectionName",
+    "count_tokens_approximate",
     "extract_bullet_ids",
     "format_playbook_line",
     "get_playbook_stats",
     "initialize_empty_playbook",
+    "limit_playbook_to_budget",
     "parse_playbook_line",
     "update_bullet_counts",
 ]
