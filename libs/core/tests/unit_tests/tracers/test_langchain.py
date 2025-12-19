@@ -148,7 +148,7 @@ def test_correct_get_tracer_project(
 
 
 def test_on_chain_start_skips_persist_when_defers_inputs() -> None:
-    """Test that _on_chain_start skips persist when defers_inputs is set."""
+    """Test that `_on_chain_start` skips persist when `defers_inputs` is set."""
     client = unittest.mock.MagicMock(spec=Client)
     client.tracing_queue = None
     tracer = LangChainTracer(client=client)
@@ -178,7 +178,7 @@ def test_on_chain_start_skips_persist_when_defers_inputs() -> None:
 
 
 def test_on_chain_start_persists_when_not_defers_inputs() -> None:
-    """Test that _on_chain_start persists when defers_inputs is not set."""
+    """Test that `_on_chain_start` persists when `defers_inputs` is not set."""
     client = unittest.mock.MagicMock(spec=Client)
     client.tracing_queue = None
     tracer = LangChainTracer(client=client)
@@ -207,7 +207,7 @@ def test_on_chain_start_persists_when_not_defers_inputs() -> None:
 
 
 def test_on_chain_end_persists_when_defers_inputs() -> None:
-    """Test that _on_chain_end calls persist (POST) when defers_inputs is set."""
+    """Test that `_on_chain_end` calls persist (POST) when `defers_inputs` is set."""
     client = unittest.mock.MagicMock(spec=Client)
     client.tracing_queue = None
     tracer = LangChainTracer(client=client)
@@ -247,7 +247,7 @@ def test_on_chain_end_persists_when_defers_inputs() -> None:
 
 
 def test_on_chain_end_updates_when_not_defers_inputs() -> None:
-    """Test that _on_chain_end calls update (PATCH) when defers_inputs is not set."""
+    """Tests `_on_chain_end` calls update (PATCH) when `defers_inputs` is not set."""
     client = unittest.mock.MagicMock(spec=Client)
     client.tracing_queue = None
     tracer = LangChainTracer(client=client)
@@ -285,7 +285,7 @@ def test_on_chain_end_updates_when_not_defers_inputs() -> None:
 
 
 def test_on_chain_error_persists_when_defers_inputs() -> None:
-    """Test that _on_chain_error calls persist (POST) when defers_inputs is set."""
+    """Test that `_on_chain_error` calls persist (POST) when `defers_inputs` is set."""
     client = unittest.mock.MagicMock(spec=Client)
     client.tracing_queue = None
     tracer = LangChainTracer(client=client)
@@ -325,7 +325,7 @@ def test_on_chain_error_persists_when_defers_inputs() -> None:
 
 
 def test_on_chain_error_updates_when_not_defers_inputs() -> None:
-    """Test that _on_chain_error calls update (PATCH) when defers_inputs is not set."""
+    """Tests `_on_chain_error` calls update (PATCH) when `defers_inputs` is not set."""
     client = unittest.mock.MagicMock(spec=Client)
     client.tracing_queue = None
     tracer = LangChainTracer(client=client)
