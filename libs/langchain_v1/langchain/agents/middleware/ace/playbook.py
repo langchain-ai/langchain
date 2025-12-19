@@ -13,9 +13,20 @@ Playbook format:
 from __future__ import annotations
 
 import re
+import sys
 from dataclasses import dataclass, field
-from enum import StrEnum
 from typing import Any
+
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+else:
+    from enum import Enum
+
+    class StrEnum(str, Enum):  # type: ignore[no-redef]
+        """Backwards-compatible StrEnum for Python < 3.11."""
+
+        def __str__(self) -> str:
+            return str(self.value)
 
 
 class SectionName(StrEnum):
