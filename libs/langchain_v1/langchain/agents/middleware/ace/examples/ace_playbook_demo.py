@@ -90,14 +90,15 @@ def calculator(expression: str) -> str:
 
 def main() -> None:
     """Run the ACE playbook evolution demo."""
-    # Create ACE middleware with reflection enabled
+    # Create ACE middleware with reflection and curation
     ace = ACEMiddleware(
         reflector_model="gpt-4.1",  # Analyzes trajectories after each response
+        curator_model="gpt-4.1",  # Reviews reflections and adds new insights
         curator_frequency=2,  # Add new insights every 2 interactions
-        initial_playbook="""## STRATEGIES & INSIGHTS
+        initial_playbook="""## strategies_and_insights
 [str-00001] helpful=0 harmful=0 :: Break word problems into clear steps before calculating
 
-## COMMON MISTAKES TO AVOID
+## common_mistakes_to_avoid
 [mis-00001] helpful=0 harmful=0 :: Don't forget to include units in the final answer
 """,
     )
