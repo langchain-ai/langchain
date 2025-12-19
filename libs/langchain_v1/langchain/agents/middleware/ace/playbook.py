@@ -664,8 +664,8 @@ def limit_playbook_to_budget(
 
     # Separate fresh bullets (0 interactions) from proven bullets
     # Fresh bullets get priority to ensure they can be evaluated at least once
-    fresh_bullets = [(p, l, s) for p, l, s in all_bullets if _is_fresh_bullet(p)]
-    proven_bullets = [(p, l, s) for p, l, s in all_bullets if not _is_fresh_bullet(p)]
+    fresh_bullets = [(p, ln, s) for p, ln, s in all_bullets if _is_fresh_bullet(p)]
+    proven_bullets = [(p, ln, s) for p, ln, s in all_bullets if not _is_fresh_bullet(p)]
 
     # Sort proven bullets by priority (highest first)
     proven_bullets.sort(key=lambda x: _compute_bullet_priority(x[0]), reverse=True)
