@@ -569,6 +569,33 @@ def _compute_bullet_priority(bullet: ParsedBullet) -> tuple[float, int]:
     return (net_score, total_interactions)
 
 
+# Default threshold for considering a bullet "fresh" (needs protection from budget limiting)
+BULLET_COUNT_FRESHNESS_THRESHOLD = 1
+
+
+def _is_fresh_bullet(
+    bullet: ParsedBullet,
+    threshold: int = BULLET_COUNT_FRESHNESS_THRESHOLD,
+) -> bool:
+    """Check if a bullet is fresh (few interactions).
+
+    Fresh bullets are newly curated additions that haven't accumulated
+    enough feedback yet. They need special handling to ensure they survive
+    budget limiting until they've been evaluated sufficiently.
+
+    Args:
+        bullet: Parsed bullet to check.
+        threshold: Maximum total interactions to be considered fresh.
+            Bullets with total interactions < threshold are fresh.
+            Default is BULLET_COUNT_FRESHNESS_THRESHOLD (1), meaning
+            only bullets with 0 interactions are fresh.
+
+    Returns:
+        True if bullet has fewer than threshold total interactions.
+    """
+    return bullet.helpful + bullet.harmful < threshold
+
+
 def limit_playbook_to_budget(
     playbook_text: str,
     token_budget: int,
@@ -581,6 +608,13 @@ def limit_playbook_to_budget(
     the highest-priority bullets (based on helpful-harmful score) while
     preserving the section structure. This prevents context window
     overflow and prompt bloat.
+
+    **Fresh bullet protection:** Newly curated bullets (with 0 interactions)
+    are always included first to ensure they survive at least one round.
+    This prevents the "cold start" problem where new insights would be
+    immediately dropped because they have no votes yet. See original ACE:
+    the reference implementation doesn't programmatically enforce budgets,
+    relying on the curator prompt instead.
 
     Args:
         playbook_text: The full playbook content.
@@ -628,8 +662,13 @@ def limit_playbook_to_budget(
         for parsed, line in bullets:
             all_bullets.append((parsed, line, section_header))
 
-    # Sort bullets by priority (highest first)
-    all_bullets.sort(key=lambda x: _compute_bullet_priority(x[0]), reverse=True)
+    # Separate fresh bullets (0 interactions) from proven bullets
+    # Fresh bullets get priority to ensure they can be evaluated at least once
+    fresh_bullets = [(p, l, s) for p, l, s in all_bullets if _is_fresh_bullet(p)]
+    proven_bullets = [(p, l, s) for p, l, s in all_bullets if not _is_fresh_bullet(p)]
+
+    # Sort proven bullets by priority (highest first)
+    proven_bullets.sort(key=lambda x: _compute_bullet_priority(x[0]), reverse=True)
 
     # Calculate token budget for bullets (reserve space for headers)
     section_headers = [s[0] for s in sections]
@@ -641,10 +680,21 @@ def limit_playbook_to_budget(
         return "\n\n".join(section_headers)
 
     # Select bullets that fit within budget
+    # IMPORTANT: Include fresh bullets first to ensure they survive at least one round
     selected_bullets: set[str] = set()  # Track by bullet ID
     used_tokens = 0
 
-    for parsed, line, _ in all_bullets:
+    # First pass: include fresh bullets (newly curated, need a chance to prove themselves)
+    for parsed, line, _ in fresh_bullets:
+        line_tokens = count_tokens_approximate(line)
+        if used_tokens + line_tokens <= available_for_bullets:
+            selected_bullets.add(parsed.id)
+            used_tokens += line_tokens
+        # If budget exhausted by fresh bullets alone, stop
+        # (rare edge case - too many fresh bullets)
+
+    # Second pass: fill remaining budget with proven bullets by priority
+    for parsed, line, _ in proven_bullets:
         line_tokens = count_tokens_approximate(line)
         if used_tokens + line_tokens <= available_for_bullets:
             selected_bullets.add(parsed.id)

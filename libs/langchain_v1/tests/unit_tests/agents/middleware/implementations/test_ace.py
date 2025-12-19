@@ -455,6 +455,27 @@ class TestPlaybookOperations:
         assert "## strategies_and_insights" in result
         assert "## common_mistakes_to_avoid" in result
 
+    def test_limit_playbook_to_budget_protects_fresh_bullets(self) -> None:
+        """Test that fresh bullets (0 interactions) are prioritized over proven ones.
+
+        This prevents the cold-start problem where newly curated bullets would
+        be immediately dropped because they have no votes yet. Fresh bullets
+        must survive at least one round to accumulate helpful/harmful counts.
+        """
+        playbook = """## strategies_and_insights
+[str-00001] helpful=10 harmful=0 :: Proven best bullet
+[str-00002] helpful=5 harmful=1 :: Proven good bullet
+[str-00003] helpful=0 harmful=0 :: Fresh bullet from curator"""
+
+        # Budget that can only fit ~2 bullets
+        # Fresh bullet (str-00003) should be kept even though it has lowest "score"
+        result = limit_playbook_to_budget(playbook, token_budget=40, reserve_tokens=5)
+
+        # Fresh bullet MUST be included (cold-start protection)
+        assert "[str-00003]" in result, "Fresh bullets should survive limiting"
+        # Best proven bullet should also be included
+        assert "[str-00001]" in result, "Best proven bullet should be kept"
+
 
 class TestPlaybookStats:
     """Tests for playbook statistics."""
