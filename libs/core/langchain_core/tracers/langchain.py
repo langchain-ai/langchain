@@ -73,18 +73,18 @@ def _get_executor() -> ThreadPoolExecutor:
 def _get_usage_metadata_from_generations(
     generations: list[list[dict[str, Any]]],
 ) -> UsageMetadata | None:
-    """Extract and aggregate usage_metadata from generations.
+    """Extract and aggregate `usage_metadata` from generations.
 
-    Iterates through generations to find and aggregate all usage_metadata
-    found in messages. This is typically present in chat model outputs.
+    Iterates through generations to find and aggregate all `usage_metadata` found in
+    messages. This is typically present in chat model outputs.
 
     Args:
         generations: List of generation batches, where each batch is a list
-            of generation dicts that may contain a "message" key with
-            "usage_metadata".
+            of generation dicts that may contain a `'message'` key with
+            `'usage_metadata'`.
 
     Returns:
-        The aggregated usage_metadata dict if found, otherwise None.
+        The aggregated `usage_metadata` dict if found, otherwise `None`.
     """
     output: UsageMetadata | None = None
     for generation_batch in generations:

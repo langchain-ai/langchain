@@ -243,13 +243,13 @@ def test_correct_get_tracer_project(
 def test_get_usage_metadata_from_generations(
     generations: list[list[dict[str, Any]]], expected: dict[str, Any] | None
 ) -> None:
-    """Test _get_usage_metadata_from_generations utility function."""
+    """Test `_get_usage_metadata_from_generations` utility function."""
     result = _get_usage_metadata_from_generations(generations)
     assert result == expected
 
 
 def test_on_llm_end_stores_usage_metadata_in_run_extra() -> None:
-    """Test that usage_metadata is stored in run.extra.metadata on llm end."""
+    """Test that `usage_metadata` is stored in `run.extra.metadata` on llm end."""
     client = unittest.mock.MagicMock(spec=Client)
     client.tracing_queue = None
     tracer = LangChainTracer(client=client)
@@ -285,7 +285,7 @@ def test_on_llm_end_stores_usage_metadata_in_run_extra() -> None:
 
 
 def test_on_llm_end_no_usage_metadata_when_not_present() -> None:
-    """Test that no usage_metadata is added when not present in outputs."""
+    """Test that no `usage_metadata` is added when not present in outputs."""
     client = unittest.mock.MagicMock(spec=Client)
     client.tracing_queue = None
     tracer = LangChainTracer(client=client)
@@ -313,7 +313,7 @@ def test_on_llm_end_no_usage_metadata_when_not_present() -> None:
 
 
 def test_on_llm_end_preserves_existing_metadata() -> None:
-    """Test that existing metadata is preserved when adding usage_metadata."""
+    """Test that existing metadata is preserved when adding `usage_metadata`."""
     client = unittest.mock.MagicMock(spec=Client)
     client.tracing_queue = None
     tracer = LangChainTracer(client=client)
