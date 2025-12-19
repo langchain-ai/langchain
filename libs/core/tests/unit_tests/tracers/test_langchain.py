@@ -352,3 +352,218 @@ def test_on_llm_end_preserves_existing_metadata() -> None:
     assert "metadata" in captured_run.extra
     assert captured_run.extra["metadata"]["usage_metadata"] == usage_metadata
     assert captured_run.extra["metadata"]["existing_key"] == "existing_value"
+
+
+def test_on_chain_start_skips_persist_when_defers_inputs() -> None:
+    """Test that `_on_chain_start` skips persist when `defers_inputs` is set."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    # Pass defers_inputs=True to signal deferred inputs
+    tracer.on_chain_start(
+        {"name": "test_chain"},
+        {"input": ""},
+        run_id=run_id,
+        defers_inputs=True,
+    )
+
+    run = tracer.run_map[str(run_id)]
+
+    persist_called = False
+
+    def mock_persist() -> None:
+        nonlocal persist_called
+        persist_called = True
+
+    with unittest.mock.patch.object(tracer, "_persist_run_single", mock_persist):
+        tracer._on_chain_start(run)
+
+    # Should NOT call persist when defers_inputs is set
+    assert not persist_called
+
+
+def test_on_chain_start_persists_when_not_defers_inputs() -> None:
+    """Test that `_on_chain_start` persists when `defers_inputs` is not set."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    # Normal chain start without defers_inputs
+    tracer.on_chain_start(
+        {"name": "test_chain"},
+        {"input": "hello"},
+        run_id=run_id,
+    )
+
+    run = tracer.run_map[str(run_id)]
+
+    persist_called = False
+
+    def mock_persist(_: Any) -> None:
+        nonlocal persist_called
+        persist_called = True
+
+    with unittest.mock.patch.object(tracer, "_persist_run_single", mock_persist):
+        tracer._on_chain_start(run)
+
+    # Should call persist when defers_inputs is not set
+    assert persist_called
+
+
+def test_on_chain_end_persists_when_defers_inputs() -> None:
+    """Test that `_on_chain_end` calls persist (POST) when `defers_inputs` is set."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_chain_start(
+        {"name": "test_chain"},
+        {"input": ""},
+        run_id=run_id,
+        defers_inputs=True,
+    )
+
+    run = tracer.run_map[str(run_id)]
+    run.outputs = {"output": "result"}
+    run.inputs = {"input": "realized input"}
+
+    persist_called = False
+    update_called = False
+
+    def mock_persist(_: Any) -> None:
+        nonlocal persist_called
+        persist_called = True
+
+    def mock_update(_: Any) -> None:
+        nonlocal update_called
+        update_called = True
+
+    with (
+        unittest.mock.patch.object(tracer, "_persist_run_single", mock_persist),
+        unittest.mock.patch.object(tracer, "_update_run_single", mock_update),
+    ):
+        tracer._on_chain_end(run)
+
+    # Should call persist (POST), not update (PATCH) for deferred inputs
+    assert persist_called
+    assert not update_called
+
+
+def test_on_chain_end_updates_when_not_defers_inputs() -> None:
+    """Tests `_on_chain_end` calls update (PATCH) when `defers_inputs` is not set."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_chain_start(
+        {"name": "test_chain"},
+        {"input": "hello"},
+        run_id=run_id,
+    )
+
+    run = tracer.run_map[str(run_id)]
+    run.outputs = {"output": "result"}
+
+    persist_called = False
+    update_called = False
+
+    def mock_persist(_: Any) -> None:
+        nonlocal persist_called
+        persist_called = True
+
+    def mock_update(_: Any) -> None:
+        nonlocal update_called
+        update_called = True
+
+    with (
+        unittest.mock.patch.object(tracer, "_persist_run_single", mock_persist),
+        unittest.mock.patch.object(tracer, "_update_run_single", mock_update),
+    ):
+        tracer._on_chain_end(run)
+
+    # Should call update (PATCH), not persist (POST) for normal inputs
+    assert not persist_called
+    assert update_called
+
+
+def test_on_chain_error_persists_when_defers_inputs() -> None:
+    """Test that `_on_chain_error` calls persist (POST) when `defers_inputs` is set."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_chain_start(
+        {"name": "test_chain"},
+        {"input": ""},
+        run_id=run_id,
+        defers_inputs=True,
+    )
+
+    run = tracer.run_map[str(run_id)]
+    run.error = "Test error"
+    run.inputs = {"input": "realized input"}
+
+    persist_called = False
+    update_called = False
+
+    def mock_persist(_: Any) -> None:
+        nonlocal persist_called
+        persist_called = True
+
+    def mock_update(_: Any) -> None:
+        nonlocal update_called
+        update_called = True
+
+    with (
+        unittest.mock.patch.object(tracer, "_persist_run_single", mock_persist),
+        unittest.mock.patch.object(tracer, "_update_run_single", mock_update),
+    ):
+        tracer._on_chain_error(run)
+
+    # Should call persist (POST), not update (PATCH) for deferred inputs
+    assert persist_called
+    assert not update_called
+
+
+def test_on_chain_error_updates_when_not_defers_inputs() -> None:
+    """Tests `_on_chain_error` calls update (PATCH) when `defers_inputs` is not set."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_chain_start(
+        {"name": "test_chain"},
+        {"input": "hello"},
+        run_id=run_id,
+    )
+
+    run = tracer.run_map[str(run_id)]
+    run.error = "Test error"
+
+    persist_called = False
+    update_called = False
+
+    def mock_persist(_: Any) -> None:
+        nonlocal persist_called
+        persist_called = True
+
+    def mock_update(_: Any) -> None:
+        nonlocal update_called
+        update_called = True
+
+    with (
+        unittest.mock.patch.object(tracer, "_persist_run_single", mock_persist),
+        unittest.mock.patch.object(tracer, "_update_run_single", mock_update),
+    ):
+        tracer._on_chain_error(run)
+
+    # Should call update (PATCH), not persist (POST) for normal inputs
+    assert not persist_called
+    assert update_called

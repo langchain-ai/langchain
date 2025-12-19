@@ -312,15 +312,28 @@ class LangChainTracer(BaseTracer):
         """Process the Chain Run upon start."""
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
-        self._persist_run_single(run)
+        # Skip persisting if inputs are deferred (e.g., iterator/generator inputs).
+        # The run will be posted when _on_chain_end is called with realized inputs.
+        if not run.extra.get("defers_inputs"):
+            self._persist_run_single(run)
 
     def _on_chain_end(self, run: Run) -> None:
         """Process the Chain Run."""
-        self._update_run_single(run)
+        # If inputs were deferred, persist (POST) the run now that inputs are realized.
+        # Otherwise, update (PATCH) the existing run.
+        if run.extra.get("defers_inputs"):
+            self._persist_run_single(run)
+        else:
+            self._update_run_single(run)
 
     def _on_chain_error(self, run: Run) -> None:
         """Process the Chain Run upon error."""
-        self._update_run_single(run)
+        # If inputs were deferred, persist (POST) the run now that inputs are realized.
+        # Otherwise, update (PATCH) the existing run.
+        if run.extra.get("defers_inputs"):
+            self._persist_run_single(run)
+        else:
+            self._update_run_single(run)
 
     def _on_tool_start(self, run: Run) -> None:
         """Process the Tool Run upon start."""
