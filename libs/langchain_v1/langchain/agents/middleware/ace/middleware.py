@@ -447,15 +447,40 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         if key_insight:
             parts.append(f"**Key Insight:** {key_insight}")
 
-        # Bullet tags summary
+        # Bullet tags summary (guard against malformed reflector output)
         bullet_tags = parsed.get("bullet_tags", [])
         if bullet_tags:
-            helpful = [t["id"] for t in bullet_tags if t.get("tag") == "helpful"]
-            harmful = [t["id"] for t in bullet_tags if t.get("tag") == "harmful"]
-            if helpful:
-                parts.append(f"**Helpful bullets:** {', '.join(helpful)}")
-            if harmful:
-                parts.append(f"**Harmful bullets:** {', '.join(harmful)}")
+            if not isinstance(bullet_tags, list):
+                logger.warning(
+                    "ACE reflector returned malformed bullet_tags (expected list, got %s)",
+                    type(bullet_tags).__name__,
+                )
+            else:
+                # Check for malformed entries and log warning
+                malformed = [t for t in bullet_tags if not isinstance(t, dict) or not t.get("id")]
+                if malformed:
+                    logger.warning(
+                        "ACE reflector returned %d malformed bullet_tags entries "
+                        "(missing 'id' or not a dict): %s",
+                        len(malformed),
+                        malformed[:3],  # Log first 3 for debugging
+                    )
+
+                # Filter to valid dicts with "id" key
+                helpful = [
+                    t.get("id")
+                    for t in bullet_tags
+                    if isinstance(t, dict) and t.get("tag") == "helpful" and t.get("id")
+                ]
+                harmful = [
+                    t.get("id")
+                    for t in bullet_tags
+                    if isinstance(t, dict) and t.get("tag") == "harmful" and t.get("id")
+                ]
+                if helpful:
+                    parts.append(f"**Helpful bullets:** {', '.join(helpful)}")
+                if harmful:
+                    parts.append(f"**Harmful bullets:** {', '.join(harmful)}")
 
         return "\n".join(parts) if parts else parsed.get("key_insight", "")
 
@@ -603,19 +628,65 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
     def _process_curator_response(
         self, playbook: ACEPlaybook, parsed: dict[str, Any]
     ) -> ACEPlaybook:
-        """Process curator response and return updated playbook."""
+        """Process curator response and return updated playbook.
+
+        Validates the curator response structure and logs warnings for malformed
+        output, continuing gracefully with valid operations.
+        """
         operations = parsed.get("operations", [])
         updated_content = playbook.content
         next_id = playbook.next_global_id
 
+        # Validate operations is a list
+        if not isinstance(operations, list):
+            logger.warning(
+                "ACE curator returned malformed operations (expected list, got %s)",
+                type(operations).__name__,
+            )
+            return ACEPlaybook(
+                content=updated_content,
+                next_global_id=next_id,
+                stats=get_playbook_stats(updated_content),
+            )
+
+        # Track malformed operations for logging
+        malformed_ops: list[Any] = []
+
         for op in operations:
-            if op.get("type") == "ADD":
-                section = op.get("section", "OTHERS")
-                content = op.get("content", "")
-                if content:
-                    updated_content, next_id = add_bullet_to_playbook(
-                        updated_content, section, content, next_id
-                    )
+            # Validate each operation is a dict
+            if not isinstance(op, dict):
+                malformed_ops.append(op)
+                continue
+
+            op_type = op.get("type")
+            if op_type == "ADD":
+                section = op.get("section")
+                content = op.get("content")
+
+                # Validate required fields for ADD operation
+                if not isinstance(content, str) or not content.strip():
+                    malformed_ops.append(op)
+                    continue
+
+                # Use default section if not provided or invalid
+                if not isinstance(section, str) or not section.strip():
+                    section = "OTHERS"
+
+                updated_content, next_id = add_bullet_to_playbook(
+                    updated_content, section, content, next_id
+                )
+            elif op_type is not None:
+                # Unknown operation type - log but don't fail
+                logger.debug("ACE curator returned unknown operation type: %s", op_type)
+
+        # Log warning for malformed operations
+        if malformed_ops:
+            logger.warning(
+                "ACE curator returned %d malformed operations "
+                "(not a dict or missing required fields): %s",
+                len(malformed_ops),
+                malformed_ops[:3],  # Log first 3 for debugging
+            )
 
         return ACEPlaybook(
             content=updated_content,
