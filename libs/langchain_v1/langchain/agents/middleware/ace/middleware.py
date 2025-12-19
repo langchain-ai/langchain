@@ -498,6 +498,13 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         Returns:
             Tuple of (playbook, reflector_prompt, user_question, bullets_used) or None
             if reflection should be skipped.
+
+        Note:
+            Reflection is skipped for non-terminal responses (i.e., when the agent
+            is still in a tool loop). A response is considered non-terminal if:
+            - It has pending tool_calls (agent will continue with tool execution)
+            This prevents wasting tokens analyzing intermediate steps and corrupting
+            playbook statistics with meaningless tool-selection reflections.
         """
         messages = state.get("messages", [])
         if not messages:
@@ -505,6 +512,16 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
 
         latest_msg = messages[-1]
         if not isinstance(latest_msg, AIMessage):
+            return None
+
+        # Skip reflection for non-terminal responses (agent still in tool loop)
+        # When tool_calls is non-empty, the agent is selecting tools and will
+        # continue execution - there's no final answer to reflect on yet
+        if latest_msg.tool_calls:
+            logger.debug(
+                "ACE: Skipping reflection for non-terminal response (has %d pending tool calls)",
+                len(latest_msg.tool_calls),
+            )
             return None
 
         playbook = self._get_playbook(state)
