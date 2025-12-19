@@ -1197,7 +1197,47 @@ def test_convert_to_openai_messages_guard_content() -> None:
 def test_convert_to_openai_messages_invalid_block() -> None:
     messages = [HumanMessage(content=[{"type": "invalid", "foo": "bar"}])]
     with pytest.raises(ValueError, match="Unrecognized content block"):
-        convert_to_openai_messages(messages, text_format="block")
+        convert_to_openai_messages(
+            messages,
+            text_format="block",
+            pass_through_unknown_blocks=False,
+        )
+    # Accept by default
+    result = convert_to_openai_messages(messages, text_format="block")
+    assert result == [{"role": "user", "content": [{"type": "invalid", "foo": "bar"}]}]
+
+
+def test_handle_openai_responses_blocks() -> None:
+    blocks: str | list[str | dict] = [
+        {"type": "reasoning", "id": "1"},
+        {
+            "type": "function_call",
+            "name": "multiply",
+            "arguments": '{"x":5,"y":4}',
+            "call_id": "call_abc123",
+            "id": "fc_abc123",
+            "status": "completed",
+        },
+    ]
+    message = AIMessage(content=blocks)
+
+    expected_tool_call = {
+        "type": "function",
+        "function": {
+            "name": "multiply",
+            "arguments": '{"x":5,"y":4}',
+        },
+        "id": "call_abc123",
+    }
+    result = convert_to_openai_messages(message)
+    assert isinstance(result, dict)
+    assert result["content"] == blocks
+    assert result["tool_calls"] == [expected_tool_call]
+
+    result = convert_to_openai_messages(message, pass_through_unknown_blocks=False)
+    assert isinstance(result, dict)
+    assert result["content"] == [{"type": "reasoning", "id": "1"}]
+    assert result["tool_calls"] == [expected_tool_call]
 
 
 def test_convert_to_openai_messages_empty_message() -> None:
