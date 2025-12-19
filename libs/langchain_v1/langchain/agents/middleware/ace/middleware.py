@@ -467,15 +467,19 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
                     )
 
                 # Filter to valid dicts with "id" key
-                helpful = [
-                    t.get("id")
+                helpful: list[str] = [
+                    bullet_id
                     for t in bullet_tags
-                    if isinstance(t, dict) and t.get("tag") == "helpful" and t.get("id")
+                    if isinstance(t, dict)
+                    and t.get("tag") == "helpful"
+                    and isinstance((bullet_id := t.get("id")), str)
                 ]
-                harmful = [
-                    t.get("id")
+                harmful: list[str] = [
+                    bullet_id
                     for t in bullet_tags
-                    if isinstance(t, dict) and t.get("tag") == "harmful" and t.get("id")
+                    if isinstance(t, dict)
+                    and t.get("tag") == "harmful"
+                    and isinstance((bullet_id := t.get("id")), str)
                 ]
                 if helpful:
                     parts.append(f"**Helpful bullets:** {', '.join(helpful)}")
