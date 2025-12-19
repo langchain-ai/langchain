@@ -240,8 +240,6 @@ def _convert_to_v1_from_converse(message: AIMessage) -> list[types.ContentBlock]
                                     "id": tc.get("id"),
                                 }
                                 break
-                    else:
-                        pass
                     if not tool_call_block:
                         tool_call_block = {
                             "type": "tool_call",

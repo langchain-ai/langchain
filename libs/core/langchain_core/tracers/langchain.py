@@ -220,7 +220,8 @@ class LangChainTracer(BaseTracer):
             log_error_once("post", e)
             raise
 
-    def _update_run_single(self, run: Run) -> None:
+    @staticmethod
+    def _update_run_single(run: Run) -> None:
         """Update a run."""
         if run.extra.get("__disabled"):
             return

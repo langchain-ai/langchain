@@ -130,7 +130,7 @@ async def tee_peer(
                     if buffer:
                         continue
                     try:
-                        item = await iterator.__anext__()
+                        item = await anext(iterator)
                     except StopAsyncIteration:
                         break
                     else:

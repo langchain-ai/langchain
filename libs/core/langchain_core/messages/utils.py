@@ -1397,7 +1397,7 @@ def convert_to_openai_messages(
                             },
                         }
                     )
-                elif block.get("type") in ["thinking", "reasoning"]:
+                elif block.get("type") in {"thinking", "reasoning"}:
                     content.append(block)
                 else:
                     err = (

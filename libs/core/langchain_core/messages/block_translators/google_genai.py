@@ -411,7 +411,10 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                         except Exception:
                             # Not valid base64, treat as non-standard
                             converted_blocks.append(
-                                {"type": "non_standard", "value": item}
+                                {
+                                    "type": "non_standard",
+                                    "value": item,
+                                }
                             )
                 else:
                     # This likely won't be reached according to previous implementations

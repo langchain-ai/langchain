@@ -248,7 +248,7 @@ def _convert_from_v1_to_chat_completions(message: AIMessage) -> AIMessage:
                 if block_type == "text":
                     # Strip annotations
                     new_content.append({"type": "text", "text": block["text"]})
-                elif block_type in ("reasoning", "tool_call"):
+                elif block_type in {"reasoning", "tool_call"}:
                     pass
                 else:
                     new_content.append(block)
@@ -706,8 +706,6 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                             if invalid_tool_call.get("id") == call_id:
                                 tool_call_block = invalid_tool_call.copy()
                                 break
-                else:
-                    pass
                 if tool_call_block:
                     if "id" in block:
                         if "extras" not in tool_call_block:
@@ -735,7 +733,7 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                         k: v for k, v in block["action"].items() if k != "sources"
                     }
                 for key in block:
-                    if key not in ("type", "id", "action", "status", "index"):
+                    if key not in {"type", "id", "action", "status", "index"}:
                         web_search_call[key] = block[key]
 
                 yield cast("types.ServerToolCall", web_search_call)
@@ -761,8 +759,6 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                         web_search_result["status"] = "success"
                     elif status:
                         web_search_result["extras"] = {"status": status}
-                    else:
-                        pass
                     if "index" in block and isinstance(block["index"], int):
                         web_search_result["index"] = f"lc_wsr_{block['index'] + 1}"
                     yield cast("types.ServerToolResult", web_search_result)
@@ -778,14 +774,14 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                     file_search_call["index"] = f"lc_fsc_{block['index']}"
 
                 for key in block:
-                    if key not in (
+                    if key not in {
                         "type",
                         "id",
                         "queries",
                         "results",
                         "status",
                         "index",
-                    ):
+                    }:
                         file_search_call[key] = block[key]
 
                 yield cast("types.ServerToolCall", file_search_call)
@@ -804,8 +800,6 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                     file_search_result["status"] = "success"
                 elif status:
                     file_search_result["extras"] = {"status": status}
-                else:
-                    pass
                 if "index" in block and isinstance(block["index"], int):
                     file_search_result["index"] = f"lc_fsr_{block['index'] + 1}"
                 yield cast("types.ServerToolResult", file_search_result)
@@ -849,8 +843,6 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                     code_interpreter_result["status"] = "success"
                 elif status:
                     code_interpreter_result["extras"] = {"status": status}
-                else:
-                    pass
                 if "index" in block and isinstance(block["index"], int):
                     code_interpreter_result["index"] = f"lc_cir_{block['index'] + 1}"
 
