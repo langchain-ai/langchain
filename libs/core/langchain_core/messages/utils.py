@@ -759,9 +759,12 @@ def trim_messages(
         messages: Sequence of Message-like objects to trim.
         max_tokens: Max token count of trimmed messages.
         token_counter: Function or llm for counting tokens in a `BaseMessage` or a
-            list of `BaseMessage`. If a `BaseLanguageModel` is passed in then
-            `BaseLanguageModel.get_num_tokens_from_messages()` will be used.
-            Set to `len` to count the number of **messages** in the chat history.
+            list of `BaseMessage`.
+
+            If a `BaseLanguageModel` is passed in then
+            `BaseLanguageModel.get_num_tokens_from_messages()` will be used. Set to
+            `len` to count the number of **messages** in the chat history.
+
             You can also use string shortcuts for convenience:
 
             - `'approximate'`: Uses `count_tokens_approximately` for fast, approximate
@@ -769,11 +772,9 @@ def trim_messages(
 
             !!! note
 
-                Use `count_tokens_approximately` (or the shortcut `'approximate'`)
-                to get fast, approximate token counts.
-
-                This is recommended for using `trim_messages` on the hot path, where
-                exact token counting is not necessary.
+                `count_tokens_approximately` (or the shortcut `'approximate'`) is
+                recommended for using `trim_messages` on the hot path, where exact token
+                counting is not necessary.
 
         strategy: Strategy for trimming.
 
