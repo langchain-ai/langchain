@@ -21,6 +21,7 @@ from typing_extensions import override
 
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
+from langchain_core.messages.ai import UsageMetadata, add_usage
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
@@ -67,6 +68,32 @@ def _get_executor() -> ThreadPoolExecutor:
     if _EXECUTOR is None:
         _EXECUTOR = ThreadPoolExecutor()
     return _EXECUTOR
+
+
+def _get_usage_metadata_from_generations(
+    generations: list[list[dict[str, Any]]],
+) -> UsageMetadata | None:
+    """Extract and aggregate `usage_metadata` from generations.
+
+    Iterates through generations to find and aggregate all `usage_metadata` found in
+    messages. This is typically present in chat model outputs.
+
+    Args:
+        generations: List of generation batches, where each batch is a list
+            of generation dicts that may contain a `'message'` key with
+            `'usage_metadata'`.
+
+    Returns:
+        The aggregated `usage_metadata` dict if found, otherwise `None`.
+    """
+    output: UsageMetadata | None = None
+    for generation_batch in generations:
+        for generation in generation_batch:
+            if isinstance(generation, dict) and "message" in generation:
+                message = generation["message"]
+                if isinstance(message, dict) and "usage_metadata" in message:
+                    output = add_usage(output, message["usage_metadata"])
+    return output
 
 
 class LangChainTracer(BaseTracer):
@@ -266,6 +293,15 @@ class LangChainTracer(BaseTracer):
 
     def _on_llm_end(self, run: Run) -> None:
         """Process the LLM Run."""
+        # Extract usage_metadata from outputs and store in extra.metadata
+        if run.outputs and "generations" in run.outputs:
+            usage_metadata = _get_usage_metadata_from_generations(
+                run.outputs["generations"]
+            )
+            if usage_metadata is not None:
+                if "metadata" not in run.extra:
+                    run.extra["metadata"] = {}
+                run.extra["metadata"]["usage_metadata"] = usage_metadata
         self._update_run_single(run)
 
     def _on_llm_error(self, run: Run) -> None:
