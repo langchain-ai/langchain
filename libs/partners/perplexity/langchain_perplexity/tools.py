@@ -62,4 +62,5 @@ class PerplexitySearchResults(BaseTool):
                 for result in response.results
             ]
         except Exception as e:
-            return repr(e)
+            msg = f"Perplexity search failed: {type(e).__name__}"
+            return msg
