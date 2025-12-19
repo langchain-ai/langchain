@@ -18,6 +18,10 @@ implementation to the implementation in LangGraph. See [Design Tradeoffs](Limita
   - [Middleware Hooks](#middleware-hooks)
 - [How Trajectories Update the Playbook](#how-trajectories-update-the-playbook)
 - [Usage Example](#usage-example)
+  - [Basic Usage](#basic-usage)
+  - [Training with Ground Truth](#training-with-ground-truth)
+  - [With Custom Initial Playbook](#with-custom-initial-playbook)
+  - [Full Configuration](#full-configuration)
 - [State Schema](#state-schema)
 - [Playbook Sections](#playbook-sections)
 - [API Reference](#api-reference)
@@ -222,6 +226,52 @@ result = agent.invoke({
 })
 ```
 
+### Training with Ground Truth
+
+When you have ground truth answers (e.g., for batch evaluation or training scenarios),
+pass them via the `ground_truth` state field. This enables richer reflector feedback
+by allowing the reflector to compare the agent's answer to the known correct answer.
+
+```python
+# Training data with known correct answers
+training_data = [
+    {
+        "question": "What is 15% of 240?",
+        "ground_truth": "36",
+    },
+    {
+        "question": "Calculate the current ratio if assets=$1M, liabilities=$500K",
+        "ground_truth": "2.0",
+    },
+]
+
+# Training loop - pass ground_truth for enhanced reflection
+for item in training_data:
+    result = agent.invoke({
+        "messages": [HumanMessage(content=item["question"])],
+        "ground_truth": item["ground_truth"],  # Enables richer reflection
+    })
+
+# Inference - no ground_truth needed
+result = agent.invoke({
+    "messages": [HumanMessage(content="What is 20% of 150?")]
+})
+```
+
+**How ground truth helps:**
+
+| Mode | Reflector Feedback | Learning Speed |
+|------|-------------------|----------------|
+| Without ground truth | Infers correctness from tool results and reasoning | Slower, noisier |
+| With ground truth | Compares agent answer to known correct answer | Faster, more accurate |
+
+The reflector prompt includes a "Ground Truth Answer" section when `ground_truth` is
+provided, enabling it to definitively identify errors and correctly tag bullets as
+helpful or harmful.
+
+See [`examples/ace_playbook_demo.py`](examples/ace_playbook_demo.py) for a complete
+example showing training with ground truth followed by inference.
+
 ### With Custom Initial Playbook
 
 ```python
@@ -276,6 +326,9 @@ class ACEState(AgentState):
 
     # Counter for curator frequency
     ace_interaction_count: int
+
+    # Optional ground truth for training/evaluation scenarios
+    ground_truth: str | None            # Enables richer reflector feedback
 ```
 
 ## Playbook Sections
@@ -454,14 +507,17 @@ The reflector receives feedback from:
 | Tool results | Medium | When tools succeed |
 | Reasoning analysis | Low | Always |
 
-### Current Limitations
+### Ground Truth Support
 
-Without ground truth (the correct answer), the reflector must **infer** correctness based on:
+When `ground_truth` is provided in the state, the reflector receives the correct answer
+and can definitively determine if the agent succeeded or failed. This matches the
+original ACE behavior of comparing `predicted_answer` vs `ground_truth`.
+
+Without ground truth, the reflector must **infer** correctness based on:
 - Tool results and errors (extracted from message history)
 - Reasoning quality analysis
 - LLM's domain knowledge
 
-This is less accurate than the original ACE which compares `predicted_answer` vs `ground_truth`.
-See [Limitations.md](Limitations.md) for details.
+See [Training with Ground Truth](#training-with-ground-truth) for usage examples.
 
 
