@@ -237,7 +237,13 @@ def _format_message_content(
             if (
                 isinstance(block, dict)
                 and "type" in block
-                and block["type"] in ("tool_use", "thinking", "reasoning_content")
+                and (
+                    block["type"] in ("tool_use", "thinking", "reasoning_content")
+                    or (
+                        block["type"] in ("function_call", "code_interpreter_call")
+                        and api == "chat/completions"
+                    )
+                )
             ):
                 continue
             if (
