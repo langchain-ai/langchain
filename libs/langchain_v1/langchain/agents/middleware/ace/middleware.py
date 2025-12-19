@@ -75,6 +75,9 @@ class ACEState(AgentState):
     # Interaction counter for curator frequency
     ace_interaction_count: NotRequired[Annotated[int, _PrivateState]]
 
+    # Optional ground truth for evaluation scenarios (e.g., batch training)
+    ground_truth: NotRequired[Annotated[str | None, _PrivateState]]
+
 
 class ACEMiddleware(AgentMiddleware[ACEState, Any]):
     """ACE (Agentic Context Engineering) middleware for self-improving agents.
@@ -570,11 +573,15 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         user_question = self._get_last_user_message(messages[:-1])
         tool_feedback = self._extract_tool_feedback(last_exchange)
 
+        # Extract ground truth if available (for evaluation scenarios)
+        ground_truth = state.get("ground_truth")
+
         reflector_prompt = build_reflector_prompt(
             question=user_question,
             reasoning_trace=trajectory,
             feedback=tool_feedback,
             bullets_used=bullets_used,
+            ground_truth=ground_truth,
         )
 
         return playbook, reflector_prompt, user_question, bullets_used

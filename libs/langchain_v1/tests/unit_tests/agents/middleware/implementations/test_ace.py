@@ -626,6 +626,54 @@ class TestPrompts:
         assert "Response was correct" in result
         assert "[str-00001]" in result
 
+    def test_build_reflector_prompt_with_ground_truth(self) -> None:
+        """Test building reflector prompt with ground truth included."""
+        result = build_reflector_prompt(
+            question="What is 2+2?",
+            reasoning_trace="Let me calculate... The answer is 4.",
+            feedback="Response was correct",
+            bullets_used="[str-00001] :: Test bullet",
+            ground_truth="4",
+        )
+
+        # Check all expected sections are present
+        assert "What is 2+2?" in result
+        assert "Let me calculate" in result
+        assert "Response was correct" in result
+        assert "[str-00001]" in result
+        # Ground truth section should be included
+        assert "Ground Truth Answer" in result
+        assert "4" in result
+
+    def test_build_reflector_prompt_without_ground_truth(self) -> None:
+        """Test that ground truth section is absent when not provided."""
+        result = build_reflector_prompt(
+            question="What is 2+2?",
+            reasoning_trace="Let me calculate...",
+            feedback="Response was correct",
+            bullets_used="[str-00001] :: Test bullet",
+            ground_truth=None,
+        )
+
+        # Ground truth section should NOT be present
+        assert "Ground Truth Answer" not in result
+        # Other sections should still be present
+        assert "What is 2+2?" in result
+        assert "Feedback/Outcome" in result
+
+    def test_build_reflector_prompt_ground_truth_empty_string(self) -> None:
+        """Test that empty string ground truth is treated as no ground truth."""
+        result = build_reflector_prompt(
+            question="What is 2+2?",
+            reasoning_trace="Let me calculate...",
+            feedback="Response was correct",
+            bullets_used="[str-00001] :: Test bullet",
+            ground_truth="",
+        )
+
+        # Empty string is falsy, so ground truth section should NOT be present
+        assert "Ground Truth Answer" not in result
+
     def test_build_curator_prompt(self) -> None:
         """Test building curator prompt."""
         result = build_curator_prompt(
@@ -863,6 +911,62 @@ class TestACEMiddlewareHooks:
         # Should return None (no state updates) - counter should NOT increment
         # This prevents counter drift during tool loops
         assert result is None
+
+    def test_ground_truth_passed_to_reflector(self) -> None:
+        """Test that ground_truth is passed from state to reflector prompt."""
+        middleware = ACEMiddleware(
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
+            initial_playbook=initialize_empty_playbook(),
+        )
+
+        state: dict[str, Any] = {
+            "messages": [
+                HumanMessage(content="What is 2+2?"),
+                AIMessage(content="The answer is 4."),
+            ],
+            "ace_playbook": middleware._get_playbook({}).to_dict(),  # type: ignore[arg-type]
+            "ace_last_reflection": "",
+            "ace_interaction_count": 0,
+            "ground_truth": "4",  # Ground truth provided for evaluation
+        }
+
+        # Run _prepare_reflection_context to get the reflector prompt
+        context = middleware._prepare_reflection_context(state)  # type: ignore[arg-type]
+
+        assert context is not None
+        _, reflector_prompt, _, _ = context
+
+        # Ground truth section should be in the prompt
+        assert "Ground Truth Answer" in reflector_prompt
+        assert "4" in reflector_prompt
+
+    def test_ground_truth_none_excludes_section(self) -> None:
+        """Test that missing ground_truth excludes GT section from prompt."""
+        middleware = ACEMiddleware(
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
+            initial_playbook=initialize_empty_playbook(),
+        )
+
+        state: dict[str, Any] = {
+            "messages": [
+                HumanMessage(content="What is 2+2?"),
+                AIMessage(content="The answer is 4."),
+            ],
+            "ace_playbook": middleware._get_playbook({}).to_dict(),  # type: ignore[arg-type]
+            "ace_last_reflection": "",
+            "ace_interaction_count": 0,
+            # No ground_truth field
+        }
+
+        context = middleware._prepare_reflection_context(state)  # type: ignore[arg-type]
+
+        assert context is not None
+        _, reflector_prompt, _, _ = context
+
+        # Ground truth section should NOT be in the prompt
+        assert "Ground Truth Answer" not in reflector_prompt
 
 
 class TestACEMiddlewareCuration:

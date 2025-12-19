@@ -7,6 +7,7 @@ LangChain middleware context.
 from __future__ import annotations
 
 from langchain_core.messages import SystemMessage
+from langchain_core.prompts import PromptTemplate
 
 from langchain.agents.middleware.ace.playbook import SectionName
 
@@ -49,8 +50,12 @@ The following reflection provides feedback on a previous attempt at this task:
 Please consider this feedback to avoid repeating mistakes."""
 
 
-# Reflector prompt for analyzing responses
-REFLECTOR_PROMPT = """You are an expert analyst and educator evaluating an AI agent's response.
+# Reflector prompt components for analyzing responses
+# These are composable templates that can be combined dynamically based on
+# whether ground truth is available.
+
+REFLECTOR_BASE = PromptTemplate.from_template(
+    """You are an expert analyst and educator evaluating an AI agent's response.
 Your job is to diagnose reasoning quality and identify which playbook strategies helped or hurt.
 
 ## Instructions
@@ -68,7 +73,18 @@ Your job is to diagnose reasoning quality and identify which playbook strategies
 
 **Agent's Reasoning/Response:**
 {reasoning_trace}
+"""
+)
 
+REFLECTOR_GT_SECTION = PromptTemplate.from_template(
+    """
+**Ground Truth Answer:**
+{ground_truth}
+"""
+)
+
+REFLECTOR_SUFFIX = PromptTemplate.from_template(
+    """
 **Feedback/Outcome:**
 {feedback}
 
@@ -78,17 +94,17 @@ Your job is to diagnose reasoning quality and identify which playbook strategies
 ## Your Analysis
 
 Respond in this exact JSON format:
-{{
+{{{{
   "reasoning": "Your chain of thought analyzing the response quality",
   "error_identification": "What specifically went wrong (if anything)? Be precise.",
   "root_cause_analysis": "Why did this error occur? What concept was misunderstood or misapplied?",
   "correct_approach": "What should the agent have done instead?",
   "key_insight": "One actionable strategy or principle to remember for future similar tasks",
   "bullet_tags": [
-    {{"id": "xxx-00001", "tag": "helpful"}},
-    {{"id": "xxx-00002", "tag": "harmful"}}
+    {{{{"id": "xxx-00001", "tag": "helpful"}}}},
+    {{{{"id": "xxx-00002", "tag": "harmful"}}}}
   ]
-}}
+}}}}
 
 Only include bullets in bullet_tags that were actually referenced. Tag options:
 - "helpful": The bullet contributed positively to the response
@@ -97,6 +113,7 @@ Only include bullets in bullet_tags that were actually referenced. Tag options:
 
 If the response was correct and no errors occurred, set error_identification, root_cause_analysis,
 and correct_approach to "N/A - response was correct" and focus on what made it successful."""
+)
 
 
 # Curator prompt for updating the playbook
@@ -212,19 +229,36 @@ def build_reflector_prompt(
     reasoning_trace: str,
     feedback: str,
     bullets_used: str,
+    ground_truth: str | None = None,
 ) -> str:
     """Build the reflector prompt for analyzing a response.
+
+    Uses PromptTemplate composition to dynamically include the ground truth
+    section when available, avoiding prompt duplication.
 
     Args:
         question: The original user question/query.
         reasoning_trace: The agent's response/reasoning.
         feedback: Feedback about the response (success/failure info).
         bullets_used: Formatted string of playbook bullets that were referenced.
+        ground_truth: Optional ground truth answer for evaluation scenarios.
 
     Returns:
         Formatted reflector prompt.
     """
-    return REFLECTOR_PROMPT.format(
+    # Compose template based on ground truth availability
+    if ground_truth:
+        template = REFLECTOR_BASE + REFLECTOR_GT_SECTION + REFLECTOR_SUFFIX
+        return template.format(
+            question=question,
+            reasoning_trace=reasoning_trace,
+            ground_truth=ground_truth,
+            feedback=feedback,
+            bullets_used=bullets_used,
+        )
+
+    template = REFLECTOR_BASE + REFLECTOR_SUFFIX
+    return template.format(
         question=question,
         reasoning_trace=reasoning_trace,
         feedback=feedback,
