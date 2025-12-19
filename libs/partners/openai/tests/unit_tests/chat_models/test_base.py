@@ -1001,6 +1001,32 @@ def test_get_num_tokens_from_messages() -> None:
         actual = llm.get_num_tokens_from_messages(messages)
     assert actual == 13
 
+    # Test Responses
+    messages = [
+        AIMessage(
+            [
+                {
+                    "type": "function_call",
+                    "name": "multiply",
+                    "arguments": '{"x":5,"y":4}',
+                    "call_id": "call_abc123",
+                    "id": "fc_abc123",
+                    "status": "completed",
+                },
+            ],
+            tool_calls=[
+                {
+                    "type": "tool_call",
+                    "name": "multiply",
+                    "args": {"x": 5, "y": 4},
+                    "id": "call_abc123",
+                }
+            ],
+        )
+    ]
+    actual = llm.get_num_tokens_from_messages(messages)
+    assert actual
+
 
 class Foo(BaseModel):
     bar: int
