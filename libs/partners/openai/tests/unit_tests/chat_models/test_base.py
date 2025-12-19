@@ -145,6 +145,10 @@ def test_profile() -> None:
     model = ChatOpenAI(model="gpt-5", profile={"tool_calling": False})
     assert model.profile == {"tool_calling": False}
 
+    # Test overrides for gpt-5 input tokens
+    model = ChatOpenAI(model="gpt-5")
+    assert model.profile["max_input_tokens"] == 272_000
+
 
 def test_openai_o1_temperature() -> None:
     llm = ChatOpenAI(model="o1-preview")
