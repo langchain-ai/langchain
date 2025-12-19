@@ -9,9 +9,10 @@ Example:
     from langchain.agents import create_agent
     from langchain.agents.middleware import ACEMiddleware
 
-    # Create ACE middleware
+    # Create ACE middleware (both models are required)
     ace = ACEMiddleware(
         reflector_model="gpt-4o-mini",
+        curator_model="gpt-4o-mini",
         curator_frequency=10,
     )
 

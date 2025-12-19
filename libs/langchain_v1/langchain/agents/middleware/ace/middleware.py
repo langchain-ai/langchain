@@ -93,13 +93,16 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         tools: Empty list (no additional tools registered).
 
     Example:
-        Basic usage with default settings:
+        Basic usage:
 
         ```python
         from langchain.agents import create_agent
         from langchain.agents.middleware import ACEMiddleware
 
-        ace = ACEMiddleware(reflector_model="gpt-4o-mini")
+        ace = ACEMiddleware(
+            reflector_model="gpt-4o-mini",
+            curator_model="gpt-4o-mini",
+        )
 
         agent = create_agent(
             model="gpt-4o",
@@ -115,7 +118,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
             reflector_model="gpt-4o-mini",
             curator_model="gpt-4o-mini",
             curator_frequency=10,
-            initial_playbook=\"\"\"## STRATEGIES & INSIGHTS
+            initial_playbook=\"\"\"## strategies_and_insights
         [str-00001] helpful=5 harmful=0 :: Always verify data types
         \"\"\",
             auto_prune=True,
@@ -130,13 +133,11 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
     def __init__(
         self,
         *,
-        reflector_model: str | BaseChatModel | None = None,
-        curator_model: str | BaseChatModel | None = None,
+        reflector_model: str | BaseChatModel,
+        curator_model: str | BaseChatModel,
         initial_playbook: str | None = None,
         curator_frequency: int = 5,
         playbook_token_budget: int = 80000,
-        enable_reflection: bool = True,
-        enable_curation: bool = True,
         auto_prune: bool = False,
         prune_threshold: float = 0.5,
         prune_min_interactions: int = 3,
@@ -147,17 +148,12 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         Args:
             reflector_model: Model for analyzing responses and tagging bullets.
                 Can be a model name string or a `BaseChatModel` instance.
-                If not provided, reflection is disabled.
             curator_model: Model for curating the playbook.
-                If not provided, uses the reflector model.
+                Can be a model name string or a `BaseChatModel` instance.
             initial_playbook: Starting playbook content.
                 If not provided, uses an empty template with standard sections.
             curator_frequency: Run curator every N interactions.
             playbook_token_budget: Maximum tokens for playbook content.
-            enable_reflection: Whether to run reflector after model calls.
-                Requires `reflector_model` to be set.
-            enable_curation: Whether to periodically curate the playbook.
-                Requires `curator_model` or `reflector_model` to be set.
             auto_prune: Whether to automatically prune harmful bullets.
             prune_threshold: Harmful ratio threshold for pruning (0-1).
             prune_min_interactions: Minimum interactions before pruning.
@@ -169,7 +165,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
 
         # Store model specs (initialize lazily)
         self._reflector_model_spec = reflector_model
-        self._curator_model_spec = curator_model or reflector_model
+        self._curator_model_spec = curator_model
         self._reflector_model: BaseChatModel | None = None
         self._curator_model: BaseChatModel | None = None
 
@@ -177,22 +173,15 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         self.initial_playbook = initial_playbook or initialize_empty_playbook()
         self.curator_frequency = curator_frequency
         self.playbook_token_budget = playbook_token_budget
-        self.enable_reflection = enable_reflection and reflector_model is not None
-        self.enable_curation = enable_curation and (
-            curator_model is not None or reflector_model is not None
-        )
         self.auto_prune = auto_prune
         self.prune_threshold = prune_threshold
         self.prune_min_interactions = prune_min_interactions
         self.expected_interactions = expected_interactions or 100
 
-    def _get_reflector_model(self) -> BaseChatModel | None:
+    def _get_reflector_model(self) -> BaseChatModel:
         """Get or initialize the reflector model."""
         if self._reflector_model is not None:
             return self._reflector_model
-
-        if self._reflector_model_spec is None:
-            return None
 
         if isinstance(self._reflector_model_spec, str):
             self._reflector_model = init_chat_model(self._reflector_model_spec)
@@ -201,13 +190,10 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
 
         return self._reflector_model
 
-    def _get_curator_model(self) -> BaseChatModel | None:
+    def _get_curator_model(self) -> BaseChatModel:
         """Get or initialize the curator model."""
         if self._curator_model is not None:
             return self._curator_model
-
-        if self._curator_model_spec is None:
-            return None
 
         if isinstance(self._curator_model_spec, str):
             self._curator_model = init_chat_model(self._curator_model_spec)
@@ -672,18 +658,12 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
     @override
     def after_model(self, state: ACEState, runtime: Runtime) -> dict[str, Any] | None:
         """Analyze response and update playbook after model call."""
-        if not self.enable_reflection:
-            return self._increment_interaction_count(state)
-
-        reflector = self._get_reflector_model()
-        if reflector is None:
-            return self._increment_interaction_count(state)
-
         context = self._prepare_reflection_context(state)
         if context is None:
             return self._increment_interaction_count(state)
 
         playbook, reflector_prompt, user_question, _ = context
+        reflector = self._get_reflector_model()
 
         # Call reflector (sync)
         try:
@@ -713,7 +693,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         }
 
         # Run curator if threshold reached
-        if self.enable_curation and interaction_count % self.curator_frequency == 0:
+        if interaction_count % self.curator_frequency == 0:
             curated = self._run_curator(
                 updated_playbook, reflection, user_question, interaction_count
             )
@@ -725,18 +705,12 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
     @override
     async def aafter_model(self, state: ACEState, runtime: Runtime) -> dict[str, Any] | None:
         """Async version of after_model."""
-        if not self.enable_reflection:
-            return self._increment_interaction_count(state)
-
-        reflector = self._get_reflector_model()
-        if reflector is None:
-            return self._increment_interaction_count(state)
-
         context = self._prepare_reflection_context(state)
         if context is None:
             return self._increment_interaction_count(state)
 
         playbook, reflector_prompt, user_question, _ = context
+        reflector = self._get_reflector_model()
 
         # Call reflector (async)
         try:
@@ -766,7 +740,7 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
         }
 
         # Run curator if threshold reached (async)
-        if self.enable_curation and interaction_count % self.curator_frequency == 0:
+        if interaction_count % self.curator_frequency == 0:
             curated = await self._arun_curator(
                 updated_playbook, reflection, user_question, interaction_count
             )
@@ -790,9 +764,6 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
     ) -> ACEPlaybook | None:
         """Run the curator to update the playbook with new insights."""
         curator = self._get_curator_model()
-        if curator is None:
-            return None
-
         curator_prompt = self._prepare_curator_prompt(
             playbook, reflection, question_context, interaction_count
         )
@@ -823,9 +794,6 @@ class ACEMiddleware(AgentMiddleware[ACEState, Any]):
     ) -> ACEPlaybook | None:
         """Async version of curator."""
         curator = self._get_curator_model()
-        if curator is None:
-            return None
-
         curator_prompt = self._prepare_curator_prompt(
             playbook, reflection, question_context, interaction_count
         )

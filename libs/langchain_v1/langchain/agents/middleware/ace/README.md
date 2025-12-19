@@ -82,14 +82,14 @@ ACE uses three specialized roles that work together:
 The playbook is a structured document containing bullets organized by section:
 
 ```
-## STRATEGIES & INSIGHTS
+## strategies_and_insights
 [str-00001] helpful=5 harmful=0 :: Always verify data types before processing
 [str-00002] helpful=3 harmful=1 :: Consider edge cases in financial data
 
-## FORMULAS & CALCULATIONS
+## formulas_and_calculations
 [cal-00001] helpful=8 harmful=0 :: NPV = Σ(Cash Flow / (1+r)^t)
 
-## COMMON MISTAKES TO AVOID
+## common_mistakes_to_avoid
 [mis-00001] helpful=6 harmful=0 :: Don't forget timezone conversions
 ```
 
@@ -202,9 +202,10 @@ from langchain.agents import create_agent
 from langchain.agents.middleware import ACEMiddleware
 from langchain_core.messages import HumanMessage
 
-# Create ACE middleware with reflection enabled
+# Create ACE middleware (both models are required)
 ace = ACEMiddleware(
     reflector_model="gpt-4o-mini",  # Analyzes trajectories
+    curator_model="gpt-4o-mini",    # Curates the playbook
     curator_frequency=10,            # Curate every 10 interactions
 )
 
@@ -228,37 +229,24 @@ ace = ACEMiddleware(
     reflector_model="gpt-4o-mini",
     curator_model="gpt-4o-mini",
     curator_frequency=5,
-    initial_playbook="""## STRATEGIES & INSIGHTS
+    initial_playbook="""## strategies_and_insights
 [str-00001] helpful=10 harmful=0 :: Always verify data types before processing
 [str-00002] helpful=5 harmful=0 :: Break complex problems into smaller steps
 
-## COMMON MISTAKES TO AVOID
+## common_mistakes_to_avoid
 [mis-00001] helpful=8 harmful=0 :: Don't forget to handle timezone conversions
 [mis-00002] helpful=6 harmful=0 :: Validate user inputs before processing
 """,
 )
 ```
 
-<!-- ### With Auto-Pruning
-
-```python
-ace = ACEMiddleware(
-    reflector_model="gpt-4o-mini",
-    curator_model="gpt-4o-mini",
-    curator_frequency=10,
-    auto_prune=True,           # Enable automatic pruning
-    prune_threshold=0.5,       # Prune if harmful/(helpful+harmful) > 0.5
-    prune_min_interactions=5,  # Only prune after 5+ interactions
-)
-``` -->
-
 ### Full Configuration
 
 ```python
 ace = ACEMiddleware(
-    # Models for reflection and curation
+    # Models for reflection and curation (both required)
     reflector_model="gpt-4o-mini",      # Or pass a BaseChatModel instance
-    curator_model="gpt-4o-mini",        # Defaults to reflector_model if not set
+    curator_model="gpt-4o-mini",        # Or pass a BaseChatModel instance
 
     # Initial playbook content
     initial_playbook=None,              # Uses default template if not provided
@@ -266,10 +254,6 @@ ace = ACEMiddleware(
     # Curation settings
     curator_frequency=5,                # Run curator every N interactions
     playbook_token_budget=80000,        # Max tokens for playbook
-
-    # Feature toggles
-    enable_reflection=True,             # Run reflector after model calls
-    enable_curation=True,               # Run curator periodically
 
     # Pruning settings
     auto_prune=False,                   # Auto-remove harmful bullets
@@ -296,17 +280,17 @@ class ACEState(AgentState):
 
 ## Playbook Sections
 
-The default playbook template includes these sections:
+The default playbook template includes these sections (using normalized snake_case names):
 
 | Section | Slug | Purpose |
 |---------|------|---------|
-| STRATEGIES & INSIGHTS | `str` | General approaches and tactics |
-| FORMULAS & CALCULATIONS | `cal` | Mathematical formulas and computation patterns |
-| CODE SNIPPETS & TEMPLATES | `cod` | Reusable code patterns |
-| COMMON MISTAKES TO AVOID | `mis` | Known pitfalls and anti-patterns |
-| PROBLEM-SOLVING HEURISTICS | `heu` | Decision-making rules of thumb |
-| CONTEXT CLUES & INDICATORS | `ctx` | Signals for identifying problem types |
-| OTHERS | `oth` | Miscellaneous insights |
+| `strategies_and_insights` | `str` | General approaches and tactics |
+| `formulas_and_calculations` | `cal` | Mathematical formulas and computation patterns |
+| `code_snippets_and_templates` | `cod` | Reusable code patterns |
+| `common_mistakes_to_avoid` | `mis` | Known pitfalls and anti-patterns |
+| `problem_solving_heuristics` | `heu` | Decision-making rules of thumb |
+| `context_clues_and_indicators` | `ctx` | Signals for identifying problem types |
+| `others` | `oth` | Miscellaneous insights |
 
 ## API Reference
 
@@ -314,16 +298,15 @@ The default playbook template includes these sections:
 
 ```python
 ACEMiddleware(
-    reflector_model: str | BaseChatModel | None = None,
-    curator_model: str | BaseChatModel | None = None,
+    reflector_model: str | BaseChatModel,      # Required
+    curator_model: str | BaseChatModel,        # Required
     initial_playbook: str | None = None,
     curator_frequency: int = 5,
     playbook_token_budget: int = 80000,
-    enable_reflection: bool = True,
-    enable_curation: bool = True,
     auto_prune: bool = False,
     prune_threshold: float = 0.5,
     prune_min_interactions: int = 3,
+    expected_interactions: int | None = None,
 )
 ```
 

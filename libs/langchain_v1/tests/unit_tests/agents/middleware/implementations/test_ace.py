@@ -564,17 +564,18 @@ class TestACEMiddlewareInitialization:
     """Tests for ACE middleware initialization."""
 
     def test_default_initialization(self) -> None:
-        """Test middleware with default settings."""
-        middleware = ACEMiddleware()
+        """Test middleware with required models."""
+        middleware = ACEMiddleware(
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
+        )
 
         assert middleware.curator_frequency == 5
         assert middleware.playbook_token_budget == 80000
-        assert middleware.enable_reflection is False  # No reflector model
-        assert middleware.enable_curation is False  # No curator model
         assert middleware.auto_prune is False
 
-    def test_initialization_with_models(self) -> None:
-        """Test middleware with model specifications."""
+    def test_initialization_with_string_models(self) -> None:
+        """Test middleware with model name strings."""
         with patch(
             "langchain.agents.middleware.ace.middleware.init_chat_model",
             return_value=MockReflectorModel(),
@@ -585,16 +586,18 @@ class TestACEMiddlewareInitialization:
                 curator_frequency=10,
             )
 
-            assert middleware.enable_reflection is True
-            assert middleware.enable_curation is True
             assert middleware.curator_frequency == 10
 
     def test_initialization_with_initial_playbook(self) -> None:
         """Test middleware with custom initial playbook."""
-        custom_playbook = """## STRATEGIES & INSIGHTS
+        custom_playbook = """## strategies_and_insights
 [str-00001] helpful=5 harmful=0 :: Custom strategy"""
 
-        middleware = ACEMiddleware(initial_playbook=custom_playbook)
+        middleware = ACEMiddleware(
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
+            initial_playbook=custom_playbook,
+        )
 
         assert "[str-00001]" in middleware.initial_playbook
         assert "Custom strategy" in middleware.initial_playbook
@@ -602,6 +605,8 @@ class TestACEMiddlewareInitialization:
     def test_initialization_with_auto_prune(self) -> None:
         """Test middleware with auto-pruning enabled."""
         middleware = ACEMiddleware(
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
             auto_prune=True,
             prune_threshold=0.6,
             prune_min_interactions=5,
@@ -617,7 +622,10 @@ class TestACEMiddlewareHooks:
 
     def test_before_agent_initializes_state(self) -> None:
         """Test that before_agent initializes ACE state fields."""
-        middleware = ACEMiddleware()
+        middleware = ACEMiddleware(
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
+        )
 
         state: dict[str, Any] = {"messages": []}
         result = middleware.before_agent(state, None)  # type: ignore[arg-type]
@@ -630,7 +638,10 @@ class TestACEMiddlewareHooks:
 
     def test_before_agent_does_not_reinitialize(self) -> None:
         """Test that before_agent doesn't overwrite existing state."""
-        middleware = ACEMiddleware()
+        middleware = ACEMiddleware(
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
+        )
 
         state: dict[str, Any] = {
             "messages": [],
@@ -643,7 +654,9 @@ class TestACEMiddlewareHooks:
     def test_wrap_model_call_injects_playbook(self) -> None:
         """Test that wrap_model_call injects playbook into system prompt."""
         middleware = ACEMiddleware(
-            initial_playbook="[str-00001] helpful=1 harmful=0 :: Test strategy"
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
+            initial_playbook="[str-00001] helpful=1 harmful=0 :: Test strategy",
         )
 
         from langchain_core.messages import SystemMessage
@@ -681,25 +694,12 @@ class TestACEMiddlewareHooks:
         assert "ACE PLAYBOOK" in system_content
         assert "[str-00001]" in system_content
 
-    def test_after_model_increments_count_without_reflection(self) -> None:
-        """Test that after_model increments count when reflection disabled."""
-        middleware = ACEMiddleware(enable_reflection=False)
-
-        state: dict[str, Any] = {
-            "messages": [AIMessage(content="Response")],
-            "ace_interaction_count": 5,
-        }
-
-        result = middleware.after_model(state, None)  # type: ignore[arg-type]
-
-        assert result is not None
-        assert result["ace_interaction_count"] == 6
-
     def test_after_model_with_reflection(self) -> None:
         """Test after_model runs reflector and updates state."""
         middleware = ACEMiddleware(
             reflector_model=MockReflectorModel(),
-            initial_playbook="""## STRATEGIES & INSIGHTS
+            curator_model=MockCuratorModel(),
+            initial_playbook="""## strategies_and_insights
 [str-00001] helpful=0 harmful=0 :: Test strategy""",
         )
 
@@ -725,7 +725,10 @@ class TestACEMiddlewareHooks:
 
     def test_after_model_handles_non_ai_message(self) -> None:
         """Test after_model handles case where last message is not AI."""
-        middleware = ACEMiddleware(reflector_model=MockReflectorModel())
+        middleware = ACEMiddleware(
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
+        )
 
         state: dict[str, Any] = {
             "messages": [HumanMessage(content="User message")],
@@ -798,7 +801,10 @@ class TestACEMiddlewareJSONParsing:
 
     def test_extract_json_direct_parse(self) -> None:
         """Test extracting JSON from direct JSON string."""
-        middleware = ACEMiddleware()
+        middleware = ACEMiddleware(
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
+        )
 
         json_str = '{"key": "value", "nested": {"a": 1}}'
         result = middleware._extract_json_from_response(json_str)
@@ -809,7 +815,10 @@ class TestACEMiddlewareJSONParsing:
 
     def test_extract_json_from_code_block(self) -> None:
         """Test extracting JSON from code block."""
-        middleware = ACEMiddleware()
+        middleware = ACEMiddleware(
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
+        )
 
         text = """Here is the response:
 ```json
@@ -825,7 +834,10 @@ End of response."""
 
     def test_extract_json_from_embedded(self) -> None:
         """Test extracting JSON embedded in text."""
-        middleware = ACEMiddleware()
+        middleware = ACEMiddleware(
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
+        )
 
         text = 'Some text before {"data": "value"} some text after'
         result = middleware._extract_json_from_response(text)
@@ -835,7 +847,10 @@ End of response."""
 
     def test_extract_json_invalid_returns_none(self) -> None:
         """Test that invalid JSON returns None."""
-        middleware = ACEMiddleware()
+        middleware = ACEMiddleware(
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
+        )
 
         result = middleware._extract_json_from_response("Not JSON at all")
         assert result is None
@@ -847,7 +862,10 @@ class TestACEMiddlewareAsync:
     @pytest.mark.asyncio
     async def test_abefore_agent(self) -> None:
         """Test async before_agent."""
-        middleware = ACEMiddleware()
+        middleware = ACEMiddleware(
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
+        )
 
         state: dict[str, Any] = {"messages": []}
         result = await middleware.abefore_agent(state, None)  # type: ignore[arg-type]
@@ -858,7 +876,11 @@ class TestACEMiddlewareAsync:
     @pytest.mark.asyncio
     async def test_awrap_model_call(self) -> None:
         """Test async wrap_model_call."""
-        middleware = ACEMiddleware(initial_playbook="[str-00001] helpful=1 harmful=0 :: Strategy")
+        middleware = ACEMiddleware(
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
+            initial_playbook="[str-00001] helpful=1 harmful=0 :: Strategy",
+        )
 
         from langchain_core.messages import SystemMessage
 
@@ -894,12 +916,13 @@ class TestACEMiddlewareAsync:
 class TestACEMiddlewareIntegration:
     """Integration-style tests for ACE middleware."""
 
-    def test_full_workflow_without_reflection(self) -> None:
-        """Test complete workflow with reflection disabled."""
+    def test_full_workflow(self) -> None:
+        """Test complete workflow with reflection and curation."""
         middleware = ACEMiddleware(
-            initial_playbook="""## STRATEGIES & INSIGHTS
+            reflector_model=MockReflectorModel(),
+            curator_model=MockCuratorModel(),
+            initial_playbook="""## strategies_and_insights
 [str-00001] helpful=5 harmful=0 :: Use systematic approach""",
-            enable_reflection=False,
         )
 
         # Initialize state
@@ -914,13 +937,15 @@ class TestACEMiddlewareIntegration:
         # Simulate after model call
         state["messages"] = [
             HumanMessage(content="Question"),
-            AIMessage(content="Answer"),
+            AIMessage(content="Answer using [str-00001]"),
         ]
         after_result = middleware.after_model(state, None)  # type: ignore[arg-type]
         state.update(after_result or {})
 
         # Verify interaction count incremented
         assert state["ace_interaction_count"] == 1
+        # Verify reflection was captured
+        assert state["ace_last_reflection"] != ""
 
     def test_playbook_evolution_over_interactions(self) -> None:
         """Test that playbook evolves across multiple interactions."""
@@ -928,7 +953,7 @@ class TestACEMiddlewareIntegration:
             reflector_model=MockReflectorModel(),
             curator_model=MockCuratorModel(),
             curator_frequency=1,  # Curate every interaction
-            initial_playbook="""## STRATEGIES & INSIGHTS
+            initial_playbook="""## strategies_and_insights
 [str-00001] helpful=0 harmful=0 :: Initial strategy""",
         )
 
