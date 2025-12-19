@@ -674,7 +674,7 @@ def test_trim_messages_start_on_with_allow_partial() -> None:
 
 
 def test_trim_messages_token_counter_shortcut_approximate() -> None:
-    """Test that 'approximate' shortcut works for token_counter."""
+    """Test that `'approximate'` shortcut works for `token_counter`."""
     messages = [
         SystemMessage("This is a test message"),
         HumanMessage("Another test message", id="first"),
@@ -704,7 +704,7 @@ def test_trim_messages_token_counter_shortcut_approximate() -> None:
 
 
 def test_trim_messages_token_counter_shortcut_invalid() -> None:
-    """Test that invalid token_counter shortcut raises ValueError."""
+    """Test that invalid `token_counter` shortcut raises `ValueError`."""
     messages = [
         SystemMessage("This is a test message"),
         HumanMessage("Another test message"),
