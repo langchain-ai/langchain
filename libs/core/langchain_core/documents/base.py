@@ -1,4 +1,16 @@
-"""Base classes for media and documents."""
+"""Base classes for media and documents.
+
+This module contains core abstractions for **data retrieval and processing workflows**:
+
+- `BaseMedia`: Base class providing `id` and `metadata` fields
+- `Blob`: Raw data loading (files, binary data) - used by document loaders
+- `Document`: Text content for retrieval (RAG, vector stores, semantic search)
+
+!!! note "Not for LLM chat messages"
+    These classes are for data processing pipelines, not LLM I/O. For multimodal
+    content in chat messages (images, audio in conversations), see
+    `langchain.messages` content blocks instead.
+"""
 
 from __future__ import annotations
 
@@ -6,7 +18,7 @@ import contextlib
 import mimetypes
 from io import BufferedReader, BytesIO
 from pathlib import Path, PurePath
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from pydantic import ConfigDict, Field, model_validator
 
@@ -15,31 +27,27 @@ from langchain_core.load.serializable import Serializable
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-PathLike = Union[str, PurePath]
+PathLike = str | PurePath
 
 
 class BaseMedia(Serializable):
-    """Use to represent media content.
+    """Base class for content used in retrieval and data processing workflows.
 
-    Media objects can be used to represent raw data, such as text or binary data.
+    Provides common fields for content that needs to be stored, indexed, or searched.
 
-    LangChain Media objects allow associating metadata and an optional identifier
-    with the content.
-
-    The presence of an ID and metadata make it easier to store, index, and search
-    over the content in a structured way.
+    !!! note
+        For multimodal content in **chat messages** (images, audio sent to/from LLMs),
+        use `langchain.messages` content blocks instead.
     """
 
     # The ID field is optional at the moment.
     # It will likely become required in a future major release after
-    # it has been adopted by enough vectorstore implementations.
-    id: Optional[str] = Field(default=None, coerce_numbers_to_str=True)
+    # it has been adopted by enough VectorStore implementations.
+    id: str | None = Field(default=None, coerce_numbers_to_str=True)
     """An optional identifier for the document.
 
     Ideally this should be unique across the document collection and formatted
     as a UUID, but this will not be enforced.
-
-    .. versionadded:: 0.2.11
     """
 
     metadata: dict = Field(default_factory=dict)
@@ -47,74 +55,72 @@ class BaseMedia(Serializable):
 
 
 class Blob(BaseMedia):
-    """Blob represents raw data by either reference or value.
+    """Raw data abstraction for document loading and file processing.
 
-    Provides an interface to materialize the blob in different representations, and
-    help to decouple the development of data loaders from the downstream parsing of
-    the raw data.
+    Represents raw bytes or text, either in-memory or by file reference. Used
+    primarily by document loaders to decouple data loading from parsing.
 
-    Inspired by: https://developer.mozilla.org/en-US/docs/Web/API/Blob
+    Inspired by [Mozilla's `Blob`](https://developer.mozilla.org/en-US/docs/Web/API/Blob)
 
-    Example: Initialize a blob from in-memory data
+    ???+ example "Initialize a blob from in-memory data"
 
-        .. code-block:: python
+        ```python
+        from langchain_core.documents import Blob
 
-            from langchain_core.documents import Blob
+        blob = Blob.from_data("Hello, world!")
 
-            blob = Blob.from_data("Hello, world!")
+        # Read the blob as a string
+        print(blob.as_string())
 
-            # Read the blob as a string
-            print(blob.as_string())
+        # Read the blob as bytes
+        print(blob.as_bytes())
 
-            # Read the blob as bytes
-            print(blob.as_bytes())
+        # Read the blob as a byte stream
+        with blob.as_bytes_io() as f:
+            print(f.read())
+        ```
 
-            # Read the blob as a byte stream
-            with blob.as_bytes_io() as f:
-                print(f.read())
+    ??? example "Load from memory and specify MIME type and metadata"
 
-    Example: Load from memory and specify mime-type and metadata
+        ```python
+        from langchain_core.documents import Blob
 
-        .. code-block:: python
+        blob = Blob.from_data(
+            data="Hello, world!",
+            mime_type="text/plain",
+            metadata={"source": "https://example.com"},
+        )
+        ```
 
-            from langchain_core.documents import Blob
+    ??? example "Load the blob from a file"
 
-            blob = Blob.from_data(
-                data="Hello, world!",
-                mime_type="text/plain",
-                metadata={"source": "https://example.com"}
-            )
+        ```python
+        from langchain_core.documents import Blob
 
-    Example: Load the blob from a file
+        blob = Blob.from_path("path/to/file.txt")
 
-        .. code-block:: python
+        # Read the blob as a string
+        print(blob.as_string())
 
-            from langchain_core.documents import Blob
+        # Read the blob as bytes
+        print(blob.as_bytes())
 
-            blob = Blob.from_path("path/to/file.txt")
-
-            # Read the blob as a string
-            print(blob.as_string())
-
-            # Read the blob as bytes
-            print(blob.as_bytes())
-
-            # Read the blob as a byte stream
-            with blob.as_bytes_io() as f:
-                print(f.read())
-
+        # Read the blob as a byte stream
+        with blob.as_bytes_io() as f:
+            print(f.read())
+        ```
     """
 
-    data: Union[bytes, str, None] = None
-    """Raw data associated with the blob."""
-    mimetype: Optional[str] = None
-    """MimeType not to be confused with a file extension."""
+    data: bytes | str | None = None
+    """Raw data associated with the `Blob`."""
+    mimetype: str | None = None
+    """MIME type, not to be confused with a file extension."""
     encoding: str = "utf-8"
     """Encoding to use if decoding the bytes into a string.
 
-    Use utf-8 as default encoding, if decoding to string.
+    Uses `utf-8` as default encoding if decoding to string.
     """
-    path: Optional[PathLike] = None
+    path: PathLike | None = None
     """Location where the original content was found."""
 
     model_config = ConfigDict(
@@ -123,16 +129,16 @@ class Blob(BaseMedia):
     )
 
     @property
-    def source(self) -> Optional[str]:
+    def source(self) -> str | None:
         """The source location of the blob as string if known otherwise none.
 
-        If a path is associated with the blob, it will default to the path location.
+        If a path is associated with the `Blob`, it will default to the path location.
 
-        Unless explicitly set via a metadata field called "source", in which
+        Unless explicitly set via a metadata field called `'source'`, in which
         case that value will be used instead.
         """
         if self.metadata and "source" in self.metadata:
-            return cast("Optional[str]", self.metadata["source"])
+            return cast("str | None", self.metadata["source"])
         return str(self.path) if self.path else None
 
     @model_validator(mode="before")
@@ -145,7 +151,14 @@ class Blob(BaseMedia):
         return values
 
     def as_string(self) -> str:
-        """Read data as a string."""
+        """Read data as a string.
+
+        Raises:
+            ValueError: If the blob cannot be represented as a string.
+
+        Returns:
+            The data as a string.
+        """
         if self.data is None and self.path:
             return Path(self.path).read_text(encoding=self.encoding)
         if isinstance(self.data, bytes):
@@ -156,7 +169,14 @@ class Blob(BaseMedia):
         raise ValueError(msg)
 
     def as_bytes(self) -> bytes:
-        """Read data as bytes."""
+        """Read data as bytes.
+
+        Raises:
+            ValueError: If the blob cannot be represented as bytes.
+
+        Returns:
+            The data as bytes.
+        """
         if isinstance(self.data, bytes):
             return self.data
         if isinstance(self.data, str):
@@ -167,8 +187,15 @@ class Blob(BaseMedia):
         raise ValueError(msg)
 
     @contextlib.contextmanager
-    def as_bytes_io(self) -> Generator[Union[BytesIO, BufferedReader], None, None]:
-        """Read data as a byte stream."""
+    def as_bytes_io(self) -> Generator[BytesIO | BufferedReader, None, None]:
+        """Read data as a byte stream.
+
+        Raises:
+            NotImplementedError: If the blob cannot be represented as a byte stream.
+
+        Yields:
+            The data as a byte stream.
+        """
         if isinstance(self.data, bytes):
             yield BytesIO(self.data)
         elif self.data is None and self.path:
@@ -184,22 +211,22 @@ class Blob(BaseMedia):
         path: PathLike,
         *,
         encoding: str = "utf-8",
-        mime_type: Optional[str] = None,
+        mime_type: str | None = None,
         guess_type: bool = True,
-        metadata: Optional[dict] = None,
+        metadata: dict | None = None,
     ) -> Blob:
         """Load the blob from a path like object.
 
         Args:
-            path: path like object to file to be read
+            path: Path-like object to file to be read
             encoding: Encoding to use if decoding the bytes into a string
-            mime_type: if provided, will be set as the mime-type of the data
-            guess_type: If True, the mimetype will be guessed from the file extension,
-                        if a mime-type was not provided
-            metadata: Metadata to associate with the blob
+            mime_type: If provided, will be set as the MIME type of the data
+            guess_type: If `True`, the MIME type will be guessed from the file
+                extension, if a MIME type was not provided
+            metadata: Metadata to associate with the `Blob`
 
         Returns:
-            Blob instance
+            `Blob` instance
         """
         if mime_type is None and guess_type:
             mimetype = mimetypes.guess_type(path)[0] if guess_type else None
@@ -218,24 +245,24 @@ class Blob(BaseMedia):
     @classmethod
     def from_data(
         cls,
-        data: Union[str, bytes],
+        data: str | bytes,
         *,
         encoding: str = "utf-8",
-        mime_type: Optional[str] = None,
-        path: Optional[str] = None,
-        metadata: Optional[dict] = None,
+        mime_type: str | None = None,
+        path: str | None = None,
+        metadata: dict | None = None,
     ) -> Blob:
-        """Initialize the blob from in-memory data.
+        """Initialize the `Blob` from in-memory data.
 
         Args:
-            data: the in-memory data associated with the blob
+            data: The in-memory data associated with the `Blob`
             encoding: Encoding to use if decoding the bytes into a string
-            mime_type: if provided, will be set as the mime-type of the data
-            path: if provided, will be set as the source from which the data came
-            metadata: Metadata to associate with the blob
+            mime_type: If provided, will be set as the MIME type of the data
+            path: If provided, will be set as the source from which the data came
+            metadata: Metadata to associate with the `Blob`
 
         Returns:
-            Blob instance
+            `Blob` instance
         """
         return cls(
             data=data,
@@ -246,7 +273,7 @@ class Blob(BaseMedia):
         )
 
     def __repr__(self) -> str:
-        """Define the blob representation."""
+        """Return the blob representation."""
         str_repr = f"Blob {id(self)}"
         if self.source:
             str_repr += f" {self.source}"
@@ -256,17 +283,18 @@ class Blob(BaseMedia):
 class Document(BaseMedia):
     """Class for storing a piece of text and associated metadata.
 
+    !!! note
+        `Document` is for **retrieval workflows**, not chat I/O. For sending text
+        to an LLM in a conversation, use message types from `langchain.messages`.
+
     Example:
+        ```python
+        from langchain_core.documents import Document
 
-        .. code-block:: python
-
-            from langchain_core.documents import Document
-
-            document = Document(
-                page_content="Hello, world!",
-                metadata={"source": "https://example.com"}
-            )
-
+        document = Document(
+            page_content="Hello, world!", metadata={"source": "https://example.com"}
+        )
+        ```
     """
 
     page_content: str
@@ -281,19 +309,24 @@ class Document(BaseMedia):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
-        Default namespace is ["langchain", "schema", "document"].
+        Returns:
+            ["langchain", "schema", "document"]
         """
         return ["langchain", "schema", "document"]
 
     def __str__(self) -> str:
-        """Override __str__ to restrict it to page_content and metadata."""
+        """Override `__str__` to restrict it to page_content and metadata.
+
+        Returns:
+            A string representation of the `Document`.
+        """
         # The format matches pydantic format for __str__.
         #
         # The purpose of this change is to make sure that user code that

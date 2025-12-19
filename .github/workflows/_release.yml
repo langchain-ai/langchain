@@ -1,5 +1,11 @@
-name: '🚀 Package Release'
-run-name: 'Release ${{ inputs.working-directory }} ${{ inputs.release-version }}'
+# Builds and publishes LangChain packages to PyPI.
+#
+# Manually triggered, though can be used as a reusable workflow (workflow_call).
+#
+# Handles version bumping, building, and publishing to PyPI with authentication.
+
+name: "🚀 Package Release"
+run-name: "Release ${{ inputs.working-directory }} ${{ inputs.release-version }}"
 on:
   workflow_call:
     inputs:
@@ -13,11 +19,11 @@ on:
         required: true
         type: string
         description: "From which folder this pipeline executes"
-        default: 'libs/langchain'
+        default: "libs/langchain_v1"
       release-version:
         required: true
         type: string
-        default: '0.1.0'
+        default: "0.1.0"
         description: "New version of package being released"
       dangerous-nonmaster-release:
         required: false
@@ -30,6 +36,9 @@ env:
   UV_FROZEN: "true"
   UV_NO_SYNC: "true"
 
+permissions:
+  contents: write # Required for creating GitHub releases
+
 jobs:
   # Build the distribution package and extract version info
   # Runs in isolated environment with minimal permissions for security
@@ -37,13 +46,15 @@ jobs:
     if: github.ref == 'refs/heads/master' || inputs.dangerous-nonmaster-release
     environment: Scheduled testing
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     outputs:
       pkg-name: ${{ steps.check-version.outputs.pkg-name }}
       version: ${{ steps.check-version.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python + uv
         uses: "./.github/actions/uv_setup"
@@ -52,8 +63,8 @@ jobs:
 
       # We want to keep this build stage *separate* from the release stage,
       # so that there's no sharing of permissions between them.
-      # The release stage has trusted publishing and GitHub repo contents write access,
-      # and we want to keep the scope of that access limited just to the release job.
+      # (Release stage has trusted publishing and GitHub repo contents write access,
+      #
       # Otherwise, a malicious `build` step (e.g. via a compromised dependency)
       # could get access to our GitHub or PyPI credentials.
       #
@@ -66,7 +77,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
       - name: Upload build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -89,10 +100,12 @@ jobs:
     needs:
       - build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       release-body: ${{ steps.generate-release-body.outputs.release-body }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           repository: langchain-ai/langchain
           path: langchain
@@ -136,8 +149,8 @@ jobs:
             fi
           fi
 
-          # if PREV_TAG is empty, let it be empty
-          if [ -z "$PREV_TAG" ]; then
+          # if PREV_TAG is empty or came out to 0.0.0, let it be empty
+          if [ -z "$PREV_TAG" ] || [ "$PREV_TAG" = "$PKG_NAME==0.0.0" ]; then
             echo "No previous tag found - first release"
           else
             # confirm prev-tag actually exists in git repo with git tag
@@ -166,8 +179,8 @@ jobs:
           PREV_TAG: ${{ steps.check-tags.outputs.prev-tag }}
         run: |
           PREAMBLE="Changes since $PREV_TAG"
-          # if PREV_TAG is empty, then we are releasing the first version
-          if [ -z "$PREV_TAG" ]; then
+          # if PREV_TAG is empty or 0.0.0, then we are releasing the first version
+          if [ -z "$PREV_TAG" ] || [ "$PREV_TAG" = "$PKG_NAME==0.0.0" ]; then
             PREAMBLE="Initial release"
             PREV_TAG=$(git rev-list --max-parents=0 HEAD)
           fi
@@ -183,13 +196,36 @@ jobs:
     needs:
       - build
       - release-notes
-    uses:
-      ./.github/workflows/_test_release.yml
-    permissions: write-all
-    with:
-      working-directory: ${{ inputs.working-directory }}
-      dangerous-nonmaster-release: ${{ inputs.dangerous-nonmaster-release }}
-    secrets: inherit
+    runs-on: ubuntu-latest
+    permissions:
+      # This permission is used for trusted publishing:
+      # https://blog.pypi.org/posts/2023-04-20-introducing-trusted-publishers/
+      #
+      # Trusted publishing has to also be configured on PyPI for each package:
+      # https://docs.pypi.org/trusted-publishers/adding-a-publisher/
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: ${{ inputs.working-directory }}/dist/
+
+      - name: Publish to test PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ${{ inputs.working-directory }}/dist/
+          verbose: true
+          print-hash: true
+          repository-url: https://test.pypi.org/legacy/
+          # We overwrite any existing distributions with the same name and version.
+          # This is *only for CI use* and is *extremely dangerous* otherwise!
+          # https://github.com/pypa/gh-action-pypi-publish#tolerating-release-package-file-duplicates
+          skip-existing: true
+          # Temp workaround since attestations are on by default as of gh-action-pypi-publish v1.11.0
+          attestations: false
 
   pre-release-checks:
     needs:
@@ -197,9 +233,11 @@ jobs:
       - release-notes
       - test-pypi-publish
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # We explicitly *don't* set up caching here. This ensures our tests are
       # maximally sensitive to catching breakage.
@@ -220,7 +258,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v7
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -265,16 +303,19 @@ jobs:
         run: |
           VIRTUAL_ENV=.venv uv pip install dist/*.whl
 
-      - name: Run unit tests
-        run: make tests
-        working-directory: ${{ inputs.working-directory }}
-
       - name: Check for prerelease versions
+        # Block release if any dependencies allow prerelease versions
+        # (unless this is itself a prerelease version)
         working-directory: ${{ inputs.working-directory }}
         run: |
           uv run python $GITHUB_WORKSPACE/.github/scripts/check_prerelease_dependencies.py pyproject.toml
 
+      - name: Run unit tests
+        run: make tests
+        working-directory: ${{ inputs.working-directory }}
+
       - name: Get minimum versions
+        # Find the minimum published versions that satisfies the given constraints
         working-directory: ${{ inputs.working-directory }}
         id: min-version
         run: |
@@ -289,7 +330,8 @@ jobs:
         env:
           MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
         run: |
-          VIRTUAL_ENV=.venv uv pip install --force-reinstall $MIN_VERSIONS --editable .
+          VIRTUAL_ENV=.venv uv pip install --force-reinstall --editable .
+          VIRTUAL_ENV=.venv uv pip install --force-reinstall $MIN_VERSIONS
           make tests
         working-directory: ${{ inputs.working-directory }}
 
@@ -298,6 +340,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
       - name: Run integration tests
+        # Uses the Makefile's `integration_tests` target for the specified package
         if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
         env:
           AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
@@ -334,21 +377,27 @@ jobs:
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
+          LANGCHAIN_TESTS_USER_AGENT: ${{ secrets.LANGCHAIN_TESTS_USER_AGENT }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
   # Test select published packages against new core
+  # Done when code changes are made to langchain-core
   test-prior-published-packages-against-new-core:
+    # Installs the new core with old partners: Installs the new unreleased core
+    # alongside the previously published partner packages and runs integration tests
     needs:
       - build
       - release-notes
       - test-pypi-publish
       - pre-release-checks
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     strategy:
       matrix:
         partner: [openai, anthropic]
-      fail-fast: false  # Continue testing other partners if one fails
+      fail-fast: false # Continue testing other partners if one fails
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
@@ -361,11 +410,13 @@ jobs:
       AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME }}
       AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
       AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
+      LANGCHAIN_TESTS_USER_AGENT: ${{ secrets.LANGCHAIN_TESTS_USER_AGENT }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # We implement this conditional as Github Actions does not have good support
       # for conditionally needing steps. https://github.com/actions/runner/issues/491
+      # TODO: this seems to be resolved upstream, so we can probably remove this workaround
       - name: Check if libs/core
         run: |
           if [ "${{ startsWith(inputs.working-directory, 'libs/core') }}" != "true" ]; then
@@ -379,7 +430,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v7
         if: startsWith(inputs.working-directory, 'libs/core')
         with:
           name: dist
@@ -393,7 +444,7 @@ jobs:
             git ls-remote --tags origin "langchain-${{ matrix.partner }}*" \
             | awk '{print $2}' \
             | sed 's|refs/tags/||' \
-            | grep -Ev '==[^=]*(\.?dev[0-9]*|\.?rc[0-9]*)$' \
+            | grep -E '[0-9]+\.[0-9]+\.[0-9]+$' \
             | sort -Vr \
             | head -n 1
           )"
@@ -420,6 +471,7 @@ jobs:
           make integration_tests
 
   publish:
+    # Publishes the package to PyPI
     needs:
       - build
       - release-notes
@@ -440,14 +492,14 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python + uv
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v7
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -462,6 +514,7 @@ jobs:
           attestations: false
 
   mark-release:
+    # Marks the GitHub release with the new version tag
     needs:
       - build
       - release-notes
@@ -471,7 +524,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       # This permission is needed by `ncipollo/release-action` to
-      # create the GitHub release.
+      # create the GitHub release/tag
       contents: write
 
     defaults:
@@ -479,14 +532,14 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python + uv
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v7
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/

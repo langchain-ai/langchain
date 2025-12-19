@@ -1,7 +1,7 @@
 from langchain_core.documents import Document
 from langchain_core.language_models import FakeListChatModel
 
-from langchain.retrievers.document_compressors import LLMChainExtractor
+from langchain_classic.retrievers.document_compressors import LLMChainExtractor
 
 
 def test_llm_chain_extractor() -> None:

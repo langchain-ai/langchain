@@ -1,6 +1,8 @@
 """LangChain CLI."""
 
-from typing import Annotated, Optional
+from __future__ import annotations
+
+from typing import Annotated
 
 import typer
 
@@ -61,11 +63,11 @@ def _main(
 def serve(
     *,
     port: Annotated[
-        Optional[int],
+        int | None,
         typer.Option(help="The port to run the server on"),
     ] = None,
     host: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(help="The host to run the server on"),
     ] = None,
 ) -> None:

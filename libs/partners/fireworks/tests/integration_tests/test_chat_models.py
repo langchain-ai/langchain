@@ -6,7 +6,7 @@ You will need FIREWORKS_API_KEY set in your environment to run these tests.
 from __future__ import annotations
 
 import json
-from typing import Annotated, Any, Literal, Optional
+from typing import Annotated, Any, Literal
 
 import pytest
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessageChunk
@@ -20,9 +20,7 @@ _MODEL = "accounts/fireworks/models/llama-v3p1-8b-instruct"
 
 def test_tool_choice_bool() -> None:
     """Test that tool choice is respected just passing in True."""
-    llm = ChatFireworks(
-        model="accounts/fireworks/models/llama-v3p1-70b-instruct", temperature=0
-    )
+    llm = ChatFireworks(model="fireworks/kimi-k2-instruct-0905")
 
     class MyTool(BaseModel):
         name: str
@@ -48,7 +46,7 @@ async def test_astream() -> None:
     """Test streaming tokens from ChatFireworks."""
     llm = ChatFireworks(model=_MODEL)
 
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     chunks_with_token_counts = 0
     chunks_with_response_metadata = 0
     async for token in llm.astream("I'm Pickle Rick"):
@@ -57,7 +55,9 @@ async def test_astream() -> None:
         full = token if full is None else full + token
         if token.usage_metadata is not None:
             chunks_with_token_counts += 1
-        if token.response_metadata:
+        if token.response_metadata and not set(token.response_metadata.keys()).issubset(
+            {"model_provider", "output_version"}
+        ):
             chunks_with_response_metadata += 1
     if chunks_with_token_counts != 1 or chunks_with_response_metadata != 1:
         msg = (
@@ -76,6 +76,7 @@ async def test_astream() -> None:
     )
     assert isinstance(full.response_metadata["model_name"], str)
     assert full.response_metadata["model_name"]
+    assert full.response_metadata["model_provider"] == "fireworks"
 
 
 async def test_abatch_tags() -> None:
@@ -103,6 +104,7 @@ def test_invoke() -> None:
 
     result = llm.invoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
+    assert result.response_metadata["model_provider"] == "fireworks"
 
 
 def _get_joke_class(

@@ -6,7 +6,7 @@ import logging
 import threading
 import weakref
 from concurrent.futures import Future, ThreadPoolExecutor, wait
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
 import langsmith
@@ -38,33 +38,36 @@ class EvaluatorCallbackHandler(BaseTracer):
     """Tracer that runs a run evaluator whenever a run is persisted.
 
     Attributes:
-        example_id : Union[UUID, None]
-            The example ID associated with the runs.
         client : Client
             The LangSmith client instance used for evaluating the runs.
-        evaluators : Sequence[RunEvaluator]
-            The sequence of run evaluators to be executed.
-        executor : ThreadPoolExecutor
-            The thread pool executor used for running the evaluators.
-        futures : set[Future]
-            The set of futures representing the running evaluators.
-        skip_unfinished : bool
-            Whether to skip runs that are not finished or raised
-            an error.
-        project_name : Optional[str]
-            The LangSmith project name to be organize eval chain runs under.
     """
 
     name: str = "evaluator_callback_handler"
+    example_id: UUID | None = None
+    """The example ID associated with the runs."""
+    client: langsmith.Client
+    """The LangSmith client instance used for evaluating the runs."""
+    evaluators: Sequence[langsmith.RunEvaluator] = ()
+    """The sequence of run evaluators to be executed."""
+    executor: ThreadPoolExecutor | None = None
+    """The thread pool executor used for running the evaluators."""
+    futures: weakref.WeakSet[Future] = weakref.WeakSet()
+    """The set of futures representing the running evaluators."""
+    skip_unfinished: bool = True
+    """Whether to skip runs that are not finished or raised an error."""
+    project_name: str | None = None
+    """The LangSmith project name to be organize eval chain runs under."""
+    logged_eval_results: dict[tuple[str, str], list[EvaluationResult]]
+    lock: threading.Lock
 
     def __init__(
         self,
         evaluators: Sequence[langsmith.RunEvaluator],
-        client: Optional[langsmith.Client] = None,
-        example_id: Optional[Union[UUID, str]] = None,
+        client: langsmith.Client | None = None,
+        example_id: UUID | str | None = None,
         skip_unfinished: bool = True,  # noqa: FBT001,FBT002
-        project_name: Optional[str] = "evaluators",
-        max_concurrency: Optional[int] = None,
+        project_name: str | None = "evaluators",
+        max_concurrency: int | None = None,
         **kwargs: Any,
     ) -> None:
         """Create an EvaluatorCallbackHandler.
@@ -91,7 +94,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         self.client = client or langchain_tracer.get_client()
         self.evaluators = evaluators
         if max_concurrency is None:
-            self.executor: Optional[ThreadPoolExecutor] = _get_executor()
+            self.executor = _get_executor()
         elif max_concurrency > 0:
             self.executor = ThreadPoolExecutor(max_workers=max_concurrency)
             weakref.finalize(
@@ -100,10 +103,10 @@ class EvaluatorCallbackHandler(BaseTracer):
             )
         else:
             self.executor = None
-        self.futures: weakref.WeakSet[Future] = weakref.WeakSet()
+        self.futures = weakref.WeakSet()
         self.skip_unfinished = skip_unfinished
         self.project_name = project_name
-        self.logged_eval_results: dict[tuple[str, str], list[EvaluationResult]] = {}
+        self.logged_eval_results = {}
         self.lock = threading.Lock()
         _TRACERS.add(self)
 
@@ -111,12 +114,8 @@ class EvaluatorCallbackHandler(BaseTracer):
         """Evaluate the run in the project.
 
         Args:
-        ----------
-        run : Run
-            The run to be evaluated.
-        evaluator : RunEvaluator
-            The evaluator to use for evaluating the run.
-
+            run: The run to be evaluated.
+            evaluator: The evaluator to use for evaluating the run.
         """
         try:
             if self.project_name is None:
@@ -155,9 +154,9 @@ class EvaluatorCallbackHandler(BaseTracer):
                     res
                 )
 
+    @staticmethod
     def _select_eval_results(
-        self,
-        results: Union[EvaluationResult, EvaluationResults],
+        results: EvaluationResult | EvaluationResults,
     ) -> list[EvaluationResult]:
         if isinstance(results, EvaluationResult):
             results_ = [results]
@@ -173,9 +172,9 @@ class EvaluatorCallbackHandler(BaseTracer):
 
     def _log_evaluation_feedback(
         self,
-        evaluator_response: Union[EvaluationResult, EvaluationResults],
+        evaluator_response: EvaluationResult | EvaluationResults,
         run: Run,
-        source_run_id: Optional[UUID] = None,
+        source_run_id: UUID | None = None,
     ) -> list[EvaluationResult]:
         results = self._select_eval_results(evaluator_response)
         for res in results:
@@ -202,10 +201,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         """Run the evaluator on the run.
 
         Args:
-        ----------
-        run : Run
-            The run to be evaluated.
-
+            run: The run to be evaluated.
         """
         if self.skip_unfinished and not run.outputs:
             logger.debug("Skipping unfinished run %s", run.id)

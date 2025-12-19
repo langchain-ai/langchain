@@ -1,20 +1,16 @@
-import sys
 import typing
-from collections.abc import Iterable, Mapping, MutableMapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, MutableMapping, Sequence
 from typing import Annotated as ExtensionsAnnotated
 from typing import (
     Any,
-    Callable,
     Literal,
-    Optional,
-    Union,
+    TypeAlias,
 )
 from typing import TypedDict as TypingTypedDict
 
 import pytest
 from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
 from pydantic import Field as FieldV2Maybe  # pydantic: ignore
-from typing_extensions import TypeAlias
 from typing_extensions import TypedDict as ExtensionsTypedDict
 
 try:
@@ -22,6 +18,10 @@ try:
 except ImportError:
     TypingAnnotated = ExtensionsAnnotated
 
+
+from importlib.metadata import version
+
+from packaging.version import parse
 from pydantic import BaseModel, Field
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
@@ -76,7 +76,7 @@ def function_docstring_annotations() -> Callable:
         """Dummy function.
 
         Args:
-            arg1 (int): foo
+            arg1: foo
             arg2: one of 'bar', 'baz'
         """
 
@@ -507,7 +507,7 @@ def test_convert_to_openai_function_strict_union_of_objects_arg_type() -> None:
     class NestedC(BaseModel):
         baz: bool
 
-    def my_function(my_arg: Union[NestedA, NestedB, NestedC]) -> None:
+    def my_function(my_arg: NestedA | NestedB | NestedC) -> None:
         """Dummy function."""
 
     expected = {
@@ -676,15 +676,13 @@ def test_convert_to_openai_function_no_description_no_params(func: dict) -> None
     assert actual == expected
 
 
-@pytest.mark.xfail(
-    reason="Pydantic converts Optional[str] to str in .model_json_schema()"
-)
+@pytest.mark.xfail(reason="Pydantic converts str | None to str in .model_json_schema()")
 def test_function_optional_param() -> None:
     @tool
     def func5(
-        a: Optional[str],
+        a: str | None,
         b: str,
-        c: Optional[list[Optional[str]]],
+        c: list[str | None] | None,
     ) -> None:
         """A test function."""
 
@@ -817,12 +815,12 @@ def test__convert_typed_dict_to_openai_function(
         """
 
         arg1: str
-        arg2: Union[int, str, bool]
-        arg3: Optional[list[SubTool]]
+        arg2: int | str | bool
+        arg3: list[SubTool] | None
         arg4: annotated[Literal["bar", "baz"], ..., "this does foo"]  # noqa: F722
-        arg5: annotated[Optional[float], None]
+        arg5: annotated[float | None, None]
         arg6: annotated[
-            Optional[Sequence[Mapping[str, tuple[Iterable[Any], SubTool]]]], []
+            Sequence[Mapping[str, tuple[Iterable[Any], SubTool]]] | None, []
         ]
         arg7: annotated[list[SubTool], ...]
         arg8: annotated[tuple[SubTool], ...]
@@ -1047,12 +1045,9 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
         _convert_typed_dict_to_openai_function(Tool)
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 10), reason="Requires python version >= 3.10 to run."
-)
-def test_convert_union_type_py_39() -> None:
+def test_convert_union_type() -> None:
     @tool
-    def magic_function(value: int | str) -> str:  # type: ignore[syntax,unused-ignore] # noqa: ARG001,FA102
+    def magic_function(value: int | str) -> str:  # noqa: ARG001
         """Compute a magic function."""
         return ""
 
@@ -1122,3 +1117,54 @@ def test_convert_to_json_schema(
     ):
         actual = convert_to_json_schema(fn)
         assert actual == expected
+
+
+def test_convert_to_openai_function_nested_strict_2() -> None:
+    def my_function(arg1: dict, arg2: dict | None) -> None:
+        """Dummy function."""
+
+    expected: dict = {
+        "name": "my_function",
+        "description": "Dummy function.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "arg1": {
+                    "additionalProperties": False,
+                    "type": "object",
+                },
+                "arg2": {
+                    "anyOf": [
+                        {"additionalProperties": False, "type": "object"},
+                        {"type": "null"},
+                    ],
+                },
+            },
+            "required": ["arg1", "arg2"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    }
+
+    # there will be no extra `"additionalProperties": False` when Pydantic < 2.11
+    if parse(version("pydantic")) < parse("2.11"):
+        del expected["parameters"]["properties"]["arg1"]["additionalProperties"]
+        del expected["parameters"]["properties"]["arg2"]["anyOf"][0][
+            "additionalProperties"
+        ]
+
+    actual = convert_to_openai_function(my_function, strict=True)
+    assert actual == expected
+
+
+def test_convert_to_openai_function_strict_required() -> None:
+    class MyModel(BaseModel):
+        """Dummy schema."""
+
+        arg1: int = Field(..., description="foo")
+        arg2: str | None = Field(None, description="bar")
+
+    expected = ["arg1", "arg2"]
+    func = convert_to_openai_function(MyModel, strict=True)
+    actual = func["parameters"]["required"]
+    assert actual == expected

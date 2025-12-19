@@ -6,7 +6,6 @@ from typing import (
     Generic,
     Literal,
     TypeVar,
-    Union,
 )
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -25,7 +24,7 @@ StructuredResponseT = TypeVar("StructuredResponseT")
 
 
 class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
-    tool_calls: Union[list[list[ToolCall]], list[list[dict]]] | None = None
+    tool_calls: list[list[ToolCall]] | list[list[dict]] | None = None
     structured_response: StructuredResponseT | None = None
     index: int = 0
     tool_style: Literal["openai", "anthropic"] = "openai"
@@ -37,9 +36,8 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call"""
-        rf = kwargs.get("response_format")
-        is_native = isinstance(rf, dict) and rf.get("type") == "json_schema"
+        """Top Level call."""
+        is_native = kwargs.get("response_format")
 
         if self.tool_calls:
             if is_native:
@@ -60,7 +58,7 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
                 content_obj = self.structured_response
             message = AIMessage(content=json.dumps(content_obj), id=str(self.index))
         else:
-            messages_string = "-".join([m.content for m in messages])
+            messages_string = "-".join([m.text for m in messages])
             message = AIMessage(
                 content=messages_string,
                 id=str(self.index),
@@ -75,7 +73,7 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         if len(tools) == 0:
@@ -108,4 +106,4 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
                     }
                 )
 
-        return self.bind(tools=tool_dicts)
+        return self.bind(tools=tool_dicts, **kwargs)

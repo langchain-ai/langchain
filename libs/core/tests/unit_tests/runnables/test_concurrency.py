@@ -2,12 +2,15 @@
 
 import asyncio
 import time
-from typing import Any
+from threading import Lock
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
 from langchain_core.runnables import RunnableConfig, RunnableLambda
-from langchain_core.runnables.base import Runnable
+
+if TYPE_CHECKING:
+    from langchain_core.runnables.base import Runnable
 
 
 @pytest.mark.asyncio
@@ -80,7 +83,6 @@ def test_batch_concurrency() -> None:
     """Test that batch respects max_concurrency."""
     running_tasks = 0
     max_running_tasks = 0
-    from threading import Lock
 
     lock = Lock()
 
@@ -112,7 +114,6 @@ def test_batch_as_completed_concurrency() -> None:
     """Test that batch_as_completed respects max_concurrency."""
     running_tasks = 0
     max_running_tasks = 0
-    from threading import Lock
 
     lock = Lock()
 

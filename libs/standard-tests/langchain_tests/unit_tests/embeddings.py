@@ -2,6 +2,7 @@
 
 import os
 from abc import abstractmethod
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -12,10 +13,7 @@ from langchain_tests.base import BaseStandardTests
 
 
 class EmbeddingsTests(BaseStandardTests):
-    """Embeddings tests base class.
-
-    :private:
-    """
+    """Embeddings tests base class."""
 
     @property
     @abstractmethod
@@ -23,7 +21,7 @@ class EmbeddingsTests(BaseStandardTests):
         """Embeddings class."""
 
     @property
-    def embedding_model_params(self) -> dict:
+    def embedding_model_params(self) -> dict[str, Any]:
         """Embeddings model parameters."""
         return {}
 
@@ -36,39 +34,36 @@ class EmbeddingsTests(BaseStandardTests):
 class EmbeddingsUnitTests(EmbeddingsTests):
     """Base class for embeddings unit tests.
 
-    Test subclasses must implement the ``embeddings_class`` property to specify the
+    Test subclasses must implement the `embeddings_class` property to specify the
     embeddings model to be tested. You can also override the
-    ``embedding_model_params`` property to specify initialization parameters.
+    `embedding_model_params` property to specify initialization parameters.
 
-    Example:
+    ```python
+    from typing import Type
 
-    .. code-block:: python
-
-        from typing import Type
-
-        from langchain_tests.unit_tests import EmbeddingsUnitTests
-        from my_package.embeddings import MyEmbeddingsModel
+    from langchain_tests.unit_tests import EmbeddingsUnitTests
+    from my_package.embeddings import MyEmbeddingsModel
 
 
-        class TestMyEmbeddingsModelUnit(EmbeddingsUnitTests):
-            @property
-            def embeddings_class(self) -> Type[MyEmbeddingsModel]:
-                # Return the embeddings model class to test here
-                return MyEmbeddingsModel
+    class TestMyEmbeddingsModelUnit(EmbeddingsUnitTests):
+        @property
+        def embeddings_class(self) -> Type[MyEmbeddingsModel]:
+            # Return the embeddings model class to test here
+            return MyEmbeddingsModel
 
-            @property
-            def embedding_model_params(self) -> dict:
-                # Return initialization parameters for the model.
-                return {"model": "model-001"}
-
-    .. note::
-          API references for individual test methods include troubleshooting tips.
+        @property
+        def embedding_model_params(self) -> dict:
+            # Return initialization parameters for the model.
+            return {"model": "model-001"}
+    ```
+    !!! note
+        API references for individual test methods include troubleshooting tips.
 
     Testing initialization from environment variables
-        Overriding the ``init_from_env_params`` property will enable additional tests
+        Overriding the `init_from_env_params` property will enable additional tests
         for initialization from environment variables. See below for details.
 
-        .. dropdown:: init_from_env_params
+        ??? note "`init_from_env_params`"
 
             This property is used in unit tests to test initialization from
             environment variables. It should return a tuple of three dictionaries
@@ -77,39 +72,38 @@ class EmbeddingsUnitTests(EmbeddingsTests):
 
             Defaults to empty dicts. If not overridden, the test is skipped.
 
-            Example:
-
-            .. code-block:: python
-
-                @property
-                def init_from_env_params(self) -> Tuple[dict, dict, dict]:
-                    return (
-                        {
-                            "MY_API_KEY": "api_key",
-                        },
-                        {
-                            "model": "model-001",
-                        },
-                        {
-                            "my_api_key": "api_key",
-                        },
-                    )
-
-    """  # noqa: D214
+            ```python
+            @property
+            def init_from_env_params(self) -> Tuple[dict, dict, dict]:
+                return (
+                    {
+                        "MY_API_KEY": "api_key",
+                    },
+                    {
+                        "model": "model-001",
+                    },
+                    {
+                        "my_api_key": "api_key",
+                    },
+                )
+            ```
+    """
 
     def test_init(self) -> None:
         """Test model initialization.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
-            If this test fails, ensure that ``embedding_model_params`` is specified
+            If this test fails, ensure that `embedding_model_params` is specified
             and the model can be initialized from those params.
         """
         model = self.embeddings_class(**self.embedding_model_params)
         assert model is not None
 
     @property
-    def init_from_env_params(self) -> tuple[dict, dict, dict]:
+    def init_from_env_params(
+        self,
+    ) -> tuple[dict[str, str], dict[str, Any], dict[str, Any]]:
         """Init from env params.
 
         This property is used in unit tests to test initialization from environment
@@ -122,12 +116,12 @@ class EmbeddingsUnitTests(EmbeddingsTests):
     def test_init_from_env(self) -> None:
         """Test initialization from environment variables.
 
-        Relies on the ``init_from_env_params`` property.
+        Relies on the `init_from_env_params` property.
         Test is skipped if that property is not set.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
-            If this test fails, ensure that ``init_from_env_params`` is specified
+            If this test fails, ensure that `init_from_env_params` is specified
             correctly and that model parameters are properly set from environment
             variables during initialization.
         """

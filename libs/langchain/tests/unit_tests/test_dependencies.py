@@ -52,13 +52,11 @@ def test_test_group_dependencies(uv_conf: Mapping[str, Any]) -> None:
 
     Examples of dependencies that should NOT be included: boto3, azure, postgres, etc.
     """
-
     dependencies = uv_conf["dependency-groups"]["test"]
     test_group_deps = {Requirement(dep).name for dep in dependencies}
 
     assert sorted(test_group_deps) == sorted(
         [
-            "duckdb-engine",
             "freezegun",
             "langchain-core",
             "langchain-tests",
@@ -75,7 +73,6 @@ def test_test_group_dependencies(uv_conf: Mapping[str, Any]) -> None:
             "pytest-socket",
             "pytest-watcher",
             "pytest-xdist",
-            "blockbuster",
             "responses",
             "syrupy",
             "toml",

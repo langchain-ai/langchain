@@ -24,16 +24,16 @@ You are a strict polling bot.
 class TestCase(BaseSchema):
     name: str
     return_direct: bool
-    response_format: Optional[Dict[str, Any]]
+    response_format: dict[str, Any] | None
     expected_tool_calls: int
     expected_last_message: str
-    expected_structured_response: Optional[Dict[str, Any]]
+    expected_structured_response: dict[str, Any] | None
 
 
 TEST_CASES = load_spec("return_direct", as_model=TestCase)
 
 
-def _make_tool(return_direct: bool):
+def _make_tool(*, return_direct: bool):
     attempts = 0
 
     def _side_effect():
@@ -63,7 +63,7 @@ def _make_tool(return_direct: bool):
 @pytest.mark.skipif(skip_openai_integration_tests, reason="OpenAI integration tests are disabled.")
 @pytest.mark.parametrize("case", TEST_CASES, ids=[c.name for c in TEST_CASES])
 def test_return_direct_integration_matrix(case: TestCase) -> None:
-    poll_tool = _make_tool(case.return_direct)
+    poll_tool = _make_tool(return_direct=case.return_direct)
 
     model = ChatOpenAI(
         model="gpt-4o",

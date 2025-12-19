@@ -3,21 +3,22 @@ from __future__ import annotations
 import json
 import sys
 import uuid
-from collections.abc import AsyncGenerator, Coroutine, Generator
 from inspect import isasyncgenfunction
-from typing import Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import MagicMock, patch
 
 import pytest
-from langsmith import Client, get_current_run_tree, traceable
+from langsmith import Client, RunTree, get_current_run_tree, traceable
 from langsmith.run_helpers import tracing_context
-from langsmith.run_trees import RunTree
 from langsmith.utils import get_env_var
-from typing_extensions import Literal
 
-from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.runnables.base import RunnableLambda, RunnableParallel
 from langchain_core.tracers.langchain import LangChainTracer
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Callable, Coroutine, Generator
+
+    from langchain_core.callbacks import BaseCallbackHandler
 
 
 def _get_posts(client: Client) -> list:
@@ -40,8 +41,8 @@ def _get_posts(client: Client) -> list:
 
 
 def _create_tracer_with_mocked_client(
-    project_name: Optional[str] = None,
-    tags: Optional[list[str]] = None,
+    project_name: str | None = None,
+    tags: list[str] | None = None,
 ) -> LangChainTracer:
     mock_session = MagicMock()
     mock_client_ = Client(
@@ -57,15 +58,20 @@ def test_tracing_context() -> None:
     )
 
     @RunnableLambda
-    def my_function(a: int) -> int:
+    def my_lambda(a: int) -> int:
         return a + 1
+
+    @RunnableLambda
+    def my_function(a: int) -> int:
+        with tracing_context(enabled=False):
+            return my_lambda.invoke(a)
 
     name = uuid.uuid4().hex
     project_name = f"Some project {name}"
     with tracing_context(project_name=project_name, client=mock_client_, enabled=True):
         assert my_function.invoke(1) == 2
     posts = _get_posts(mock_client_)
-    assert posts
+    assert len(posts) == 1
     assert all(post["session_name"] == project_name for post in posts)
 
 
@@ -221,7 +227,7 @@ async def test_config_traceable_async_handoff() -> None:
 @pytest.mark.parametrize("enabled", [None, True, False])
 @pytest.mark.parametrize("env", ["", "true"])
 def test_tracing_enable_disable(
-    mock_get_client: MagicMock, *, enabled: bool, env: str
+    mock_get_client: MagicMock, *, enabled: bool | None, env: str
 ) -> None:
     mock_session = MagicMock()
     mock_client_ = Client(
@@ -424,13 +430,19 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
     mock_client_ = Client(
         session=mock_session, api_key="test", auto_batch_tracing=False
     )
+    grandchild_run = None
+    kitten_run = None
 
     @traceable
     def kitten(x: str) -> str:
+        nonlocal kitten_run
+        kitten_run = get_current_run_tree()
         return x
 
     @RunnableLambda
     def grandchild(x: str) -> str:
+        nonlocal grandchild_run
+        grandchild_run = get_current_run_tree()
         return kitten(x)
 
     @RunnableLambda
@@ -477,14 +489,14 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
     assert run.child_runs
     child_run = run.child_runs[0]
     assert child_run.name == "child"
-    assert child_run.child_runs
-    grandchild_run = child_run.child_runs[0]
+    assert isinstance(grandchild_run, RunTree)
     assert grandchild_run.name == "grandchild"
-    assert grandchild_run.child_runs
     assert grandchild_run.metadata.get("some_foo") == "some_bar"
     assert "afoo" in grandchild_run.tags  # type: ignore[operator]
-    kitten_run = grandchild_run.child_runs[0]
+    assert isinstance(kitten_run, RunTree)
     assert kitten_run.name == "kitten"
     assert not kitten_run.child_runs
     assert kitten_run.metadata.get("some_foo") == "some_bar"
     assert "afoo" in kitten_run.tags  # type: ignore[operator]
+    assert grandchild_run is not None
+    assert kitten_run.dotted_order.startswith(grandchild_run.dotted_order)

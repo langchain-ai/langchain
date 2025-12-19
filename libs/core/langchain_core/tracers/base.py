@@ -8,8 +8,6 @@ from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
-    Union,
 )
 
 from typing_extensions import override
@@ -57,10 +55,10 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        parent_run_id: Optional[UUID] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        name: Optional[str] = None,
+        tags: list[str] | None = None,
+        parent_run_id: UUID | None = None,
+        metadata: dict[str, Any] | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for an LLM run.
@@ -69,11 +67,11 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             serialized: The serialized model.
             messages: The messages to start the chat with.
             run_id: The run ID.
-            tags: The tags for the run. Defaults to None.
-            parent_run_id: The parent run ID. Defaults to None.
-            metadata: The metadata for the run. Defaults to None.
+            tags: The tags for the run.
+            parent_run_id: The parent run ID.
+            metadata: The metadata for the run.
             name: The name of the run.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -98,10 +96,10 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         prompts: list[str],
         *,
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        parent_run_id: Optional[UUID] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        name: Optional[str] = None,
+        tags: list[str] | None = None,
+        parent_run_id: UUID | None = None,
+        metadata: dict[str, Any] | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for an LLM run.
@@ -110,11 +108,11 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             serialized: The serialized model.
             prompts: The prompts to start the LLM with.
             run_id: The run ID.
-            tags: The tags for the run. Defaults to None.
-            parent_run_id: The parent run ID. Defaults to None.
-            metadata: The metadata for the run. Defaults to None.
+            tags: The tags for the run.
+            parent_run_id: The parent run ID.
+            metadata: The metadata for the run.
             name: The name of the run.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -138,19 +136,19 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         self,
         token: str,
         *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Run:
         """Run on new LLM token. Only available when streaming is enabled.
 
         Args:
             token: The token.
-            chunk: The chunk. Defaults to None.
+            chunk: The chunk.
             run_id: The run ID.
-            parent_run_id: The parent run ID. Defaults to None.
-            kwargs: Additional arguments.
+            parent_run_id: The parent run ID.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -179,7 +177,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         Args:
             retry_state: The retry state.
             run_id: The run ID.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -196,7 +194,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         Args:
             response: The response.
             run_id: The run ID.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -223,7 +221,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         Args:
             error: The error.
             run_id: The run ID.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -244,11 +242,11 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         inputs: dict[str, Any],
         *,
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        parent_run_id: Optional[UUID] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        run_type: Optional[str] = None,
-        name: Optional[str] = None,
+        tags: list[str] | None = None,
+        parent_run_id: UUID | None = None,
+        metadata: dict[str, Any] | None = None,
+        run_type: str | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for a chain run.
@@ -257,12 +255,12 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             serialized: The serialized chain.
             inputs: The inputs for the chain.
             run_id: The run ID.
-            tags: The tags for the run. Defaults to None.
-            parent_run_id: The parent run ID. Defaults to None.
-            metadata: The metadata for the run. Defaults to None.
-            run_type: The type of the run. Defaults to None.
+            tags: The tags for the run.
+            parent_run_id: The parent run ID.
+            metadata: The metadata for the run.
+            run_type: The type of the run.
             name: The name of the run.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -288,7 +286,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         outputs: dict[str, Any],
         *,
         run_id: UUID,
-        inputs: Optional[dict[str, Any]] = None,
+        inputs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Run:
         """End a trace for a chain run.
@@ -296,8 +294,8 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         Args:
             outputs: The outputs for the chain.
             run_id: The run ID.
-            inputs: The inputs for the chain. Defaults to None.
-            kwargs: Additional arguments.
+            inputs: The inputs for the chain.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -316,7 +314,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         self,
         error: BaseException,
         *,
-        inputs: Optional[dict[str, Any]] = None,
+        inputs: dict[str, Any] | None = None,
         run_id: UUID,
         **kwargs: Any,
     ) -> Run:
@@ -324,9 +322,9 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
 
         Args:
             error: The error.
-            inputs: The inputs for the chain. Defaults to None.
+            inputs: The inputs for the chain.
             run_id: The run ID.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -346,11 +344,11 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         input_str: str,
         *,
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        parent_run_id: Optional[UUID] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        name: Optional[str] = None,
-        inputs: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        parent_run_id: UUID | None = None,
+        metadata: dict[str, Any] | None = None,
+        name: str | None = None,
+        inputs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for a tool run.
@@ -359,12 +357,12 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             serialized: The serialized tool.
             input_str: The input string.
             run_id: The run ID.
-            tags: The tags for the run. Defaults to None.
-            parent_run_id: The parent run ID. Defaults to None.
-            metadata: The metadata for the run. Defaults to None.
+            tags: The tags for the run.
+            parent_run_id: The parent run ID.
+            metadata: The metadata for the run.
             name: The name of the run.
             inputs: The inputs for the tool.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -391,7 +389,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         Args:
             output: The output for the tool.
             run_id: The run ID.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -417,7 +415,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         Args:
             error: The error.
             run_id: The run ID.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -436,10 +434,10 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         query: str,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        name: Optional[str] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> Run:
         """Run when the Retriever starts running.
@@ -448,11 +446,11 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             serialized: The serialized retriever.
             query: The query.
             run_id: The run ID.
-            parent_run_id: The parent run ID. Defaults to None.
-            tags: The tags for the run. Defaults to None.
-            metadata: The metadata for the run. Defaults to None.
+            parent_run_id: The parent run ID.
+            tags: The tags for the run.
+            metadata: The metadata for the run.
             name: The name of the run.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -484,7 +482,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         Args:
             error: The error.
             run_id: The run ID.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -506,7 +504,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         Args:
             documents: The documents.
             run_id: The run ID.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -520,11 +518,11 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         return retrieval_run
 
     def __deepcopy__(self, memo: dict) -> BaseTracer:
-        """Deepcopy the tracer."""
+        """Return self."""
         return self
 
     def __copy__(self) -> BaseTracer:
-        """Copy the tracer."""
+        """Return self."""
         return self
 
 
@@ -565,10 +563,10 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        name: Optional[str] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> Any:
         chat_model_run = self._create_chat_model_run(
@@ -595,9 +593,9 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         prompts: list[str],
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         llm_run = self._create_llm_run(
@@ -617,9 +615,9 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         self,
         token: str,
         *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> None:
         llm_run = self._llm_run_with_token_event(
@@ -649,8 +647,8 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         response: LLMResult,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         llm_run = self._complete_llm_run(
@@ -666,8 +664,8 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         error: BaseException,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         llm_run = self._errored_llm_run(
@@ -684,11 +682,11 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         inputs: dict[str, Any],
         *,
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        parent_run_id: Optional[UUID] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        run_type: Optional[str] = None,
-        name: Optional[str] = None,
+        tags: list[str] | None = None,
+        parent_run_id: UUID | None = None,
+        metadata: dict[str, Any] | None = None,
+        run_type: str | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> None:
         chain_run = self._create_chain_run(
@@ -711,7 +709,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         outputs: dict[str, Any],
         *,
         run_id: UUID,
-        inputs: Optional[dict[str, Any]] = None,
+        inputs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         chain_run = self._complete_chain_run(
@@ -727,7 +725,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         self,
         error: BaseException,
         *,
-        inputs: Optional[dict[str, Any]] = None,
+        inputs: dict[str, Any] | None = None,
         run_id: UUID,
         **kwargs: Any,
     ) -> None:
@@ -746,11 +744,11 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         input_str: str,
         *,
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        parent_run_id: Optional[UUID] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        name: Optional[str] = None,
-        inputs: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        parent_run_id: UUID | None = None,
+        metadata: dict[str, Any] | None = None,
+        name: str | None = None,
+        inputs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         tool_run = self._create_tool_run(
@@ -787,8 +785,8 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         error: BaseException,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         tool_run = self._errored_tool_run(
@@ -805,10 +803,10 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         query: str,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        name: Optional[str] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> None:
         retriever_run = self._create_retrieval_run(
@@ -832,8 +830,8 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         error: BaseException,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         retrieval_run = self._errored_retrieval_run(
@@ -852,8 +850,8 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         documents: Sequence[Document],
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         retrieval_run = self._complete_retrieval_run(
@@ -882,7 +880,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         self,
         run: Run,
         token: str,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]],
+        chunk: GenerationChunk | ChatGenerationChunk | None,
     ) -> None:
         """Process new LLM token."""
 

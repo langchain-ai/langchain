@@ -1,13 +1,12 @@
-"""Test yamlOutputParser"""
+"""Test yamlOutputParser."""
 
 from enum import Enum
-from typing import Optional
 
 import pytest
 from langchain_core.exceptions import OutputParserException
 from pydantic import BaseModel, Field
 
-from langchain.output_parsers.yaml import YamlOutputParser
+from langchain_classic.output_parsers.yaml import YamlOutputParser
 
 
 class Actions(Enum):
@@ -20,7 +19,7 @@ class Actions(Enum):
 class TestModel(BaseModel):
     action: Actions = Field(description="Action to be performed")
     action_input: str = Field(description="Input to be used in the action")
-    additional_fields: Optional[str] = Field(
+    additional_fields: str | None = Field(
         description="Additional fields",
         default=None,
     )
@@ -70,7 +69,6 @@ DEF_EXPECTED_RESULT = TestModel(
 @pytest.mark.parametrize("result", [DEF_RESULT, DEF_RESULT_NO_BACKTICKS])
 def test_yaml_output_parser(result: str) -> None:
     """Test yamlOutputParser."""
-
     yaml_parser: YamlOutputParser[TestModel] = YamlOutputParser(
         pydantic_object=TestModel,
     )
@@ -82,7 +80,6 @@ def test_yaml_output_parser(result: str) -> None:
 
 def test_yaml_output_parser_fail() -> None:
     """Test YamlOutputParser where completion result fails schema validation."""
-
     yaml_parser: YamlOutputParser[TestModel] = YamlOutputParser(
         pydantic_object=TestModel,
     )

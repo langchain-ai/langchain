@@ -1,72 +1,74 @@
 """Messages for tools."""
 
 import json
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, cast, overload
 from uuid import UUID
 
 from pydantic import Field, model_validator
 from typing_extensions import NotRequired, TypedDict, override
 
+from langchain_core.messages import content as types
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
+from langchain_core.messages.content import InvalidToolCall
 from langchain_core.utils._merge import merge_dicts, merge_obj
 
 
 class ToolOutputMixin:
     """Mixin for objects that tools can return directly.
 
-    If a custom BaseTool is invoked with a ToolCall and the output of custom code is
-    not an instance of ToolOutputMixin, the output will automatically be coerced to a
-    string and wrapped in a ToolMessage.
+    If a custom BaseTool is invoked with a `ToolCall` and the output of custom code is
+    not an instance of `ToolOutputMixin`, the output will automatically be coerced to
+    a string and wrapped in a `ToolMessage`.
+
     """
 
 
 class ToolMessage(BaseMessage, ToolOutputMixin):
     """Message for passing the result of executing a tool back to a model.
 
-    ToolMessages contain the result of a tool invocation. Typically, the result
+    `ToolMessage` objects contain the result of a tool invocation. Typically, the result
     is encoded inside the `content` field.
 
-    Example: A ToolMessage representing a result of 42 from a tool call with id
+    `tool_call_id` is used to associate the tool call request with the tool call
+    response. Useful in situations where a chat model is able to request multiple tool
+    calls in parallel.
 
-        .. code-block:: python
+    Example:
+        A `ToolMessage` representing a result of `42` from a tool call with id
 
-            from langchain_core.messages import ToolMessage
+        ```python
+        from langchain_core.messages import ToolMessage
 
-            ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+        ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+        ```
 
-
-    Example: A ToolMessage where only part of the tool output is sent to the model
+    Example:
+        A `ToolMessage` where only part of the tool output is sent to the model
         and the full output is passed in to artifact.
 
-        .. versionadded:: 0.2.17
+        ```python
+        from langchain_core.messages import ToolMessage
 
-        .. code-block:: python
+        tool_output = {
+            "stdout": "From the graph we can see that the correlation between "
+            "x and y is ...",
+            "stderr": None,
+            "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+        }
 
-            from langchain_core.messages import ToolMessage
-
-            tool_output = {
-                "stdout": "From the graph we can see that the correlation between x and y is ...",
-                "stderr": None,
-                "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-            }
-
-            ToolMessage(
-                content=tool_output["stdout"],
-                artifact=tool_output,
-                tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
-            )
-
-    The tool_call_id field is used to associate the tool call request with the
-    tool call response. This is useful in situations where a chat model is able
-    to request multiple tool calls in parallel.
-
-    """  # noqa: E501
+        ToolMessage(
+            content=tool_output["stdout"],
+            artifact=tool_output,
+            tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+        )
+        ```
+    """
 
     tool_call_id: str
     """Tool call that this message is responding to."""
 
     type: Literal["tool"] = "tool"
-    """The type of the message (used for serialization). Defaults to "tool"."""
+    """The type of the message (used for serialization)."""
 
     artifact: Any = None
     """Artifact of the Tool execution which is not meant to be sent to the model.
@@ -75,19 +77,15 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     a subset of the full tool output is being passed as message content but the full
     output is needed in other parts of the code.
 
-    .. versionadded:: 0.2.17
     """
 
     status: Literal["success", "error"] = "success"
-    """Status of the tool invocation.
-
-    .. versionadded:: 0.2.24
-    """
+    """Status of the tool invocation."""
 
     additional_kwargs: dict = Field(default_factory=dict, repr=False)
-    """Currently inherited from BaseMessage, but not used."""
+    """Currently inherited from `BaseMessage`, but not used."""
     response_metadata: dict = Field(default_factory=dict, repr=False)
-    """Currently inherited from BaseMessage, but not used."""
+    """Currently inherited from `BaseMessage`, but not used."""
 
     @model_validator(mode="before")
     @classmethod
@@ -96,6 +94,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
 
         Args:
             values: The model arguments.
+
         """
         content = values["content"]
         if isinstance(content, tuple):
@@ -133,16 +132,43 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
             values["tool_call_id"] = str(tool_call_id)
         return values
 
+    @overload
     def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
+        self,
+        content: str | list[str | dict],
+        **kwargs: Any,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        content: str | list[str | dict] | None = None,
+        content_blocks: list[types.ContentBlock] | None = None,
+        **kwargs: Any,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        content: str | list[str | dict] | None = None,
+        content_blocks: list[types.ContentBlock] | None = None,
+        **kwargs: Any,
     ) -> None:
-        """Create a ToolMessage.
+        """Initialize a `ToolMessage`.
+
+        Specify `content` as positional arg or `content_blocks` for typing.
 
         Args:
-            content: The string contents of the message.
+            content: The contents of the message.
+            content_blocks: Typed standard content.
             **kwargs: Additional fields.
         """
-        super().__init__(content=content, **kwargs)
+        if content_blocks is not None:
+            super().__init__(
+                content=cast("str | list[str | dict]", content_blocks),
+                **kwargs,
+            )
+        else:
+            super().__init__(content=content, **kwargs)
 
 
 class ToolMessageChunk(ToolMessage, BaseMessageChunk):
@@ -178,20 +204,15 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
 
 
 class ToolCall(TypedDict):
-    """Represents a request to call a tool.
+    """Represents an AI's request to call a tool.
 
     Example:
+        ```python
+        {"name": "foo", "args": {"a": 1}, "id": "123"}
+        ```
 
-        .. code-block:: python
-
-            {
-                "name": "foo",
-                "args": {"a": 1},
-                "id": "123"
-            }
-
-        This represents a request to call the tool named "foo" with arguments {"a": 1}
-        and an identifier of "123".
+        This represents a request to call the tool named `'foo'` with arguments
+        `{"a": 1}` and an identifier of `'123'`.
 
     """
 
@@ -199,11 +220,12 @@ class ToolCall(TypedDict):
     """The name of the tool to be called."""
     args: dict[str, Any]
     """The arguments to the tool call."""
-    id: Optional[str]
+    id: str | None
     """An identifier associated with the tool call.
 
     An identifier is needed to associate a tool call request with a tool
     call result in events when multiple concurrent tool calls are made.
+
     """
     type: NotRequired[Literal["tool_call"]]
 
@@ -212,7 +234,7 @@ def tool_call(
     *,
     name: str,
     args: dict[str, Any],
-    id: Optional[str],
+    id: str | None,
 ) -> ToolCall:
     """Create a tool call.
 
@@ -220,48 +242,49 @@ def tool_call(
         name: The name of the tool to be called.
         args: The arguments to the tool call.
         id: An identifier associated with the tool call.
+
+    Returns:
+        The created tool call.
     """
     return ToolCall(name=name, args=args, id=id, type="tool_call")
 
 
 class ToolCallChunk(TypedDict):
-    """A chunk of a tool call (e.g., as part of a stream).
+    """A chunk of a tool call (yielded when streaming).
 
-    When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+    When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
     all string attributes are concatenated. Chunks are only merged if their
     values of `index` are equal and not None.
 
     Example:
+    ```python
+    left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
+    right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
 
-    .. code-block:: python
-
-        left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-        right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
-
-        (
-            AIMessageChunk(content="", tool_call_chunks=left_chunks)
-            + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-        ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
-
+    (
+        AIMessageChunk(content="", tool_call_chunks=left_chunks)
+        + AIMessageChunk(content="", tool_call_chunks=right_chunks)
+    ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
+    ```
     """
 
-    name: Optional[str]
+    name: str | None
     """The name of the tool to be called."""
-    args: Optional[str]
+    args: str | None
     """The arguments to the tool call."""
-    id: Optional[str]
+    id: str | None
     """An identifier associated with the tool call."""
-    index: Optional[int]
+    index: int | None
     """The index of the tool call in a sequence."""
     type: NotRequired[Literal["tool_call_chunk"]]
 
 
 def tool_call_chunk(
     *,
-    name: Optional[str] = None,
-    args: Optional[str] = None,
-    id: Optional[str] = None,
-    index: Optional[int] = None,
+    name: str | None = None,
+    args: str | None = None,
+    id: str | None = None,
+    index: int | None = None,
 ) -> ToolCallChunk:
     """Create a tool call chunk.
 
@@ -270,36 +293,21 @@ def tool_call_chunk(
         args: The arguments to the tool call.
         id: An identifier associated with the tool call.
         index: The index of the tool call in a sequence.
+
+    Returns:
+        The created tool call chunk.
     """
     return ToolCallChunk(
         name=name, args=args, id=id, index=index, type="tool_call_chunk"
     )
 
 
-class InvalidToolCall(TypedDict):
-    """Allowance for errors made by LLM.
-
-    Here we add an `error` key to surface errors made during generation
-    (e.g., invalid JSON arguments.)
-    """
-
-    name: Optional[str]
-    """The name of the tool to be called."""
-    args: Optional[str]
-    """The arguments to the tool call."""
-    id: Optional[str]
-    """An identifier associated with the tool call."""
-    error: Optional[str]
-    """An error message associated with the tool call."""
-    type: NotRequired[Literal["invalid_tool_call"]]
-
-
 def invalid_tool_call(
     *,
-    name: Optional[str] = None,
-    args: Optional[str] = None,
-    id: Optional[str] = None,
-    error: Optional[str] = None,
+    name: str | None = None,
+    args: str | None = None,
+    id: str | None = None,
+    error: str | None = None,
 ) -> InvalidToolCall:
     """Create an invalid tool call.
 
@@ -308,6 +316,9 @@ def invalid_tool_call(
         args: The arguments to the tool call.
         id: An identifier associated with the tool call.
         error: An error message associated with the tool call.
+
+    Returns:
+        The created invalid tool call.
     """
     return InvalidToolCall(
         name=name, args=args, id=id, error=error, type="invalid_tool_call"
@@ -317,7 +328,14 @@ def invalid_tool_call(
 def default_tool_parser(
     raw_tool_calls: list[dict],
 ) -> tuple[list[ToolCall], list[InvalidToolCall]]:
-    """Best-effort parsing of tools."""
+    """Best-effort parsing of tools.
+
+    Args:
+        raw_tool_calls: List of raw tool call dicts to parse.
+
+    Returns:
+        A list of tool calls and invalid tool calls.
+    """
     tool_calls = []
     invalid_tool_calls = []
     for raw_tool_call in raw_tool_calls:
@@ -345,7 +363,14 @@ def default_tool_parser(
 
 
 def default_tool_chunk_parser(raw_tool_calls: list[dict]) -> list[ToolCallChunk]:
-    """Best-effort parsing of tool chunks."""
+    """Best-effort parsing of tool chunks.
+
+    Args:
+        raw_tool_calls: List of raw tool call dicts to parse.
+
+    Returns:
+        List of parsed ToolCallChunk objects.
+    """
     tool_call_chunks = []
     for tool_call in raw_tool_calls:
         if "function" not in tool_call:

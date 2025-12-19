@@ -1,42 +1,9 @@
 """Configuration for unit tests."""
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Sequence
 from importlib import util
 
 import pytest
-from blockbuster import blockbuster_ctx
-
-
-@pytest.fixture(autouse=True)
-def blockbuster() -> Iterator[None]:
-    with blockbuster_ctx("langchain") as bb:
-        bb.functions["io.TextIOWrapper.read"].can_block_in(
-            "langchain/__init__.py",
-            "<module>",
-        )
-
-        for func in ["os.stat", "os.path.abspath"]:
-            (
-                bb.functions[func]
-                .can_block_in("langchain_core/runnables/base.py", "__repr__")
-                .can_block_in(
-                    "langchain_core/beta/runnables/context.py",
-                    "aconfig_with_context",
-                )
-            )
-
-        for func in ["os.stat", "io.TextIOWrapper.read"]:
-            bb.functions[func].can_block_in(
-                "langsmith/client.py",
-                "_default_retry_config",
-            )
-
-        for bb_function in bb.functions.values():
-            bb_function.can_block_in(
-                "freezegun/api.py",
-                "_get_cached_module_attributes",
-            )
-        yield
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -73,12 +40,10 @@ def pytest_collection_modifyitems(
 
     The `requires` marker syntax is:
 
-    .. code-block:: python
-
-        @pytest.mark.requires("package1", "package2")
-        def test_something():
-            ...
-
+    ```python
+    @pytest.mark.requires("package1", "package2")
+    def test_something(): ...
+    ```
     """
     # Mapping from the name of a package to whether it is installed or not.
     # Used to avoid repeated calls to `util.find_spec`
@@ -110,11 +75,7 @@ def pytest_collection_modifyitems(
                 # If we haven't yet checked whether the pkg is installed
                 # let's check it and store the result.
                 if pkg not in required_pkgs_info:
-                    try:
-                        installed = util.find_spec(pkg) is not None
-                    except Exception:
-                        installed = False
-                    required_pkgs_info[pkg] = installed
+                    required_pkgs_info[pkg] = util.find_spec(pkg) is not None
 
                 if not required_pkgs_info[pkg]:
                     if only_extended:
