@@ -9,19 +9,20 @@ from langchain.embeddings.base import (
 )
 
 
-def test_parse_model_string() -> None:
+@pytest.mark.parametrize(
+    ("model_string", "expected_provider", "expected_model"),
+    [
+        ("openai:text-embedding-3-small", "openai", "text-embedding-3-small"),
+        ("bedrock:amazon.titan-embed-text-v1", "bedrock", "amazon.titan-embed-text-v1"),
+        ("huggingface:BAAI/bge-base-en:v1.5", "huggingface", "BAAI/bge-base-en:v1.5"),
+        ("google_genai:gemini-embedding-001", "google_genai", "gemini-embedding-001"),
+    ],
+)
+def test_parse_model_string(model_string: str, expected_provider: str, expected_model: str) -> None:
     """Test parsing model strings into provider and model components."""
-    assert _parse_model_string("openai:text-embedding-3-small") == (
-        "openai",
-        "text-embedding-3-small",
-    )
-    assert _parse_model_string("bedrock:amazon.titan-embed-text-v1") == (
-        "bedrock",
-        "amazon.titan-embed-text-v1",
-    )
-    assert _parse_model_string("huggingface:BAAI/bge-base-en:v1.5") == (
-        "huggingface",
-        "BAAI/bge-base-en:v1.5",
+    assert _parse_model_string(model_string) == (
+        expected_provider,
+        expected_model,
     )
 
 

@@ -10,6 +10,7 @@ _SUPPORTED_PROVIDERS = {
     "azure_openai": "langchain_openai",
     "bedrock": "langchain_aws",
     "cohere": "langchain_cohere",
+    "google_genai": "langchain_google_genai",
     "google_vertexai": "langchain_google_vertexai",
     "huggingface": "langchain_huggingface",
     "mistralai": "langchain_mistralai",
@@ -207,6 +208,10 @@ def init_embeddings(
         from langchain_openai import AzureOpenAIEmbeddings
 
         return AzureOpenAIEmbeddings(model=model_name, **kwargs)
+    if provider == "google_genai":
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+        return GoogleGenerativeAIEmbeddings(model=model_name, **kwargs)
     if provider == "google_vertexai":
         from langchain_google_vertexai import VertexAIEmbeddings
 

@@ -18,8 +18,10 @@ from typing import (
     cast,
     get_args,
     get_origin,
+    get_type_hints,
 )
 
+import typing_extensions
 from pydantic import BaseModel
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as Field_v1
@@ -232,13 +234,20 @@ def _convert_any_typed_dicts_to_pydantic(
     if is_typeddict(type_):
         typed_dict = type_
         docstring = inspect.getdoc(typed_dict)
-        annotations_ = typed_dict.__annotations__
+        # Use get_type_hints to properly resolve forward references and
+        # string annotations in Python 3.14+ (PEP 649 deferred annotations).
+        # include_extras=True preserves Annotated metadata.
+        try:
+            annotations_ = get_type_hints(typed_dict, include_extras=True)
+        except Exception:
+            # Fallback for edge cases where get_type_hints might fail
+            annotations_ = typed_dict.__annotations__
         description, arg_descriptions = _parse_google_docstring(
             docstring, list(annotations_)
         )
         fields: dict = {}
         for arg, arg_type in annotations_.items():
-            if get_origin(arg_type) is Annotated:  # type: ignore[comparison-overlap]
+            if get_origin(arg_type) in (Annotated, typing_extensions.Annotated):
                 annotated_args = get_args(arg_type)
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     annotated_args[0], depth=depth + 1, visited=visited
