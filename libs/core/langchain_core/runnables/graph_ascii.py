@@ -165,6 +165,9 @@ class AsciiCanvas:
             y0: y coordinate of the box corner.
             width: box width.
             height: box height.
+
+        Raises:
+            ValueError: if box dimensions are invalid.
         """
         if width <= 1 or height <= 1:
             msg = "Box dimensions should be > 1"
