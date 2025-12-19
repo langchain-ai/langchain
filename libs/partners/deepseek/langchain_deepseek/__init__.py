@@ -1,3 +1,5 @@
+"""LangChain DeepSeek integration."""
+
 from importlib import metadata
 
 from langchain_deepseek.chat_models import ChatDeepSeek

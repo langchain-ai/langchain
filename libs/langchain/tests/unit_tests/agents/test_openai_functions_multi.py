@@ -5,7 +5,7 @@ from langchain_core.agents import AgentFinish
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, SystemMessage
 
-from langchain.agents.openai_functions_multi_agent.base import (
+from langchain_classic.agents.openai_functions_multi_agent.base import (
     _FunctionsAgentAction,
     _parse_ai_message,
 )

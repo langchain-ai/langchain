@@ -19,6 +19,15 @@ DEPLOYMENT_NAME = os.environ.get(
     os.environ.get("AZURE_OPENAI_LLM_DEPLOYMENT_NAME", ""),
 )
 
+pytestmark = pytest.mark.skipif(
+    True,
+    reason=(
+        "This entire module is skipped as all Azure OpenAI models supporting text "
+        "completions are retired. See: "
+        "https://learn.microsoft.com/en-us/azure/ai-foundry/openai/concepts/legacy-models"
+    ),
+)
+
 
 def _get_llm(**kwargs: Any) -> AzureOpenAI:
     return AzureOpenAI(  # type: ignore[call-arg, call-arg, call-arg]
@@ -98,7 +107,7 @@ async def test_openai_ainvoke(llm: AzureOpenAI) -> None:
 @pytest.mark.scheduled
 def test_openai_invoke(llm: AzureOpenAI) -> None:
     """Test streaming tokens from AzureOpenAI."""
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    result = llm.invoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result, str)
 
 
@@ -145,7 +154,7 @@ def test_openai_streaming_callback() -> None:
         max_tokens=10,
         streaming=True,
         temperature=0,
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
         verbose=True,
     )
     llm.invoke("Write me a sentence with 100 words.")
@@ -168,7 +177,7 @@ async def test_openai_async_streaming_callback() -> None:
         max_tokens=10,
         streaming=True,
         temperature=0,
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
         verbose=True,
     )
     result = await llm.agenerate(["Write me a sentence with 100 words."])

@@ -1,17 +1,20 @@
-"""**OutputParser** classes parse the output of an LLM call.
+"""`OutputParser` classes parse the output of an LLM call into structured data.
 
-**Class hierarchy:**
+!!! tip "Structured output"
 
-.. code-block::
+    Output parsers emerged as an early solution to the challenge of obtaining structured
+    output from LLMs.
 
-    BaseLLMOutputParser --> BaseOutputParser --> <name>OutputParser  # ListOutputParser, PydanticOutputParser
+    Today, most LLMs support [structured output](https://docs.langchain.com/oss/python/langchain/models#structured-outputs)
+    natively. In such cases, using output parsers may be unnecessary, and you should
+    leverage the model's built-in capabilities for structured output. Refer to the
+    [documentation of your chosen model](https://docs.langchain.com/oss/python/integrations/providers/overview)
+    for guidance on how to achieve structured output directly.
 
-**Main helpers:**
-
-.. code-block::
-
-    Serializable, Generation, PromptValue
-"""  # noqa: E501
+    Output parsers remain valuable when working with models that do not support
+    structured output natively, or when you require additional processing or validation
+    of the model's output beyond its inherent capabilities.
+"""
 
 from typing import TYPE_CHECKING
 

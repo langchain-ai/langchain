@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any, Callable, Union
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.exceptions import OutputParserException
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def _replace_new_line(match: re.Match[str]) -> str:
@@ -19,7 +22,7 @@ def _replace_new_line(match: re.Match[str]) -> str:
     return match.group(1) + value + match.group(3)
 
 
-def _custom_parser(multiline_string: Union[str, bytes, bytearray]) -> str:
+def _custom_parser(multiline_string: str | bytes | bytearray) -> str:
     r"""Custom parser for multiline strings.
 
     The LLM response for `action_input` may be a multiline
@@ -50,7 +53,7 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
 
     Args:
         s: The JSON string to parse.
-        strict: Whether to use strict parsing. Defaults to False.
+        strict: Whether to use strict parsing.
 
     Returns:
         The parsed JSON object as a Python dictionary.

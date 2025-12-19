@@ -1,4 +1,4 @@
-from langchain.evaluation import __all__
+from langchain_classic.evaluation import __all__
 
 EXPECTED_ALL = [
     "EvaluatorType",

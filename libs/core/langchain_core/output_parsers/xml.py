@@ -5,7 +5,7 @@ import re
 import xml
 import xml.etree.ElementTree as ET
 from collections.abc import AsyncIterator, Iterator
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 from xml.etree.ElementTree import TreeBuilder
 
 from typing_extensions import override
@@ -43,19 +43,19 @@ class _StreamingParser:
     """Streaming parser for XML.
 
     This implementation is pulled into a class to avoid implementation
-    drift between transform and atransform of the XMLOutputParser.
+    drift between transform and atransform of the `XMLOutputParser`.
     """
 
     def __init__(self, parser: Literal["defusedxml", "xml"]) -> None:
         """Initialize the streaming parser.
 
         Args:
-            parser: Parser to use for XML parsing. Can be either 'defusedxml' or 'xml'.
-              See documentation in XMLOutputParser for more information.
+            parser: Parser to use for XML parsing. Can be either `'defusedxml'` or
+                `'xml'`. See documentation in `XMLOutputParser` for more information.
 
         Raises:
-            ImportError: If defusedxml is not installed and the defusedxml
-                parser is requested.
+            ImportError: If `defusedxml` is not installed and the `defusedxml` parser is
+                requested.
         """
         if parser == "defusedxml":
             if not _HAS_DEFUSEDXML:
@@ -75,14 +75,14 @@ class _StreamingParser:
         self.buffer = ""
         self.xml_started = False
 
-    def parse(self, chunk: Union[str, BaseMessage]) -> Iterator[AddableDict]:
+    def parse(self, chunk: str | BaseMessage) -> Iterator[AddableDict]:
         """Parse a chunk of text.
 
         Args:
-            chunk: A chunk of text to parse. This can be a string or a BaseMessage.
+            chunk: A chunk of text to parse. This can be a `str` or a `BaseMessage`.
 
         Yields:
-            AddableDict: A dictionary representing the parsed XML element.
+            A `dict` representing the parsed XML element.
 
         Raises:
             xml.etree.ElementTree.ParseError: If the XML is not well-formed.
@@ -147,65 +147,68 @@ class _StreamingParser:
 
 
 class XMLOutputParser(BaseTransformOutputParser):
-    """Parse an output using xml format."""
+    """Parse an output using xml format.
 
-    tags: Optional[list[str]] = None
+    Returns a dictionary of tags.
+    """
+
+    tags: list[str] | None = None
     """Tags to tell the LLM to expect in the XML output.
 
     Note this may not be perfect depending on the LLM implementation.
 
-    For example, with tags=["foo", "bar", "baz"]:
+    For example, with `tags=["foo", "bar", "baz"]`:
 
     1. A well-formatted XML instance:
-       "<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>"
+        `"<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>"`
 
     2. A badly-formatted XML instance (missing closing tag for 'bar'):
-       "<foo>\n   <bar>\n   </foo>"
+        `"<foo>\n   <bar>\n   </foo>"`
 
     3. A badly-formatted XML instance (unexpected 'tag' element):
-       "<foo>\n   <tag>\n   </tag>\n</foo>"
+        `"<foo>\n   <tag>\n   </tag>\n</foo>"`
     """
     encoding_matcher: re.Pattern = re.compile(
         r"<([^>]*encoding[^>]*)>\n(.*)", re.MULTILINE | re.DOTALL
     )
     parser: Literal["defusedxml", "xml"] = "defusedxml"
-    """Parser to use for XML parsing. Can be either 'defusedxml' or 'xml'.
+    """Parser to use for XML parsing. Can be either `'defusedxml'` or `'xml'`.
 
-    * 'defusedxml' is the default parser and is used to prevent XML vulnerabilities
-       present in some distributions of Python's standard library xml.
-       `defusedxml` is a wrapper around the standard library parser that
-       sets up the parser with secure defaults.
-    * 'xml' is the standard library parser.
+    * `'defusedxml'` is the default parser and is used to prevent XML vulnerabilities
+        present in some distributions of Python's standard library xml.
+        `defusedxml` is a wrapper around the standard library parser that
+        sets up the parser with secure defaults.
+    * `'xml'` is the standard library parser.
 
-    Use `xml` only if you are sure that your distribution of the standard library
-    is not vulnerable to XML vulnerabilities.
+    Use `xml` only if you are sure that your distribution of the standard library is not
+    vulnerable to XML vulnerabilities.
 
     Please review the following resources for more information:
 
     * https://docs.python.org/3/library/xml.html#xml-vulnerabilities
     * https://github.com/tiran/defusedxml
 
-    The standard library relies on libexpat for parsing XML:
-    https://github.com/libexpat/libexpat
+    The standard library relies on [`libexpat`](https://github.com/libexpat/libexpat)
+    for parsing XML.
     """
 
     def get_format_instructions(self) -> str:
         """Return the format instructions for the XML output."""
         return XML_FORMAT_INSTRUCTIONS.format(tags=self.tags)
 
-    def parse(self, text: str) -> dict[str, Union[str, list[Any]]]:
+    def parse(self, text: str) -> dict[str, str | list[Any]]:
         """Parse the output of an LLM call.
 
         Args:
             text: The output of an LLM call.
 
         Returns:
-            A dictionary representing the parsed XML.
+            A `dict` representing the parsed XML.
 
         Raises:
             OutputParserException: If the XML is not well-formed.
-            ImportError: If defusedxml is not installed and the defusedxml
-                parser is requested.
+            ImportError: If defus`edxml is not installed and the `defusedxml` parser is
+                requested.
         """
         # Try to find XML string within triple backticks
         # Imports are temporarily placed here to avoid issue with caching on CI
@@ -240,9 +243,7 @@ class XMLOutputParser(BaseTransformOutputParser):
             raise OutputParserException(msg, llm_output=text) from e
 
     @override
-    def _transform(
-        self, input: Iterator[Union[str, BaseMessage]]
-    ) -> Iterator[AddableDict]:
+    def _transform(self, input: Iterator[str | BaseMessage]) -> Iterator[AddableDict]:
         streaming_parser = _StreamingParser(self.parser)
         for chunk in input:
             yield from streaming_parser.parse(chunk)
@@ -250,7 +251,7 @@ class XMLOutputParser(BaseTransformOutputParser):
 
     @override
     async def _atransform(
-        self, input: AsyncIterator[Union[str, BaseMessage]]
+        self, input: AsyncIterator[str | BaseMessage]
     ) -> AsyncIterator[AddableDict]:
         streaming_parser = _StreamingParser(self.parser)
         async for chunk in input:
@@ -258,7 +259,7 @@ class XMLOutputParser(BaseTransformOutputParser):
                 yield output
         streaming_parser.close()
 
-    def _root_to_dict(self, root: ET.Element) -> dict[str, Union[str, list[Any]]]:
+    def _root_to_dict(self, root: ET.Element) -> dict[str, str | list[Any]]:
         """Converts xml tree to python dictionary."""
         if root.text and bool(re.search(r"\S", root.text)):
             # If root text contains any non-whitespace character it

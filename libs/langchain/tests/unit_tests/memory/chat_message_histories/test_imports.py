@@ -1,4 +1,4 @@
-from langchain.memory import chat_message_histories
+from langchain_classic.memory import chat_message_histories
 
 EXPECTED_ALL = [
     "AstraDBChatMessageHistory",

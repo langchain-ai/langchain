@@ -1,6 +1,6 @@
 from functools import partial
 from inspect import isclass
-from typing import Any, Union, cast
+from typing import Any, cast
 
 import pytest
 from pydantic import BaseModel
@@ -17,8 +17,8 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 
 
 def _fake_runnable(
-    _: Any, *, schema: Union[dict, type[BaseModel]], value: Any = 42, **_kwargs: Any
-) -> Union[BaseModel, dict]:
+    _: Any, *, schema: dict | type[BaseModel], value: Any = 42, **_kwargs: Any
+) -> BaseModel | dict:
     if isclass(schema) and is_basemodel_subclass(schema):
         return schema(name="yo", value=value)
     params = cast("dict", schema)["parameters"]
@@ -26,11 +26,11 @@ def _fake_runnable(
 
 
 class FakeStructuredChatModel(FakeListChatModel):
-    """Fake ChatModel for testing purposes."""
+    """Fake chat model for testing purposes."""
 
     @override
     def with_structured_output(
-        self, schema: Union[dict, type[BaseModel]], **kwargs: Any
+        self, schema: dict | type[BaseModel], **kwargs: Any
     ) -> Runnable:
         return RunnableLambda(partial(_fake_runnable, schema=schema, **kwargs))
 
@@ -125,7 +125,9 @@ def test_structured_prompt_kwargs() -> None:
 
 def test_structured_prompt_template_format() -> None:
     prompt = StructuredPrompt(
-        [("human", "hi {{person.name}}")], schema={}, template_format="mustache"
+        [("human", "hi {{person.name}}")],
+        schema={"type": "object", "properties": {}, "title": "foo"},
+        template_format="mustache",
     )
     assert prompt.messages[0].prompt.template_format == "mustache"  # type: ignore[union-attr, union-attr]
     assert prompt.input_variables == ["person"]
@@ -136,4 +138,8 @@ def test_structured_prompt_template_format() -> None:
 
 def test_structured_prompt_template_empty_vars() -> None:
     with pytest.raises(ChevronError, match="empty tag"):
-        StructuredPrompt([("human", "hi {{}}")], schema={}, template_format="mustache")
+        StructuredPrompt(
+            [("human", "hi {{}}")],
+            schema={"type": "object", "properties": {}, "title": "foo"},
+            template_format="mustache",
+        )

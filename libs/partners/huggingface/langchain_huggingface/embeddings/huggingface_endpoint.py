@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import from_env
@@ -15,39 +15,45 @@ VALID_TASKS = ("feature-extraction",)
 class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
     """HuggingFaceHub embedding models.
 
-    To use, you should have the ``huggingface_hub`` python package installed, and the
-    environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token, or pass
+    To use, you should have the `huggingface_hub` python package installed, and the
+    environment variable `HUGGINGFACEHUB_API_TOKEN` set with your API token, or pass
     it as a named parameter to the constructor.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_huggingface import HuggingFaceEndpointEmbeddings
 
-            from langchain_huggingface import HuggingFaceEndpointEmbeddings
-            model = "sentence-transformers/all-mpnet-base-v2"
-            hf = HuggingFaceEndpointEmbeddings(
-                model=model,
-                task="feature-extraction",
-                huggingfacehub_api_token="my-api-key",
-            )
-
+        model = "sentence-transformers/all-mpnet-base-v2"
+        hf = HuggingFaceEndpointEmbeddings(
+            model=model,
+            task="feature-extraction",
+            huggingfacehub_api_token="my-api-key",
+        )
+        ```
     """
 
-    client: Any = None  #: :meta private:
-    async_client: Any = None  #: :meta private:
-    model: Optional[str] = None
+    client: Any = None
+
+    async_client: Any = None
+
+    model: str | None = None
     """Model name to use."""
-    provider: Optional[str] = None
+
+    provider: str | None = None
     """Name of the provider to use for inference with the model specified in
-        ``repo_id``. e.g. "sambanova". if not specified, defaults to HF Inference API.
+        `repo_id`. e.g. "sambanova". if not specified, defaults to HF Inference API.
         available providers can be found in the [huggingface_hub documentation](https://huggingface.co/docs/huggingface_hub/guides/inference#supported-providers-and-tasks)."""
-    repo_id: Optional[str] = None
+
+    repo_id: str | None = None
     """Huggingfacehub repository id, for backward compatibility."""
-    task: Optional[str] = "feature-extraction"
+
+    task: str | None = "feature-extraction"
     """Task to call the model with."""
-    model_kwargs: Optional[dict] = None
+
+    model_kwargs: dict | None = None
     """Keyword arguments to pass to the model."""
 
-    huggingfacehub_api_token: Optional[str] = Field(
+    huggingfacehub_api_token: str | None = Field(
         default_factory=from_env("HUGGINGFACEHUB_API_TOKEN", default=None)
     )
 

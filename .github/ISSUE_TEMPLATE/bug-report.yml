@@ -8,16 +8,15 @@ body:
       value: |
         Thank you for taking the time to file a bug report.
 
-        Use this to report BUGS in LangChain. For usage questions, feature requests and general design questions, please use the [LangChain Forum](https://forum.langchain.com/).
+        For usage questions, feature requests and general design questions, please use the [LangChain Forum](https://forum.langchain.com/).
 
-        Relevant links to check before filing a bug report to see if your issue has already been reported, fixed or
-        if there's another way to solve your problem:
+        Check these before submitting to see if your issue has already been reported, fixed or if there's another way to solve your problem:
 
-        * [LangChain Forum](https://forum.langchain.com/),
-        * [LangChain documentation with the integrated search](https://docs.langchain.com/oss/python/langchain/overview),
-        * [API Reference](https://python.langchain.com/api_reference/),
+        * [Documentation](https://docs.langchain.com/oss/python/langchain/overview),
+        * [API Reference Documentation](https://reference.langchain.com/python/),
         * [LangChain ChatBot](https://chat.langchain.com/)
         * [GitHub search](https://github.com/langchain-ai/langchain),
+        * [LangChain Forum](https://forum.langchain.com/),
   - type: checkboxes
     id: checks
     attributes:
@@ -36,16 +35,48 @@ body:
           required: true
         - label: This is not related to the langchain-community package.
           required: true
-        - label: I read what a minimal reproducible example is (https://stackoverflow.com/help/minimal-reproducible-example).
-          required: true
         - label: I posted a self-contained, minimal, reproducible example. A maintainer can copy it and run it AS IS.
           required: true
+  - type: checkboxes
+    id: package
+    attributes:
+      label: Package (Required)
+      description: |
+        Which `langchain` package(s) is this bug related to? Select at least one.
+
+        Note that if the package you are reporting for is not listed here, it is not in this repository (e.g. `langchain-google-genai` is in [`langchain-ai/langchain-google`](https://github.com/langchain-ai/langchain-google/)).
+
+        Please report issues for other packages to their respective repositories.
+      options:
+        - label: langchain
+        - label: langchain-openai
+        - label: langchain-anthropic
+        - label: langchain-classic
+        - label: langchain-core
+        - label: langchain-cli
+        - label: langchain-model-profiles
+        - label: langchain-tests
+        - label: langchain-text-splitters
+        - label: langchain-chroma
+        - label: langchain-deepseek
+        - label: langchain-exa
+        - label: langchain-fireworks
+        - label: langchain-groq
+        - label: langchain-huggingface
+        - label: langchain-mistralai
+        - label: langchain-nomic
+        - label: langchain-ollama
+        - label: langchain-perplexity
+        - label: langchain-prompty
+        - label: langchain-qdrant
+        - label: langchain-xai
+        - label: Other / not sure / general
   - type: textarea
     id: reproduction
     validations:
       required: true
     attributes:
-      label: Example Code
+      label: Example Code (Python)
       description: |
         Please add a self-contained, [minimal, reproducible, example](https://stackoverflow.com/help/minimal-reproducible-example) with your use case.
 
@@ -53,15 +84,12 @@ body:
 
         **Important!**
 
-        * Avoid screenshots when possible, as they are hard to read and (more importantly) don't allow others to copy-and-paste your code.
-        * Reduce your code to the minimum required to reproduce the issue if possible. This makes it much easier for others to help you.
-        * Use code tags (e.g., ```python ... ```) to correctly [format your code](https://help.github.com/en/github/writing-on-github/creating-and-highlighting-code-blocks#syntax-highlighting).
-        * INCLUDE the language label (e.g. `python`) after the first three backticks to enable syntax highlighting. (e.g., ```python rather than ```).
+        * Avoid screenshots, as they are hard to read and (more importantly) don't allow others to copy-and-paste your code.
+        * Reduce your code to the minimum required to reproduce the issue if possible.
 
+        (This will be automatically formatted into code, so no need for backticks.)
+      render: python
       placeholder: |
-        The following code:
-
-        ```python
         from langchain_core.runnables import RunnableLambda
 
         def bad_code(inputs) -> int:
@@ -69,17 +97,14 @@ body:
 
           chain = RunnableLambda(bad_code)
           chain.invoke('Hello!')
-        ```
   - type: textarea
-    id: error
-    validations:
-      required: false
     attributes:
       label: Error Message and Stack Trace (if applicable)
       description: |
-        If you are reporting an error, please include the full error message and stack trace.
-      placeholder: |
-        Exception + full stack trace
+        If you are reporting an error, please copy and paste the full error message and
+        stack trace.
+        (This will be automatically formatted into code, so no need for backticks.)
+      render: shell
   - type: textarea
     id: description
     attributes:
@@ -99,9 +124,7 @@ body:
     attributes:
       label: System Info
       description: |
-        Please share your system info with us. Do NOT skip this step and please don't trim
-        the output. Most users don't include enough information here and it makes it harder
-        for us to help you.
+        Please share your system info with us.
 
         Run the following command in your terminal and paste the output here:
 
@@ -113,13 +136,7 @@ body:
         from langchain_core import sys_info
         sys_info.print_sys_info()
         ```
-
-        alternatively, put the entire output of `pip freeze` here.
       placeholder: |
         python -m langchain_core.sys_info
     validations:
       required: true
-
-
-
-
