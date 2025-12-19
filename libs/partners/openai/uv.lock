@@ -606,7 +606,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.2.2"
+version = "1.2.3"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
