@@ -391,7 +391,9 @@ def add_bullet_to_playbook(
     new_line = format_playbook_line(new_id, 0, 0, content)
 
     lines = playbook_text.strip().split("\n")
-    section_normalized = _normalize_section_name(section if isinstance(section, str) else section.value)
+    section_normalized = _normalize_section_name(
+        section if isinstance(section, str) else section.value
+    )
     added = False
 
     # Simple approach: find section and append after header
