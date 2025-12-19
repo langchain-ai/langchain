@@ -14,35 +14,40 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from enum import StrEnum
 from typing import Any
+
+
+class SectionName(StrEnum):
+    """Canonical ACE playbook section names.
+
+    These normalized snake_case names are used throughout the ACE system
+    to ensure consistent matching between curator output and playbook headers.
+    """
+
+    STRATEGIES_AND_INSIGHTS = "strategies_and_insights"
+    FORMULAS_AND_CALCULATIONS = "formulas_and_calculations"
+    CODE_SNIPPETS_AND_TEMPLATES = "code_snippets_and_templates"
+    COMMON_MISTAKES_TO_AVOID = "common_mistakes_to_avoid"
+    PROBLEM_SOLVING_HEURISTICS = "problem_solving_heuristics"
+    CONTEXT_CLUES_AND_INDICATORS = "context_clues_and_indicators"
+    OTHERS = "others"
+
 
 # Thresholds for classifying bullet performance
 _HIGH_PERFORMING_HELPFUL_MIN = 5  # Minimum helpful count for high-performing bullets
 _HIGH_PERFORMING_HARMFUL_MAX = 2  # Maximum harmful count for high-performing bullets
 
-# Canonical section names used throughout ACE.
-# Using normalized snake_case names eliminates the need for runtime conversion
-# and ensures consistent matching between curator output and playbook headers.
-SECTION_NAMES = (
-    "strategies_and_insights",
-    "formulas_and_calculations",
-    "code_snippets_and_templates",
-    "common_mistakes_to_avoid",
-    "problem_solving_heuristics",
-    "context_clues_and_indicators",
-    "others",
-)
-
 # Section slug mappings for bullet ID generation
 _SECTION_SLUGS: dict[str, str] = {
-    "strategies_and_insights": "str",
-    "formulas_and_calculations": "cal",
-    "code_snippets_and_templates": "cod",
-    "common_mistakes_to_avoid": "mis",
-    "problem_solving_heuristics": "heu",
-    "context_clues_and_indicators": "ctx",
-    "others": "oth",
-    "general": "gen",
+    SectionName.STRATEGIES_AND_INSIGHTS: "str",
+    SectionName.FORMULAS_AND_CALCULATIONS: "cal",
+    SectionName.CODE_SNIPPETS_AND_TEMPLATES: "cod",
+    SectionName.COMMON_MISTAKES_TO_AVOID: "mis",
+    SectionName.PROBLEM_SOLVING_HEURISTICS: "heu",
+    SectionName.CONTEXT_CLUES_AND_INDICATORS: "ctx",
+    SectionName.OTHERS: "oth",
+    "general": "gen",  # Legacy fallback
 }
 
 
@@ -84,7 +89,7 @@ def _normalize_section_name(section: str) -> str:
 
 def _build_default_playbook() -> str:
     """Build the default empty playbook with canonical section headers."""
-    return "\n\n".join(f"## {section}" for section in SECTION_NAMES)
+    return "\n\n".join(f"## {section.value}" for section in SectionName)
 
 
 _DEFAULT_PLAYBOOK = _build_default_playbook()
@@ -148,15 +153,18 @@ def initialize_empty_playbook() -> str:
     return _DEFAULT_PLAYBOOK
 
 
-def get_section_slug(section_name: str) -> str:
+def get_section_slug(section_name: SectionName | str) -> str:
     """Get the 3-letter slug for a section name.
 
     Args:
-        section_name: Section name (e.g., "strategies_and_insights").
+        section_name: Section name enum or string (e.g., SectionName.STRATEGIES_AND_INSIGHTS
+            or "strategies_and_insights").
 
     Returns:
         3-letter slug (e.g., "str").
     """
+    if isinstance(section_name, SectionName):
+        return _SECTION_SLUGS.get(section_name, "oth")
     normalized = _normalize_section_name(section_name)
     return _SECTION_SLUGS.get(normalized, "oth")
 
@@ -362,7 +370,7 @@ def update_bullet_counts(
 
 def add_bullet_to_playbook(
     playbook_text: str,
-    section: str,
+    section: SectionName | str,
     content: str,
     next_global_id: int,
 ) -> tuple[str, int]:
@@ -370,7 +378,8 @@ def add_bullet_to_playbook(
 
     Args:
         playbook_text: Current playbook content.
-        section: Section name to add the bullet to.
+        section: Section name enum or string (e.g., SectionName.STRATEGIES_AND_INSIGHTS
+            or "strategies_and_insights").
         content: Content of the new bullet.
         next_global_id: Next available global ID.
 
@@ -382,7 +391,7 @@ def add_bullet_to_playbook(
     new_line = format_playbook_line(new_id, 0, 0, content)
 
     lines = playbook_text.strip().split("\n")
-    section_normalized = _normalize_section_name(section)
+    section_normalized = _normalize_section_name(section if isinstance(section, str) else section.value)
     added = False
 
     # Simple approach: find section and append after header
@@ -402,7 +411,7 @@ def add_bullet_to_playbook(
     if not added:
         # Section not found, add to others
         for i, line in enumerate(result_lines):
-            if line.strip() == "## others":
+            if line.strip() == f"## {SectionName.OTHERS}":
                 result_lines.insert(i + 1, new_line)
                 added = True
                 break

@@ -292,6 +292,30 @@ The default playbook template includes these sections (using normalized snake_ca
 | `context_clues_and_indicators` | `ctx` | Signals for identifying problem types |
 | `others` | `oth` | Miscellaneous insights |
 
+### Using the SectionName Enum
+
+Section names are available as a `StrEnum` for type safety:
+
+```python
+from langchain.agents.middleware.ace import SectionName, add_bullet_to_playbook
+
+# Use enum values for type safety
+playbook, next_id = add_bullet_to_playbook(
+    playbook_text,
+    SectionName.STRATEGIES_AND_INSIGHTS,  # Type-safe
+    "New insight",
+    1
+)
+
+# String values still work (for backwards compatibility with LLM outputs)
+playbook, next_id = add_bullet_to_playbook(
+    playbook_text,
+    "strategies_and_insights",  # String also works
+    "New insight",
+    1
+)
+```
+
 ## API Reference
 
 ### ACEMiddleware
@@ -315,6 +339,7 @@ ACEMiddleware(
 ```python
 from langchain.agents.middleware.ace import (
     ACEPlaybook,              # Dataclass for playbook state
+    SectionName,              # Enum of canonical section names
     initialize_empty_playbook,  # Create default playbook template
     parse_playbook_line,      # Parse a bullet line
     format_playbook_line,     # Format a bullet line

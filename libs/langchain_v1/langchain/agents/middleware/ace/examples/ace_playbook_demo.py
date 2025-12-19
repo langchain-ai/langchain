@@ -26,6 +26,7 @@ from langgraph.checkpoint.memory import MemorySaver
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import ACEMiddleware
+from langchain.agents.middleware.ace import SectionName
 
 # Safe math operators for the calculator
 _SAFE_OPERATORS: dict[type, Callable[..., float]] = {
@@ -95,10 +96,10 @@ def main() -> None:
         reflector_model="gpt-4.1",  # Analyzes trajectories after each response
         curator_model="gpt-4.1",  # Reviews reflections and adds new insights
         curator_frequency=2,  # Add new insights every 2 interactions
-        initial_playbook="""## strategies_and_insights
+        initial_playbook=f"""## {SectionName.STRATEGIES_AND_INSIGHTS}
 [str-00001] helpful=0 harmful=0 :: Break word problems into clear steps before calculating
 
-## common_mistakes_to_avoid
+## {SectionName.COMMON_MISTAKES_TO_AVOID}
 [mis-00001] helpful=0 harmful=0 :: Don't forget to include units in the final answer
 """,
     )

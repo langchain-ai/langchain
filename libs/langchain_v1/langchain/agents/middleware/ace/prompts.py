@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from langchain_core.messages import SystemMessage
 
+from langchain.agents.middleware.ace.playbook import SectionName
+
 # System prompt enhancement template
 PLAYBOOK_INJECTION_TEMPLATE = """{original_prompt}
 
@@ -154,8 +156,7 @@ Respond in this exact JSON format:
   ]
 }}
 
-Valid sections: strategies_and_insights, formulas_and_calculations, code_snippets_and_templates,
-common_mistakes_to_avoid, problem_solving_heuristics, context_clues_and_indicators, others
+Valid sections: {valid_sections}
 
 If no updates are needed, return an empty operations list."""
 
@@ -254,6 +255,7 @@ def build_curator_prompt(
     Returns:
         Formatted curator prompt.
     """
+    valid_sections = ", ".join(section.value for section in SectionName)
     return CURATOR_PROMPT.format(
         current_step=current_step,
         total_samples=total_samples,
@@ -262,4 +264,5 @@ def build_curator_prompt(
         recent_reflection=recent_reflection,
         current_playbook=current_playbook,
         question_context=question_context or "(No question context available)",
+        valid_sections=valid_sections,
     )

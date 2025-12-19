@@ -14,6 +14,7 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain.agents.middleware.ace import (
     ACEMiddleware,
     ACEPlaybook,
+    SectionName,
     extract_bullet_ids,
     format_playbook_line,
     get_playbook_stats,
@@ -65,7 +66,7 @@ class MockCuratorModel(BaseChatModel):
                 "operations": [
                     {
                         "type": "ADD",
-                        "section": "STRATEGIES & INSIGHTS",
+                        "section": SectionName.STRATEGIES_AND_INSIGHTS.value,
                         "content": "New strategy learned from interaction",
                         "reason": "Derived from reflection",
                     }
@@ -150,10 +151,13 @@ class TestPlaybookParsing:
 
     def test_get_section_slug(self) -> None:
         """Test section slug mapping."""
+        # Test with enum
+        assert get_section_slug(SectionName.STRATEGIES_AND_INSIGHTS) == "str"
+        assert get_section_slug(SectionName.FORMULAS_AND_CALCULATIONS) == "cal"
+        assert get_section_slug(SectionName.COMMON_MISTAKES_TO_AVOID) == "mis"
+        # Test with string (backwards compatibility for LLM output)
         assert get_section_slug("strategies_and_insights") == "str"
         assert get_section_slug("STRATEGIES & INSIGHTS") == "str"
-        assert get_section_slug("formulas_and_calculations") == "cal"
-        assert get_section_slug("common_mistakes_to_avoid") == "mis"
         assert get_section_slug("unknown_section") == "oth"
 
 
@@ -216,6 +220,14 @@ class TestSectionNameNormalization:
         assert "[str-00001]" in updated
         assert "Test strategy" in updated
         assert next_id == 2
+
+        # Test with enum (preferred API)
+        updated2, next_id2 = add_bullet_to_playbook(
+            playbook, SectionName.STRATEGIES_AND_INSIGHTS, "Another strategy", 1
+        )
+        assert "[str-00001]" in updated2
+        assert "Another strategy" in updated2
+        assert next_id2 == 2
 
     def test_add_bullet_without_hyphen_in_section(self) -> None:
         """Regression test: curator may output 'Problem Solving Heuristics' without hyphen."""
