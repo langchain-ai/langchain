@@ -377,10 +377,10 @@ def _convert_delta_to_message_chunk(
         try:
             tool_call_chunks = [
                 tool_call_chunk(
-                    name=rtc["function"].get("name"),
-                    args=rtc["function"].get("arguments"),
+                    name=rtc.get("function", {}).get("name"),
+                    args=rtc.get("function", {}).get("arguments"),
                     id=rtc.get("id"),
-                    index=rtc["index"],
+                    index=rtc.get("index"),
                 )
                 for rtc in raw_tool_calls
             ]
