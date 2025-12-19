@@ -1432,7 +1432,7 @@ def convert_to_openai_messages(
                         }
                     )
                 elif (
-                    block.get("type") in ["thinking", "reasoning"]
+                    block.get("type") in {"thinking", "reasoning"}
                     or pass_through_unknown_blocks
                 ):
                     content.append(block)
