@@ -721,7 +721,7 @@ def trim_messages(
     token_counter: Callable[[list[BaseMessage]], int]
     | Callable[[BaseMessage], int]
     | BaseLanguageModel
-    | Literal["approximate"]
+    | Literal["approximate"],
     strategy: Literal["first", "last"] = "last",
     allow_partial: bool = False,
     end_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
@@ -764,52 +764,59 @@ def trim_messages(
             Set to `len` to count the number of **messages** in the chat history.
             You can also use string shortcuts for convenience:
 
-            - ``"approximate"``: Uses `count_tokens_approximately` for fast, approximate
-              token counts.
+            - `'approximate'`: Uses `count_tokens_approximately` for fast, approximate
+                token counts.
 
             !!! note
 
-                Use `count_tokens_approximately` (or the shortcut `'approximate'`) to get
-                fast, approximate token counts.
+                Use `count_tokens_approximately` (or the shortcut `'approximate'`)
+                to get fast, approximate token counts.
 
                 This is recommended for using `trim_messages` on the hot path, where
                 exact token counting is not necessary.
 
         strategy: Strategy for trimming.
+
             - `'first'`: Keep the first `<= n_count` tokens of the messages.
             - `'last'`: Keep the last `<= n_count` tokens of the messages.
         allow_partial: Whether to split a message if only part of the message can be
-            included. If `strategy='last'` then the last partial contents of a message
-            are included. If `strategy='first'` then the first partial contents of a
-            message are included.
-        end_on: The message type to end on. If specified then every message after the
-            last occurrence of this type is ignored. If `strategy='last'` then this
-            is done before we attempt to get the last `max_tokens`. If
-            `strategy='first'` then this is done after we get the first
-            `max_tokens`. Can be specified as string names (e.g. `'system'`,
-            `'human'`, `'ai'`, ...) or as `BaseMessage` classes (e.g.
-            `SystemMessage`, `HumanMessage`, `AIMessage`, ...). Can be a single
-            type or a list of types.
+            included.
 
-        start_on: The message type to start on. Should only be specified if
-            `strategy='last'`. If specified then every message before
-            the first occurrence of this type is ignored. This is done after we trim
-            the initial messages to the last `max_tokens`. Does not
-            apply to a `SystemMessage` at index 0 if `include_system=True`. Can be
-            specified as string names (e.g. `'system'`, `'human'`, `'ai'`, ...) or
-            as `BaseMessage` classes (e.g. `SystemMessage`, `HumanMessage`,
-            `AIMessage`, ...). Can be a single type or a list of types.
+            If `strategy='last'` then the last partial contents of a message are
+            included. If `strategy='first'` then the first partial contents of a
+            message are included.
+        end_on: The message type to end on.
+
+            If specified then every message after the last occurrence of this type is
+            ignored. If `strategy='last'` then this is done before we attempt to get the
+            last `max_tokens`. If `strategy='first'` then this is done after we get the
+            first `max_tokens`. Can be specified as string names (e.g. `'system'`,
+            `'human'`, `'ai'`, ...) or as `BaseMessage` classes (e.g. `SystemMessage`,
+            `HumanMessage`, `AIMessage`, ...). Can be a single type or a list of types.
+
+        start_on: The message type to start on.
+
+            Should only be specified if `strategy='last'`. If specified then every
+            message before the first occurrence of this type is ignored. This is done
+            after we trim the initial messages to the last `max_tokens`. Does not apply
+            to a `SystemMessage` at index 0 if `include_system=True`. Can be specified
+            as string names (e.g. `'system'`, `'human'`, `'ai'`, ...) or as
+            `BaseMessage` classes (e.g. `SystemMessage`, `HumanMessage`, `AIMessage`,
+            ...). Can be a single type or a list of types.
 
         include_system: Whether to keep the `SystemMessage` if there is one at index
-            `0`. Should only be specified if `strategy="last"`.
+            `0`.
+
+            Should only be specified if `strategy="last"`.
         text_splitter: Function or `langchain_text_splitters.TextSplitter` for
-            splitting the string contents of a message. Only used if
-            `allow_partial=True`. If `strategy='last'` then the last split tokens
-            from a partial message will be included. if `strategy='first'` then the
-            first split tokens from a partial message will be included. Token splitter
-            assumes that separators are kept, so that split contents can be directly
-            concatenated to recreate the original text. Defaults to splitting on
-            newlines.
+            splitting the string contents of a message.
+
+            Only used if `allow_partial=True`. If `strategy='last'` then the last split
+            tokens from a partial message will be included. if `strategy='first'` then
+            the first split tokens from a partial message will be included. Token
+            splitter assumes that separators are kept, so that split contents can be
+            directly concatenated to recreate the original text. Defaults to splitting
+            on newlines.
 
     Returns:
         List of trimmed `BaseMessage`.
@@ -820,8 +827,8 @@ def trim_messages(
 
     Example:
         Trim chat history based on token count, keeping the `SystemMessage` if
-        present, and ensuring that the chat history starts with a `HumanMessage` (
-        or a `SystemMessage` followed by a `HumanMessage`).
+        present, and ensuring that the chat history starts with a `HumanMessage` (or a
+        `SystemMessage` followed by a `HumanMessage`).
 
         ```python
         from langchain_core.messages import (
@@ -874,7 +881,7 @@ def trim_messages(
         ]
         ```
 
-        Trim chat history using approximate token counting with the "approximate" shortcut:
+        Trim chat history using approximate token counting with "approximate":
 
         ```python
         trim_messages(
@@ -1041,10 +1048,11 @@ def trim_messages(
             )
             raise ValueError(msg)
     else:
-        actual_token_counter = token_counter
+        # Type narrowing: at this point token_counter is not a str
+        actual_token_counter = token_counter  # type: ignore[assignment]
 
     if hasattr(actual_token_counter, "get_num_tokens_from_messages"):
-        list_token_counter = actual_token_counter.get_num_tokens_from_messages  # type: ignore[assignment]
+        list_token_counter = actual_token_counter.get_num_tokens_from_messages
     elif callable(actual_token_counter):
         if (
             next(
@@ -1057,7 +1065,7 @@ def trim_messages(
                 return sum(actual_token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
 
         else:
-            list_token_counter = actual_token_counter  # type: ignore[assignment]
+            list_token_counter = actual_token_counter
     else:
         msg = (
             f"'token_counter' expected to be a model that implements "

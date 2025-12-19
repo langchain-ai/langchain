@@ -710,9 +710,10 @@ def test_trim_messages_token_counter_shortcut_invalid() -> None:
         HumanMessage("Another test message"),
     ]
 
-    # Test with invalid shortcut
+    # Test with invalid shortcut - intentionally passing invalid string to verify
+    # runtime error handling for dynamically-constructed inputs
     with pytest.raises(ValueError, match="Invalid token_counter shortcut 'invalid'"):
-        trim_messages(
+        trim_messages(  # type: ignore[call-overload]
             messages,
             max_tokens=50,
             token_counter="invalid",
