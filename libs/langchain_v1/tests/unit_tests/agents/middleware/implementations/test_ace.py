@@ -234,7 +234,7 @@ class TestSectionNameNormalization:
         playbook = initialize_empty_playbook()
 
         # Section name without hyphen (LLM variation)
-        updated, next_id = add_bullet_to_playbook(
+        updated, _ = add_bullet_to_playbook(
             playbook, "Problem Solving Heuristics", "New heuristic", 1
         )
 
