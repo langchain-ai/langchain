@@ -352,3 +352,171 @@ def test_on_llm_end_preserves_existing_metadata() -> None:
     assert "metadata" in captured_run.extra
     assert captured_run.extra["metadata"]["usage_metadata"] == usage_metadata
     assert captured_run.extra["metadata"]["existing_key"] == "existing_value"
+
+
+def test_on_llm_end_flattens_single_generation() -> None:
+    """Test that outputs are flattened to just the message when generations is 1x1."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_llm_start({"name": "test_llm"}, ["foo"], run_id=run_id)
+
+    run = tracer.run_map[str(run_id)]
+    message = {"content": "Hello!"}
+    generation = {"text": "Hello!", "message": message}
+    run.outputs = {"generations": [[generation]]}
+
+    captured_run = None
+
+    def capture_run(r: Run) -> None:
+        nonlocal captured_run
+        captured_run = r
+
+    with unittest.mock.patch.object(tracer, "_update_run_single", capture_run):
+        tracer._on_llm_end(run)
+
+    assert captured_run is not None
+    # Should be flattened to just the message
+    assert captured_run.outputs == message
+
+
+def test_on_llm_end_does_not_flatten_single_generation_without_message() -> None:
+    """Test that outputs are not flattened when single generation has no message."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_llm_start({"name": "test_llm"}, ["foo"], run_id=run_id)
+
+    run = tracer.run_map[str(run_id)]
+    # Generation with only text, no message
+    generation = {"text": "Hello!"}
+    run.outputs = {"generations": [[generation]]}
+
+    captured_run = None
+
+    def capture_run(r: Run) -> None:
+        nonlocal captured_run
+        captured_run = r
+
+    with unittest.mock.patch.object(tracer, "_update_run_single", capture_run):
+        tracer._on_llm_end(run)
+
+    assert captured_run is not None
+    # Should NOT be flattened - keep original structure when no message
+    assert captured_run.outputs == {"generations": [[generation]]}
+
+
+def test_on_llm_end_does_not_flatten_multiple_generations_in_batch() -> None:
+    """Test that outputs are not flattened when there are multiple generations."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_llm_start({"name": "test_llm"}, ["foo"], run_id=run_id)
+
+    run = tracer.run_map[str(run_id)]
+    generation1 = {"text": "Hello!", "message": {"content": "Hello!"}}
+    generation2 = {"text": "Hi there!", "message": {"content": "Hi there!"}}
+    run.outputs = {"generations": [[generation1, generation2]]}
+
+    captured_run = None
+
+    def capture_run(r: Run) -> None:
+        nonlocal captured_run
+        captured_run = r
+
+    with unittest.mock.patch.object(tracer, "_update_run_single", capture_run):
+        tracer._on_llm_end(run)
+
+    assert captured_run is not None
+    # Should NOT be flattened - keep original structure
+    assert captured_run.outputs == {"generations": [[generation1, generation2]]}
+
+
+def test_on_llm_end_does_not_flatten_multiple_batches() -> None:
+    """Test that outputs are not flattened when there are multiple batches."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_llm_start({"name": "test_llm"}, ["foo", "bar"], run_id=run_id)
+
+    run = tracer.run_map[str(run_id)]
+    generation1 = {"text": "Response 1", "message": {"content": "Response 1"}}
+    generation2 = {"text": "Response 2", "message": {"content": "Response 2"}}
+    run.outputs = {"generations": [[generation1], [generation2]]}
+
+    captured_run = None
+
+    def capture_run(r: Run) -> None:
+        nonlocal captured_run
+        captured_run = r
+
+    with unittest.mock.patch.object(tracer, "_update_run_single", capture_run):
+        tracer._on_llm_end(run)
+
+    assert captured_run is not None
+    # Should NOT be flattened - keep original structure
+    assert captured_run.outputs == {"generations": [[generation1], [generation2]]}
+
+
+def test_on_llm_end_does_not_flatten_multiple_batches_multiple_generations() -> None:
+    """Test outputs not flattened with multiple batches and multiple generations."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_llm_start({"name": "test_llm"}, ["foo", "bar"], run_id=run_id)
+
+    run = tracer.run_map[str(run_id)]
+    gen1a = {"text": "1a", "message": {"content": "1a"}}
+    gen1b = {"text": "1b", "message": {"content": "1b"}}
+    gen2a = {"text": "2a", "message": {"content": "2a"}}
+    gen2b = {"text": "2b", "message": {"content": "2b"}}
+    run.outputs = {"generations": [[gen1a, gen1b], [gen2a, gen2b]]}
+
+    captured_run = None
+
+    def capture_run(r: Run) -> None:
+        nonlocal captured_run
+        captured_run = r
+
+    with unittest.mock.patch.object(tracer, "_update_run_single", capture_run):
+        tracer._on_llm_end(run)
+
+    assert captured_run is not None
+    # Should NOT be flattened - keep original structure
+    assert captured_run.outputs == {"generations": [[gen1a, gen1b], [gen2a, gen2b]]}
+
+
+def test_on_llm_end_handles_empty_generations() -> None:
+    """Test that empty generations are handled without error."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_llm_start({"name": "test_llm"}, ["foo"], run_id=run_id)
+
+    run = tracer.run_map[str(run_id)]
+    run.outputs = {"generations": []}
+
+    captured_run = None
+
+    def capture_run(r: Run) -> None:
+        nonlocal captured_run
+        captured_run = r
+
+    with unittest.mock.patch.object(tracer, "_update_run_single", capture_run):
+        tracer._on_llm_end(run)
+
+    assert captured_run is not None
+    # Should keep original structure when empty
+    assert captured_run.outputs == {"generations": []}

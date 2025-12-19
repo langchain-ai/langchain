@@ -295,13 +295,18 @@ class LangChainTracer(BaseTracer):
         """Process the LLM Run."""
         # Extract usage_metadata from outputs and store in extra.metadata
         if run.outputs and "generations" in run.outputs:
-            usage_metadata = _get_usage_metadata_from_generations(
-                run.outputs["generations"]
-            )
+            generations = run.outputs["generations"]
+            usage_metadata = _get_usage_metadata_from_generations(generations)
             if usage_metadata is not None:
                 if "metadata" not in run.extra:
                     run.extra["metadata"] = {}
                 run.extra["metadata"]["usage_metadata"] = usage_metadata
+
+            # Flatten outputs if there's only a single generation with a message
+            if len(generations) == 1 and len(generations[0]) == 1:
+                generation = generations[0][0]
+                if isinstance(generation, dict) and "message" in generation:
+                    run.outputs = generation["message"]
         self._update_run_single(run)
 
     def _on_llm_error(self, run: Run) -> None:
