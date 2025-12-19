@@ -64,7 +64,7 @@ _SECTION_SLUGS: dict[str, str] = {
 
 
 def _normalize_section_name(section: str) -> str:
-    """Normalize a section name for consistent matching.
+    r"""Normalize a section name for consistent matching.
 
     Since we now use canonical snake_case section names everywhere,
     this function is primarily for backwards compatibility with:
