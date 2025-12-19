@@ -19,7 +19,18 @@ if TYPE_CHECKING:
 
 
 def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
-    """Convert `ImageContentBlock` to format expected by OpenAI Chat Completions."""
+    """Convert `ImageContentBlock` to format expected by OpenAI Chat Completions.
+
+    Args:
+        block: The image content block to convert.
+
+    Raises:
+        ValueError: If required keys are missing.
+        ValueError: If source type is unsupported.
+
+    Returns:
+        The formatted image content block.
+    """
     if "url" in block:
         return {
             "type": "image_url",
@@ -50,6 +61,18 @@ def convert_to_openai_data_block(
 
     "Standard data content block" can include old-style LangChain v0 blocks
     (URLContentBlock, Base64ContentBlock, IDContentBlock) or new ones.
+
+    Args:
+        block: The content block to convert.
+        api: The OpenAI API being targeted. Either "chat/completions" or "responses".
+
+    Raises:
+        ValueError: If required keys are missing.
+        ValueError: If file URLs are used with Chat Completions API.
+        ValueError: If block type is unsupported.
+
+    Returns:
+        The formatted content block.
     """
     if block["type"] == "image":
         chat_completions_block = convert_to_openai_image_block(block)
@@ -981,7 +1004,14 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
 
 
 def translate_content(message: AIMessage) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a message with OpenAI content."""
+    """Derive standard content blocks from a message with OpenAI content.
+
+    Args:
+        message: The message to translate.
+
+    Returns:
+        The derived content blocks.
+    """
     if isinstance(message.content, str):
         return _convert_to_v1_from_chat_completions(message)
     message = _convert_from_v03_ai_message(message)
@@ -989,7 +1019,14 @@ def translate_content(message: AIMessage) -> list[types.ContentBlock]:
 
 
 def translate_content_chunk(message: AIMessageChunk) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a message chunk with OpenAI content."""
+    """Derive standard content blocks from a message chunk with OpenAI content.
+
+    Args:
+        message: The message chunk to translate.
+
+    Returns:
+        The derived content blocks.
+    """
     if isinstance(message.content, str):
         return _convert_to_v1_from_chat_completions_chunk(message)
     message = _convert_from_v03_ai_message(message)  # type: ignore[assignment]
