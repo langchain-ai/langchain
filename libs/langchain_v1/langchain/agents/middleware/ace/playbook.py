@@ -400,15 +400,15 @@ def add_bullet_to_playbook(
                 added = True
 
     if not added:
-        # Section not found, add to OTHERS
+        # Section not found, add to others
         for i, line in enumerate(result_lines):
-            if line.strip() == "## OTHERS":
+            if line.strip() == "## others":
                 result_lines.insert(i + 1, new_line)
                 added = True
                 break
 
     if not added:
-        # No OTHERS section, append at end
+        # No others section, append at end
         result_lines.append(new_line)
 
     return "\n".join(result_lines), next_global_id + 1
