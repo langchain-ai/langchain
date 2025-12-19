@@ -147,15 +147,15 @@ Respond in this exact JSON format:
   "operations": [
     {{
       "type": "ADD",
-      "section": "STRATEGIES & INSIGHTS",
+      "section": "strategies_and_insights",
       "content": "The new insight or strategy to add",
       "reason": "Why this is worth adding and how it complements existing bullets"
     }}
   ]
 }}
 
-Valid sections: STRATEGIES & INSIGHTS, FORMULAS & CALCULATIONS, CODE SNIPPETS & TEMPLATES,
-COMMON MISTAKES TO AVOID, PROBLEM-SOLVING HEURISTICS, CONTEXT CLUES & INDICATORS, OTHERS
+Valid sections: strategies_and_insights, formulas_and_calculations, code_snippets_and_templates,
+common_mistakes_to_avoid, problem_solving_heuristics, context_clues_and_indicators, others
 
 If no updates are needed, return an empty operations list."""
 

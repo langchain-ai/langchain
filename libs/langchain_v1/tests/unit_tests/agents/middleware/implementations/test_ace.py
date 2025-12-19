@@ -22,6 +22,7 @@ from langchain.agents.middleware.ace import (
     update_bullet_counts,
 )
 from langchain.agents.middleware.ace.playbook import (
+    _normalize_section_name,
     add_bullet_to_playbook,
     extract_playbook_bullets,
     get_section_slug,
@@ -156,6 +157,117 @@ class TestPlaybookParsing:
         assert get_section_slug("unknown_section") == "oth"
 
 
+class TestSectionNameNormalization:
+    """Tests for section name normalization (regression tests for curator output handling)."""
+
+    def test_normalize_strips_whitespace(self) -> None:
+        """Test that leading/trailing whitespace is stripped."""
+        assert _normalize_section_name("  STRATEGIES & INSIGHTS  ") == "strategies_and_insights"
+        assert _normalize_section_name("STRATEGIES & INSIGHTS\n") == "strategies_and_insights"
+        assert _normalize_section_name("\t OTHERS \t") == "others"
+
+    def test_normalize_handles_hyphens(self) -> None:
+        """Test that hyphens are treated like spaces/underscores."""
+        # "PROBLEM-SOLVING HEURISTICS" from playbook header
+        assert _normalize_section_name("PROBLEM-SOLVING HEURISTICS") == "problem_solving_heuristics"
+        # "Problem Solving Heuristics" without hyphen (common LLM variation)
+        assert _normalize_section_name("Problem Solving Heuristics") == "problem_solving_heuristics"
+        # Both should produce the same result
+        assert _normalize_section_name("PROBLEM-SOLVING HEURISTICS") == _normalize_section_name(
+            "Problem Solving Heuristics"
+        )
+
+    def test_normalize_handles_ampersands(self) -> None:
+        """Test that ampersands are normalized to 'and'."""
+        assert _normalize_section_name("STRATEGIES & INSIGHTS") == "strategies_and_insights"
+        assert _normalize_section_name("strategies and insights") == "strategies_and_insights"
+        assert _normalize_section_name("CODE SNIPPETS & TEMPLATES") == "code_snippets_and_templates"
+
+    def test_normalize_collapses_multiple_underscores(self) -> None:
+        """Test that multiple separators collapse to single underscore."""
+        assert _normalize_section_name("code   snippets") == "code_snippets"
+        assert _normalize_section_name("code - snippets") == "code_snippets"
+        assert _normalize_section_name("code--snippets") == "code_snippets"
+
+    def test_get_section_slug_with_trailing_newline(self) -> None:
+        """Regression test: LLM output often has trailing newlines."""
+        assert get_section_slug("STRATEGIES & INSIGHTS\n") == "str"
+        assert get_section_slug("FORMULAS & CALCULATIONS\r\n") == "cal"
+        assert get_section_slug("  OTHERS  \n") == "oth"
+
+    def test_get_section_slug_without_hyphen(self) -> None:
+        """Regression test: LLM may omit hyphens from 'PROBLEM-SOLVING HEURISTICS'."""
+        # With hyphen (as in playbook)
+        assert get_section_slug("PROBLEM-SOLVING HEURISTICS") == "heu"
+        # Without hyphen (common LLM variation)
+        assert get_section_slug("Problem Solving Heuristics") == "heu"
+        assert get_section_slug("problem solving heuristics") == "heu"
+
+    def test_add_bullet_with_trailing_whitespace(self) -> None:
+        """Regression test: curator output may include trailing newlines in section."""
+        playbook = initialize_empty_playbook()
+
+        # Section name with trailing newline (common LLM output issue)
+        updated, next_id = add_bullet_to_playbook(
+            playbook, "strategies_and_insights\n", "Test strategy", 1
+        )
+
+        # Should match the section and use correct slug
+        assert "[str-00001]" in updated
+        assert "Test strategy" in updated
+        assert next_id == 2
+
+    def test_add_bullet_without_hyphen_in_section(self) -> None:
+        """Regression test: curator may output 'Problem Solving Heuristics' without hyphen."""
+        playbook = initialize_empty_playbook()
+
+        # Section name without hyphen (LLM variation)
+        updated, next_id = add_bullet_to_playbook(
+            playbook, "Problem Solving Heuristics", "New heuristic", 1
+        )
+
+        # Should match "## problem_solving_heuristics" header and use 'heu' slug
+        assert "[heu-00001]" in updated
+        assert "New heuristic" in updated
+        # Verify it was added under the correct section (not OTHERS)
+        lines = updated.split("\n")
+        heuristics_idx = next(
+            i for i, line in enumerate(lines) if "problem_solving_heuristics" in line
+        )
+        content_idx = next(i for i, line in enumerate(lines) if "New heuristic" in line)
+        others_idx = next(i for i, line in enumerate(lines) if line.strip() == "## others")
+        # Content should appear after heuristics header but before OTHERS
+        assert heuristics_idx < content_idx < others_idx
+
+    def test_add_bullet_mixed_case_and_separators(self) -> None:
+        """Test various case and separator combinations all match correctly."""
+        playbook = initialize_empty_playbook()
+
+        test_cases = [
+            ("STRATEGIES & INSIGHTS", "str"),
+            ("strategies & insights", "str"),
+            ("Strategies And Insights", "str"),
+            ("strategies_and_insights", "str"),
+            ("FORMULAS & CALCULATIONS", "cal"),
+            ("formulas and calculations", "cal"),
+            ("CODE SNIPPETS & TEMPLATES", "cod"),
+            ("Code Snippets And Templates", "cod"),
+            ("COMMON MISTAKES TO AVOID", "mis"),
+            ("common mistakes to avoid", "mis"),
+            ("PROBLEM-SOLVING HEURISTICS", "heu"),
+            ("problem-solving heuristics", "heu"),
+            ("Problem Solving Heuristics", "heu"),  # Without hyphen
+            ("CONTEXT CLUES & INDICATORS", "ctx"),
+            ("context clues and indicators", "ctx"),
+        ]
+
+        for section_name, expected_slug in test_cases:
+            updated, _ = add_bullet_to_playbook(playbook, section_name, f"Test {section_name}", 1)
+            assert f"[{expected_slug}-00001]" in updated, (
+                f"Section '{section_name}' should produce slug '{expected_slug}'"
+            )
+
+
 class TestPlaybookOperations:
     """Tests for playbook modification operations."""
 
@@ -163,10 +275,11 @@ class TestPlaybookOperations:
         """Test creating an empty playbook."""
         playbook = initialize_empty_playbook()
 
-        assert "## STRATEGIES & INSIGHTS" in playbook
-        assert "## FORMULAS & CALCULATIONS" in playbook
-        assert "## COMMON MISTAKES TO AVOID" in playbook
-        assert "## OTHERS" in playbook
+        # Now uses normalized snake_case section names
+        assert "## strategies_and_insights" in playbook
+        assert "## formulas_and_calculations" in playbook
+        assert "## common_mistakes_to_avoid" in playbook
+        assert "## others" in playbook
 
     def test_update_bullet_counts_helpful(self) -> None:
         """Test updating bullet counts with helpful tag."""
@@ -326,7 +439,8 @@ class TestACEPlaybookDataclass:
         """Test default initialization."""
         playbook = ACEPlaybook()
 
-        assert "## STRATEGIES & INSIGHTS" in playbook.content
+        # Now uses normalized snake_case section names
+        assert "## strategies_and_insights" in playbook.content
         assert playbook.next_global_id == 1
         assert playbook.stats == {}
 

@@ -34,6 +34,7 @@ For more information, see:
 from langchain.agents.middleware.ace.middleware import ACEMiddleware
 from langchain.agents.middleware.ace.playbook import (
     ACEPlaybook,
+    SECTION_NAMES,
     extract_bullet_ids,
     format_playbook_line,
     get_playbook_stats,
@@ -45,6 +46,7 @@ from langchain.agents.middleware.ace.playbook import (
 __all__ = [
     "ACEMiddleware",
     "ACEPlaybook",
+    "SECTION_NAMES",
     "extract_bullet_ids",
     "format_playbook_line",
     "get_playbook_stats",

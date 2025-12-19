@@ -20,37 +20,74 @@ from typing import Any
 _HIGH_PERFORMING_HELPFUL_MIN = 5  # Minimum helpful count for high-performing bullets
 _HIGH_PERFORMING_HARMFUL_MAX = 2  # Maximum harmful count for high-performing bullets
 
+# Canonical section names used throughout ACE.
+# Using normalized snake_case names eliminates the need for runtime conversion
+# and ensures consistent matching between curator output and playbook headers.
+SECTION_NAMES = (
+    "strategies_and_insights",
+    "formulas_and_calculations",
+    "code_snippets_and_templates",
+    "common_mistakes_to_avoid",
+    "problem_solving_heuristics",
+    "context_clues_and_indicators",
+    "others",
+)
+
 # Section slug mappings for bullet ID generation
 _SECTION_SLUGS: dict[str, str] = {
     "strategies_and_insights": "str",
-    "strategies & insights": "str",
     "formulas_and_calculations": "cal",
-    "formulas & calculations": "cal",
     "code_snippets_and_templates": "cod",
-    "code snippets & templates": "cod",
     "common_mistakes_to_avoid": "mis",
-    "common mistakes to avoid": "mis",
-    "problem-solving_heuristics": "heu",
-    "problem-solving heuristics": "heu",
+    "problem_solving_heuristics": "heu",
     "context_clues_and_indicators": "ctx",
-    "context clues & indicators": "ctx",
     "others": "oth",
     "general": "gen",
 }
 
-_DEFAULT_PLAYBOOK = """## STRATEGIES & INSIGHTS
 
-## FORMULAS & CALCULATIONS
+def _normalize_section_name(section: str) -> str:
+    """Normalize a section name for consistent matching.
 
-## CODE SNIPPETS & TEMPLATES
+    Since we now use canonical snake_case section names everywhere,
+    this function is primarily for backwards compatibility with:
+    - Legacy playbooks using human-readable headers
+    - LLM outputs that may use variations
 
-## COMMON MISTAKES TO AVOID
+    Args:
+        section: Raw section name from curator output or playbook header.
 
-## PROBLEM-SOLVING HEURISTICS
+    Returns:
+        Normalized section name for matching.
 
-## CONTEXT CLUES & INDICATORS
+    Examples:
+        >>> _normalize_section_name("strategies_and_insights")
+        'strategies_and_insights'
+        >>> _normalize_section_name("STRATEGIES & INSIGHTS\\n")
+        'strategies_and_insights'
+        >>> _normalize_section_name("Problem Solving Heuristics")
+        'problem_solving_heuristics'
+    """
+    # Strip leading/trailing whitespace first
+    normalized = section.strip()
+    # Lowercase
+    normalized = normalized.lower()
+    # Replace ampersands with "and"
+    normalized = normalized.replace("&", "and")
+    # Treat hyphens and spaces as equivalent separators -> underscore
+    normalized = normalized.replace("-", "_").replace(" ", "_")
+    # Collapse multiple underscores
+    while "__" in normalized:
+        normalized = normalized.replace("__", "_")
+    return normalized
 
-## OTHERS"""
+
+def _build_default_playbook() -> str:
+    """Build the default empty playbook with canonical section headers."""
+    return "\n\n".join(f"## {section}" for section in SECTION_NAMES)
+
+
+_DEFAULT_PLAYBOOK = _build_default_playbook()
 
 
 @dataclass
@@ -120,7 +157,7 @@ def get_section_slug(section_name: str) -> str:
     Returns:
         3-letter slug (e.g., "str").
     """
-    normalized = section_name.lower().strip()
+    normalized = _normalize_section_name(section_name)
     return _SECTION_SLUGS.get(normalized, "oth")
 
 
@@ -345,31 +382,8 @@ def add_bullet_to_playbook(
     new_line = format_playbook_line(new_id, 0, 0, content)
 
     lines = playbook_text.strip().split("\n")
-    new_lines: list[str] = []
-    section_normalized = section.lower().replace(" ", "_").replace("&", "and")
-    current_section: str | None = None
+    section_normalized = _normalize_section_name(section)
     added = False
-
-    for line in lines:
-        new_lines.append(line)
-
-        if line.strip().startswith("##"):
-            header = line.strip()[2:].strip()
-            current_section = header.lower().replace(" ", "_").replace("&", "and")
-
-            # If we just left the target section, add the bullet
-            if not added and current_section != section_normalized:
-                # Check if previous section was target
-                pass
-
-        # Add bullet after section header if this is the target section
-        if (
-            not added
-            and current_section == section_normalized
-            and not line.strip().startswith("##")
-        ):
-            # Insert before this line if it's the start of content
-            pass
 
     # Simple approach: find section and append after header
     result_lines: list[str] = []
@@ -379,7 +393,7 @@ def add_bullet_to_playbook(
 
         if line.strip().startswith("##"):
             header = line.strip()[2:].strip()
-            normalized = header.lower().replace(" ", "_").replace("&", "and")
+            normalized = _normalize_section_name(header)
             if normalized == section_normalized:
                 # Add the new bullet right after the section header
                 result_lines.append(new_line)
