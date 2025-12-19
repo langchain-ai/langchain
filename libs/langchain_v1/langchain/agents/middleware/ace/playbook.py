@@ -26,6 +26,7 @@ else:
         """Backwards-compatible StrEnum for Python < 3.11."""
 
         def __str__(self) -> str:
+            """Return string representation of the enum value."""
             return str(self.value)
 
 
@@ -79,7 +80,7 @@ def _normalize_section_name(section: str) -> str:
     Examples:
         >>> _normalize_section_name("strategies_and_insights")
         'strategies_and_insights'
-        >>> _normalize_section_name("STRATEGIES & INSIGHTS\\n")
+        >>> _normalize_section_name("STRATEGIES & INSIGHTS\n")
         'strategies_and_insights'
         >>> _normalize_section_name("Problem Solving Heuristics")
         'problem_solving_heuristics'
