@@ -1220,6 +1220,7 @@ def before_agent(
             ```python
             from langchain.agents import create_agent
             from langchain.agents.middleware import before_agent, AgentState
+            from langchain.messages import HumanMessage
             from langgraph.runtime import Runtime
 
 
@@ -1234,7 +1235,7 @@ def before_agent(
 
 
             agent = create_agent(
-                model="openai:gpt-4o",
+                model="openai:gpt-5.2",
                 tools=[...],
                 middleware=[notify_start],
             )
