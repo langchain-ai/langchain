@@ -654,6 +654,7 @@ class ChildTool(BaseTool):
             TypeError: If `args_schema` is not a Pydantic `BaseModel` or dict.
         """
         input_args = self.args_schema
+
         if isinstance(tool_input, str):
             if input_args is not None:
                 if isinstance(input_args, dict):
@@ -671,6 +672,7 @@ class ChildTool(BaseTool):
                     msg = f"args_schema must be a Pydantic BaseModel, got {input_args}"
                     raise TypeError(msg)
             return tool_input
+
         if input_args is not None:
             if isinstance(input_args, dict):
                 return tool_input
@@ -740,6 +742,7 @@ class ChildTool(BaseTool):
                     validated_input[k] = tool_call_id
 
             return validated_input
+
         return tool_input
 
     @abstractmethod
