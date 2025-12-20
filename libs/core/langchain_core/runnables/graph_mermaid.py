@@ -81,6 +81,7 @@ def draw_mermaid(
                 }
             }
             ```
+
     Returns:
         Mermaid graph syntax.
 
