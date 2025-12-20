@@ -22,6 +22,7 @@ from typing import (
     get_type_hints,
 )
 
+import typing_extensions
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -94,7 +95,7 @@ def _is_annotated_type(typ: type[Any]) -> bool:
     Returns:
         `True` if the type is an Annotated type, `False` otherwise.
     """
-    return get_origin(typ) is typing.Annotated
+    return get_origin(typ) in {typing.Annotated, typing_extensions.Annotated}
 
 
 def _get_annotation_description(arg_type: type) -> str | None:
