@@ -289,7 +289,7 @@ class _TracerCore(ABC):
             for generation in generations:
                 if hasattr(generation, "message"):
                     msg = generation.message
-                    if hasattr(msg, "tool_calls"):
+                    if hasattr(msg, "tool_calls") and msg.tool_calls:
                         tool_call_count += len(msg.tool_calls)
         if tool_call_count > 0:
             llm_run.extra["tool_call_count"] = tool_call_count
