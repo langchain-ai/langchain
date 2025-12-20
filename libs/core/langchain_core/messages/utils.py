@@ -109,6 +109,11 @@ def get_buffer_string(
     Raises:
         ValueError: If an unsupported message type is encountered.
 
+    Note:
+        If a message is an `AIMessage` and contains both tool calls under `tool_calls`
+        and a function call under `additional_kwargs["function_call"]`, only the tool
+        calls will be appended to the string representation.
+
     Example:
         ```python
         from langchain_core import AIMessage, HumanMessage
@@ -139,8 +144,12 @@ def get_buffer_string(
             msg = f"Got unsupported message type: {m}"
             raise ValueError(msg)  # noqa: TRY004
         message = f"{role}: {m.text}"
-        if isinstance(m, AIMessage) and "function_call" in m.additional_kwargs:
-            message += f"{m.additional_kwargs['function_call']}"
+        if isinstance(m, AIMessage):
+            if m.tool_calls:
+                message += f"{m.tool_calls}"
+            elif "function_call" in m.additional_kwargs:
+                # Legacy behavior assumes only one function call per message
+                message += f"{m.additional_kwargs['function_call']}"
         string_messages.append(message)
 
     return "\n".join(string_messages)
