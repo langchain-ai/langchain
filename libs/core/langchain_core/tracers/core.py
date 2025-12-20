@@ -16,7 +16,6 @@ from typing import (
 from langchain_core.exceptions import TracerException
 from langchain_core.load import dumpd
 from langchain_core.tracers.schemas import Run
-from langchain_core.tracers.utils import store_tool_call_count_in_run
 
 if TYPE_CHECKING:
     from collections.abc import Coroutine, Sequence
@@ -284,7 +283,16 @@ class _TracerCore(ABC):
                     )
         llm_run.end_time = datetime.now(timezone.utc)
         llm_run.events.append({"name": "end", "time": llm_run.end_time})
-        store_tool_call_count_in_run(llm_run)
+
+        tool_call_count = 0
+        for generations in response.generations:
+            for generation in generations:
+                if hasattr(generation, "message"):
+                    msg = generation.message
+                    if hasattr(msg, "tool_calls"):
+                        tool_call_count += len(msg.tool_calls)
+        if tool_call_count > 0:
+            llm_run.extra["tool_call_count"] = tool_call_count
 
         return llm_run
 

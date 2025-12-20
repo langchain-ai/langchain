@@ -9,8 +9,6 @@ EXPECTED_ALL = [
     "Run",
     "RunLog",
     "RunLogPatch",
-    "count_tool_calls_in_run",
-    "store_tool_call_count_in_run",
 ]
 
 
