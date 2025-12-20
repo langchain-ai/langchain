@@ -2,17 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Any, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
-from langchain_core.tools.builtin import (
-    CodeExecutionTool,
-    WebSearchTool,
-    XSearchTool,
-)
+if TYPE_CHECKING:
+    from langchain_core.tools.builtin import (
+        CodeExecutionTool,
+        WebSearchTool,
+        XSearchTool,
+    )
 
 
 def convert_standard_to_xai(
-    tool: Union[WebSearchTool, CodeExecutionTool, XSearchTool, dict[str, Any]],
+    tool: WebSearchTool | CodeExecutionTool | XSearchTool | dict[str, Any],
 ) -> dict[str, Any] | None:
     """Convert standard builtin tool to xAI format.
 
@@ -34,7 +35,7 @@ def convert_standard_to_xai(
         {'type': 'x_search'}
     """
     # Cast to dict for easier key access across union types
-    tool_dict = cast(dict[str, Any], tool)
+    tool_dict = cast("dict[str, Any]", tool)
     tool_type = tool_dict.get("type")
 
     if tool_type == "web_search":
@@ -50,6 +51,6 @@ def convert_standard_to_xai(
         return {"type": "x_search"}
 
     # Tool not supported by xAI
-    # (web_fetch, memory, file_search, image_generation, text_editor, bash are not supported)
+    # (web_fetch, memory, file_search, image_generation, text_editor,
+    # bash are not supported)
     return None
-

@@ -65,4 +65,3 @@ def test_convert_bash() -> None:
     tool = {"type": "bash"}
     result = convert_standard_to_xai(tool)
     assert result is None
-
