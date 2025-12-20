@@ -1408,6 +1408,39 @@ def test_tool_annotated_descriptions() -> None:
     }
 
 
+def test_tool_field_description_preserved() -> None:
+    """Test that `Field(description=...)` is preserved in `@tool` decorator."""
+
+    @tool
+    def my_tool(
+        topic: Annotated[str, Field(description="The research topic")],
+        depth: Annotated[int, Field(description="Search depth level")] = 3,
+    ) -> str:
+        """A tool for research."""
+        return f"{topic} at depth {depth}"
+
+    args_schema = _schema(my_tool.args_schema)
+    assert args_schema == {
+        "title": "my_tool",
+        "type": "object",
+        "description": "A tool for research.",
+        "properties": {
+            "topic": {
+                "title": "Topic",
+                "type": "string",
+                "description": "The research topic",
+            },
+            "depth": {
+                "title": "Depth",
+                "type": "integer",
+                "description": "Search depth level",
+                "default": 3,
+            },
+        },
+        "required": ["topic"],
+    }
+
+
 def test_tool_call_input_tool_message_output() -> None:
     tool_call = {
         "name": "structured_api",

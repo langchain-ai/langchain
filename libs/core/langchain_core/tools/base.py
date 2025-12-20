@@ -32,6 +32,7 @@ from pydantic import (
     ValidationError,
     validate_arguments,
 )
+from pydantic.fields import FieldInfo
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
@@ -101,6 +102,8 @@ def _is_annotated_type(typ: type[Any]) -> bool:
 def _get_annotation_description(arg_type: type) -> str | None:
     """Extract description from an Annotated type.
 
+    Checks for string annotations and `FieldInfo` objects with descriptions.
+
     Args:
         arg_type: The type to extract description from.
 
@@ -112,6 +115,8 @@ def _get_annotation_description(arg_type: type) -> str | None:
         for annotation in annotated_args[1:]:
             if isinstance(annotation, str):
                 return annotation
+            if isinstance(annotation, FieldInfo) and annotation.description:
+                return annotation.description
     return None
 
 
