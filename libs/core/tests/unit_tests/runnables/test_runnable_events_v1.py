@@ -1542,7 +1542,7 @@ async def test_chain_ordering() -> None:
 
     try:
         for _ in range(10):
-            next_chunk = await iterable.__anext__()
+            next_chunk = await anext(iterable)
             events.append(next_chunk)
     except Exception:
         pass
@@ -1659,7 +1659,7 @@ async def test_event_stream_with_retry() -> None:
 
     try:
         for _ in range(10):
-            next_chunk = await iterable.__anext__()
+            next_chunk = await anext(iterable)
             events.append(next_chunk)
     except Exception:
         pass
