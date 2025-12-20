@@ -5,9 +5,24 @@ from unittest.mock import Mock, patch
 import pytest
 from pydantic import SecretStr
 
+from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_openai import OpenAIEmbeddings
 
 os.environ["OPENAI_API_KEY"] = "foo"
+
+
+class _CountingRateLimiter(BaseRateLimiter):
+    def __init__(self) -> None:
+        self.calls = 0
+        self.async_calls = 0
+
+    def acquire(self, *, blocking: bool = True) -> bool:
+        self.calls += 1
+        return True
+
+    async def aacquire(self, *, blocking: bool = True) -> bool:
+        self.async_calls += 1
+        return True
 
 
 def test_openai_invalid_model_kwargs() -> None:
@@ -61,6 +76,23 @@ def test_embed_documents_with_custom_chunk_size_no_check_ctx_length() -> None:
     assert result == [[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8]]
 
 
+def test_embed_documents_rate_limiter() -> None:
+    rate_limiter = _CountingRateLimiter()
+    embeddings = OpenAIEmbeddings(
+        chunk_size=1, check_embedding_ctx_length=False, rate_limiter=rate_limiter
+    )
+    texts = ["text1", "text2"]
+    with patch.object(embeddings.client, "create") as mock_create:
+        mock_create.side_effect = [
+            {"data": [{"embedding": [0.1]}]},
+            {"data": [{"embedding": [0.2]}]},
+        ]
+
+        embeddings.embed_documents(texts)
+
+    assert rate_limiter.calls == 2
+
+
 def test_embed_with_kwargs() -> None:
     embeddings = OpenAIEmbeddings(
         model="text-embedding-3-small", check_embedding_ctx_length=False
@@ -98,6 +130,23 @@ async def test_embed_with_kwargs_async() -> None:
         mock_create.assert_any_call(input=texts, **client_kwargs)
 
     assert result == [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
+
+
+async def test_embed_documents_rate_limiter_async() -> None:
+    rate_limiter = _CountingRateLimiter()
+    embeddings = OpenAIEmbeddings(
+        chunk_size=1, check_embedding_ctx_length=False, rate_limiter=rate_limiter
+    )
+    texts = ["text1", "text2"]
+    with patch.object(embeddings.async_client, "create") as mock_create:
+        mock_create.side_effect = [
+            {"data": [{"embedding": [0.1]}]},
+            {"data": [{"embedding": [0.2]}]},
+        ]
+
+        await embeddings.aembed_documents(texts)
+
+    assert rate_limiter.async_calls == 2
 
 
 def test_embeddings_respects_token_limit() -> None:
