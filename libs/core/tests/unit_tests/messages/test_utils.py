@@ -673,6 +673,82 @@ def test_trim_messages_start_on_with_allow_partial() -> None:
     assert messages == messages_copy
 
 
+def test_trim_messages_token_counter_shortcut_approximate() -> None:
+    """Test that `'approximate'` shortcut works for `token_counter`."""
+    messages = [
+        SystemMessage("This is a test message"),
+        HumanMessage("Another test message", id="first"),
+        AIMessage("AI response here", id="second"),
+    ]
+    messages_copy = [m.model_copy(deep=True) for m in messages]
+
+    # Test using the "approximate" shortcut
+    result_shortcut = trim_messages(
+        messages,
+        max_tokens=50,
+        token_counter="approximate",
+        strategy="last",
+    )
+
+    # Test using count_tokens_approximately directly
+    result_direct = trim_messages(
+        messages,
+        max_tokens=50,
+        token_counter=count_tokens_approximately,
+        strategy="last",
+    )
+
+    # Both should produce the same result
+    assert result_shortcut == result_direct
+    assert messages == messages_copy
+
+
+def test_trim_messages_token_counter_shortcut_invalid() -> None:
+    """Test that invalid `token_counter` shortcut raises `ValueError`."""
+    messages = [
+        SystemMessage("This is a test message"),
+        HumanMessage("Another test message"),
+    ]
+
+    # Test with invalid shortcut - intentionally passing invalid string to verify
+    # runtime error handling for dynamically-constructed inputs
+    with pytest.raises(ValueError, match="Invalid token_counter shortcut 'invalid'"):
+        trim_messages(  # type: ignore[call-overload]
+            messages,
+            max_tokens=50,
+            token_counter="invalid",
+            strategy="last",
+        )
+
+
+def test_trim_messages_token_counter_shortcut_with_options() -> None:
+    """Test that `'approximate'` shortcut works with different trim options."""
+    messages = [
+        SystemMessage("System instructions"),
+        HumanMessage("First human message", id="first"),
+        AIMessage("First AI response", id="ai1"),
+        HumanMessage("Second human message", id="second"),
+        AIMessage("Second AI response", id="ai2"),
+    ]
+    messages_copy = [m.model_copy(deep=True) for m in messages]
+
+    # Test with various options
+    result = trim_messages(
+        messages,
+        max_tokens=100,
+        token_counter="approximate",
+        strategy="last",
+        include_system=True,
+        start_on="human",
+    )
+
+    # Should include system message and start on human
+    assert len(result) >= 2
+    assert isinstance(result[0], SystemMessage)
+    assert any(isinstance(msg, HumanMessage) for msg in result[1:])
+    assert messages == messages_copy
+
+
 class FakeTokenCountingModel(FakeChatModel):
     @override
     def get_num_tokens_from_messages(
