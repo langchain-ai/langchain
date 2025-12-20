@@ -126,3 +126,30 @@ def test_complete_llm_run_counts_tool_calls_from_multiple_generations() -> None:
     completed_run = tracer._complete_llm_run(response=response, run_id=run.id)
 
     assert completed_run.extra["tool_call_count"] == 3
+
+
+def test_complete_llm_run_handles_null_tool_calls() -> None:
+    """Test that `_complete_llm_run` handles null `tool_calls` gracefully."""
+    tracer = MockTracerCore()
+
+    run = MagicMock(spec=Run)
+    run.id = "test-llm-run-id-null-tools"
+    run.run_type = "llm"
+    run.extra = {}
+    run.outputs = {}
+    run.events = []
+    run.end_time = None
+    run.inputs = {}
+
+    tracer.run_map[str(run.id)] = run
+
+    message = AIMessage(content="Test with null tool_calls")
+    generation = ChatGeneration(message=message)
+    # Bypass Pydantic validation by directly setting attribute
+    object.__setattr__(message, "tool_calls", None)
+    response = LLMResult(generations=[[generation]])
+
+    # Should not raise TypeError from len(None)
+    completed_run = tracer._complete_llm_run(response=response, run_id=run.id)
+
+    assert "tool_call_count" not in completed_run.extra
