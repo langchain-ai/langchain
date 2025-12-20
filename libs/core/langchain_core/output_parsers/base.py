@@ -332,7 +332,7 @@ class BaseOutputParser(
         )
         raise NotImplementedError(msg)
 
-    @deprecated("1.0.2", alternative="asdict", removal="2.0")
+    @deprecated("1.2.5", alternative="asdict", removal="2.0")
     @override
     def dict(self, **kwargs: Any) -> builtins.dict[str, Any]:
         return self.asdict()

@@ -338,7 +338,7 @@ class BasePromptTemplate(
         """Return the prompt type key."""
         raise NotImplementedError
 
-    @deprecated("1.0.2", alternative="asdict", removal="2.0")
+    @deprecated("1.2.5", alternative="asdict", removal="2.0")
     def dict(self, **kwargs: Any) -> builtins.dict[str, Any]:
         """DEPRECATED - use `asdict()` instead.
 
