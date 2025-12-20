@@ -127,33 +127,68 @@ def test_configurable() -> None:
     for method in ("get_num_tokens", "get_num_tokens_from_messages"):
         assert hasattr(model_with_config, method)
 
-    model_dump = model_with_config.model_dump()  # type: ignore[attr-defined]
-
-    # Check essential bound model fields
-    assert model_dump["bound"]["model_name"] == "gpt-4o"
-    assert model_dump["bound"]["openai_api_key"] == SecretStr("foo")
-    assert model_dump["bound"]["streaming"] is False
-    assert model_dump["bound"]["stream_usage"] is True
-
-    # Check kwargs (tools binding)
-    assert model_dump["kwargs"] == {
-        "tools": [
-            {
-                "type": "function",
-                "function": {"name": "foo", "description": "foo", "parameters": {}},
-            },
-        ],
+    assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
+        "name": None,
+        "bound": {
+            "default_headers": None,
+            "default_query": None,
+            "disable_streaming": False,
+            "disabled_params": None,
+            "extra_body": None,
+            "frequency_penalty": None,
+            "include": None,
+            "include_response_headers": False,
+            "logit_bias": None,
+            "logprobs": None,
+            "max_retries": None,
+            "max_tokens": None,
+            "model_kwargs": {},
+            "model_name": "gpt-4o",
+            "n": None,
+            "name": None,
+            "openai_api_base": None,
+            "openai_api_key": SecretStr("foo"),
+            "openai_organization": None,
+            "openai_proxy": None,
+            "output_version": None,
+            "presence_penalty": None,
+            "reasoning": None,
+            "reasoning_effort": None,
+            "request_timeout": None,
+            "seed": None,
+            "service_tier": None,
+            "stop": None,
+            "store": None,
+            "stream_usage": True,
+            "streaming": False,
+            "temperature": None,
+            "tiktoken_model_name": None,
+            "top_logprobs": None,
+            "top_p": None,
+            "truncation": None,
+            "use_previous_response_id": False,
+            "use_responses_api": None,
+            "verbosity": None,
+        },
+        "kwargs": {
+            "tools": [
+                {
+                    "type": "function",
+                    "function": {"name": "foo", "description": "foo", "parameters": {}},
+                },
+            ],
+        },
+        "config": {
+            "callbacks": None,
+            "configurable": {},
+            "metadata": {"model": "gpt-4o"},
+            "recursion_limit": 25,
+            "tags": ["foo"],
+        },
+        "config_factories": [],
+        "custom_input_type": None,
+        "custom_output_type": None,
     }
-
-    # Check config contains the expected tags (other fields may vary by langchain-core)
-    assert model_dump["config"]["tags"] == ["foo"]
-    assert model_dump["config"]["configurable"] == {}
-
-    # Check structural fields
-    assert model_dump["name"] is None
-    assert model_dump["config_factories"] == []
-    assert model_dump["custom_input_type"] is None
-    assert model_dump["custom_output_type"] is None
 
 
 @pytest.mark.requires("langchain_openai", "langchain_anthropic")
@@ -166,6 +201,7 @@ def test_configurable_with_default() -> None:
     """Test configurable chat model behavior with default parameters.
 
     Verifies that a configurable chat model initialized with default parameters:
+
     - Has access to all standard runnable methods (`invoke`, `stream`, etc.)
     - Provides immediate access to non-configurable methods (e.g. `get_num_tokens`)
     - Supports model switching through runtime configuration using `config_prefix`
@@ -173,18 +209,18 @@ def test_configurable_with_default() -> None:
     - Can be used in chains with different model providers via configuration
 
     Example:
-    ```python
-    # This creates a configurable model with default parameters (model)
-    model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
+        ```python
+        # This creates a configurable model with default parameters (model)
+        model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
 
-    # This works immediately - uses default gpt-4o
-    tokens = model.get_num_tokens("hello")
+        # This works immediately - uses default gpt-4o
+        tokens = model.get_num_tokens("hello")
 
-    # This also works - switches to Claude at runtime
-    response = model.invoke(
-        "Hello", config={"configurable": {"my_model_model": "claude-3-sonnet-20240229"}}
-    )
-    ```
+        # This also works - switches to Claude at runtime
+        response = model.invoke(
+            "Hello", config={"configurable": {"my_model_model": "claude-3-sonnet-20240229"}}
+        )
+        ```
     """
     model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
     for method in (
@@ -220,35 +256,41 @@ def test_configurable_with_default() -> None:
     assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
         "name": None,
         "bound": {
-            "name": None,
+            "anthropic_api_key": SecretStr("bar"),
+            "anthropic_api_url": "https://api.anthropic.com",
+            "anthropic_proxy": None,
+            "betas": None,
+            "context_management": None,
+            "default_headers": None,
+            "default_request_timeout": None,
             "disable_streaming": False,
             "effort": None,
-            "model": "claude-sonnet-4-5-20250929",
-            "mcp_servers": None,
+            "max_retries": 2,
             "max_tokens": 64000,
+            "mcp_servers": None,
+            "model": "claude-sonnet-4-5-20250929",
+            "model_kwargs": {},
+            "name": None,
+            "output_version": None,
+            "reuse_last_container": None,
+            "stop_sequences": None,
+            "stream_usage": True,
+            "streaming": False,
             "temperature": None,
             "thinking": None,
             "top_k": None,
             "top_p": None,
-            "default_request_timeout": None,
-            "max_retries": 2,
-            "stop_sequences": None,
-            "anthropic_api_url": "https://api.anthropic.com",
-            "anthropic_proxy": None,
-            "context_management": None,
-            "anthropic_api_key": SecretStr("bar"),
-            "betas": None,
-            "default_headers": None,
-            "model_kwargs": {},
-            "reuse_last_container": None,
-            "streaming": False,
-            "stream_usage": True,
-            "output_version": None,
         },
         "kwargs": {
             "tools": [{"name": "foo", "description": "foo", "input_schema": {}}],
         },
-        "config": {"tags": ["foo"], "configurable": {}},
+        "config": {
+            "callbacks": None,
+            "configurable": {},
+            "metadata": {"bar_model": "claude-sonnet-4-5-20250929"},
+            "recursion_limit": 25,
+            "tags": ["foo"],
+        },
         "config_factories": [],
         "custom_input_type": None,
         "custom_output_type": None,
