@@ -722,7 +722,7 @@ def test_trim_messages_token_counter_shortcut_invalid() -> None:
 
 
 def test_trim_messages_token_counter_shortcut_with_options() -> None:
-    """Test that 'approximate' shortcut works with different trim options."""
+    """Test that `'approximate'` shortcut works with different trim options."""
     messages = [
         SystemMessage("System instructions"),
         HumanMessage("First human message", id="first"),
