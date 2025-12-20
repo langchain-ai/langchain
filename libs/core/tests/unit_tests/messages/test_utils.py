@@ -1537,7 +1537,7 @@ def test_get_buffer_string_with_empty_content() -> None:
 
 
 def test_get_buffer_string_with_tool_calls() -> None:
-    """Test get_buffer_string with modern tool_calls field."""
+    """Test `get_buffer_string` with `tool_calls` field."""
     messages = [
         HumanMessage(content="What's the weather?"),
         AIMessage(
@@ -1560,7 +1560,7 @@ def test_get_buffer_string_with_tool_calls() -> None:
 
 
 def test_get_buffer_string_with_tool_calls_empty_content() -> None:
-    """Test get_buffer_string with tool_calls and empty content."""
+    """Test `get_buffer_string` with `tool_calls` and empty `content`."""
     messages = [
         AIMessage(
             content="",
@@ -1580,7 +1580,7 @@ def test_get_buffer_string_with_tool_calls_empty_content() -> None:
 
 
 def test_get_buffer_string_tool_calls_preferred_over_function_call() -> None:
-    """Test that tool_calls takes precedence over legacy function_call."""
+    """Test that `tool_calls` takes precedence over legacy `function_call`."""
     messages = [
         AIMessage(
             content="Calling tools",
