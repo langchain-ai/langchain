@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import warnings
 from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage
 
 from langchain.agents.middleware.builtin_tools import (
-    BUILTIN_TOOL_REGISTRY,
     BuiltinToolsMiddleware,
     _detect_provider,
 )
@@ -89,6 +89,107 @@ class ChatVertexAI(FakeGoogleModel):
 
 class ChatXAI(FakeXAIModel):
     """Mock ChatXAI for provider detection."""
+
+
+def _mock_convert_to_openai(tool: dict[str, Any]) -> dict[str, Any] | None:
+    """Mock OpenAI converter."""
+    tool_type = tool.get("type")
+    if tool_type == "web_search":
+        result: dict[str, Any] = {"type": "web_search"}
+        if "user_location" in tool:
+            result["user_location"] = tool["user_location"]
+        return result
+    if tool_type == "code_execution":
+        result = {"type": "code_interpreter"}
+        result["container"] = tool.get("container", {"type": "auto"})
+        return result
+    if tool_type == "file_search":
+        result = {"type": "file_search"}
+        if "vector_store_ids" in tool:
+            result["vector_store_ids"] = tool["vector_store_ids"]
+        return result
+    if tool_type == "image_generation":
+        return {"type": "image_generation"}
+    return None
+
+
+def _mock_convert_to_anthropic(tool: dict[str, Any]) -> dict[str, Any] | None:
+    """Mock Anthropic converter."""
+    tool_type = tool.get("type")
+    if tool_type == "web_search":
+        result: dict[str, Any] = {"type": "web_search_20250305", "name": "web_search"}
+        if "max_uses" in tool:
+            result["max_uses"] = tool["max_uses"]
+        if "user_location" in tool:
+            result["user_location"] = tool["user_location"]
+        return result
+    if tool_type == "code_execution":
+        return {"type": "code_execution_20250825", "name": "code_execution"}
+    if tool_type == "web_fetch":
+        result = {"type": "web_fetch_20250910", "name": "web_fetch"}
+        if "max_uses" in tool:
+            result["max_uses"] = tool["max_uses"]
+        return result
+    if tool_type == "memory":
+        return {"type": "memory_20250818", "name": "memory"}
+    if tool_type == "text_editor":
+        return {"type": "text_editor_20250728", "name": "str_replace_based_edit_tool"}
+    if tool_type == "bash":
+        return {"type": "bash_20250124", "name": "bash"}
+    return None
+
+
+def _mock_convert_to_xai(tool: dict[str, Any]) -> dict[str, Any] | None:
+    """Mock xAI converter."""
+    tool_type = tool.get("type")
+    if tool_type == "web_search":
+        return {"type": "web_search"}
+    if tool_type == "code_execution":
+        return {"type": "code_interpreter"}
+    if tool_type == "x_search":
+        return {"type": "x_search"}
+    return None
+
+
+@pytest.fixture(autouse=True)
+def mock_conversion_utilities(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Mock the conversion utilities from partner packages."""
+    import sys
+
+    # Mock the modules to make _check_pkg pass
+    mock_openai = MagicMock()
+    mock_openai.__spec__ = MagicMock()
+    mock_openai_utils = MagicMock()
+    mock_openai_utils_builtin = MagicMock()
+    mock_openai_utils_builtin.convert_standard_to_openai = _mock_convert_to_openai
+
+    mock_anthropic = MagicMock()
+    mock_anthropic.__spec__ = MagicMock()
+    mock_anthropic_utils = MagicMock()
+    mock_anthropic_utils_builtin = MagicMock()
+    mock_anthropic_utils_builtin.convert_standard_to_anthropic = _mock_convert_to_anthropic
+
+    mock_xai = MagicMock()
+    mock_xai.__spec__ = MagicMock()
+    mock_xai_utils = MagicMock()
+    mock_xai_utils_builtin = MagicMock()
+    mock_xai_utils_builtin.convert_standard_to_xai = _mock_convert_to_xai
+
+    monkeypatch.setitem(sys.modules, "langchain_openai", mock_openai)
+    monkeypatch.setitem(sys.modules, "langchain_openai.utils", mock_openai_utils)
+    monkeypatch.setitem(
+        sys.modules, "langchain_openai.utils.builtin_tools", mock_openai_utils_builtin
+    )
+
+    monkeypatch.setitem(sys.modules, "langchain_anthropic", mock_anthropic)
+    monkeypatch.setitem(sys.modules, "langchain_anthropic.utils", mock_anthropic_utils)
+    monkeypatch.setitem(
+        sys.modules, "langchain_anthropic.utils.builtin_tools", mock_anthropic_utils_builtin
+    )
+
+    monkeypatch.setitem(sys.modules, "langchain_xai", mock_xai)
+    monkeypatch.setitem(sys.modules, "langchain_xai.utils", mock_xai_utils)
+    monkeypatch.setitem(sys.modules, "langchain_xai.utils.builtin_tools", mock_xai_utils_builtin)
 
 
 def test_detect_provider_anthropic() -> None:
@@ -743,13 +844,3 @@ async def test_builtin_tools_middleware_async_xai() -> None:
 
     result = await middleware.awrap_model_call(request, handler)
     assert isinstance(result, ModelResponse)
-
-
-def test_tool_registry_completeness() -> None:
-    """Test that all tools in registry have entries for all providers."""
-    expected_providers = {"anthropic", "openai", "google_genai", "xai"}
-
-    for tool_name, provider_map in BUILTIN_TOOL_REGISTRY.items():
-        assert set(provider_map.keys()) == expected_providers, (
-            f"Tool '{tool_name}' is missing provider entries"
-        )
