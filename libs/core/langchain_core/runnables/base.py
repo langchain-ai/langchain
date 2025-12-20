@@ -94,7 +94,7 @@ from langchain_core.tracers.root_listeners import (
     AsyncRootListenersTracer,
     RootListenersTracer,
 )
-from langchain_core.utils.aiter import aclosing, atee, py_anext
+from langchain_core.utils.aiter import aclosing, atee
 from langchain_core.utils.iter import safetee
 from langchain_core.utils.pydantic import create_model_v2
 
@@ -127,10 +127,10 @@ class Runnable(ABC, Generic[Input, Output]):
     Key Methods
     ===========
 
-    - **`invoke`/`ainvoke`**: Transforms a single input into an output.
-    - **`batch`/`abatch`**: Efficiently transforms multiple inputs into outputs.
-    - **`stream`/`astream`**: Streams output from a single input as it's produced.
-    - **`astream_log`**: Streams output and selected intermediate results from an
+    - `invoke`/`ainvoke`: Transforms a single input into an output.
+    - `batch`/`abatch`: Efficiently transforms multiple inputs into outputs.
+    - `stream`/`astream`: Streams output from a single input as it's produced.
+    - `astream_log`: Streams output and selected intermediate results from an
         input.
 
     Built-in optimizations:
@@ -2277,6 +2277,9 @@ class Runnable(ABC, Generic[Input, Output]):
         Use this to implement `stream` or `transform` in `Runnable` subclasses.
 
         """
+        # Extract defers_inputs from kwargs if present
+        defers_inputs = kwargs.pop("defers_inputs", False)
+
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = tee(inputs, 2)
         # Start the input iterator to ensure the input Runnable starts before this one
@@ -2293,6 +2296,7 @@ class Runnable(ABC, Generic[Input, Output]):
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
+            defers_inputs=defers_inputs,
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -2374,10 +2378,13 @@ class Runnable(ABC, Generic[Input, Output]):
         Use this to implement `astream` or `atransform` in `Runnable` subclasses.
 
         """
+        # Extract defers_inputs from kwargs if present
+        defers_inputs = kwargs.pop("defers_inputs", False)
+
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = atee(inputs, 2)
         # Start the input iterator to ensure the input Runnable starts before this one
-        final_input: Input | None = await py_anext(input_for_tracing, None)
+        final_input: Input | None = await anext(input_for_tracing, None)
         final_input_supported = True
         final_output: Output | None = None
         final_output_supported = True
@@ -2390,6 +2397,7 @@ class Runnable(ABC, Generic[Input, Output]):
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
+            defers_inputs=defers_inputs,
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -2417,7 +2425,7 @@ class Runnable(ABC, Generic[Input, Output]):
                     iterator = iterator_
                 try:
                     while True:
-                        chunk = await coro_with_context(py_anext(iterator), context)
+                        chunk = await coro_with_context(anext(iterator), context)
                         yield chunk
                         if final_output_supported:
                             if final_output is None:
@@ -4025,7 +4033,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
 
         # Wrap in a coroutine to satisfy linter
         async def get_next_chunk(generator: AsyncIterator) -> Output | None:
-            return await py_anext(generator)
+            return await anext(generator)
 
         # Start the first iteration of each generator
         tasks = {
@@ -4323,6 +4331,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             input,
             self._transform,  # type: ignore[arg-type]
             config,
+            defers_inputs=True,
             **kwargs,
         )
 
@@ -4356,7 +4365,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             raise NotImplementedError(msg)
 
         return self._atransform_stream_with_config(
-            input, self._atransform, config, **kwargs
+            input, self._atransform, config, defers_inputs=True, **kwargs
         )
 
     @override

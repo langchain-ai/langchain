@@ -15,12 +15,16 @@ import json
 import logging
 import math
 from collections.abc import Callable, Iterable, Sequence
-from functools import partial
+from functools import partial, wraps
 from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    Concatenate,
     Literal,
+    ParamSpec,
+    Protocol,
+    TypeVar,
     cast,
     overload,
 )
@@ -384,33 +388,54 @@ def convert_to_messages(
     return [_convert_to_message(m) for m in messages]
 
 
-def _runnable_support(func: Callable) -> Callable:
+_P = ParamSpec("_P")
+_R_co = TypeVar("_R_co", covariant=True)
+
+
+class _RunnableSupportCallable(Protocol[_P, _R_co]):
     @overload
-    def wrapped(
-        messages: None = None, **kwargs: Any
-    ) -> Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]]: ...
+    def __call__(
+        self,
+        messages: None = None,
+        *args: _P.args,
+        **kwargs: _P.kwargs,
+    ) -> Runnable[Sequence[MessageLikeRepresentation], _R_co]: ...
 
     @overload
-    def wrapped(
-        messages: Sequence[MessageLikeRepresentation], **kwargs: Any
-    ) -> list[BaseMessage]: ...
+    def __call__(
+        self,
+        messages: Sequence[MessageLikeRepresentation] | PromptValue,
+        *args: _P.args,
+        **kwargs: _P.kwargs,
+    ) -> _R_co: ...
 
+    def __call__(
+        self,
+        messages: Sequence[MessageLikeRepresentation] | PromptValue | None = None,
+        *args: _P.args,
+        **kwargs: _P.kwargs,
+    ) -> _R_co | Runnable[Sequence[MessageLikeRepresentation], _R_co]: ...
+
+
+def _runnable_support(
+    func: Callable[
+        Concatenate[Sequence[MessageLikeRepresentation] | PromptValue, _P], _R_co
+    ],
+) -> _RunnableSupportCallable[_P, _R_co]:
+    @wraps(func)
     def wrapped(
-        messages: Sequence[MessageLikeRepresentation] | None = None,
-        **kwargs: Any,
-    ) -> (
-        list[BaseMessage]
-        | Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]]
-    ):
+        messages: Sequence[MessageLikeRepresentation] | PromptValue | None = None,
+        *args: _P.args,
+        **kwargs: _P.kwargs,
+    ) -> _R_co | Runnable[Sequence[MessageLikeRepresentation], _R_co]:
         # Import locally to prevent circular import.
         from langchain_core.runnables.base import RunnableLambda  # noqa: PLC0415
 
         if messages is not None:
-            return func(messages, **kwargs)
+            return func(messages, *args, **kwargs)
         return RunnableLambda(partial(func, **kwargs), name=func.__name__)
 
-    wrapped.__doc__ = func.__doc__
-    return wrapped
+    return cast("_RunnableSupportCallable[_P, _R_co]", wrapped)
 
 
 @_runnable_support
@@ -695,7 +720,8 @@ def trim_messages(
     max_tokens: int,
     token_counter: Callable[[list[BaseMessage]], int]
     | Callable[[BaseMessage], int]
-    | BaseLanguageModel,
+    | BaseLanguageModel
+    | Literal["approximate"],
     strategy: Literal["first", "last"] = "last",
     allow_partial: bool = False,
     end_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
@@ -733,53 +759,65 @@ def trim_messages(
         messages: Sequence of Message-like objects to trim.
         max_tokens: Max token count of trimmed messages.
         token_counter: Function or llm for counting tokens in a `BaseMessage` or a
-            list of `BaseMessage`. If a `BaseLanguageModel` is passed in then
-            `BaseLanguageModel.get_num_tokens_from_messages()` will be used.
-            Set to `len` to count the number of **messages** in the chat history.
+            list of `BaseMessage`.
+
+            If a `BaseLanguageModel` is passed in then
+            `BaseLanguageModel.get_num_tokens_from_messages()` will be used. Set to
+            `len` to count the number of **messages** in the chat history.
+
+            You can also use string shortcuts for convenience:
+
+            - `'approximate'`: Uses `count_tokens_approximately` for fast, approximate
+                token counts.
 
             !!! note
 
-                Use `count_tokens_approximately` to get fast, approximate token
-                counts.
-
-                This is recommended for using `trim_messages` on the hot path, where
-                exact token counting is not necessary.
+                `count_tokens_approximately` (or the shortcut `'approximate'`) is
+                recommended for using `trim_messages` on the hot path, where exact token
+                counting is not necessary.
 
         strategy: Strategy for trimming.
+
             - `'first'`: Keep the first `<= n_count` tokens of the messages.
             - `'last'`: Keep the last `<= n_count` tokens of the messages.
         allow_partial: Whether to split a message if only part of the message can be
-            included. If `strategy='last'` then the last partial contents of a message
-            are included. If `strategy='first'` then the first partial contents of a
-            message are included.
-        end_on: The message type to end on. If specified then every message after the
-            last occurrence of this type is ignored. If `strategy='last'` then this
-            is done before we attempt to get the last `max_tokens`. If
-            `strategy='first'` then this is done after we get the first
-            `max_tokens`. Can be specified as string names (e.g. `'system'`,
-            `'human'`, `'ai'`, ...) or as `BaseMessage` classes (e.g.
-            `SystemMessage`, `HumanMessage`, `AIMessage`, ...). Can be a single
-            type or a list of types.
+            included.
 
-        start_on: The message type to start on. Should only be specified if
-            `strategy='last'`. If specified then every message before
-            the first occurrence of this type is ignored. This is done after we trim
-            the initial messages to the last `max_tokens`. Does not
-            apply to a `SystemMessage` at index 0 if `include_system=True`. Can be
-            specified as string names (e.g. `'system'`, `'human'`, `'ai'`, ...) or
-            as `BaseMessage` classes (e.g. `SystemMessage`, `HumanMessage`,
-            `AIMessage`, ...). Can be a single type or a list of types.
+            If `strategy='last'` then the last partial contents of a message are
+            included. If `strategy='first'` then the first partial contents of a
+            message are included.
+        end_on: The message type to end on.
+
+            If specified then every message after the last occurrence of this type is
+            ignored. If `strategy='last'` then this is done before we attempt to get the
+            last `max_tokens`. If `strategy='first'` then this is done after we get the
+            first `max_tokens`. Can be specified as string names (e.g. `'system'`,
+            `'human'`, `'ai'`, ...) or as `BaseMessage` classes (e.g. `SystemMessage`,
+            `HumanMessage`, `AIMessage`, ...). Can be a single type or a list of types.
+
+        start_on: The message type to start on.
+
+            Should only be specified if `strategy='last'`. If specified then every
+            message before the first occurrence of this type is ignored. This is done
+            after we trim the initial messages to the last `max_tokens`. Does not apply
+            to a `SystemMessage` at index 0 if `include_system=True`. Can be specified
+            as string names (e.g. `'system'`, `'human'`, `'ai'`, ...) or as
+            `BaseMessage` classes (e.g. `SystemMessage`, `HumanMessage`, `AIMessage`,
+            ...). Can be a single type or a list of types.
 
         include_system: Whether to keep the `SystemMessage` if there is one at index
-            `0`. Should only be specified if `strategy="last"`.
+            `0`.
+
+            Should only be specified if `strategy="last"`.
         text_splitter: Function or `langchain_text_splitters.TextSplitter` for
-            splitting the string contents of a message. Only used if
-            `allow_partial=True`. If `strategy='last'` then the last split tokens
-            from a partial message will be included. if `strategy='first'` then the
-            first split tokens from a partial message will be included. Token splitter
-            assumes that separators are kept, so that split contents can be directly
-            concatenated to recreate the original text. Defaults to splitting on
-            newlines.
+            splitting the string contents of a message.
+
+            Only used if `allow_partial=True`. If `strategy='last'` then the last split
+            tokens from a partial message will be included. if `strategy='first'` then
+            the first split tokens from a partial message will be included. Token
+            splitter assumes that separators are kept, so that split contents can be
+            directly concatenated to recreate the original text. Defaults to splitting
+            on newlines.
 
     Returns:
         List of trimmed `BaseMessage`.
@@ -790,8 +828,8 @@ def trim_messages(
 
     Example:
         Trim chat history based on token count, keeping the `SystemMessage` if
-        present, and ensuring that the chat history starts with a `HumanMessage` (
-        or a `SystemMessage` followed by a `HumanMessage`).
+        present, and ensuring that the chat history starts with a `HumanMessage` (or a
+        `SystemMessage` followed by a `HumanMessage`).
 
         ```python
         from langchain_core.messages import (
@@ -844,8 +882,34 @@ def trim_messages(
         ]
         ```
 
+        Trim chat history using approximate token counting with `'approximate'`:
+
+        ```python
+        trim_messages(
+            messages,
+            max_tokens=45,
+            strategy="last",
+            # Using the "approximate" shortcut for fast token counting
+            token_counter="approximate",
+            start_on="human",
+            include_system=True,
+        )
+
+        # This is equivalent to using `count_tokens_approximately` directly
+        from langchain_core.messages.utils import count_tokens_approximately
+
+        trim_messages(
+            messages,
+            max_tokens=45,
+            strategy="last",
+            token_counter=count_tokens_approximately,
+            start_on="human",
+            include_system=True,
+        )
+        ```
+
         Trim chat history based on the message count, keeping the `SystemMessage` if
-        present, and ensuring that the chat history starts with a `HumanMessage` (
+        present, and ensuring that the chat history starts with a HumanMessage (
         or a `SystemMessage` followed by a `HumanMessage`).
 
             trim_messages(
@@ -967,24 +1031,44 @@ def trim_messages(
         raise ValueError(msg)
 
     messages = convert_to_messages(messages)
-    if hasattr(token_counter, "get_num_tokens_from_messages"):
-        list_token_counter = token_counter.get_num_tokens_from_messages
-    elif callable(token_counter):
+
+    # Handle string shortcuts for token counter
+    if isinstance(token_counter, str):
+        if token_counter in _TOKEN_COUNTER_SHORTCUTS:
+            actual_token_counter = _TOKEN_COUNTER_SHORTCUTS[token_counter]
+        else:
+            available_shortcuts = ", ".join(
+                f"'{key}'" for key in _TOKEN_COUNTER_SHORTCUTS
+            )
+            msg = (
+                f"Invalid token_counter shortcut '{token_counter}'. "
+                f"Available shortcuts: {available_shortcuts}."
+            )
+            raise ValueError(msg)
+    else:
+        # Type narrowing: at this point token_counter is not a str
+        actual_token_counter = token_counter  # type: ignore[assignment]
+
+    if hasattr(actual_token_counter, "get_num_tokens_from_messages"):
+        list_token_counter = actual_token_counter.get_num_tokens_from_messages
+    elif callable(actual_token_counter):
         if (
-            next(iter(inspect.signature(token_counter).parameters.values())).annotation
+            next(
+                iter(inspect.signature(actual_token_counter).parameters.values())
+            ).annotation
             is BaseMessage
         ):
 
             def list_token_counter(messages: Sequence[BaseMessage]) -> int:
-                return sum(token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
+                return sum(actual_token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
 
         else:
-            list_token_counter = token_counter
+            list_token_counter = actual_token_counter
     else:
         msg = (
             f"'token_counter' expected to be a model that implements "
             f"'get_num_tokens_from_messages()' or a function. Received object of type "
-            f"{type(token_counter)}."
+            f"{type(actual_token_counter)}."
         )
         raise ValueError(msg)
 
@@ -1024,6 +1108,7 @@ def convert_to_openai_messages(
     *,
     text_format: Literal["string", "block"] = "string",
     include_id: bool = False,
+    pass_through_unknown_blocks: bool = True,
 ) -> dict | list[dict]:
     """Convert LangChain messages into OpenAI message dicts.
 
@@ -1043,6 +1128,9 @@ def convert_to_openai_messages(
                 content blocks these are left as is.
         include_id: Whether to include message IDs in the openai messages, if they
             are present in the source messages.
+        pass_through_unknown_blocks: Whether to include content blocks with unknown
+            formats in the output. If `False`, an error is raised if an unknown
+            content block is encountered.
 
     Raises:
         ValueError: if an unrecognized `text_format` is specified, or if a message
@@ -1292,6 +1380,36 @@ def convert_to_openai_messages(
                                 },
                             }
                         )
+                elif block.get("type") == "function_call":  # OpenAI Responses
+                    if not any(
+                        tool_call["id"] == block.get("call_id")
+                        for tool_call in cast("AIMessage", message).tool_calls
+                    ):
+                        if missing := [
+                            k
+                            for k in ("call_id", "name", "arguments")
+                            if k not in block
+                        ]:
+                            err = (
+                                f"Unrecognized content block at "
+                                f"messages[{i}].content[{j}] has 'type': "
+                                f"'tool_use', but is missing expected key(s) "
+                                f"{missing}. Full content block:\n\n{block}"
+                            )
+                            raise ValueError(err)
+                        oai_msg["tool_calls"] = oai_msg.get("tool_calls", [])
+                        oai_msg["tool_calls"].append(
+                            {
+                                "type": "function",
+                                "id": block.get("call_id"),
+                                "function": {
+                                    "name": block.get("name"),
+                                    "arguments": block.get("arguments"),
+                                },
+                            }
+                        )
+                    if pass_through_unknown_blocks:
+                        content.append(block)
                 elif block.get("type") == "tool_result":
                     if missing := [
                         k for k in ("content", "tool_use_id") if k not in block
@@ -1372,7 +1490,10 @@ def convert_to_openai_messages(
                             },
                         }
                     )
-                elif block.get("type") in ["thinking", "reasoning"]:
+                elif (
+                    block.get("type") in {"thinking", "reasoning"}
+                    or pass_through_unknown_blocks
+                ):
                     content.append(block)
                 else:
                     err = (
@@ -1745,3 +1866,14 @@ def count_tokens_approximately(
 
     # round up once more time in case extra_tokens_per_message is a float
     return math.ceil(token_count)
+
+
+# Mapping from string shortcuts to token counter functions
+def _approximate_token_counter(messages: Sequence[BaseMessage]) -> int:
+    """Wrapper for `count_tokens_approximately` that matches expected signature."""
+    return count_tokens_approximately(messages)
+
+
+_TOKEN_COUNTER_SHORTCUTS = {
+    "approximate": _approximate_token_counter,
+}

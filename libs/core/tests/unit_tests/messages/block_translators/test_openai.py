@@ -385,8 +385,9 @@ def test_compat_responses_v03() -> None:
     ]
     assert message_v03.content_blocks == expected_content
 
-    # Test chunks
-    ## Tool calls
+    # --- Test chunks --- #
+
+    # Tool calls
     chunk_1 = AIMessageChunk(
         content=[],
         additional_kwargs={"__openai_function_call_ids__": {"call_abc": "fc_abc"}},
@@ -443,7 +444,7 @@ def test_compat_responses_v03() -> None:
     ]
     assert chunk.content_blocks == expected_content
 
-    ## Reasoning
+    # Reasoning
     chunk_1 = AIMessageChunk(
         content=[],
         additional_kwargs={
@@ -477,7 +478,7 @@ def test_compat_responses_v03() -> None:
 
 def test_convert_to_openai_data_block() -> None:
     # Chat completions
-    ## Image / url
+    # Image / url
     block = {
         "type": "image",
         "url": "https://example.com/test.png",
@@ -489,7 +490,7 @@ def test_convert_to_openai_data_block() -> None:
     result = convert_to_openai_data_block(block)
     assert result == expected
 
-    ## Image / base64
+    # Image / base64
     block = {
         "type": "image",
         "base64": "<base64 string>",
@@ -502,7 +503,7 @@ def test_convert_to_openai_data_block() -> None:
     result = convert_to_openai_data_block(block)
     assert result == expected
 
-    ## File / url
+    # File / url
     block = {
         "type": "file",
         "url": "https://example.com/test.pdf",
@@ -510,7 +511,7 @@ def test_convert_to_openai_data_block() -> None:
     with pytest.raises(ValueError, match="does not support"):
         result = convert_to_openai_data_block(block)
 
-    ## File / base64
+    # File / base64
     block = {
         "type": "file",
         "base64": "<base64 string>",
@@ -527,7 +528,7 @@ def test_convert_to_openai_data_block() -> None:
     result = convert_to_openai_data_block(block)
     assert result == expected
 
-    ## File / file ID
+    # File / file ID
     block = {
         "type": "file",
         "file_id": "file-abc123",
@@ -536,7 +537,7 @@ def test_convert_to_openai_data_block() -> None:
     result = convert_to_openai_data_block(block)
     assert result == expected
 
-    ## Audio / base64
+    # Audio / base64
     block = {
         "type": "audio",
         "base64": "<base64 string>",
@@ -550,7 +551,7 @@ def test_convert_to_openai_data_block() -> None:
     assert result == expected
 
     # Responses
-    ## Image / url
+    # Image / url
     block = {
         "type": "image",
         "url": "https://example.com/test.png",
@@ -559,7 +560,7 @@ def test_convert_to_openai_data_block() -> None:
     result = convert_to_openai_data_block(block, api="responses")
     assert result == expected
 
-    ## Image / base64
+    # Image / base64
     block = {
         "type": "image",
         "base64": "<base64 string>",
@@ -572,14 +573,14 @@ def test_convert_to_openai_data_block() -> None:
     result = convert_to_openai_data_block(block, api="responses")
     assert result == expected
 
-    ## File / url
+    # File / url
     block = {
         "type": "file",
         "url": "https://example.com/test.pdf",
     }
     expected = {"type": "input_file", "file_url": "https://example.com/test.pdf"}
 
-    ## File / base64
+    # File / base64
     block = {
         "type": "file",
         "base64": "<base64 string>",
@@ -594,7 +595,7 @@ def test_convert_to_openai_data_block() -> None:
     result = convert_to_openai_data_block(block, api="responses")
     assert result == expected
 
-    ## File / file ID
+    # File / file ID
     block = {
         "type": "file",
         "file_id": "file-abc123",

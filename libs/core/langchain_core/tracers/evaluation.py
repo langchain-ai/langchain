@@ -154,8 +154,8 @@ class EvaluatorCallbackHandler(BaseTracer):
                     res
                 )
 
+    @staticmethod
     def _select_eval_results(
-        self,
         results: EvaluationResult | EvaluationResults,
     ) -> list[EvaluationResult]:
         if isinstance(results, EvaluationResult):
