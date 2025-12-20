@@ -5,7 +5,13 @@ from __future__ import annotations
 from typing import Any, Literal
 from unittest.mock import MagicMock
 
-from langchain_core.messages import AIMessageChunk, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
 from openai.types.chat import ChatCompletionMessage
@@ -243,6 +249,248 @@ class TestChatDeepSeekCustomUnit:
         tool_message = ToolMessage(content="test string", tool_call_id="test_id")
         payload = chat_model._get_request_payload([tool_message])
         assert payload["messages"][0]["content"] == "test string"
+
+    def test_get_request_payload_preserves_reasoning_content(self) -> None:
+        """Test reasoning_content preservation in _get_request_payload.
+
+        Specifically tests AIMessages with tool_calls.
+        """
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        # Create an AIMessage with tool_calls and reasoning_content
+        ai_message = AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": "test_tool",
+                    "args": {"arg1": "value1"},
+                    "id": "test_call_id",
+                }
+            ],
+            additional_kwargs={"reasoning_content": "This is the reasoning content"},
+        )
+
+        payload = chat_model._get_request_payload([ai_message])
+
+        # Verify reasoning_content is preserved in the payload
+        assert len(payload["messages"]) == 1
+        assert payload["messages"][0]["role"] == "assistant"
+        assert payload["messages"][0]["tool_calls"] is not None
+        assert (
+            payload["messages"][0]["reasoning_content"]
+            == "This is the reasoning content"
+        )
+
+    def test_get_request_payload_without_reasoning_content(self) -> None:
+        """Test _get_request_payload when reasoning_content is not present."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        # Create an AIMessage with tool_calls but no reasoning_content
+        ai_message = AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": "test_tool",
+                    "args": {"arg1": "value1"},
+                    "id": "test_call_id",
+                }
+            ],
+        )
+
+        payload = chat_model._get_request_payload([ai_message])
+
+        # Verify payload is created correctly without reasoning_content
+        assert len(payload["messages"]) == 1
+        assert payload["messages"][0]["role"] == "assistant"
+        assert payload["messages"][0]["tool_calls"] is not None
+        assert "reasoning_content" not in payload["messages"][0]
+
+    def test_get_request_payload_agent_conversation_with_reasoning(self) -> None:
+        """Test reasoning_content preservation in realistic agent conversation."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        # Simulate a real agent conversation:
+        # 1. User asks a question
+        # 2. AI responds with tool calls and reasoning
+        # 3. Tool returns result
+        # 4. User asks follow-up
+        # 5. AI responds again (should preserve previous reasoning_content)
+        messages = [
+            HumanMessage(content="What's the weather in Paris?"),
+            AIMessage(
+                content="",
+                tool_calls=[
+                    {
+                        "name": "get_weather",
+                        "args": {"location": "Paris"},
+                        "id": "call_123",
+                    }
+                ],
+                additional_kwargs={
+                    "reasoning_content": (
+                        "I need to check the weather for Paris using the tool."
+                    ),
+                },
+            ),
+            ToolMessage(
+                content="Sunny, 22°C",
+                tool_call_id="call_123",
+            ),
+            HumanMessage(content="What about London?"),
+            AIMessage(
+                content="",
+                tool_calls=[
+                    {
+                        "name": "get_weather",
+                        "args": {"location": "London"},
+                        "id": "call_456",
+                    }
+                ],
+                additional_kwargs={
+                    "reasoning_content": "Now I need to check weather for London."
+                },
+            ),
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+
+        # Verify all messages are present
+        expected_message_count = 5
+        assert len(payload["messages"]) == expected_message_count
+
+        # Verify reasoning_content is preserved for the first AI message (index 1)
+        assert payload["messages"][1]["role"] == "assistant"
+        assert payload["messages"][1]["tool_calls"] is not None
+        assert (
+            payload["messages"][1]["reasoning_content"]
+            == "I need to check the weather for Paris using the tool."
+        )
+
+        # Verify reasoning_content is preserved for the second AI message (index 4)
+        assert payload["messages"][4]["role"] == "assistant"
+        assert payload["messages"][4]["tool_calls"] is not None
+        assert (
+            payload["messages"][4]["reasoning_content"]
+            == "Now I need to check weather for London."
+        )
+
+        # Verify other messages don't have reasoning_content
+        assert payload["messages"][0]["role"] == "user"
+        assert "reasoning_content" not in payload["messages"][0]
+        assert payload["messages"][2]["role"] == "tool"
+        assert "reasoning_content" not in payload["messages"][2]
+        assert payload["messages"][3]["role"] == "user"
+        assert "reasoning_content" not in payload["messages"][3]
+
+    def test_get_request_payload_mixed_reasoning_content(self) -> None:
+        """Test that only messages with reasoning_content get it added, others don't."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        messages = [
+            HumanMessage(content="Hello"),
+            AIMessage(
+                content="Hi there!",
+                # No tool_calls, no reasoning_content
+            ),
+            HumanMessage(content="Use a tool"),
+            AIMessage(
+                content="",
+                tool_calls=[
+                    {
+                        "name": "test_tool",
+                        "args": {},
+                        "id": "call_1",
+                    }
+                ],
+                # Has tool_calls but NO reasoning_content
+            ),
+            HumanMessage(content="Use tool with reasoning"),
+            AIMessage(
+                content="",
+                tool_calls=[
+                    {
+                        "name": "test_tool",
+                        "args": {},
+                        "id": "call_2",
+                    }
+                ],
+                additional_kwargs={
+                    "reasoning_content": "I should use the tool here."
+                },
+            ),
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+
+        # Verify only the last message (index 5) has reasoning_content
+        expected_message_count = 6
+        assert len(payload["messages"]) == expected_message_count
+        # AI without tool_calls
+        assert "reasoning_content" not in payload["messages"][1]
+        # AI with tool_calls but no reasoning
+        assert "reasoning_content" not in payload["messages"][3]
+        assert (
+            payload["messages"][5]["reasoning_content"] == "I should use the tool here."
+        )
+
+    def test_get_request_payload_normal_conversation_no_reasoning(self) -> None:
+        """Test that normal conversations without reasoning work correctly."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        # Normal conversation without any reasoning or tool calls
+        messages = [
+            SystemMessage(content="You are a helpful assistant."),
+            HumanMessage(content="Hello, how are you?"),
+            AIMessage(content="I'm doing well, thank you! How can I help you today?"),
+            HumanMessage(content="What's 2+2?"),
+            AIMessage(content="2+2 equals 4."),
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+
+        # Verify all messages are present and correct
+        expected_message_count = 5
+        assert len(payload["messages"]) == expected_message_count
+        assert payload["messages"][0]["role"] == "system"
+        assert payload["messages"][1]["role"] == "user"
+        assert payload["messages"][2]["role"] == "assistant"
+        assert payload["messages"][3]["role"] == "user"
+        assert payload["messages"][4]["role"] == "assistant"
+
+        # Verify NO reasoning_content is added to any message
+        for i, message in enumerate(payload["messages"]):
+            assert "reasoning_content" not in message, (
+                f"Message at index {i} should not have reasoning_content"
+            )
+
+        # Verify content is preserved correctly
+        assert (
+            payload["messages"][2]["content"]
+            == "I'm doing well, thank you! How can I help you today?"
+        )
+        assert payload["messages"][4]["content"] == "2+2 equals 4."
+
+    def test_get_request_payload_ai_without_tool_calls(self) -> None:
+        """Test that AIMessages without tool_calls never get reasoning_content."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        # Even if reasoning_content exists in additional_kwargs, it shouldn't be added
+        # if there are no tool_calls (DeepSeek API only requires it with tool_calls)
+        messages = [
+            AIMessage(
+                content="This is a normal response",
+                additional_kwargs={"reasoning_content": "Some reasoning"},
+                # No tool_calls
+            ),
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+
+        # Verify reasoning_content is NOT added (because no tool_calls)
+        assert len(payload["messages"]) == 1
+        assert payload["messages"][0]["role"] == "assistant"
+        assert "reasoning_content" not in payload["messages"][0]
+        assert payload["messages"][0]["content"] == "This is a normal response"
 
 
 class SampleTool(PydanticBaseModel):
