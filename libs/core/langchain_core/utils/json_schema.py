@@ -170,28 +170,33 @@ def dereference_refs(
     full_schema: dict | None = None,
     skip_keys: Sequence[str] | None = None,
 ) -> dict:
-    """Resolve and inline JSON Schema $ref references in a schema object.
+    """Resolve and inline JSON Schema `$ref` references in a schema object.
 
-    This function processes a JSON Schema and resolves all $ref references by replacing
-    them with the actual referenced content. It handles both simple references and
-    complex cases like circular references and mixed $ref objects that contain
-    additional properties alongside the $ref.
+    This function processes a JSON Schema and resolves all `$ref` references by
+    replacing them with the actual referenced content.
+
+    Handles both simple references and complex cases like circular references and mixed
+    `$ref` objects that contain additional properties alongside the `$ref`.
 
     Args:
-        schema_obj: The JSON Schema object or fragment to process. This can be a
-            complete schema or just a portion of one.
-        full_schema: The complete schema containing all definitions that $refs might
-            point to. If not provided, defaults to schema_obj (useful when the
-            schema is self-contained).
-        skip_keys: Controls recursion behavior and reference resolution depth:
-            - If `None` (Default): Only recurse under '$defs' and use shallow reference
-              resolution (break cycles but don't deep-inline nested refs)
-            - If provided (even as []): Recurse under all keys and use deep reference
-              resolution (fully inline all nested references)
+        schema_obj: The JSON Schema object or fragment to process.
+
+            This can be a complete schema or just a portion of one.
+        full_schema: The complete schema containing all definitions that `$refs` might
+            point to.
+
+            If not provided, defaults to `schema_obj` (useful when the schema is
+            self-contained).
+        skip_keys: Controls recursion behavior and reference resolution depth.
+
+            - If `None` (Default): Only recurse under `'$defs'` and use shallow
+                reference resolution (break cycles but don't deep-inline nested refs)
+            - If provided (even as `[]`): Recurse under all keys and use deep reference
+                resolution (fully inline all nested references)
 
     Returns:
-        A new dictionary with all $ref references resolved and inlined. The original
-        schema_obj is not modified.
+        A new dictionary with all $ref references resolved and inlined.
+            The original `schema_obj` is not modified.
 
     Examples:
         Basic reference resolution:
@@ -203,7 +208,8 @@ def dereference_refs(
         >>> result = dereference_refs(schema)
         >>> result["properties"]["name"]  # {"type": "string"}
 
-        Mixed $ref with additional properties:
+        Mixed `$ref` with additional properties:
+
         >>> schema = {
         ...     "properties": {
         ...         "name": {"$ref": "#/$defs/base", "description": "User name"}
@@ -215,6 +221,7 @@ def dereference_refs(
         # {"type": "string", "minLength": 1, "description": "User name"}
 
         Handling circular references:
+
         >>> schema = {
         ...     "properties": {"user": {"$ref": "#/$defs/User"}},
         ...     "$defs": {
@@ -226,11 +233,12 @@ def dereference_refs(
         ... }
         >>> result = dereference_refs(schema)  # Won't cause infinite recursion
 
-    Note:
+    !!! note
+
         - Circular references are handled gracefully by breaking cycles
-        - Mixed $ref objects (with both $ref and other properties) are supported
-        - Additional properties in mixed $refs override resolved properties
-        - The $defs section is preserved in the output by default
+        - Mixed `$ref` objects (with both `$ref` and other properties) are supported
+        - Additional properties in mixed `$refs` override resolved properties
+        - The `$defs` section is preserved in the output by default
     """
     full = full_schema or schema_obj
     keys_to_skip = list(skip_keys) if skip_keys is not None else ["$defs"]

@@ -182,10 +182,10 @@ def create_structured_chat_agent(
             If `False`, does not add a stop token.
             If a list of str, uses the provided list as the stop tokens.
 
-            Default is True. You may to set this to False if the LLM you are using
+            You may to set this to False if the LLM you are using
             does not support stop sequences.
         tools_renderer: This controls how the tools are converted into a string and
-            then passed into the LLM. Default is `render_text_description`.
+            then passed into the LLM.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
@@ -195,7 +195,7 @@ def create_structured_chat_agent(
     Examples:
         ```python
         from langchain_classic import hub
-        from langchain_community.chat_models import ChatOpenAI
+        from langchain_openai import ChatOpenAI
         from langchain_classic.agents import (
             AgentExecutor,
             create_structured_chat_agent,

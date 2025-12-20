@@ -86,7 +86,7 @@ class BaseStore(ABC, Generic[K, V]):
 
         Returns:
             A sequence of optional values associated with the keys.
-            If a key is not found, the corresponding value will be None.
+            If a key is not found, the corresponding value will be `None`.
         """
 
     async def amget(self, keys: Sequence[K]) -> list[V | None]:
@@ -97,7 +97,7 @@ class BaseStore(ABC, Generic[K, V]):
 
         Returns:
             A sequence of optional values associated with the keys.
-            If a key is not found, the corresponding value will be None.
+            If a key is not found, the corresponding value will be `None`.
         """
         return await run_in_executor(None, self.mget, keys)
 
@@ -243,8 +243,7 @@ class InMemoryStore(InMemoryBaseStore[Any]):
     """In-memory store for any type of data.
 
     Attributes:
-        store (dict[str, Any]): The underlying dictionary that stores
-            the key-value pairs.
+        store: The underlying dictionary that stores the key-value pairs.
 
     Examples:
         ```python
@@ -267,8 +266,7 @@ class InMemoryByteStore(InMemoryBaseStore[bytes]):
     """In-memory store for bytes.
 
     Attributes:
-        store (dict[str, bytes]): The underlying dictionary that stores
-            the key-value pairs.
+        store: The underlying dictionary that stores the key-value pairs.
 
     Examples:
         ```python

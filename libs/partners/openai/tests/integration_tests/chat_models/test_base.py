@@ -2,6 +2,7 @@
 
 import base64
 import json
+import os
 from collections.abc import AsyncIterator
 from pathlib import Path
 from textwrap import dedent
@@ -27,6 +28,7 @@ from langchain_tests.integration_tests.chat_models import (
     magic_function,
 )
 from pydantic import BaseModel, Field, field_validator
+from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -62,6 +64,57 @@ def test_chat_openai_model() -> None:
     assert chat.model_name == "foo"
     chat = ChatOpenAI(model_name="bar")  # type: ignore[call-arg]
     assert chat.model_name == "bar"
+
+
+def test_callable_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_key = os.environ["OPENAI_API_KEY"]
+
+    calls = {"sync": 0}
+
+    def get_openai_api_key() -> str:
+        calls["sync"] += 1
+        return original_key
+
+    monkeypatch.delenv("OPENAI_API_KEY")
+
+    model = ChatOpenAI(model="gpt-4.1-mini", api_key=get_openai_api_key)
+    response = model.invoke("hello")
+    assert isinstance(response, AIMessage)
+    assert calls["sync"] == 1
+
+
+async def test_callable_api_key_async(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_key = os.environ["OPENAI_API_KEY"]
+
+    calls = {"sync": 0, "async": 0}
+
+    def get_openai_api_key() -> str:
+        calls["sync"] += 1
+        return original_key
+
+    async def get_openai_api_key_async() -> str:
+        calls["async"] += 1
+        return original_key
+
+    monkeypatch.delenv("OPENAI_API_KEY")
+
+    model = ChatOpenAI(model="gpt-4.1-mini", api_key=get_openai_api_key)
+    response = model.invoke("hello")
+    assert isinstance(response, AIMessage)
+    assert calls["sync"] == 1
+
+    response = await model.ainvoke("hello")
+    assert isinstance(response, AIMessage)
+    assert calls["sync"] == 2
+
+    model = ChatOpenAI(model="gpt-4.1-mini", api_key=get_openai_api_key_async)
+    async_response = await model.ainvoke("hello")
+    assert isinstance(async_response, AIMessage)
+    assert calls["async"] == 1
+
+    with pytest.raises(ValueError):
+        # We do not create a sync callable from an async one
+        _ = model.invoke("hello")
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
@@ -141,7 +194,7 @@ def test_chat_openai_streaming_generation_info() -> None:
     chat = ChatOpenAI(max_tokens=2, temperature=0, callbacks=callback_manager)  # type: ignore[call-arg]
     list(chat.stream("hi"))
     generation = callback.saved_things["generation"]
-    # `Hello!` is two tokens, assert that that is what is returned
+    # `Hello!` is two tokens, assert that is what is returned
     assert generation.generations[0][0].text == "Hello!"
 
 
@@ -194,13 +247,35 @@ def test_openai_invoke() -> None:
     result = llm.invoke("Hello", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
 
+    usage_metadata = result.usage_metadata  # type: ignore[attr-defined]
+
     # assert no response headers if include_response_headers is not set
     assert "headers" not in result.response_metadata
+    assert usage_metadata is not None
+    flex_input = usage_metadata.get("input_token_details", {}).get("flex")
+    assert isinstance(flex_input, int)
+    assert flex_input > 0
+    assert flex_input == usage_metadata.get("input_tokens")
+    flex_output = usage_metadata.get("output_token_details", {}).get("flex")
+    assert isinstance(flex_output, int)
+    assert flex_output > 0
+    # GPT-5-nano/reasoning model specific. Remove if model used in test changes.
+    flex_reasoning = usage_metadata.get("output_token_details", {}).get(
+        "flex_reasoning"
+    )
+    assert isinstance(flex_reasoning, int)
+    assert flex_reasoning > 0
+    assert flex_reasoning + flex_output == usage_metadata.get("output_tokens")
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 def test_stream() -> None:
     """Test streaming tokens from OpenAI."""
-    llm = ChatOpenAI(model="gpt-4.1-mini")
+    llm = ChatOpenAI(
+        model="gpt-5-nano",
+        service_tier="flex",  # Also test service_tier
+        max_retries=3,  # Add retries for 503 capacity errors
+    )
 
     full: BaseMessageChunk | None = None
     for chunk in llm.stream("I'm Pickle Rick"):
@@ -236,6 +311,19 @@ def test_stream() -> None:
     assert aggregate.usage_metadata["input_tokens"] > 0
     assert aggregate.usage_metadata["output_tokens"] > 0
     assert aggregate.usage_metadata["total_tokens"] > 0
+    assert aggregate.usage_metadata.get("input_token_details", {}).get("flex", 0) > 0  # type: ignore[operator]
+    assert aggregate.usage_metadata.get("output_token_details", {}).get("flex", 0) > 0  # type: ignore[operator]
+    assert (
+        aggregate.usage_metadata.get("output_token_details", {}).get(  # type: ignore[operator]
+            "flex_reasoning", 0
+        )
+        > 0
+    )
+    assert aggregate.usage_metadata.get("output_token_details", {}).get(  # type: ignore[operator]
+        "flex_reasoning", 0
+    ) + aggregate.usage_metadata.get("output_token_details", {}).get(
+        "flex", 0
+    ) == aggregate.usage_metadata.get("output_tokens")
 
 
 async def test_astream() -> None:
@@ -306,6 +394,28 @@ async def test_astream() -> None:
     )
     await _test_stream(llm.astream("Hello"), expect_usage=True)
     await _test_stream(llm.astream("Hello", stream_usage=False), expect_usage=False)
+
+
+@pytest.mark.parametrize("streaming", [False, True])
+def test_flex_usage_responses(streaming: bool) -> None:
+    llm = ChatOpenAI(
+        model="gpt-5-nano",
+        service_tier="flex",
+        max_retries=3,
+        use_responses_api=True,
+        streaming=streaming,
+    )
+    result = llm.invoke("Hello")
+    assert result.usage_metadata
+    flex_input = result.usage_metadata.get("input_token_details", {}).get("flex")
+    flex_output = result.usage_metadata.get("output_token_details", {}).get("flex")
+    flex_reasoning = result.usage_metadata.get("output_token_details", {}).get(
+        "flex_reasoning"
+    )
+    assert isinstance(flex_input, int)
+    assert isinstance(flex_output, int)
+    assert isinstance(flex_reasoning, int)
+    assert flex_output + flex_reasoning == result.usage_metadata.get("output_tokens")
 
 
 async def test_abatch_tags() -> None:
@@ -600,7 +710,7 @@ async def test_openai_response_headers_async(use_responses_api: bool) -> None:
 
 def test_image_token_counting_jpeg() -> None:
     model = ChatOpenAI(model="gpt-4o", temperature=0)
-    image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+    image_url = "https://raw.githubusercontent.com/langchain-ai/docs/9f99bb977307a1bd5efeb8dc6b67eb13904c4af1/src/oss/images/checkpoints.jpg"
     message = HumanMessage(
         content=[
             {"type": "text", "text": "describe the weather in this image"},
@@ -632,7 +742,7 @@ def test_image_token_counting_jpeg() -> None:
 
 def test_image_token_counting_png() -> None:
     model = ChatOpenAI(model="gpt-4o", temperature=0)
-    image_url = "https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png"
+    image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
     message = HumanMessage(
         content=[
             {"type": "text", "text": "how many dice are in this image"},
@@ -894,6 +1004,7 @@ def test_audio_input_modality() -> None:
     assert "audio" in output.additional_kwargs
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 def test_prediction_tokens() -> None:
     code = dedent(
         """
@@ -1024,6 +1135,7 @@ def test_o1_stream_default_works() -> None:
     assert len(result) > 0
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 def test_multi_party_conversation() -> None:
     llm = ChatOpenAI(model="gpt-5-nano")
     messages = [
@@ -1035,17 +1147,34 @@ def test_multi_party_conversation() -> None:
     assert "Bob" in response.content
 
 
-def test_structured_output_and_tools() -> None:
-    class ResponseFormat(BaseModel):
-        response: str
-        explanation: str
+class ResponseFormat(BaseModel):
+    response: str
+    explanation: str
 
-    llm = ChatOpenAI(model="gpt-5-nano").bind_tools(
-        [GenerateUsername], strict=True, response_format=ResponseFormat
+
+class ResponseFormatDict(TypedDict):
+    response: str
+    explanation: str
+
+
+@pytest.mark.flaky(retries=3, delay=1)
+@pytest.mark.parametrize(
+    "schema", [ResponseFormat, ResponseFormat.model_json_schema(), ResponseFormatDict]
+)
+def test_structured_output_and_tools(schema: Any) -> None:
+    llm = ChatOpenAI(model="gpt-5-nano", verbosity="low").bind_tools(
+        [GenerateUsername], strict=True, response_format=schema
     )
 
     response = llm.invoke("What weighs more, a pound of feathers or a pound of gold?")
-    assert isinstance(response.additional_kwargs["parsed"], ResponseFormat)
+    if schema == ResponseFormat:
+        parsed = response.additional_kwargs["parsed"]
+        assert isinstance(parsed, ResponseFormat)
+    else:
+        parsed = json.loads(response.text)
+        assert isinstance(parsed, dict)
+        assert parsed["response"]
+        assert parsed["explanation"]
 
     # Test streaming tool calls
     full: BaseMessageChunk | None = None
@@ -1061,10 +1190,6 @@ def test_structured_output_and_tools() -> None:
 
 
 def test_tools_and_structured_output() -> None:
-    class ResponseFormat(BaseModel):
-        response: str
-        explanation: str
-
     llm = ChatOpenAI(model="gpt-5-nano").with_structured_output(
         ResponseFormat, strict=True, include_raw=True, tools=[GenerateUsername]
     )

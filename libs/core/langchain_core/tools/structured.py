@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import textwrap
 from collections.abc import Awaitable, Callable
 from inspect import signature
@@ -21,10 +22,12 @@ from langchain_core.callbacks import (
 )
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
+    _EMPTY_SET,
     FILTERED_ARGS,
     ArgsSchema,
     BaseTool,
     _get_runnable_config_param,
+    _is_injected_arg_type,
     create_schema_from_function,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
@@ -149,21 +152,18 @@ class StructuredTool(BaseTool):
             description: The description of the tool.
                 Defaults to the function docstring.
             return_direct: Whether to return the result directly or as a callback.
-                Defaults to `False`.
             args_schema: The schema of the tool's input arguments.
             infer_schema: Whether to infer the schema from the function's signature.
-                Defaults to `True`.
-            response_format: The tool response format. If "content" then the output of
-                the tool is interpreted as the contents of a ToolMessage. If
-                "content_and_artifact" then the output is expected to be a two-tuple
-                corresponding to the (content, artifact) of a ToolMessage.
-                Defaults to "content".
-            parse_docstring: if `infer_schema` and `parse_docstring`, will attempt
+            response_format: The tool response format.
+
+                If `"content"` then the output of the tool is interpreted as the
+                contents of a `ToolMessage`. If `"content_and_artifact"` then the output
+                is expected to be a two-tuple corresponding to the `(content, artifact)`
+                of a `ToolMessage`.
+            parse_docstring: If `infer_schema` and `parse_docstring`, will attempt
                 to parse parameter descriptions from Google Style function docstrings.
-                Defaults to `False`.
             error_on_invalid_docstring: if `parse_docstring` is provided, configure
-                whether to raise ValueError on invalid Google Style docstrings.
-                Defaults to `False`.
+                whether to raise `ValueError` on invalid Google Style docstrings.
             **kwargs: Additional arguments to pass to the tool
 
         Returns:
@@ -242,6 +242,17 @@ class StructuredTool(BaseTool):
             return_direct=return_direct,
             response_format=response_format,
             **kwargs,
+        )
+
+    @functools.cached_property
+    def _injected_args_keys(self) -> frozenset[str]:
+        fn = self.func or self.coroutine
+        if fn is None:
+            return _EMPTY_SET
+        return frozenset(
+            k
+            for k, v in signature(fn).parameters.items()
+            if _is_injected_arg_type(v.annotation)
         )
 
 

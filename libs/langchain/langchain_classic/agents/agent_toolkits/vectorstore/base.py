@@ -87,12 +87,11 @@ def create_vectorstore_agent(
         llm: LLM that will be used by the agent
         toolkit: Set of tools for the agent
         callback_manager: Object to handle the callback
-        prefix: The prefix prompt for the agent. If not provided uses default PREFIX.
+        prefix: The prefix prompt for the agent.
         verbose: If you want to see the content of the scratchpad.
-            [ Defaults to `False` ]
         agent_executor_kwargs: If there is any other parameter you want to send to the
-            agent. [ Defaults to `None` ]
-        kwargs: Additional named parameters to pass to the ZeroShotAgent.
+            agent.
+        kwargs: Additional named parameters to pass to the `ZeroShotAgent`.
 
     Returns:
         Returns a callable AgentExecutor object.
@@ -202,15 +201,14 @@ def create_vectorstore_router_agent(
             vector stores
         callback_manager: Object to handle the callback
         prefix: The prefix prompt for the router agent.
-            If not provided uses default ROUTER_PREFIX.
+            If not provided uses default `ROUTER_PREFIX`.
         verbose: If you want to see the content of the scratchpad.
-            [ Defaults to `False` ]
         agent_executor_kwargs: If there is any other parameter you want to send to the
-            agent. [ Defaults to `None` ]
-        kwargs: Additional named parameters to pass to the ZeroShotAgent.
+            agent.
+        kwargs: Additional named parameters to pass to the `ZeroShotAgent`.
 
     Returns:
-        Returns a callable AgentExecutor object.
+        Returns a callable `AgentExecutor` object.
         Either you can call it or use run method with the query to get the response.
 
     """

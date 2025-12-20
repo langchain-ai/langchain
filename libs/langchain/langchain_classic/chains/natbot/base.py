@@ -40,7 +40,7 @@ class NatBotChain(Chain):
         access and use this chain, and isolate the network access of the server
         that hosts this chain.
 
-        See https://python.langchain.com/docs/security for more information.
+        See https://docs.langchain.com/oss/python/security-policy for more information.
 
     Example:
         ```python
@@ -55,10 +55,10 @@ class NatBotChain(Chain):
     """Objective that NatBot is tasked with completing."""
     llm: BaseLanguageModel | None = None
     """[Deprecated] LLM wrapper to use."""
-    input_url_key: str = "url"  #: :meta private:
-    input_browser_content_key: str = "browser_content"  #: :meta private:
-    previous_command: str = ""  #: :meta private:
-    output_key: str = "command"  #: :meta private:
+    input_url_key: str = "url"
+    input_browser_content_key: str = "browser_content"
+    previous_command: str = ""
+    output_key: str = "command"
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -102,18 +102,12 @@ class NatBotChain(Chain):
 
     @property
     def input_keys(self) -> list[str]:
-        """Expect url and browser content.
-
-        :meta private:
-        """
+        """Expect url and browser content."""
         return [self.input_url_key, self.input_browser_content_key]
 
     @property
     def output_keys(self) -> list[str]:
-        """Return command.
-
-        :meta private:
-        """
+        """Return command."""
         return [self.output_key]
 
     def _call(

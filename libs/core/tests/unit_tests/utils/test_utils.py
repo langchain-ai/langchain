@@ -1,9 +1,9 @@
 import os
 import re
-from collections.abc import Callable
+import sys
 from contextlib import AbstractContextManager, nullcontext
 from copy import deepcopy
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -21,6 +21,9 @@ from langchain_core.utils import (
 )
 from langchain_core.utils._merge import merge_dicts
 from langchain_core.utils.utils import secret_from_env
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 @pytest.mark.parametrize(
@@ -214,6 +217,10 @@ def test_guard_import_failure(
         guard_import(module_name, pip_name=pip_name, package=package)
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
+)
 def test_get_pydantic_field_names_v1_in_2() -> None:
     class PydanticV1Model(PydanticV1BaseModel):
         field1: str

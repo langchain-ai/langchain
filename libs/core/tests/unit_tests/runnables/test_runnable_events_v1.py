@@ -36,10 +36,10 @@ from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
 
 
 def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
-    """Removes the run ids from events."""
+    """Removes the run IDs from events."""
     for event in events:
-        assert "parent_ids" in event, "Parent ids should be present in the event."
-        assert event["parent_ids"] == [], "Parent ids should be empty."
+        assert "parent_ids" in event, "Parent IDs should be present in the event."
+        assert event["parent_ids"] == [], "Parent IDs should be empty."
 
     return cast("list[StreamEvent]", [{**event, "run_id": ""} for event in events])
 
@@ -1542,7 +1542,7 @@ async def test_chain_ordering() -> None:
 
     try:
         for _ in range(10):
-            next_chunk = await iterable.__anext__()
+            next_chunk = await anext(iterable)
             events.append(next_chunk)
     except Exception:
         pass
@@ -1659,7 +1659,7 @@ async def test_event_stream_with_retry() -> None:
 
     try:
         for _ in range(10):
-            next_chunk = await iterable.__anext__()
+            next_chunk = await anext(iterable)
             events.append(next_chunk)
     except Exception:
         pass

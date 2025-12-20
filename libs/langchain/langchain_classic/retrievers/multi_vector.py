@@ -30,15 +30,20 @@ class MultiVectorRetriever(BaseRetriever):
     """Retrieve from a set of multiple embeddings for the same document."""
 
     vectorstore: VectorStore
-    """The underlying vectorstore to use to store small chunks
+    """The underlying `VectorStore` to use to store small chunks
     and their embedding vectors"""
+
     byte_store: ByteStore | None = None
     """The lower-level backing storage layer for the parent documents"""
+
     docstore: BaseStore[str, Document]
     """The storage interface for the parent documents"""
+
     id_key: str = "doc_id"
+
     search_kwargs: dict = Field(default_factory=dict)
     """Keyword arguments to pass to the search function."""
+
     search_type: SearchType = SearchType.similarity
     """Type of search to perform (similarity / mmr)"""
 
@@ -86,7 +91,7 @@ class MultiVectorRetriever(BaseRetriever):
         else:
             sub_docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
 
-        # We do this to maintain the order of the ids that are returned
+        # We do this to maintain the order of the IDs that are returned
         ids = []
         for d in sub_docs:
             if self.id_key in d.metadata and d.metadata[self.id_key] not in ids:
@@ -128,7 +133,7 @@ class MultiVectorRetriever(BaseRetriever):
                 **self.search_kwargs,
             )
 
-        # We do this to maintain the order of the ids that are returned
+        # We do this to maintain the order of the IDs that are returned
         ids = []
         for d in sub_docs:
             if self.id_key in d.metadata and d.metadata[self.id_key] not in ids:

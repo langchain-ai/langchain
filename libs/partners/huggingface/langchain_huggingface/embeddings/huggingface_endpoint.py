@@ -32,18 +32,24 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
         ```
     """
 
-    client: Any = None  #: :meta private:
-    async_client: Any = None  #: :meta private:
+    client: Any = None
+
+    async_client: Any = None
+
     model: str | None = None
     """Model name to use."""
+
     provider: str | None = None
     """Name of the provider to use for inference with the model specified in
         `repo_id`. e.g. "sambanova". if not specified, defaults to HF Inference API.
         available providers can be found in the [huggingface_hub documentation](https://huggingface.co/docs/huggingface_hub/guides/inference#supported-providers-and-tasks)."""
+
     repo_id: str | None = None
     """Huggingfacehub repository id, for backward compatibility."""
+
     task: str | None = "feature-extraction"
     """Task to call the model with."""
+
     model_kwargs: dict | None = None
     """Keyword arguments to pass to the model."""
 

@@ -69,12 +69,12 @@ class DictPromptTemplate(RunnableSerializable[dict, dict]):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
             `["langchain_core", "prompts", "dict"]`
@@ -85,7 +85,7 @@ class DictPromptTemplate(RunnableSerializable[dict, dict]):
         """Human-readable representation.
 
         Args:
-            html: Whether to format as HTML. Defaults to `False`.
+            html: Whether to format as HTML.
 
         Returns:
             Human-readable representation.

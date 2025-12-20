@@ -18,6 +18,7 @@ from langchain_core.language_models import (
     ParrotFakeChatModel,
 )
 from langchain_core.language_models._utils import _normalize_messages
+from langchain_core.language_models.chat_models import _generate_response_from_error
 from langchain_core.language_models.fake_chat_models import (
     FakeListChatModelError,
     GenericFakeChatModel,
@@ -164,9 +165,9 @@ async def test_stream_error_callback() -> None:
         cb_async = FakeAsyncCallbackHandler()
         llm_astream = llm.astream("Dummy message", config={"callbacks": [cb_async]})
         for _ in range(i):
-            await llm_astream.__anext__()
+            await anext(llm_astream)
         with pytest.raises(FakeListChatModelError):
-            await llm_astream.__anext__()
+            await anext(llm_astream)
         eval_response(cb_async, i)
 
         cb_sync = FakeCallbackHandler()
@@ -1217,3 +1218,103 @@ def test_get_ls_params() -> None:
 
     ls_params = llm._get_ls_params(stop=["stop"])
     assert ls_params["ls_stop"] == ["stop"]
+
+
+def test_model_profiles() -> None:
+    model = GenericFakeChatModel(messages=iter([]))
+    assert model.profile is None
+
+    model_with_profile = GenericFakeChatModel(
+        messages=iter([]), profile={"max_input_tokens": 100}
+    )
+    assert model_with_profile.profile == {"max_input_tokens": 100}
+
+
+class MockResponse:
+    """Mock response for testing _generate_response_from_error."""
+
+    def __init__(
+        self,
+        status_code: int = 400,
+        headers: dict[str, str] | None = None,
+        json_data: dict[str, Any] | None = None,
+        json_raises: type[Exception] | None = None,
+        text_raises: type[Exception] | None = None,
+    ):
+        self.status_code = status_code
+        self.headers = headers or {}
+        self._json_data = json_data
+        self._json_raises = json_raises
+        self._text_raises = text_raises
+
+    def json(self) -> dict[str, Any]:
+        if self._json_raises:
+            msg = "JSON parsing failed"
+            raise self._json_raises(msg)
+        return self._json_data or {}
+
+    @property
+    def text(self) -> str:
+        if self._text_raises:
+            msg = "Text access failed"
+            raise self._text_raises(msg)
+        return ""
+
+
+class MockAPIError(Exception):
+    """Mock API error with response attribute."""
+
+    def __init__(self, message: str, response: MockResponse | None = None):
+        super().__init__(message)
+        self.message = message
+        if response is not None:
+            self.response = response
+
+
+def test_generate_response_from_error_with_valid_json() -> None:
+    """Test `_generate_response_from_error` with valid JSON response."""
+    response = MockResponse(
+        status_code=400,
+        headers={"content-type": "application/json"},
+        json_data={"error": {"message": "Bad request", "type": "invalid_request"}},
+    )
+    error = MockAPIError("API Error", response=response)
+
+    generations = _generate_response_from_error(error)
+
+    assert len(generations) == 1
+    generation = generations[0]
+    assert isinstance(generation, ChatGeneration)
+    assert isinstance(generation.message, AIMessage)
+    assert generation.message.content == ""
+
+    metadata = generation.message.response_metadata
+    assert metadata["body"] == {
+        "error": {"message": "Bad request", "type": "invalid_request"}
+    }
+    assert metadata["headers"] == {"content-type": "application/json"}
+    assert metadata["status_code"] == 400
+
+
+def test_generate_response_from_error_handles_streaming_response_failure() -> None:
+    # Simulates scenario where accessing response.json() or response.text
+    # raises ResponseNotRead on streaming responses
+    response = MockResponse(
+        status_code=400,
+        headers={"content-type": "application/json"},
+        json_raises=Exception,  # Simulates ResponseNotRead or similar
+        text_raises=Exception,
+    )
+    error = MockAPIError("API Error", response=response)
+
+    # This should NOT raise an exception, but should handle it gracefully
+    generations = _generate_response_from_error(error)
+
+    assert len(generations) == 1
+    generation = generations[0]
+    metadata = generation.message.response_metadata
+
+    # When both fail, body should be None instead of raising an exception
+    assert metadata["body"] is None
+    assert metadata["headers"] == {"content-type": "application/json"}
+    assert metadata["status_code"] == 400

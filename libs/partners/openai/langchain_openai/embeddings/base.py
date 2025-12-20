@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import warnings
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
 from typing import Any, Literal, cast
 
 import openai
@@ -15,7 +15,12 @@ from langchain_core.utils import from_env, get_pydantic_field_names, secret_from
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_openai.chat_models._client_utils import _resolve_sync_and_async_api_keys
+
 logger = logging.getLogger(__name__)
+
+MAX_TOKENS_PER_REQUEST = 300000
+"""API limit per request for embedding tokens."""
 
 
 def _process_batched_chunked_embeddings(
@@ -90,21 +95,21 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         ```
 
     Key init args — embedding params:
-        model: str
+        model:
             Name of OpenAI model to use.
-        dimensions: int | None = None
+        dimensions:
             The number of dimensions the resulting output embeddings should have.
             Only supported in `'text-embedding-3'` and later models.
 
     Key init args — client params:
-        api_key: SecretStr | None = None
+        api_key:
             OpenAI API key.
-        organization: str | None = None
+        organization:
             OpenAI organization ID. If not passed in will be read
             from env var `OPENAI_ORG_ID`.
-        max_retries: int = 2
+        max_retries:
             Maximum number of retries to make when generating.
-        request_timeout: float | Tuple[float, float] | Any | None = None
+        request_timeout:
             Timeout for requests to OpenAI completion API
 
     See full list of supported init args and their descriptions in the params section.
@@ -157,42 +162,55 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         ```
     """
 
-    client: Any = Field(default=None, exclude=True)  #: :meta private:
-    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
+    client: Any = Field(default=None, exclude=True)
+
+    async_client: Any = Field(default=None, exclude=True)
+
     model: str = "text-embedding-ada-002"
+
     dimensions: int | None = None
     """The number of dimensions the resulting output embeddings should have.
 
     Only supported in `text-embedding-3` and later models.
     """
+
     # to support Azure OpenAI Service custom deployment names
     deployment: str | None = model
+
     # TODO: Move to AzureOpenAIEmbeddings.
     openai_api_version: str | None = Field(
         default_factory=from_env("OPENAI_API_VERSION", default=None),
         alias="api_version",
     )
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
+
     # to support Azure OpenAI Service custom endpoints
     openai_api_base: str | None = Field(
         alias="base_url", default_factory=from_env("OPENAI_API_BASE", default=None)
     )
     """Base URL path for API requests, leave blank if not using a proxy or service
         emulator."""
+
     # to support Azure OpenAI Service custom endpoints
     openai_api_type: str | None = Field(
         default_factory=from_env("OPENAI_API_TYPE", default=None)
     )
+
     # to support explicit proxy for OpenAI
     openai_proxy: str | None = Field(
         default_factory=from_env("OPENAI_PROXY", default=None)
     )
+
     embedding_ctx_length: int = 8191
     """The maximum number of tokens to embed at once."""
-    openai_api_key: SecretStr | None = Field(
+
+    openai_api_key: (
+        SecretStr | None | Callable[[], str] | Callable[[], Awaitable[str]]
+    ) = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
+
     openai_organization: str | None = Field(
         alias="organization",
         default_factory=from_env(
@@ -200,54 +218,79 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         ),
     )
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
+
     allowed_special: Literal["all"] | set[str] | None = None
+
     disallowed_special: Literal["all"] | set[str] | Sequence[str] | None = None
+
     chunk_size: int = 1000
     """Maximum number of texts to embed in each batch"""
+
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
+
     request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
     """Timeout for requests to OpenAI completion API. Can be float, `httpx.Timeout` or
     None."""
+
     headers: Any = None
+
     tiktoken_enabled: bool = True
     """Set this to False for non-OpenAI implementations of the embeddings API, e.g.
     the `--extensions openai` extension for `text-generation-webui`"""
+
     tiktoken_model_name: str | None = None
     """The model name to pass to tiktoken when using this class.
+
     Tiktoken is used to count the number of tokens in documents to constrain
-    them to be under a certain limit. By default, when set to None, this will
-    be the same as the embedding model name. However, there are some cases
-    where you may want to use this Embedding class with a model name not
-    supported by tiktoken. This can include when using Azure embeddings or
-    when using one of the many model providers that expose an OpenAI-like
+    them to be under a certain limit.
+
+    By default, when set to `None`, this will be the same as the embedding model name.
+    However, there are some cases where you may want to use this `Embedding` class with
+    a model name not supported by tiktoken. This can include when using Azure embeddings
+    or when using one of the many model providers that expose an OpenAI-like
     API but with different models. In those cases, in order to avoid erroring
-    when tiktoken is called, you can specify a model name to use here."""
+    when tiktoken is called, you can specify a model name to use here.
+    """
+
     show_progress_bar: bool = False
     """Whether to show a progress bar when embedding."""
+
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
+
     skip_empty: bool = False
-    """Whether to skip empty strings when embedding or raise an error.
-    Defaults to not skipping."""
+    """Whether to skip empty strings when embedding or raise an error."""
+
     default_headers: Mapping[str, str] | None = None
+
     default_query: Mapping[str, object] | None = None
+
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
+
     retry_min_seconds: int = 4
     """Min number of seconds to wait between retries"""
+
     retry_max_seconds: int = 20
     """Max number of seconds to wait between retries"""
+
     http_client: Any | None = None
-    """Optional `httpx.Client`. Only used for sync invocations. Must specify
-        `http_async_client` as well if you'd like a custom client for async
-        invocations.
+    """Optional `httpx.Client`.
+
+    Only used for sync invocations. Must specify `http_async_client` as well if you'd
+    like a custom client for async invocations.
     """
+
     http_async_client: Any | None = None
-    """Optional `httpx.AsyncClient`. Only used for async invocations. Must specify
-        `http_client` as well if you'd like a custom client for sync invocations."""
+    """Optional `httpx.AsyncClient`.
+
+    Only used for async invocations. Must specify `http_client` as well if you'd like a
+    custom client for sync invocations.
+    """
+
     check_embedding_ctx_length: bool = True
     """Whether to check the token length of inputs and automatically split inputs
         longer than embedding_ctx_length."""
@@ -293,10 +336,19 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 "If you are using Azure, please use the `AzureOpenAIEmbeddings` class."
             )
             raise ValueError(msg)
+
+        # Resolve API key from SecretStr or Callable
+        sync_api_key_value: str | Callable[[], str] | None = None
+        async_api_key_value: str | Callable[[], Awaitable[str]] | None = None
+
+        if self.openai_api_key is not None:
+            # Because OpenAI and AsyncOpenAI clients support either sync or async
+            # callables for the API key, we need to resolve separate values here.
+            sync_api_key_value, async_api_key_value = _resolve_sync_and_async_api_keys(
+                self.openai_api_key
+            )
+
         client_params: dict = {
-            "api_key": (
-                self.openai_api_key.get_secret_value() if self.openai_api_key else None
-            ),
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
@@ -316,18 +368,26 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             )
             raise ValueError(msg)
         if not self.client:
-            if self.openai_proxy and not self.http_client:
-                try:
-                    import httpx
-                except ImportError as e:
-                    msg = (
-                        "Could not import httpx python package. "
-                        "Please install it with `pip install httpx`."
-                    )
-                    raise ImportError(msg) from e
-                self.http_client = httpx.Client(proxy=self.openai_proxy)
-            sync_specific = {"http_client": self.http_client}
-            self.client = openai.OpenAI(**client_params, **sync_specific).embeddings  # type: ignore[arg-type]
+            if sync_api_key_value is None:
+                # No valid sync API key, leave client as None and raise informative
+                # error on invocation.
+                self.client = None
+            else:
+                if self.openai_proxy and not self.http_client:
+                    try:
+                        import httpx
+                    except ImportError as e:
+                        msg = (
+                            "Could not import httpx python package. "
+                            "Please install it with `pip install httpx`."
+                        )
+                        raise ImportError(msg) from e
+                    self.http_client = httpx.Client(proxy=self.openai_proxy)
+                sync_specific = {
+                    "http_client": self.http_client,
+                    "api_key": sync_api_key_value,
+                }
+                self.client = openai.OpenAI(**client_params, **sync_specific).embeddings  # type: ignore[arg-type]
         if not self.async_client:
             if self.openai_proxy and not self.http_async_client:
                 try:
@@ -339,7 +399,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     )
                     raise ImportError(msg) from e
                 self.http_async_client = httpx.AsyncClient(proxy=self.openai_proxy)
-            async_specific = {"http_client": self.http_async_client}
+            async_specific = {
+                "http_client": self.http_async_client,
+                "api_key": async_api_key_value,
+            }
             self.async_client = openai.AsyncOpenAI(
                 **client_params,
                 **async_specific,  # type: ignore[arg-type]
@@ -353,30 +416,40 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             params["dimensions"] = self.dimensions
         return params
 
+    def _ensure_sync_client_available(self) -> None:
+        """Check that sync client is available, raise error if not."""
+        if self.client is None:
+            msg = (
+                "Sync client is not available. This happens when an async callable "
+                "was provided for the API key. Use async methods (ainvoke, astream) "
+                "instead, or provide a string or sync callable for the API key."
+            )
+            raise ValueError(msg)
+
     def _tokenize(
         self, texts: list[str], chunk_size: int
-    ) -> tuple[Iterable[int], list[list[int] | str], list[int]]:
-        """Take the input `texts` and `chunk_size` and return 3 iterables as a tuple.
+    ) -> tuple[Iterable[int], list[list[int] | str], list[int], list[int]]:
+        """Tokenize and batch input texts.
 
-        We have `batches`, where batches are sets of individual texts
-        we want responses from the openai api. The length of a single batch is
-        `chunk_size` texts.
+        Splits texts based on `embedding_ctx_length` and groups them into batches
+        of size `chunk_size`.
 
-        Each individual text is also split into multiple texts based on the
-        `embedding_ctx_length` parameter (based on number of tokens).
+        Args:
+            texts: The list of texts to tokenize.
+            chunk_size: The maximum number of texts to include in a single batch.
 
-        This function returns a 3-tuple of the following:
-
-        _iter: An iterable of the starting index in `tokens` for each *batch*
-        tokens: A list of tokenized texts, where each text has already been split
-            into sub-texts based on the `embedding_ctx_length` parameter. In the
-            case of tiktoken, this is a list of token arrays. In the case of
-            HuggingFace transformers, this is a list of strings.
-        indices: An iterable of the same length as `tokens` that maps each token-array
-            to the index of the original text in `texts`.
+        Returns:
+            A tuple containing:
+                1. An iterable of starting indices in the token list for each batch.
+                2. A list of tokenized texts (token arrays for tiktoken, strings for
+                    HuggingFace).
+                3. An iterable mapping each token array to the index of the original
+                    text. Same length as the token list.
+                4. A list of token counts for each tokenized text.
         """
         tokens: list[list[int] | str] = []
         indices: list[int] = []
+        token_counts: list[int] = []
         model_name = self.tiktoken_model_name or self.model
 
         # If tiktoken flag set to False
@@ -408,6 +481,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     chunk_text: str = tokenizer.decode(token_chunk)
                     tokens.append(chunk_text)
                     indices.append(i)
+                    token_counts.append(len(token_chunk))
         else:
             try:
                 encoding = tiktoken.encoding_for_model(model_name)
@@ -437,6 +511,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 for j in range(0, len(token), self.embedding_ctx_length):
                     tokens.append(token[j : j + self.embedding_ctx_length])
                     indices.append(i)
+                    token_counts.append(len(token[j : j + self.embedding_ctx_length]))
 
         if self.show_progress_bar:
             try:
@@ -447,7 +522,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 _iter = range(0, len(tokens), chunk_size)
         else:
             _iter = range(0, len(tokens), chunk_size)
-        return _iter, tokens, indices
+        return _iter, tokens, indices, token_counts
 
     # please refer to
     # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
@@ -462,28 +537,48 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """Generate length-safe embeddings for a list of texts.
 
         This method handles tokenization and embedding generation, respecting the
-        set embedding context length and chunk size. It supports both tiktoken
-        and HuggingFace tokenizer based on the tiktoken_enabled flag.
+        `embedding_ctx_length` and `chunk_size`. Supports both `tiktoken` and
+        HuggingFace `transformers` based on the `tiktoken_enabled` flag.
 
         Args:
-            texts (List[str]): A list of texts to embed.
-            engine (str): The engine or model to use for embeddings.
-            chunk_size (int | None): The size of chunks for processing embeddings.
+            texts: The list of texts to embed.
+            engine: The engine or model to use for embeddings.
+            chunk_size: The size of chunks for processing embeddings.
 
         Returns:
-            List[List[float]]: A list of embeddings for each input text.
+            A list of embeddings for each input text.
         """
         _chunk_size = chunk_size or self.chunk_size
         client_kwargs = {**self._invocation_params, **kwargs}
-        _iter, tokens, indices = self._tokenize(texts, _chunk_size)
+        _iter, tokens, indices, token_counts = self._tokenize(texts, _chunk_size)
         batched_embeddings: list[list[float]] = []
-        for i in _iter:
-            response = self.client.create(
-                input=tokens[i : i + _chunk_size], **client_kwargs
-            )
+
+        # Process in batches respecting the token limit
+        i = 0
+        while i < len(tokens):
+            # Determine how many chunks we can include in this batch
+            batch_token_count = 0
+            batch_end = i
+
+            for j in range(i, min(i + _chunk_size, len(tokens))):
+                chunk_tokens = token_counts[j]
+                # Check if adding this chunk would exceed the limit
+                if batch_token_count + chunk_tokens > MAX_TOKENS_PER_REQUEST:
+                    if batch_end == i:
+                        # Single chunk exceeds limit - handle it anyway
+                        batch_end = j + 1
+                    break
+                batch_token_count += chunk_tokens
+                batch_end = j + 1
+
+            # Make API call with this batch
+            batch_tokens = tokens[i:batch_end]
+            response = self.client.create(input=batch_tokens, **client_kwargs)
             if not isinstance(response, dict):
                 response = response.model_dump()
             batched_embeddings.extend(r["embedding"] for r in response["data"])
+
+            i = batch_end
 
         embeddings = _process_batched_chunked_embeddings(
             len(texts), tokens, batched_embeddings, indices, self.skip_empty
@@ -513,32 +608,53 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     ) -> list[list[float]]:
         """Asynchronously generate length-safe embeddings for a list of texts.
 
-        This method handles tokenization and asynchronous embedding generation,
-        respecting the set embedding context length and chunk size. It supports both
-        `tiktoken` and HuggingFace `tokenizer` based on the tiktoken_enabled flag.
+        This method handles tokenization and embedding generation, respecting the
+        `embedding_ctx_length` and `chunk_size`. Supports both `tiktoken` and
+        HuggingFace `transformers` based on the `tiktoken_enabled` flag.
 
         Args:
-            texts (List[str]): A list of texts to embed.
-            engine (str): The engine or model to use for embeddings.
-            chunk_size (int | None): The size of chunks for processing embeddings.
+            texts: The list of texts to embed.
+            engine: The engine or model to use for embeddings.
+            chunk_size: The size of chunks for processing embeddings.
 
         Returns:
-            List[List[float]]: A list of embeddings for each input text.
+            A list of embeddings for each input text.
         """
         _chunk_size = chunk_size or self.chunk_size
         client_kwargs = {**self._invocation_params, **kwargs}
-        _iter, tokens, indices = await run_in_executor(
+        _iter, tokens, indices, token_counts = await run_in_executor(
             None, self._tokenize, texts, _chunk_size
         )
         batched_embeddings: list[list[float]] = []
-        for i in range(0, len(tokens), _chunk_size):
-            response = await self.async_client.create(
-                input=tokens[i : i + _chunk_size], **client_kwargs
-            )
 
+        # Process in batches respecting the token limit
+        i = 0
+        while i < len(tokens):
+            # Determine how many chunks we can include in this batch
+            batch_token_count = 0
+            batch_end = i
+
+            for j in range(i, min(i + _chunk_size, len(tokens))):
+                chunk_tokens = token_counts[j]
+                # Check if adding this chunk would exceed the limit
+                if batch_token_count + chunk_tokens > MAX_TOKENS_PER_REQUEST:
+                    if batch_end == i:
+                        # Single chunk exceeds limit - handle it anyway
+                        batch_end = j + 1
+                    break
+                batch_token_count += chunk_tokens
+                batch_end = j + 1
+
+            # Make API call with this batch
+            batch_tokens = tokens[i:batch_end]
+            response = await self.async_client.create(
+                input=batch_tokens, **client_kwargs
+            )
             if not isinstance(response, dict):
                 response = response.model_dump()
             batched_embeddings.extend(r["embedding"] for r in response["data"])
+
+            i = batch_end
 
         embeddings = _process_batched_chunked_embeddings(
             len(texts), tokens, batched_embeddings, indices, self.skip_empty
@@ -561,17 +677,19 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     def embed_documents(
         self, texts: list[str], chunk_size: int | None = None, **kwargs: Any
     ) -> list[list[float]]:
-        """Call out to OpenAI's embedding endpoint for embedding search docs.
+        """Call OpenAI's embedding endpoint to embed search docs.
 
         Args:
             texts: The list of texts to embed.
-            chunk_size: The chunk size of embeddings. If `None`, will use the chunk size
-                specified by the class.
+            chunk_size: The chunk size of embeddings.
+
+                If `None`, will use the chunk size specified by the class.
             kwargs: Additional keyword arguments to pass to the embedding API.
 
         Returns:
             List of embeddings, one for each text.
         """
+        self._ensure_sync_client_available()
         chunk_size_ = chunk_size or self.chunk_size
         client_kwargs = {**self._invocation_params, **kwargs}
         if not self.check_embedding_ctx_length:
@@ -585,8 +703,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 embeddings.extend(r["embedding"] for r in response["data"])
             return embeddings
 
-        # NOTE: to keep things simple, we assume the list may contain texts longer
-        #       than the maximum context and use length-safe embedding function.
+        # Unconditionally call _get_len_safe_embeddings to handle length safety.
+        # This could be optimized to avoid double work when all texts are short enough.
         engine = cast(str, self.deployment)
         return self._get_len_safe_embeddings(
             texts, engine=engine, chunk_size=chunk_size, **kwargs
@@ -595,12 +713,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     async def aembed_documents(
         self, texts: list[str], chunk_size: int | None = None, **kwargs: Any
     ) -> list[list[float]]:
-        """Call out to OpenAI's embedding endpoint async for embedding search docs.
+        """Asynchronously call OpenAI's embedding endpoint to embed search docs.
 
         Args:
             texts: The list of texts to embed.
-            chunk_size: The chunk size of embeddings. If `None`, will use the chunk size
-                specified by the class.
+            chunk_size: The chunk size of embeddings.
+
+                If `None`, will use the chunk size specified by the class.
             kwargs: Additional keyword arguments to pass to the embedding API.
 
         Returns:
@@ -619,8 +738,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 embeddings.extend(r["embedding"] for r in response["data"])
             return embeddings
 
-        # NOTE: to keep things simple, we assume the list may contain texts longer
-        #       than the maximum context and use length-safe embedding function.
+        # Unconditionally call _get_len_safe_embeddings to handle length safety.
+        # This could be optimized to avoid double work when all texts are short enough.
         engine = cast(str, self.deployment)
         return await self._aget_len_safe_embeddings(
             texts, engine=engine, chunk_size=chunk_size, **kwargs
@@ -636,6 +755,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             Embedding for the text.
         """
+        self._ensure_sync_client_available()
         return self.embed_documents([text], **kwargs)[0]
 
     async def aembed_query(self, text: str, **kwargs: Any) -> list[float]:

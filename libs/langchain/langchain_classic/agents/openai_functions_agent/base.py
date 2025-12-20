@@ -40,15 +40,14 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     """An Agent driven by OpenAIs function powered API.
 
     Args:
-        llm: This should be an instance of ChatOpenAI, specifically a model
+        llm: This should be an instance of `ChatOpenAI`, specifically a model
             that supports using `functions`.
         tools: The tools this agent has access to.
         prompt: The prompt for this agent, should support agent_scratchpad as one
             of the variables. For an easy way to construct this prompt, use
             `OpenAIFunctionsAgent.create_prompt(...)`
         output_parser: The output parser for this agent. Should be an instance of
-            OpenAIFunctionsAgentOutputParser.
-            Defaults to OpenAIFunctionsAgentOutputParser.
+            `OpenAIFunctionsAgentOutputParser`.
     """
 
     llm: BaseLanguageModel
@@ -107,13 +106,13 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations.
             callbacks: Callbacks to use.
-            with_functions: Whether to use functions. Defaults to `True`.
+            with_functions: Whether to use functions.
             **kwargs: User inputs.
 
         Returns:
             Action specifying what tool to use.
-            If the agent is finished, returns an AgentFinish.
-            If the agent is not finished, returns an AgentAction.
+            If the agent is finished, returns an `AgentFinish`.
+            If the agent is not finished, returns an `AgentAction`.
         """
         agent_scratchpad = format_to_openai_function_messages(intermediate_steps)
         selected_inputs = {
@@ -311,7 +310,7 @@ def create_openai_functions_agent(
         Creating an agent with no memory
 
         ```python
-        from langchain_community.chat_models import ChatOpenAI
+        from langchain_openai import ChatOpenAI
         from langchain_classic.agents import (
             AgentExecutor,
             create_openai_functions_agent,

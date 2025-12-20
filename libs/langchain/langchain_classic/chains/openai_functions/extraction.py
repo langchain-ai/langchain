@@ -50,13 +50,7 @@ Passage:
         "LangChain has introduced a method called `with_structured_output` that"
         "is available on ChatModels capable of tool calling."
         "You can read more about the method here: "
-        "<https://python.langchain.com/docs/modules/model_io/chat/structured_output/>. "
-        "Please follow our extraction use case documentation for more guidelines"
-        "on how to do information extraction with LLMs."
-        "<https://python.langchain.com/docs/use_cases/extraction/>. "
-        "If you notice other issues, please provide "
-        "feedback here:"
-        "<https://github.com/langchain-ai/langchain/discussions/18154>"
+        "<https://docs.langchain.com/oss/python/langchain/models#structured-outputs>."
     ),
     removal="1.0",
     alternative=(
@@ -69,10 +63,10 @@ Passage:
                 punchline: str = Field(description="The punchline to the joke")
 
             # Or any other chat model that supports tools.
-            # Please reference to to the documentation of structured_output
+            # Please reference to the documentation of structured_output
             # to see an up to date list of which models support
             # with_structured_output.
-            model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+            model = ChatAnthropic(model="claude-opus-4-1-20250805", temperature=0)
             structured_model = model.with_structured_output(Joke)
             structured_model.invoke("Tell me a joke about cats.
                 Make sure to call the Joke function.")
@@ -94,8 +88,7 @@ def create_extraction_chain(
         prompt: The prompt to use for extraction.
         tags: Optional list of tags to associate with the chain.
         verbose: Whether to run in verbose mode. In verbose mode, some intermediate
-            logs will be printed to the console. Defaults to the global `verbose` value,
-            accessible via `langchain.globals.get_verbose()`.
+            logs will be printed to the console.
 
     Returns:
         Chain that can be used to extract information from a passage.
@@ -120,7 +113,7 @@ def create_extraction_chain(
         "LangChain has introduced a method called `with_structured_output` that"
         "is available on ChatModels capable of tool calling."
         "You can read more about the method here: "
-        "<https://python.langchain.com/docs/modules/model_io/chat/structured_output/>. "
+        "<https://docs.langchain.com/oss/python/langchain/models#structured-outputs>. "
         "Please follow our extraction use case documentation for more guidelines"
         "on how to do information extraction with LLMs."
         "<https://python.langchain.com/docs/use_cases/extraction/>. "
@@ -139,10 +132,10 @@ def create_extraction_chain(
                 punchline: str = Field(description="The punchline to the joke")
 
             # Or any other chat model that supports tools.
-            # Please reference to to the documentation of structured_output
+            # Please reference to the documentation of structured_output
             # to see an up to date list of which models support
             # with_structured_output.
-            model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+            model = ChatAnthropic(model="claude-opus-4-1-20250805", temperature=0)
             structured_model = model.with_structured_output(Joke)
             structured_model.invoke("Tell me a joke about cats.
                 Make sure to call the Joke function.")
@@ -162,8 +155,7 @@ def create_extraction_chain_pydantic(
         llm: The language model to use.
         prompt: The prompt to use for extraction.
         verbose: Whether to run in verbose mode. In verbose mode, some intermediate
-            logs will be printed to the console. Defaults to the global `verbose` value,
-            accessible via `langchain.globals.get_verbose()`
+            logs will be printed to the console.
 
     Returns:
         Chain that can be used to extract information from a passage.

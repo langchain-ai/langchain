@@ -7,7 +7,10 @@ from typing import Any, cast
 from langchain_text_splitters.base import TextSplitter, Tokenizer, split_text_on_tokens
 
 try:
-    from sentence_transformers import SentenceTransformer
+    # Type ignores needed as long as sentence-transformers doesn't support Python 3.14.
+    from sentence_transformers import (  # type: ignore[import-not-found, unused-ignore]
+        SentenceTransformer,
+    )
 
     _HAS_SENTENCE_TRANSFORMERS = True
 except ImportError:

@@ -73,8 +73,7 @@ class MultiRouteChain(Chain):
     default_chain: Chain
     """Default chain to use when none of the destination chains are suitable."""
     silent_errors: bool = False
-    """If `True`, use default_chain when an invalid destination name is provided.
-    Defaults to `False`."""
+    """If `True`, use default_chain when an invalid destination name is provided."""
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -83,18 +82,12 @@ class MultiRouteChain(Chain):
 
     @property
     def input_keys(self) -> list[str]:
-        """Will be whatever keys the router chain prompt expects.
-
-        :meta private:
-        """
+        """Will be whatever keys the router chain prompt expects."""
         return self.router_chain.input_keys
 
     @property
     def output_keys(self) -> list[str]:
-        """Will always return text key.
-
-        :meta private:
-        """
+        """Will always return text key."""
         return []
 
     def _call(

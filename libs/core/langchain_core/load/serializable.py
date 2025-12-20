@@ -96,12 +96,15 @@ class Serializable(BaseModel, ABC):
         By design, even if a class inherits from `Serializable`, it is not serializable
         by default. This is to prevent accidental serialization of objects that should
         not be serialized.
-    - `get_lc_namespace`: Get the namespace of the langchain object.
+    - `get_lc_namespace`: Get the namespace of the LangChain object.
+
         During deserialization, this namespace is used to identify
         the correct class to instantiate.
+
         Please see the `Reviver` class in `langchain_core.load.load` for more details.
         During deserialization an additional mapping is handle classes that have moved
         or been renamed across package versions.
+
     - `lc_secrets`: A map of constructor argument names to secret ids.
     - `lc_attributes`: List of additional attribute names that should be included
         as part of the serialized representation.
@@ -127,10 +130,10 @@ class Serializable(BaseModel, ABC):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         For example, if the class is `langchain.llms.openai.OpenAI`, then the
-        namespace is ["langchain", "llms", "openai"]
+        namespace is `["langchain", "llms", "openai"]`
 
         Returns:
             The namespace.
@@ -194,7 +197,7 @@ class Serializable(BaseModel, ABC):
             ValueError: If the class has deprecated attributes.
 
         Returns:
-            A json serializable object or a `SerializedNotImplemented` object.
+            A JSON serializable object or a `SerializedNotImplemented` object.
         """
         if not self.is_lc_serializable():
             return self.to_json_not_implemented()

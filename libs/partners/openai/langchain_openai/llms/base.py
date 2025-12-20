@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import sys
-from collections.abc import AsyncIterator, Collection, Iterator, Mapping
+from collections.abc import AsyncIterator, Callable, Collection, Iterator, Mapping
 from typing import Any, Literal
 
 import openai
@@ -62,46 +62,46 @@ class BaseOpenAI(BaseLLM):
         ```
 
     Key init args — completion params:
-        model_name: str
+        model_name:
             Name of OpenAI model to use.
-        temperature: float
+        temperature:
             Sampling temperature.
-        max_tokens: int
+        max_tokens:
             Max number of tokens to generate.
-        top_p: float
+        top_p:
             Total probability mass of tokens to consider at each step.
-        frequency_penalty: float
+        frequency_penalty:
             Penalizes repeated tokens according to frequency.
-        presence_penalty: float
+        presence_penalty:
             Penalizes repeated tokens.
-        n: int
+        n:
             How many completions to generate for each prompt.
-        best_of: int
+        best_of:
             Generates best_of completions server-side and returns the "best".
-        logit_bias: dict[str, float] | None
+        logit_bias:
             Adjust the probability of specific tokens being generated.
-        seed: int | None
+        seed:
             Seed for generation.
-        logprobs: int | None
+        logprobs:
             Include the log probabilities on the logprobs most likely output tokens.
-        streaming: bool
+        streaming:
             Whether to stream the results or not.
 
     Key init args — client params:
-        openai_api_key: SecretStr | None
+        openai_api_key:
             OpenAI API key. If not passed in will be read from env var
             `OPENAI_API_KEY`.
-        openai_api_base: str | None
+        openai_api_base:
             Base URL path for API requests, leave blank if not using a proxy or
             service emulator.
-        openai_organization: str | None
+        openai_organization:
             OpenAI organization ID. If not passed in will be read from env
             var `OPENAI_ORG_ID`.
-        request_timeout: Union[float, tuple[float, float], Any, None]
+        request_timeout:
             Timeout for requests to OpenAI completion API.
-        max_retries: int
+        max_retries:
             Maximum number of retries to make when generating.
-        batch_size: int
+        batch_size:
             Batch size to use when passing multiple documents to generate.
 
     See full list of supported init args and their descriptions in the params section.
@@ -164,37 +164,50 @@ class BaseOpenAI(BaseLLM):
 
     """
 
-    client: Any = Field(default=None, exclude=True)  #: :meta private:
-    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
+    client: Any = Field(default=None, exclude=True)
+
+    async_client: Any = Field(default=None, exclude=True)
+
     model_name: str = Field(default="gpt-3.5-turbo-instruct", alias="model")
     """Model name to use."""
+
     temperature: float = 0.7
     """What sampling temperature to use."""
+
     max_tokens: int = 256
     """The maximum number of tokens to generate in the completion.
     -1 returns as many tokens as possible given the prompt and
     the models maximal context size."""
+
     top_p: float = 1
     """Total probability mass of tokens to consider at each step."""
+
     frequency_penalty: float = 0
     """Penalizes repeated tokens according to frequency."""
+
     presence_penalty: float = 0
     """Penalizes repeated tokens."""
+
     n: int = 1
     """How many completions to generate for each prompt."""
+
     best_of: int = 1
     """Generates best_of completions server-side and returns the "best"."""
+
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: SecretStr | None = Field(
+
+    openai_api_key: SecretStr | None | Callable[[], str] = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
+
     openai_api_base: str | None = Field(
         alias="base_url", default_factory=from_env("OPENAI_API_BASE", default=None)
     )
     """Base URL path for API requests, leave blank if not using a proxy or service
         emulator."""
+
     openai_organization: str | None = Field(
         alias="organization",
         default_factory=from_env(
@@ -202,54 +215,77 @@ class BaseOpenAI(BaseLLM):
         ),
     )
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
+
     # to support explicit proxy for OpenAI
     openai_proxy: str | None = Field(
         default_factory=from_env("OPENAI_PROXY", default=None)
     )
+
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
+
     request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
     """Timeout for requests to OpenAI completion API. Can be float, `httpx.Timeout` or
     None."""
+
     logit_bias: dict[str, float] | None = None
     """Adjust the probability of specific tokens being generated."""
+
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
+
     seed: int | None = None
     """Seed for generation"""
+
     logprobs: int | None = None
     """Include the log probabilities on the logprobs most likely output tokens,
     as well the chosen tokens."""
+
     streaming: bool = False
     """Whether to stream the results or not."""
+
     allowed_special: Literal["all"] | set[str] = set()
     """Set of special tokens that are allowed。"""
+
     disallowed_special: Literal["all"] | Collection[str] = "all"
     """Set of special tokens that are not allowed。"""
+
     tiktoken_model_name: str | None = None
     """The model name to pass to tiktoken when using this class.
+
     Tiktoken is used to count the number of tokens in documents to constrain
-    them to be under a certain limit. By default, when set to None, this will
-    be the same as the embedding model name. However, there are some cases
-    where you may want to use this Embedding class with a model name not
-    supported by tiktoken. This can include when using Azure embeddings or
-    when using one of the many model providers that expose an OpenAI-like
+    them to be under a certain limit.
+
+    By default, when set to `None`, this will be the same as the embedding model name.
+    However, there are some cases where you may want to use this `Embedding` class with
+    a model name not supported by tiktoken. This can include when using Azure embeddings
+    or when using one of the many model providers that expose an OpenAI-like
     API but with different models. In those cases, in order to avoid erroring
-    when tiktoken is called, you can specify a model name to use here."""
+    when tiktoken is called, you can specify a model name to use here.
+    """
+
     default_headers: Mapping[str, str] | None = None
+
     default_query: Mapping[str, object] | None = None
+
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Any | None = None
-    """Optional `httpx.Client`. Only used for sync invocations. Must specify
-        `http_async_client` as well if you'd like a custom client for async
-        invocations.
+    """Optional `httpx.Client`.
+
+    Only used for sync invocations. Must specify `http_async_client` as well if you'd
+    like a custom client for async invocations.
     """
+
     http_async_client: Any | None = None
-    """Optional `httpx.AsyncClient`. Only used for async invocations. Must specify
-        `http_client` as well if you'd like a custom client for sync invocations."""
+    """Optional `httpx.AsyncClient`.
+
+    Only used for async invocations. Must specify `http_client` as well if you'd like a
+    custom client for sync invocations.
+    """
+
     extra_body: Mapping[str, Any] | None = None
     """Optional additional JSON properties to include in the request parameters when
     making requests to OpenAI compatible APIs, such as vLLM."""
@@ -276,10 +312,16 @@ class BaseOpenAI(BaseLLM):
             msg = "Cannot stream results when best_of > 1."
             raise ValueError(msg)
 
+        # Resolve API key from SecretStr or Callable
+        api_key_value: str | Callable[[], str] | None = None
+        if self.openai_api_key is not None:
+            if isinstance(self.openai_api_key, SecretStr):
+                api_key_value = self.openai_api_key.get_secret_value()
+            elif callable(self.openai_api_key):
+                api_key_value = self.openai_api_key
+
         client_params: dict = {
-            "api_key": (
-                self.openai_api_key.get_secret_value() if self.openai_api_key else None
-            ),
+            "api_key": api_key_value,
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
@@ -707,29 +749,29 @@ class OpenAI(BaseOpenAI):
         ```
 
     Key init args — completion params:
-        model: str
+        model:
             Name of OpenAI model to use.
-        temperature: float
+        temperature:
             Sampling temperature.
-        max_tokens: int | None
+        max_tokens:
             Max number of tokens to generate.
-        logprobs: bool | None
+        logprobs:
             Whether to return logprobs.
-        stream_options: Dict
+        stream_options:
             Configure streaming outputs, like whether to return token usage when
             streaming (`{"include_usage": True}`).
 
     Key init args — client params:
-        timeout: Union[float, Tuple[float, float], Any, None]
+        timeout:
             Timeout for requests.
-        max_retries: int
+        max_retries:
             Max number of retries.
-        api_key: str | None
+        api_key:
             OpenAI API key. If not passed in will be read from env var `OPENAI_API_KEY`.
-        base_url: str | None
+        base_url:
             Base URL for API requests. Only specify if using a proxy or service
             emulator.
-        organization: str | None
+        organization:
             OpenAI organization ID. If not passed in will be read from env
             var `OPENAI_ORG_ID`.
 
@@ -793,7 +835,11 @@ class OpenAI(BaseOpenAI):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the LangChain object.
+
+        Returns:
+            `["langchain", "llms", "openai"]`
+        """
         return ["langchain", "llms", "openai"]
 
     @classmethod

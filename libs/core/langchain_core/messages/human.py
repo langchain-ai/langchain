@@ -7,9 +7,9 @@ from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 
 
 class HumanMessage(BaseMessage):
-    """Message from a human.
+    """Message from the user.
 
-    `HumanMessage`s are messages that are passed in from a human to the model.
+    A `HumanMessage` is a message that is passed in from a user to the model.
 
     Example:
         ```python
@@ -27,11 +27,7 @@ class HumanMessage(BaseMessage):
     """
 
     type: Literal["human"] = "human"
-    """The type of the message (used for serialization).
-
-    Defaults to `'human'`.
-
-    """
+    """The type of the message (used for serialization)."""
 
     @overload
     def __init__(
@@ -71,5 +67,4 @@ class HumanMessageChunk(HumanMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["HumanMessageChunk"] = "HumanMessageChunk"  # type: ignore[assignment]
-    """The type of the message (used for serialization).
-    Defaults to "HumanMessageChunk"."""
+    """The type of the message (used for serialization)."""

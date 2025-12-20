@@ -41,7 +41,7 @@ Passage:
         "See API reference for this function for replacement: <"
         "https://api.python.langchain.com/en/latest/chains/langchain.chains.openai_functions.tagging.create_tagging_chain.html"
         "> You can read more about `with_structured_output` here: "
-        "<https://python.langchain.com/docs/how_to/structured_output/>. "
+        "<https://docs.langchain.com/oss/python/langchain/models#structured-outputs>. "
         "If you notice other issues, please provide "
         "feedback here: "
         "<https://github.com/langchain-ai/langchain/discussions/18154>"
@@ -73,7 +73,7 @@ def create_tagging_chain(
         punchline: Annotated[str, ..., "The punchline of the joke"]
 
     # Or any other chat model that supports tools.
-    # Please reference to to the documentation of structured_output
+    # Please reference to the documentation of structured_output
     # to see an up to date list of which models support
     # with_structured_output.
     model = ChatAnthropic(model="claude-3-haiku-20240307", temperature=0)
@@ -84,7 +84,7 @@ def create_tagging_chain(
     )
     ```
 
-    Read more here: https://python.langchain.com/docs/how_to/structured_output/
+    Read more here: https://docs.langchain.com/oss/python/langchain/models#structured-outputs
 
     Args:
         schema: The schema of the entities to extract.
@@ -117,7 +117,7 @@ def create_tagging_chain(
         "See API reference for this function for replacement: <"
         "https://api.python.langchain.com/en/latest/chains/langchain.chains.openai_functions.tagging.create_tagging_chain_pydantic.html"
         "> You can read more about `with_structured_output` here: "
-        "<https://python.langchain.com/docs/how_to/structured_output/>. "
+        "<https://docs.langchain.com/oss/python/langchain/models#structured-outputs>. "
         "If you notice other issues, please provide "
         "feedback here: "
         "<https://github.com/langchain-ai/langchain/discussions/18154>"
@@ -149,10 +149,10 @@ def create_tagging_chain_pydantic(
 
 
     # Or any other chat model that supports tools.
-    # Please reference to to the documentation of structured_output
+    # Please reference to the documentation of structured_output
     # to see an up to date list of which models support
     # with_structured_output.
-    model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+    model = ChatAnthropic(model="claude-opus-4-1-20250805", temperature=0)
     structured_model = model.with_structured_output(Joke)
     structured_model.invoke(
         "Why did the cat cross the road? To get to the other "
@@ -160,7 +160,7 @@ def create_tagging_chain_pydantic(
     )
     ```
 
-    Read more here: https://python.langchain.com/docs/how_to/structured_output/
+    Read more here: https://docs.langchain.com/oss/python/langchain/models#structured-outputs
 
     Args:
         pydantic_schema: The Pydantic schema of the entities to extract.

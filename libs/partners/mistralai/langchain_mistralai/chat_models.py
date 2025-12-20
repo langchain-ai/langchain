@@ -23,13 +23,12 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import (
-    BaseChatModel,
-    LangSmithParams,
-    agenerate_from_stream,
-    generate_from_stream,
+from langchain_core.language_models import (
+    LanguageModelInput,
+    ModelProfile,
+    ModelProfileRegistry,
 )
+from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import (
     AIMessage,
@@ -74,6 +73,9 @@ from pydantic import (
 )
 from typing_extensions import Self
 
+from langchain_mistralai._compat import _convert_from_v1_to_mistral
+from langchain_mistralai.data._profiles import _PROFILES
+
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
     from contextlib import AbstractAsyncContextManager
@@ -87,6 +89,14 @@ TOOL_CALL_ID_PATTERN = re.compile(r"^[a-zA-Z0-9]{9}$")
 # This SSL context is equivalent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
+
+
+_MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 def _create_retry_decorator(
@@ -138,7 +148,8 @@ def _convert_mistral_chat_message_to_message(
     if role != "assistant":
         msg = f"Expected role to be 'assistant', got {role}"
         raise ValueError(msg)
-    content = cast("str", _message["content"])
+    # Mistral returns None for tool invocations
+    content = _message.get("content", "") or ""
 
     additional_kwargs: dict = {}
     tool_calls = []
@@ -160,6 +171,7 @@ def _convert_mistral_chat_message_to_message(
         additional_kwargs=additional_kwargs,
         tool_calls=tool_calls,
         invalid_tool_calls=invalid_tool_calls,
+        response_metadata={"model_provider": "mistralai"},
     )
 
 
@@ -231,14 +243,34 @@ async def acompletion_with_retry(
 
 
 def _convert_chunk_to_message_chunk(
-    chunk: dict, default_class: type[BaseMessageChunk]
-) -> BaseMessageChunk:
+    chunk: dict,
+    default_class: type[BaseMessageChunk],
+    index: int,
+    index_type: str,
+    output_version: str | None,
+) -> tuple[BaseMessageChunk, int, str]:
     _choice = chunk["choices"][0]
     _delta = _choice["delta"]
     role = _delta.get("role")
     content = _delta.get("content") or ""
+    if output_version == "v1" and isinstance(content, str):
+        content = [{"type": "text", "text": content}]
+    if isinstance(content, list):
+        for block in content:
+            if isinstance(block, dict):
+                if "type" in block and block["type"] != index_type:
+                    index_type = block["type"]
+                    index = index + 1
+                if "index" not in block:
+                    block["index"] = index
+                if block.get("type") == "thinking" and isinstance(
+                    block.get("thinking"), list
+                ):
+                    for sub_block in block["thinking"]:
+                        if isinstance(sub_block, dict) and "index" not in sub_block:
+                            sub_block["index"] = 0
     if role == "user" or default_class == HumanMessageChunk:
-        return HumanMessageChunk(content=content)
+        return HumanMessageChunk(content=content), index, index_type
     if role == "assistant" or default_class == AIMessageChunk:
         additional_kwargs: dict = {}
         response_metadata = {}
@@ -276,18 +308,22 @@ def _convert_chunk_to_message_chunk(
         ):
             response_metadata["model_name"] = chunk["model"]
             response_metadata["finish_reason"] = _choice["finish_reason"]
-        return AIMessageChunk(
-            content=content,
-            additional_kwargs=additional_kwargs,
-            tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
-            usage_metadata=usage_metadata,  # type: ignore[arg-type]
-            response_metadata=response_metadata,
+        return (
+            AIMessageChunk(
+                content=content,
+                additional_kwargs=additional_kwargs,
+                tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
+                usage_metadata=usage_metadata,  # type: ignore[arg-type]
+                response_metadata={"model_provider": "mistralai", **response_metadata},
+            ),
+            index,
+            index_type,
         )
     if role == "system" or default_class == SystemMessageChunk:
-        return SystemMessageChunk(content=content)
+        return SystemMessageChunk(content=content), index, index_type
     if role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)
-    return default_class(content=content)  # type: ignore[call-arg]
+        return ChatMessageChunk(content=content, role=role), index, index_type
+    return default_class(content=content), index, index_type  # type: ignore[call-arg]
 
 
 def _format_tool_call_for_mistral(tool_call: ToolCall) -> dict:
@@ -318,6 +354,21 @@ def _format_invalid_tool_call_for_mistral(invalid_tool_call: InvalidToolCall) ->
     return result
 
 
+def _clean_block(block: dict) -> dict:
+    # Remove "index" key added for message aggregation in langchain-core
+    new_block = {k: v for k, v in block.items() if k != "index"}
+    if block.get("type") == "thinking" and isinstance(block.get("thinking"), list):
+        new_block["thinking"] = [
+            (
+                {k: v for k, v in sb.items() if k != "index"}
+                if isinstance(sb, dict) and "index" in sb
+                else sb
+            )
+            for sb in block["thinking"]
+        ]
+    return new_block
+
+
 def _convert_message_to_mistral_chat_message(
     message: BaseMessage,
 ) -> dict:
@@ -327,16 +378,14 @@ def _convert_message_to_mistral_chat_message(
         return {"role": "user", "content": message.content}
     if isinstance(message, AIMessage):
         message_dict: dict[str, Any] = {"role": "assistant"}
-        tool_calls = []
+        tool_calls: list = []
         if message.tool_calls or message.invalid_tool_calls:
-            for tool_call in message.tool_calls:
+            if message.tool_calls:
                 tool_calls.extend(
-                    [
-                        _format_tool_call_for_mistral(tool_call)
-                        for tool_call in message.tool_calls
-                    ]
+                    _format_tool_call_for_mistral(tool_call)
+                    for tool_call in message.tool_calls
                 )
-            for invalid_tool_call in message.invalid_tool_calls:
+            if message.invalid_tool_calls:
                 tool_calls.extend(
                     _format_invalid_tool_call_for_mistral(invalid_tool_call)
                     for invalid_tool_call in message.invalid_tool_calls
@@ -356,13 +405,40 @@ def _convert_message_to_mistral_chat_message(
             pass
         if tool_calls:  # do not populate empty list tool_calls
             message_dict["tool_calls"] = tool_calls
-        if tool_calls and message.content:
+
+        # Message content
+        # Translate v1 content
+        if message.response_metadata.get("output_version") == "v1":
+            content = _convert_from_v1_to_mistral(
+                message.content_blocks, message.response_metadata.get("model_provider")
+            )
+        else:
+            content = message.content
+
+        if tool_calls and content:
             # Assistant message must have either content or tool_calls, but not both.
             # Some providers may not support tool_calls in the same message as content.
             # This is done to ensure compatibility with messages from other providers.
-            message_dict["content"] = ""
+            content = ""
+
+        elif isinstance(content, list):
+            content = [
+                _clean_block(block)
+                if isinstance(block, dict) and "index" in block
+                else block
+                for block in content
+            ]
         else:
-            message_dict["content"] = message.content
+            content = message.content
+
+        # if any blocks are dicts, cast strings to text blocks
+        if any(isinstance(block, dict) for block in content):
+            content = [
+                block if isinstance(block, dict) else {"type": "text", "text": block}
+                for block in content
+            ]
+        message_dict["content"] = content
+
         if "prefix" in message.additional_kwargs:
             message_dict["prefix"] = message.additional_kwargs["prefix"]
         return message_dict
@@ -382,7 +458,7 @@ def _convert_message_to_mistral_chat_message(
 
 
 class ChatMistralAI(BaseChatModel):
-    """A chat model that uses the MistralAI API."""
+    """A chat model that uses the Mistral AI API."""
 
     # The type for client and async_client is ignored because the type is not
     # an Optional after the model is initialized and the model_validator
@@ -390,27 +466,41 @@ class ChatMistralAI(BaseChatModel):
     client: httpx.Client = Field(  # type: ignore[assignment] # : meta private:
         default=None, exclude=True
     )
+
     async_client: httpx.AsyncClient = Field(  # type: ignore[assignment] # : meta private:
         default=None, exclude=True
-    )  #: :meta private:
+    )
+
     mistral_api_key: SecretStr | None = Field(
         alias="api_key",
         default_factory=secret_from_env("MISTRAL_API_KEY", default=None),
     )
+
     endpoint: str | None = Field(default=None, alias="base_url")
+
     max_retries: int = 5
+
     timeout: int = 120
+
     max_concurrent_requests: int = 64
+
     model: str = Field(default="mistral-small", alias="model_name")
+
     temperature: float = 0.7
+
     max_tokens: int | None = None
+
     top_p: float = 1
     """Decode using nucleus sampling: consider the smallest set of tokens whose
     probability sum is at least `top_p`. Must be in the closed interval
     `[0.0, 1.0]`."""
+
     random_seed: int | None = None
+
     safe_mode: bool | None = None
+
     streaming: bool = False
+
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any invocation parameters not explicitly specified."""
 
@@ -556,6 +646,13 @@ class ChatMistralAI(BaseChatModel):
 
         return self
 
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model)
+        return self
+
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -564,13 +661,6 @@ class ChatMistralAI(BaseChatModel):
         stream: bool | None = None,  # noqa: FBT001
         **kwargs: Any,
     ) -> ChatResult:
-        should_stream = stream if stream is not None else self.streaming
-        if should_stream:
-            stream_iter = self._stream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            return generate_from_stream(stream_iter)
-
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         response = self.completion_with_retry(
@@ -627,12 +717,16 @@ class ChatMistralAI(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
+        index = -1
+        index_type = ""
         for chunk in self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         ):
             if len(chunk.get("choices", [])) == 0:
                 continue
-            new_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
+            new_chunk, index, index_type = _convert_chunk_to_message_chunk(
+                chunk, default_chunk_class, index, index_type, self.output_version
+            )
             # make future chunks same type as first chunk
             default_chunk_class = new_chunk.__class__
             gen_chunk = ChatGenerationChunk(message=new_chunk)
@@ -653,12 +747,16 @@ class ChatMistralAI(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
+        index = -1
+        index_type = ""
         async for chunk in await acompletion_with_retry(
             self, messages=message_dicts, run_manager=run_manager, **params
         ):
             if len(chunk.get("choices", [])) == 0:
                 continue
-            new_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
+            new_chunk, index, index_type = _convert_chunk_to_message_chunk(
+                chunk, default_chunk_class, index, index_type, self.output_version
+            )
             # make future chunks same type as first chunk
             default_chunk_class = new_chunk.__class__
             gen_chunk = ChatGenerationChunk(message=new_chunk)
@@ -676,13 +774,6 @@ class ChatMistralAI(BaseChatModel):
         stream: bool | None = None,  # noqa: FBT001
         **kwargs: Any,
     ) -> ChatResult:
-        should_stream = stream if stream is not None else self.streaming
-        if should_stream:
-            stream_iter = self._astream(
-                messages=messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            return await agenerate_from_stream(stream_iter)
-
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         response = await acompletion_with_retry(
@@ -702,8 +793,8 @@ class ChatMistralAI(BaseChatModel):
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
-                Supports any tool definition handled by
-                `langchain_core.utils.function_calling.convert_to_openai_tool`.
+
+                Supports any tool definition handled by [`convert_to_openai_tool`][langchain_core.utils.function_calling.convert_to_openai_tool].
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function or
                 `'auto'` to automatically determine which function to call
@@ -711,8 +802,7 @@ class ChatMistralAI(BaseChatModel):
                 {"type": "function", "function": {"name": <<tool_name>>}}.
             kwargs: Any additional parameters are passed directly to
                 `self.bind(**kwargs)`.
-
-        """
+        """  # noqa: E501
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice:
             tool_names = []
@@ -747,20 +837,19 @@ class ChatMistralAI(BaseChatModel):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - an OpenAI function/tool schema,
-                - a JSON Schema,
-                - a `TypedDict` class (support added in 0.1.12),
-                - or a Pydantic class.
+                - An OpenAI function/tool schema,
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - Or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
-                for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or `TypedDict` class.
+                dict and will not be validated.
 
-                !!! warning "Behavior changed in 0.1.12"
-                    Added support for TypedDict class.
+                See `langchain_core.utils.function_calling.convert_to_openai_tool` for
+                more on how to properly specify types and descriptions of schema fields
+                when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
@@ -777,16 +866,23 @@ class ChatMistralAI(BaseChatModel):
                     must include instructions for formatting the output into the
                     desired schema into the model call.
 
-                !!! warning "Behavior changed in 0.2.5"
+                !!! warning "Behavior changed in `langchain-mistralai` 0.2.5"
+
                     Added method="json_schema"
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a BaseMessage) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
 
             kwargs: Any additional parameters are passed directly to
                 `self.bind(**kwargs)`. This is useful for passing in
@@ -795,97 +891,130 @@ class ChatMistralAI(BaseChatModel):
                 `stop` to control when the model should stop generating output.
 
         Returns:
-            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
-            an instance of `schema` (i.e., a Pydantic object).
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            Otherwise, if `include_raw` is False then Runnable outputs a dict.
-
-            If `include_raw` is True, then Runnable outputs a dict with keys:
-                - `'raw'`: BaseMessage
-                - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
-                - `'parsing_error'`: BaseException | None
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
 
         Example: schema=Pydantic class, method="function_calling", include_raw=False:
-            ```python
-            from typing import Optional
 
-            from langchain_mistralai import ChatMistralAI
-            from pydantic import BaseModel, Field
+        ```python
+        from typing import Optional
 
-
-            class AnswerWithJustification(BaseModel):
-                '''An answer to the user question along with justification for the answer.'''
-
-                answer: str
-                # If we provide default values and/or descriptions for fields, these will be passed
-                # to the model. This is an important part of improving a model's ability to
-                # correctly return structured outputs.
-                justification: str | None = Field(
-                    default=None, description="A justification for the answer."
-                )
+        from langchain_mistralai import ChatMistralAI
+        from pydantic import BaseModel, Field
 
 
-            model = ChatMistralAI(model="mistral-large-latest", temperature=0)
-            structured_model = model.with_structured_output(AnswerWithJustification)
+        class AnswerWithJustification(BaseModel):
+            '''An answer to the user question along with justification for the answer.'''
 
-            structured_model.invoke(
-                "What weighs more a pound of bricks or a pound of feathers"
+            answer: str
+            # If we provide default values and/or descriptions for fields, these will be passed
+            # to the model. This is an important part of improving a model's ability to
+            # correctly return structured outputs.
+            justification: str | None = Field(
+                default=None, description="A justification for the answer."
             )
 
-            # -> AnswerWithJustification(
-            #     answer='They weigh the same',
-            #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
-            # )
-            ```
+
+        model = ChatMistralAI(model="mistral-large-latest", temperature=0)
+        structured_model = model.with_structured_output(AnswerWithJustification)
+
+        structured_model.invoke(
+            "What weighs more a pound of bricks or a pound of feathers"
+        )
+
+        # -> AnswerWithJustification(
+        #     answer='They weigh the same',
+        #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+        # )
+        ```
 
         Example: schema=Pydantic class, method="function_calling", include_raw=True:
-            ```python
-            from langchain_mistralai import ChatMistralAI
-            from pydantic import BaseModel
+
+        ```python
+        from langchain_mistralai import ChatMistralAI
+        from pydantic import BaseModel
 
 
-            class AnswerWithJustification(BaseModel):
-                '''An answer to the user question along with justification for the answer.'''
+        class AnswerWithJustification(BaseModel):
+            '''An answer to the user question along with justification for the answer.'''
 
-                answer: str
-                justification: str
+            answer: str
+            justification: str
 
 
-            model = ChatMistralAI(model="mistral-large-latest", temperature=0)
-            structured_model = model.with_structured_output(
-                AnswerWithJustification, include_raw=True
-            )
+        model = ChatMistralAI(model="mistral-large-latest", temperature=0)
+        structured_model = model.with_structured_output(
+            AnswerWithJustification, include_raw=True
+        )
 
-            structured_model.invoke(
-                "What weighs more a pound of bricks or a pound of feathers"
-            )
-            # -> {
-            #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
-            #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
-            #     'parsing_error': None
-            # }
-            ```
+        structured_model.invoke(
+            "What weighs more a pound of bricks or a pound of feathers"
+        )
+        # -> {
+        #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
+        #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
+        #     'parsing_error': None
+        # }
+        ```
 
         Example: schema=TypedDict class, method="function_calling", include_raw=False:
-            ```python
-            from typing_extensions import Annotated, TypedDict
 
-            from langchain_mistralai import ChatMistralAI
+        ```python
+        from typing_extensions import Annotated, TypedDict
+
+        from langchain_mistralai import ChatMistralAI
 
 
-            class AnswerWithJustification(TypedDict):
-                '''An answer to the user question along with justification for the answer.'''
+        class AnswerWithJustification(TypedDict):
+            '''An answer to the user question along with justification for the answer.'''
 
-                answer: str
-                justification: Annotated[
-                    str | None, None, "A justification for the answer."
-                ]
+            answer: str
+            justification: Annotated[
+                str | None, None, "A justification for the answer."
+            ]
 
+
+        model = ChatMistralAI(model="mistral-large-latest", temperature=0)
+        structured_model = model.with_structured_output(AnswerWithJustification)
+
+        structured_model.invoke(
+            "What weighs more a pound of bricks or a pound of feathers"
+        )
+        # -> {
+        #     'answer': 'They weigh the same',
+        #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+        # }
+        ```
+
+        Example: schema=OpenAI function schema, method="function_calling", include_raw=False:
+
+        ```python
+        from langchain_mistralai import ChatMistralAI
+
+        oai_schema = {
+            'name': 'AnswerWithJustification',
+            'description': 'An answer to the user question along with justification for the answer.',
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'answer': {'type': 'string'},
+                    'justification': {'description': 'A justification for the answer.', 'type': 'string'}
+                },
+                'required': ['answer']
+            }
 
             model = ChatMistralAI(model="mistral-large-latest", temperature=0)
-            structured_model = model.with_structured_output(AnswerWithJustification)
+            structured_model = model.with_structured_output(oai_schema)
 
             structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
@@ -894,85 +1023,58 @@ class ChatMistralAI(BaseChatModel):
             #     'answer': 'They weigh the same',
             #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
             # }
-            ```
-
-        Example: schema=OpenAI function schema, method="function_calling", include_raw=False:
-            ```python
-            from langchain_mistralai import ChatMistralAI
-
-            oai_schema = {
-                'name': 'AnswerWithJustification',
-                'description': 'An answer to the user question along with justification for the answer.',
-                'parameters': {
-                    'type': 'object',
-                    'properties': {
-                        'answer': {'type': 'string'},
-                        'justification': {'description': 'A justification for the answer.', 'type': 'string'}
-                    },
-                    'required': ['answer']
-                }
-
-                model = ChatMistralAI(model="mistral-large-latest", temperature=0)
-                structured_model = model.with_structured_output(oai_schema)
-
-                structured_model.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
-                # -> {
-                #     'answer': 'They weigh the same',
-                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
-                # }
-            ```
+        ```
 
         Example: schema=Pydantic class, method="json_mode", include_raw=True:
-            ```python
-            from langchain_mistralai import ChatMistralAI
-            from pydantic import BaseModel
+
+        ```python
+        from langchain_mistralai import ChatMistralAI
+        from pydantic import BaseModel
 
 
-            class AnswerWithJustification(BaseModel):
-                answer: str
-                justification: str
+        class AnswerWithJustification(BaseModel):
+            answer: str
+            justification: str
 
 
-            model = ChatMistralAI(model="mistral-large-latest", temperature=0)
-            structured_model = model.with_structured_output(
-                AnswerWithJustification, method="json_mode", include_raw=True
-            )
+        model = ChatMistralAI(model="mistral-large-latest", temperature=0)
+        structured_model = model.with_structured_output(
+            AnswerWithJustification, method="json_mode", include_raw=True
+        )
 
-            structured_model.invoke(
-                "Answer the following question. "
-                "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
-                "What's heavier a pound of bricks or a pound of feathers?"
-            )
-            # -> {
-            #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
-            #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
-            #     'parsing_error': None
-            # }
-            ```
+        structured_model.invoke(
+            "Answer the following question. "
+            "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
+            "What's heavier a pound of bricks or a pound of feathers?"
+        )
+        # -> {
+        #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
+        #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
+        #     'parsing_error': None
+        # }
+        ```
 
         Example: schema=None, method="json_mode", include_raw=True:
-            ```python
-            structured_model = model.with_structured_output(
-                method="json_mode", include_raw=True
-            )
 
-            structured_model.invoke(
-                "Answer the following question. "
-                "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
-                "What's heavier a pound of bricks or a pound of feathers?"
-            )
-            # -> {
-            #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
-            #     'parsed': {
-            #         'answer': 'They are both the same weight.',
-            #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
-            #     },
-            #     'parsing_error': None
-            # }
-            ```
+        ```python
+        structured_model = model.with_structured_output(
+            method="json_mode", include_raw=True
+        )
 
+        structured_model.invoke(
+            "Answer the following question. "
+            "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
+            "What's heavier a pound of bricks or a pound of feathers?"
+        )
+        # -> {
+        #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
+        #     'parsed': {
+        #         'answer': 'They are both the same weight.',
+        #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
+        #     },
+        #     'parsing_error': None
+        # }
+        ```
         """  # noqa: E501
         _ = kwargs.pop("strict", None)
         if kwargs:
@@ -1075,7 +1177,11 @@ class ChatMistralAI(BaseChatModel):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the LangChain object.
+
+        Returns:
+            `["langchain", "chat_models", "mistralai"]`
+        """
         return ["langchain", "chat_models", "mistralai"]
 
 

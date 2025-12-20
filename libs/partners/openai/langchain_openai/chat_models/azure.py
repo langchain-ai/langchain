@@ -17,7 +17,7 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, SecretStr, model_validator
 from typing_extensions import Self
 
-from langchain_openai.chat_models.base import BaseChatOpenAI
+from langchain_openai.chat_models.base import BaseChatOpenAI, _get_default_model_profile
 
 logger = logging.getLogger(__name__)
 
@@ -49,30 +49,30 @@ class AzureChatOpenAI(BaseChatOpenAI):
         ```
 
     Key init args — completion params:
-        azure_deployment: str
+        azure_deployment:
             Name of Azure OpenAI deployment to use.
-        temperature: float
+        temperature:
             Sampling temperature.
-        max_tokens: int | None
+        max_tokens:
             Max number of tokens to generate.
-        logprobs: bool | None
+        logprobs:
             Whether to return logprobs.
 
     Key init args — client params:
-        api_version: str
+        api_version:
             Azure OpenAI REST API version to use (distinct from the version of the
             underlying model). [See more on the different versions.](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#rest-api-versioning)
-        timeout: Union[float, Tuple[float, float], Any, None]
+        timeout:
             Timeout for requests.
-        max_retries: int | None
+        max_retries:
             Max number of retries.
-        organization: str | None
+        organization:
             OpenAI organization ID. If not passed in will be read from env
             var `OPENAI_ORG_ID`.
-        model: str | None
+        model:
             The name of the underlying OpenAI model. Used for tracing and token
             counting. Does not affect completion. E.g. `'gpt-4'`, `'gpt-35-turbo'`, etc.
-        model_version: str | None
+        model_version:
             The version of the underlying OpenAI model. Used for tracing and token
             counting. Does not affect completion. E.g., `'0125'`, `'0125-preview'`, etc.
 
@@ -572,7 +572,11 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the LangChain object.
+
+        Returns:
+            `["langchain", "chat_models", "azure_openai"]`
+        """
         return ["langchain", "chat_models", "azure_openai"]
 
     @property
@@ -695,6 +699,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 **async_specific,  # type: ignore[arg-type]
             )
             self.async_client = self.root_async_client.chat.completions
+        return self
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None and self.deployment_name is not None:
+            self.profile = _get_default_model_profile(self.deployment_name)
         return self
 
     @property
@@ -833,17 +844,19 @@ class AzureChatOpenAI(BaseChatOpenAI):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - a JSON Schema,
-                - a `TypedDict` class,
-                - or a Pydantic class,
-                - an OpenAI function/tool schema.
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - A Pydantic class,
+                - Or an OpenAI function/tool schema.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
-                for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or `TypedDict` class.
+                dict and will not be validated.
+
+                See `langchain_core.utils.function_calling.convert_to_openai_tool` for
+                more on how to properly specify types and descriptions of schema fields
+                when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
@@ -863,12 +876,18 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 support which methods [here](https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format).
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a BaseMessage) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
             strict:
 
                 - True:
@@ -886,79 +905,32 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 !!! note
                     `strict` can only be non-null if `method` is `'json_schema'`
                     or `'function_calling'`.
-            tools:
-                A list of tool-like objects to bind to the chat model. Requires that:
-
-                - `method` is `'json_schema'` (default).
-                - `strict=True`
-                - `include_raw=True`
-
-                If a model elects to call a
-                tool, the resulting `AIMessage` in `'raw'` will include tool calls.
-
-                ??? example
-
-                    ```python
-                    from langchain.chat_models import init_chat_model
-                    from pydantic import BaseModel
-
-
-                    class ResponseSchema(BaseModel):
-                        response: str
-
-
-                    def get_weather(location: str) -> str:
-                        \"\"\"Get weather at a location.\"\"\"
-                        pass
-
-                    model = init_chat_model("openai:gpt-4o-mini")
-
-                    structured_model = model.with_structured_output(
-                        ResponseSchema,
-                        tools=[get_weather],
-                        strict=True,
-                        include_raw=True,
-                    )
-
-                    structured_model.invoke("What's the weather in Boston?")
-                    ```
-
-                    ```python
-                    {
-                        "raw": AIMessage(content="", tool_calls=[...], ...),
-                        "parsing_error": None,
-                        "parsed": None,
-                    }
-                    ```
-
             kwargs: Additional keyword args are passed through to the model.
 
         Returns:
-            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
-            an instance of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is False then Runnable outputs a dict.
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            If `include_raw` is True, then Runnable outputs a dict with keys:
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
 
-            - `'raw'`: BaseMessage
-            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
-            - `'parsing_error'`: BaseException | None
+        !!! warning "Behavior changed in `langchain-openai` 0.3.0"
 
-        !!! warning "Behavior changed in 0.1.20"
-            Added support for TypedDict class `schema`.
-
-        !!! warning "Behavior changed in 0.1.21"
-            Support for `strict` argument added.
-            Support for `method="json_schema"` added.
-
-        !!! warning "Behavior changed in 0.3.0"
             `method` default changed from "function_calling" to "json_schema".
 
-        !!! warning "Behavior changed in 0.3.12"
+        !!! warning "Behavior changed in `langchain-openai` 0.3.12"
+
             Support for `tools` added.
 
-        !!! warning "Behavior changed in 0.3.21"
+        !!! warning "Behavior changed in `langchain-openai` 0.3.21"
+
             Pass `kwargs` through to the model.
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`, `strict=True`"

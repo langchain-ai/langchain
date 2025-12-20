@@ -37,7 +37,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     def _parser_exception(
         self, e: Exception, json_object: dict
     ) -> OutputParserException:
-        json_string = json.dumps(json_object)
+        json_string = json.dumps(json_object, ensure_ascii=False)
         name = self.pydantic_object.__name__
         msg = f"Failed to parse {name} from completion {json_string}. Got: {e}"
         return OutputParserException(msg, llm_output=json_string)
@@ -54,7 +54,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
                 all the keys that have been returned so far.
 
         Raises:
-            `OutputParserException`: If the result is not valid JSON
+            OutputParserException: If the result is not valid JSON
                 or does not conform to the Pydantic model.
 
         Returns:
@@ -86,7 +86,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
             The format instructions for the JSON output.
         """
         # Copy schema to avoid altering original Pydantic schema.
-        schema = dict(self.pydantic_object.model_json_schema().items())
+        schema = dict(self._get_schema(self.pydantic_object).items())
 
         # Remove extraneous fields.
         reduced_schema = schema

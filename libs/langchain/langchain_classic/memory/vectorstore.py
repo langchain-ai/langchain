@@ -5,10 +5,10 @@ from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
-from langchain_core.memory import BaseMemory
 from langchain_core.vectorstores import VectorStoreRetriever
 from pydantic import Field
 
+from langchain_classic.base_memory import BaseMemory
 from langchain_classic.memory.utils import get_prompt_input_key
 
 
@@ -30,7 +30,7 @@ class VectorStoreRetrieverMemory(BaseMemory):
     retriever: VectorStoreRetriever = Field(exclude=True)
     """VectorStoreRetriever object to connect to."""
 
-    memory_key: str = "history"  #: :meta private:
+    memory_key: str = "history"
     """Key name to locate the memories in the result of load_memory_variables."""
 
     input_key: str | None = None

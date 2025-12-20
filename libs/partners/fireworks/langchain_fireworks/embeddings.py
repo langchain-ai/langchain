@@ -19,11 +19,11 @@ class FireworksEmbeddings(BaseModel, Embeddings):
         ```
 
     Key init args — completion params:
-        model: str
+        model:
             Name of Fireworks model to use.
 
     Key init args — client params:
-        fireworks_api_key: SecretStr
+        fireworks_api_key:
             Fireworks API key.
 
     See full list of supported init args and their descriptions in the params section.
@@ -65,7 +65,8 @@ class FireworksEmbeddings(BaseModel, Embeddings):
         ```
     """
 
-    client: OpenAI = Field(default=None, exclude=True)  # type: ignore[assignment] # :meta private:
+    client: OpenAI = Field(default=None, exclude=True)  # type: ignore[assignment]
+
     fireworks_api_key: SecretStr = Field(
         alias="api_key",
         default_factory=secret_from_env(
@@ -77,6 +78,7 @@ class FireworksEmbeddings(BaseModel, Embeddings):
 
     Automatically read from env variable `FIREWORKS_API_KEY` if not provided.
     """
+
     model: str = "nomic-ai/nomic-embed-text-v1.5"
 
     model_config = ConfigDict(

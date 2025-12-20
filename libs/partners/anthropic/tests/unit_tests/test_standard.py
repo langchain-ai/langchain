@@ -9,7 +9,7 @@ from langchain_anthropic import ChatAnthropic
 
 
 class TestAnthropicStandard(ChatModelUnitTests):
-    """Use the standard ChatModel unit tests against the ChatAnthropic class."""
+    """Use the standard chat model unit tests against the `ChatAnthropic` class."""
 
     @property
     def chat_model_class(self) -> type[BaseChatModel]:
@@ -26,7 +26,7 @@ def test_init_time_with_client(benchmark: BenchmarkFixture) -> None:
 
     def _init_in_loop_with_clients() -> None:
         for _ in range(10):
-            llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+            llm = ChatAnthropic(model="claude-3-5-haiku-20241022")
             _ = llm._client
             _ = llm._async_client
 

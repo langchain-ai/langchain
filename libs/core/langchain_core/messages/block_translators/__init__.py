@@ -12,10 +12,11 @@ the implementation in `BaseMessage`.
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from langchain_core.messages import AIMessage, AIMessageChunk
     from langchain_core.messages import content as types
 
@@ -28,7 +29,7 @@ dictionary with two keys:
 - `'translate_content'`: Function to translate `AIMessage` content.
 - `'translate_content_chunk'`: Function to translate `AIMessageChunk` content.
 
-When calling `.content_blocks` on an `AIMessage` or `AIMessageChunk`, if
+When calling `content_blocks` on an `AIMessage` or `AIMessageChunk`, if
 `model_provider` is set in `response_metadata`, the corresponding translator
 functions will be used to parse the content into blocks. Otherwise, best-effort parsing
 in `BaseMessage` will be used.

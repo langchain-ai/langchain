@@ -19,7 +19,7 @@ class RecursiveJsonSplitter:
     """
 
     max_chunk_size: int = 2000
-    """The maximum size for each chunk. Defaults to 2000."""
+    """The maximum size for each chunk."""
     min_chunk_size: int = 1800
     """The minimum size for each chunk, derived from `max_chunk_size` if not
     explicitly provided."""
@@ -34,7 +34,7 @@ class RecursiveJsonSplitter:
         `max_chunk_size` if not explicitly provided.
 
         Args:
-            max_chunk_size: The maximum size for a chunk. Defaults to 2000.
+            max_chunk_size: The maximum size for a chunk.
             min_chunk_size: The minimum size for a chunk. If `None`,
                 defaults to the maximum chunk size minus 200, with a lower bound of 50.
         """
@@ -144,7 +144,7 @@ class RecursiveJsonSplitter:
         ensure_ascii: bool = True,  # noqa: FBT001,FBT002
         metadatas: list[dict[Any, Any]] | None = None,
     ) -> list[Document]:
-        """Create documents from a list of json objects (Dict)."""
+        """Create a list of `Document` objects from a list of json objects (`dict`)."""
         metadatas_ = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):

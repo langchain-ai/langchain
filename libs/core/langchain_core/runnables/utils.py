@@ -5,9 +5,9 @@ from __future__ import annotations
 import ast
 import asyncio
 import inspect
+import sys
 import textwrap
-from collections.abc import Callable, Mapping, Sequence
-from contextvars import Context
+from collections.abc import Mapping, Sequence
 from functools import lru_cache
 from inspect import signature
 from itertools import groupby
@@ -30,9 +30,11 @@ if TYPE_CHECKING:
         AsyncIterable,
         AsyncIterator,
         Awaitable,
+        Callable,
         Coroutine,
         Iterable,
     )
+    from contextvars import Context
 
     from langchain_core.runnables.schema import StreamEvent
 
@@ -118,14 +120,13 @@ def accepts_context(callable: Callable[..., Any]) -> bool:  # noqa: A002
         return False
 
 
-@lru_cache(maxsize=1)
 def asyncio_accepts_context() -> bool:
-    """Cache the result of checking if asyncio.create_task accepts a `context` arg.
+    """Check if asyncio.create_task accepts a `context` arg.
 
     Returns:
         True if `asyncio.create_task` accepts a context argument, `False` otherwise.
     """
-    return accepts_context(asyncio.create_task)
+    return sys.version_info >= (3, 11)
 
 
 def coro_with_context(
@@ -136,7 +137,7 @@ def coro_with_context(
     Args:
         coro: The coroutine to await.
         context: The context to use.
-        create_task: Whether to create a task. Defaults to `False`.
+        create_task: Whether to create a task.
 
     Returns:
         The coroutine with the context.
@@ -558,7 +559,7 @@ class ConfigurableField(NamedTuple):
     annotation: Any | None = None
     """The annotation of the field. """
     is_shared: bool = False
-    """Whether the field is shared. Defaults to `False`."""
+    """Whether the field is shared."""
 
     @override
     def __hash__(self) -> int:
@@ -579,7 +580,7 @@ class ConfigurableFieldSingleOption(NamedTuple):
     description: str | None = None
     """The description of the field. """
     is_shared: bool = False
-    """Whether the field is shared. Defaults to `False`."""
+    """Whether the field is shared."""
 
     @override
     def __hash__(self) -> int:
@@ -600,7 +601,7 @@ class ConfigurableFieldMultiOption(NamedTuple):
     description: str | None = None
     """The description of the field. """
     is_shared: bool = False
-    """Whether the field is shared. Defaults to `False`."""
+    """Whether the field is shared."""
 
     @override
     def __hash__(self) -> int:
@@ -626,7 +627,7 @@ class ConfigurableFieldSpec(NamedTuple):
     default: Any = None
     """The default value for the field. """
     is_shared: bool = False
-    """Whether the field is shared. Defaults to `False`."""
+    """Whether the field is shared."""
     dependencies: list[str] | None = None
     """The dependencies of the field. """
 

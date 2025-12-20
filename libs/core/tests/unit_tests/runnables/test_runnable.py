@@ -4,7 +4,13 @@ import sys
 import time
 import uuid
 import warnings
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Sequence
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Iterator,
+    Sequence,
+)
 from functools import partial
 from operator import itemgetter
 from typing import Any, cast
@@ -94,7 +100,7 @@ PYDANTIC_VERSION_AT_LEAST_210 = version.parse("2.10") <= PYDANTIC_VERSION
 class FakeTracer(BaseTracer):
     """Fake tracer that records LangChain execution.
 
-    It replaces run ids with deterministic UUIDs for snapshotting.
+    It replaces run IDs with deterministic UUIDs for snapshotting.
     """
 
     def __init__(self) -> None:
@@ -312,6 +318,12 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             "Document": {
                 "description": "Class for storing a piece of text and "
                 "associated metadata.\n"
+                "\n"
+                "!!! note\n"
+                "    `Document` is for **retrieval workflows**, not chat I/O. For "
+                "sending text\n"
+                "    to an LLM in a conversation, use message types from "
+                "`langchain.messages`.\n"
                 "\n"
                 "Example:\n"
                 "    ```python\n"
@@ -2073,7 +2085,7 @@ async def test_prompt_with_llm(
         part async for part in chain.astream_log({"question": "What is your name?"})
     ]
 
-    # remove ids from logs
+    # Remove IDs from logs
     for part in stream_log:
         for op in part.ops:
             if (
@@ -2284,7 +2296,7 @@ async def test_prompt_with_llm_parser(
         part async for part in chain.astream_log({"question": "What is your name?"})
     ]
 
-    # remove ids from logs
+    # Remove IDs from logs
     for part in stream_log:
         for op in part.ops:
             if (
@@ -2472,7 +2484,7 @@ async def test_stream_log_retriever() -> None:
         part async for part in chain.astream_log({"question": "What is your name?"})
     ]
 
-    # remove ids from logs
+    # Remove IDs from logs
     for part in stream_log:
         for op in part.ops:
             if (
@@ -2505,7 +2517,7 @@ async def test_stream_log_lists() -> None:
         part async for part in chain.astream_log({"question": "What is your name?"})
     ]
 
-    # remove ids from logs
+    # Remove IDs from logs
     for part in stream_log:
         for op in part.ops:
             if (
@@ -5719,3 +5731,37 @@ def test_runnable_assign() -> None:
 
     result = runnable_assign.invoke({"input": 5})
     assert result == {"input": 5, "add_step": {"added": 15}}
+
+
+def test_runnable_typed_dict_schema() -> None:
+    """Testing that the schema is generated properly(not empty) when using TypedDict.
+
+    subclasses to annotate the arguments of a RunnableParallel children.
+    """
+
+    class Foo(TypedDict):
+        foo: str
+
+    class InputData(Foo):
+        bar: str
+
+    def forward_foo(input_data: InputData) -> str:
+        return input_data["foo"]
+
+    def transform_input(input_data: InputData) -> dict[str, str]:
+        foo = input_data["foo"]
+        bar = input_data["bar"]
+
+        return {"transformed": foo + bar}
+
+    foo_runnable = RunnableLambda(forward_foo)
+    other_runnable = RunnableLambda(transform_input)
+
+    parallel = RunnableParallel(
+        foo=foo_runnable,
+        other=other_runnable,
+    )
+    assert (
+        repr(parallel.input_schema.model_validate({"foo": "Y", "bar": "Z"}))
+        == "RunnableParallel<foo,other>Input(root={'foo': 'Y', 'bar': 'Z'})"
+    )

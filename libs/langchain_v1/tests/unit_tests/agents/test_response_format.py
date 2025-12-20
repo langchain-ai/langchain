@@ -1,14 +1,18 @@
 """Test suite for create_agent with structured output response_format permutations."""
 
 import json
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
+from typing import Any
 
 import pytest
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.messages import AIMessage as CoreAIMessage
+from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.runnables import Runnable
+from pydantic import BaseModel, Field
+from typing_extensions import TypedDict
 
-from dataclasses import dataclass
-from typing import Union, Sequence, Any, Callable
-from collections.abc import Awaitable
-
-from langchain_core.messages import HumanMessage, AIMessage as CoreAIMessage
 from langchain.agents import create_agent
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
@@ -16,16 +20,9 @@ from langchain.agents.structured_output import (
     StructuredOutputValidationError,
     ToolStrategy,
 )
-from langchain.tools import tool
-from pydantic import BaseModel, Field
-from typing_extensions import TypedDict
-
 from langchain.messages import AIMessage
-from langchain_core.messages import BaseMessage
-from langchain_core.language_models import LanguageModelInput
-from langchain_core.runnables import Runnable
+from langchain.tools import BaseTool, tool
 from tests.unit_tests.agents.model import FakeToolCallingModel
-from langchain.tools import BaseTool
 
 
 # Test data models
@@ -86,14 +83,12 @@ location_json_schema = {
 @tool
 def get_weather() -> str:
     """Get the weather."""
-
     return "The weather is sunny and 75°F."
 
 
 @tool
 def get_location() -> str:
     """Get the current location."""
-
     return "You are in New York, USA."
 
 
@@ -345,14 +340,12 @@ class TestResponseFormatAsToolStrategy:
             ],
         ]
 
-        model = FakeToolCallingModel[Union[WeatherBaseModel, LocationResponse]](
-            tool_calls=tool_calls
-        )
+        model = FakeToolCallingModel[WeatherBaseModel | LocationResponse](tool_calls=tool_calls)
 
         agent = create_agent(
             model,
             [get_weather, get_location],
-            response_format=ToolStrategy(Union[WeatherBaseModel, LocationResponse]),
+            response_format=ToolStrategy(WeatherBaseModel | LocationResponse),
         )
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
@@ -376,7 +369,7 @@ class TestResponseFormatAsToolStrategy:
         agent_location = create_agent(
             model_location,
             [get_weather, get_location],
-            response_format=ToolStrategy(Union[WeatherBaseModel, LocationResponse]),
+            response_format=ToolStrategy(WeatherBaseModel | LocationResponse),
         )
         response_location = agent_location.invoke({"messages": [HumanMessage("Where am I?")]})
 
@@ -384,7 +377,11 @@ class TestResponseFormatAsToolStrategy:
         assert len(response_location["messages"]) == 5
 
     def test_multiple_structured_outputs_error_without_retry(self) -> None:
-        """Test that MultipleStructuredOutputsError is raised when model returns multiple structured tool calls without retry."""
+        """Test multiple structured outputs error without retry.
+
+        Test that MultipleStructuredOutputsError is raised when model returns multiple
+        structured tool calls without retry.
+        """
         tool_calls = [
             [
                 {
@@ -406,14 +403,14 @@ class TestResponseFormatAsToolStrategy:
             model,
             [],
             response_format=ToolStrategy(
-                Union[WeatherBaseModel, LocationResponse],
+                WeatherBaseModel | LocationResponse,
                 handle_errors=False,
             ),
         )
 
         with pytest.raises(
             MultipleStructuredOutputsError,
-            match=".*WeatherBaseModel.*LocationResponse.*",
+            match=r".*WeatherBaseModel.*LocationResponse.*",
         ):
             agent.invoke({"messages": [HumanMessage("Give me weather and location")]})
 
@@ -447,7 +444,7 @@ class TestResponseFormatAsToolStrategy:
             model,
             [],
             response_format=ToolStrategy(
-                Union[WeatherBaseModel, LocationResponse],
+                WeatherBaseModel | LocationResponse,
                 handle_errors=True,
             ),
         )
@@ -459,7 +456,11 @@ class TestResponseFormatAsToolStrategy:
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
 
     def test_structured_output_parsing_error_without_retry(self) -> None:
-        """Test that StructuredOutputParsingError is raised when tool args fail to parse without retry."""
+        """Test structured output parsing error without retry.
+
+        Test that StructuredOutputParsingError is raised when tool args fail to parse
+        without retry.
+        """
         tool_calls = [
             [
                 {
@@ -483,7 +484,7 @@ class TestResponseFormatAsToolStrategy:
 
         with pytest.raises(
             StructuredOutputValidationError,
-            match=".*WeatherBaseModel.*",
+            match=r".*WeatherBaseModel.*",
         ):
             agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
@@ -558,7 +559,7 @@ class TestResponseFormatAsToolStrategy:
             model,
             [],
             response_format=ToolStrategy(
-                Union[WeatherBaseModel, LocationResponse],
+                WeatherBaseModel | LocationResponse,
                 handle_errors=custom_message,
             ),
         )
@@ -610,6 +611,39 @@ class TestResponseFormatAsToolStrategy:
         )
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
 
+    def test_validation_error_with_invalid_response(self) -> None:
+        """Test validation error with invalid response.
+
+        Test that StructuredOutputValidationError is raised when tool strategy receives
+        invalid response.
+        """
+        tool_calls = [
+            [
+                {
+                    "name": "WeatherBaseModel",
+                    "id": "1",
+                    "args": {"invalid_field": "wrong_data", "another_bad_field": 123},
+                },
+            ],
+        ]
+
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(
+                WeatherBaseModel,
+                handle_errors=False,  # Disable retry to ensure error is raised
+            ),
+        )
+
+        with pytest.raises(
+            StructuredOutputValidationError,
+            match=r".*WeatherBaseModel.*",
+        ):
+            agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
 
 class TestResponseFormatAsProviderStrategy:
     def test_pydantic_model(self) -> None:
@@ -629,6 +663,32 @@ class TestResponseFormatAsProviderStrategy:
 
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
         assert len(response["messages"]) == 4
+
+    def test_validation_error_with_invalid_response(self) -> None:
+        """Test validation error with invalid response.
+
+        Test that StructuredOutputValidationError is raised when provider strategy
+        receives invalid response.
+        """
+        tool_calls = [
+            [{"args": {}, "id": "1", "name": "get_weather"}],
+        ]
+
+        # But we're using WeatherBaseModel which has different field requirements
+        model = FakeToolCallingModel[dict](
+            tool_calls=tool_calls,
+            structured_response={"invalid": "data"},  # Wrong structure
+        )
+
+        agent = create_agent(
+            model, [get_weather], response_format=ProviderStrategy(WeatherBaseModel)
+        )
+
+        with pytest.raises(
+            StructuredOutputValidationError,
+            match=r".*WeatherBaseModel.*",
+        ):
+            agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
     def test_dataclass(self) -> None:
         """Test response_format as ProviderStrategy with dataclass."""
@@ -686,6 +746,18 @@ class TestResponseFormatAsProviderStrategy:
         assert response["structured_response"] == EXPECTED_WEATHER_DICT
         assert len(response["messages"]) == 4
 
+    def test_provider_strategy_strict_flag(self) -> None:
+        """ProviderStrategy should pass through strict flag for provider schemas."""
+        # Default should not set strict
+        strategy_default = ProviderStrategy(WeatherBaseModel)
+        kwargs_default = strategy_default.to_model_kwargs()
+        assert "strict" not in kwargs_default["response_format"]["json_schema"]
+
+        # Explicit strict True should include the flag
+        strategy_strict = ProviderStrategy(WeatherBaseModel, strict=True)
+        kwargs_strict = strategy_strict.to_model_kwargs()
+        assert kwargs_strict["response_format"]["json_schema"]["strict"] is True
+
 
 class TestDynamicModelWithResponseFormat:
     """Test response_format with middleware that modifies the model."""
@@ -698,8 +770,10 @@ class TestDynamicModelWithResponseFormat:
         selected based on the final model's capabilities.
         """
         from unittest.mock import patch
-        from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
+
         from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+
+        from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
 
         # Custom model that we'll use to test whether the tool strategy is applied
         # correctly at runtime.
@@ -708,7 +782,7 @@ class TestDynamicModelWithResponseFormat:
 
             def bind_tools(
                 self,
-                tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
+                tools: Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
                 **kwargs: Any,
             ) -> Runnable[LanguageModelInput, BaseMessage]:
                 # Record every tool binding event.
@@ -733,13 +807,12 @@ class TestDynamicModelWithResponseFormat:
                 handler: Callable[[ModelRequest], CoreAIMessage],
             ) -> CoreAIMessage:
                 # Replace the model with our custom test model
-                request.model = model
-                return handler(request)
+                return handler(request.override(model=model))
 
         # Track which model is checked for provider strategy support
         calls = []
 
-        def mock_supports_provider_strategy(model) -> bool:
+        def mock_supports_provider_strategy(model, tools) -> bool:
             """Track which model is checked and return True for ProviderStrategy."""
             calls.append(model)
             return True
@@ -787,14 +860,14 @@ def test_union_of_types() -> None:
         ],
     ]
 
-    model = FakeToolCallingModel[Union[WeatherBaseModel, LocationResponse]](
+    model = FakeToolCallingModel[WeatherBaseModel | LocationResponse](
         tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_PYDANTIC
     )
 
     agent = create_agent(
         model,
         [get_weather, get_location],
-        response_format=ToolStrategy(Union[WeatherBaseModel, LocationResponse]),
+        response_format=ToolStrategy(WeatherBaseModel | LocationResponse),
     )
     response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 

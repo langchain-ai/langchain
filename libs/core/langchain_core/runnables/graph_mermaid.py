@@ -60,10 +60,10 @@ def draw_mermaid(
         edges: List of edges, object with a source, target and data.
         first_node: Id of the first node.
         last_node: Id of the last node.
-        with_styles: Whether to include styles in the graph. Defaults to `True`.
-        curve_style: Curve style for the edges. Defaults to CurveStyle.LINEAR.
-        node_styles: Node colors for different types. Defaults to NodeStyles().
-        wrap_label_n_words: Words to wrap the edge labels. Defaults to 9.
+        with_styles: Whether to include styles in the graph.
+        curve_style: Curve style for the edges.
+        node_styles: Node colors for different types.
+        wrap_label_n_words: Words to wrap the edge labels.
         frontmatter_config: Mermaid frontmatter config.
             Can be used to customize theme and styles. Will be converted to YAML and
             added to the beginning of the mermaid graph.
@@ -81,6 +81,7 @@ def draw_mermaid(
                 }
             }
             ```
+
     Returns:
         Mermaid graph syntax.
 
@@ -281,18 +282,20 @@ def draw_mermaid_png(
     max_retries: int = 1,
     retry_delay: float = 1.0,
     base_url: str | None = None,
+    proxies: dict[str, str] | None = None,
 ) -> bytes:
     """Draws a Mermaid graph as PNG using provided syntax.
 
     Args:
         mermaid_syntax: Mermaid graph syntax.
         output_file_path: Path to save the PNG image.
-        draw_method: Method to draw the graph. Defaults to MermaidDrawMethod.API.
-        background_color: Background color of the image. Defaults to "white".
-        padding: Padding around the image. Defaults to 10.
-        max_retries: Maximum number of retries (MermaidDrawMethod.API). Defaults to 1.
-        retry_delay: Delay between retries (MermaidDrawMethod.API). Defaults to 1.0.
+        draw_method: Method to draw the graph.
+        background_color: Background color of the image.
+        padding: Padding around the image.
+        max_retries: Maximum number of retries (MermaidDrawMethod.API).
+        retry_delay: Delay between retries (MermaidDrawMethod.API).
         base_url: Base URL for the Mermaid.ink API.
+        proxies: HTTP/HTTPS proxies for requests (e.g. `{"http": "http://127.0.0.1:7890"}`).
 
     Returns:
         PNG image bytes.
@@ -314,6 +317,7 @@ def draw_mermaid_png(
             max_retries=max_retries,
             retry_delay=retry_delay,
             base_url=base_url,
+            proxies=proxies,
         )
     else:
         supported_methods = ", ".join([m.value for m in MermaidDrawMethod])
@@ -405,6 +409,7 @@ def _render_mermaid_using_api(
     file_type: Literal["jpeg", "png", "webp"] | None = "png",
     max_retries: int = 1,
     retry_delay: float = 1.0,
+    proxies: dict[str, str] | None = None,
     base_url: str | None = None,
 ) -> bytes:
     """Renders Mermaid graph using the Mermaid.INK API."""
@@ -445,7 +450,7 @@ def _render_mermaid_using_api(
 
     for attempt in range(max_retries + 1):
         try:
-            response = requests.get(image_url, timeout=10)
+            response = requests.get(image_url, timeout=10, proxies=proxies)
             if response.status_code == requests.codes.ok:
                 img_bytes = response.content
                 if output_file_path is not None:
@@ -454,7 +459,10 @@ def _render_mermaid_using_api(
                 return img_bytes
 
             # If we get a server error (5xx), retry
-            if 500 <= response.status_code < 600 and attempt < max_retries:
+            if (
+                requests.codes.internal_server_error <= response.status_code
+                and attempt < max_retries
+            ):
                 # Exponential backoff with jitter
                 sleep_time = retry_delay * (2**attempt) * (0.5 + 0.5 * random.random())  # noqa: S311 not used for crypto
                 time.sleep(sleep_time)

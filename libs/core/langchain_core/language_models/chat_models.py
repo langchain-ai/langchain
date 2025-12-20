@@ -33,6 +33,7 @@ from langchain_core.language_models.base import (
     LangSmithParams,
     LanguageModelInput,
 )
+from langchain_core.language_models.model_profile import ModelProfile
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
     AIMessage,
@@ -88,7 +89,10 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
             try:
                 metadata["body"] = response.json()
             except Exception:
-                metadata["body"] = getattr(response, "text", None)
+                try:
+                    metadata["body"] = getattr(response, "text", None)
+                except Exception:
+                    metadata["body"] = None
         if hasattr(response, "headers"):
             try:
                 metadata["headers"] = dict(response.headers)
@@ -264,21 +268,21 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         This table provides a brief overview of the main declarative methods. Please see the reference for each method for full documentation.
 
-        | Method                       | Description                                                                                  |
-        | ---------------------------- | -------------------------------------------------------------------------------------------- |
-        | `bind_tools`                 | Create chat model that can call tools.                                                        |
-        | `with_structured_output`     | Create wrapper that structures model output using schema.                                    |
-        | `with_retry`                 | Create wrapper that retries model calls on failure.                                          |
-        | `with_fallbacks`             | Create wrapper that falls back to other models on failure.                                   |
-        | `configurable_fields`        | Specify init args of the model that can be configured at runtime via the `RunnableConfig`.     |
-        | `configurable_alternatives`  | Specify alternative models which can be swapped in at runtime via the `RunnableConfig`.        |
+        | Method                       | Description                                                                                |
+        | ---------------------------- | ------------------------------------------------------------------------------------------ |
+        | `bind_tools`                 | Create chat model that can call tools.                                                     |
+        | `with_structured_output`     | Create wrapper that structures model output using schema.                                  |
+        | `with_retry`                 | Create wrapper that retries model calls on failure.                                        |
+        | `with_fallbacks`             | Create wrapper that falls back to other models on failure.                                 |
+        | `configurable_fields`        | Specify init args of the model that can be configured at runtime via the `RunnableConfig`. |
+        | `configurable_alternatives`  | Specify alternative models which can be swapped in at runtime via the `RunnableConfig`.    |
 
     Creating custom chat model:
         Custom chat model implementations should inherit from this class.
         Please reference the table below for information about which
         methods and properties are required or optional for implementations.
 
-        | Method/Property                  | Description                                                        | Required/Optional |
+        | Method/Property                  | Description                                                        | Required          |
         | -------------------------------- | ------------------------------------------------------------------ | ----------------- |
         | `_generate`                      | Use to generate a chat result from a prompt                        | Required          |
         | `_llm_type` (property)           | Used to uniquely identify the type of the model. Used for logging. | Required          |
@@ -286,9 +290,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         | `_stream`                        | Use to implement streaming                                         | Optional          |
         | `_agenerate`                     | Use to implement a native async method                             | Optional          |
         | `_astream`                       | Use to implement async version of `_stream`                        | Optional          |
-
-        Follow the guide for more information on how to implement a custom chat model:
-        [Guide](https://python.langchain.com/docs/how_to/custom_chat_model/).
 
     """  # noqa: E501
 
@@ -325,14 +326,30 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     Supported values:
 
     - `'v0'`: provider-specific format in content (can lazily-parse with
-        `.content_blocks`)
-    - `'v1'`: standardized format in content (consistent with `.content_blocks`)
+        `content_blocks`)
+    - `'v1'`: standardized format in content (consistent with `content_blocks`)
 
-    Partner packages (e.g., `langchain-openai`) can also use this field to roll out
-    new content formats in a backward-compatible way.
+    Partner packages (e.g.,
+    [`langchain-openai`](https://pypi.org/project/langchain-openai)) can also use this
+    field to roll out new content formats in a backward-compatible way.
 
-    !!! version-added "Added in version 1.0"
+    !!! version-added "Added in `langchain-core` 1.0.0"
 
+    """
+
+    profile: ModelProfile | None = Field(default=None, exclude=True)
+    """Profile detailing model capabilities.
+
+    !!! warning "Beta feature"
+        This is a beta feature. The format of model profiles is subject to change.
+
+    If not specified, automatically loaded from the provider package on initialization
+    if data is available.
+
+    Example profile data includes context window sizes, supported modalities, or support
+    for tool calling, structured output, and other features.
+
+    !!! version-added "Added in `langchain-core` 1.1.0"
     """
 
     model_config = ConfigDict(
@@ -530,7 +547,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                         ):
                             if block["type"] != index_type:
                                 index_type = block["type"]
-                                index = index + 1
+                                index += 1
                             if "index" not in block:
                                 block["index"] = index
                     run_manager.on_llm_new_token(
@@ -662,7 +679,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     ):
                         if block["type"] != index_type:
                             index_type = block["type"]
-                            index = index + 1
+                            index += 1
                         if "index" not in block:
                             block["index"] = index
                 await run_manager.on_llm_new_token(
@@ -713,7 +730,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     # --- Custom methods ---
 
-    def _combine_llm_outputs(self, llm_outputs: list[dict | None]) -> dict:  # noqa: ARG002
+    def _combine_llm_outputs(self, _llm_outputs: list[dict | None], /) -> dict:
         return {}
 
     def _convert_cached_generations(self, cache_val: list) -> list[ChatGeneration]:
@@ -840,24 +857,29 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         1. Take advantage of batched calls,
         2. Need more output from the model than just the top generated value,
         3. Are building chains that are agnostic to the underlying language model
-           type (e.g., pure text completion models vs chat models).
+            type (e.g., pure text completion models vs chat models).
 
         Args:
             messages: List of list of messages.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: Callbacks to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
             tags: The tags to apply.
             metadata: The metadata to apply.
             run_name: The name of the run.
             run_id: The ID of the run.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
-            An LLMResult, which contains a list of candidate Generations for each input
-            prompt and additional model provider-specific output.
+            An `LLMResult`, which contains a list of candidate `Generations` for each
+                input prompt and additional model provider-specific output.
 
         """
         ls_structured_output_format = kwargs.pop(
@@ -958,24 +980,29 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         1. Take advantage of batched calls,
         2. Need more output from the model than just the top generated value,
         3. Are building chains that are agnostic to the underlying language model
-           type (e.g., pure text completion models vs chat models).
+            type (e.g., pure text completion models vs chat models).
 
         Args:
             messages: List of list of messages.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: Callbacks to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
             tags: The tags to apply.
             metadata: The metadata to apply.
             run_name: The name of the run.
             run_id: The ID of the run.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
-            An LLMResult, which contains a list of candidate Generations for each input
-            prompt and additional model provider-specific output.
+            An `LLMResult`, which contains a list of candidate `Generations` for each
+                input prompt and additional model provider-specific output.
 
         """
         ls_structured_output_format = kwargs.pop(
@@ -1160,7 +1187,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     ):
                         if block["type"] != index_type:
                             index_type = block["type"]
-                            index = index + 1
+                            index += 1
                         if "index" not in block:
                             block["index"] = index
                 if run_manager:
@@ -1278,7 +1305,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     ):
                         if block["type"] != index_type:
                             index_type = block["type"]
-                            index = index + 1
+                            index += 1
                         if "index" not in block:
                             block["index"] = index
                 if run_manager:
@@ -1504,25 +1531,33 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - an OpenAI function/tool schema,
-                - a JSON Schema,
-                - a `TypedDict` class,
-                - or a Pydantic class.
+                - An OpenAI function/tool schema,
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - Or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
-                for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or `TypedDict` class.
+                dict and will not be validated.
+
+                See `langchain_core.utils.function_calling.convert_to_openai_tool` for
+                more on how to properly specify types and descriptions of schema fields
+                when specifying a Pydantic or `TypedDict` class.
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a BaseMessage) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
 
         Raises:
             ValueError: If there are any unsupported `kwargs`.
@@ -1530,20 +1565,21 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 `with_structured_output()`.
 
         Returns:
-            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
-            an instance of `schema` (i.e., a Pydantic object).
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            Otherwise, if `include_raw` is False then Runnable outputs a dict.
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
 
-            If `include_raw` is True, then Runnable outputs a dict with keys:
+        ???+ example "Pydantic schema (`include_raw=False`)"
 
-            - `'raw'`: BaseMessage
-            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
-            - `'parsing_error'`: BaseException | None
-
-        Example: Pydantic schema (include_raw=False):
             ```python
             from pydantic import BaseModel
 
@@ -1568,7 +1604,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             # )
             ```
 
-        Example: Pydantic schema (include_raw=True):
+        ??? example "Pydantic schema (`include_raw=True`)"
+
             ```python
             from pydantic import BaseModel
 
@@ -1595,7 +1632,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             # }
             ```
 
-        Example: Dict schema (include_raw=False):
+        ??? example "Dictionary schema (`include_raw=False`)"
+
             ```python
             from pydantic import BaseModel
             from langchain_core.utils.function_calling import convert_to_openai_tool
@@ -1621,8 +1659,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             # }
             ```
 
-        !!! warning "Behavior changed in 0.2.26"
-                Added support for TypedDict class.
+        !!! warning "Behavior changed in `langchain-core` 0.2.26"
+
+            Added support for `TypedDict` class.
 
         """  # noqa: E501
         _ = kwargs.pop("method", None)
@@ -1721,9 +1760,12 @@ def _gen_info_and_msg_metadata(
     }
 
 
+_MAX_CLEANUP_DEPTH = 100
+
+
 def _cleanup_llm_representation(serialized: Any, depth: int) -> None:
     """Remove non-serializable objects from a serialized object."""
-    if depth > 100:  # Don't cooperate for pathological cases
+    if depth > _MAX_CLEANUP_DEPTH:  # Don't cooperate for pathological cases
         return
 
     if not isinstance(serialized, dict):

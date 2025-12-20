@@ -26,13 +26,15 @@ from typing import (
 
 from typing_extensions import override
 
+from langchain_core._api.deprecation import deprecated
+
 T = TypeVar("T")
 
 _no_default = object()
 
 
 # https://github.com/python/cpython/blob/main/Lib/test/test_asyncgen.py#L54
-# before 3.10, the builtin anext() was not available
+@deprecated(since="1.1.2", removal="2.0.0")
 def py_anext(
     iterator: AsyncIterator[T], default: T | Any = _no_default
 ) -> Awaitable[T | Any | None]:
@@ -128,7 +130,7 @@ async def tee_peer(
                     if buffer:
                         continue
                     try:
-                        item = await iterator.__anext__()
+                        item = await anext(iterator)
                     except StopAsyncIteration:
                         break
                     else:
@@ -201,7 +203,7 @@ class Tee(Generic[T]):
 
         Args:
             iterable: The iterable to split.
-            n: The number of iterators to create. Defaults to 2.
+            n: The number of iterators to create.
             lock: The lock to synchronise access to the shared buffers.
 
         """

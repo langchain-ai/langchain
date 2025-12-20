@@ -386,7 +386,7 @@ def test_streaming_generation_info() -> None:
     )
     list(chat.stream("Respond with the single word Hello", stop=["o"]))
     generation = callback.saved_things["generation"]
-    # `Hello!` is two tokens, assert that that is what is returned
+    # `Hello!` is two tokens, assert that is what is returned
     assert isinstance(generation, LLMResult)
     assert generation.generations[0][0].text == "Hell"
 

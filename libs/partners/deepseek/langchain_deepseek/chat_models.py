@@ -3,27 +3,44 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator, Sequence
 from json import JSONDecodeError
-from typing import Any, Literal, TypeAlias
+from typing import Any, Literal, TypeAlias, cast
 
 import openai
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LangSmithParams, LanguageModelInput
-from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.language_models import (
+    LangSmithParams,
+    LanguageModelInput,
+    ModelProfile,
+    ModelProfileRegistry,
+)
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
 from langchain_core.utils import from_env, secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_deepseek.data._profiles import _PROFILES
+
 DEFAULT_API_BASE = "https://api.deepseek.com/v1"
+DEFAULT_BETA_API_BASE = "https://api.deepseek.com/beta"
 
 _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[BaseModel]
 _DictOrPydantic: TypeAlias = dict[str, Any] | BaseModel
+
+
+_MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 class ChatDeepSeek(BaseChatOpenAI):
@@ -38,20 +55,20 @@ class ChatDeepSeek(BaseChatOpenAI):
         ```
 
     Key init args — completion params:
-        model: str
-            Name of DeepSeek model to use, e.g. "deepseek-chat".
-        temperature: float
+        model:
+            Name of DeepSeek model to use, e.g. `'deepseek-chat'`.
+        temperature:
             Sampling temperature.
-        max_tokens: int | None
+        max_tokens:
             Max number of tokens to generate.
 
     Key init args — client params:
-        timeout: float | None
+        timeout:
             Timeout for requests.
-        max_retries: int
+        max_retries:
             Max number of retries.
-        api_key: str | None
-            DeepSeek API key. If not passed in will be read from env var DEEPSEEK_API_KEY.
+        api_key:
+            DeepSeek API key. If not passed in will be read from env var `DEEPSEEK_API_KEY`.
 
     See full list of supported init args and their descriptions in the params section.
 
@@ -156,7 +173,8 @@ class ChatDeepSeek(BaseChatOpenAI):
         ```python
         {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
         ```
-    Response metadata
+
+    Response metadata:
         ```python
         ai_msg = model.invoke(messages)
         ai_msg.response_metadata
@@ -229,6 +247,13 @@ class ChatDeepSeek(BaseChatOpenAI):
             self.async_client = self.root_async_client.chat.completions
         return self
 
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model_name)
+        return self
+
     def _get_request_payload(
         self,
         input_: LanguageModelInput,
@@ -263,6 +288,11 @@ class ChatDeepSeek(BaseChatOpenAI):
         if not isinstance(response, openai.BaseModel):
             return rtn
 
+        for generation in rtn.generations:
+            if generation.message.response_metadata is None:
+                generation.message.response_metadata = {}
+            generation.message.response_metadata["model_provider"] = "deepseek"
+
         choices = getattr(response, "choices", None)
         if choices and hasattr(choices[0].message, "reasoning_content"):
             rtn.generations[0].message.additional_kwargs["reasoning_content"] = choices[
@@ -294,6 +324,10 @@ class ChatDeepSeek(BaseChatOpenAI):
         if (choices := chunk.get("choices")) and generation_chunk:
             top = choices[0]
             if isinstance(generation_chunk.message, AIMessageChunk):
+                generation_chunk.message.response_metadata = {
+                    **generation_chunk.message.response_metadata,
+                    "model_provider": "deepseek",
+                }
                 if (
                     reasoning_content := top.get("delta", {}).get("reasoning_content")
                 ) is not None:
@@ -358,6 +392,50 @@ class ChatDeepSeek(BaseChatOpenAI):
                 e.pos,
             ) from e
 
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
+        *,
+        tool_choice: dict | str | bool | None = None,
+        strict: bool | None = None,
+        parallel_tool_calls: bool | None = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, AIMessage]:
+        """Bind tool-like objects to this chat model.
+
+        Overrides parent to use beta endpoint when `strict=True`.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+            tool_choice: Which tool to require the model to call.
+            strict: If True, uses beta API for strict schema validation.
+            parallel_tool_calls: Set to `False` to disable parallel tool use.
+            **kwargs: Additional parameters passed to parent `bind_tools`.
+
+        Returns:
+            A Runnable that takes same inputs as a chat model.
+        """
+        # If strict mode is enabled and using default API base, switch to beta endpoint
+        if strict is True and self.api_base == DEFAULT_API_BASE:
+            # Create a new instance with beta endpoint
+            beta_model = self.model_copy(update={"api_base": DEFAULT_BETA_API_BASE})
+            return beta_model.bind_tools(
+                tools,
+                tool_choice=tool_choice,
+                strict=strict,
+                parallel_tool_calls=parallel_tool_calls,
+                **kwargs,
+            )
+
+        # Otherwise use parent implementation
+        return super().bind_tools(
+            tools,
+            tool_choice=tool_choice,
+            strict=strict,
+            parallel_tool_calls=parallel_tool_calls,
+            **kwargs,
+        )
+
     def with_structured_output(
         self,
         schema: _DictOrPydanticClass | None = None,
@@ -376,17 +454,19 @@ class ChatDeepSeek(BaseChatOpenAI):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - an OpenAI function/tool schema,
-                - a JSON Schema,
-                - a `TypedDict` class (support added in 0.1.20),
-                - or a Pydantic class.
+                - An OpenAI function/tool schema,
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - Or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
-                for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or `TypedDict` class.
+                dict and will not be validated.
+
+                See `langchain_core.utils.function_calling.convert_to_openai_tool` for
+                more on how to properly specify types and descriptions of schema fields
+                when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
@@ -395,43 +475,64 @@ class ChatDeepSeek(BaseChatOpenAI):
                 - `'json_mode'`:
                     Uses DeepSeek's [JSON mode feature](https://api-docs.deepseek.com/guides/json_mode).
 
-                !!! warning "Behavior changed in 0.1.3"
-                    Added support for `'json_mode'`.
-
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a BaseMessage) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
 
             strict:
                 Whether to enable strict schema adherence when generating the function
-                call. This parameter is included for compatibility with other chat
-                models, and if specified will be passed to the Chat Completions API
-                in accordance with the OpenAI API specification. However, the DeepSeek
-                API may ignore the parameter.
+                call. When set to `True`, DeepSeek will use the beta API endpoint
+                (`https://api.deepseek.com/beta`) for strict schema validation.
+                This ensures model outputs exactly match the defined schema.
+
+                !!! note
+
+                    DeepSeek's strict mode requires all object properties to be marked
+                    as required in the schema.
 
             kwargs: Additional keyword args aren't supported.
 
         Returns:
-            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
-            an instance of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is False then Runnable outputs a dict.
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            If `include_raw` is True, then Runnable outputs a dict with keys:
-
-            - `'raw'`: BaseMessage
-            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
-            - `'parsing_error'`: BaseException | None
-
-        """  # noqa: E501
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
+        """
         # Some applications require that incompatible parameters (e.g., unsupported
         # methods) be handled.
         if method == "json_schema":
             method = "function_calling"
+
+        # If strict mode is enabled and using default API base, switch to beta endpoint
+        if strict is True and self.api_base == DEFAULT_API_BASE:
+            # Create a new instance with beta endpoint
+            beta_model = self.model_copy(update={"api_base": DEFAULT_BETA_API_BASE})
+            return beta_model.with_structured_output(
+                schema,
+                method=method,
+                include_raw=include_raw,
+                strict=strict,
+                **kwargs,
+            )
+
         return super().with_structured_output(
             schema,
             method=method,

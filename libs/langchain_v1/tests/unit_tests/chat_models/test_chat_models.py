@@ -33,7 +33,7 @@ def test_all_imports() -> None:
     ("model_name", "model_provider"),
     [
         ("gpt-4o", "openai"),
-        ("claude-3-opus-20240229", "anthropic"),
+        ("claude-opus-4-1", "anthropic"),
         ("accounts/fireworks/models/mixtral-8x7b-instruct", "fireworks"),
         ("mixtral-8x7b-32768", "groq"),
     ],
@@ -57,7 +57,7 @@ def test_init_missing_dep() -> None:
 
 
 def test_init_unknown_provider() -> None:
-    with pytest.raises(ValueError, match="Unsupported model_provider='bar'."):
+    with pytest.raises(ValueError, match="Unsupported model_provider='bar'"):
         init_chat_model("foo", model_provider="bar")
 
 
@@ -178,7 +178,13 @@ def test_configurable() -> None:
                 },
             ],
         },
-        "config": {"tags": ["foo"], "configurable": {}},
+        "config": {
+            "callbacks": None,
+            "configurable": {},
+            "metadata": {"model": "gpt-4o"},
+            "recursion_limit": 25,
+            "tags": ["foo"],
+        },
         "config_factories": [],
         "custom_input_type": None,
         "custom_output_type": None,
@@ -241,17 +247,18 @@ def test_configurable_with_default() -> None:
 
     model_with_config = model_with_tools.with_config(
         RunnableConfig(tags=["foo"]),
-        configurable={"bar_model": "claude-3-7-sonnet-20250219"},
+        configurable={"bar_model": "claude-sonnet-4-5-20250929"},
     )
 
-    assert model_with_config.model == "claude-3-7-sonnet-20250219"  # type: ignore[attr-defined]
+    assert model_with_config.model == "claude-sonnet-4-5-20250929"  # type: ignore[attr-defined]
 
     assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
         "name": None,
         "bound": {
             "name": None,
             "disable_streaming": False,
-            "model": "claude-3-7-sonnet-20250219",
+            "effort": None,
+            "model": "claude-sonnet-4-5-20250929",
             "mcp_servers": None,
             "max_tokens": 64000,
             "temperature": None,
@@ -268,6 +275,7 @@ def test_configurable_with_default() -> None:
             "betas": None,
             "default_headers": None,
             "model_kwargs": {},
+            "reuse_last_container": None,
             "streaming": False,
             "stream_usage": True,
             "output_version": None,
@@ -275,7 +283,13 @@ def test_configurable_with_default() -> None:
         "kwargs": {
             "tools": [{"name": "foo", "description": "foo", "input_schema": {}}],
         },
-        "config": {"tags": ["foo"], "configurable": {}},
+        "config": {
+            "callbacks": None,
+            "configurable": {},
+            "metadata": {"bar_model": "claude-sonnet-4-5-20250929"},
+            "recursion_limit": 25,
+            "tags": ["foo"],
+        },
         "config_factories": [],
         "custom_input_type": None,
         "custom_output_type": None,

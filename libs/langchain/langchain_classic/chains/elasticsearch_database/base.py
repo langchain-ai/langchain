@@ -31,7 +31,7 @@ class ElasticsearchDatabaseChain(Chain):
     Example:
         ```python
         from langchain_classic.chains import ElasticsearchDatabaseChain
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
         from elasticsearch import Elasticsearch
 
         database = Elasticsearch("http://localhost:9200")
@@ -49,8 +49,8 @@ class ElasticsearchDatabaseChain(Chain):
     """Number of results to return from the query"""
     ignore_indices: list[str] | None = None
     include_indices: list[str] | None = None
-    input_key: str = "question"  #: :meta private:
-    output_key: str = "result"  #: :meta private:
+    input_key: str = "question"
+    output_key: str = "result"
     sample_documents_in_index_info: int = 3
     return_intermediate_steps: bool = False
     """Whether or not to return the intermediate steps along with the final answer."""
@@ -69,18 +69,12 @@ class ElasticsearchDatabaseChain(Chain):
 
     @property
     def input_keys(self) -> list[str]:
-        """Return the singular input key.
-
-        :meta private:
-        """
+        """Return the singular input key."""
         return [self.input_key]
 
     @property
     def output_keys(self) -> list[str]:
-        """Return the singular output key.
-
-        :meta private:
-        """
+        """Return the singular output key."""
         if not self.return_intermediate_steps:
             return [self.output_key]
         return [self.output_key, INTERMEDIATE_STEPS_KEY]
@@ -198,7 +192,7 @@ class ElasticsearchDatabaseChain(Chain):
             query_prompt: The prompt to use for query construction.
             answer_prompt: The prompt to use for answering user question given data.
             query_output_parser: The output parser to use for parsing model-generated
-                ES query. Defaults to SimpleJsonOutputParser.
+                ES query. Defaults to `SimpleJsonOutputParser`.
             kwargs: Additional arguments to pass to the constructor.
         """
         query_prompt = query_prompt or DSL_PROMPT

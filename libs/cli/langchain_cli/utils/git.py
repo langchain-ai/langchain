@@ -6,9 +6,8 @@ import hashlib
 import logging
 import re
 import shutil
-from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from git import Repo
 
@@ -17,6 +16,9 @@ from langchain_cli.constants import (
     DEFAULT_GIT_REPO,
     DEFAULT_GIT_SUBDIRECTORY,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 logger = logging.getLogger(__name__)
 
@@ -182,7 +184,7 @@ def parse_dependencies(
     inner_branches = _list_arg_to_length(branch, num_deps)
 
     return list(
-        map(  # type: ignore[call-overload]
+        map(  # type: ignore[call-overload, unused-ignore]
             parse_dependency_string,
             inner_deps,
             inner_repos,

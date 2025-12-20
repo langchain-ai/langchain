@@ -1,21 +1,32 @@
 # langchain-ollama
 
-This package contains the LangChain integration with Ollama
+[![PyPI - Version](https://img.shields.io/pypi/v/langchain-ollama?label=%20)](https://pypi.org/project/langchain-ollama/#history)
+[![PyPI - License](https://img.shields.io/pypi/l/langchain-ollama)](https://opensource.org/licenses/MIT)
+[![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-ollama)](https://pypistats.org/packages/langchain-ollama)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
 
-View the [documentation](https://docs.langchain.com/oss/python/integrations/providers/ollama) for more details.
+Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
 
-## Development
-
-### Running Tests
-
-To run integration tests (`make integration_tests`), you will need the following models installed in your Ollama server:
-
-- `llama3.1`
-- `deepseek-r1:1.5b`
-- `gpt-oss:20b`
-
-Install these models by running:
+## Quick Install
 
 ```bash
-ollama pull <name-of-model>
+pip install langchain-ollama
 ```
+
+## 🤔 What is this?
+
+This package contains the LangChain integration with Ollama
+
+## 📖 Documentation
+
+For full documentation, see the [API reference](https://reference.langchain.com/python/integrations/langchain_ollama/). For conceptual guides, tutorials, and examples on using these classes, see the [LangChain Docs](https://docs.langchain.com/oss/python/integrations/providers/ollama).
+
+## 📕 Releases & Versioning
+
+See our [Releases](https://docs.langchain.com/oss/python/release-policy) and [Versioning](https://docs.langchain.com/oss/python/versioning) policies.
+
+## 💁 Contributing
+
+As an open-source project in a rapidly developing field, we are extremely open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
+
+For detailed information on how to contribute, see the [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview).

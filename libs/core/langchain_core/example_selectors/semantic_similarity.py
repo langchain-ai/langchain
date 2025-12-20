@@ -41,7 +41,7 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
     """Optional keys to filter input to. If provided, the search is based on
     the input variables instead of all variables."""
     vectorstore_kwargs: dict[str, Any] | None = None
-    """Extra arguments passed to similarity_search function of the vectorstore."""
+    """Extra arguments passed to similarity_search function of the `VectorStore`."""
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -154,12 +154,12 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
             examples: List of examples to use in the prompt.
             embeddings: An initialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
-            k: Number of examples to select. Default is 4.
+            k: Number of examples to select.
             input_keys: If provided, the search is based on the input variables
                 instead of all variables.
             example_keys: If provided, keys to filter examples to.
             vectorstore_kwargs: Extra arguments passed to similarity_search function
-                of the vectorstore.
+                of the `VectorStore`.
             vectorstore_cls_kwargs: optional kwargs containing url for vector store
 
         Returns:
@@ -198,12 +198,12 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
             examples: List of examples to use in the prompt.
             embeddings: An initialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
-            k: Number of examples to select. Default is 4.
+            k: Number of examples to select.
             input_keys: If provided, the search is based on the input variables
                 instead of all variables.
             example_keys: If provided, keys to filter examples to.
             vectorstore_kwargs: Extra arguments passed to similarity_search function
-                of the vectorstore.
+                of the `VectorStore`.
             vectorstore_cls_kwargs: optional kwargs containing url for vector store
 
         Returns:
@@ -285,14 +285,13 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
             examples: List of examples to use in the prompt.
             embeddings: An initialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
-            k: Number of examples to select. Default is 4.
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-                Default is 20.
+            k: Number of examples to select.
+            fetch_k: Number of `Document` objects to fetch to pass to MMR algorithm.
             input_keys: If provided, the search is based on the input variables
                 instead of all variables.
             example_keys: If provided, keys to filter examples to.
             vectorstore_kwargs: Extra arguments passed to similarity_search function
-                of the vectorstore.
+                of the `VectorStore`.
             vectorstore_cls_kwargs: optional kwargs containing url for vector store
 
         Returns:
@@ -333,14 +332,13 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
             examples: List of examples to use in the prompt.
             embeddings: An initialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
-            k: Number of examples to select. Default is 4.
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-                Default is 20.
+            k: Number of examples to select.
+            fetch_k: Number of `Document` objects to fetch to pass to MMR algorithm.
             input_keys: If provided, the search is based on the input variables
                 instead of all variables.
             example_keys: If provided, keys to filter examples to.
             vectorstore_kwargs: Extra arguments passed to similarity_search function
-                of the vectorstore.
+                of the `VectorStore`.
             vectorstore_cls_kwargs: optional kwargs containing url for vector store
 
         Returns:

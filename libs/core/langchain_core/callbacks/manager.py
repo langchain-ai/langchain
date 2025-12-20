@@ -6,7 +6,6 @@ import asyncio
 import atexit
 import functools
 import logging
-import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -39,9 +38,9 @@ from langchain_core.tracers.context import (
     tracing_v2_callback_var,
 )
 from langchain_core.tracers.langchain import LangChainTracer
-from langchain_core.tracers.schemas import Run
 from langchain_core.tracers.stdout import ConsoleCallbackHandler
 from langchain_core.utils.env import env_var_is_set
+from langchain_core.utils.uuid import uuid7
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Coroutine, Generator, Sequence
@@ -52,6 +51,7 @@ if TYPE_CHECKING:
     from langchain_core.documents import Document
     from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
     from langchain_core.runnables.config import RunnableConfig
+    from langchain_core.tracers.schemas import Run
 
 logger = logging.getLogger(__name__)
 
@@ -229,7 +229,24 @@ def shielded(func: Func) -> Func:
 
     @functools.wraps(func)
     async def wrapped(*args: Any, **kwargs: Any) -> Any:
-        return await asyncio.shield(func(*args, **kwargs))
+        # Capture the current context to preserve context variables
+        ctx = copy_context()
+
+        # Create the coroutine
+        coro = func(*args, **kwargs)
+
+        # For Python 3.11+, create task with explicit context
+        # For older versions, fallback to original behavior
+        try:
+            # Create a task with the captured context to preserve context variables
+            task = asyncio.create_task(coro, context=ctx)  # type: ignore[call-arg, unused-ignore]
+            # `call-arg` used to not fail 3.9 or 3.10 tests
+            return await asyncio.shield(task)
+        except TypeError:
+            # Python < 3.11 fallback - create task normally then shield
+            # This won't preserve context perfectly but is better than nothing
+            task = asyncio.create_task(coro)
+            return await asyncio.shield(task)
 
     return cast("Func", wrapped)
 
@@ -487,7 +504,7 @@ class BaseRunManager(RunManagerMixin):
 
         """
         return cls(
-            run_id=uuid.uuid4(),
+            run_id=uuid7(),
             handlers=[],
             inheritable_handlers=[],
             tags=[],
@@ -1313,7 +1330,7 @@ class CallbackManager(BaseCallbackManager):
         managers = []
         for i, prompt in enumerate(prompts):
             # Can't have duplicate runs with the same run ID (if provided)
-            run_id_ = run_id if i == 0 and run_id is not None else uuid.uuid4()
+            run_id_ = run_id if i == 0 and run_id is not None else uuid7()
             handle_event(
                 self.handlers,
                 "on_llm_start",
@@ -1367,7 +1384,7 @@ class CallbackManager(BaseCallbackManager):
                 run_id_ = run_id
                 run_id = None
             else:
-                run_id_ = uuid.uuid4()
+                run_id_ = uuid7()
             handle_event(
                 self.handlers,
                 "on_chat_model_start",
@@ -1416,7 +1433,7 @@ class CallbackManager(BaseCallbackManager):
 
         """
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = uuid7()
         handle_event(
             self.handlers,
             "on_chain_start",
@@ -1471,7 +1488,7 @@ class CallbackManager(BaseCallbackManager):
 
         """
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = uuid7()
 
         handle_event(
             self.handlers,
@@ -1520,7 +1537,7 @@ class CallbackManager(BaseCallbackManager):
             The callback manager for the retriever run.
         """
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = uuid7()
 
         handle_event(
             self.handlers,
@@ -1566,9 +1583,6 @@ class CallbackManager(BaseCallbackManager):
 
         Raises:
             ValueError: If additional keyword arguments are passed.
-
-        !!! version-added "Added in version 0.2.14"
-
         """
         if not self.handlers:
             return
@@ -1580,7 +1594,7 @@ class CallbackManager(BaseCallbackManager):
             )
             raise ValueError(msg)
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = uuid7()
 
         handle_event(
             self.handlers,
@@ -1802,7 +1816,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                 run_id_ = run_id
                 run_id = None
             else:
-                run_id_ = uuid.uuid4()
+                run_id_ = uuid7()
 
             if inline_handlers:
                 inline_tasks.append(
@@ -1886,7 +1900,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                 run_id_ = run_id
                 run_id = None
             else:
-                run_id_ = uuid.uuid4()
+                run_id_ = uuid7()
 
             for handler in self.handlers:
                 task = ahandle_event(
@@ -1948,7 +1962,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             The async callback manager for the chain run.
         """
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = uuid7()
 
         await ahandle_event(
             self.handlers,
@@ -1996,7 +2010,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             The async callback manager for the tool run.
         """
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = uuid7()
 
         await ahandle_event(
             self.handlers,
@@ -2042,13 +2056,11 @@ class AsyncCallbackManager(BaseCallbackManager):
 
         Raises:
             ValueError: If additional keyword arguments are passed.
-
-        !!! version-added "Added in version 0.2.14"
         """
         if not self.handlers:
             return
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = uuid7()
 
         if kwargs:
             msg = (
@@ -2090,7 +2102,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             The async callback manager for the retriever run.
         """
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = uuid7()
 
         await ahandle_event(
             self.handlers,
@@ -2555,9 +2567,6 @@ async def adispatch_custom_event(
         This is due to a limitation in asyncio for python <= 3.10 that prevents
         LangChain from automatically propagating the config object on the user's
         behalf.
-
-    !!! version-added "Added in version 0.2.15"
-
     """
     # Import locally to prevent circular imports.
     from langchain_core.runnables.config import (  # noqa: PLC0415
@@ -2630,9 +2639,6 @@ def dispatch_custom_event(
         foo_ = RunnableLambda(foo)
         foo_.invoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
         ```
-
-    !!! version-added "Added in version 0.2.15"
-
     """
     # Import locally to prevent circular imports.
     from langchain_core.runnables.config import (  # noqa: PLC0415

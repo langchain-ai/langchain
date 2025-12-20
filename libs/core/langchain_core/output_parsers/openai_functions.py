@@ -37,7 +37,7 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
             The parsed JSON object.
 
         Raises:
-            `OutputParserException`: If the output is not valid JSON.
+            OutputParserException: If the output is not valid JSON.
         """
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
@@ -88,7 +88,7 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
             The parsed JSON object.
 
         Raises:
-            OutputParserExcept`ion: If the output is not valid JSON.
+            OutputParserException: If the output is not valid JSON.
         """
         if len(result) != 1:
             msg = f"Expected exactly one result, but got {len(result)}"
@@ -238,7 +238,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
             The validated values.
 
         Raises:
-            `ValueError`: If the schema is not a Pydantic schema.
+            ValueError: If the schema is not a Pydantic schema.
         """
         schema = values["pydantic_schema"]
         if "args_only" not in values:
@@ -264,7 +264,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
             partial: Whether to parse partial JSON objects.
 
         Raises:
-            `ValueError`: If the Pydantic schema is not valid.
+            ValueError: If the Pydantic schema is not valid.
 
         Returns:
             The parsed JSON object.

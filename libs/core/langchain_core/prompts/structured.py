@@ -48,8 +48,17 @@ class StructuredPrompt(ChatPromptTemplate):
             schema_: schema for the structured prompt.
             structured_output_kwargs: additional kwargs for structured output.
             template_format: template format for the prompt.
+
+        Raises:
+            ValueError: if schema is not provided.
         """
-        schema_ = schema_ or kwargs.pop("schema")
+        schema_ = schema_ or kwargs.pop("schema", None)
+        if not schema_:
+            err_msg = (
+                "Must pass in a non-empty structured output schema. Received: "
+                f"{schema_}"
+            )
+            raise ValueError(err_msg)
         structured_output_kwargs = structured_output_kwargs or {}
         for k in set(kwargs).difference(get_pydantic_field_names(self.__class__)):
             structured_output_kwargs[k] = kwargs.pop(k)
@@ -63,13 +72,13 @@ class StructuredPrompt(ChatPromptTemplate):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         For example, if the class is `langchain.llms.openai.OpenAI`, then the
         namespace is `["langchain", "llms", "openai"]`
 
         Returns:
-            The namespace of the langchain object.
+            The namespace of the LangChain object.
         """
         return cls.__module__.split(".")
 
@@ -104,19 +113,23 @@ class StructuredPrompt(ChatPromptTemplate):
             )
             ```
         Args:
-            messages: sequence of message representations.
+            messages: Sequence of message representations.
+
                 A message can be represented using the following formats:
-                (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
-                (message type, template); e.g., ("human", "{user_input}"),
-                (4) 2-tuple of (message class, template), (5) a string which is
-                shorthand for ("human", template); e.g., "{user_input}"
-            schema: a dictionary representation of function call, or a Pydantic model.
+
+                1. `BaseMessagePromptTemplate`
+                2. `BaseMessage`
+                3. 2-tuple of `(message type, template)`; e.g.,
+                    `("human", "{user_input}")`
+                4. 2-tuple of `(message class, template)`
+                5. A string which is shorthand for `("human", template)`; e.g.,
+                    `"{user_input}"`
+            schema: A dictionary representation of function call, or a Pydantic model.
             **kwargs: Any additional kwargs to pass through to
                 `ChatModel.with_structured_output(schema, **kwargs)`.
 
         Returns:
-            a structured prompt template
-
+            A structured prompt template
         """
         return cls(messages, schema, **kwargs)
 

@@ -37,16 +37,16 @@ class __ModuleName__VectorStore(VectorStore):
 
     # TODO: Populate with relevant params.
     Key init args — indexing params:
-        collection_name: str
+        collection_name:
             Name of the collection.
-        embedding_function: Embeddings
+        embedding_function:
             Embedding function to use.
 
     # TODO: Populate with relevant params.
     Key init args — client params:
-        client: Client | None
+        client:
             Client to use.
-        connection_args: dict | None
+        connection_args:
             Connection arguments.
 
     # TODO: Replace with relevant init params.

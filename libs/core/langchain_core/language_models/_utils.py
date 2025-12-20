@@ -89,7 +89,8 @@ class ParsedDataUri(TypedDict):
 def _parse_data_uri(uri: str) -> ParsedDataUri | None:
     """Parse a data URI into its components.
 
-    If parsing fails, return None. If either MIME type or data is missing, return None.
+    If parsing fails, return `None`. If either MIME type or data is missing, return
+    `None`.
 
     Example:
         ```python
@@ -138,7 +139,8 @@ def _normalize_messages(
             directly; this may change in the future
     - LangChain v0 standard content blocks for backward compatibility
 
-    !!! warning "Behavior changed in 1.0.0"
+    !!! warning "Behavior changed in `langchain-core` 1.0.0"
+
         In previous versions, this function returned messages in LangChain v0 format.
         Now, it returns messages in LangChain v1 format, which upgraded chat models now
         expect to receive when passing back in message history. For backward

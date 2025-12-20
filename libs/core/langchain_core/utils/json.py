@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.exceptions import OutputParserException
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def _replace_new_line(match: re.Match[str]) -> str:
@@ -51,7 +53,7 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
 
     Args:
         s: The JSON string to parse.
-        strict: Whether to use strict parsing. Defaults to `False`.
+        strict: Whether to use strict parsing.
 
     Returns:
         The parsed JSON object as a Python dictionary.

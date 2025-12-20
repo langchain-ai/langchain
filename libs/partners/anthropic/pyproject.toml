@@ -3,31 +3,33 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-authors = []
+name = "langchain-anthropic"
+description = "Integration package connecting Claude (Anthropic) APIs and LangChain"
 license = { text = "MIT" }
+readme = "README.md"
+authors = []
+
+version = "1.3.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "anthropic>=0.69.0,<1.0.0",
-    "langchain-core>=1.0.0a8,<2.0.0",
+    "anthropic>=0.75.0,<1.0.0",
+    "langchain-core>=1.2.0,<2.0.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
-name = "langchain-anthropic"
-version = "1.0.0a4"
-description = "Integration package connecting Claude (Anthropic) APIs and LangChain"
-readme = "README.md"
 
 [project.urls]
-homepage = "https://docs.langchain.com/oss/python/integrations/providers/anthropic"
-repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/anthropic"
-changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-anthropic%22"
-docs = "https://reference.langchain.com/python/integrations/langchain_anthropic/"
-twitter = "https://x.com/LangChainAI"
-slack = "https://www.langchain.com/join-community"
-reddit = "https://www.reddit.com/r/LangChain/"
+Homepage = "https://docs.langchain.com/oss/python/integrations/providers/anthropic"
+Documentation = "https://reference.langchain.com/python/integrations/langchain_anthropic/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/anthropic"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-anthropic%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
     "pytest>=7.3.0,<8.0.0",
+    "blockbuster>=1.5.5,<1.6",
     "freezegun>=1.2.2,<2.0.0",
     "pytest-mock>=3.10.0,<4.0.0",
     "syrupy>=4.0.2,<5.0.0",
@@ -39,6 +41,7 @@ test = [
     "pytest-socket>=0.7.0,<1.0.0",
     "pytest-xdist>=3.8.0,<4.0.0",
     "vcrpy>=7.0.0,<8.0.0",
+    "langgraph-prebuilt>=0.7.0a2",  # set explicitly until we have a stable version
     "langchain-core",
     "langchain-tests",
     "langchain",

@@ -60,10 +60,10 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             chunk_overlap: Overlap in characters between chunks
             length_function: Function that measures the length of given chunks
             keep_separator: Whether to keep the separator and where to place it
-                            in each corresponding chunk (True='start')
+                in each corresponding chunk `(True='start')`
             add_start_index: If `True`, includes chunk's start index in metadata
             strip_whitespace: If `True`, strips whitespace from the start and end of
-                              every document
+                every document
         """
         if chunk_size <= 0:
             msg = f"chunk_size must be > 0, got {chunk_size}"
@@ -91,7 +91,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
     def create_documents(
         self, texts: list[str], metadatas: list[dict[Any, Any]] | None = None
     ) -> list[Document]:
-        """Create documents from a list of texts."""
+        """Create a list of `Document` objects from a list of texts."""
         metadatas_ = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
@@ -170,7 +170,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
     def from_huggingface_tokenizer(
         cls, tokenizer: PreTrainedTokenizerBase, **kwargs: Any
     ) -> TextSplitter:
-        """Text splitter that uses HuggingFace tokenizer to count length."""
+        """Text splitter that uses Hugging Face tokenizer to count length."""
         if not _HAS_TRANSFORMERS:
             msg = (
                 "Could not import transformers python package. "
@@ -196,7 +196,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         disallowed_special: Literal["all"] | Collection[str] = "all",
         **kwargs: Any,
     ) -> Self:
-        """Text splitter that uses tiktoken encoder to count length."""
+        """Text splitter that uses `tiktoken` encoder to count length."""
         if not _HAS_TIKTOKEN:
             msg = (
                 "Could not import tiktoken python package. "
@@ -280,7 +280,7 @@ class TokenTextSplitter(TextSplitter):
 
         Returns:
             A list of text chunks, where each chunk is derived from a portion
-            of the input text based on the tokenization and chunking rules.
+                of the input text based on the tokenization and chunking rules.
         """
 
         def _encode(_text: str) -> list[int]:
@@ -312,6 +312,7 @@ class Language(str, Enum):
     PHP = "php"
     PROTO = "proto"
     PYTHON = "python"
+    R = "r"
     RST = "rst"
     RUBY = "ruby"
     RUST = "rust"
@@ -341,9 +342,9 @@ class Tokenizer:
     tokens_per_chunk: int
     """Maximum number of tokens per chunk"""
     decode: Callable[[list[int]], str]
-    """ Function to decode a list of token ids to a string"""
+    """ Function to decode a list of token IDs to a string"""
     encode: Callable[[str], list[int]]
-    """ Function to encode a string to a list of token ids"""
+    """ Function to encode a string to a list of token IDs"""
 
 
 def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> list[str]:
