@@ -3167,6 +3167,7 @@ def test_model_prefers_responses_api() -> None:
     assert _model_prefers_responses_api("gpt-5.2-pro")
     assert not _model_prefers_responses_api("gpt-5.1")
 
+
 def test_convert_delta_to_message_chunk_with_missing_function() -> None:
     """Test handling of tool_calls with missing function field."""
     delta_dict = {
@@ -3178,7 +3179,7 @@ def test_convert_delta_to_message_chunk_with_missing_function() -> None:
                 "type": "function",
                 # Note: no function field
             }
-        ]
+        ],
     }
     result = _convert_delta_to_message_chunk(delta_dict, AIMessageChunk)
 
@@ -3186,6 +3187,7 @@ def test_convert_delta_to_message_chunk_with_missing_function() -> None:
     assert len(result.tool_call_chunks) == 1
     assert result.tool_call_chunks[0]["name"] is None
     assert result.tool_call_chunks[0]["args"] is None
+
 
 def test_convert_delta_to_message_chunk_with_none_function() -> None:
     """Test handling of tool_calls with function=None."""
@@ -3198,8 +3200,10 @@ def test_convert_delta_to_message_chunk_with_none_function() -> None:
                 "type": "function",
                 "function": None,
             }
-        ]
+        ],
     }
     result = _convert_delta_to_message_chunk(delta_dict, AIMessageChunk)
     assert isinstance(result, AIMessageChunk)
     assert len(result.tool_call_chunks) == 1
+    assert result.tool_call_chunks[0]["name"] is None
+    assert result.tool_call_chunks[0]["args"] is None
