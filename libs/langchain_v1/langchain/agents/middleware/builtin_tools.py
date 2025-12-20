@@ -3,6 +3,10 @@
 This middleware enables easy switching between LLM providers while using native
 server-side tools like web_search, code_execution, etc. It automatically detects
 the provider and injects the appropriate tool format.
+
+The middleware uses standard TypedDict schemas from langchain_core.tools.builtin
+and converts them to provider-specific formats using conversion utilities from
+each provider's integration package.
 """
 
 from __future__ import annotations
@@ -12,6 +16,7 @@ import warnings
 from typing import TYPE_CHECKING, Any, Literal
 
 from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
+from langchain.chat_models.base import _check_pkg
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -19,73 +24,6 @@ if TYPE_CHECKING:
     from langchain.agents.middleware.types import ModelCallResult, ModelResponse
 
 logger = logging.getLogger(__name__)
-
-# Tool registry mapping canonical tool names to provider-specific formats
-BUILTIN_TOOL_REGISTRY: dict[str, dict[str, dict[str, Any] | None]] = {
-    # Web Search
-    "web_search": {
-        "anthropic": {"type": "web_search_20250305", "name": "web_search"},
-        "openai": {"type": "web_search"},
-        "google_genai": {"google_search": {}},
-        "xai": {"type": "web_search"},
-    },
-    # Code Execution / Code Interpreter
-    "code_execution": {
-        "anthropic": {"type": "code_execution_20250825", "name": "code_execution"},
-        "openai": {"type": "code_interpreter", "container": {"type": "auto"}},
-        "google_genai": {"code_execution": {}},
-        "xai": {"type": "code_interpreter"},
-    },
-    # X Search (xAI/Grok only - search X/Twitter posts)
-    "x_search": {
-        "anthropic": None,
-        "openai": None,
-        "google_genai": None,
-        "xai": {"type": "x_search"},
-    },
-    # Web Fetch (Anthropic only)
-    "web_fetch": {
-        "anthropic": {"type": "web_fetch_20250910", "name": "web_fetch"},
-        "openai": None,
-        "google_genai": None,
-        "xai": None,
-    },
-    # Memory (Anthropic only)
-    "memory": {
-        "anthropic": {"type": "memory_20250818", "name": "memory"},
-        "openai": None,
-        "google_genai": None,
-        "xai": None,
-    },
-    # File Search (OpenAI only - requires vector_store_ids)
-    "file_search": {
-        "anthropic": None,
-        "openai": {"type": "file_search"},  # User must add vector_store_ids
-        "google_genai": None,
-        "xai": None,
-    },
-    # Image Generation (OpenAI only)
-    "image_generation": {
-        "anthropic": None,
-        "openai": {"type": "image_generation"},
-        "google_genai": None,
-        "xai": None,
-    },
-    # Text Editor (Anthropic only)
-    "text_editor": {
-        "anthropic": {"type": "text_editor_20250728", "name": "str_replace_based_edit_tool"},
-        "openai": None,
-        "google_genai": None,
-        "xai": None,
-    },
-    # Bash (Anthropic only)
-    "bash": {
-        "anthropic": {"type": "bash_20250124", "name": "bash"},
-        "openai": None,
-        "google_genai": None,
-        "xai": None,
-    },
-}
 
 
 def _detect_provider(model: Any) -> str:
@@ -226,39 +164,79 @@ class BuiltinToolsMiddleware(AgentMiddleware):
     ) -> dict[str, Any] | None:
         """Build provider-specific tool definition.
 
+        Creates a standard builtin tool definition and converts it to the
+        provider-specific format using conversion utilities from the provider's
+        integration package.
+
         Args:
-            tool_name: Canonical tool name.
-            provider: Provider identifier.
-            options: Additional options to merge into the tool definition.
+            tool_name: Canonical tool name (e.g., "web_search", "code_execution").
+            provider: Provider identifier (e.g., "openai", "anthropic", "xai").
+            options: Additional options to merge into the standard tool definition.
 
         Returns:
-            Provider-specific tool definition dict, or None if unsupported.
+            Provider-specific tool definition dict, or None if unsupported by provider
+            or if provider package is not installed.
         """
-        if tool_name not in BUILTIN_TOOL_REGISTRY:
-            logger.warning("Unknown builtin tool: %s", tool_name)
+        # Create standard tool definition
+        standard_tool: dict[str, Any] = {"type": tool_name, **options}
+
+        # Convert to provider-specific format using conversion utilities
+        if provider == "openai":
+            try:
+                _check_pkg("langchain_openai")
+                from langchain_openai.utils.builtin_tools import (
+                    convert_standard_to_openai,
+                )
+
+                return convert_standard_to_openai(standard_tool)
+            except ImportError:
+                logger.debug(
+                    "langchain-openai package not installed, cannot convert tool: %s",
+                    tool_name,
+                )
+                return None
+
+        if provider == "anthropic":
+            try:
+                _check_pkg("langchain_anthropic")
+                from langchain_anthropic.utils.builtin_tools import (
+                    convert_standard_to_anthropic,
+                )
+
+                return convert_standard_to_anthropic(standard_tool)
+            except ImportError:
+                logger.debug(
+                    "langchain-anthropic package not installed, cannot convert tool: %s",
+                    tool_name,
+                )
+                return None
+
+        if provider == "xai":
+            try:
+                _check_pkg("langchain_xai")
+                from langchain_xai.utils.builtin_tools import convert_standard_to_xai
+
+                return convert_standard_to_xai(standard_tool)
+            except ImportError:
+                logger.debug(
+                    "langchain-xai package not installed, cannot convert tool: %s",
+                    tool_name,
+                )
+                return None
+
+        if provider == "google_genai":
+            # Google GenAI uses a different format that doesn't fit the standard pattern
+            # For now, handle it directly here
+            if tool_name == "web_search":
+                return {"google_search": {}}
+            if tool_name == "code_execution":
+                return {"code_execution": {}}
+            # Other tools not supported by Google GenAI
             return None
 
-        provider_tools = BUILTIN_TOOL_REGISTRY[tool_name]
-        base_tool = provider_tools.get(provider)
-
-        if base_tool is None:
-            return None
-
-        # Deep copy and merge options
-        tool_def = base_tool.copy()
-
-        # Merge user-provided options into the tool definition
-        if options:
-            # For nested structures, we need to merge carefully
-            for key, value in options.items():
-                if key in tool_def and isinstance(tool_def[key], dict) and isinstance(value, dict):
-                    # Merge nested dicts
-                    tool_def[key] = {**tool_def[key], **value}
-                else:
-                    # Direct assignment
-                    tool_def[key] = value
-
-        return tool_def
+        # Unknown provider
+        logger.warning("Unknown provider: %s", provider)
+        return None
 
     def wrap_model_call(
         self,
