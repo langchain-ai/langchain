@@ -882,23 +882,20 @@ def trim_messages(
         ]
         ```
 
-        Trim chat history using approximate token counting with "approximate":
+        Trim chat history using approximate token counting with `'approximate'`:
 
         ```python
         trim_messages(
             messages,
             max_tokens=45,
             strategy="last",
-            # Using the "approximate" shortcut for fast approximate token counting
+            # Using the "approximate" shortcut for fast token counting
             token_counter="approximate",
             start_on="human",
             include_system=True,
         )
-        ```
 
-        This is equivalent to using `count_tokens_approximately` directly:
-
-        ```python
+        # This is equivalent to using `count_tokens_approximately` directly
         from langchain_core.messages.utils import count_tokens_approximately
 
         trim_messages(
@@ -1873,7 +1870,7 @@ def count_tokens_approximately(
 
 # Mapping from string shortcuts to token counter functions
 def _approximate_token_counter(messages: Sequence[BaseMessage]) -> int:
-    """Wrapper for count_tokens_approximately that matches expected signature."""
+    """Wrapper for `count_tokens_approximately` that matches expected signature."""
     return count_tokens_approximately(messages)
 
 
