@@ -716,15 +716,17 @@ class ChildTool(BaseTool):
 
             # Include fields from tool_input, plus fields with explicit defaults.
             # This applies Pydantic defaults (like Field(default=1)) while excluding
-            # synthetic fields from *args/*kwargs which are required (no default).
+            # synthetic "args"/"kwargs" fields that Pydantic creates for *args/**kwargs.
             field_info = get_fields(input_args)
             validated_input = {}
             for k in result_dict:
                 if k in tool_input:
                     # Field was provided in input - include it (validated)
                     validated_input[k] = getattr(result, k)
-                elif k in field_info:
-                    # Check if field has an explicit default defined in the schema
+                elif k in field_info and k not in ("args", "kwargs"):
+                    # Check if field has an explicit default defined in the schema.
+                    # Exclude "args"/"kwargs" as these are synthetic fields for variadic
+                    # parameters that should not be passed as keyword arguments.
                     fi = field_info[k]
                     # Pydantic v2 uses is_required() method, v1 uses required attribute
                     has_default = (
