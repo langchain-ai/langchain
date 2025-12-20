@@ -33,7 +33,7 @@ def _build_deprecation_message(
     alternative: str = "",
     alternative_import: str = "",
 ) -> str:
-    """Build a simple deprecation message for __deprecated__ attribute (PEP 702).
+    """Build a simple deprecation message for `__deprecated__` attribute.
 
     Args:
         alternative: An alternative API name.
@@ -102,60 +102,57 @@ def deprecated(
 ) -> Callable[[T], T]:
     """Decorator to mark a function, a class, or a property as deprecated.
 
-    When deprecating a classmethod, a staticmethod, or a property, the
-    `@deprecated` decorator should go *under* `@classmethod` and
-    `@staticmethod` (i.e., `deprecated` should directly decorate the
-    underlying callable), but *over* `@property`.
+    When deprecating a classmethod, a staticmethod, or a property, the `@deprecated`
+    decorator should go *under* `@classmethod` and `@staticmethod` (i.e., `deprecated`
+    should directly decorate the underlying callable), but *over* `@property`.
 
-    When deprecating a class `C` intended to be used as a base class in a
-    multiple inheritance hierarchy, `C` *must* define an `__init__` method
-    (if `C` instead inherited its `__init__` from its own base class, then
-    `@deprecated` would mess up `__init__` inheritance when installing its
-    own (deprecation-emitting) `C.__init__`).
+    When deprecating a class `C` intended to be used as a base class in a multiple
+    inheritance hierarchy, `C` *must* define an `__init__` method (if `C` instead
+    inherited its `__init__` from its own base class, then `@deprecated` would mess up
+    `__init__` inheritance when installing its own (deprecation-emitting) `C.__init__`).
 
-    Parameters are the same as for `warn_deprecated`, except that *obj_type*
-    defaults to 'class' if decorating a class, 'attribute' if decorating a
-    property, and 'function' otherwise.
+    Parameters are the same as for `warn_deprecated`, except that *obj_type* defaults to
+    'class' if decorating a class, 'attribute' if decorating a property, and 'function'
+    otherwise.
 
     Args:
-        since:
-            The release at which this API became deprecated.
-        message:
-            Override the default deprecation message. The %(since)s,
-            %(name)s, %(alternative)s, %(obj_type)s, %(addendum)s,
-            and %(removal)s format specifiers will be replaced by the
+        since: The release at which this API became deprecated.
+        message: Override the default deprecation message.
+
+            The `%(since)s`, `%(name)s`, `%(alternative)s`, `%(obj_type)s`,
+            `%(addendum)s`, and `%(removal)s` format specifiers will be replaced by the
             values of the respective arguments passed to this function.
-        name:
-            The name of the deprecated object.
-        alternative:
-            An alternative API that the user may use in place of the
-            deprecated API. The deprecation warning will tell the user
-            about this alternative if provided.
-        alternative_import:
-            An alternative import that the user may use instead.
-        pending:
-            If `True`, uses a `PendingDeprecationWarning` instead of a
-            DeprecationWarning. Cannot be used together with removal.
-        obj_type:
-            The object type being deprecated.
-        addendum:
-            Additional text appended directly to the final message.
-        removal:
-            The expected removal version. With the default (an empty
-            string), a removal version is automatically computed from
-            since. Set to other Falsy values to not schedule a removal
-            date. Cannot be used together with pending.
-        package:
-            The package of the deprecated object.
+        name: The name of the deprecated object.
+        alternative: An alternative API that the user may use in place of the deprecated
+            API.
+
+            The deprecation warning will tell the user about this alternative if
+            provided.
+        alternative_import: An alternative import that the user may use instead.
+        pending: If `True`, uses a `PendingDeprecationWarning` instead of a
+            `DeprecationWarning`.
+
+            Cannot be used together with removal.
+        obj_type: The object type being deprecated.
+        addendum: Additional text appended directly to the final message.
+        removal: The expected removal version.
+
+            With the default (an empty string), a removal version is automatically
+            computed from since. Set to other Falsy values to not schedule a removal
+            date.
+
+            Cannot be used together with pending.
+        package: The package of the deprecated object.
 
     Returns:
         A decorator to mark a function or class as deprecated.
 
-    ```python
-    @deprecated("1.4.0")
-    def the_function_to_deprecate():
-        pass
-    ```
+    Example:
+        ```python
+        @deprecated("1.4.0")
+        def the_function_to_deprecate():
+            pass
+        ```
     """
     _validate_deprecation_params(
         removal, alternative, alternative_import, pending=pending
@@ -246,8 +243,8 @@ def deprecated(
                 )
                 # Set __deprecated__ for PEP 702 (IDE/type checker support)
                 obj.__deprecated__ = _build_deprecation_message(  # type: ignore[attr-defined]
-                    alternative=_alternative,
-                    alternative_import=_alternative_import,
+                    alternative=alternative,
+                    alternative_import=alternative_import,
                 )
                 return obj
 
@@ -346,8 +343,8 @@ def deprecated(
                 )
                 # Set __deprecated__ for PEP 702 (IDE/type checker support)
                 prop.__deprecated__ = _build_deprecation_message(  # type: ignore[attr-defined]
-                    alternative=_alternative,
-                    alternative_import=_alternative_import,
+                    alternative=alternative,
+                    alternative_import=alternative_import,
                 )
                 return cast("T", prop)
 
@@ -374,8 +371,8 @@ def deprecated(
                 wrapper.__doc__ = new_doc
                 # Set __deprecated__ for PEP 702 (IDE/type checker support)
                 wrapper.__deprecated__ = _build_deprecation_message(  # type: ignore[attr-defined]
-                    alternative=_alternative,
-                    alternative_import=_alternative_import,
+                    alternative=alternative,
+                    alternative_import=alternative_import,
                 )
                 return cast("T", wrapper)
 
@@ -432,7 +429,7 @@ def deprecated(
 
 @contextlib.contextmanager
 def suppress_langchain_deprecation_warning() -> Generator[None, None, None]:
-    """Context manager to suppress LangChainDeprecationWarning."""
+    """Context manager to suppress `LangChainDeprecationWarning`."""
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", LangChainDeprecationWarning)
         warnings.simplefilter("ignore", LangChainPendingDeprecationWarning)
@@ -455,35 +452,33 @@ def warn_deprecated(
     """Display a standardized deprecation.
 
     Args:
-        since:
-            The release at which this API became deprecated.
-        message:
-            Override the default deprecation message. The %(since)s,
-            %(name)s, %(alternative)s, %(obj_type)s, %(addendum)s,
-            and %(removal)s format specifiers will be replaced by the
+        since: The release at which this API became deprecated.
+        message: Override the default deprecation message.
+
+            The `%(since)s`, `%(name)s`, `%(alternative)s`, `%(obj_type)s`,
+            `%(addendum)s`, and `%(removal)s` format specifiers will be replaced by the
             values of the respective arguments passed to this function.
-        name:
-            The name of the deprecated object.
-        alternative:
-            An alternative API that the user may use in place of the
-            deprecated API. The deprecation warning will tell the user
-            about this alternative if provided.
-        alternative_import:
-            An alternative import that the user may use instead.
-        pending:
-            If `True`, uses a `PendingDeprecationWarning` instead of a
-            DeprecationWarning. Cannot be used together with removal.
-        obj_type:
-            The object type being deprecated.
-        addendum:
-            Additional text appended directly to the final message.
-        removal:
-            The expected removal version. With the default (an empty
-            string), a removal version is automatically computed from
-            since. Set to other Falsy values to not schedule a removal
-            date. Cannot be used together with pending.
-        package:
-            The package of the deprecated object.
+        name: The name of the deprecated object.
+        alternative: An alternative API that the user may use in place of the
+            deprecated API.
+
+            The deprecation warning will tell the user about this alternative if
+            provided.
+        alternative_import: An alternative import that the user may use instead.
+        pending: If `True`, uses a `PendingDeprecationWarning` instead of a
+            `DeprecationWarning`.
+
+            Cannot be used together with removal.
+        obj_type: The object type being deprecated.
+        addendum: Additional text appended directly to the final message.
+        removal: The expected removal version.
+
+            With the default (an empty string), a removal version is automatically
+            computed from since. Set to other Falsy values to not schedule a removal
+            date.
+
+            Cannot be used together with pending.
+        package: The package of the deprecated object.
     """
     if not pending:
         if not removal:
@@ -568,8 +563,8 @@ def rename_parameter(
     """Decorator indicating that parameter *old* of *func* is renamed to *new*.
 
     The actual implementation of *func* should use *new*, not *old*. If *old* is passed
-    to *func*, a DeprecationWarning is emitted, and its value is used, even if *new* is
-    also passed by keyword.
+    to *func*, a `DeprecationWarning` is emitted, and its value is used, even if *new*
+    is also passed by keyword.
 
     Args:
         since: The version in which the parameter was renamed.
