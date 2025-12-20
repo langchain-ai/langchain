@@ -414,9 +414,7 @@ class TestChatDeepSeekCustomUnit:
                         "id": "call_2",
                     }
                 ],
-                additional_kwargs={
-                    "reasoning_content": "I should use the tool here."
-                },
+                additional_kwargs={"reasoning_content": "I should use the tool here."},
             ),
         ]
 
