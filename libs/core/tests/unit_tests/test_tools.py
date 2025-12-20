@@ -3348,13 +3348,10 @@ async def test_tool_call_id_passed_via_run_method(method: str) -> None:
 
 
 def test_tool_args_schema_default_values() -> None:
-    """Test that Pydantic default values from args_schema are applied.
+    """Test that Pydantic default values from `args_schema` are applied.
 
-    When a tool has an args_schema with default values, those defaults
+    When a tool has an `args_schema` with default values, those defaults
     should be passed to the tool function when the caller omits them.
-    This is useful when an LLM omits optional arguments.
-
-    Fixes: https://github.com/langchain-ai/langchain/issues/34384
     """
 
     class SearchArgs(BaseModel):
