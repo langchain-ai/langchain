@@ -3407,3 +3407,69 @@ async def test_tool_args_schema_default_values_async() -> None:
     # Invoke with only required argument - default should be applied
     result = await async_search_tool.ainvoke({"query": "hello"})
     assert result == "query=hello, limit=5"
+
+
+def test_tool_args_schema_none_default() -> None:
+    """Test that explicit `None` defaults are handled correctly.
+
+    When a field has `Field(default=None)`, that `None` value should be passed
+    to the tool function, not omitted from the arguments.
+    """
+
+    class FilterArgs(BaseModel):
+        """Schema for filter tool arguments."""
+
+        query: str = Field(..., description="The search query")
+        category: str | None = Field(default=None, description="Optional category")
+        tag: str | None = Field(default=None, description="Optional tag filter")
+
+    @tool("filter_search", args_schema=FilterArgs)
+    def filter_tool(query: str, category: str | None, tag: str | None) -> str:
+        """Search with optional filters.
+
+        Args:
+            query: The search query.
+            category: Optional category filter.
+            tag: Optional tag filter.
+        """
+        return f"query={query}, category={category}, tag={tag}"
+
+    # Invoke with only required argument - None defaults should be applied
+    result = filter_tool.invoke({"query": "test"})
+    assert result == "query=test, category=None, tag=None"
+
+    # Invoke with one optional provided
+    result = filter_tool.invoke({"query": "test", "category": "books"})
+    assert result == "query=test, category=books, tag=None"
+
+    # Invoke with all arguments
+    result = filter_tool.invoke({"query": "test", "category": "books", "tag": "new"})
+    assert result == "query=test, category=books, tag=new"
+
+
+def test_tool_args_schema_falsy_defaults() -> None:
+    """Test falsy default values (`0`, `False`, empty string) are handled correctly."""
+
+    class ConfigArgs(BaseModel):
+        """Schema for config tool arguments."""
+
+        name: str = Field(..., description="Config name")
+        enabled: bool = Field(default=False, description="Whether enabled")
+        count: int = Field(default=0, description="Initial count")
+        prefix: str = Field(default="", description="Optional prefix")
+
+    @tool("config_tool", args_schema=ConfigArgs)
+    def config_tool(name: str, *, enabled: bool, count: int, prefix: str) -> str:
+        """Configure settings.
+
+        Args:
+            name: Config name.
+            enabled: Whether enabled.
+            count: Initial count.
+            prefix: Optional prefix.
+        """
+        return f"name={name}, enabled={enabled}, count={count}, prefix={prefix!r}"
+
+    # Invoke with only required argument - falsy defaults should be applied
+    result = config_tool.invoke({"name": "test"})
+    assert result == "name=test, enabled=False, count=0, prefix=''"

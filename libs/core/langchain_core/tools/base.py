@@ -714,17 +714,26 @@ class ChildTool(BaseTool):
                 )
                 raise NotImplementedError(msg)
 
-            # Include fields from tool_input, plus fields with non-None defaults.
+            # Include fields from tool_input, plus fields with explicit defaults.
             # This applies Pydantic defaults (like Field(default=1)) while excluding
-            # synthetic fields from *args/*kwargs which have default=None.
+            # synthetic fields from *args/*kwargs which are required (no default).
+            field_info = get_fields(input_args)
             validated_input = {}
             for k in result_dict:
                 if k in tool_input:
                     # Field was provided in input - include it (validated)
                     validated_input[k] = getattr(result, k)
-                elif getattr(result, k) is not None:
-                    # Field has a non-None default - include it
-                    validated_input[k] = getattr(result, k)
+                elif k in field_info:
+                    # Check if field has an explicit default defined in the schema
+                    fi = field_info[k]
+                    # Pydantic v2 uses is_required() method, v1 uses required attribute
+                    has_default = (
+                        not fi.is_required()
+                        if hasattr(fi, "is_required")
+                        else not getattr(fi, "required", True)
+                    )
+                    if has_default:
+                        validated_input[k] = getattr(result, k)
 
             for k in self._injected_args_keys:
                 if k in tool_input:
