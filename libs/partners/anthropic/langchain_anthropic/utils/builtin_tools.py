@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any, cast
 
 from langchain_core.tools.builtin import (
     BashTool,
@@ -15,15 +15,13 @@ from langchain_core.tools.builtin import (
 
 
 def convert_standard_to_anthropic(
-    tool: Union[
-        WebSearchTool,
-        CodeExecutionTool,
-        WebFetchTool,
-        MemoryTool,
-        TextEditorTool,
-        BashTool,
-        dict[str, Any],
-    ],
+    tool: WebSearchTool
+    | CodeExecutionTool
+    | WebFetchTool
+    | MemoryTool
+    | TextEditorTool
+    | BashTool
+    | dict[str, Any],
 ) -> dict[str, Any] | None:
     """Convert standard builtin tool to Anthropic format.
 
@@ -41,13 +39,12 @@ def convert_standard_to_anthropic(
         >>> convert_standard_to_anthropic({"type": "code_execution"})
         {'type': 'code_execution_20250825', 'name': 'code_execution'}
 
-        >>> convert_standard_to_anthropic({
-        ...     "type": "web_search",
-        ...     "max_uses": 5
-        ... })
+        >>> convert_standard_to_anthropic({"type": "web_search", "max_uses": 5})
         {'type': 'web_search_20250305', 'name': 'web_search', 'max_uses': 5}
     """
-    tool_type = tool.get("type")
+    # Cast to dict for easier key access across union types
+    tool_dict = cast(dict[str, Any], tool)
+    tool_type = tool_dict.get("type")
 
     if tool_type == "web_search":
         # Anthropic web search format
@@ -56,11 +53,11 @@ def convert_standard_to_anthropic(
             "name": "web_search",
         }
         # Pass through max_uses if provided
-        if "max_uses" in tool:
-            result["max_uses"] = tool["max_uses"]
+        if "max_uses" in tool_dict:
+            result["max_uses"] = tool_dict["max_uses"]
         # Pass through user_location if provided
-        if "user_location" in tool:
-            result["user_location"] = tool["user_location"]
+        if "user_location" in tool_dict:
+            result["user_location"] = tool_dict["user_location"]
         return result
 
     if tool_type == "code_execution":
@@ -77,8 +74,8 @@ def convert_standard_to_anthropic(
             "name": "web_fetch",
         }
         # Pass through max_uses if provided
-        if "max_uses" in tool:
-            result["max_uses"] = tool["max_uses"]
+        if "max_uses" in tool_dict:
+            result["max_uses"] = tool_dict["max_uses"]
         return result
 
     if tool_type == "memory":
@@ -105,4 +102,3 @@ def convert_standard_to_anthropic(
     # Tool not supported by Anthropic
     # (file_search, image_generation, x_search are not supported)
     return None
-

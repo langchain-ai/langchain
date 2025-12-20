@@ -110,4 +110,3 @@ def test_convert_x_search() -> None:
     tool = {"type": "x_search"}
     result = convert_standard_to_anthropic(tool)
     assert result is None
-

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any, Union, cast
 
 from langchain_core.tools.builtin import (
     CodeExecutionTool,
@@ -33,7 +33,9 @@ def convert_standard_to_xai(
         >>> convert_standard_to_xai({"type": "x_search"})
         {'type': 'x_search'}
     """
-    tool_type = tool.get("type")
+    # Cast to dict for easier key access across union types
+    tool_dict = cast(dict[str, Any], tool)
+    tool_type = tool_dict.get("type")
 
     if tool_type == "web_search":
         # xAI web search format

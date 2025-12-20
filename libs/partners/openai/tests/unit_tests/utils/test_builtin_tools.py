@@ -103,4 +103,3 @@ def test_convert_bash_tool() -> None:
     tool = {"type": "bash"}
     result = convert_standard_to_openai(tool)
     assert result is None
-
