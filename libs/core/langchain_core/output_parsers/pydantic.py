@@ -54,7 +54,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
                 all the keys that have been returned so far.
 
         Raises:
-            `OutputParserException`: If the result is not valid JSON
+            OutputParserException: If the result is not valid JSON
                 or does not conform to the Pydantic model.
 
         Returns:
