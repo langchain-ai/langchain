@@ -25,6 +25,19 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Literal type for all supported builtin tool names
+BuiltinToolName = Literal[
+    "web_search",
+    "code_execution",
+    "x_search",
+    "web_fetch",
+    "memory",
+    "file_search",
+    "image_generation",
+    "text_editor",
+    "bash",
+]
+
 
 def _detect_provider(model: Any) -> str:
     """Detect the provider from the model instance.
@@ -86,19 +99,6 @@ class BuiltinToolsMiddleware(AgentMiddleware):
             )
             ```
 
-        !!! example "With tool-specific options"
-
-            ```python
-            middleware = BuiltinToolsMiddleware(
-                include_tools=[
-                    "web_search",
-                    {"name": "web_fetch", "max_uses": 5},
-                    {"name": "file_search", "vector_store_ids": ["vs_123"]},
-                ],
-                unsupported_behavior="warn",
-            )
-            ```
-
         !!! example "Error on unsupported tools"
 
             ```python
@@ -111,19 +111,25 @@ class BuiltinToolsMiddleware(AgentMiddleware):
 
     def __init__(
         self,
-        include_tools: list[str | dict[str, Any]],
         *,
+        include_tools: list[BuiltinToolName],
         unsupported_behavior: Literal["remove", "error", "warn"] = "remove",
     ) -> None:
         """Initialize the builtin tools middleware.
 
         Args:
-            include_tools: List of tool names or tool specifications to include.
+            include_tools: List of tool names to include.
 
-                Can be:
-
-                - Simple tool name: `"web_search"`
-                - Tool with options: `{"name": "web_fetch", "max_uses": 5}`
+                Supported tool names:
+                - `"web_search"`: Web search (OpenAI, Anthropic, xAI)
+                - `"code_execution"`: Code interpreter (OpenAI, Anthropic, Google, xAI)
+                - `"x_search"`: X/Twitter search (xAI only)
+                - `"web_fetch"`: Web page fetching (Anthropic only)
+                - `"memory"`: Memory/context management (Anthropic only)
+                - `"file_search"`: File search (OpenAI only)
+                - `"image_generation"`: Image generation (OpenAI only)
+                - `"text_editor"`: Text editor (Anthropic only)
+                - `"bash"`: Bash execution (Anthropic only)
             unsupported_behavior: How to handle tools not supported by a provider.
 
                 - `"remove"` (default): Silently skip unsupported tools
@@ -135,32 +141,10 @@ class BuiltinToolsMiddleware(AgentMiddleware):
         self.include_tools = include_tools
         self.unsupported_behavior = unsupported_behavior
 
-    def _parse_tool_spec(self, tool_spec: str | dict[str, Any]) -> tuple[str, dict[str, Any]]:
-        """Parse a tool specification into name and options.
-
-        Args:
-            tool_spec: Tool name string or dict with name and options.
-
-        Returns:
-            Tuple of (tool_name, options_dict).
-        """
-        if isinstance(tool_spec, str):
-            return tool_spec, {}
-
-        tool_name = tool_spec.get("name")
-        if not tool_name:
-            msg = f"Tool specification must have 'name' key: {tool_spec}"
-            raise ValueError(msg)
-
-        # Extract all keys except 'name' as options
-        options = {k: v for k, v in tool_spec.items() if k != "name"}
-        return tool_name, options
-
     def _build_tool_definition(
         self,
-        tool_name: str,
+        tool_name: BuiltinToolName,
         provider: str,
-        options: dict[str, Any],
     ) -> dict[str, Any] | None:
         """Build provider-specific tool definition.
 
@@ -171,14 +155,13 @@ class BuiltinToolsMiddleware(AgentMiddleware):
         Args:
             tool_name: Canonical tool name (e.g., "web_search", "code_execution").
             provider: Provider identifier (e.g., "openai", "anthropic", "xai").
-            options: Additional options to merge into the standard tool definition.
 
         Returns:
             Provider-specific tool definition dict, or None if unsupported by provider
             or if provider package is not installed.
         """
         # Create standard tool definition
-        standard_tool: dict[str, Any] = {"type": tool_name, **options}
+        standard_tool: dict[str, Any] = {"type": tool_name}
 
         # Convert to provider-specific format using conversion utilities
         if provider == "openai":
@@ -269,9 +252,8 @@ class BuiltinToolsMiddleware(AgentMiddleware):
         builtin_tools: list[dict[str, Any]] = []
         unsupported_tools: list[str] = []
 
-        for tool_spec in self.include_tools:
-            tool_name, options = self._parse_tool_spec(tool_spec)
-            tool_def = self._build_tool_definition(tool_name, provider, options)
+        for tool_name in self.include_tools:
+            tool_def = self._build_tool_definition(tool_name, provider)
 
             if tool_def is None:
                 unsupported_tools.append(tool_name)
@@ -338,9 +320,8 @@ class BuiltinToolsMiddleware(AgentMiddleware):
         builtin_tools: list[dict[str, Any]] = []
         unsupported_tools: list[str] = []
 
-        for tool_spec in self.include_tools:
-            tool_name, options = self._parse_tool_spec(tool_spec)
-            tool_def = self._build_tool_definition(tool_name, provider, options)
+        for tool_name in self.include_tools:
+            tool_def = self._build_tool_definition(tool_name, provider)
 
             if tool_def is None:
                 unsupported_tools.append(tool_name)

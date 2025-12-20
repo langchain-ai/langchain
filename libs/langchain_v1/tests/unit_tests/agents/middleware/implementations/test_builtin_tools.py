@@ -490,61 +490,6 @@ def test_builtin_tools_middleware_with_existing_tools() -> None:
     assert isinstance(result, ModelResponse)
 
 
-def test_builtin_tools_middleware_with_options() -> None:
-    """Test adding tools with custom options."""
-    middleware = BuiltinToolsMiddleware(
-        include_tools=[
-            {"name": "web_fetch", "max_uses": 5},
-        ]
-    )
-
-    model = ChatAnthropic()
-    request = ModelRequest(
-        model=model,
-        messages=[],
-        tools=[],
-    )
-
-    def handler(req: ModelRequest) -> ModelResponse:
-        assert len(req.tools) == 1
-        tool = req.tools[0]
-        assert isinstance(tool, dict)
-        assert tool["type"] == "web_fetch_20250910"
-        assert tool["name"] == "web_fetch"
-        assert tool["max_uses"] == 5
-        return ModelResponse(result=[AIMessage(content="test")])
-
-    result = middleware.wrap_model_call(request, handler)
-    assert isinstance(result, ModelResponse)
-
-
-def test_builtin_tools_middleware_openai_file_search_with_options() -> None:
-    """Test adding file_search with vector_store_ids for OpenAI."""
-    middleware = BuiltinToolsMiddleware(
-        include_tools=[
-            {"name": "file_search", "vector_store_ids": ["vs_123", "vs_456"]},
-        ]
-    )
-
-    model = ChatOpenAI()
-    request = ModelRequest(
-        model=model,
-        messages=[],
-        tools=[],
-    )
-
-    def handler(req: ModelRequest) -> ModelResponse:
-        assert len(req.tools) == 1
-        tool = req.tools[0]
-        assert isinstance(tool, dict)
-        assert tool["type"] == "file_search"
-        assert tool["vector_store_ids"] == ["vs_123", "vs_456"]
-        return ModelResponse(result=[AIMessage(content="test")])
-
-    result = middleware.wrap_model_call(request, handler)
-    assert isinstance(result, ModelResponse)
-
-
 def test_builtin_tools_middleware_unsupported_remove() -> None:
     """Test unsupported_behavior='remove' silently skips unsupported tools."""
     middleware = BuiltinToolsMiddleware(
@@ -758,26 +703,6 @@ def test_builtin_tools_middleware_all_xai_tools() -> None:
 
     result = middleware.wrap_model_call(request, handler)
     assert isinstance(result, ModelResponse)
-
-
-def test_builtin_tools_middleware_invalid_tool_spec() -> None:
-    """Test that invalid tool spec raises ValueError."""
-    middleware = BuiltinToolsMiddleware(
-        include_tools=[{"invalid": "spec"}]  # Missing 'name' key
-    )
-
-    model = ChatAnthropic()
-    request = ModelRequest(
-        model=model,
-        messages=[],
-        tools=[],
-    )
-
-    def handler(req: ModelRequest) -> ModelResponse:
-        return ModelResponse(result=[AIMessage(content="test")])
-
-    with pytest.raises(ValueError, match="must have 'name' key"):
-        middleware.wrap_model_call(request, handler)
 
 
 @pytest.mark.asyncio
