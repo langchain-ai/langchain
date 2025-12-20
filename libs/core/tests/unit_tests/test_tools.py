@@ -1409,7 +1409,7 @@ def test_tool_annotated_descriptions() -> None:
 
 
 def test_tool_field_description_preserved() -> None:
-    """Test that Field(description=...) is preserved in @tool decorator."""
+    """Test that `Field(description=...)` is preserved in `@tool` decorator."""
 
     @tool
     def my_tool(

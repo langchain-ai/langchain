@@ -101,7 +101,7 @@ def _is_annotated_type(typ: type[Any]) -> bool:
 def _get_annotation_description(arg_type: type) -> str | None:
     """Extract description from an Annotated type.
 
-    Checks for string annotations and FieldInfo objects with descriptions.
+    Checks for string annotations and `FieldInfo` objects with descriptions.
 
     Args:
         arg_type: The type to extract description from.
