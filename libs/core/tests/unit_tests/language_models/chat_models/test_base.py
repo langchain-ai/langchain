@@ -165,9 +165,9 @@ async def test_stream_error_callback() -> None:
         cb_async = FakeAsyncCallbackHandler()
         llm_astream = llm.astream("Dummy message", config={"callbacks": [cb_async]})
         for _ in range(i):
-            await llm_astream.__anext__()
+            await anext(llm_astream)
         with pytest.raises(FakeListChatModelError):
-            await llm_astream.__anext__()
+            await anext(llm_astream)
         eval_response(cb_async, i)
 
         cb_sync = FakeCallbackHandler()

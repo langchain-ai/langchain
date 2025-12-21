@@ -48,6 +48,9 @@ class StructuredPrompt(ChatPromptTemplate):
             schema_: schema for the structured prompt.
             structured_output_kwargs: additional kwargs for structured output.
             template_format: template format for the prompt.
+
+        Raises:
+            ValueError: if schema is not provided.
         """
         schema_ = schema_ or kwargs.pop("schema", None)
         if not schema_:

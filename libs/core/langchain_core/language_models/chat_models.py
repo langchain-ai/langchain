@@ -561,7 +561,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                         ):
                             if block["type"] != index_type:
                                 index_type = block["type"]
-                                index = index + 1
+                                index += 1
                             if "index" not in block:
                                 block["index"] = index
                     run_manager.on_llm_new_token(
@@ -693,7 +693,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     ):
                         if block["type"] != index_type:
                             index_type = block["type"]
-                            index = index + 1
+                            index += 1
                         if "index" not in block:
                             block["index"] = index
                 await run_manager.on_llm_new_token(
@@ -744,7 +744,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     # --- Custom methods ---
 
-    def _combine_llm_outputs(self, llm_outputs: list[dict | None]) -> dict:  # noqa: ARG002
+    def _combine_llm_outputs(self, _llm_outputs: list[dict | None], /) -> dict:
         return {}
 
     def _convert_cached_generations(self, cache_val: list) -> list[ChatGeneration]:
@@ -1201,7 +1201,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     ):
                         if block["type"] != index_type:
                             index_type = block["type"]
-                            index = index + 1
+                            index += 1
                         if "index" not in block:
                             block["index"] = index
                 if run_manager:
@@ -1319,7 +1319,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     ):
                         if block["type"] != index_type:
                             index_type = block["type"]
-                            index = index + 1
+                            index += 1
                         if "index" not in block:
                             block["index"] = index
                 if run_manager:
