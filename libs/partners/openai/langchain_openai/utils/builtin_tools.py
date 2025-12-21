@@ -80,10 +80,6 @@ def convert_standard_to_openai(
         # OpenAI image generation format
         return {"type": "image_generation"}
 
-    if tool_type == "x_search":
-        # OpenAI supports x_search
-        return {"type": "x_search"}
-
     # Tool not supported by OpenAI
     # (web_fetch, memory, text_editor, bash are Anthropic-only)
     return None

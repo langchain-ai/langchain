@@ -69,13 +69,6 @@ def test_convert_image_generation() -> None:
     assert result == {"type": "image_generation"}
 
 
-def test_convert_x_search() -> None:
-    """Test converting x_search tool."""
-    tool = {"type": "x_search"}
-    result = convert_standard_to_openai(tool)
-    assert result == {"type": "x_search"}
-
-
 def test_convert_unsupported_tool() -> None:
     """Test converting tool not supported by OpenAI."""
     # web_fetch is Anthropic-only
