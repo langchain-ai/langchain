@@ -1869,17 +1869,50 @@ def _make_message_chunk_from_anthropic_event(
     # Reference: Anthropic SDK streaming implementation
     # https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
     if event.type == "message_start" and stream_usage:
-        # Capture model name, but don't include usage_metadata yet
-        # as it will be properly reported in message_delta with complete info
+    # Capture model name, but don't include usage_metadata yet
         if hasattr(event.message, "model"):
             response_metadata: dict[str, Any] = {"model_name": event.message.model}
         else:
             response_metadata = {}
 
+    content: str | list = "" if coerce_content_to_string else []
+    tool_call_chunks = []
+
+    # ✅ FIX: handle pre-completed content in message_start
+    if hasattr(event.message, "content") and event.message.content:
+        msg_content = event.message.content
+
+        if isinstance(msg_content, list):
+            content = []
+            for idx, block in enumerate(msg_content):
+                block_dict = (
+                    block.model_dump()
+                    if hasattr(block, "model_dump")
+                    else dict(block)
+                )
+                block_dict["index"] = idx
+
+                if "caller" in block_dict and block_dict["caller"] is None:
+                    block_dict.pop("caller")
+
+                content.append(block_dict)
+
+                if block_dict.get("type") == "tool_use":
+                    tool_call_chunks.append(
+                        create_tool_call_chunk(
+                            index=idx,
+                            id=block_dict.get("id"),
+                            name=block_dict.get("name"),
+                            args=json.dumps(block_dict.get("input", {})),
+                        )
+                    )
+
         message_chunk = AIMessageChunk(
-            content="" if coerce_content_to_string else [],
+            content=content,
             response_metadata=response_metadata,
+            tool_call_chunks=tool_call_chunks if tool_call_chunks else [],
         )
+
 
     elif (
         event.type == "content_block_start"
