@@ -2,8 +2,8 @@ import os
 from typing import Any
 from unittest.mock import Mock, patch
 
-import pytest
 from pydantic import SecretStr
+import pytest
 
 from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_openai import OpenAIEmbeddings
