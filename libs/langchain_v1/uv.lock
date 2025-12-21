@@ -1863,7 +1863,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.1.3"
+version = "1.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -2102,7 +2102,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.2.0"
+version = "1.2.4"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -2283,7 +2283,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.1.3"
+version = "1.1.6"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },
@@ -2346,7 +2346,7 @@ wheels = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.0.2"
+version = "1.1.1"
 source = { editable = "../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -2391,7 +2391,7 @@ typing = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "1.0.0"
+version = "1.1.0"
 source = { editable = "../text-splitters" }
 dependencies = [
     { name = "langchain-core" },

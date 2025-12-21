@@ -326,7 +326,7 @@ class AIMessage(BaseMessage):
         if tool_calls := values.get("tool_calls"):
             values["tool_calls"] = [
                 create_tool_call(
-                    **{k: v for k, v in tc.items() if k not in ("type", "extras")}
+                    **{k: v for k, v in tc.items() if k not in {"type", "extras"}}
                 )
                 for tc in tool_calls
             ]
@@ -443,7 +443,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             blocks = [
                 block
                 for block in blocks
-                if block["type"] not in ("tool_call", "invalid_tool_call")
+                if block["type"] not in {"tool_call", "invalid_tool_call"}
             ]
             for tool_call_chunk in self.tool_call_chunks:
                 tc: types.ToolCallChunk = {
@@ -574,7 +574,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 if (
                     isinstance(block, dict)
                     and block.get("type")
-                    in ("server_tool_call", "server_tool_call_chunk")
+                    in {"server_tool_call", "server_tool_call_chunk"}
                     and (args_str := block.get("args"))
                     and isinstance(args_str, str)
                 ):

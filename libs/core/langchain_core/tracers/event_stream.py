@@ -426,6 +426,10 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Run on new output token. Only available when streaming is enabled.
 
         For both chat models and non-chat models (legacy LLMs).
+
+        Raises:
+            ValueError: If the run type is not `llm` or `chat_model`.
+            AssertionError: If the run ID is not found in the run map.
         """
         run_info = self.run_map.get(run_id)
         chunk_: GenerationChunk | BaseMessageChunk
@@ -707,11 +711,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
     @override
     async def on_tool_end(self, output: Any, *, run_id: UUID, **kwargs: Any) -> None:
-        """End a trace for a tool run.
-
-        Raises:
-            AssertionError: If the run ID is a tool call and does not have inputs
-        """
+        """End a trace for a tool run."""
         run_info, inputs = self._get_tool_run_info_with_inputs(run_id)
 
         self._send(
