@@ -17,6 +17,10 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_openai.chat_models._client_utils import (
+    _get_default_async_httpx_client,
+    _get_default_httpx_client,
+)
 from langchain_openai.chat_models.base import BaseChatOpenAI, _get_default_model_profile
 
 logger = logging.getLogger(__name__)
@@ -682,23 +686,55 @@ class AzureChatOpenAI(BaseChatOpenAI):
         if self.max_retries is not None:
             client_params["max_retries"] = self.max_retries
 
+        has_credentials = any(
+            [
+                self.openai_api_key,
+                self.azure_ad_token,
+                self.azure_ad_token_provider,
+            ]
+        )
+
         if not self.client:
-            sync_specific = {"http_client": self.http_client}
-            self.root_client = openai.AzureOpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
-            self.client = self.root_client.chat.completions
+            if not has_credentials:
+                self.client = None
+                self.root_client = None
+            else:
+                sync_specific = {
+                    "http_client": self.http_client
+                    or _get_default_httpx_client(
+                        self.azure_endpoint, self.request_timeout
+                    )
+                }
+                self.root_client = openai.AzureOpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
+                self.client = self.root_client.chat.completions
         if not self.async_client:
-            async_specific = {"http_client": self.http_async_client}
-
-            if self.azure_ad_async_token_provider:
-                client_params["azure_ad_token_provider"] = (
-                    self.azure_ad_async_token_provider
-                )
-
-            self.root_async_client = openai.AsyncAzureOpenAI(
-                **client_params,
-                **async_specific,  # type: ignore[arg-type]
+            # For async, also check for azure_ad_async_token_provider
+            has_async_credentials = (
+                has_credentials or self.azure_ad_async_token_provider
             )
-            self.async_client = self.root_async_client.chat.completions
+
+            if not has_async_credentials:
+                # No valid credentials, leave client as None
+                self.async_client = None
+                self.root_async_client = None
+            else:
+                async_specific = {
+                    "http_client": self.http_async_client
+                    or _get_default_async_httpx_client(
+                        self.azure_endpoint, self.request_timeout
+                    )
+                }
+
+                if self.azure_ad_async_token_provider:
+                    client_params["azure_ad_token_provider"] = (
+                        self.azure_ad_async_token_provider
+                    )
+
+                self.root_async_client = openai.AsyncAzureOpenAI(
+                    **client_params,
+                    **async_specific,  # type: ignore[arg-type]
+                )
+                self.async_client = self.root_async_client.chat.completions
         return self
 
     @model_validator(mode="after")
