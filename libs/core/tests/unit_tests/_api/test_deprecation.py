@@ -493,3 +493,88 @@ def test_rename_parameter_method() -> None:
 
         with pytest.raises(TypeError):
             assert foo.a("hello", old_name="hello")  # type: ignore[call-arg]
+
+
+# Tests for PEP 702 __deprecated__ attribute
+
+
+def test_deprecated_function_has_pep702_attribute() -> None:
+    """Test that deprecated functions have `__deprecated__` attribute."""
+
+    @deprecated(since="2.0.0", removal="3.0.0", alternative="new_function")
+    def old_function() -> str:
+        """Original doc."""
+        return "old"
+
+    assert hasattr(old_function, "__deprecated__")
+    assert old_function.__deprecated__ == "Use new_function instead."
+
+
+def test_deprecated_function_with_alternative_import_has_pep702_attribute() -> None:
+    """Test `__deprecated__` with `alternative_import`."""
+
+    @deprecated(
+        since="2.0.0", removal="3.0.0", alternative_import="new_module.new_function"
+    )
+    def old_function() -> str:
+        """Original doc."""
+        return "old"
+
+    assert hasattr(old_function, "__deprecated__")
+    assert old_function.__deprecated__ == "Use new_module.new_function instead."
+
+
+def test_deprecated_function_without_alternative_has_pep702_attribute() -> None:
+    """Test `__deprecated__` without alternative shows `'Deprecated.'`."""
+
+    @deprecated(since="2.0.0", removal="3.0.0")
+    def old_function() -> str:
+        """Original doc."""
+        return "old"
+
+    assert hasattr(old_function, "__deprecated__")
+    assert old_function.__deprecated__ == "Deprecated."
+
+
+def test_deprecated_class_has_pep702_attribute() -> None:
+    """Test that deprecated classes have `__deprecated__` attribute (PEP 702)."""
+
+    @deprecated(since="2.0.0", removal="3.0.0", alternative="NewClass")
+    class OldClass:
+        def __init__(self) -> None:
+            """Original doc."""
+
+    assert hasattr(OldClass, "__deprecated__")
+    assert OldClass.__deprecated__ == "Use NewClass instead."
+
+
+def test_deprecated_class_without_alternative_has_pep702_attribute() -> None:
+    """Test `__deprecated__` on class without alternative."""
+
+    @deprecated(since="2.0.0", removal="3.0.0")
+    class OldClass:
+        def __init__(self) -> None:
+            """Original doc."""
+
+    assert hasattr(OldClass, "__deprecated__")
+    assert OldClass.__deprecated__ == "Deprecated."
+
+
+def test_deprecated_property_has_pep702_attribute() -> None:
+    """Test that deprecated properties have `__deprecated__` attribute (PEP 702).
+
+    Note: When using @property over @deprecated (which is what works in practice),
+    the `__deprecated__` attribute is set on the property's underlying `fget` function.
+    """
+
+    class MyClass:
+        @property
+        @deprecated(since="2.0.0", removal="3.0.0", alternative="new_property")
+        def old_property(self) -> str:
+            """Original doc."""
+            return "old"
+
+    prop = MyClass.__dict__["old_property"]
+    # The __deprecated__ attribute is on the underlying fget function
+    assert hasattr(prop.fget, "__deprecated__")
+    assert prop.fget.__deprecated__ == "Use new_property instead."
