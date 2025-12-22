@@ -1,0 +1,4 @@
+langgraph
+langgraph-swarm-py
+langchain-openai
+python-dotenv
