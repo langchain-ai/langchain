@@ -341,6 +341,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     """Profile detailing model capabilities.
 
     !!! warning "Beta feature"
+
         This is a beta feature. The format of model profiles is subject to change.
 
     If not specified, automatically loaded from the provider package on initialization
