@@ -65,14 +65,19 @@ logger = logging.getLogger(__name__)
 def _get_type(v: Any) -> str:
     """Get the type associated with the object for serialization purposes."""
     if isinstance(v, dict) and "type" in v:
-        return cast("str", v["type"])
-    if hasattr(v, "type"):
-        return cast("str", v.type)
-    msg = (
-        f"Expected either a dictionary with a 'type' key or an object "
-        f"with a 'type' attribute. Instead got type {type(v)}."
-    )
-    raise TypeError(msg)
+        result = v["type"]
+    elif hasattr(v, "type"):
+        result = v.type
+    else:
+        msg = (
+            f"Expected either a dictionary with a 'type' key or an object "
+            f"with a 'type' attribute. Instead got type {type(v)}."
+        )
+        raise TypeError(msg)
+    if not isinstance(result, str):
+        msg = f"Expected 'type' to be a str, got {type(result).__name__}"
+        raise TypeError(msg)
+    return result
 
 
 AnyMessage = Annotated[
@@ -1127,6 +1132,7 @@ def convert_to_openai_messages(
     *,
     text_format: Literal["string", "block"] = "string",
     include_id: bool = False,
+    pass_through_unknown_blocks: bool = True,
 ) -> dict: ...
 
 
@@ -1136,6 +1142,7 @@ def convert_to_openai_messages(
     *,
     text_format: Literal["string", "block"] = "string",
     include_id: bool = False,
+    pass_through_unknown_blocks: bool = True,
 ) -> list[dict]: ...
 
 
@@ -1801,7 +1808,11 @@ def _get_message_openai_role(message: BaseMessage) -> str:
     if isinstance(message, ToolMessage):
         return "tool"
     if isinstance(message, SystemMessage):
-        return cast("str", message.additional_kwargs.get("__openai_role__", "system"))
+        role = message.additional_kwargs.get("__openai_role__", "system")
+        if not isinstance(role, str):
+            msg = f"Expected '__openai_role__' to be a str, got {type(role).__name__}"
+            raise TypeError(msg)
+        return role
     if isinstance(message, FunctionMessage):
         return "function"
     if isinstance(message, ChatMessage):

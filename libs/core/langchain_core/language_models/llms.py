@@ -301,6 +301,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     @functools.cached_property
     def _serialized(self) -> dict[str, Any]:
+        # self is always a Serializable object in this case, thus the result is
+        # guaranteed to be a dict since dumps uses the default callback, which uses
+        # obj.to_json which always returns TypedDict subclasses
         return cast("dict[str, Any]", dumpd(self))
 
     # --- Runnable methods ---
