@@ -80,7 +80,6 @@ from langchain_core.runnables.utils import (
     indent_lines_after_first,
     is_async_callable,
     is_async_generator,
-    task_with_context,
 )
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.tracers.event_stream import (
@@ -3189,7 +3188,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         part = functools.partial(step.ainvoke, input_, config, **kwargs)
                     else:
                         part = functools.partial(step.ainvoke, input_, config)
-                    input_ = await task_with_context(part(), context)
+                    input_ = await coro_with_context(part(), context, create_task=True)
             # finish the root run
         except BaseException as e:
             await run_manager.on_chain_error(e)
@@ -3911,8 +3910,8 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
                 callbacks=run_manager.get_child(f"map:key:{key}"),
             )
             with set_config_context(child_config) as context:
-                return await task_with_context(
-                    step.ainvoke(input_, child_config), context
+                return await coro_with_context(
+                    step.ainvoke(input_, child_config), context, create_task=True
                 )
 
         # gather results from all steps

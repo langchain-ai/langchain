@@ -132,35 +132,23 @@ def asyncio_accepts_context() -> bool:
 _T = TypeVar("_T")
 
 
-def task_with_context(
-    coro: Coroutine[Any, Any, _T], context: Context
-) -> asyncio.Task[_T]:
-    """Create a task with a context.
-
-    Args:
-        coro: The coroutine to create a task for.
-        context: The context to use.
-
-    Returns:
-        The task with the context.
-    """
-    if asyncio_accepts_context():
-        return asyncio.create_task(coro, context=context)  # type: ignore[arg-type,call-arg,unused-ignore]
-    return asyncio.create_task(coro)
-
-
-def coro_with_context(coro: Awaitable[_T], context: Context) -> Awaitable[_T]:
+def coro_with_context(
+    coro: Awaitable[_T], context: Context, *, create_task: bool = False
+) -> Awaitable[_T]:
     """Await a coroutine with a context.
 
     Args:
         coro: The coroutine to await.
         context: The context to use.
+        create_task: Whether to create a task.
 
     Returns:
         The coroutine with the context.
     """
     if asyncio_accepts_context():
         return asyncio.create_task(coro, context=context)  # type: ignore[arg-type,call-arg,unused-ignore]
+    if create_task:
+        return asyncio.create_task(coro)  # type: ignore[arg-type]
     return coro
 
 
