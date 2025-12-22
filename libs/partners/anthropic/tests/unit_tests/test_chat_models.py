@@ -2380,3 +2380,150 @@ def test_extras_with_multiple_fields() -> None:
     assert tool_def.get("defer_loading") is True
     assert tool_def.get("cache_control") == {"type": "ephemeral"}
     assert "input_examples" in tool_def
+
+
+def test_message_start_with_pre_completed_tool_use() -> None:
+    """Test that message_start events with pre-completed tool_use blocks are handled.
+
+    This tests the fix for GitHub issue #34406 where streaming with programmatic
+    tool calling (e.g., code_execution_20250825) returns empty AIMessage because
+    tool_use blocks are pre-completed in message_start instead of streamed.
+    """
+    from unittest.mock import MagicMock
+
+    from langchain_anthropic.chat_models import _make_message_chunk_from_anthropic_event
+
+    # Create a mock tool_use content block (pre-completed)
+    mock_tool_use_block = MagicMock()
+    mock_tool_use_block.type = "tool_use"
+    mock_tool_use_block.id = "toolu_01ABC123"
+    mock_tool_use_block.name = "get_weather"
+    mock_tool_use_block.input = {"location": "San Francisco"}
+    mock_tool_use_block.model_dump.return_value = {
+        "type": "tool_use",
+        "id": "toolu_01ABC123",
+        "name": "get_weather",
+        "input": {"location": "San Francisco"},
+    }
+
+    # Create mock message with pre-completed content
+    mock_message = MagicMock()
+    mock_message.model = MODEL_NAME
+    mock_message.content = [mock_tool_use_block]
+
+    # Create message_start event with pre-completed tool_use
+    message_start_event = MagicMock()
+    message_start_event.type = "message_start"
+    message_start_event.message = mock_message
+
+    # Test with coerce_content_to_string=False (tool calling scenario)
+    chunk, _ = _make_message_chunk_from_anthropic_event(
+        message_start_event,
+        stream_usage=True,
+        coerce_content_to_string=False,
+        block_start_event=None,
+    )
+
+    # Verify the chunk is not empty and contains the tool use
+    assert chunk is not None, (
+        "message_start with pre-completed content should produce chunk"
+    )
+    assert chunk.content, "Chunk content should not be empty"
+    assert isinstance(chunk.content, list), "Content should be a list"
+    assert len(chunk.content) == 1, "Should have one content block"
+    content_block = chunk.content[0]
+    assert isinstance(content_block, dict), "Content block should be a dict"
+    assert content_block["type"] == "tool_use"
+    assert content_block["id"] == "toolu_01ABC123"
+    assert content_block["name"] == "get_weather"
+
+    # Verify tool_call_chunks are populated
+    assert chunk.tool_call_chunks, "Tool call chunks should be populated"
+    assert len(chunk.tool_call_chunks) == 1
+    assert chunk.tool_call_chunks[0]["name"] == "get_weather"
+    assert chunk.tool_call_chunks[0]["id"] == "toolu_01ABC123"
+    args = chunk.tool_call_chunks[0]["args"]
+    assert args is not None
+    assert '"location": "San Francisco"' in args
+
+
+def test_message_start_with_multiple_pre_completed_blocks() -> None:
+    """Test message_start with multiple pre-completed content blocks."""
+    from unittest.mock import MagicMock
+
+    from langchain_anthropic.chat_models import _make_message_chunk_from_anthropic_event
+
+    # Create mock text block
+    mock_text_block = MagicMock()
+    mock_text_block.type = "text"
+    mock_text_block.text = "Let me check the weather."
+    mock_text_block.model_dump.return_value = {
+        "type": "text",
+        "text": "Let me check the weather.",
+    }
+
+    # Create mock tool_use block
+    mock_tool_use_block = MagicMock()
+    mock_tool_use_block.type = "tool_use"
+    mock_tool_use_block.id = "toolu_02XYZ789"
+    mock_tool_use_block.name = "search"
+    mock_tool_use_block.input = {"query": "weather"}
+    mock_tool_use_block.model_dump.return_value = {
+        "type": "tool_use",
+        "id": "toolu_02XYZ789",
+        "name": "search",
+        "input": {"query": "weather"},
+    }
+
+    # Create mock message with multiple pre-completed content blocks
+    mock_message = MagicMock()
+    mock_message.model = MODEL_NAME
+    mock_message.content = [mock_text_block, mock_tool_use_block]
+
+    message_start_event = MagicMock()
+    message_start_event.type = "message_start"
+    message_start_event.message = mock_message
+
+    chunk, _ = _make_message_chunk_from_anthropic_event(
+        message_start_event,
+        stream_usage=True,
+        coerce_content_to_string=False,
+        block_start_event=None,
+    )
+
+    assert chunk is not None
+    assert isinstance(chunk.content, list), "Content should be a list"
+    assert len(chunk.content) == 2
+    text_block = chunk.content[0]
+    tool_block = chunk.content[1]
+    assert isinstance(text_block, dict)
+    assert text_block["type"] == "text"
+    assert isinstance(tool_block, dict)
+    assert tool_block["type"] == "tool_use"
+    assert len(chunk.tool_call_chunks) == 1
+    assert chunk.tool_call_chunks[0]["name"] == "search"
+
+
+def test_message_start_empty_content_still_works() -> None:
+    """Test that message_start with empty content still produces a chunk."""
+    from unittest.mock import MagicMock
+
+    from langchain_anthropic.chat_models import _make_message_chunk_from_anthropic_event
+
+    mock_message = MagicMock()
+    mock_message.model = MODEL_NAME
+    mock_message.content = []
+
+    message_start_event = MagicMock()
+    message_start_event.type = "message_start"
+    message_start_event.message = mock_message
+
+    chunk, _ = _make_message_chunk_from_anthropic_event(
+        message_start_event,
+        stream_usage=True,
+        coerce_content_to_string=False,
+        block_start_event=None,
+    )
+
+    assert chunk is not None
+    assert chunk.content == []
