@@ -1,6 +1,5 @@
 import threading
 import time
-import unittest
 import unittest.mock
 import uuid
 from typing import Any
