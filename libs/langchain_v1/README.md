@@ -28,6 +28,10 @@ LangChain [agents](https://docs.langchain.com/oss/python/langchain/agents) are b
 
 For full documentation, see the [API reference](https://reference.langchain.com/python/langchain/langchain/). For conceptual guides, tutorials, and examples on using LangChain, see the [LangChain Docs](https://docs.langchain.com/oss/python/langchain/overview).
 
+### 🎯 Key Guides
+
+- **[`init_chat_model` Complete Guide](./INIT_CHAT_MODEL_GUIDE.md)** - Learn how to initialize chat models from any provider using a unified interface
+
 ## 📕 Releases & Versioning
 
 See our [Releases](https://docs.langchain.com/oss/python/release-policy) and [Versioning](https://docs.langchain.com/oss/python/versioning) policies.
