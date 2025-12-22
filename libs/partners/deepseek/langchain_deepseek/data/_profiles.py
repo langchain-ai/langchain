@@ -28,6 +28,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "reasoning_output": False,
         "tool_calling": True,
     },
+    "deepseek-v3": {
+        "max_input_tokens": 128000,
+        "max_output_tokens": 8192,
+        "image_inputs": False,
+        "audio_inputs": False,
+        "video_inputs": False,
+        "image_outputs": False,
+        "audio_outputs": False,
+        "video_outputs": False,
+        "reasoning_output": False,
+        "tool_calling": True,
+    },
     "deepseek-reasoner": {
         "max_input_tokens": 128000,
         "max_output_tokens": 128000,
