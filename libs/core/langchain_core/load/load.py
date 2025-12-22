@@ -19,7 +19,7 @@ The `allowed_objects` parameter controls which classes can be deserialized:
     langchain_core.
 - **`'all'`**: Allow classes defined in the serialization mappings. This
     includes core LangChain types (messages, prompts, documents, etc.) and trusted
-    partner integrations.
+    partner integrations. See `langchain_core.load.mapping` for the full list.
 - **Explicit list of classes**: Only those specific classes are allowed.
 
 For simple data types like messages and documents, the default allowlist is safe to use.
@@ -295,7 +295,8 @@ class Reviver:
                 - `'all'`: Allow classes defined in the serialization mappings.
 
                     This includes core LangChain types (messages, prompts, documents,
-                    etc.) and trusted partner integrations.
+                    etc.) and trusted partner integrations. See
+                    `langchain_core.load.mapping` for the full list.
                 - Explicit list of classes: Only those specific classes are allowed.
             secrets_map: A map of secrets to load.
                 If a secret is not found in the map, it will be loaded from the
@@ -411,8 +412,12 @@ class Reviver:
                 and mapping_key not in self.allowed_class_paths
             ):
                 msg = (
-                    "Deserialization of the requested object is not allowed. "
-                    f"Update allowed_objects to include {mapping_key!r}."
+                    f"Deserialization of {mapping_key!r} is not allowed. "
+                    "The default (allowed_objects='core') only permits core "
+                    "langchain-core classes. To allow trusted partner integrations, "
+                    "use allowed_objects='all'. Alternatively, pass an explicit list "
+                    "of allowed classes via allowed_objects=[...]. "
+                    "See langchain_core.load.mapping for the full allowlist."
                 )
                 raise ValueError(msg)
 
@@ -482,7 +487,8 @@ def loads(
     Equivalent to `load(json.loads(text))`.
 
     Only classes in the allowlist can be instantiated. The default allowlist includes
-    core LangChain types (messages, prompts, documents, etc.).
+    core LangChain types (messages, prompts, documents, etc.). See
+    `langchain_core.load.mapping` for the full list.
 
     Args:
         text: The string to load.
@@ -493,7 +499,8 @@ def loads(
             - `'all'`: Allow classes defined in the serialization mappings.
 
                 This includes core LangChain types (messages, prompts, documents, etc.)
-                and trusted partner integrations.
+                and trusted partner integrations. See `langchain_core.load.mapping` for
+                the full list.
             - Explicit list of classes: Only those specific classes are allowed.
             - `[]`: Disallow all deserialization (will raise on any object).
         secrets_map: A map of secrets to load.
@@ -556,7 +563,8 @@ def load(
     `orjson.loads`.
 
     Only classes in the allowlist can be instantiated. The default allowlist includes
-    core LangChain types (messages, prompts, documents, etc.).
+    core LangChain types (messages, prompts, documents, etc.). See
+    `langchain_core.load.mapping` for the full list.
 
     Args:
         obj: The object to load.
@@ -567,7 +575,8 @@ def load(
             - `'all'`: Allow classes defined in the serialization mappings.
 
                 This includes core LangChain types (messages, prompts, documents, etc.)
-                and trusted partner integrations.
+                and trusted partner integrations. See `langchain_core.load.mapping` for
+                the full list.
             - Explicit list of classes: Only those specific classes are allowed.
             - `[]`: Disallow all deserialization (will raise on any object).
         secrets_map: A map of secrets to load.
