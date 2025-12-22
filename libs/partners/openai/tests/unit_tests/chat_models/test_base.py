@@ -1360,7 +1360,7 @@ def test_structured_outputs_parser() -> None:
         partial(_oai_structured_outputs_parser, schema=GenerateUsername)
     )
     serialized = dumps(llm_output)
-    deserialized = loads(serialized)
+    deserialized = loads(serialized, allowed_objects=[ChatGeneration, AIMessage])
     assert isinstance(deserialized, ChatGeneration)
     result = output_parser.invoke(cast(AIMessage, deserialized.message))
     assert result == parsed_response
