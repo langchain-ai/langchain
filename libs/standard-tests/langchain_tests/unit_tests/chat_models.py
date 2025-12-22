@@ -1129,6 +1129,7 @@ class ChatModelUnitTests(ChatModelTests):
                         dumpd(model),
                         valid_namespaces=model.get_lc_namespace()[:1],
                         allowed_objects="all",
+                        secrets_from_env=True,
                     ).dict()
                 )
 
