@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10.0, <4.0.0"
 resolution-markers = [
     "python_full_version >= '3.14' and platform_python_implementation == 'PyPy'",
@@ -2458,7 +2458,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.1.0"
+version = "1.2.4"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -2639,7 +2639,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.1.0"
+version = "1.1.6"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },
@@ -2702,7 +2702,7 @@ wheels = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.0.2"
+version = "1.1.1"
 source = { editable = "../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -2747,7 +2747,7 @@ typing = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "1.0.0"
+version = "1.1.0"
 source = { editable = "../text-splitters" }
 dependencies = [
     { name = "langchain-core" },

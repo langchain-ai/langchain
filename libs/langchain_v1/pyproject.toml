@@ -9,10 +9,10 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.1.3"
+version = "1.2.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.1.2,<2.0.0",
+    "langchain-core>=1.2.1,<2.0.0",
     "langgraph>=1.0.2,<1.1.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
@@ -141,7 +141,6 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 "tests/unit_tests/agents/*" = [
     "ANN", # Annotations, needs to fix
     "ARG", # Arguments, needs to fix
-    "PT",  # pytest, needs to fix
 ]
 "tests/unit_tests/agents/test_return_direct_spec.py" = ["F821"]
 "tests/unit_tests/agents/test_responses_spec.py" = ["F821"]
