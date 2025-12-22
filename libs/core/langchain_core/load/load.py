@@ -15,9 +15,9 @@ allowlist. If the class is not in the allowlist, deserialization raises a `Value
 
 The `allowed_objects` parameter controls which classes can be deserialized:
 
-- **`"core"` (default)**: Allow classes defined in the serialization mappings for
+- **`'core'` (default)**: Allow classes defined in the serialization mappings for
     langchain_core.
-- **`"all"`**: Allow classes defined in the serialization mappings. This
+- **`'all'`**: Allow classes defined in the serialization mappings. This
     includes core LangChain types (messages, prompts, documents, etc.) and trusted
     partner integrations.
 - **Explicit list of classes**: Only those specific classes are allowed.
@@ -130,7 +130,7 @@ def _get_default_allowed_class_paths(
     by default. Both the legacy paths (keys) and current paths (values) are included.
 
     Args:
-        allowed_object_mode: either "all" or "core".
+        allowed_object_mode: either `'all'` or `'core'`.
 
     Returns:
         Set of class path tuples that are allowed by default.
@@ -158,18 +158,19 @@ def _block_jinja2_templates(
     Jinja2 templates can execute arbitrary code, so they are blocked by default when
     deserializing objects with `template_format='jinja2'`.
 
-    Note: We intentionally do NOT check the class_path here to keep this simple and
-    future-proof. If any new class is added that accepts template_format='jinja2',
-    it will be automatically blocked without needing to update this function.
+    Note:
+        We intentionally do NOT check the `class_path` here to keep this simple and
+        future-proof. If any new class is added that accepts `template_format='jinja2'`,
+        it will be automatically blocked without needing to update this function.
 
     Args:
         class_path: The class path tuple being deserialized (unused).
         kwargs: The kwargs dict for the class constructor.
 
     Raises:
-        ValueError: If template_format is `'jinja2'`.
+        ValueError: If `template_format` is `'jinja2'`.
     """
-    _ = class_path  # Unused - see docstring for rationale
+    _ = class_path  # Unused - see docstring for rationale. Kept to satisfy signature.
     if kwargs.get("template_format") == "jinja2":
         msg = (
             "Jinja2 templates are not allowed during deserialization for security "
@@ -289,9 +290,9 @@ class Reviver:
 
         Args:
             allowed_objects: Allowlist of classes that can be deserialized.
-                - `"core"` (default): Allow classes defined in the serialization
-                    mappings for langchain_core.
-                - `"all"`: Allow classes defined in the serialization mappings.
+                - `'core'` (default): Allow classes defined in the serialization
+                    mappings for `langchain_core`.
+                - `'all'`: Allow classes defined in the serialization mappings.
 
                     This includes core LangChain types (messages, prompts, documents,
                     etc.) and trusted partner integrations.
@@ -314,8 +315,9 @@ class Reviver:
                 If provided, this function is called with `(class_path, kwargs)` where
                 `class_path` is the class path tuple and `kwargs` is the kwargs dict.
                 The validator should raise an exception if the object should not be
-                deserialized, otherwise return `None`. Defaults to
-                `default_init_validator` which blocks jinja2 templates.
+                deserialized, otherwise return `None`.
+
+                Defaults to `default_init_validator` which blocks jinja2 templates.
         """
         self.secrets_from_env = secrets_from_env
         self.secrets_map = secrets_map or {}
@@ -486,9 +488,9 @@ def loads(
         text: The string to load.
         allowed_objects: Allowlist of classes that can be deserialized.
 
-            - `"core"` (default): Allow classes defined in the serialization mappings
+            - `'core'` (default): Allow classes defined in the serialization mappings
                 for langchain_core.
-            - `"all"`: Allow classes defined in the serialization mappings.
+            - `'all'`: Allow classes defined in the serialization mappings.
 
                 This includes core LangChain types (messages, prompts, documents, etc.)
                 and trusted partner integrations.
@@ -560,9 +562,9 @@ def load(
         obj: The object to load.
         allowed_objects: Allowlist of classes that can be deserialized.
 
-            - `"core"` (default): Allow classes defined in the serialization mappings
+            - `'core'` (default): Allow classes defined in the serialization mappings
                 for langchain_core.
-            - `"all"`: Allow classes defined in the serialization mappings.
+            - `'all'`: Allow classes defined in the serialization mappings.
 
                 This includes core LangChain types (messages, prompts, documents, etc.)
                 and trusted partner integrations.
