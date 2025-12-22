@@ -490,17 +490,23 @@ def loads(
     core LangChain types (messages, prompts, documents, etc.). See
     `langchain_core.load.mapping` for the full list.
 
+    !!! warning "Beta feature"
+
+        This is a beta feature. Please be wary of deploying experimental code to
+        production unless you've taken appropriate precautions.
+
     Args:
         text: The string to load.
         allowed_objects: Allowlist of classes that can be deserialized.
 
             - `'core'` (default): Allow classes defined in the serialization mappings
-                for langchain_core.
+                for `langchain_core`.
             - `'all'`: Allow classes defined in the serialization mappings.
 
                 This includes core LangChain types (messages, prompts, documents, etc.)
                 and trusted partner integrations. See `langchain_core.load.mapping` for
                 the full list.
+
             - Explicit list of classes: Only those specific classes are allowed.
             - `[]`: Disallow all deserialization (will raise on any object).
         secrets_map: A map of secrets to load.
@@ -522,8 +528,9 @@ def loads(
             If provided, this function is called with `(class_path, kwargs)` where
             `class_path` is the class path tuple and `kwargs` is the kwargs dict.
             The validator should raise an exception if the object should not be
-            deserialized, otherwise return `None`. Defaults to
-            `default_init_validator` which blocks jinja2 templates.
+            deserialized, otherwise return `None`.
+
+            Defaults to `default_init_validator` which blocks jinja2 templates.
 
     Returns:
         Revived LangChain objects.
@@ -566,17 +573,23 @@ def load(
     core LangChain types (messages, prompts, documents, etc.). See
     `langchain_core.load.mapping` for the full list.
 
+    !!! warning "Beta feature"
+
+        This is a beta feature. Please be wary of deploying experimental code to
+        production unless you've taken appropriate precautions.
+
     Args:
         obj: The object to load.
         allowed_objects: Allowlist of classes that can be deserialized.
 
             - `'core'` (default): Allow classes defined in the serialization mappings
-                for langchain_core.
+                for `langchain_core`.
             - `'all'`: Allow classes defined in the serialization mappings.
 
                 This includes core LangChain types (messages, prompts, documents, etc.)
                 and trusted partner integrations. See `langchain_core.load.mapping` for
                 the full list.
+
             - Explicit list of classes: Only those specific classes are allowed.
             - `[]`: Disallow all deserialization (will raise on any object).
         secrets_map: A map of secrets to load.
@@ -598,8 +611,9 @@ def load(
             If provided, this function is called with `(class_path, kwargs)` where
             `class_path` is the class path tuple and `kwargs` is the kwargs dict.
             The validator should raise an exception if the object should not be
-            deserialized, otherwise return `None`. Defaults to
-            `default_init_validator` which blocks jinja2 templates.
+            deserialized, otherwise return `None`.
+
+            Defaults to `default_init_validator` which blocks jinja2 templates.
 
     Returns:
         Revived LangChain objects.
