@@ -11,7 +11,7 @@ import pytest as pytest
 
 from langchain_fireworks import Fireworks
 
-_MODEL = "accounts/fireworks/models/llama-v3p1-8b-instruct"
+_MODEL = "accounts/fireworks/models/gpt-oss-20b"
 
 
 def test_fireworks_call() -> None:
