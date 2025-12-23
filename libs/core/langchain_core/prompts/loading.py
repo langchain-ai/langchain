@@ -7,6 +7,7 @@ from pathlib import Path
 
 import yaml
 
+from langchain_core.load import load
 from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import ChatPromptTemplate
@@ -29,6 +30,9 @@ def load_prompt_from_config(config: dict) -> BasePromptTemplate:
     Raises:
         ValueError: If the prompt type is not supported.
     """
+    if "lc" in config and "type" in config:
+        return load(config)
+
     if "_type" not in config:
         logger.warning("No `_type` key found, defaulting to `prompt`.")
     config_type = config.pop("_type", "prompt")
