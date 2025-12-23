@@ -125,7 +125,7 @@ def test_appends_to_existing_system_prompt() -> None:
 
 
 @pytest.mark.parametrize(
-    "original_prompt,expected_prompt_prefix",
+    ("original_prompt", "expected_prompt_prefix"),
     [
         ("Original prompt", "Original prompt\n\n## `write_todos`"),
         (None, "## `write_todos`"),
@@ -291,7 +291,7 @@ def test_todo_middleware_custom_system_prompt_and_tool_description() -> None:
 
 
 @pytest.mark.parametrize(
-    "todos,expected_message",
+    ("todos", "expected_message"),
     [
         ([], "Updated todo list to []"),
         (
