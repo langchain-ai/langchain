@@ -200,7 +200,7 @@ def custom_openapi() -> dict[str, Any]:
 
 # This lets us prevent the "servers" configuration from being overwritten in
 # the auto-generated OpenAPI schema
-app.openapi = custom_openapi  # type: ignore[method-assign]
+app.openapi = custom_openapi
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=PORT)
