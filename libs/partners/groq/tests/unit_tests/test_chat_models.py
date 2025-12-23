@@ -264,6 +264,7 @@ def test_groq_serialization() -> None:
         dump,
         valid_namespaces=["langchain_groq"],
         secrets_map={"GROQ_API_KEY": api_key2},
+        allowed_objects="all",
     )
 
     assert type(llm2) is ChatGroq
