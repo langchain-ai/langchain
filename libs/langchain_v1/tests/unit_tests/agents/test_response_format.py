@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 from langchain.agents import create_agent
+from langchain.agents.factory import _supports_provider_strategy
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
     ProviderStrategy,
@@ -873,3 +874,46 @@ def test_union_of_types() -> None:
 
     assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
     assert len(response["messages"]) == 5
+
+
+class TestSupportsProviderStrategy:
+    """Unit tests for `_supports_provider_strategy`."""
+
+    @staticmethod
+    def _make_structured_model(model_name: str):
+        from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+
+        class GeminiTestChatModel(GenericFakeChatModel):
+            model_name: str
+
+        return GeminiTestChatModel(
+            messages=iter(
+                [
+                    CoreAIMessage(content="test-response"),
+                ]
+            ),
+            profile={"structured_output": True},
+            model_name=model_name,
+        )
+
+    def test_blocks_gemini_v2_with_tools(self) -> None:
+        """Gemini 2 series models cannot use provider strategy with tools."""
+        model = self._make_structured_model("gemini-2.5-flash")
+        assert not _supports_provider_strategy(model, tools=[get_weather])
+
+    def test_allows_gemini_v3_with_tools(self) -> None:
+        """Gemini 3 series models support structured output alongside tools."""
+        model = self._make_structured_model("gemini-3-pro-preview")
+        assert _supports_provider_strategy(model, tools=[get_weather])
+
+    @pytest.mark.parametrize(
+        "alias",
+        [
+            "gemini-flash-latest",
+            "gemini-flash-lite-latest",
+        ],
+    )
+    def test_blocks_gemini_latest_aliases(self, alias: str) -> None:
+        """Latest aliases stay blocked until they point to Gemini 3."""
+        model = self._make_structured_model(alias)
+        assert not _supports_provider_strategy(model, tools=[get_weather])
