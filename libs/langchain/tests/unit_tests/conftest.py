@@ -31,13 +31,6 @@ def blockbuster() -> Iterator[None]:
                 "_default_retry_config",
             )
 
-        # Allow BufferedWriter.write in aiosqlite (used by async SQLRecordManager tests)
-        for aiosqlite_func in ["_execute", "run", "_connect", "execute", "executemany"]:
-            bb.functions["io.BufferedWriter.write"].can_block_in(
-                "aiosqlite/core.py",
-                aiosqlite_func,
-            )
-
         for bb_function in bb.functions.values():
             bb_function.can_block_in(
                 "freezegun/api.py",

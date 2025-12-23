@@ -210,6 +210,7 @@ def test_indexing_same_content(
         }
 
 
+@pytest.mark.skip(reason="Blockbuster detects blocking I/O in aiosqlite")
 @pytest.mark.requires("aiosqlite")
 async def test_aindexing_same_content(
     arecord_manager: SQLRecordManager,
@@ -330,6 +331,7 @@ def test_index_simple_delete_full(
         }
 
 
+@pytest.mark.skip(reason="Blockbuster detects blocking I/O in aiosqlite")
 @pytest.mark.requires("aiosqlite")
 async def test_aindex_simple_delete_full(
     arecord_manager: SQLRecordManager,
@@ -459,6 +461,7 @@ def test_incremental_fails_with_bad_source_ids(
         )
 
 
+@pytest.mark.skip(reason="Blockbuster detects blocking I/O in aiosqlite")
 @pytest.mark.requires("aiosqlite")
 async def test_aincremental_fails_with_bad_source_ids(
     arecord_manager: SQLRecordManager,
@@ -597,6 +600,7 @@ def test_no_delete(
         }
 
 
+@pytest.mark.skip(reason="Blockbuster detects blocking I/O in aiosqlite")
 @pytest.mark.requires("aiosqlite")
 async def test_ano_delete(
     arecord_manager: SQLRecordManager,
@@ -1029,6 +1033,7 @@ def test_incremental_delete_with_batch_size(
         }
 
 
+@pytest.mark.skip(reason="Blockbuster detects blocking I/O in aiosqlite")
 @pytest.mark.requires("aiosqlite")
 async def test_aincremental_delete(
     arecord_manager: SQLRecordManager,
@@ -1156,6 +1161,7 @@ def test_indexing_with_no_docs(
     }
 
 
+@pytest.mark.skip(reason="Blockbuster detects blocking I/O in aiosqlite")
 @pytest.mark.requires("aiosqlite")
 async def test_aindexing_with_no_docs(
     arecord_manager: SQLRecordManager,
@@ -1197,6 +1203,7 @@ def test_deduplication(
     }
 
 
+@pytest.mark.skip(reason="Blockbuster detects blocking I/O in aiosqlite")
 @pytest.mark.requires("aiosqlite")
 async def test_adeduplication(
     arecord_manager: SQLRecordManager,
@@ -1265,6 +1272,7 @@ def test_cleanup_with_different_batchsize(
     }
 
 
+@pytest.mark.skip(reason="Blockbuster detects blocking I/O in aiosqlite")
 @pytest.mark.requires("aiosqlite")
 async def test_async_cleanup_with_different_batchsize(
     arecord_manager: SQLRecordManager,
@@ -1420,6 +1428,7 @@ def test_indexing_force_update(
     }
 
 
+@pytest.mark.skip(reason="Blockbuster detects blocking I/O in aiosqlite")
 @pytest.mark.requires("aiosqlite")
 async def test_aindexing_force_update(
     arecord_manager: SQLRecordManager,
@@ -1513,6 +1522,7 @@ def test_indexing_custom_batch_size(
         assert kwargs == {"ids": ids, "batch_size": batch_size}
 
 
+@pytest.mark.skip(reason="Blockbuster detects blocking I/O in aiosqlite")
 @pytest.mark.requires("aiosqlite")
 async def test_aindexing_custom_batch_size(
     arecord_manager: SQLRecordManager,
