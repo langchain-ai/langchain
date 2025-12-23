@@ -1,10 +1,26 @@
-"""Dump objects to json."""
+"""Serialize LangChain objects to JSON.
+
+Provides `dumps` (to JSON string) and `dumpd` (to dict) for serializing
+`Serializable` objects.
+
+## Escaping
+
+During serialization, plain dicts (user data) that contain an `'lc'` key are escaped
+by wrapping them: `{"__lc_escaped__": {...original...}}`. This prevents injection
+attacks where malicious data could trick the deserializer into instantiating
+arbitrary classes. The escape marker is removed during deserialization.
+
+This is an allowlist approach: only dicts explicitly produced by
+`Serializable.to_json()` are treated as LC objects; everything else is escaped if it
+could be confused with the LC format.
+"""
 
 import json
 from typing import Any
 
 from pydantic import BaseModel
 
+from langchain_core.load._validation import _serialize_value
 from langchain_core.load.serializable import Serializable, to_json_not_implemented
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration
@@ -25,6 +41,20 @@ def default(obj: Any) -> Any:
 
 
 def _dump_pydantic_models(obj: Any) -> Any:
+    """Convert nested Pydantic models to dicts for JSON serialization.
+
+    Handles the special case where a `ChatGeneration` contains an `AIMessage`
+    with a parsed Pydantic model in `additional_kwargs["parsed"]`. Since
+    Pydantic models aren't directly JSON serializable, this converts them to
+    dicts.
+
+    Args:
+        obj: The object to process.
+
+    Returns:
+        A copy of the object with nested Pydantic models converted to dicts, or
+            the original object unchanged if no conversion was needed.
+    """
     if (
         isinstance(obj, ChatGeneration)
         and isinstance(obj.message, AIMessage)
@@ -40,12 +70,18 @@ def _dump_pydantic_models(obj: Any) -> Any:
 def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
     """Return a json string representation of an object.
 
+    Note:
+        Plain dicts containing an `'lc'` key are automatically escaped to prevent
+        confusion with LC serialization format. The escape marker is removed during
+        deserialization.
+
     Args:
         obj: The object to dump.
-        pretty: Whether to pretty print the json. If true, the json will be
-            indented with 2 spaces (if no indent is provided as part of kwargs).
-            Default is False.
-        kwargs: Additional arguments to pass to json.dumps
+        pretty: Whether to pretty print the json.
+
+            If `True`, the json will be indented by either 2 spaces or the amount
+            provided in the `indent` kwarg.
+        **kwargs: Additional arguments to pass to `json.dumps`
 
     Returns:
         A json string representation of the object.
@@ -56,25 +92,23 @@ def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
     if "default" in kwargs:
         msg = "`default` should not be passed to dumps"
         raise ValueError(msg)
-    try:
-        obj = _dump_pydantic_models(obj)
-        if pretty:
-            indent = kwargs.pop("indent", 2)
-            return json.dumps(obj, default=default, indent=indent, **kwargs)
-        return json.dumps(obj, default=default, **kwargs)
-    except TypeError:
-        if pretty:
-            indent = kwargs.pop("indent", 2)
-            return json.dumps(to_json_not_implemented(obj), indent=indent, **kwargs)
-        return json.dumps(to_json_not_implemented(obj), **kwargs)
+
+    obj = _dump_pydantic_models(obj)
+    serialized = _serialize_value(obj)
+
+    if pretty:
+        indent = kwargs.pop("indent", 2)
+        return json.dumps(serialized, indent=indent, **kwargs)
+    return json.dumps(serialized, **kwargs)
 
 
 def dumpd(obj: Any) -> Any:
     """Return a dict representation of an object.
 
-    .. note::
-        Unfortunately this function is not as efficient as it could be because it first
-        dumps the object to a json string and then loads it back into a dictionary.
+    Note:
+        Plain dicts containing an `'lc'` key are automatically escaped to prevent
+        confusion with LC serialization format. The escape marker is removed during
+        deserialization.
 
     Args:
         obj: The object to dump.
@@ -82,4 +116,5 @@ def dumpd(obj: Any) -> Any:
     Returns:
         dictionary that can be serialized to json using json.dumps
     """
-    return json.loads(dumps(obj))
+    obj = _dump_pydantic_models(obj)
+    return _serialize_value(obj)

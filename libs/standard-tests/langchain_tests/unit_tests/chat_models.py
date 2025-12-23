@@ -1115,7 +1115,10 @@ class ChatModelUnitTests(ChatModelTests):
                 assert (
                     model.dict()
                     == load(
-                        dumpd(model), valid_namespaces=model.get_lc_namespace()[:1]
+                        dumpd(model),
+                        valid_namespaces=model.get_lc_namespace()[:1],
+                        allowed_objects="all",
+                        secrets_from_env=True,
                     ).dict()
                 )
 

@@ -603,8 +603,8 @@ class InMemoryVectorStore(VectorStore):
             A VectorStore object.
         """
         path_: Path = Path(path)
-        with path_.open("r") as f:
-            store = load(json.load(f))
+        with path_.open("r", encoding="utf-8") as f:
+            store = load(json.load(f), allowed_objects=[Document])
         vectorstore = cls(embedding=embedding, **kwargs)
         vectorstore.store = store
         return vectorstore
