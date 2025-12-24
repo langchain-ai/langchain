@@ -118,6 +118,12 @@ Example:
     ```
 """
 
+TriggerClauseMapping = Mapping[Literal["fraction", "tokens", "messages"], float | int]
+"""Mapping-based trigger clause combining multiple context metrics with AND semantics."""
+
+TriggerConfig = ContextSize | TriggerClauseMapping | list[ContextSize | TriggerClauseMapping]
+"""Supported trigger configuration inputs."""
+
 
 def _get_approximate_token_counter(model: BaseChatModel) -> TokenCounter:
     """Tune parameters of approximate token counter based on model type."""
@@ -140,7 +146,7 @@ class SummarizationMiddleware(AgentMiddleware):
         self,
         model: str | BaseChatModel,
         *,
-        trigger: ContextSize | list[ContextSize] | None = None,
+        trigger: TriggerConfig | None = None,
         keep: ContextSize = ("messages", _DEFAULT_MESSAGES_TO_KEEP),
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
@@ -155,8 +161,10 @@ class SummarizationMiddleware(AgentMiddleware):
 
                 Provide a single
                 [`ContextSize`][langchain.agents.middleware.summarization.ContextSize]
-                tuple or a list of tuples, in which case summarization runs when any
-                threshold is met.
+                tuple, a dictionary specifying multiple conditions that must ALL be
+                satisfied, or a list combining any of these inputs. Lists adopt OR
+                semantics, while dictionary keys (e.g. `{"tokens": 4000, "messages": 10}`)
+                adopt AND semantics.
 
                 !!! example
 
@@ -167,9 +175,15 @@ class SummarizationMiddleware(AgentMiddleware):
                     # Trigger summarization when 3000 tokens is reached
                     ("tokens", 3000)
 
+                    # Trigger summarization when BOTH token and message limits are exceeded
+                    {"tokens": 4000, "messages": 10}
+
                     # Trigger summarization either when 80% of model's max input tokens
                     # is reached or when 100 messages is reached (whichever comes first)
                     [("fraction", 0.8), ("messages", 100)]
+
+                    # Require both metrics for a clause, with OR between clauses
+                    [{"tokens": 5000, "messages": 3}, {"tokens": 3000, "messages": 6}]
                     ```
 
                     See [`ContextSize`][langchain.agents.middleware.summarization.ContextSize]
@@ -230,17 +244,21 @@ class SummarizationMiddleware(AgentMiddleware):
 
         self.model = model
         if trigger is None:
-            self.trigger: ContextSize | list[ContextSize] | None = None
-            trigger_conditions: list[ContextSize] = []
+            self.trigger: TriggerConfig | None = None
+            trigger_inputs: list[ContextSize | TriggerClauseMapping] = []
         elif isinstance(trigger, list):
-            validated_list = [self._validate_context_size(item, "trigger") for item in trigger]
-            self.trigger = validated_list
-            trigger_conditions = validated_list
+            self.trigger = trigger
+            trigger_inputs = list(trigger)
         else:
-            validated = self._validate_context_size(trigger, "trigger")
-            self.trigger = validated
-            trigger_conditions = [validated]
-        self._trigger_conditions = trigger_conditions
+            self.trigger = trigger
+            trigger_inputs = [trigger]
+
+        self._trigger_clauses: list[list[ContextSize]] = [
+            self._normalize_trigger_clause(item) for item in trigger_inputs
+        ]
+        self._trigger_conditions = [
+            condition for clause in self._trigger_clauses for condition in clause
+        ]
 
         self.keep = self._validate_context_size(keep, "keep")
         if token_counter is count_tokens_approximately:
@@ -321,23 +339,15 @@ class SummarizationMiddleware(AgentMiddleware):
 
     def _should_summarize(self, messages: list[AnyMessage], total_tokens: int) -> bool:
         """Determine whether summarization should run for the current token usage."""
-        if not self._trigger_conditions:
+        if not self._trigger_clauses:
             return False
 
-        for kind, value in self._trigger_conditions:
-            if kind == "messages" and len(messages) >= value:
+        for clause in self._trigger_clauses:
+            if all(
+                self._evaluate_trigger_condition(condition, messages, total_tokens)
+                for condition in clause
+            ):
                 return True
-            if kind == "tokens" and total_tokens >= value:
-                return True
-            if kind == "fraction":
-                max_input_tokens = self._get_profile_limits()
-                if max_input_tokens is None:
-                    continue
-                threshold = int(max_input_tokens * value)
-                if threshold <= 0:
-                    threshold = 1
-                if total_tokens >= threshold:
-                    return True
         return False
 
     def _determine_cutoff_index(self, messages: list[AnyMessage]) -> int:
@@ -433,6 +443,43 @@ class SummarizationMiddleware(AgentMiddleware):
             msg = f"Unsupported context size type {kind} for {parameter_name}."
             raise ValueError(msg)
         return context
+
+    def _normalize_trigger_clause(
+        self,
+        clause: ContextSize | TriggerClauseMapping,
+    ) -> list[ContextSize]:
+        """Normalize a trigger clause into a list of validated ContextSize tuples."""
+        if isinstance(clause, Mapping):
+            normalized: list[ContextSize] = []
+            for kind, value in clause.items():
+                normalized.append(self._validate_context_size((kind, value), "trigger"))
+            if not normalized:
+                msg = "Trigger mappings must contain at least one condition."
+                raise ValueError(msg)
+            return normalized
+        return [self._validate_context_size(clause, "trigger")]
+
+    def _evaluate_trigger_condition(
+        self,
+        condition: ContextSize,
+        messages: list[AnyMessage],
+        total_tokens: int,
+    ) -> bool:
+        """Evaluate a single trigger condition against the current state."""
+        kind, value = condition
+        if kind == "messages":
+            return len(messages) >= value
+        if kind == "tokens":
+            return total_tokens >= value
+        if kind == "fraction":
+            max_input_tokens = self._get_profile_limits()
+            if max_input_tokens is None:
+                return False
+            threshold = int(max_input_tokens * value)
+            if threshold <= 0:
+                threshold = 1
+            return total_tokens >= threshold
+        return False
 
     def _build_new_messages(self, summary: str) -> list[HumanMessage]:
         return [

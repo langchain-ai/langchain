@@ -552,6 +552,59 @@ def test_summarization_middleware_multiple_triggers() -> None:
     assert result is not None
 
 
+def test_summarization_middleware_trigger_and_semantics() -> None:
+    """Ensure dictionary triggers require ALL listed conditions."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger={"tokens": 4000, "messages": 10},
+        keep=("messages", 2),
+    )
+
+    # Force high token count regardless of message length
+    middleware.token_counter = lambda messages: 5000
+
+    # High tokens but insufficient messages -> should not summarize
+    few_messages = [HumanMessage(content=str(i)) for i in range(5)]
+    state = {"messages": few_messages}
+    assert middleware.before_model(state, None) is None
+
+    # Both thresholds met -> summarization runs
+    enough_messages = [HumanMessage(content=str(i)) for i in range(12)]
+    state = {"messages": enough_messages}
+    result = middleware.before_model(state, None)
+    assert result is not None
+
+
+def test_summarization_middleware_trigger_or_semantics_with_clauses() -> None:
+    """Ensure OR semantics across clauses that include dict + tuple inputs."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=[{"tokens": 5000, "messages": 3}, ("messages", 12)],
+        keep=("messages", 2),
+    )
+
+    middleware.token_counter = lambda messages: 6000
+
+    # High tokens but messages below clause requirement -> should not trigger
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(2)]}
+    assert middleware.before_model(state, None) is None
+
+    # Clause with AND semantics satisfied
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(4)]}
+    assert middleware.before_model(state, None) is not None
+
+    # Lower tokens but message-count-only clause should still trigger
+    middleware.token_counter = lambda messages: 3500
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(12)]}
+    assert middleware.before_model(state, None) is not None
+
+
+def test_summarization_middleware_empty_trigger_mapping_raises() -> None:
+    """Validate that empty trigger mappings are rejected."""
+    with pytest.raises(ValueError, match="Trigger mappings must contain at least one condition."):
+        SummarizationMiddleware(model=MockChatModel(), trigger={})
+
+
 def test_summarization_middleware_profile_edge_cases() -> None:
     """Test profile retrieval with various edge cases."""
 
