@@ -601,7 +601,10 @@ def test_summarization_middleware_trigger_or_semantics_with_clauses() -> None:
 
 def test_summarization_middleware_empty_trigger_mapping_raises() -> None:
     """Validate that empty trigger mappings are rejected."""
-    with pytest.raises(ValueError, match="Trigger mappings must contain at least one condition."):
+    with pytest.raises(
+        ValueError,
+        match=r"Trigger mappings must contain at least one condition\.",
+    ):
         SummarizationMiddleware(model=MockChatModel(), trigger={})
 
 
