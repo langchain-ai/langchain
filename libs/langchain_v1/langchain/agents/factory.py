@@ -386,8 +386,14 @@ def _supports_provider_strategy(model: str | BaseChatModel, tools: list | None =
             model_profile is not None
             and model_profile.get("structured_output")
             # We make an exception for Gemini models, which currently do not support
-            # simultaneous tool use with structured output
-            and not (tools and isinstance(model_name, str) and "gemini" in model_name.lower())
+            # simultaneous tool use with structured output. Gemini 3 models however
+            # do support this.
+            and not (
+                tools
+                and isinstance(model_name, str)
+                and "gemini" in model_name.lower()
+                and "gemini-3" not in model_name.lower()
+            )
         ):
             return True
 
