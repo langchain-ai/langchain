@@ -452,7 +452,25 @@ class SummarizationMiddleware(AgentMiddleware):
         if isinstance(clause, Mapping):
             normalized: list[ContextSize] = []
             for kind, value in clause.items():
-                normalized.append(self._validate_context_size((kind, value), "trigger"))
+                if kind == "fraction":
+                    normalized.append(
+                        self._validate_context_size(("fraction", float(value)), "trigger")
+                    )
+                elif kind == "tokens":
+                    if not isinstance(value, int):
+                        msg = "Token-based trigger thresholds must be integers."
+                        raise TypeError(msg)
+                    normalized.append(self._validate_context_size(("tokens", value), "trigger"))
+                elif kind == "messages":
+                    if not isinstance(value, int):
+                        msg = "Message-based trigger thresholds must be integers."
+                        raise TypeError(msg)
+                    normalized.append(
+                        self._validate_context_size(("messages", value), "trigger")
+                    )
+                else:  # pragma: no cover - handled by _validate_context_size for tuples
+                    msg = f"Unsupported trigger key '{kind}'."
+                    raise ValueError(msg)
             if not normalized:
                 msg = "Trigger mappings must contain at least one condition."
                 raise ValueError(msg)
