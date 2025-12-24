@@ -1876,9 +1876,38 @@ def _make_message_chunk_from_anthropic_event(
         else:
             response_metadata = {}
 
+        # Check if message_start contains pre-completed content blocks
+        # (can happen during code execution with external tools)
+        content: str | list = "" if coerce_content_to_string else []
+        tool_call_chunks = []
+        if hasattr(event.message, "content") and event.message.content:
+            msg_content = event.message.content
+            if isinstance(msg_content, list) and len(msg_content) > 0:
+                content = []
+                for idx, block in enumerate(msg_content):
+                    block_dict = (
+                        block.model_dump()
+                        if hasattr(block, "model_dump")
+                        else dict(block)
+                    )
+                    block_dict["index"] = idx
+                    if "caller" in block_dict and block_dict["caller"] is None:
+                        block_dict.pop("caller")
+                    content.append(block_dict)
+                    if block_dict.get("type") == "tool_use":
+                        tool_call_chunks.append(
+                            create_tool_call_chunk(
+                                index=idx,
+                                id=block_dict.get("id"),
+                                name=block_dict.get("name"),
+                                args=json.dumps(block_dict.get("input", {})),
+                            )
+                        )
+
         message_chunk = AIMessageChunk(
-            content="" if coerce_content_to_string else [],
+            content=content,
             response_metadata=response_metadata,
+            tool_call_chunks=tool_call_chunks if tool_call_chunks else [],
         )
 
     elif (
