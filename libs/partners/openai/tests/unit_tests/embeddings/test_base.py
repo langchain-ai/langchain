@@ -2,10 +2,10 @@ import os
 from typing import Any
 from unittest.mock import Mock, patch
 
-from pydantic import SecretStr
 import pytest
-
 from langchain_core.rate_limiters import BaseRateLimiter
+from pydantic import SecretStr
+
 from langchain_openai import OpenAIEmbeddings
 
 os.environ["OPENAI_API_KEY"] = "foo"
