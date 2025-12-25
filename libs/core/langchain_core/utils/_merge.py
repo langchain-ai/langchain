@@ -97,6 +97,17 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
         if merged is None:
             merged = other.copy()
         else:
+            # Build index lookup map for O(1) access instead of O(n) list scan
+            # Maps index value -> position in merged list
+            index_map: dict[int | str, int] = {}
+            for i, e_left in enumerate(merged):
+                if isinstance(e_left, dict) and "index" in e_left:
+                    idx = e_left["index"]
+                    if isinstance(idx, int) or (
+                        isinstance(idx, str) and idx.startswith("lc_")
+                    ):
+                        index_map[idx] = i
+
             for e in other:
                 if (
                     isinstance(e, dict)
@@ -108,15 +119,12 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
                         )
                     )
                 ):
-                    to_merge = [
-                        i
-                        for i, e_left in enumerate(merged)
-                        if "index" in e_left and e_left["index"] == e["index"]
-                    ]
-                    if to_merge:
+                    # O(1) lookup instead of O(n) list comprehension
+                    merge_pos = index_map.get(e["index"])
+                    if merge_pos is not None:
                         # TODO: Remove this once merge_dict is updated with special
                         # handling for 'type'.
-                        if (left_type := merged[to_merge[0]].get("type")) and (
+                        if (left_type := merged[merge_pos].get("type")) and (
                             e.get("type") == "non_standard" and "value" in e
                         ):
                             if left_type != "non_standard":
@@ -145,9 +153,11 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
                                 if "type" in e
                                 else e
                             )
-                        merged[to_merge[0]] = merge_dicts(merged[to_merge[0]], new_e)
+                        merged[merge_pos] = merge_dicts(merged[merge_pos], new_e)
                     else:
                         merged.append(e)
+                        # Update index_map for newly appended element
+                        index_map[e["index"]] = len(merged) - 1
                 else:
                     merged.append(e)
     return merged
