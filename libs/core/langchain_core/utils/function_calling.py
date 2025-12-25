@@ -207,7 +207,7 @@ def _convert_python_function_to_openai_function(
 
 
 def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescription:
-    adapter: TypeAdapter = TypeAdapter(typed_dict)
+    adapter: TypeAdapter[Any] = TypeAdapter(typed_dict)
     schema = adapter.json_schema()
     return _convert_json_schema_to_openai_function(schema)
 
