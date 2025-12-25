@@ -58,7 +58,7 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 #             "all dicts."
                 #         )
                 if (right_k == "index" and merged[right_k].startswith("lc_")) or (
-                    right_k in ("id", "output_version", "model_provider")
+                    right_k in {"id", "output_version", "model_provider"}
                     and merged[right_k] == right_v
                 ):
                     continue

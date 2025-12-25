@@ -119,12 +119,26 @@ def _convert_to_v1_from_groq(message: AIMessage) -> list[types.ContentBlock]:
 
 
 def translate_content(message: AIMessage) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a message with groq content."""
+    """Derive standard content blocks from a message with groq content.
+
+    Args:
+        message: The message to translate.
+
+    Returns:
+        The derived content blocks.
+    """
     return _convert_to_v1_from_groq(message)
 
 
 def translate_content_chunk(message: AIMessageChunk) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a message chunk with groq content."""
+    """Derive standard content blocks from a message chunk with groq content.
+
+    Args:
+        message: The message chunk to translate.
+
+    Returns:
+        The derived content blocks.
+    """
     return _convert_to_v1_from_groq(message)
 
 
