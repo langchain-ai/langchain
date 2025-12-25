@@ -22,8 +22,6 @@ from typing import (
 )
 
 from pydantic import BaseModel, TypeAdapter
-import typing_extensions
-from pydantic import BaseModel
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as Field_v1
 from pydantic.v1 import create_model as create_model_v1
@@ -244,7 +242,7 @@ def _convert_any_typed_dicts_to_pydantic(
         )
         fields: dict = {}
         for arg, arg_type in annotations_.items():
-            if get_origin(arg_type) in {Annotated, typing_extensions.Annotated}:
+            if get_origin(arg_type) is Annotated:  # type: ignore[comparison-overlap]
                 annotated_args = get_args(arg_type)
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     annotated_args[0], depth=depth + 1, visited=visited
