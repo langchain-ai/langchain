@@ -323,10 +323,6 @@ def test_convert_to_openai_function(
     annotated_function: Callable,
     dummy_pydantic: type[BaseModel],
     runnable: Runnable,
-    dummy_typing_typed_dict: type,
-    dummy_typing_typed_dict_docstring: type,
-    dummy_extensions_typed_dict: type,
-    dummy_extensions_typed_dict_docstring: type,
 ) -> None:
     expected = {
         "name": "dummy_function",
@@ -1098,10 +1094,6 @@ def test_convert_to_json_schema(
     bedrock_converse_tool: dict,
     annotated_function: Callable,
     dummy_pydantic: type[BaseModel],
-    dummy_typing_typed_dict: type,
-    dummy_typing_typed_dict_docstring: type,
-    dummy_extensions_typed_dict: type,
-    dummy_extensions_typed_dict_docstring: type,
 ) -> None:
     expected = json_schema
 
