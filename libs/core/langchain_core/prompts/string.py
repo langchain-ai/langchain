@@ -248,13 +248,21 @@ def get_template_variables(template: str, template_format: str) -> list[str]:
 
     Args:
         template: The template string.
-        template_format: The template format. Should be one of "f-string" or "jinja2".
+        template_format: The template format. Should be one of "f-string",
+            "jinja2", or "mustache".
 
     Returns:
-        The variables from the template.
+        The variables from the template, sorted alphabetically.
+
+        For "mustache" format, only top-level variable names are returned.
+        Nested variables like ``{{user.name}}`` return ``["user"]`` rather than
+        ``["user.name"]``, since mustache templates expect structured input
+        objects (e.g., ``{"user": {"name": "Alice"}}``).
 
     Raises:
-        ValueError: If the template format is not supported.
+        ValueError: If the template format is not supported, or if an f-string
+            template contains invalid variable names (attribute access, indexing,
+            or positional arguments).
     """
     if template_format == "jinja2":
         # Get the variables for the template
