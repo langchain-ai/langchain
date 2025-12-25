@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 from uuid import UUID
 
+import pytest
 from typing_extensions import override
 
 from langchain_core.callbacks import (
@@ -210,3 +211,81 @@ async def test_shielded_callback_context_preservation() -> None:
         f"but got {handler.context_values}. "
         f"This indicates the shielded decorator is not preserving context variables."
     )
+
+
+def test_configure_tracing_keyword_only() -> None:
+    """Test that tracing parameter must be passed as keyword-only argument.
+
+    This test verifies that the tracing parameter in AsyncCallbackManager.configure()
+    is keyword-only and cannot be passed as a positional argument.
+    """
+    # This should work - tracing as keyword argument
+    manager = AsyncCallbackManager.configure(tracing=True)
+    assert isinstance(manager, AsyncCallbackManager)
+
+    # This should work - tracing with default value (False)
+    manager = AsyncCallbackManager.configure()
+    assert isinstance(manager, AsyncCallbackManager)
+
+    # This should work - all parameters as keyword arguments
+    manager = AsyncCallbackManager.configure(
+        inheritable_callbacks=None,
+        local_callbacks=None,
+        verbose=False,
+        inheritable_tags=["tag1"],
+        local_tags=["tag2"],
+        inheritable_metadata={"key": "value"},
+        local_metadata={"local_key": "local_value"},
+        tracing=False,
+    )
+    assert isinstance(manager, AsyncCallbackManager)
+
+    # This should fail - tracing as positional argument
+    # Using noqa/type:ignore to suppress linting since we're testing incorrect usage
+    with pytest.raises(
+        TypeError, match="takes from 1 to 8 positional arguments but 9 were given"
+    ):
+        AsyncCallbackManager.configure(  # type: ignore[misc]
+            None,  # inheritable_callbacks
+            None,  # local_callbacks
+            False,  # verbose  # noqa: FBT003
+            None,  # inheritable_tags
+            None,  # local_tags
+            None,  # inheritable_metadata
+            None,  # local_metadata
+            False,  # tracing - should fail as positional  # noqa: FBT003
+        )
+
+
+def test_configure_with_tracing_enabled() -> None:
+    """Test that configure works correctly with tracing enabled.
+
+    This test verifies that the tracing parameter is properly handled
+    when set to True.
+    """
+    # Configure with tracing enabled
+    manager = AsyncCallbackManager.configure(tracing=True)
+    assert isinstance(manager, AsyncCallbackManager)
+
+    # Verify that handlers are set up (when tracing is enabled, a tracer
+    # should be added). Note: The actual tracer setup depends on environment
+    # variables like LANGCHAIN_TRACING_V2. So we just verify the manager is
+    # created successfully.
+    assert manager is not None
+
+
+def test_configure_with_callbacks_and_tracing() -> None:
+    """Test configure with both callbacks and tracing parameter.
+
+    This test verifies that the configure method works correctly when
+    both callbacks and the tracing parameter are provided.
+    """
+    handler = BaseCallbackHandler()
+
+    manager = AsyncCallbackManager.configure(
+        inheritable_callbacks=[handler],
+        tracing=False,
+    )
+
+    assert isinstance(manager, AsyncCallbackManager)
+    assert handler in manager.handlers

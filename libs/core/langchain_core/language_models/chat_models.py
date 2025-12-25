@@ -353,6 +353,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     !!! version-added "Added in `langchain-core` 1.1.0"
     """
 
+    tracing: bool = Field(default=False, exclude=True)
+    """Whether to enable Langsmith tracing for this model."""
+
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
     )
@@ -512,6 +515,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 self.tags,
                 inheritable_metadata,
                 self.metadata,
+                tracing=self.tracing,
             )
             (run_manager,) = callback_manager.on_chat_model_start(
                 self._serialized,
@@ -640,6 +644,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             self.tags,
             inheritable_metadata,
             self.metadata,
+            tracing=self.tracing,
         )
         (run_manager,) = await callback_manager.on_chat_model_start(
             self._serialized,
@@ -905,6 +910,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             self.tags,
             inheritable_metadata,
             self.metadata,
+            tracing=self.tracing,
         )
         messages_to_trace = [
             _format_for_tracing(message_list) for message_list in messages
@@ -1028,6 +1034,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             self.tags,
             inheritable_metadata,
             self.metadata,
+            tracing=self.tracing,
         )
 
         messages_to_trace = [
