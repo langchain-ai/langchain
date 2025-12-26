@@ -492,7 +492,12 @@ class SummarizationMiddleware(AgentMiddleware):
             return "Previous conversation was too long to summarize."
 
         try:
-            response = self.model.invoke(self.summary_prompt.format(messages=trimmed_messages))
+            # Pass empty callbacks to prevent inheriting streaming callbacks from
+            # parent context, which would leak internal model output to agent stream
+            response = self.model.invoke(
+                self.summary_prompt.format(messages=trimmed_messages),
+                config={"callbacks": []},
+            )
             return response.text.strip()
         except Exception as e:
             return f"Error generating summary: {e!s}"
@@ -507,8 +512,11 @@ class SummarizationMiddleware(AgentMiddleware):
             return "Previous conversation was too long to summarize."
 
         try:
+            # Pass empty callbacks to prevent inheriting streaming callbacks from
+            # parent context, which would leak internal model output to agent stream
             response = await self.model.ainvoke(
-                self.summary_prompt.format(messages=trimmed_messages)
+                self.summary_prompt.format(messages=trimmed_messages),
+                config={"callbacks": []},
             )
             return response.text.strip()
         except Exception as e:
