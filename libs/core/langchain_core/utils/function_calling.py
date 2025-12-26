@@ -8,7 +8,6 @@ import logging
 import types
 import typing
 import uuid
-from collections.abc import Mapping
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -35,7 +34,7 @@ from langchain_core.utils.json_schema import dereference_refs
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Mapping
 
     from langchain_core.tools import BaseTool
 
