@@ -8,6 +8,7 @@ import random
 import re
 import string
 import time
+import urllib.parse
 from dataclasses import asdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
@@ -434,9 +435,11 @@ def _render_mermaid_using_api(
     if background_color is not None and not _HEX_COLOR_PATTERN.match(background_color):
         background_color = f"!{background_color}"
 
+    # URL-encode the background color to handle special characters like '!'
+    encoded_bg_color = urllib.parse.quote(str(background_color), safe="")
     image_url = (
         f"{base_url}/img/{mermaid_syntax_encoded}"
-        f"?type={file_type}&bgColor={background_color}"
+        f"?type={file_type}&bgColor={encoded_bg_color}"
     )
 
     error_msg_suffix = (
