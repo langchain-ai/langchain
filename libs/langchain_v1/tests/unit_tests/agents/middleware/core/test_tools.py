@@ -293,7 +293,7 @@ def test_middleware_with_additional_tools() -> None:
         return "middleware"
 
     class ToolProvidingMiddleware(AgentMiddleware):
-        tools = [middleware_tool]
+        tools = (middleware_tool,)
 
     # Model calls the middleware-provided tool
     model = FakeToolCallingModel(
