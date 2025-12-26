@@ -47,6 +47,20 @@ PYTHON_TO_JSON_TYPES = {
     "bool": "boolean",
 }
 
+_ORIGIN_MAP: dict[type, Any] = {
+    dict: dict,
+    list: list,
+    tuple: tuple,
+    set: set,
+    collections.abc.Iterable: typing.Iterable,
+    collections.abc.Mapping: typing.Mapping,
+    collections.abc.Sequence: typing.Sequence,
+    collections.abc.MutableMapping: typing.MutableMapping,
+}
+# Add UnionType mapping for Python 3.10+
+if hasattr(types, "UnionType"):
+    _ORIGIN_MAP[types.UnionType] = Union
+
 
 class FunctionDescription(TypedDict):
     """Representation of a callable function to send to an LLM."""
@@ -731,22 +745,7 @@ def _parse_google_docstring(
 
 
 def _py_38_safe_origin(origin: type) -> type:
-    origin_union_type_map: dict[type, Any] = (
-        {types.UnionType: Union} if hasattr(types, "UnionType") else {}
-    )
-
-    origin_map: dict[type, Any] = {
-        dict: dict,
-        list: list,
-        tuple: tuple,
-        set: set,
-        collections.abc.Iterable: typing.Iterable,
-        collections.abc.Mapping: typing.Mapping,
-        collections.abc.Sequence: typing.Sequence,
-        collections.abc.MutableMapping: typing.MutableMapping,
-        **origin_union_type_map,
-    }
-    return cast("type", origin_map.get(origin, origin))
+    return cast("type", _ORIGIN_MAP.get(origin, origin))
 
 
 def _recursive_set_additional_properties_false(
