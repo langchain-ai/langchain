@@ -54,7 +54,11 @@ def test_summarization_middleware_initialization() -> None:
     assert middleware.summary_prompt == "Custom prompt: {messages}"
     assert middleware.trim_tokens_to_summarize == 4000
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Model profile information is required to use fractional token limits, "
+        "and is unavailable for the specified model",
+    ):
         SummarizationMiddleware(model=model, keep=("fraction", 0.5))  # no model profile
 
     # Test with string model
@@ -346,7 +350,7 @@ def test_summarization_middleware_missing_profile() -> None:
 
 def test_summarization_middleware_full_workflow() -> None:
     """Test SummarizationMiddleware complete summarization workflow."""
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning, match="messages_to_keep is deprecated"):
         # keep test for functionality
         middleware = SummarizationMiddleware(
             model=MockChatModel(), max_tokens_before_summary=1000, messages_to_keep=2
@@ -753,14 +757,14 @@ def test_summarization_middleware_cutoff_at_boundary() -> None:
 def test_summarization_middleware_deprecated_parameters_with_defaults() -> None:
     """Test that deprecated parameters work correctly with default values."""
     # Test that deprecated max_tokens_before_summary is ignored when trigger is set
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning, match="max_tokens_before_summary is deprecated"):
         middleware = SummarizationMiddleware(
             model=MockChatModel(), trigger=("tokens", 2000), max_tokens_before_summary=1000
         )
     assert middleware.trigger == ("tokens", 2000)
 
     # Test that messages_to_keep is ignored when keep is not default
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning, match="messages_to_keep is deprecated"):
         middleware = SummarizationMiddleware(
             model=MockChatModel(), keep=("messages", 5), messages_to_keep=10
         )
