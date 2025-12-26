@@ -1518,9 +1518,13 @@ def _fetch_last_ai_and_tool_messages(
 # file handles, threading objects) and should be excluded when passing state to Send.
 # These fields are typically marked with UntrackedValue/PrivateStateAttr annotations
 # but need to be filtered here because Send serializes its entire arg payload.
-_NON_SERIALIZABLE_STATE_FIELDS = frozenset({
-    "shell_session_resources",  # ShellToolMiddleware: contains subprocess, threads, file handles
-})
+_NON_SERIALIZABLE_STATE_FIELDS = frozenset(
+    {
+        # ShellToolMiddleware: contains subprocess.Popen, threading.Thread,
+        # queue.Queue, file handles, weakref.finalize - all non-serializable
+        "shell_session_resources",
+    }
+)
 
 
 def _filter_serializable_state(state: dict[str, Any]) -> dict[str, Any]:
