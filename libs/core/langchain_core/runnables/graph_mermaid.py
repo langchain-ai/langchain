@@ -40,7 +40,6 @@ except ImportError:
 
 MARKDOWN_SPECIAL_CHARS = "*_`"
 
-# Precompile regex pattern for hex color validation
 _HEX_COLOR_PATTERN = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
 
 
