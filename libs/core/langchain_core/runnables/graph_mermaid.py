@@ -40,6 +40,8 @@ except ImportError:
 
 MARKDOWN_SPECIAL_CHARS = "*_`"
 
+_HEX_COLOR_PATTERN = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
+
 
 def draw_mermaid(
     nodes: dict[str, Node],
@@ -429,10 +431,8 @@ def _render_mermaid_using_api(
     )
 
     # Check if the background color is a hexadecimal color code using regex
-    if background_color is not None:
-        hex_color_pattern = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
-        if not hex_color_pattern.match(background_color):
-            background_color = f"!{background_color}"
+    if background_color is not None and not _HEX_COLOR_PATTERN.match(background_color):
+        background_color = f"!{background_color}"
 
     image_url = (
         f"{base_url}/img/{mermaid_syntax_encoded}"
