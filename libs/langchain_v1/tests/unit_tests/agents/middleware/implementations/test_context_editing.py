@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.messages import (
@@ -11,13 +10,17 @@ from langchain_core.messages import (
     MessageLikeRepresentation,
     ToolMessage,
 )
-from langgraph.runtime import Runtime
 
 from langchain.agents.middleware.context_editing import (
     ClearToolUsesEdit,
     ContextEditingMiddleware,
 )
 from langchain.agents.middleware.types import AgentState, ModelRequest
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from langgraph.runtime import Runtime
 
 
 class _TokenCountingChatModel(FakeChatModel):

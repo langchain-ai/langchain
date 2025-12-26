@@ -20,9 +20,7 @@ from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
 from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
-from langgraph.runtime import Runtime
 from langgraph.types import Command, Send
-from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict
 
 from langchain.agents.middleware.types import (
@@ -56,8 +54,10 @@ if TYPE_CHECKING:
     from langchain_core.runnables import Runnable
     from langgraph.cache.base import BaseCache
     from langgraph.graph.state import CompiledStateGraph
+    from langgraph.runtime import Runtime
     from langgraph.store.base import BaseStore
     from langgraph.types import Checkpointer
+    from langgraph.typing import ContextT
 
     from langchain.agents.middleware.types import ToolCallRequest, ToolCallWrapper
 
