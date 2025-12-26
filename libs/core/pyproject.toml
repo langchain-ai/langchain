@@ -68,6 +68,11 @@ test_integration = []
 langchain-tests = { path = "../standard-tests" }
 langchain-text-splitters = { path = "../text-splitters" }
 
+[tool.uv.dependency-resolution]
+override = [
+    { name = "orjson", marker = "platform_python_implementation != 'PyPy' and python_full_version != '3.13.*'" },
+]
+
 
 [tool.mypy]
 plugins = ["pydantic.mypy"]

@@ -64,6 +64,11 @@ langchain-core = { path = "../../core", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
 langchain = { path = "../../langchain_v1", editable = true }
 
+[tool.uv.dependency-resolution]
+override = [
+    { name = "orjson", marker = "platform_python_implementation != 'PyPy' and python_full_version != '3.13.*'" },
+]
+
 [tool.mypy]
 disallow_untyped_defs = "True"
 [[tool.mypy.overrides]]
