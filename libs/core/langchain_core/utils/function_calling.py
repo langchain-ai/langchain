@@ -48,8 +48,6 @@ PYTHON_TO_JSON_TYPES = {
     "bool": "boolean",
 }
 
-# Precomputed origin type mapping for _py_38_safe_origin
-# Avoids dict creation on every function call
 _ORIGIN_MAP: dict[type, Any] = {
     dict: dict,
     list: list,
