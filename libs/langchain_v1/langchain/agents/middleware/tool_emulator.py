@@ -147,7 +147,9 @@ class LLMToolEmulator(AgentMiddleware):
         )
 
         # Get emulated response from LLM
-        response = self.model.invoke([HumanMessage(prompt)])
+        # Pass empty callbacks to prevent inheriting streaming callbacks from
+        # parent context, which would leak internal model output to agent stream
+        response = self.model.invoke([HumanMessage(prompt)], config={"callbacks": []})
 
         # Short-circuit: return emulated result without executing real tool
         return ToolMessage(
@@ -199,7 +201,11 @@ class LLMToolEmulator(AgentMiddleware):
         )
 
         # Get emulated response from LLM (using async invoke)
-        response = await self.model.ainvoke([HumanMessage(prompt)])
+        # Pass empty callbacks to prevent inheriting streaming callbacks from
+        # parent context, which would leak internal model output to agent stream
+        response = await self.model.ainvoke(
+            [HumanMessage(prompt)], config={"callbacks": []}
+        )
 
         # Short-circuit: return emulated result without executing real tool
         return ToolMessage(
