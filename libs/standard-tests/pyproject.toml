@@ -67,7 +67,6 @@ ignore = [
     "C90",     # McCabe complexity
     "COM812",  # Messes with the formatter
     "FIX002",  # Line contains TODO
-    "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
     "PLR2004", # Magic numbers
     "PLR09",   # Too many something (arg, statements, etc)

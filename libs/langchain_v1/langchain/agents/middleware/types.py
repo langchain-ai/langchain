@@ -1228,7 +1228,10 @@ def before_agent(
             async def notify_start(state: AgentState, runtime: Runtime) -> None:
                 '''Notify user that agent is starting.'''
                 runtime.stream_writer(
-                    {"type": "status", "message": "Initializing agent session..."}
+                    {
+                        "type": "status",
+                        "message": "Initializing agent session...",
+                    }
                 )
                 # Perform prerequisite tasks here
                 runtime.stream_writer({"type": "status", "message": "Agent ready!"})

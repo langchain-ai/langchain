@@ -441,7 +441,10 @@ agent = create_agent(
 def test_injected_state_in_middleware_agent() -> None:
     """Test that custom state is properly injected into tools when using middleware."""
     result = agent.invoke(
-        {"custom_state": "I love pizza", "messages": [HumanMessage("Call the test state tool")]}
+        {
+            "custom_state": "I love pizza",
+            "messages": [HumanMessage("Call the test state tool")],
+        }
     )
 
     messages = result["messages"]
@@ -777,6 +780,7 @@ class TestAgentMiddlewareHooks:
                     execution_log.append(f"{hook_type}_agent_called")
                     execution_log.append(f"message_count: {len(state['messages'])}")
                     return None
+
             else:
 
                 @after_agent
@@ -784,6 +788,7 @@ class TestAgentMiddlewareHooks:
                     execution_log.append(f"{hook_type}_agent_called")
                     execution_log.append(f"message_count: {len(state['messages'])}")
                     return None
+
         elif hook_type == "before":
 
             @before_agent
@@ -791,6 +796,7 @@ class TestAgentMiddlewareHooks:
                 execution_log.append(f"{hook_type}_agent_called")
                 execution_log.append(f"message_count: {len(state['messages'])}")
                 return None
+
         else:
 
             @after_agent
@@ -828,6 +834,7 @@ class TestAgentMiddlewareHooks:
                     if hook_type == "after":
                         execution_log.append("hook_called")
                     return None
+
         else:
 
             class CustomMiddleware(AgentMiddleware):
@@ -870,6 +877,7 @@ class TestAgentHooksCombined:
             @after_agent
             async def log_after(state: AgentState, runtime) -> None:
                 execution_log.append("after")
+
         else:
 
             @before_agent
