@@ -72,7 +72,7 @@ langchain-text-splitters = { path = "../text-splitters" }
 # Exclude Python 3.13t from orjson dependency to fix installation failure
 # See: https://github.com/langchain-ai/langchain/issues/34462
 override-dependencies = [
-    { name = "orjson", marker = "platform_python_implementation != 'PyPy' and python_full_version != '3.13.*'" },
+    "orjson; platform_python_implementation != 'PyPy' and python_full_version != '3.13.*'",
 ]
 
 
