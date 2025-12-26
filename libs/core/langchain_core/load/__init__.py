@@ -6,7 +6,7 @@ from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
     from langchain_core.load.dump import dumpd, dumps
-    from langchain_core.load.load import loads
+    from langchain_core.load.load import InitValidator, loads
     from langchain_core.load.serializable import Serializable
 
 # Unfortunately, we have to eagerly import load from langchain_core/load/load.py
@@ -15,11 +15,19 @@ if TYPE_CHECKING:
 # the `from langchain_core.load.load import load` absolute import should also work.
 from langchain_core.load.load import load
 
-__all__ = ("Serializable", "dumpd", "dumps", "load", "loads")
+__all__ = (
+    "InitValidator",
+    "Serializable",
+    "dumpd",
+    "dumps",
+    "load",
+    "loads",
+)
 
 _dynamic_imports = {
     "dumpd": "dump",
     "dumps": "dump",
+    "InitValidator": "load",
     "loads": "load",
     "Serializable": "serializable",
 }

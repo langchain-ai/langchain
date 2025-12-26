@@ -7,7 +7,10 @@ import asyncio
 import inspect
 import sys
 import textwrap
-from collections.abc import Mapping, Sequence
+
+# Cannot move to TYPE_CHECKING as Mapping and Sequence are needed at runtime by
+# RunnableConfigurableFields.
+from collections.abc import Mapping, Sequence  # noqa: TC003
 from functools import lru_cache
 from inspect import signature
 from itertools import groupby
