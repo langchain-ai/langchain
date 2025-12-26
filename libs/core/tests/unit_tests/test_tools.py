@@ -2943,7 +2943,7 @@ def test_tool_args_schema_with_annotated_type() -> None:
 class CallbackHandlerWithInputCapture(FakeCallbackHandler):
     """Callback handler that captures inputs passed to on_tool_start."""
 
-    captured_inputs: list[dict | None] = []
+    captured_inputs: list[dict | None] = Field(default_factory=list)
 
     def on_tool_start(
         self,
@@ -3158,19 +3158,18 @@ def test_filter_tool_runtime_directly_injected_arg() -> None:
 
     handler = CallbackHandlerWithInputCapture(captured_inputs=[])
 
-    # Create a mock ToolRuntime instance
-    class MockRuntime:
-        """Mock ToolRuntime for testing."""
-
-        agent_name = "test_agent"
-        context: dict[str, Any] = {}
-        state: dict[str, Any] = {}
-
     result = tool_with_runtime.invoke(
         {
             "query": "test",
             "limit": 5,
-            "runtime": MockRuntime(),
+            "runtime": ToolRuntime(
+                context={},
+                state={},
+                config={},
+                stream_writer=lambda _: None,
+                tool_call_id=None,
+                store=None,
+            ),
         },
         config={"callbacks": [handler]},
     )
@@ -3193,7 +3192,7 @@ class CallbackHandlerWithToolCallIdCapture(FakeCallbackHandler):
     callback method.
     """
 
-    captured_tool_call_ids: list[str | None] = []
+    captured_tool_call_ids: list[str | None] = Field(default_factory=list)
 
     def on_tool_start(
         self,
