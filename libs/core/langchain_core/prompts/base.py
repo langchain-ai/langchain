@@ -6,7 +6,7 @@ import contextlib
 import json
 import typing
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
+from collections.abc import Mapping  # noqa: TC003
 from functools import cached_property
 from pathlib import Path
 from typing import (
@@ -22,7 +22,7 @@ from typing_extensions import Self, override
 
 from langchain_core.exceptions import ErrorCode, create_message
 from langchain_core.load import dumpd
-from langchain_core.output_parsers.base import BaseOutputParser
+from langchain_core.output_parsers.base import BaseOutputParser  # noqa: TC001
 from langchain_core.prompt_values import (
     ChatPromptValueConcrete,
     PromptValue,

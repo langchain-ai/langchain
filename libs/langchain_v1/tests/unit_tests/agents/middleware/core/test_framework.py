@@ -1,12 +1,14 @@
 import sys
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Annotated, Any
 
 import pytest
+from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import InjectedToolCallId, tool
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.runtime import Runtime
 from pydantic import BaseModel, Field
 from syrupy.assertion import SnapshotAssertion
 
@@ -14,10 +16,16 @@ from langchain.agents.factory import create_agent
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
+    ModelCallResult,
     ModelRequest,
+    ModelResponse,
     OmitFromInput,
     OmitFromOutput,
     PrivateStateAttr,
+    after_agent,
+    after_model,
+    before_agent,
+    before_model,
     hook_config,
 )
 from langchain.agents.structured_output import ToolStrategy
@@ -373,7 +381,6 @@ def test_public_private_state_for_custom_middleware() -> None:
 
 def test_runtime_injected_into_middleware() -> None:
     """Test that the runtime is injected into the middleware."""
-    from langgraph.runtime import Runtime
 
     class CustomMiddleware(AgentMiddleware):
         def before_model(self, state: AgentState, runtime: Runtime) -> None:
@@ -467,7 +474,6 @@ def test_jump_to_is_ephemeral() -> None:
 
 def test_create_agent_sync_invoke_with_only_async_middleware_raises_error() -> None:
     """Test that sync invoke with only async middleware works via run_in_executor."""
-    from collections.abc import Awaitable
 
     class AsyncOnlyMiddleware(AgentMiddleware):
         async def awrap_model_call(
@@ -490,8 +496,6 @@ def test_create_agent_sync_invoke_with_only_async_middleware_raises_error() -> N
 
 def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
     """Test that sync invoke works with mixed sync/async middleware when sync versions exist."""
-    from collections.abc import Awaitable
-
     calls = []
 
     class MixedMiddleware(AgentMiddleware):
@@ -540,8 +544,6 @@ def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
 
 async def test_create_agent_async_invoke() -> None:
     """Test async invoke with async middleware hooks."""
-    from collections.abc import Awaitable, Callable
-
     calls = []
 
     class AsyncMiddleware(AgentMiddleware):
@@ -603,8 +605,6 @@ async def test_create_agent_async_invoke() -> None:
 
 async def test_create_agent_async_invoke_multiple_middleware() -> None:
     """Test async invoke with multiple async middleware hooks."""
-    from collections.abc import Awaitable, Callable
-
     calls = []
 
     class AsyncMiddlewareOne(AgentMiddleware):
@@ -658,8 +658,6 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
 
 async def test_create_agent_async_jump() -> None:
     """Test async invoke with async middleware using jump_to."""
-    from typing import Any
-
     calls = []
 
     class AsyncMiddlewareOne(AgentMiddleware):
@@ -695,10 +693,6 @@ async def test_create_agent_async_jump() -> None:
 
 async def test_create_agent_mixed_sync_async_middleware_async_invoke() -> None:
     """Test async invoke with mixed sync and async middleware."""
-    from collections.abc import Awaitable, Callable
-
-    from langchain.agents.middleware.types import ModelCallResult, ModelResponse
-
     calls = []
 
     class MostlySyncMiddleware(AgentMiddleware):
@@ -773,8 +767,6 @@ class TestAgentMiddlewareHooks:
     @pytest.mark.parametrize("hook_type", ["before", "after"])
     async def test_hook_execution(self, *, is_async: bool, hook_type: str) -> None:
         """Test that agent hooks are called in both sync and async modes."""
-        from langchain.agents.middleware import after_agent, before_agent
-
         execution_log: list[str] = []
 
         if is_async:
@@ -806,8 +798,6 @@ class TestAgentMiddlewareHooks:
                 execution_log.append(f"{hook_type}_agent_called")
                 execution_log.append(f"message_count: {len(state['messages'])}")
                 return None
-
-        from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, tools=[], middleware=[log_hook])
@@ -851,8 +841,6 @@ class TestAgentMiddlewareHooks:
                         execution_log.append("hook_called")
                     return None
 
-        from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-
         middleware = CustomMiddleware()
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, tools=[], middleware=[middleware])
@@ -871,8 +859,6 @@ class TestAgentHooksCombined:
     @pytest.mark.parametrize("is_async", [False, True])
     async def test_execution_order(self, *, is_async: bool) -> None:
         """Test that before_agent executes before after_agent in both sync and async modes."""
-        from langchain.agents.middleware import after_agent, before_agent
-
         execution_log: list[str] = []
 
         if is_async:
@@ -894,8 +880,6 @@ class TestAgentHooksCombined:
             def log_after(state: AgentState, runtime) -> None:
                 execution_log.append("after")
 
-        from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, tools=[], middleware=[log_before, log_after])
 
@@ -908,9 +892,6 @@ class TestAgentHooksCombined:
 
     def test_state_passthrough(self) -> None:
         """Test that state modifications in before_agent are visible to after_agent."""
-        from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-
-        from langchain.agents.middleware import before_agent
 
         @before_agent
         def modify_in_before(state: AgentState, runtime) -> dict[str, Any]:
@@ -925,10 +906,6 @@ class TestAgentHooksCombined:
 
     def test_multiple_middleware_instances(self) -> None:
         """Test multiple before_agent and after_agent middleware instances."""
-        from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-
-        from langchain.agents.middleware import after_agent, before_agent
-
         execution_log = []
 
         @before_agent
@@ -963,13 +940,6 @@ class TestAgentHooksCombined:
         This is different from model-level hooks (before_model, after_model) which run
         on every model invocation within the tool calling loop.
         """
-        from langchain.agents.middleware import (
-            after_agent,
-            after_model,
-            before_agent,
-            before_model,
-        )
-
         execution_log = []
 
         @tool
