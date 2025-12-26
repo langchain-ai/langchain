@@ -78,17 +78,15 @@ test_integration = [
 
 [tool.uv]
 prerelease = "allow"
+override-dependencies = [
+    { name = "orjson", marker = "platform_python_implementation != 'PyPy' and python_full_version != '3.13.*'" },
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
 langchain-tests = { path = "../standard-tests", editable = true }
 langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
-
-[tool.uv.dependency-resolution]
-override = [
-    { name = "orjson", marker = "platform_python_implementation != 'PyPy' and python_full_version != '3.13.*'" },
-]
 
 [tool.ruff]
 line-length = 100
