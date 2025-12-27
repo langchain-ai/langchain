@@ -65,7 +65,7 @@ class TestModelRequestSystemMessage:
     """Test ModelRequest with system_message field."""
 
     @pytest.mark.parametrize(
-        "system_message,system_prompt,expected_msg,expected_prompt",
+        ("system_message", "system_prompt", "expected_msg", "expected_prompt"),
         [
             # Test with SystemMessage
             (
@@ -124,7 +124,7 @@ class TestModelRequestSystemMessage:
         assert "Part 1" in request.system_prompt
 
     @pytest.mark.parametrize(
-        "override_with,expected_text",
+        ("override_with", "expected_text"),
         [
             ("system_message", "New"),
             ("system_prompt", "New prompt"),
@@ -184,8 +184,8 @@ class TestModelRequestSystemMessage:
         """Test that setting both system_prompt and system_message raises error."""
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
 
-        with pytest.raises(ValueError, match="Cannot specify both"):
-            if use_constructor:
+        if use_constructor:
+            with pytest.raises(ValueError, match="Cannot specify both"):
                 ModelRequest(
                     model=model,
                     system_prompt="String prompt",
@@ -197,24 +197,25 @@ class TestModelRequestSystemMessage:
                     state={},
                     runtime=None,
                 )
-            else:
-                request = ModelRequest(
-                    model=model,
-                    system_message=None,
-                    messages=[],
-                    tool_choice=None,
-                    tools=[],
-                    response_format=None,
-                    state={},
-                    runtime=None,
-                )
+        else:
+            request = ModelRequest(
+                model=model,
+                system_message=None,
+                messages=[],
+                tool_choice=None,
+                tools=[],
+                response_format=None,
+                state={},
+                runtime=None,
+            )
+            with pytest.raises(ValueError, match="Cannot specify both"):
                 request.override(
                     system_prompt="String prompt",
                     system_message=SystemMessage(content="Message prompt"),
                 )
 
     @pytest.mark.parametrize(
-        "new_value,should_be_none",
+        ("new_value", "should_be_none"),
         [
             ("New prompt", False),
             (None, True),
@@ -651,7 +652,7 @@ class TestMetadataMerging:
     """Test metadata merging behavior when updating system messages."""
 
     @pytest.mark.parametrize(
-        "metadata_type,initial_metadata,update_metadata,expected_result",
+        ("metadata_type", "initial_metadata", "update_metadata", "expected_result"),
         [
             # additional_kwargs merging
             (
@@ -948,7 +949,7 @@ class TestEdgeCasesAndErrorHandling:
     """Test edge cases and error handling for system messages."""
 
     @pytest.mark.parametrize(
-        "content,expected_blocks,expected_prompt",
+        ("content", "expected_blocks", "expected_prompt"),
         [
             ("", 0, ""),
             (

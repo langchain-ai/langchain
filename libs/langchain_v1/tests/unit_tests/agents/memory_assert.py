@@ -1,5 +1,6 @@
 import os
 import tempfile
+import time
 from collections import defaultdict
 from functools import partial
 
@@ -36,8 +37,6 @@ class MemorySaverAssertImmutable(InMemorySaver):
         new_versions: ChannelVersions,
     ) -> None:
         if self.put_sleep:
-            import time
-
             time.sleep(self.put_sleep)
         # assert checkpoint hasn't been modified since last written
         thread_id = config["configurable"]["thread_id"]

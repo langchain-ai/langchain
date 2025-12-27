@@ -925,7 +925,7 @@ def test_tool_message_serdes() -> None:
         },
     }
     assert dumpd(message) == ser_message
-    assert load(dumpd(message)) == message
+    assert load(dumpd(message), allowed_objects=[ToolMessage]) == message
 
 
 class BadObject:
@@ -954,7 +954,7 @@ def test_tool_message_ser_non_serializable() -> None:
     }
     assert dumpd(message) == ser_message
     with pytest.raises(NotImplementedError):
-        load(dumpd(ser_message))
+        load(dumpd(message), allowed_objects=[ToolMessage])
 
 
 def test_tool_message_to_dict() -> None:

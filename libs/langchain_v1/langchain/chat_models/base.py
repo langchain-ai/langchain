@@ -17,6 +17,7 @@ from typing import (
 
 from langchain_core.language_models import BaseChatModel, LanguageModelInput
 from langchain_core.messages import AIMessage, AnyMessage
+from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from typing_extensions import override
 
@@ -538,8 +539,12 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
 def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
     """Parse model name and provider, inferring provider if necessary."""
     # Handle provider:model format
-    if not model_provider and ":" in model and model.split(":")[0] in _SUPPORTED_PROVIDERS:
-        model_provider = model.split(":")[0]
+    if (
+        not model_provider
+        and ":" in model
+        and model.split(":", maxsplit=1)[0] in _SUPPORTED_PROVIDERS
+    ):
+        model_provider = model.split(":", maxsplit=1)[0]
         model = ":".join(model.split(":")[1:])
 
     # Attempt to infer provider if not specified
@@ -677,8 +682,6 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     @override
     def InputType(self) -> TypeAlias:
         """Get the input type for this `Runnable`."""
-        from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
-
         # This is a version of LanguageModelInput which replaces the abstract
         # base class BaseMessage with a union of its subclasses, which makes
         # for a much better schema.

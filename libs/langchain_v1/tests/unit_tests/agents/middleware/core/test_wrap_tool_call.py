@@ -4,6 +4,7 @@ These tests verify the decorator-based approach for wrapping tool calls,
 focusing on the handler pattern (not generators).
 """
 
+import time
 from collections.abc import Callable
 
 from langchain_core.messages import HumanMessage, ToolCall, ToolMessage
@@ -765,8 +766,6 @@ def test_wrap_tool_call_monitoring_pattern() -> None:
 
     @wrap_tool_call
     def monitor_execution(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
-        import time
-
         start_time = time.time()
         response = handler(request)
         execution_time = time.time() - start_time
