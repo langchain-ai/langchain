@@ -9,6 +9,7 @@ from typing import (
     Any,
     Generic,
     TypeVar,
+    cast,
 )
 
 from typing_extensions import override
@@ -77,7 +78,7 @@ class BaseGenerationOutputParser(
         """Return the output type for the parser."""
         # even though mypy complains this isn't valid,
         # it is good enough for pydantic to build the schema from
-        return T  # type: ignore[misc]
+        return cast("type[T]", T)  # type: ignore[misc]
 
     @override
     def invoke(
@@ -181,7 +182,7 @@ class BaseOutputParser(
             if hasattr(base, "__pydantic_generic_metadata__"):
                 metadata = base.__pydantic_generic_metadata__
                 if "args" in metadata and len(metadata["args"]) > 0:
-                    return metadata["args"][0]
+                    return cast("type[T]", metadata["args"][0])
 
         msg = (
             f"Runnable {self.__class__.__name__} doesn't have an inferable OutputType. "

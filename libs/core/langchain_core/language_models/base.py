@@ -12,13 +12,14 @@ from typing import (
     Literal,
     TypeAlias,
     TypeVar,
+    cast,
 )
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import TypedDict, override
 
-from langchain_core.caches import BaseCache
-from langchain_core.callbacks import Callbacks
+from langchain_core.caches import BaseCache  # noqa: TC001
+from langchain_core.callbacks import Callbacks  # noqa: TC001
 from langchain_core.globals import get_verbose
 from langchain_core.messages import (
     AIMessage,
@@ -92,7 +93,7 @@ def _get_token_ids_default_method(text: str) -> list[int]:
     tokenizer = get_tokenizer()
 
     # tokenize the text using the GPT-2 tokenizer
-    return tokenizer.encode(text)
+    return cast("list[int]", tokenizer.encode(text))
 
 
 LanguageModelInput = PromptValue | str | Sequence[MessageLikeRepresentation]
@@ -299,6 +300,9 @@ class BaseLanguageModel(
 
         Useful for checking if an input fits in a model's context window.
 
+        This should be overridden by model-specific implementations to provide accurate
+        token counts via model-specific tokenizers.
+
         Args:
             text: The string input to tokenize.
 
@@ -317,9 +321,17 @@ class BaseLanguageModel(
 
         Useful for checking if an input fits in a model's context window.
 
+        This should be overridden by model-specific implementations to provide accurate
+        token counts via model-specific tokenizers.
+
         !!! note
-            The base implementation of `get_num_tokens_from_messages` ignores tool
-            schemas.
+
+            * The base implementation of `get_num_tokens_from_messages` ignores tool
+                schemas.
+            * The base implementation of `get_num_tokens_from_messages` adds additional
+                prefixes to messages in represent user roles, which will add to the
+                overall token count. Model-specific implementations may choose to
+                handle this differently.
 
         Args:
             messages: The message inputs to tokenize.

@@ -15,14 +15,12 @@ from typing_extensions import TypedDict
 
 from langchain_fireworks import ChatFireworks
 
-_MODEL = "accounts/fireworks/models/llama-v3p1-8b-instruct"
+_MODEL = "accounts/fireworks/models/gpt-oss-120b"
 
 
 def test_tool_choice_bool() -> None:
     """Test that tool choice is respected just passing in True."""
-    llm = ChatFireworks(
-        model="accounts/fireworks/models/llama-v3p1-70b-instruct", temperature=0
-    )
+    llm = ChatFireworks(model="fireworks/kimi-k2-instruct-0905")
 
     class MyTool(BaseModel):
         name: str
@@ -46,7 +44,7 @@ def test_tool_choice_bool() -> None:
 
 async def test_astream() -> None:
     """Test streaming tokens from ChatFireworks."""
-    llm = ChatFireworks(model=_MODEL)
+    llm = ChatFireworks(model="fireworks/kimi-k2-instruct-0905")
 
     full: BaseMessageChunk | None = None
     chunks_with_token_counts = 0
@@ -144,7 +142,7 @@ def _get_joke_class(
 
 @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
 def test_structured_output_json_schema(schema_type: str) -> None:
-    llm = ChatFireworks(model="accounts/fireworks/models/llama-v3p1-70b-instruct")
+    llm = ChatFireworks(model="fireworks/kimi-k2-instruct-0905")
     schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
     chat = llm.with_structured_output(schema, method="json_schema")
 

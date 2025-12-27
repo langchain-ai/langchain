@@ -11,18 +11,18 @@ import subprocess
 import tempfile
 import threading
 import time
-import typing
 import uuid
 import weakref
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
 
 from langchain_core.messages import ToolMessage
-from langchain_core.tools.base import BaseTool, ToolException
+from langchain_core.tools.base import ToolException
 from langgraph.channels.untracked_value import UntrackedValue
 from pydantic import BaseModel, model_validator
-from typing_extensions import NotRequired
+from pydantic.json_schema import SkipJsonSchema
+from typing_extensions import NotRequired, override
 
 from langchain.agents.middleware._execution import (
     SHELL_TEMP_PREFIX,
@@ -38,14 +38,13 @@ from langchain.agents.middleware._redaction import (
     ResolvedRedactionRule,
 )
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, PrivateStateAttr
+from langchain.tools import ToolRuntime, tool
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
     from langgraph.runtime import Runtime
-    from langgraph.types import Command
 
-    from langchain.agents.middleware.types import ToolCallRequest
 
 LOGGER = logging.getLogger(__name__)
 _DONE_MARKER_PREFIX = "__LC_SHELL_DONE__"
@@ -59,6 +58,7 @@ DEFAULT_TOOL_DESCRIPTION = (
     "session remains stable. Outputs may be truncated when they become very large, and long "
     "running commands will be terminated once their configured timeout elapses."
 )
+SHELL_TOOL_NAME = "shell"
 
 
 def _cleanup_resources(
@@ -78,10 +78,10 @@ class _SessionResources:
     session: ShellSession
     tempdir: tempfile.TemporaryDirectory[str] | None
     policy: BaseExecutionPolicy
-    _finalizer: weakref.finalize = field(init=False, repr=False)
+    finalizer: weakref.finalize = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        self._finalizer = weakref.finalize(
+        self.finalizer = weakref.finalize(
             self,
             _cleanup_resources,
             self.session,
@@ -248,6 +248,10 @@ class ShellSession:
             if source == "stdout" and data.startswith(marker):
                 _, _, status = data.partition(" ")
                 exit_code = self._safe_int(status.strip())
+                # Drain any remaining stderr that may have arrived concurrently.
+                # The stderr reader thread runs independently, so output might
+                # still be in flight when the stdout marker arrives.
+                self._drain_remaining_stderr(collected, deadline)
                 break
 
             total_lines += 1
@@ -323,6 +327,37 @@ class ShellSession:
             except queue.Empty:
                 break
 
+    def _drain_remaining_stderr(
+        self, collected: list[str], deadline: float, drain_timeout: float = 0.05
+    ) -> None:
+        """Drain any stderr output that arrived concurrently with the done marker.
+
+        The stdout and stderr reader threads run independently. When a command writes to
+        stderr just before exiting, the stderr output may still be in transit when the
+        done marker arrives on stdout. This method briefly polls the queue to capture
+        such output.
+
+        Args:
+            collected: The list to append collected stderr lines to.
+            deadline: The original command deadline (used as an upper bound).
+            drain_timeout: Maximum time to wait for additional stderr output.
+        """
+        drain_deadline = min(time.monotonic() + drain_timeout, deadline)
+        while True:
+            remaining = drain_deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            try:
+                source, data = self._queue.get(timeout=remaining)
+            except queue.Empty:
+                break
+            if data is None or source != "stderr":
+                continue
+            stripped = data.rstrip("\n")
+            collected.append(f"[stderr] {stripped}")
+            if data.endswith("\n"):
+                collected.append("\n")
+
     @staticmethod
     def _safe_int(value: str) -> int | None:
         with contextlib.suppress(ValueError):
@@ -334,7 +369,17 @@ class _ShellToolInput(BaseModel):
     """Input schema for the persistent shell tool."""
 
     command: str | None = None
+    """The shell command to execute."""
+
     restart: bool | None = None
+    """Whether to restart the shell session."""
+
+    runtime: Annotated[Any, SkipJsonSchema()] = None
+    """The runtime for the shell tool.
+
+    Included as a workaround at the moment bc args_schema doesn't work with
+    injected ToolRuntime.
+    """
 
     @model_validator(mode="after")
     def validate_payload(self) -> _ShellToolInput:
@@ -345,24 +390,6 @@ class _ShellToolInput(BaseModel):
             msg = "Specify only one of 'command' or 'restart'."
             raise ValueError(msg)
         return self
-
-
-class _PersistentShellTool(BaseTool):
-    """Tool wrapper that relies on middleware interception for execution."""
-
-    name: str = "shell"
-    description: str = DEFAULT_TOOL_DESCRIPTION
-    args_schema: type[BaseModel] = _ShellToolInput
-
-    def __init__(self, middleware: ShellToolMiddleware, description: str | None = None) -> None:
-        super().__init__()
-        self._middleware = middleware
-        if description is not None:
-            self.description = description
-
-    def _run(self, **_: Any) -> Any:  # pragma: no cover - executed via middleware wrapper
-        msg = "Persistent shell tool execution should be intercepted via middleware wrappers."
-        raise RuntimeError(msg)
 
 
 class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
@@ -393,10 +420,11 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         execution_policy: BaseExecutionPolicy | None = None,
         redaction_rules: tuple[RedactionRule, ...] | list[RedactionRule] | None = None,
         tool_description: str | None = None,
+        tool_name: str = SHELL_TOOL_NAME,
         shell_command: Sequence[str] | str | None = None,
         env: Mapping[str, Any] | None = None,
     ) -> None:
-        """Initialize the middleware.
+        """Initialize an instance of `ShellToolMiddleware`.
 
         Args:
             workspace_root: Base directory for the shell session.
@@ -414,6 +442,9 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
                 returning it to the model.
             tool_description: Optional override for the registered shell tool
                 description.
+            tool_name: Name for the registered shell tool.
+
+                Defaults to `"shell"`.
             shell_command: Optional shell executable (string) or argument sequence used
                 to launch the persistent session.
 
@@ -425,6 +456,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         """
         super().__init__()
         self._workspace_root = Path(workspace_root) if workspace_root else None
+        self._tool_name = tool_name
         self._shell_command = self._normalize_shell_command(shell_command)
         self._environment = self._normalize_env(env)
         if execution_policy is not None:
@@ -438,9 +470,25 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         self._startup_commands = self._normalize_commands(startup_commands)
         self._shutdown_commands = self._normalize_commands(shutdown_commands)
 
+        # Create a proper tool that executes directly (no interception needed)
         description = tool_description or DEFAULT_TOOL_DESCRIPTION
-        self._tool = _PersistentShellTool(self, description=description)
-        self.tools = [self._tool]
+
+        @tool(self._tool_name, args_schema=_ShellToolInput, description=description)
+        def shell_tool(
+            *,
+            runtime: ToolRuntime[None, ShellToolState],
+            command: str | None = None,
+            restart: bool = False,
+        ) -> ToolMessage | str:
+            resources = self._get_or_create_resources(runtime.state)
+            return self._run_shell_tool(
+                resources,
+                {"command": command, "restart": restart},
+                tool_call_id=runtime.tool_call_id,
+            )
+
+        self._shell_tool = shell_tool
+        self.tools = [self._shell_tool]
 
     @staticmethod
     def _normalize_commands(
@@ -476,38 +524,52 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
             normalized[key] = str(value)
         return normalized
 
-    def before_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
+    @override
+    def before_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:
         """Start the shell session and run startup commands."""
-        resources = self._create_resources()
+        resources = self._get_or_create_resources(state)
         return {"shell_session_resources": resources}
 
     async def abefore_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:
-        """Async counterpart to `before_agent`."""
+        """Async start the shell session and run startup commands."""
         return self.before_agent(state, runtime)
 
-    def after_agent(self, state: ShellToolState, runtime: Runtime) -> None:  # noqa: ARG002
+    @override
+    def after_agent(self, state: ShellToolState, runtime: Runtime) -> None:
         """Run shutdown commands and release resources when an agent completes."""
-        resources = self._ensure_resources(state)
+        resources = state.get("shell_session_resources")
+        if not isinstance(resources, _SessionResources):
+            # Resources were never created, nothing to clean up
+            return
         try:
             self._run_shutdown_commands(resources.session)
         finally:
-            resources._finalizer()
+            resources.finalizer()
 
     async def aafter_agent(self, state: ShellToolState, runtime: Runtime) -> None:
-        """Async counterpart to `after_agent`."""
+        """Async run shutdown commands and release resources when an agent completes."""
         return self.after_agent(state, runtime)
 
-    def _ensure_resources(self, state: ShellToolState) -> _SessionResources:
+    def _get_or_create_resources(self, state: ShellToolState) -> _SessionResources:
+        """Get existing resources from state or create new ones if they don't exist.
+
+        This method enables resumability by checking if resources already exist in the state
+        (e.g., after an interrupt), and only creating new resources if they're not present.
+
+        Args:
+            state: The agent state which may contain shell session resources.
+
+        Returns:
+            Session resources, either retrieved from state or newly created.
+        """
         resources = state.get("shell_session_resources")
-        if resources is not None and not isinstance(resources, _SessionResources):
-            resources = None
-        if resources is None:
-            msg = (
-                "Shell session resources are unavailable. Ensure `before_agent` ran successfully "
-                "before invoking the shell tool."
-            )
-            raise ToolException(msg)
-        return resources
+        if isinstance(resources, _SessionResources):
+            return resources
+
+        new_resources = self._create_resources()
+        # Cast needed to make state dict-like for mutation
+        cast("dict[str, Any]", state)["shell_session_resources"] = new_resources
+        return new_resources
 
     def _create_resources(self) -> _SessionResources:
         workspace = self._workspace_root
@@ -543,7 +605,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
             return
         for command in self._startup_commands:
             result = session.execute(command, timeout=self._execution_policy.startup_timeout)
-            if result.timed_out or (result.exit_code not in (0, None)):
+            if result.timed_out or (result.exit_code not in {0, None}):
                 msg = f"Startup command '{command}' failed with exit code {result.exit_code}"
                 raise RuntimeError(msg)
 
@@ -555,7 +617,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
                 result = session.execute(command, timeout=self._execution_policy.command_timeout)
                 if result.timed_out:
                     LOGGER.warning("Shutdown command '%s' timed out.", command)
-                elif result.exit_code not in (0, None):
+                elif result.exit_code not in {0, None}:
                     LOGGER.warning(
                         "Shutdown command '%s' exited with %s.", command, result.exit_code
                     )
@@ -646,7 +708,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
                 f"(observed {result.total_bytes})."
             )
 
-        if result.exit_code not in (0, None):
+        if result.exit_code not in {0, None}:
             sanitized_output = f"{sanitized_output.rstrip()}\n\nExit code: {result.exit_code}"
             final_status: Literal["success", "error"] = "error"
         else:
@@ -669,36 +731,6 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
             artifact=artifact,
         )
 
-    def wrap_tool_call(
-        self,
-        request: ToolCallRequest,
-        handler: typing.Callable[[ToolCallRequest], ToolMessage | Command],
-    ) -> ToolMessage | Command:
-        """Intercept local shell tool calls and execute them via the managed session."""
-        if isinstance(request.tool, _PersistentShellTool):
-            resources = self._ensure_resources(request.state)
-            return self._run_shell_tool(
-                resources,
-                request.tool_call["args"],
-                tool_call_id=request.tool_call.get("id"),
-            )
-        return handler(request)
-
-    async def awrap_tool_call(
-        self,
-        request: ToolCallRequest,
-        handler: typing.Callable[[ToolCallRequest], typing.Awaitable[ToolMessage | Command]],
-    ) -> ToolMessage | Command:
-        """Async interception mirroring the synchronous tool handler."""
-        if isinstance(request.tool, _PersistentShellTool):
-            resources = self._ensure_resources(request.state)
-            return self._run_shell_tool(
-                resources,
-                request.tool_call["args"],
-                tool_call_id=request.tool_call.get("id"),
-            )
-        return await handler(request)
-
     def _format_tool_message(
         self,
         content: str,
@@ -713,7 +745,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         return ToolMessage(
             content=content,
             tool_call_id=tool_call_id,
-            name=self._tool.name,
+            name=self._tool_name,
             status=status,
             artifact=artifact,
         )

@@ -4,17 +4,21 @@ build-backend = "hatchling.build"
 
 [project]
 name = "langchain-model-profiles"
-description = "Centralized reference of LLM capabilities."
+description = "CLI tool for updating model profile data in LangChain integration packages."
 readme = "README.md"
 license = { text = "MIT" }
 authors = []
 
-version = "0.0.3"
+version = "0.0.5"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
+    "httpx>=0.23.0,<1",
     "tomli>=2.0.0,<3.0.0; python_version < '3.11'",
     "typing-extensions>=4.7.0,<5.0.0",
 ]
+
+[project.scripts]
+langchain-profiles = "langchain_model_profiles.cli:main"
 
 [project.urls]
 Homepage = "https://docs.langchain.com/"
@@ -25,9 +29,7 @@ Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
-dev = [
-    "httpx>=0.23.0,<1",  # For refresh_data.py script
-]
+dev = []
 
 test = [
     "pytest>=8.0.0,<9.0.0",
@@ -80,6 +82,7 @@ ignore = [
     "FIX002",
     "TD002",
     "TD003",
+    "T201",  # Allow print statements (CLI tool)
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 

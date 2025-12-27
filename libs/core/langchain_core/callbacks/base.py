@@ -5,13 +5,12 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from typing_extensions import Self
-
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from uuid import UUID
 
     from tenacity import RetryCallState
+    from typing_extensions import Self
 
     from langchain_core.agents import AgentAction, AgentFinish
     from langchain_core.documents import Document
@@ -961,27 +960,28 @@ class BaseCallbackManager(CallbackManagerMixin):
                 #    ['tag2', 'tag1']
             ```
         """  # noqa: E501
-        manager = self.__class__(
+        # Combine handlers and inheritable_handlers separately, using sets
+        # to deduplicate (order not preserved)
+        combined_handlers = list(set(self.handlers) | set(other.handlers))
+        combined_inheritable = list(
+            set(self.inheritable_handlers) | set(other.inheritable_handlers)
+        )
+
+        return self.__class__(
             parent_run_id=self.parent_run_id or other.parent_run_id,
-            handlers=[],
-            inheritable_handlers=[],
+            handlers=combined_handlers,
+            inheritable_handlers=combined_inheritable,
             tags=list(set(self.tags + other.tags)),
             inheritable_tags=list(set(self.inheritable_tags + other.inheritable_tags)),
             metadata={
                 **self.metadata,
                 **other.metadata,
             },
+            inheritable_metadata={
+                **self.inheritable_metadata,
+                **other.inheritable_metadata,
+            },
         )
-
-        handlers = self.handlers + other.handlers
-        inheritable_handlers = self.inheritable_handlers + other.inheritable_handlers
-
-        for handler in handlers:
-            manager.add_handler(handler)
-
-        for handler in inheritable_handlers:
-            manager.add_handler(handler, inherit=True)
-        return manager
 
     @property
     def is_async(self) -> bool:
