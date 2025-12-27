@@ -30,6 +30,9 @@ def uuid7(nanoseconds: int | None = None) -> UUID:
 
     Args:
         nanoseconds: Optional ns timestamp. If not provided, uses current time.
+
+    Returns:
+        A UUIDv7 object.
     """
     # --- 48 ---   -- 4 --   --- 12 ---   -- 2 --   --- 30 ---   - 32 -
     # unix_ts_ms | version | counter_hi | variant | counter_lo | random

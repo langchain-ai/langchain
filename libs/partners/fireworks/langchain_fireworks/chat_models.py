@@ -291,9 +291,7 @@ class ChatFireworks(BaseChatModel):
         ```python
         from langchain_fireworks.chat_models import ChatFireworks
 
-        fireworks = ChatFireworks(
-            model_name="accounts/fireworks/models/llama-v3p1-8b-instruct"
-        )
+        fireworks = ChatFireworks(model_name="accounts/fireworks/models/gpt-oss-120b")
         ```
     """
 
@@ -805,7 +803,7 @@ class ChatFireworks(BaseChatModel):
 
 
         model = ChatFireworks(
-            model="accounts/fireworks/models/firefunction-v1",
+            model="accounts/fireworks/models/gpt-oss-120b",
             temperature=0,
         )
         structured_model = model.with_structured_output(AnswerWithJustification)
@@ -835,7 +833,7 @@ class ChatFireworks(BaseChatModel):
 
 
         model = ChatFireworks(
-            model="accounts/fireworks/models/firefunction-v1",
+            model="accounts/fireworks/models/gpt-oss-120b",
             temperature=0,
         )
         structured_model = model.with_structured_output(
@@ -870,7 +868,7 @@ class ChatFireworks(BaseChatModel):
 
 
         model = ChatFireworks(
-            model="accounts/fireworks/models/firefunction-v1",
+            model="accounts/fireworks/models/gpt-oss-120b",
             temperature=0,
         )
         structured_model = model.with_structured_output(AnswerWithJustification)
@@ -906,7 +904,7 @@ class ChatFireworks(BaseChatModel):
         }
 
         model = ChatFireworks(
-            model="accounts/fireworks/models/firefunction-v1",
+            model="accounts/fireworks/models/gpt-oss-120b",
             temperature=0,
         )
         structured_model = model.with_structured_output(oai_schema)
@@ -933,7 +931,7 @@ class ChatFireworks(BaseChatModel):
 
 
         model = ChatFireworks(
-            model="accounts/fireworks/models/firefunction-v1", temperature=0
+            model="accounts/fireworks/models/gpt-oss-120b", temperature=0
         )
         structured_model = model.with_structured_output(
             AnswerWithJustification, method="json_mode", include_raw=True

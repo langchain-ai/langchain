@@ -13,13 +13,12 @@ from langchain_core.messages import HumanMessage
 from langchain_core.prompts.structured import StructuredPrompt
 from langchain_core.runnables.base import Runnable, RunnableLambda
 from langchain_core.utils.mustache import ChevronError
-from langchain_core.utils.pydantic import is_basemodel_subclass
 
 
 def _fake_runnable(
     _: Any, *, schema: dict | type[BaseModel], value: Any = 42, **_kwargs: Any
 ) -> BaseModel | dict:
-    if isclass(schema) and is_basemodel_subclass(schema):
+    if isclass(schema) and issubclass(schema, BaseModel):
         return schema(name="yo", value=value)
     params = cast("dict", schema)["parameters"]
     return {k: 1 if k != "value" else value for k, v in params.items()}
@@ -82,7 +81,6 @@ def test_structured_prompt_dict() -> None:
     assert loads(dumps(prompt)).model_dump() == prompt.model_dump()
 
     chain = loads(dumps(prompt)) | model
-
     assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 42}
 
 

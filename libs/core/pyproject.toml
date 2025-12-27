@@ -9,7 +9,7 @@ license = {text = "MIT"}
 readme = "README.md"
 authors = []
 
-version = "1.2.1"
+version = "1.2.5"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langsmith>=0.3.45,<1.0.0",
@@ -76,7 +76,6 @@ enable_error_code = "deprecated"
 
 # TODO: activate for 'strict' checking
 disallow_any_generics = false
-warn_return_any = false
 
 
 [tool.ruff.format]
@@ -89,13 +88,9 @@ ignore = [
     "COM812",  # Messes with the formatter
     "CPY",     # No copyright
     "FIX002",  # Line contains TODO
-    "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
     "PLR09",   # Too many something (arg, statements, etc)
     "RUF012",  # Doesn't play well with Pydantic
-    "TC001",   # Doesn't play well with Pydantic
-    "TC002",   # Doesn't play well with Pydantic
-    "TC003",   # Doesn't play well with Pydantic
     "TD002",   # Missing author in TODO
     "TD003",   # Missing issue link in TODO
 
@@ -112,7 +107,7 @@ unfixable = [
 flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
 flake8-builtins.ignorelist = ["id", "input", "type"]
-flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
+flake8-type-checking.runtime-evaluated-base-classes = [ "pydantic.BaseModel", "langchain_core.load.serializable.Serializable", "langchain_core.runnables.base.RunnableSerializable", "langchain_core.language_models.base.BaseLanguageModel", "langchain_core.outputs.generation.Generation", "langchain_core.tools.base.BaseTool",]
 pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
 
 [tool.ruff.lint.pydocstyle]

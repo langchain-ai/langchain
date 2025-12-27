@@ -145,6 +145,10 @@ def test_profile() -> None:
     model = ChatOpenAI(model="gpt-5", profile={"tool_calling": False})
     assert model.profile == {"tool_calling": False}
 
+    # Test overrides for gpt-5 input tokens
+    model = ChatOpenAI(model="gpt-5")
+    assert model.profile["max_input_tokens"] == 272_000
+
 
 def test_openai_o1_temperature() -> None:
     llm = ChatOpenAI(model="o1-preview")
@@ -997,6 +1001,32 @@ def test_get_num_tokens_from_messages() -> None:
         actual = llm.get_num_tokens_from_messages(messages)
     assert actual == 13
 
+    # Test Responses
+    messages = [
+        AIMessage(
+            [
+                {
+                    "type": "function_call",
+                    "name": "multiply",
+                    "arguments": '{"x":5,"y":4}',
+                    "call_id": "call_abc123",
+                    "id": "fc_abc123",
+                    "status": "completed",
+                },
+            ],
+            tool_calls=[
+                {
+                    "type": "tool_call",
+                    "name": "multiply",
+                    "args": {"x": 5, "y": 4},
+                    "id": "call_abc123",
+                }
+            ],
+        )
+    ]
+    actual = llm.get_num_tokens_from_messages(messages)
+    assert actual
+
 
 class Foo(BaseModel):
     bar: int
@@ -1330,7 +1360,7 @@ def test_structured_outputs_parser() -> None:
         partial(_oai_structured_outputs_parser, schema=GenerateUsername)
     )
     serialized = dumps(llm_output)
-    deserialized = loads(serialized)
+    deserialized = loads(serialized, allowed_objects=[ChatGeneration, AIMessage])
     assert isinstance(deserialized, ChatGeneration)
     result = output_parser.invoke(cast(AIMessage, deserialized.message))
     assert result == parsed_response

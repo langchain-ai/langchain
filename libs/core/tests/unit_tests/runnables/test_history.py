@@ -37,7 +37,7 @@ def test_interfaces() -> None:
 
 def _get_get_session_history(
     *,
-    store: dict[str, Any] | None = None,
+    store: dict[str, InMemoryChatMessageHistory] | None = None,
 ) -> Callable[..., InMemoryChatMessageHistory]:
     chat_history_store = store if store is not None else {}
 
@@ -96,7 +96,8 @@ async def test_input_messages_async() -> None:
     output = [
         c
         async for c in with_history.astream([HumanMessage(content="hi again")], config)  # type: ignore[arg-type]
-    ] == ["you said: hello\ngood bye\nhi again"]
+    ]
+    assert output == ["you said: hello\ngood bye\nhi again"]
     assert store == {
         "1_async": InMemoryChatMessageHistory(
             messages=[
