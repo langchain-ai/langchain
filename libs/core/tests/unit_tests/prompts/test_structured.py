@@ -81,7 +81,6 @@ def test_structured_prompt_dict() -> None:
     assert loads(dumps(prompt)).model_dump() == prompt.model_dump()
 
     chain = loads(dumps(prompt)) | model
-
     assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 42}
 
 

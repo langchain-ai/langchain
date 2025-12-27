@@ -8,7 +8,7 @@ import json
 import typing
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import Callable  # noqa: TC003
 from inspect import signature
 from typing import (
     TYPE_CHECKING,

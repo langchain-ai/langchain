@@ -12,7 +12,6 @@ from typing import (
     TypeVar,
     cast,
 )
-from uuid import UUID
 
 from typing_extensions import NotRequired, override
 
@@ -47,6 +46,7 @@ from langchain_core.utils.uuid import uuid7
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
+    from uuid import UUID
 
     from langchain_core.documents import Document
     from langchain_core.runnables import Runnable, RunnableConfig

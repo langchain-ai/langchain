@@ -7,6 +7,7 @@ from typing import Any
 
 import pytest
 from langchain_core.messages import HumanMessage
+from langchain_core.tools import tool
 from langgraph.graph.state import CompiledStateGraph
 
 from langchain.agents import create_agent
@@ -17,13 +18,11 @@ from langchain.agents.middleware.types import _InputAgentState
 def _get_model(provider: str) -> Any:
     """Get chat model for the specified provider."""
     if provider == "anthropic":
-        from langchain_anthropic import ChatAnthropic
-
-        return ChatAnthropic(model="claude-sonnet-4-5-20250929")
+        return pytest.importorskip("langchain_anthropic").ChatAnthropic(
+            model="claude-sonnet-4-5-20250929"
+        )
     if provider == "openai":
-        from langchain_openai import ChatOpenAI
-
-        return ChatOpenAI(model="gpt-4o-mini")
+        return pytest.importorskip("langchain_openai").ChatOpenAI(model="gpt-4o-mini")
     msg = f"Unknown provider: {provider}"
     raise ValueError(msg)
 
@@ -31,8 +30,6 @@ def _get_model(provider: str) -> Any:
 @pytest.mark.parametrize("provider", ["anthropic", "openai"])
 def test_shell_tool_basic_execution(tmp_path: Path, provider: str) -> None:
     """Test basic shell command execution across different models."""
-    pytest.importorskip(f"langchain_{provider}")
-
     workspace = tmp_path / "workspace"
     agent: CompiledStateGraph[Any, Any, _InputAgentState, Any] = create_agent(
         model=_get_model(provider),
@@ -113,8 +110,6 @@ def test_shell_tool_error_handling(tmp_path: Path) -> None:
 @pytest.mark.requires("langchain_anthropic")
 def test_shell_tool_with_custom_tools(tmp_path: Path) -> None:
     """Test shell tool works alongside custom tools."""
-    from langchain_core.tools import tool
-
     workspace = tmp_path / "workspace"
 
     @tool
