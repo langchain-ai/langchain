@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field, replace
 from inspect import iscoroutinefunction
 from typing import (
@@ -338,7 +338,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     state_schema: type[StateT] = cast("type[StateT]", AgentState)
     """The schema for state passed to the middleware nodes."""
 
-    tools: list[BaseTool]
+    tools: Sequence[BaseTool]
     """Additional tools registered by the middleware."""
 
     @property
