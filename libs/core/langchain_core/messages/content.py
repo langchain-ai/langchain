@@ -504,7 +504,7 @@ class ImageContentBlock(TypedDict):
     """Image data.
 
     !!! note "Factory function"
-        `create_image_block` may also be used as a factory to create a
+        `create_image_block` may also be used as a factory to create an
         `ImageContentBlock`. Benefits include:
 
         * Automatic ID generation (when not provided)

@@ -110,13 +110,8 @@ ignore = [
     "COM812",  # Messes with the formatter
     "CPY",     # No copyright
     "FIX002",  # Line contains TODO
-    "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
     "PLR09",   # Too many something (arg, statements, etc)
-    "RUF012",  # Doesn't play well with Pydantic
-    "TC001",   # Doesn't play well with Pydantic
-    "TC002",   # Doesn't play well with Pydantic
-    "TC003",   # Doesn't play well with Pydantic
     "TD002",   # Missing author in TODO
     "TD003",   # Missing issue link in TODO
 
@@ -141,7 +136,6 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 "tests/unit_tests/agents/*" = [
     "ANN", # Annotations, needs to fix
     "ARG", # Arguments, needs to fix
-    "PT",  # pytest, needs to fix
 ]
 "tests/unit_tests/agents/test_return_direct_spec.py" = ["F821"]
 "tests/unit_tests/agents/test_responses_spec.py" = ["F821"]
