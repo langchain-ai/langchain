@@ -1,0 +1,68 @@
+# Shared ruff configuration for LangChain packages
+# This file contains common ruff settings that are shared across all packages.
+# Note: ruff doesn't support native extend in pyproject.toml, so packages should
+# reference this file or include these settings in their pyproject.toml
+
+[format]
+docstring-code-format = true
+
+[lint]
+select = ["ALL"]
+ignore = [
+    "C90",     # McCabe complexity
+    "COM812",  # Messes with the formatter
+    "CPY",     # No copyright
+    "FIX002",  # Line contains TODO
+    "PERF203", # Rarely useful
+    "PLR09",   # Too many something (arg, statements, etc)
+    "TD002",   # Missing author in TODO
+    "TD003",   # Missing issue link in TODO
+
+    # TODO rules
+    "ANN401",  # No Any types
+    "BLE",     # Blind exceptions
+    "ERA",     # No commented-out code
+]
+unfixable = [
+    "B028",    # People should intentionally tune the stacklevel
+    "PLW1510", # People should intentionally set the check argument
+]
+
+[lint.flake8-annotations]
+allow-star-arg-any = true
+mypy-init-return = true
+
+[lint.flake8-type-checking]
+runtime-evaluated-base-classes = [
+    "pydantic.BaseModel",
+    "langchain_core.load.serializable.Serializable",
+    "langchain_core.runnables.base.RunnableSerializable",
+    "langchain_core.language_models.base.BaseLanguageModel",
+    "langchain_core.outputs.generation.Generation",
+    "langchain_core.tools.base.BaseTool",
+]
+
+[lint.pep8-naming]
+classmethod-decorators = [
+    "classmethod",
+    "langchain_core.utils.pydantic.pre_init",
+    "pydantic.field_validator",
+    "pydantic.v1.root_validator",
+]
+
+[lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
+[lint.per-file-ignores]
+"tests/**" = [
+    "D1",      # Documentation rules
+    "PLR2004", # Magic values are perfectly fine in unit tests (e.g. 0, 1, 2, etc.)
+    "S",       # Security rules (relaxed for tests)
+    "SLF",     # Private member access in tests
+]
+"scripts/**" = [
+    "INP",     # Scripts are not in a package
+    "S",       # Security rules (relaxed for scripts)
+]
+
