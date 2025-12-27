@@ -13,6 +13,7 @@ from langgraph.types import Command
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware._retry import calculate_delay
 from langchain.agents.middleware.tool_retry import ToolRetryMiddleware
+from langchain.agents.middleware.types import wrap_tool_call
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
@@ -867,8 +868,6 @@ def test_tool_retry_multiple_middleware_composition() -> None:
     call_log = []
 
     # Custom middleware that logs calls
-    from langchain.agents.middleware.types import wrap_tool_call
-
     @wrap_tool_call
     def logging_middleware(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
         call_log.append(f"before_{request.tool.name}")

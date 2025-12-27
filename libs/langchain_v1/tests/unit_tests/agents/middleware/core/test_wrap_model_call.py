@@ -12,6 +12,8 @@ import pytest
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.tools import tool
+from typing_extensions import TypedDict
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.types import (
@@ -929,7 +931,6 @@ class TestWrapModelCallDecorator:
 
     def test_decorator_with_custom_state_schema(self) -> None:
         """Test decorator with custom state schema."""
-        from typing_extensions import TypedDict
 
         class CustomState(TypedDict):
             messages: list
@@ -945,7 +946,6 @@ class TestWrapModelCallDecorator:
 
     def test_decorator_with_tools_parameter(self) -> None:
         """Test decorator with tools parameter."""
-        from langchain_core.tools import tool
 
         @tool
         def test_tool(query: str) -> str:

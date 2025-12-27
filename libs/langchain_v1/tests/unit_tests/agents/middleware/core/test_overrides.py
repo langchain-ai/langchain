@@ -2,6 +2,7 @@
 
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.tools import tool
 
 from langchain.agents.middleware.types import ModelRequest, ToolCallRequest
 
@@ -190,7 +191,6 @@ class TestToolCallRequestOverride:
 
     def test_override_tool_call(self) -> None:
         """Test overriding tool_call dict."""
-        from langchain_core.tools import tool
 
         @tool
         def test_tool(x: int) -> str:
@@ -219,7 +219,6 @@ class TestToolCallRequestOverride:
 
     def test_override_state(self) -> None:
         """Test overriding state."""
-        from langchain_core.tools import tool
 
         @tool
         def test_tool(x: int) -> str:
@@ -244,7 +243,6 @@ class TestToolCallRequestOverride:
 
     def test_override_multiple_attributes(self) -> None:
         """Test overriding multiple attributes at once."""
-        from langchain_core.tools import tool
 
         @tool
         def test_tool(x: int) -> str:
@@ -287,7 +285,6 @@ class TestToolCallRequestOverride:
 
     def test_override_with_copy_pattern(self) -> None:
         """Test common pattern of copying and modifying tool_call."""
-        from langchain_core.tools import tool
 
         @tool
         def test_tool(value: int) -> str:
@@ -320,7 +317,6 @@ class TestToolCallRequestOverride:
 
     def test_override_preserves_identity(self) -> None:
         """Test that unchanged attributes maintain object identity."""
-        from langchain_core.tools import tool
 
         @tool
         def test_tool(x: int) -> str:
@@ -346,7 +342,6 @@ class TestToolCallRequestOverride:
 
     def test_override_chaining(self) -> None:
         """Test chaining multiple override calls."""
-        from langchain_core.tools import tool
 
         @tool
         def test_tool(x: int) -> str:

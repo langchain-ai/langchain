@@ -6,8 +6,10 @@ from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, Field
 
-from langchain_core.callbacks import Callbacks
-from langchain_core.documents import Document
+# Cannot move Callbacks and Document to TYPE_CHECKING as StructuredTool's
+# func/coroutine parameter annotations are evaluated at runtime.
+from langchain_core.callbacks import Callbacks  # noqa: TC001
+from langchain_core.documents import Document  # noqa: TC001
 from langchain_core.prompts import (
     BasePromptTemplate,
     PromptTemplate,

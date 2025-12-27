@@ -9,7 +9,6 @@ import pytest
 from typing_extensions import override
 
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import (
@@ -932,38 +931,30 @@ class _AnotherFakeChatModel(BaseChatModel):
 
     def _generate(
         self,
-        messages: list[BaseMessage],  # noqa: ARG002
-        stop: list[str] | None = None,  # noqa: ARG002
-        run_manager: CallbackManagerForLLMRun | None = None,  # noqa: ARG002
-        **kwargs: Any,  # noqa: ARG002
+        *_args: Any,
+        **_kwargs: Any,
     ) -> ChatResult:
         return ChatResult(generations=[ChatGeneration(message=next(self.responses))])
 
     async def _agenerate(
         self,
-        messages: list[BaseMessage],  # noqa: ARG002
-        stop: list[str] | None = None,  # noqa: ARG002
-        run_manager: AsyncCallbackManagerForLLMRun | None = None,  # noqa: ARG002
-        **kwargs: Any,  # noqa: ARG002
+        *_args: Any,
+        **_kwargs: Any,
     ) -> ChatResult:
         return ChatResult(generations=[ChatGeneration(message=next(self.responses))])
 
     def _stream(
         self,
-        messages: list[BaseMessage],  # noqa: ARG002
-        stop: list[str] | None = None,  # noqa: ARG002
-        run_manager: CallbackManagerForLLMRun | None = None,  # noqa: ARG002
-        **kwargs: Any,  # noqa: ARG002
+        *_args: Any,
+        **_kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         for chunk in self.chunks:
             yield ChatGenerationChunk(message=chunk)
 
     async def _astream(
         self,
-        messages: list[BaseMessage],  # noqa: ARG002
-        stop: list[str] | None = None,  # noqa: ARG002
-        run_manager: AsyncCallbackManagerForLLMRun | None = None,  # noqa: ARG002
-        **kwargs: Any,  # noqa: ARG002
+        *_args: Any,
+        **_kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         for chunk in self.chunks:
             yield ChatGenerationChunk(message=chunk)
