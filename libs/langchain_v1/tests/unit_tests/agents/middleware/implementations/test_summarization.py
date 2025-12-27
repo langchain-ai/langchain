@@ -168,7 +168,7 @@ def test_summarization_middleware_trim_limit_none_keeps_all_messages() -> None:
         model=MockChatModel(),
         trim_tokens_to_summarize=None,
     )
-    middleware.token_counter = lambda msgs: len(msgs)
+    middleware.token_counter = len
 
     trimmed = middleware._trim_messages_for_summary(messages)
     assert trimmed is messages
