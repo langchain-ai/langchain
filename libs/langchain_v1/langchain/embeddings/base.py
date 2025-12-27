@@ -31,10 +31,35 @@ _SUPPORTED_PROVIDERS: dict[str, tuple[str, str, Callable[..., Embeddings]]] = {
     "ollama": ("langchain_ollama", "OllamaEmbeddings", _call),
     "openai": ("langchain_openai", "OpenAIEmbeddings", _call),
 }
+"""Registry mapping provider names to their import configuration.
+
+Each entry maps a provider key to a tuple of:
+
+- `module_path`: The Python module path containing the embeddings class.
+- `class_name`: The name of the embeddings class to import.
+- `creator_func`: A callable that instantiates the class with provided kwargs.
+"""
 
 
 @functools.lru_cache(maxsize=len(_SUPPORTED_PROVIDERS))
 def _get_embeddings_class_creator(provider: str) -> Callable[..., Embeddings]:
+    """Return a factory function that creates an embeddings model for the given provider.
+
+    This function is cached to avoid repeated module imports.
+
+    Args:
+        provider: The name of the model provider (e.g., `'openai'`, `'cohere'`).
+
+            Must be a key in `_SUPPORTED_PROVIDERS`.
+
+    Returns:
+        A callable that accepts model kwargs and returns an `Embeddings` instance for
+            the specified provider.
+
+    Raises:
+        ValueError: If the provider is not in `_SUPPORTED_PROVIDERS`.
+        ImportError: If the provider's integration package is not installed.
+    """
     if provider not in _SUPPORTED_PROVIDERS:
         msg = (
             f"Provider '{provider}' is not supported.\n"
@@ -42,6 +67,7 @@ def _get_embeddings_class_creator(provider: str) -> Callable[..., Embeddings]:
             f"{_get_provider_list()}"
         )
         raise ValueError(msg)
+
     module_name, class_name, creator_func = _SUPPORTED_PROVIDERS[provider]
     try:
         module = importlib.import_module(module_name)
@@ -49,6 +75,7 @@ def _get_embeddings_class_creator(provider: str) -> Callable[..., Embeddings]:
         pkg = module_name.replace("_", "-")
         msg = f"Could not import {pkg} python package. Please install it with `pip install {pkg}`"
         raise ImportError(msg) from e
+
     cls = getattr(module, class_name)
     return functools.partial(creator_func, cls=cls)
 

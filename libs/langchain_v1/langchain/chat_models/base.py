@@ -84,7 +84,7 @@ Each entry maps a provider key to a tuple of:
 
 
 def _import_module(module: str) -> ModuleType:
-    """Import a module by name with a user-friendly error message on failure.
+    """Import a module by name.
 
     Args:
         module: The fully qualified module name to import (e.g., `'langchain_openai'`).
@@ -120,8 +120,8 @@ def _get_chat_model_creator(
             Must be a key in `_SUPPORTED_PROVIDERS`.
 
     Returns:
-        A callable that accepts model kwargs and returns a `BaseChatModel`
-        instance for the specified provider.
+        A callable that accepts model kwargs and returns a `BaseChatModel` instance for
+            the specified provider.
 
     Raises:
         ValueError: If the provider is not in `_SUPPORTED_PROVIDERS`.
