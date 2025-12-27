@@ -6,7 +6,7 @@ import operator
 from collections.abc import Sequence
 from typing import Any, Literal, cast, overload
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
 
 from langchain_core.messages import content as types
@@ -166,10 +166,10 @@ class AIMessage(BaseMessage):
     (e.g., tool calls, usage metadata) added by the LangChain framework.
     """
 
-    tool_calls: list[ToolCall] = []
+    tool_calls: list[ToolCall] = Field(default_factory=list)
     """If present, tool calls associated with the message."""
 
-    invalid_tool_calls: list[InvalidToolCall] = []
+    invalid_tool_calls: list[InvalidToolCall] = Field(default_factory=list)
     """If present, tool calls with parsing errors associated with the message."""
 
     usage_metadata: UsageMetadata | None = None
@@ -394,7 +394,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment]
     """The type of the message (used for deserialization)."""
 
-    tool_call_chunks: list[ToolCallChunk] = []
+    tool_call_chunks: list[ToolCallChunk] = Field(default_factory=list)
     """If provided, tool call chunks associated with the message."""
 
     chunk_position: Literal["last"] | None = None
