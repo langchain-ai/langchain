@@ -65,7 +65,6 @@ def mock_completion() -> dict:
 @pytest.mark.parametrize("model", ["gpt-3.5-turbo-instruct"])
 def test_get_token_ids(model: str) -> None:
     OpenAI(model=model).get_token_ids("foo")
-    return
 
 
 def test_custom_token_counting() -> None:
@@ -109,3 +108,13 @@ def test_stream_response_to_generation_chunk() -> None:
     assert chunk == GenerationChunk(
         text="", generation_info={"finish_reason": None, "logprobs": None}
     )
+
+
+def test_generate_streaming_multiple_prompts_error() -> None:
+    """Ensures ValueError when streaming=True and multiple prompts."""
+    llm = OpenAI(streaming=True)
+
+    with pytest.raises(
+        ValueError, match="Cannot stream results with multiple prompts\\."
+    ):
+        llm._generate(["foo", "bar"])

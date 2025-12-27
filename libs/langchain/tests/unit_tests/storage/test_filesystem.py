@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from langchain_core.stores import InvalidKeyException
 
-from langchain.storage.file_system import LocalFileStore
+from langchain_classic.storage.file_system import LocalFileStore
 
 
 @pytest.fixture

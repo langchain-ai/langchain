@@ -2,16 +2,10 @@
 
 
 class BaseStandardTests:
-    """Base class for standard tests.
-
-    :private:
-    """
+    """Base class for standard tests."""
 
     def test_no_overrides_DO_NOT_OVERRIDE(self) -> None:  # noqa: N802
-        """Test that no standard tests are overridden.
-
-        :private:
-        """
+        """Test that no standard tests are overridden."""
         # Find path to standard test implementations
         comparison_class = None
 

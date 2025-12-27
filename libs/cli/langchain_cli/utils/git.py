@@ -6,9 +6,8 @@ import hashlib
 import logging
 import re
 import shutil
-from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from git import Repo
 
@@ -17,6 +16,9 @@ from langchain_cli.constants import (
     DEFAULT_GIT_REPO,
     DEFAULT_GIT_SUBDIRECTORY,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 logger = logging.getLogger(__name__)
 
@@ -38,19 +40,19 @@ def parse_dependency_string(
     branch: str | None,
     api_path: str | None,
 ) -> DependencySource:
-    """Parse a dependency string into a DependencySource.
+    """Parse a dependency string into a `DependencySource`.
 
     Args:
-        dep: the dependency string.
-        repo: optional repository.
-        branch: optional branch.
-        api_path: optional API path.
+        dep: The dependency string
+        repo: Optional repository
+        branch: Optional branch
+        api_path: Optional API path
 
     Returns:
-        The parsed dependency source information.
+        The parsed dependency source information
 
     Raises:
-        ValueError: if the dependency string is invalid.
+        ValueError: If the dependency string is invalid
     """
     if dep is not None and dep.startswith("git+"):
         if repo is not None or branch is not None:
@@ -147,8 +149,8 @@ def parse_dependencies(
     """Parse dependencies.
 
     Args:
-        dependencies: the dependencies to parse
-        repo: the repositories to use
+        dependencies: The dependencies to parse
+        repo: The repositories to use
         branch: the branches to use
         api_path: the api paths to use
 
@@ -182,7 +184,7 @@ def parse_dependencies(
     inner_branches = _list_arg_to_length(branch, num_deps)
 
     return list(
-        map(  # type: ignore[call-overload]
+        map(  # type: ignore[call-overload, unused-ignore]
             parse_dependency_string,
             inner_deps,
             inner_repos,
@@ -244,7 +246,7 @@ def copy_repo(
 ) -> None:
     """Copiy a repo, ignoring git folders.
 
-    Raises FileNotFound error if it can't find source
+    Raises `FileNotFound` if it can't find source
     """
 
     def ignore_func(_: str, files: list[str]) -> list[str]:

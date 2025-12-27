@@ -12,18 +12,16 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    Optional,
-    Union,
     cast,
 )
 
 if TYPE_CHECKING:
-    from typing_extensions import TypeAlias
+    from typing import TypeAlias
 
 logger = logging.getLogger(__name__)
 
 
-Scopes: TypeAlias = list[Union[Literal[False, 0], Mapping[str, Any]]]
+Scopes: TypeAlias = list[Literal[False, 0] | Mapping[str, Any]]
 
 
 # Globals
@@ -48,7 +46,7 @@ def grab_literal(template: str, l_del: str) -> tuple[str, str]:
         l_del: The left delimiter.
 
     Returns:
-        tuple[str, str]: The literal and the template.
+        The literal and the template.
     """
     global _CURRENT_LINE
 
@@ -78,7 +76,7 @@ def l_sa_check(
         is_standalone: Whether the tag is standalone.
 
     Returns:
-        bool: Whether the tag could be a standalone.
+        Whether the tag could be a standalone.
     """
     # If there is a newline, or the previous tag was a standalone
     if literal.find("\n") != -1 or is_standalone:
@@ -87,7 +85,7 @@ def l_sa_check(
         # If all the characters since the last newline are spaces
         # Then the next tag could be a standalone
         # Otherwise it can't be
-        return padding.isspace() or padding == ""
+        return padding.isspace() or not padding
     return False
 
 
@@ -104,7 +102,7 @@ def r_sa_check(
         is_standalone: Whether the tag is standalone.
 
     Returns:
-        bool: Whether the tag could be a standalone.
+        Whether the tag could be a standalone.
     """
     # Check right side if we might be a standalone
     if is_standalone and tag_type not in {"variable", "no escape"}:
@@ -126,7 +124,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
         r_del: The right delimiter.
 
     Returns:
-        tuple[tuple[str, str], str]: The tag and the template.
+        The tag and the template.
 
     Raises:
         ChevronError: If the tag is unclosed.
@@ -307,7 +305,7 @@ def tokenize(
 
         # Start yielding
         # Ignore literals that are empty
-        if literal != "":
+        if literal:
             yield ("literal", literal)
 
         # Ignore comments and set delimiters
@@ -331,7 +329,7 @@ def tokenize(
 
 
 def _html_escape(string: str) -> str:
-    """Return the HTML-escaped string with these characters escaped: ``" & < >``."""
+    """Return the HTML-escaped string with these characters escaped: `" & < >`."""
     html_codes = {
         '"': "&quot;",
         "<": "&lt;",
@@ -376,15 +374,29 @@ def _get_key(
                 if resolved_scope in (0, False):
                     return resolved_scope
                 # Move into the scope
-                try:
-                    # Try subscripting (Normal dictionaries)
-                    resolved_scope = cast("dict[str, Any]", resolved_scope)[child]
-                except (TypeError, AttributeError):
+                if isinstance(resolved_scope, dict):
                     try:
-                        resolved_scope = getattr(resolved_scope, child)
-                    except (TypeError, AttributeError):
-                        # Try as a list
-                        resolved_scope = resolved_scope[int(child)]  # type: ignore[index]
+                        resolved_scope = resolved_scope[child]
+                    except (KeyError, TypeError):
+                        # Key not found - will be caught by outer try-except
+                        msg = f"Key {child!r} not found in dict"
+                        raise KeyError(msg) from None
+                elif isinstance(resolved_scope, (list, tuple)):
+                    try:
+                        resolved_scope = resolved_scope[int(child)]
+                    except (ValueError, IndexError, TypeError):
+                        # Invalid index - will be caught by outer try-except
+                        msg = f"Invalid index {child!r} for list/tuple"
+                        raise IndexError(msg) from None
+                else:
+                    # Reject everything else for security
+                    # This prevents traversing into arbitrary Python objects
+                    msg = (
+                        f"Cannot traverse into {type(resolved_scope).__name__}. "
+                        "Mustache templates only support dict, list, and tuple. "
+                        f"Got: {type(resolved_scope)}"
+                    )
+                    raise TypeError(msg)  # noqa: TRY301
 
             try:
                 # This allows for custom falsy data types
@@ -395,8 +407,9 @@ def _get_key(
                 if resolved_scope in (0, False):
                     return resolved_scope
                 return resolved_scope or ""
-        except (AttributeError, KeyError, IndexError, ValueError):
+        except (AttributeError, KeyError, IndexError, ValueError, TypeError):
             # We couldn't find the key in the current scope
+            # TypeError: Attempted to traverse into non-dict/list type
             # We'll try again on the next pass
             pass
 
@@ -433,13 +446,13 @@ EMPTY_DICT: MappingProxyType[str, str] = MappingProxyType({})
 
 
 def render(
-    template: Union[str, list[tuple[str, str]]] = "",
+    template: str | list[tuple[str, str]] = "",
     data: Mapping[str, Any] = EMPTY_DICT,
     partials_dict: Mapping[str, str] = EMPTY_DICT,
     padding: str = "",
     def_ldel: str = "{{",
     def_rdel: str = "}}",
-    scopes: Optional[Scopes] = None,
+    scopes: Scopes | None = None,
     warn: bool = False,  # noqa: FBT001,FBT002
     keep: bool = False,  # noqa: FBT001,FBT002
 ) -> str:

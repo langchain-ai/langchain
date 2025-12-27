@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import math
 import os
-from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 try:
@@ -20,6 +19,8 @@ except ImportError:
     _HAS_GRANDALF = False
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
+
     from langchain_core.runnables.graph import Edge as LangEdge
 
 
@@ -62,8 +63,8 @@ class AsciiCanvas:
         """Create an ASCII canvas.
 
         Args:
-            cols: number of columns in the canvas. Should be ``> 1``.
-            lines: number of lines in the canvas. Should be ``> 1``.
+            cols: number of columns in the canvas. Should be `> 1`.
+            lines: number of lines in the canvas. Should be `> 1`.
 
         Raises:
             ValueError: if canvas dimensions are invalid.
@@ -90,9 +91,9 @@ class AsciiCanvas:
         """Create a point on ASCII canvas.
 
         Args:
-            x: x coordinate. Should be ``>= 0`` and ``<`` number of columns in
+            x: x coordinate. Should be `>= 0` and `<` number of columns in
                 the canvas.
-            y: y coordinate. Should be ``>= 0`` an ``<`` number of lines in the
+            y: y coordinate. Should be `>= 0` an `<` number of lines in the
                 canvas.
             char: character to place in the specified point on the
                 canvas.
@@ -117,11 +118,11 @@ class AsciiCanvas:
         """Create a line on ASCII canvas.
 
         Args:
-            x0 (int): x coordinate where the line should start.
-            y0 (int): y coordinate where the line should start.
-            x1 (int): x coordinate where the line should end.
-            y1 (int): y coordinate where the line should end.
-            char (str): character to draw the line with.
+            x0: x coordinate where the line should start.
+            y0: y coordinate where the line should start.
+            x1: x coordinate where the line should end.
+            y1: y coordinate where the line should end.
+            char: character to draw the line with.
         """
         if x0 > x1:
             x1, x0 = x0, x1
@@ -149,9 +150,9 @@ class AsciiCanvas:
         """Print a text on ASCII canvas.
 
         Args:
-            x (int): x coordinate where the text should start.
-            y (int): y coordinate where the text should start.
-            text (str): string that should be printed.
+            x: x coordinate where the text should start.
+            y: y coordinate where the text should start.
+            text: string that should be printed.
         """
         for i, char in enumerate(text):
             self.point(x + i, y, char)
@@ -160,10 +161,13 @@ class AsciiCanvas:
         """Create a box on ASCII canvas.
 
         Args:
-            x0 (int): x coordinate of the box corner.
-            y0 (int): y coordinate of the box corner.
-            width (int): box width.
-            height (int): box height.
+            x0: x coordinate of the box corner.
+            y0: y coordinate of the box corner.
+            width: box width.
+            height: box height.
+
+        Raises:
+            ValueError: if box dimensions are invalid.
         """
         if width <= 1 or height <= 1:
             msg = "Box dimensions should be > 1"
@@ -255,21 +259,20 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
         ASCII representation
 
     Example:
+        ```python
+        from langchain_core.runnables.graph_ascii import draw_ascii
 
-        .. code-block:: python
-
-            from langchain_core.runnables.graph_ascii import draw_ascii
-
-            vertices = {1: "1", 2: "2", 3: "3", 4: "4"}
-            edges = [
-                (source, target, None, None)
-                for source, target in [(1, 2), (2, 3), (2, 4), (1, 4)]
-            ]
+        vertices = {1: "1", 2: "2", 3: "3", 4: "4"}
+        edges = [
+            (source, target, None, None)
+            for source, target in [(1, 2), (2, 3), (2, 4), (1, 4)]
+        ]
 
 
-            print(draw_ascii(vertices, edges))
+        print(draw_ascii(vertices, edges))
+        ```
 
-        .. code-block:: none
+        ```txt
 
                  +---+
                  | 1 |
@@ -286,7 +289,7 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
             +---+     +---+
             | 3 |     | 4 |
             +---+     +---+
-
+        ```
     """
     # NOTE: coordinates might me negative, so we need to shift
     # everything to the positive plane before we actually draw it.

@@ -1,5 +1,4 @@
-import sys
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 
@@ -11,9 +10,6 @@ from langchain_core.runnables.utils import (
 )
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
-)
 @pytest.mark.parametrize(
     ("func", "expected_source"),
     [
@@ -41,17 +37,17 @@ def test_indent_lines_after_first(text: str, prefix: str, expected_output: str) 
     assert indented_text == expected_output
 
 
-global_agent = RunnableLambda(lambda x: x * 3)
+global_agent = RunnableLambda[str, str](lambda x: x * 3)
 
 
 def test_nonlocals() -> None:
-    agent = RunnableLambda(lambda x: x * 2)
+    agent = RunnableLambda[str, str](lambda x: x * 2)
 
     def my_func(value: str, agent: dict[str, str]) -> str:
         return agent.get("agent_name", value)
 
     def my_func2(value: str) -> str:
-        return agent.get("agent_name", value)  # type: ignore[attr-defined]
+        return str(agent.get("agent_name", value))  # type: ignore[attr-defined]
 
     def my_func3(value: str) -> str:
         return agent.invoke(value)
@@ -60,7 +56,7 @@ def test_nonlocals() -> None:
         return global_agent.invoke(value)
 
     def my_func5() -> tuple[Callable[[str], str], RunnableLambda]:
-        global_agent = RunnableLambda(lambda x: x * 3)
+        global_agent = RunnableLambda[str, str](lambda x: x * 3)
 
         def my_func6(value: str) -> str:
             return global_agent.invoke(value)

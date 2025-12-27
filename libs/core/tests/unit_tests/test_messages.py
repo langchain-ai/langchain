@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional, Union
+from typing import get_args
 
 import pytest
 
@@ -29,6 +29,7 @@ from langchain_core.messages import (
     messages_from_dict,
     messages_to_dict,
 )
+from langchain_core.messages.content import KNOWN_BLOCK_TYPES, ContentBlock
 from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
@@ -177,21 +178,23 @@ def test_message_chunks() -> None:
     assert AIMessageChunk(content="") + left == left
     assert right + AIMessageChunk(content="") == right
 
+    default_id = "lc_run--abc123"
+    meaningful_id = "msg_def456"
+
     # Test ID order of precedence
-    null_id = AIMessageChunk(content="", id=None)
-    default_id = AIMessageChunk(
-        content="", id="run-abc123"
+    null_id_chunk = AIMessageChunk(content="", id=None)
+    default_id_chunk = AIMessageChunk(
+        content="", id=default_id
     )  # LangChain-assigned run ID
-    meaningful_id = AIMessageChunk(content="", id="msg_def456")  # provider-assigned ID
+    provider_chunk = AIMessageChunk(
+        content="", id=meaningful_id
+    )  # provided ID (either by user or provider)
 
-    assert (null_id + default_id).id == "run-abc123"
-    assert (default_id + null_id).id == "run-abc123"
+    assert (null_id_chunk + default_id_chunk).id == default_id
+    assert (null_id_chunk + provider_chunk).id == meaningful_id
 
-    assert (null_id + meaningful_id).id == "msg_def456"
-    assert (meaningful_id + null_id).id == "msg_def456"
-
-    assert (default_id + meaningful_id).id == "msg_def456"
-    assert (meaningful_id + default_id).id == "msg_def456"
+    # Provider assigned IDs have highest precedence
+    assert (default_id_chunk + provider_chunk).id == meaningful_id
 
 
 def test_chat_message_chunks() -> None:
@@ -319,19 +322,11 @@ def test_function_message_chunks() -> None:
 
 
 def test_ai_message_chunks() -> None:
-    assert AIMessageChunk(example=True, content="I am") + AIMessageChunk(
-        example=True, content=" indeed."
-    ) == AIMessageChunk(example=True, content="I am indeed."), (
+    assert AIMessageChunk(content="I am") + AIMessageChunk(
+        content=" indeed."
+    ) == AIMessageChunk(content="I am indeed."), (
         "AIMessageChunk + AIMessageChunk should be a AIMessageChunk"
     )
-
-    with pytest.raises(
-        ValueError,
-        match="Cannot concatenate AIMessageChunks with different example values",
-    ):
-        AIMessageChunk(example=True, content="I am") + AIMessageChunk(
-            example=False, content=" indeed."
-        )
 
 
 class TestGetBufferString:
@@ -644,7 +639,7 @@ def test_tool_calls_merge() -> None:
         {"content": ""},
     ]
 
-    final: Optional[BaseMessageChunk] = None
+    final: BaseMessageChunk | None = None
 
     for chunk in chunks:
         msg = AIMessageChunk(**chunk)
@@ -750,7 +745,6 @@ def test_convert_to_messages() -> None:
                 "type": "human",
                 "name": None,
                 "id": "1",
-                "example": False,
             },
         ]
     )
@@ -786,7 +780,6 @@ def test_convert_to_messages() -> None:
             additional_kwargs={"metadata": {"speaker_name": "Presenter"}},
             response_metadata={},
             id="1",
-            example=False,
         ),
     ]
     assert expected == actual
@@ -932,7 +925,7 @@ def test_tool_message_serdes() -> None:
         },
     }
     assert dumpd(message) == ser_message
-    assert load(dumpd(message)) == message
+    assert load(dumpd(message), allowed_objects=[ToolMessage]) == message
 
 
 class BadObject:
@@ -961,7 +954,7 @@ def test_tool_message_ser_non_serializable() -> None:
     }
     assert dumpd(message) == ser_message
     with pytest.raises(NotImplementedError):
-        load(dumpd(ser_message))
+        load(dumpd(message), allowed_objects=[ToolMessage])
 
 
 def test_tool_message_to_dict() -> None:
@@ -1022,9 +1015,7 @@ def test_tool_message_str() -> None:
         ),
     ],
 )
-def test_merge_content(
-    first: Union[list, str], others: list, expected: Union[list, str]
-) -> None:
+def test_merge_content(first: list | str, others: list, expected: list | str) -> None:
     actual = merge_content(first, *others)
     assert actual == expected
 
@@ -1034,12 +1025,13 @@ def test_tool_message_content() -> None:
     ToolMessage(["foo"], tool_call_id="1")
     ToolMessage([{"foo": "bar"}], tool_call_id="1")
 
-    assert ToolMessage(("a", "b", "c"), tool_call_id="1").content == ["a", "b", "c"]  # type: ignore[arg-type]
-    assert ToolMessage(5, tool_call_id="1").content == "5"  # type: ignore[arg-type]
-    assert ToolMessage(5.1, tool_call_id="1").content == "5.1"  # type: ignore[arg-type]
-    assert ToolMessage({"foo": "bar"}, tool_call_id="1").content == "{'foo': 'bar'}"  # type: ignore[arg-type]
+    # Ignoring since we're testing that tuples get converted to lists in `coerce_args`
+    assert ToolMessage(("a", "b", "c"), tool_call_id="1").content == ["a", "b", "c"]  # type: ignore[call-overload]
+    assert ToolMessage(5, tool_call_id="1").content == "5"  # type: ignore[call-overload]
+    assert ToolMessage(5.1, tool_call_id="1").content == "5.1"  # type: ignore[call-overload]
+    assert ToolMessage({"foo": "bar"}, tool_call_id="1").content == "{'foo': 'bar'}"  # type: ignore[call-overload]
     assert (
-        ToolMessage(Document("foo"), tool_call_id="1").content == "page_content='foo'"  # type: ignore[arg-type]
+        ToolMessage(Document("foo"), tool_call_id="1").content == "page_content='foo'"  # type: ignore[call-overload]
     )
 
 
@@ -1057,9 +1049,9 @@ def test_message_text() -> None:
     # content: [empty], [single element], [multiple elements]
     # content dict types: [text], [not text], [no type]
 
-    assert HumanMessage(content="foo").text() == "foo"
-    assert not AIMessage(content=[]).text()
-    assert AIMessage(content=["foo", "bar"]).text() == "foobar"
+    assert HumanMessage(content="foo").text == "foo"
+    assert AIMessage(content=[]).text == ""
+    assert AIMessage(content=["foo", "bar"]).text == "foobar"
     assert (
         AIMessage(
             content=[
@@ -1071,12 +1063,11 @@ def test_message_text() -> None:
                     "input": {"location": "San Francisco, CA"},
                 },
             ]
-        ).text()
+        ).text
         == "<thinking>thinking...</thinking>"
     )
     assert (
-        SystemMessage(content=[{"type": "text", "text": "foo"}, "bar"]).text()
-        == "foobar"
+        SystemMessage(content=[{"type": "text", "text": "foo"}, "bar"]).text == "foobar"
     )
     assert (
         ToolMessage(
@@ -1092,40 +1083,78 @@ def test_message_text() -> None:
                 },
             ],
             tool_call_id="1",
-        ).text()
+        ).text
         == "15 degrees"
     )
     assert (
-        AIMessage(content=[{"text": "hi there"}, "hi"]).text() == "hi"
+        AIMessage(content=[{"text": "hi there"}, "hi"]).text == "hi"
     )  # missing type: text
-    assert not AIMessage(content=[{"type": "nottext", "text": "hi"}]).text()
-    assert not AIMessage(content=[]).text()
-    assert not AIMessage(
-        content="", tool_calls=[create_tool_call(name="a", args={"b": 1}, id=None)]
-    ).text()
+    assert AIMessage(content=[{"type": "nottext", "text": "hi"}]).text == ""
+    assert AIMessage(content=[]).text == ""
+    assert (
+        AIMessage(
+            content="", tool_calls=[create_tool_call(name="a", args={"b": 1}, id=None)]
+        ).text
+        == ""
+    )
 
 
 def test_is_data_content_block() -> None:
+    # Test all DataContentBlock types with various data fields
+
+    # Image blocks
+    assert is_data_content_block({"type": "image", "url": "https://..."})
     assert is_data_content_block(
         {
             "type": "image",
-            "source_type": "url",
-            "url": "https://...",
-        }
-    )
-    assert is_data_content_block(
-        {
-            "type": "image",
-            "source_type": "base64",
-            "data": "<base64 data>",
+            "base64": "<base64 data>",
             "mime_type": "image/jpeg",
         }
     )
+
+    # Video blocks
+    assert is_data_content_block({"type": "video", "url": "https://video.mp4"})
+    assert is_data_content_block(
+        {
+            "type": "video",
+            "base64": "<base64 video>",
+            "mime_type": "video/mp4",
+        }
+    )
+    assert is_data_content_block({"type": "video", "file_id": "vid_123"})
+
+    # Audio blocks
+    assert is_data_content_block({"type": "audio", "url": "https://audio.mp3"})
+    assert is_data_content_block(
+        {
+            "type": "audio",
+            "base64": "<base64 audio>",
+            "mime_type": "audio/mp3",
+        }
+    )
+    assert is_data_content_block({"type": "audio", "file_id": "aud_123"})
+
+    # Plain text blocks
+    assert is_data_content_block({"type": "text-plain", "text": "document content"})
+    assert is_data_content_block({"type": "text-plain", "url": "https://doc.txt"})
+    assert is_data_content_block({"type": "text-plain", "file_id": "txt_123"})
+
+    # File blocks
+    assert is_data_content_block({"type": "file", "url": "https://file.pdf"})
+    assert is_data_content_block(
+        {
+            "type": "file",
+            "base64": "<base64 file>",
+            "mime_type": "application/pdf",
+        }
+    )
+    assert is_data_content_block({"type": "file", "file_id": "file_123"})
+
+    # Blocks with additional metadata (should still be valid)
     assert is_data_content_block(
         {
             "type": "image",
-            "source_type": "base64",
-            "data": "<base64 data>",
+            "base64": "<base64 data>",
             "mime_type": "image/jpeg",
             "cache_control": {"type": "ephemeral"},
         }
@@ -1133,65 +1162,191 @@ def test_is_data_content_block() -> None:
     assert is_data_content_block(
         {
             "type": "image",
-            "source_type": "base64",
-            "data": "<base64 data>",
+            "base64": "<base64 data>",
             "mime_type": "image/jpeg",
             "metadata": {"cache_control": {"type": "ephemeral"}},
         }
     )
-
-    assert not is_data_content_block(
+    assert is_data_content_block(
         {
-            "type": "text",
-            "text": "foo",
+            "type": "image",
+            "base64": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "extras": "hi",
         }
     )
+
+    # Invalid cases - wrong type
+    assert not is_data_content_block({"type": "text", "text": "foo"})
     assert not is_data_content_block(
         {
             "type": "image_url",
             "image_url": {"url": "https://..."},
-        }
+        }  # This is OpenAI Chat Completions
     )
-    assert not is_data_content_block(
-        {
-            "type": "image",
-            "source_type": "base64",
-        }
-    )
-    assert not is_data_content_block(
-        {
-            "type": "image",
-            "source": "<base64 data>",
-        }
-    )
+    assert not is_data_content_block({"type": "tool_call", "name": "func", "args": {}})
+    assert not is_data_content_block({"type": "invalid", "url": "something"})
+
+    # Invalid cases - valid type but no data or `source_type` fields
+    assert not is_data_content_block({"type": "image"})
+    assert not is_data_content_block({"type": "video", "mime_type": "video/mp4"})
+    assert not is_data_content_block({"type": "audio", "extras": {"key": "value"}})
+
+    # Invalid cases - valid type but wrong data field name
+    assert not is_data_content_block({"type": "image", "source": "<base64 data>"})
+    assert not is_data_content_block({"type": "video", "data": "video_data"})
+
+    # Edge cases - empty or missing values
+    assert not is_data_content_block({})
+    assert not is_data_content_block({"url": "https://..."})  # missing type
 
 
 def test_convert_to_openai_image_block() -> None:
-    input_block = {
-        "type": "image",
-        "source_type": "url",
-        "url": "https://...",
-        "cache_control": {"type": "ephemeral"},
-    }
-    expected = {
-        "type": "image_url",
-        "image_url": {"url": "https://..."},
-    }
-    result = convert_to_openai_image_block(input_block)
-    assert result == expected
-
-    input_block = {
-        "type": "image",
-        "source_type": "base64",
-        "data": "<base64 data>",
-        "mime_type": "image/jpeg",
-        "cache_control": {"type": "ephemeral"},
-    }
-    expected = {
-        "type": "image_url",
-        "image_url": {
-            "url": "data:image/jpeg;base64,<base64 data>",
+    for input_block in [
+        {
+            "type": "image",
+            "url": "https://...",
+            "cache_control": {"type": "ephemeral"},
         },
+        {
+            "type": "image",
+            "source_type": "url",
+            "url": "https://...",
+            "cache_control": {"type": "ephemeral"},
+        },
+    ]:
+        expected = {
+            "type": "image_url",
+            "image_url": {"url": "https://..."},
+        }
+        result = convert_to_openai_image_block(input_block)
+        assert result == expected
+
+    for input_block in [
+        {
+            "type": "image",
+            "base64": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "cache_control": {"type": "ephemeral"},
+        },
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "cache_control": {"type": "ephemeral"},
+        },
+    ]:
+        expected = {
+            "type": "image_url",
+            "image_url": {
+                "url": "data:image/jpeg;base64,<base64 data>",
+            },
+        }
+        result = convert_to_openai_image_block(input_block)
+        assert result == expected
+
+
+def test_known_block_types() -> None:
+    expected = {
+        bt
+        for bt in get_args(ContentBlock)
+        for bt in get_args(bt.__annotations__["type"])
     }
-    result = convert_to_openai_image_block(input_block)
-    assert result == expected
+    # Normalize any Literal[...] types in block types to their string values.
+    # This ensures all entries are plain strings, not Literal objects.
+    expected = {
+        t
+        if isinstance(t, str)
+        else t.__args__[0]
+        if hasattr(t, "__args__") and len(t.__args__) == 1
+        else t
+        for t in expected
+    }
+    assert expected == KNOWN_BLOCK_TYPES
+
+
+def test_typed_init() -> None:
+    ai_message = AIMessage(content_blocks=[{"type": "text", "text": "Hello"}])
+    assert ai_message.content == [{"type": "text", "text": "Hello"}]
+    assert ai_message.content_blocks == ai_message.content
+
+    human_message = HumanMessage(content_blocks=[{"type": "text", "text": "Hello"}])
+    assert human_message.content == [{"type": "text", "text": "Hello"}]
+    assert human_message.content_blocks == human_message.content
+
+    system_message = SystemMessage(content_blocks=[{"type": "text", "text": "Hello"}])
+    assert system_message.content == [{"type": "text", "text": "Hello"}]
+    assert system_message.content_blocks == system_message.content
+
+    tool_message = ToolMessage(
+        content_blocks=[{"type": "text", "text": "Hello"}],
+        tool_call_id="abc123",
+    )
+    assert tool_message.content == [{"type": "text", "text": "Hello"}]
+    assert tool_message.content_blocks == tool_message.content
+
+    for message_class in [AIMessage, HumanMessage, SystemMessage]:
+        message = message_class("Hello")
+        assert message.content == "Hello"
+        assert message.content_blocks == [{"type": "text", "text": "Hello"}]
+
+        message = message_class(content="Hello")
+        assert message.content == "Hello"
+        assert message.content_blocks == [{"type": "text", "text": "Hello"}]
+
+    # Test we get type errors for malformed blocks (type checker will complain if
+    # below type-ignores are unused).
+    _ = AIMessage(content_blocks=[{"type": "text", "bad": "Hello"}])  # type: ignore[list-item]
+    _ = HumanMessage(content_blocks=[{"type": "text", "bad": "Hello"}])  # type: ignore[list-item]
+    _ = SystemMessage(content_blocks=[{"type": "text", "bad": "Hello"}])  # type: ignore[list-item]
+    _ = ToolMessage(
+        content_blocks=[{"type": "text", "bad": "Hello"}],  # type: ignore[list-item]
+        tool_call_id="abc123",
+    )
+
+
+def test_text_accessor() -> None:
+    """Test that `message.text` property and `.text()` method return the same value."""
+    human_msg = HumanMessage(content="Hello world")
+    assert human_msg.text == "Hello world"
+    assert human_msg.text == "Hello world"
+    assert str(human_msg.text) == str(human_msg.text)
+
+    system_msg = SystemMessage(content="You are a helpful assistant")
+    assert system_msg.text == "You are a helpful assistant"
+    assert system_msg.text == "You are a helpful assistant"
+    assert str(system_msg.text) == str(system_msg.text)
+
+    ai_msg = AIMessage(content="I can help you with that")
+    assert ai_msg.text == "I can help you with that"
+    assert ai_msg.text == "I can help you with that"
+    assert str(ai_msg.text) == str(ai_msg.text)
+
+    tool_msg = ToolMessage(content="Task completed", tool_call_id="tool_1")
+    assert tool_msg.text == "Task completed"
+    assert tool_msg.text == "Task completed"
+    assert str(tool_msg.text) == str(tool_msg.text)
+
+    complex_msg = HumanMessage(
+        content=[{"type": "text", "text": "Hello "}, {"type": "text", "text": "world"}]
+    )
+    assert complex_msg.text == "Hello world"
+    assert complex_msg.text == "Hello world"
+    assert str(complex_msg.text) == str(complex_msg.text)
+
+    mixed_msg = AIMessage(
+        content=[
+            {"type": "text", "text": "The answer is "},
+            {"type": "tool_use", "name": "calculate", "input": {"x": 2}, "id": "1"},
+            {"type": "text", "text": "42"},
+        ]
+    )
+    assert mixed_msg.text == "The answer is 42"
+    assert mixed_msg.text == "The answer is 42"
+    assert str(mixed_msg.text) == str(mixed_msg.text)
+
+    empty_msg = HumanMessage(content=[])
+    assert empty_msg.text == ""
+    assert empty_msg.text == ""
+    assert str(empty_msg.text) == str(empty_msg.text)

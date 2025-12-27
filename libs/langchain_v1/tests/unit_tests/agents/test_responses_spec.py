@@ -24,7 +24,7 @@ class AssertionByInvocation(BaseSchema):
     prompt: str
     tools_with_expected_calls: ToolCalls
     expected_last_message: str
-    expected_structured_response: Optional[Dict[str, Any]]
+    expected_structured_response: dict[str, Any] | None
     llm_request_count: int
 
 
@@ -51,9 +51,9 @@ TEST_CASES = load_spec("responses", as_model=TestCase)
 
 def _make_tool(fn, *, name: str, description: str):
     mock = MagicMock(side_effect=lambda *, name: fn(name=name))
-    InputModel = create_model(f"{name}_input", name=(str, ...))
+    input_model = create_model(f"{name}_input", name=(str, ...))
 
-    @tool(name, description=description, args_schema=InputModel)
+    @tool(name, description=description, args_schema=input_model)
     def _wrapped(name: str):
         return mock(name=name)
 
@@ -65,16 +65,17 @@ def _make_tool(fn, *, name: str, description: str):
 def test_responses_integration_matrix(case: TestCase) -> None:
     if case.name == "asking for information that does not fit into the response format":
         pytest.xfail(
-            "currently failing due to undefined behavior when model cannot conform to any of the structured response formats."
+            "currently failing due to undefined behavior when model cannot conform to "
+            "any of the structured response formats."
         )
 
-    def get_employee_role(*, name: str) -> Optional[str]:
+    def get_employee_role(*, name: str) -> str | None:
         for e in EMPLOYEES:
             if e.name == name:
                 return e.role
         return None
 
-    def get_employee_department(*, name: str) -> Optional[str]:
+    def get_employee_department(*, name: str) -> str | None:
         for e in EMPLOYEES:
             if e.name == name:
                 return e.department

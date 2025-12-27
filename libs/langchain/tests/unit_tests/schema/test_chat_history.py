@@ -1,4 +1,4 @@
-from langchain.schema.chat_history import __all__
+from langchain_classic.schema.chat_history import __all__
 
 EXPECTED_ALL = ["BaseChatMessageHistory"]
 

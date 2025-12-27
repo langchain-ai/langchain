@@ -1,6 +1,6 @@
 from functools import partial
 from inspect import isclass
-from typing import Any, Union, cast
+from typing import Any, cast
 
 import pytest
 from pydantic import BaseModel
@@ -13,24 +13,23 @@ from langchain_core.messages import HumanMessage
 from langchain_core.prompts.structured import StructuredPrompt
 from langchain_core.runnables.base import Runnable, RunnableLambda
 from langchain_core.utils.mustache import ChevronError
-from langchain_core.utils.pydantic import is_basemodel_subclass
 
 
 def _fake_runnable(
-    _: Any, *, schema: Union[dict, type[BaseModel]], value: Any = 42, **_kwargs: Any
-) -> Union[BaseModel, dict]:
-    if isclass(schema) and is_basemodel_subclass(schema):
+    _: Any, *, schema: dict | type[BaseModel], value: Any = 42, **_kwargs: Any
+) -> BaseModel | dict:
+    if isclass(schema) and issubclass(schema, BaseModel):
         return schema(name="yo", value=value)
     params = cast("dict", schema)["parameters"]
     return {k: 1 if k != "value" else value for k, v in params.items()}
 
 
 class FakeStructuredChatModel(FakeListChatModel):
-    """Fake ChatModel for testing purposes."""
+    """Fake chat model for testing purposes."""
 
     @override
     def with_structured_output(
-        self, schema: Union[dict, type[BaseModel]], **kwargs: Any
+        self, schema: dict | type[BaseModel], **kwargs: Any
     ) -> Runnable:
         return RunnableLambda(partial(_fake_runnable, schema=schema, **kwargs))
 
@@ -82,7 +81,6 @@ def test_structured_prompt_dict() -> None:
     assert loads(dumps(prompt)).model_dump() == prompt.model_dump()
 
     chain = loads(dumps(prompt)) | model
-
     assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 42}
 
 
@@ -125,7 +123,9 @@ def test_structured_prompt_kwargs() -> None:
 
 def test_structured_prompt_template_format() -> None:
     prompt = StructuredPrompt(
-        [("human", "hi {{person.name}}")], schema={}, template_format="mustache"
+        [("human", "hi {{person.name}}")],
+        schema={"type": "object", "properties": {}, "title": "foo"},
+        template_format="mustache",
     )
     assert prompt.messages[0].prompt.template_format == "mustache"  # type: ignore[union-attr, union-attr]
     assert prompt.input_variables == ["person"]
@@ -136,4 +136,8 @@ def test_structured_prompt_template_format() -> None:
 
 def test_structured_prompt_template_empty_vars() -> None:
     with pytest.raises(ChevronError, match="empty tag"):
-        StructuredPrompt([("human", "hi {{}}")], schema={}, template_format="mustache")
+        StructuredPrompt(
+            [("human", "hi {{}}")],
+            schema={"type": "object", "properties": {}, "title": "foo"},
+            template_format="mustache",
+        )

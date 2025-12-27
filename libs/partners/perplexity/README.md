@@ -1,29 +1,32 @@
 # langchain-perplexity
 
-This package contains the LangChain integration with Perplexity.
+[![PyPI - Version](https://img.shields.io/pypi/v/langchain-perplexity?label=%20)](https://pypi.org/project/langchain-perplexity/#history)
+[![PyPI - License](https://img.shields.io/pypi/l/langchain-perplexity)](https://opensource.org/licenses/MIT)
+[![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-perplexity)](https://pypistats.org/packages/langchain-perplexity)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
 
-## Installation
+Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+
+## Quick Install
 
 ```bash
-pip install -U langchain-perplexity
+pip install langchain-perplexity
 ```
 
-And you should [configure your perplexity credentials](https://docs.perplexity.ai/guides/getting-started)
-and then set the `PPLX_API_KEY` environment variable.
+## 🤔 What is this?
 
-## Usage
+This package contains the LangChain integration with Perplexity.
 
-This package contains the `ChatPerplexity` class, which is the recommended way to interface with Perplexity chat models.
+## 📖 Documentation
 
-```python
-import getpass
-import os
+For full documentation, see the [API reference](https://reference.langchain.com/python/integrations/langchain_perplexity/). For conceptual guides, tutorials, and examples on using these classes, see the [LangChain Docs](https://docs.langchain.com/oss/python/integrations/providers/perplexity).
 
-if not os.environ.get("PPLX_API_KEY"):
-  os.environ["PPLX_API_KEY"] = getpass.getpass("Enter API key for Perplexity: ")
+## 📕 Releases & Versioning
 
-from langchain.chat_models import init_chat_model
+See our [Releases](https://docs.langchain.com/oss/python/release-policy) and [Versioning](https://docs.langchain.com/oss/python/versioning) policies.
 
-llm = init_chat_model("llama-3.1-sonar-small-128k-online", model_provider="perplexity")
-llm.invoke("Hello, world!")
-```
+## 💁 Contributing
+
+As an open-source project in a rapidly developing field, we are extremely open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
+
+For detailed information on how to contribute, see the [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview).

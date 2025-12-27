@@ -1,57 +1,28 @@
 # langchain-mistralai
 
-This package contains the LangChain integrations for [MistralAI](https://docs.mistral.ai) through their [mistralai](https://pypi.org/project/mistralai/) SDK.
+[![PyPI - Version](https://img.shields.io/pypi/v/langchain-mistralai?label=%20)](https://pypi.org/project/langchain-mistralai/#history)
+[![PyPI - License](https://img.shields.io/pypi/l/langchain-mistralai)](https://opensource.org/licenses/MIT)
+[![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-mistralai)](https://pypistats.org/packages/langchain-mistralai)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
 
-## Installation
+Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
 
-```bash
-pip install -U langchain-mistralai
-```
-
-## Chat Models
-
-This package contains the `ChatMistralAI` class, which is the recommended way to interface with MistralAI models.
-
-To use, install the requirements, and configure your environment.
+## Quick Install
 
 ```bash
-export MISTRAL_API_KEY=your-api-key
+pip install langchain-mistralai
 ```
 
-Then initialize
+## 📖 Documentation
 
-```python
-from langchain_core.messages import HumanMessage
-from langchain_mistralai.chat_models import ChatMistralAI
+For full documentation, see the [API reference](https://reference.langchain.com/python/integrations/langchain_mistralai/). For conceptual guides, tutorials, and examples on using these classes, see the [LangChain Docs](https://docs.langchain.com/oss/python/integrations/providers/mistralai).
 
-chat = ChatMistralAI(model="mistral-small")
-messages = [HumanMessage(content="say a brief hello")]
-chat.invoke(messages)
-```
+## 📕 Releases & Versioning
 
-`ChatMistralAI` also supports async and streaming functionality:
+See our [Releases](https://docs.langchain.com/oss/python/release-policy) and [Versioning](https://docs.langchain.com/oss/python/versioning) policies.
 
-```python
-# For async...
-await chat.ainvoke(messages)
+## 💁 Contributing
 
-# For streaming...
-for chunk in chat.stream(messages):
-    print(chunk.content, end="", flush=True)
-```
+As an open-source project in a rapidly developing field, we are extremely open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
 
-## Embeddings
-
-With `MistralAIEmbeddings`, you can directly use the default model 'mistral-embed', or set a different one if available.
-
-### Choose model
-
-`embedding.model = 'mistral-embed'`
-
-### Simple query
-
-`res_query = embedding.embed_query("The test information")`
-
-### Documents
-
-`res_document = embedding.embed_documents(["test1", "another test"])`
+For detailed information on how to contribute, see the [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview).

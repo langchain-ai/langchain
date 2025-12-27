@@ -1,8 +1,7 @@
 from typing import Any
 
 import pytest
-from langchain_tests.conftest import CustomPersister, CustomSerializer
-from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
+from langchain_tests.conftest import CustomPersister, CustomSerializer, base_vcr_config
 from vcr import VCR  # type: ignore[import-untyped]
 
 _EXTRA_HEADERS = [
@@ -28,9 +27,9 @@ def remove_response_headers(response: dict) -> dict:
 
 
 @pytest.fixture(scope="session")
-def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
+def vcr_config() -> dict:
     """Extend the default configuration coming from langchain_tests."""
-    config = _base_vcr_config.copy()
+    config = base_vcr_config()
     config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
     config["before_record_request"] = remove_request_headers
     config["before_record_response"] = remove_response_headers

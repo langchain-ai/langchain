@@ -1,21 +1,17 @@
 import re
 import warnings
 from pathlib import Path
-from typing import Any, Union, cast
+from typing import Any, cast
 
 import pytest
 from packaging import version
 from pydantic import ValidationError
 from syrupy.assertion import SnapshotAssertion
 
-from langchain_core._api.deprecation import (
-    LangChainPendingDeprecationWarning,
-)
 from langchain_core.load import dumpd, load
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
-    ChatMessage,
     HumanMessage,
     SystemMessage,
     ToolMessage,
@@ -191,7 +187,6 @@ def test_message_prompt_template_from_template_file() -> None:
     )
     actual = ChatMessagePromptTemplate.from_template_file(
         Path(__file__).parent.parent / "data" / "prompt_file.txt",
-        ["question"],
         role="human",
     )
     assert expected == actual
@@ -260,13 +255,9 @@ async def test_chat_prompt_template_from_messages_using_role_strings() -> None:
         SystemMessage(
             content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
         ),
-        HumanMessage(
-            content="Hello, how are you doing?", additional_kwargs={}, example=False
-        ),
-        AIMessage(
-            content="I'm doing well, thanks!", additional_kwargs={}, example=False
-        ),
-        HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
+        HumanMessage(content="Hello, how are you doing?", additional_kwargs={}),
+        AIMessage(content="I'm doing well, thanks!", additional_kwargs={}),
+        HumanMessage(content="What is your name?", additional_kwargs={}),
     ]
 
     messages = template.format_messages(name="Bob", user_input="What is your name?")
@@ -296,13 +287,9 @@ def test_chat_prompt_template_from_messages_mustache() -> None:
         SystemMessage(
             content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
         ),
-        HumanMessage(
-            content="Hello, how are you doing?", additional_kwargs={}, example=False
-        ),
-        AIMessage(
-            content="I'm doing well, thanks!", additional_kwargs={}, example=False
-        ),
-        HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
+        HumanMessage(content="Hello, how are you doing?", additional_kwargs={}),
+        AIMessage(content="I'm doing well, thanks!", additional_kwargs={}),
+        HumanMessage(content="What is your name?", additional_kwargs={}),
     ]
 
 
@@ -324,13 +311,9 @@ def test_chat_prompt_template_from_messages_jinja2() -> None:
         SystemMessage(
             content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
         ),
-        HumanMessage(
-            content="Hello, how are you doing?", additional_kwargs={}, example=False
-        ),
-        AIMessage(
-            content="I'm doing well, thanks!", additional_kwargs={}, example=False
-        ),
-        HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
+        HumanMessage(content="Hello, how are you doing?", additional_kwargs={}),
+        AIMessage(content="I'm doing well, thanks!", additional_kwargs={}),
+        HumanMessage(content="What is your name?", additional_kwargs={}),
     ]
 
 
@@ -471,32 +454,6 @@ def test_chat_valid_infer_variables() -> None:
     assert prompt.partial_variables == {"formatins": "some structure"}
 
 
-async def test_chat_from_role_strings() -> None:
-    """Test instantiation of chat template from role strings."""
-    with pytest.warns(LangChainPendingDeprecationWarning):
-        template = ChatPromptTemplate.from_role_strings(
-            [
-                ("system", "You are a bot."),
-                ("assistant", "hello!"),
-                ("human", "{question}"),
-                ("other", "{quack}"),
-            ]
-        )
-
-    expected = [
-        ChatMessage(content="You are a bot.", role="system"),
-        ChatMessage(content="hello!", role="assistant"),
-        ChatMessage(content="How are you?", role="human"),
-        ChatMessage(content="duck", role="other"),
-    ]
-
-    messages = template.format_messages(question="How are you?", quack="duck")
-    assert messages == expected
-
-    messages = await template.aformat_messages(question="How are you?", quack="duck")
-    assert messages == expected
-
-
 @pytest.mark.parametrize(
     ("args", "expected"),
     [
@@ -524,7 +481,7 @@ async def test_chat_from_role_strings() -> None:
     ],
 )
 def test_convert_to_message(
-    args: Any, expected: Union[BaseMessage, BaseMessagePromptTemplate]
+    args: Any, expected: BaseMessage | BaseMessagePromptTemplate
 ) -> None:
     """Test convert to message."""
     assert _convert_to_message_template(args) == expected
@@ -1166,7 +1123,7 @@ def test_data_prompt_template_deserializable() -> None:
                     )
                 ]
             )
-        )
+        ),
     )
 
 
@@ -1236,3 +1193,446 @@ def test_dict_message_prompt_template_errors_on_jinja2() -> None:
         _ = ChatPromptTemplate.from_messages(
             [("human", [prompt])], template_format="jinja2"
         )
+
+
+def test_rendering_prompt_with_conditionals_no_empty_text_blocks() -> None:
+    manifest = {
+        "lc": 1,
+        "type": "constructor",
+        "id": ["langchain_core", "prompts", "chat", "ChatPromptTemplate"],
+        "kwargs": {
+            "messages": [
+                {
+                    "lc": 1,
+                    "type": "constructor",
+                    "id": [
+                        "langchain_core",
+                        "prompts",
+                        "chat",
+                        "SystemMessagePromptTemplate",
+                    ],
+                    "kwargs": {
+                        "prompt": {
+                            "lc": 1,
+                            "type": "constructor",
+                            "id": [
+                                "langchain_core",
+                                "prompts",
+                                "prompt",
+                                "PromptTemplate",
+                            ],
+                            "kwargs": {
+                                "input_variables": [],
+                                "template_format": "mustache",
+                                "template": "Always echo back whatever I send you.",
+                            },
+                        },
+                    },
+                },
+                {
+                    "lc": 1,
+                    "type": "constructor",
+                    "id": [
+                        "langchain_core",
+                        "prompts",
+                        "chat",
+                        "HumanMessagePromptTemplate",
+                    ],
+                    "kwargs": {
+                        "prompt": [
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": [],
+                                    "template_format": "mustache",
+                                    "template": "Here is the teacher's prompt:",
+                                    "additional_content_fields": {
+                                        "text": "Here is the teacher's prompt:",
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": ["promptDescription"],
+                                    "template_format": "mustache",
+                                    "template": '"{{promptDescription}}"\n',
+                                    "additional_content_fields": {
+                                        "text": '"{{promptDescription}}"\n',
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": [],
+                                    "template_format": "mustache",
+                                    "template": "Here is the expected answer or success criteria given by the teacher:",  # noqa: E501
+                                    "additional_content_fields": {
+                                        "text": "Here is the expected answer or success criteria given by the teacher:",  # noqa: E501
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": ["expectedResponse"],
+                                    "template_format": "mustache",
+                                    "template": '"{{expectedResponse}}"\n',
+                                    "additional_content_fields": {
+                                        "text": '"{{expectedResponse}}"\n',
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": [],
+                                    "template_format": "mustache",
+                                    "template": "Note: This may be just one example of many possible correct ways for the student to respond.\n",  # noqa: E501
+                                    "additional_content_fields": {
+                                        "text": "Note: This may be just one example of many possible correct ways for the student to respond.\n",  # noqa: E501
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": [],
+                                    "template_format": "mustache",
+                                    "template": "For your evaluation of the student's response:\n",  # noqa: E501
+                                    "additional_content_fields": {
+                                        "text": "For your evaluation of the student's response:\n",  # noqa: E501
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": [],
+                                    "template_format": "mustache",
+                                    "template": "Here is a transcript of the student's explanation:",  # noqa: E501
+                                    "additional_content_fields": {
+                                        "text": "Here is a transcript of the student's explanation:",  # noqa: E501
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": ["responseTranscript"],
+                                    "template_format": "mustache",
+                                    "template": '"{{responseTranscript}}"\n',
+                                    "additional_content_fields": {
+                                        "text": '"{{responseTranscript}}"\n',
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": ["readingFluencyAnalysis"],
+                                    "template_format": "mustache",
+                                    "template": "{{#readingFluencyAnalysis}} For this task, the student's reading pronunciation and fluency were important. Here is analysis of the student's oral response: \"{{readingFluencyAnalysis}}\" {{/readingFluencyAnalysis}}",  # noqa: E501
+                                    "additional_content_fields": {
+                                        "text": "{{#readingFluencyAnalysis}} For this task, the student's reading pronunciation and fluency were important. Here is analysis of the student's oral response: \"{{readingFluencyAnalysis}}\" {{/readingFluencyAnalysis}}",  # noqa: E501
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": ["readingFluencyAnalysis"],
+                                    "template_format": "mustache",
+                                    "template": "{{#readingFluencyAnalysis}}Root analysis of the student's response (step 3) in this oral analysis rather than inconsistencies in the transcript.{{/readingFluencyAnalysis}}",  # noqa: E501
+                                    "additional_content_fields": {
+                                        "text": "{{#readingFluencyAnalysis}}Root analysis of the student's response (step 3) in this oral analysis rather than inconsistencies in the transcript.{{/readingFluencyAnalysis}}",  # noqa: E501
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": ["readingFluencyAnalysis"],
+                                    "template_format": "mustache",
+                                    "template": "{{#readingFluencyAnalysis}}Remember this is a student, so we care about general fluency - not voice acting. {{/readingFluencyAnalysis}}\n",  # noqa: E501
+                                    "additional_content_fields": {
+                                        "text": "{{#readingFluencyAnalysis}}Remember this is a student, so we care about general fluency - not voice acting. {{/readingFluencyAnalysis}}\n",  # noqa: E501
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": ["multipleChoiceAnalysis"],
+                                    "template_format": "mustache",
+                                    "template": "{{#multipleChoiceAnalysis}}Here is an analysis of the student's multiple choice response: {{multipleChoiceAnalysis}}{{/multipleChoiceAnalysis}}\n",  # noqa: E501
+                                    "additional_content_fields": {
+                                        "text": "{{#multipleChoiceAnalysis}}Here is an analysis of the student's multiple choice response: {{multipleChoiceAnalysis}}{{/multipleChoiceAnalysis}}\n",  # noqa: E501
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": [],
+                                    "template_format": "mustache",
+                                    "template": "Here is the student's whiteboard:\n",
+                                    "additional_content_fields": {
+                                        "text": "Here is the student's whiteboard:\n",
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "image",
+                                    "ImagePromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "template": {
+                                        "url": "{{whiteboard}}",
+                                    },
+                                    "input_variables": ["whiteboard"],
+                                    "template_format": "mustache",
+                                    "additional_content_fields": {
+                                        "image_url": {
+                                            "url": "{{whiteboard}}",
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                        "additional_options": {},
+                    },
+                },
+            ],
+            "input_variables": [
+                "promptDescription",
+                "expectedResponse",
+                "responseTranscript",
+                "readingFluencyAnalysis",
+                "readingFluencyAnalysis",
+                "readingFluencyAnalysis",
+                "multipleChoiceAnalysis",
+                "whiteboard",
+            ],
+            "template_format": "mustache",
+            "metadata": {
+                "lc_hub_owner": "jacob",
+                "lc_hub_repo": "mustache-conditionals",
+                "lc_hub_commit_hash": "836ad82d512409ea6024fb760b76a27ba58fc68b1179656c0ba2789778686d46",  # noqa: E501
+            },
+        },
+    }
+
+    # Load the ChatPromptTemplate from the manifest
+    template = load(manifest)
+
+    # Format with conditional data - rules is empty, so mustache conditionals
+    # should not render
+    result = template.invoke(
+        {
+            "promptDescription": "What is the capital of the USA?",
+            "expectedResponse": "Washington, D.C.",
+            "responseTranscript": "Washington, D.C.",
+            "readingFluencyAnalysis": None,
+            "multipleChoiceAnalysis": "testing2",
+            "whiteboard": "https://foo.com/bar.png",
+        }
+    )
+    content = result.messages[1].content
+    assert isinstance(content, list)
+    assert not [
+        block for block in content if block["type"] == "text" and block["text"] == ""
+    ]
+
+
+def test_fstring_rejects_invalid_identifier_variable_names() -> None:
+    """Test that f-string templates block attribute access, indexing.
+
+    This validation prevents template injection attacks by blocking:
+    - Attribute access like {msg.__class__}
+    - Indexing like {msg[0]}
+    - All-digit variable names like {0} or {100} (interpreted as positional args)
+
+    While allowing any other field names that Python's Formatter accepts.
+    """
+    # Test that attribute access and indexing are blocked (security issue)
+    invalid_templates = [
+        "{msg.__class__}",  # Attribute access with dunder
+        "{msg.__class__.__name__}",  # Multiple dunders
+        "{msg.content}",  # Attribute access
+        "{msg[0]}",  # Item access
+        "{0}",  # All-digit variable name (positional argument)
+        "{100}",  # All-digit variable name (positional argument)
+        "{42}",  # All-digit variable name (positional argument)
+    ]
+
+    for template_str in invalid_templates:
+        with pytest.raises(ValueError, match="Invalid variable name") as exc_info:
+            ChatPromptTemplate.from_messages(
+                [("human", template_str)],
+                template_format="f-string",
+            )
+
+        error_msg = str(exc_info.value)
+        assert "Invalid variable name" in error_msg
+        # Check for any of the expected error message parts
+        assert (
+            "attribute access" in error_msg
+            or "indexing" in error_msg
+            or "positional arguments" in error_msg
+        )
+
+    # Valid templates - Python's Formatter accepts non-identifier field names
+    valid_templates = [
+        (
+            "Hello {name} and {user_id}",
+            {"name": "Alice", "user_id": "123"},
+            "Hello Alice and 123",
+        ),
+        ("User: {user-name}", {"user-name": "Bob"}, "User: Bob"),  # Hyphen allowed
+        (
+            "Value: {2fast}",
+            {"2fast": "Charlie"},
+            "Value: Charlie",
+        ),  # Starts with digit allowed
+        ("Data: {my var}", {"my var": "Dave"}, "Data: Dave"),  # Space allowed
+    ]
+
+    for template_str, kwargs, expected in valid_templates:
+        template = ChatPromptTemplate.from_messages(
+            [("human", template_str)],
+            template_format="f-string",
+        )
+        result = template.invoke(kwargs)
+        assert result.messages[0].content == expected  # type: ignore[attr-defined]
+
+
+def test_mustache_template_attribute_access_vulnerability() -> None:
+    """Test that Mustache template injection is blocked.
+
+    Verify the fix for security vulnerability GHSA-6qv9-48xg-fc7f
+
+    Previously, Mustache used getattr() as a fallback, allowing access to
+    dangerous attributes like __class__, __globals__, etc.
+
+    The fix adds isinstance checks that reject non-dict/list types.
+    When templates try to traverse Python objects, they get empty string
+    per Mustache spec (better than the previous behavior of exposing internals).
+    """
+    msg = HumanMessage("howdy")
+
+    # Template tries to access attributes on a Python object
+    prompt = ChatPromptTemplate.from_messages(
+        [("human", "{{question.__class__.__name__}}")],
+        template_format="mustache",
+    )
+
+    # After the fix: returns empty string (attack blocked!)
+    # Previously would return "HumanMessage" via getattr()
+    result = prompt.invoke({"question": msg})
+    assert result.messages[0].content == ""  # type: ignore[attr-defined]
+
+    # Mustache still works correctly with actual dicts
+    prompt_dict = ChatPromptTemplate.from_messages(
+        [("human", "{{person.name}}")],
+        template_format="mustache",
+    )
+    result_dict = prompt_dict.invoke({"person": {"name": "Alice"}})
+    assert result_dict.messages[0].content == "Alice"  # type: ignore[attr-defined]

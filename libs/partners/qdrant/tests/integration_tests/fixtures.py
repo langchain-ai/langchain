@@ -19,7 +19,7 @@ def qdrant_locations(use_in_memory: bool = True) -> list[str]:  # noqa: FBT001, 
         locations.append("http://localhost:6333")
 
     if qdrant_url := os.getenv("QDRANT_URL"):
-        logger.info(f"Running Qdrant tests with Qdrant instance at {qdrant_url}.")
+        logger.info("Running Qdrant tests with Qdrant instance at %s.", qdrant_url)
         locations.append(qdrant_url)
 
     return locations

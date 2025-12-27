@@ -4,7 +4,7 @@ import copy
 import json
 import logging
 from json import JSONDecodeError
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 from pydantic import SkipValidation, ValidationError
 
@@ -15,7 +15,11 @@ from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils.json import parse_partial_json
-from langchain_core.utils.pydantic import TypeBaseModel
+from langchain_core.utils.pydantic import (
+    TypeBaseModel,
+    is_pydantic_v1_subclass,
+    is_pydantic_v2_subclass,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,15 +30,14 @@ def parse_tool_call(
     partial: bool = False,
     strict: bool = False,
     return_id: bool = True,
-) -> Optional[dict[str, Any]]:
+) -> dict[str, Any] | None:
     """Parse a single tool call.
 
     Args:
         raw_tool_call: The raw tool call to parse.
-        partial: Whether to parse partial JSON. Default is False.
+        partial: Whether to parse partial JSON.
         strict: Whether to allow non-JSON-compliant strings.
-            Default is False.
-        return_id: Whether to return the tool call id. Default is True.
+        return_id: Whether to return the tool call id.
 
     Returns:
         The parsed tool call.
@@ -44,22 +47,24 @@ def parse_tool_call(
     """
     if "function" not in raw_tool_call:
         return None
+
+    arguments = raw_tool_call["function"]["arguments"]
+
     if partial:
         try:
-            function_args = parse_partial_json(
-                raw_tool_call["function"]["arguments"], strict=strict
-            )
+            function_args = parse_partial_json(arguments, strict=strict)
         except (JSONDecodeError, TypeError):  # None args raise TypeError
             return None
+    # Handle None or empty string arguments for parameter-less tools
+    elif not arguments:
+        function_args = {}
     else:
         try:
-            function_args = json.loads(
-                raw_tool_call["function"]["arguments"], strict=strict
-            )
+            function_args = json.loads(arguments, strict=strict)
         except JSONDecodeError as e:
             msg = (
                 f"Function {raw_tool_call['function']['name']} arguments:\n\n"
-                f"{raw_tool_call['function']['arguments']}\n\nare not valid JSON. "
+                f"{arguments}\n\nare not valid JSON. "
                 f"Received JSONDecodeError {e}"
             )
             raise OutputParserException(msg) from e
@@ -75,7 +80,7 @@ def parse_tool_call(
 
 def make_invalid_tool_call(
     raw_tool_call: dict[str, Any],
-    error_msg: Optional[str],
+    error_msg: str | None,
 ) -> InvalidToolCall:
     """Create an InvalidToolCall from a raw tool call.
 
@@ -105,10 +110,9 @@ def parse_tool_calls(
 
     Args:
         raw_tool_calls: The raw tool calls to parse.
-        partial: Whether to parse partial JSON. Default is False.
+        partial: Whether to parse partial JSON.
         strict: Whether to allow non-JSON-compliant strings.
-            Default is False.
-        return_id: Whether to return the tool call id. Default is True.
+        return_id: Whether to return the tool call id.
 
     Returns:
         The parsed tool calls.
@@ -148,7 +152,7 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
     first_tool_only: bool = False
     """Whether to return only the first tool call.
 
-    If False, the result will be a list of tool calls, or an empty list
+    If `False`, the result will be a list of tool calls, or an empty list
     if no tool calls are found.
 
     If true, and multiple tool calls are found, only the first one will be returned,
@@ -162,10 +166,9 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         Args:
             result: The result of the LLM call.
             partial: Whether to parse partial JSON.
-                If True, the output will be a JSON object containing
+                If `True`, the output will be a JSON object containing
                 all the keys that have been returned so far.
-                If False, the output will be the full JSON object.
-                Default is False.
+                If `False`, the output will be the full JSON object.
 
         Returns:
             The parsed tool calls.
@@ -226,10 +229,9 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
         Args:
             result: The result of the LLM call.
             partial: Whether to parse partial JSON.
-                If True, the output will be a JSON object containing
-                all the keys that have been returned so far.
-                If False, the output will be the full JSON object.
-                Default is False.
+                If `True`, the output will be a JSON object containing
+                    all the keys that have been returned so far.
+                If `False`, the output will be the full JSON object.
 
         Raises:
             OutputParserException: If the generation is not a chat generation.
@@ -310,10 +312,9 @@ class PydanticToolsParser(JsonOutputToolsParser):
         Args:
             result: The result of the LLM call.
             partial: Whether to parse partial JSON.
-                If True, the output will be a JSON object containing
-                all the keys that have been returned so far.
-                If False, the output will be the full JSON object.
-                Default is False.
+                If `True`, the output will be a JSON object containing
+                    all the keys that have been returned so far.
+                If `False`, the output will be the full JSON object.
 
         Returns:
             The parsed Pydantic objects.
@@ -328,7 +329,15 @@ class PydanticToolsParser(JsonOutputToolsParser):
             return None if self.first_tool_only else []
 
         json_results = [json_results] if self.first_tool_only else json_results
-        name_dict = {tool.__name__: tool for tool in self.tools}
+        name_dict_v2: dict[str, TypeBaseModel] = {
+            tool.model_config.get("title") or tool.__name__: tool
+            for tool in self.tools
+            if is_pydantic_v2_subclass(tool)
+        }
+        name_dict_v1: dict[str, TypeBaseModel] = {
+            tool.__name__: tool for tool in self.tools if is_pydantic_v1_subclass(tool)
+        }
+        name_dict: dict[str, TypeBaseModel] = {**name_dict_v2, **name_dict_v1}
         pydantic_objects = []
         for res in json_results:
             if not isinstance(res["args"], dict):

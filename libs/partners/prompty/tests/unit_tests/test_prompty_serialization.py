@@ -1,8 +1,10 @@
 import json
 import os
 
-from langchain.agents.format_scratchpad import format_to_openai_function_messages
-from langchain.tools import tool
+from langchain_classic.agents.format_scratchpad import (
+    format_to_openai_function_messages,
+)
+from langchain_classic.tools import tool
 from langchain_core.language_models import FakeListLLM
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.utils.function_calling import convert_to_openai_function
@@ -104,13 +106,15 @@ def test_prompty_used_in_agent() -> None:
         | FakeOutputParser()
     )
 
-    from langchain.agents import AgentExecutor
+    from langchain_classic.agents import AgentExecutor
 
     class AgentInput(BaseModel):
         input: str
         chat_history: list[tuple[str, str]] = Field(
             ...,
-            extra={"widget": {"type": "chat", "input": "input", "output": "output"}},
+            json_schema_extra={
+                "widget": {"type": "chat", "input": "input", "output": "output"}
+            },
         )
 
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True).with_types(

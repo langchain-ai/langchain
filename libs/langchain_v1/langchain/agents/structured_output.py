@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import uuid
 from dataclasses import dataclass, is_dataclass
 from types import UnionType
@@ -34,17 +35,21 @@ SchemaKind = Literal["pydantic", "dataclass", "typeddict", "json_schema"]
 class StructuredOutputError(Exception):
     """Base class for structured output errors."""
 
+    ai_message: AIMessage
+
 
 class MultipleStructuredOutputsError(StructuredOutputError):
     """Raised when model returns multiple structured output tool calls when only one is expected."""
 
-    def __init__(self, tool_names: list[str]) -> None:
-        """Initialize MultipleStructuredOutputsError.
+    def __init__(self, tool_names: list[str], ai_message: AIMessage) -> None:
+        """Initialize `MultipleStructuredOutputsError`.
 
         Args:
             tool_names: The names of the tools called for structured output.
+            ai_message: The AI message that contained the invalid multiple tool calls.
         """
         self.tool_names = tool_names
+        self.ai_message = ai_message
 
         super().__init__(
             "Model incorrectly returned multiple structured responses "
@@ -55,15 +60,17 @@ class MultipleStructuredOutputsError(StructuredOutputError):
 class StructuredOutputValidationError(StructuredOutputError):
     """Raised when structured output tool call arguments fail to parse according to the schema."""
 
-    def __init__(self, tool_name: str, source: Exception) -> None:
-        """Initialize StructuredOutputValidationError.
+    def __init__(self, tool_name: str, source: Exception, ai_message: AIMessage) -> None:
+        """Initialize `StructuredOutputValidationError`.
 
         Args:
             tool_name: The name of the tool that failed.
             source: The exception that occurred.
+            ai_message: The AI message that contained the invalid structured output.
         """
         self.tool_name = tool_name
         self.source = source
+        self.ai_message = ai_message
         super().__init__(f"Failed to parse structured output for tool '{tool_name}': {source}.")
 
 
@@ -73,8 +80,9 @@ def _parse_with_schema(
     """Parse data using for any supported schema type.
 
     Args:
-        schema: The schema type (Pydantic model, dataclass, or TypedDict)
-        schema_kind: One of "pydantic", "dataclass", "typeddict", or "json_schema"
+        schema: The schema type (Pydantic model, `dataclass`, or `TypedDict`)
+        schema_kind: One of `"pydantic"`, `"dataclass"`, `"typeddict"`, or
+            `"json_schema"`
         data: The data to parse
 
     Returns:
@@ -99,13 +107,14 @@ class _SchemaSpec(Generic[SchemaT]):
     """Describes a structured output schema."""
 
     schema: type[SchemaT]
-    """The schema for the response, can be a Pydantic model, dataclass, TypedDict,
+    """The schema for the response, can be a Pydantic model, `dataclass`, `TypedDict`,
     or JSON schema dict."""
 
     name: str
     """Name of the schema, used for tool calling.
 
-    If not provided, the name will be the model name or "response_format" if it's a JSON schema.
+    If not provided, the name will be the model name or `"response_format"` if it's a
+    JSON schema.
     """
 
     description: str
@@ -120,7 +129,7 @@ class _SchemaSpec(Generic[SchemaT]):
     json_schema: dict[str, Any]
     """JSON schema associated with the schema."""
 
-    strict: bool = False
+    strict: bool | None = None
     """Whether to enforce strict validation of the schema."""
 
     def __init__(
@@ -129,7 +138,7 @@ class _SchemaSpec(Generic[SchemaT]):
         *,
         name: str | None = None,
         description: str | None = None,
-        strict: bool = False,
+        strict: bool | None = None,
     ) -> None:
         """Initialize SchemaSpec with schema and optional parameters."""
         self.schema = schema
@@ -186,14 +195,15 @@ class ToolStrategy(Generic[SchemaT]):
     handle_errors: (
         bool | str | type[Exception] | tuple[type[Exception], ...] | Callable[[Exception], str]
     )
-    """Error handling strategy for structured output via ToolStrategy. Default is True.
+    """Error handling strategy for structured output via `ToolStrategy`.
 
-    - True: Catch all errors with default error template
-    - str: Catch all errors with this custom message
-    - type[Exception]: Only catch this exception type with default message
-    - tuple[type[Exception], ...]: Only catch these exception types with default message
-    - Callable[[Exception], str]: Custom function that returns error message
-    - False: No retry, let exceptions propagate
+    - `True`: Catch all errors with default error template
+    - `str`: Catch all errors with this custom message
+    - `type[Exception]`: Only catch this exception type with default message
+    - `tuple[type[Exception], ...]`: Only catch these exception types with default
+        message
+    - `Callable[[Exception], str]`: Custom function that returns error message
+    - `False`: No retry, let exceptions propagate
     """
 
     def __init__(
@@ -207,9 +217,10 @@ class ToolStrategy(Generic[SchemaT]):
         | tuple[type[Exception], ...]
         | Callable[[Exception], str] = True,
     ) -> None:
-        """Initialize ToolStrategy.
+        """Initialize `ToolStrategy`.
 
-        Initialize ToolStrategy with schemas, tool message content, and error handling strategy.
+        Initialize `ToolStrategy` with schemas, tool message content, and error handling
+        strategy.
         """
         self.schema = schema
         self.tool_message_content = tool_message_content
@@ -217,7 +228,7 @@ class ToolStrategy(Generic[SchemaT]):
 
         def _iter_variants(schema: Any) -> Iterable[Any]:
             """Yield leaf variants from Union and JSON Schema oneOf."""
-            if get_origin(schema) in (UnionType, Union):
+            if get_origin(schema) in {UnionType, Union}:
                 for arg in get_args(schema):
                     yield from _iter_variants(arg)
                 return
@@ -245,21 +256,32 @@ class ProviderStrategy(Generic[SchemaT]):
     def __init__(
         self,
         schema: type[SchemaT],
+        *,
+        strict: bool | None = None,
     ) -> None:
-        """Initialize ProviderStrategy with schema."""
+        """Initialize ProviderStrategy with schema.
+
+        Args:
+            schema: Schema to enforce via the provider's native structured output.
+            strict: Whether to request strict provider-side schema enforcement.
+        """
         self.schema = schema
-        self.schema_spec = _SchemaSpec(schema)
+        self.schema_spec = _SchemaSpec(schema, strict=strict)
 
     def to_model_kwargs(self) -> dict[str, Any]:
         """Convert to kwargs to bind to a model to force structured output."""
         # OpenAI:
         # - see https://platform.openai.com/docs/guides/structured-outputs
-        response_format = {
+        json_schema: dict[str, Any] = {
+            "name": self.schema_spec.name,
+            "schema": self.schema_spec.json_schema,
+        }
+        if self.schema_spec.strict:
+            json_schema["strict"] = True
+
+        response_format: dict[str, Any] = {
             "type": "json_schema",
-            "json_schema": {
-                "name": self.schema_spec.name,
-                "schema": self.schema_spec.json_schema,
-            },
+            "json_schema": json_schema,
         }
         return {"response_format": response_format}
 
@@ -285,13 +307,13 @@ class OutputToolBinding(Generic[SchemaT]):
 
     @classmethod
     def from_schema_spec(cls, schema_spec: _SchemaSpec[SchemaT]) -> Self:
-        """Create an OutputToolBinding instance from a SchemaSpec.
+        """Create an `OutputToolBinding` instance from a `SchemaSpec`.
 
         Args:
-            schema_spec: The SchemaSpec to convert
+            schema_spec: The `SchemaSpec` to convert
 
         Returns:
-            An OutputToolBinding instance with the appropriate tool created
+            An `OutputToolBinding` instance with the appropriate tool created
         """
         return cls(
             schema=schema_spec.schema,
@@ -329,20 +351,20 @@ class ProviderStrategyBinding(Generic[SchemaT]):
 
     schema: type[SchemaT]
     """The original schema provided for structured output
-    (Pydantic model, dataclass, TypedDict, or JSON schema dict)."""
+    (Pydantic model, `dataclass`, `TypedDict`, or JSON schema dict)."""
 
     schema_kind: SchemaKind
     """Classification of the schema type for proper response construction."""
 
     @classmethod
     def from_schema_spec(cls, schema_spec: _SchemaSpec[SchemaT]) -> Self:
-        """Create a ProviderStrategyBinding instance from a SchemaSpec.
+        """Create a `ProviderStrategyBinding` instance from a `SchemaSpec`.
 
         Args:
-            schema_spec: The SchemaSpec to convert
+            schema_spec: The `SchemaSpec` to convert
 
         Returns:
-            A ProviderStrategyBinding instance for parsing native structured output
+            A `ProviderStrategyBinding` instance for parsing native structured output
         """
         return cls(
             schema=schema_spec.schema,
@@ -350,10 +372,10 @@ class ProviderStrategyBinding(Generic[SchemaT]):
         )
 
     def parse(self, response: AIMessage) -> SchemaT:
-        """Parse AIMessage content according to the schema.
+        """Parse `AIMessage` content according to the schema.
 
         Args:
-            response: The AI message containing the structured output
+            response: The `AIMessage` containing the structured output
 
         Returns:
             The parsed response according to the schema
@@ -363,8 +385,6 @@ class ProviderStrategyBinding(Generic[SchemaT]):
         """
         # Extract text content from AIMessage and parse as JSON
         raw_text = self._extract_text_content_from_message(response)
-
-        import json
 
         try:
             data = json.loads(raw_text)
@@ -405,4 +425,18 @@ class ProviderStrategyBinding(Generic[SchemaT]):
         return str(content)
 
 
-ResponseFormat = ToolStrategy[SchemaT] | ProviderStrategy[SchemaT]
+class AutoStrategy(Generic[SchemaT]):
+    """Automatically select the best strategy for structured output."""
+
+    schema: type[SchemaT]
+    """Schema for automatic mode."""
+
+    def __init__(
+        self,
+        schema: type[SchemaT],
+    ) -> None:
+        """Initialize AutoStrategy with schema."""
+        self.schema = schema
+
+
+ResponseFormat = ToolStrategy[SchemaT] | ProviderStrategy[SchemaT] | AutoStrategy[SchemaT]

@@ -2,21 +2,19 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from inspect import signature
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Optional,
-    Union,
 )
 
 from typing_extensions import override
 
+# Cannot move to TYPE_CHECKING as _run/_arun parameter annotations are needed at runtime
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
+    AsyncCallbackManagerForToolRun,  # noqa: TC001
+    CallbackManagerForToolRun,  # noqa: TC001
 )
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
@@ -34,9 +32,9 @@ class Tool(BaseTool):
     """Tool that takes in function or coroutine directly."""
 
     description: str = ""
-    func: Optional[Callable[..., str]]
+    func: Callable[..., str] | None
     """The function to run when the tool is called."""
-    coroutine: Optional[Callable[..., Awaitable[str]]] = None
+    coroutine: Callable[..., Awaitable[str]] | None = None
     """The asynchronous version of the function."""
 
     # --- Runnable ---
@@ -44,8 +42,8 @@ class Tool(BaseTool):
     @override
     async def ainvoke(
         self,
-        input: Union[str, dict, ToolCall],
-        config: Optional[RunnableConfig] = None,
+        input: str | dict | ToolCall,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> Any:
         if not self.coroutine:
@@ -70,9 +68,9 @@ class Tool(BaseTool):
         return {"tool_input": {"type": "string"}}
 
     def _to_args_and_kwargs(
-        self, tool_input: Union[str, dict], tool_call_id: Optional[str]
+        self, tool_input: str | dict, tool_call_id: str | None
     ) -> tuple[tuple, dict]:
-        """Convert tool input to pydantic model.
+        """Convert tool input to Pydantic model.
 
         Args:
             tool_input: The input to the tool.
@@ -82,8 +80,7 @@ class Tool(BaseTool):
             ToolException: If the tool input is invalid.
 
         Returns:
-            the pydantic model args and kwargs.
-
+            The Pydantic model args and kwargs.
         """
         args, kwargs = super()._to_args_and_kwargs(tool_input, tool_call_id)
         # For backwards compatibility. The tool must be run with a single input
@@ -101,7 +98,7 @@ class Tool(BaseTool):
         self,
         *args: Any,
         config: RunnableConfig,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        run_manager: CallbackManagerForToolRun | None = None,
         **kwargs: Any,
     ) -> Any:
         """Use the tool.
@@ -128,7 +125,7 @@ class Tool(BaseTool):
         self,
         *args: Any,
         config: RunnableConfig,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        run_manager: AsyncCallbackManagerForToolRun | None = None,
         **kwargs: Any,
     ) -> Any:
         """Use the tool asynchronously.
@@ -157,7 +154,7 @@ class Tool(BaseTool):
 
     # TODO: this is for backwards compatibility, remove in future
     def __init__(
-        self, name: str, func: Optional[Callable], description: str, **kwargs: Any
+        self, name: str, func: Callable | None, description: str, **kwargs: Any
     ) -> None:
         """Initialize tool."""
         super().__init__(name=name, func=func, description=description, **kwargs)
@@ -165,14 +162,13 @@ class Tool(BaseTool):
     @classmethod
     def from_function(
         cls,
-        func: Optional[Callable],
+        func: Callable | None,
         name: str,  # We keep these required to support backwards compatibility
         description: str,
         return_direct: bool = False,  # noqa: FBT001,FBT002
-        args_schema: Optional[ArgsSchema] = None,
-        coroutine: Optional[
-            Callable[..., Awaitable[Any]]
-        ] = None,  # This is last for compatibility, but should be after func
+        args_schema: ArgsSchema | None = None,
+        coroutine: Callable[..., Awaitable[Any]]
+        | None = None,  # This is last for compatibility, but should be after func
         **kwargs: Any,
     ) -> Tool:
         """Initialize tool from a function.
@@ -181,10 +177,10 @@ class Tool(BaseTool):
             func: The function to create the tool from.
             name: The name of the tool.
             description: The description of the tool.
-            return_direct: Whether to return the output directly. Defaults to False.
-            args_schema: The schema of the tool's input arguments. Defaults to None.
-            coroutine: The asynchronous version of the function. Defaults to None.
-            kwargs: Additional arguments to pass to the tool.
+            return_direct: Whether to return the output directly.
+            args_schema: The schema of the tool's input arguments.
+            coroutine: The asynchronous version of the function.
+            **kwargs: Additional arguments to pass to the tool.
 
         Returns:
             The tool.

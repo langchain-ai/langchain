@@ -13,11 +13,11 @@ body:
         Relevant links to check before filing a feature request to see if your request has already been made or
         if there's another way to achieve what you want:
 
-        * [LangChain Forum](https://forum.langchain.com/),
-        * [LangChain documentation with the integrated search](https://docs.langchain.com/oss/python/langchain/overview),
-        * [API Reference](https://python.langchain.com/api_reference/),
+        * [Documentation](https://docs.langchain.com/oss/python/langchain/overview),
+        * [API Reference Documentation](https://reference.langchain.com/python/),
         * [LangChain ChatBot](https://chat.langchain.com/)
         * [GitHub search](https://github.com/langchain-ai/langchain),
+        * [LangChain Forum](https://forum.langchain.com/),
   - type: checkboxes
     id: checks
     attributes:
@@ -34,6 +34,40 @@ body:
           required: true
         - label: This is not related to the langchain-community package.
           required: true
+  - type: checkboxes
+    id: package
+    attributes:
+      label: Package (Required)
+      description: |
+        Which `langchain` package(s) is this request related to? Select at least one.
+
+        Note that if the package you are requesting for is not listed here, it is not in this repository (e.g. `langchain-google-genai` is in `langchain-ai/langchain`).
+
+        Please submit feature requests for other packages to their respective repositories.
+      options:
+        - label: langchain
+        - label: langchain-openai
+        - label: langchain-anthropic
+        - label: langchain-classic
+        - label: langchain-core
+        - label: langchain-cli
+        - label: langchain-model-profiles
+        - label: langchain-tests
+        - label: langchain-text-splitters
+        - label: langchain-chroma
+        - label: langchain-deepseek
+        - label: langchain-exa
+        - label: langchain-fireworks
+        - label: langchain-groq
+        - label: langchain-huggingface
+        - label: langchain-mistralai
+        - label: langchain-nomic
+        - label: langchain-ollama
+        - label: langchain-perplexity
+        - label: langchain-prompty
+        - label: langchain-qdrant
+        - label: langchain-xai
+        - label: Other / not sure / general
   - type: textarea
     id: feature-description
     validations:
@@ -42,11 +76,11 @@ body:
       label: Feature Description
       description: |
         Please provide a clear and concise description of the feature you would like to see added to LangChain.
-        
+
         What specific functionality are you requesting? Be as detailed as possible.
       placeholder: |
         I would like LangChain to support...
-        
+
         This feature would allow users to...
   - type: textarea
     id: use-case
@@ -56,13 +90,13 @@ body:
       label: Use Case
       description: |
         Describe the specific use case or problem this feature would solve.
-        
+
         Why do you need this feature? What problem does it solve for you or other users?
       placeholder: |
         I'm trying to build an application that...
-        
+
         Currently, I have to work around this by...
-        
+
         This feature would help me/users to...
   - type: textarea
     id: proposed-solution
@@ -72,13 +106,13 @@ body:
       label: Proposed Solution
       description: |
         If you have ideas about how this feature could be implemented, please describe them here.
-        
+
         This is optional but can be helpful for maintainers to understand your vision.
       placeholder: |
         I think this could be implemented by...
-        
+
         The API could look like...
-        
+
         ```python
         # Example of how the feature might work
         ```
@@ -90,15 +124,15 @@ body:
       label: Alternatives Considered
       description: |
         Have you considered any alternative solutions or workarounds?
-        
+
         What other approaches have you tried or considered?
       placeholder: |
         I've tried using...
-        
+
         Alternative approaches I considered:
         1. ...
         2. ...
-        
+
         But these don't work because...
   - type: textarea
     id: additional-context
@@ -110,9 +144,9 @@ body:
         Add any other context, screenshots, examples, or references that would help explain your feature request.
       placeholder: |
         Related issues: #...
-        
+
         Similar features in other libraries:
         - ...
-        
+
         Additional context or examples:
         - ...
