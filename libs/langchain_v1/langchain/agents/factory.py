@@ -314,7 +314,7 @@ def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None 
 def _extract_metadata(type_: type) -> list:
     """Extract metadata from a field type, handling Required/NotRequired and Annotated wrappers."""
     # Handle Required[Annotated[...]] or NotRequired[Annotated[...]]
-    if get_origin(type_) in (Required, NotRequired):
+    if get_origin(type_) in {Required, NotRequired}:
         inner_type = get_args(type_)[0]
         if get_origin(inner_type) is Annotated:
             return list(get_args(inner_type)[1:])
@@ -937,8 +937,7 @@ def create_agent(
 
                     tool_message_content = (
                         effective_response_format.tool_message_content
-                        if effective_response_format.tool_message_content
-                        else f"Returning structured response: {structured_response}"
+                        or f"Returning structured response: {structured_response}"
                     )
 
                     return {
