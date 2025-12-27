@@ -56,7 +56,7 @@ class ChatDeepSeek(BaseChatOpenAI):
 
     Key init args — completion params:
         model:
-            Name of DeepSeek model to use, e.g. "deepseek-chat", "deepseek-v3",
+            Name of DeepSeek model to use, e.g. `'deepseek-chat'`, `'deepseek-v3'`,
             or `'deepseek-reasoner`'.
         temperature:
             Sampling temperature.
