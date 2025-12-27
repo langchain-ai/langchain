@@ -246,13 +246,13 @@ def _create_message_from_message_type(
     """Create a message from a `Message` type and content string.
 
     Args:
-        message_type: (str) the type of the message (e.g., `'human'`, `'ai'`, etc.).
-        content: (str) the content string.
-        name: (str) the name of the message.
-        tool_call_id: (str) the tool call id.
-        tool_calls: (list[dict[str, Any]]) the tool calls.
-        id: (str) the id of the message.
-        additional_kwargs: (dict[str, Any]) additional keyword arguments.
+        message_type: the type of the message (e.g., `'human'`, `'ai'`, etc.).
+        content: the content string.
+        name: the name of the message.
+        tool_call_id: the tool call id.
+        tool_calls: the tool calls.
+        id: the id of the message.
+        additional_kwargs: additional keyword arguments.
 
     Returns:
         a message of the appropriate type.
