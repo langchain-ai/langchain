@@ -162,13 +162,15 @@ def test_respects_keep_last_tool_results() -> None:
     ]
 
     for call_id, text in edits:
-        conversation.append(
-            AIMessage(
-                content="",
-                tool_calls=[{"id": call_id, "name": "tool", "args": {"input": call_id}}],
+        conversation.extend(
+            (
+                AIMessage(
+                    content="",
+                    tool_calls=[{"id": call_id, "name": "tool", "args": {"input": call_id}}],
+                ),
+                ToolMessage(content=text, tool_call_id=call_id),
             )
         )
-        conversation.append(ToolMessage(content=text, tool_call_id=call_id))
 
     _state, request = _make_state_and_request(conversation)
 
@@ -355,13 +357,15 @@ async def test_respects_keep_last_tool_results_async() -> None:
     ]
 
     for call_id, text in edits:
-        conversation.append(
-            AIMessage(
-                content="",
-                tool_calls=[{"id": call_id, "name": "tool", "args": {"input": call_id}}],
+        conversation.extend(
+            (
+                AIMessage(
+                    content="",
+                    tool_calls=[{"id": call_id, "name": "tool", "args": {"input": call_id}}],
+                ),
+                ToolMessage(content=text, tool_call_id=call_id),
             )
         )
-        conversation.append(ToolMessage(content=text, tool_call_id=call_id))
 
     _state, request = _make_state_and_request(conversation)
 

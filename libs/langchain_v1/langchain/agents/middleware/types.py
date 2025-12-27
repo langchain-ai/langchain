@@ -270,7 +270,7 @@ class ModelResponse:
 
 
 # Type alias for middleware return type - allows returning either full response or just AIMessage
-ModelCallResult: TypeAlias = "ModelResponse | AIMessage"
+ModelCallResult: TypeAlias = ModelResponse | AIMessage
 """`TypeAlias` for model call handler return value.
 
 Middleware can return either:
