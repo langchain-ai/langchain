@@ -8,6 +8,7 @@ from langchain_core.runnables import RunnableConfig, RunnableSequence
 from pydantic import SecretStr
 
 from langchain.chat_models import __all__, init_chat_model
+from langchain.chat_models.base import _SUPPORTED_PROVIDERS
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
@@ -59,6 +60,11 @@ def test_init_missing_dep() -> None:
 def test_init_unknown_provider() -> None:
     with pytest.raises(ValueError, match="Unsupported provider='bar'"):
         init_chat_model("foo", model_provider="bar")
+
+
+def test_supported_providers_is_sorted() -> None:
+    """Test that supported providers are sorted alphabetically."""
+    assert list(_SUPPORTED_PROVIDERS) == sorted(_SUPPORTED_PROVIDERS.keys())
 
 
 @pytest.mark.requires("langchain_openai")

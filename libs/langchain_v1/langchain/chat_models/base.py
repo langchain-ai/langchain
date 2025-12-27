@@ -5,6 +5,7 @@ from __future__ import annotations
 import functools
 import importlib
 import warnings
+from collections.abc import Callable
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -20,7 +21,7 @@ from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from typing_extensions import override
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Callable, Iterator, Sequence
+    from collections.abc import AsyncIterator, Iterator, Sequence
     from types import ModuleType
 
     from langchain_core.runnables.schema import StreamEvent
@@ -34,39 +35,39 @@ def _call(cls: type[BaseChatModel], **kwargs: Any) -> BaseChatModel:
 
 
 _SUPPORTED_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
-    "openai": ("langchain_openai", "ChatOpenAI", _call),
     "anthropic": ("langchain_anthropic", "ChatAnthropic", _call),
-    "azure_openai": ("langchain_openai", "AzureChatOpenAI", _call),
     "azure_ai": ("langchain_azure_ai.chat_models", "AzureAIChatCompletionsModel", _call),
-    "cohere": ("langchain_cohere", "ChatCohere", _call),
-    "google_vertexai": ("langchain_google_vertexai", "ChatVertexAI", _call),
-    "google_genai": ("langchain_google_genai", "ChatGoogleGenerativeAI", _call),
-    "fireworks": ("langchain_fireworks", "ChatFireworks", _call),
-    "ollama": ("langchain_ollama", "ChatOllama", _call),
-    "together": ("langchain_together", "ChatTogether", _call),
-    "mistralai": ("langchain_mistralai", "ChatMistralAI", _call),
-    "huggingface": (
-        "langchain_huggingface",
-        "ChatHuggingFace",
-        lambda cls, model, **kwargs: cls.from_model_id(model_id=model, **kwargs),
-    ),
-    "groq": ("langchain_groq", "ChatGroq", _call),
+    "azure_openai": ("langchain_openai", "AzureChatOpenAI", _call),
     "bedrock": ("langchain_aws", "ChatBedrock", _call),
     "bedrock_converse": ("langchain_aws", "ChatBedrockConverse", _call),
+    "cohere": ("langchain_cohere", "ChatCohere", _call),
+    "deepseek": ("langchain_deepseek", "ChatDeepSeek", _call),
+    "fireworks": ("langchain_fireworks", "ChatFireworks", _call),
     "google_anthropic_vertex": (
         "langchain_google_vertexai.model_garden",
         "ChatAnthropicVertex",
         _call,
     ),
-    "deepseek": ("langchain_deepseek", "ChatDeepSeek", _call),
+    "google_genai": ("langchain_google_genai", "ChatGoogleGenerativeAI", _call),
+    "google_vertexai": ("langchain_google_vertexai", "ChatVertexAI", _call),
+    "groq": ("langchain_groq", "ChatGroq", _call),
+    "huggingface": (
+        "langchain_huggingface",
+        "ChatHuggingFace",
+        lambda cls, model, **kwargs: cls.from_model_id(model_id=model, **kwargs),
+    ),
     "ibm": (
         "langchain_ibm",
         "ChatWatsonx",
         lambda cls, model, **kwargs: cls(model_id=model, **kwargs),
     ),
-    "xai": ("langchain_xai", "ChatXAI", _call),
+    "mistralai": ("langchain_mistralai", "ChatMistralAI", _call),
+    "ollama": ("langchain_ollama", "ChatOllama", _call),
+    "openai": ("langchain_openai", "ChatOpenAI", _call),
     "perplexity": ("langchain_perplexity", "ChatPerplexity", _call),
+    "together": ("langchain_together", "ChatTogether", _call),
     "upstage": ("langchain_upstage", "ChatUpstage", _call),
+    "xai": ("langchain_xai", "ChatXAI", _call),
 }
 
 
@@ -74,6 +75,8 @@ def _import_module(module: str) -> ModuleType:
     try:
         return importlib.import_module(module)
     except ImportError as e:
+        # Extract package name from module path (e.g., "langchain_azure_ai.chat_models"
+        # becomes "langchain-azure-ai")
         pkg = module.split(".", maxsplit=1)[0].replace("_", "-")
         msg = f"Could not import {pkg} python package. Please install it with `pip install {pkg}`"
         raise ImportError(msg) from e
