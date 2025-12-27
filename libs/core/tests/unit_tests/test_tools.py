@@ -46,6 +46,11 @@ from langchain_core.runnables import (
 )
 from langchain_core.tools import (
     BaseTool,
+<<<<<<< HEAD
+=======
+    InjectedToolArg,
+    SchemaAnnotationError,
+>>>>>>> 63cb8db77e (Fix #27510: Add InjectedToolArg support for schema inspection)
     StructuredTool,
     Tool,
     ToolException,
@@ -1088,6 +1093,7 @@ async def test_async_tool_pass_context() -> None:
     )
 
 
+<<<<<<< HEAD
 def assert_bar(bar: Any, bar_config: RunnableConfig) -> Any:
     assert bar_config["configurable"]["foo"] == "not-bar"
     assert bar == "baz"
@@ -3040,10 +3046,36 @@ def test_filter_run_manager_from_callbacks() -> None:
 
 def test_filter_multiple_injected_args() -> None:
     """Test filtering multiple injected arguments from callback inputs."""
+=======
+def test_injected_tool_arg_basic() -> None:
+    """Test that InjectedToolArg parameters are excluded from schema."""
+
+    @tool
+    def user_specific_tool(input_data: str, user_id: InjectedToolArg) -> str:
+        """Process data for a specific user."""
+        return f"User {user_id} processed {input_data}"
+
+    # Check that the tool was created successfully
+    assert isinstance(user_specific_tool, BaseTool)
+    assert user_specific_tool.name == "user_specific_tool"
+
+    # Check that the schema only includes 'input_data', not 'user_id'
+    args_schema = user_specific_tool.args
+    assert "input_data" in args_schema
+    assert "user_id" not in args_schema
+
+    # Verify the schema properties
+    assert args_schema["input_data"]["type"] == "string"
+
+
+def test_injected_tool_arg_multiple_params() -> None:
+    """Test tool with multiple parameters including injected ones."""
+>>>>>>> 63cb8db77e (Fix #27510: Add InjectedToolArg support for schema inspection)
 
     @tool
     def complex_tool(
         query: str,
+<<<<<<< HEAD
         limit: int,
         state: Annotated[dict, InjectedToolArg()],
         context: Annotated[str, InjectedToolArg()],
@@ -3505,3 +3537,85 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
+=======
+        user_id: InjectedToolArg,
+        limit: int,
+        api_key: InjectedToolArg,
+    ) -> str:
+        """Search with user context."""
+        return f"Search {query} for user {user_id} with limit {limit} using {api_key}"
+
+    # Check the schema
+    args_schema = complex_tool.args
+
+    # Regular parameters should be in schema
+    assert "query" in args_schema
+    assert "limit" in args_schema
+
+    # Injected parameters should NOT be in schema
+    assert "user_id" not in args_schema
+    assert "api_key" not in args_schema
+
+    # Verify we have exactly 2 parameters in the schema
+    assert len(args_schema) == 2
+
+
+def test_injected_tool_arg_optional() -> None:
+    """Test tool with optional injected arguments."""
+
+    @tool
+    def tool_with_optional(
+        required_input: str,
+        optional_injected: Optional[InjectedToolArg] = None,
+    ) -> str:
+        """Tool with optional injected parameter."""
+        return f"Input: {required_input}, Injected: {optional_injected}"
+
+    # Check the schema
+    args_schema = tool_with_optional.args
+
+    # Only required_input should be in schema
+    assert "required_input" in args_schema
+    assert "optional_injected" not in args_schema
+    assert len(args_schema) == 1
+
+
+def test_injected_tool_arg_structured_tool() -> None:
+    """Test InjectedToolArg with StructuredTool."""
+
+    def my_function(data: str, context: InjectedToolArg) -> str:
+        """Process data with injected context."""
+        return f"Data: {data}, Context: {context}"
+
+    structured_tool = StructuredTool.from_function(
+        func=my_function,
+        name="my_tool",
+        description="A test tool",
+    )
+
+    # Check the schema
+    args_schema = structured_tool.args
+
+    # Only 'data' should be in the schema
+    assert "data" in args_schema
+    assert "context" not in args_schema
+
+
+def test_injected_tool_arg_get_input_schema() -> None:
+    """Test that get_input_schema also excludes injected arguments."""
+
+    @tool
+    def test_tool(input_data: str, user_id: InjectedToolArg) -> str:
+        """Test tool."""
+        return f"{input_data} for {user_id}"
+
+    # Get the input schema
+    input_schema = test_tool.get_input_schema()
+
+    # Check the schema properties
+    schema_dict = input_schema.schema()
+    properties = schema_dict.get("properties", {})
+
+    assert "input_data" in properties
+    assert "user_id" not in properties
+>>>>>>> 63cb8db77e (Fix #27510: Add InjectedToolArg support for schema inspection)
