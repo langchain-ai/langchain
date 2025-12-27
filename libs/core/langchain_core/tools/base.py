@@ -8,7 +8,7 @@ import json
 import typing
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import Callable  # noqa: TC003
 from inspect import signature
 from typing import (
     TYPE_CHECKING,
@@ -22,6 +22,7 @@ from typing import (
     get_type_hints,
 )
 
+import typing_extensions
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -31,6 +32,7 @@ from pydantic import (
     ValidationError,
     validate_arguments,
 )
+from pydantic.fields import FieldInfo
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
@@ -94,11 +96,13 @@ def _is_annotated_type(typ: type[Any]) -> bool:
     Returns:
         `True` if the type is an Annotated type, `False` otherwise.
     """
-    return get_origin(typ) is typing.Annotated
+    return get_origin(typ) in {typing.Annotated, typing_extensions.Annotated}
 
 
 def _get_annotation_description(arg_type: type) -> str | None:
     """Extract description from an Annotated type.
+
+    Checks for string annotations and `FieldInfo` objects with descriptions.
 
     Args:
         arg_type: The type to extract description from.
@@ -111,6 +115,8 @@ def _get_annotation_description(arg_type: type) -> str | None:
         for annotation in annotated_args[1:]:
             if isinstance(annotation, str):
                 return annotation
+            if isinstance(annotation, FieldInfo) and annotation.description:
+                return annotation.description
     return None
 
 
@@ -562,7 +568,7 @@ class ChildTool(BaseTool):
         else:
             input_schema = self.get_input_schema()
             json_schema = input_schema.model_json_schema()
-        return json_schema["properties"]
+        return cast("dict", json_schema["properties"])
 
     @property
     def tool_call_schema(self) -> ArgsSchema:
@@ -653,6 +659,7 @@ class ChildTool(BaseTool):
             TypeError: If `args_schema` is not a Pydantic `BaseModel` or dict.
         """
         input_args = self.args_schema
+
         if isinstance(tool_input, str):
             if input_args is not None:
                 if isinstance(input_args, dict):
@@ -670,6 +677,7 @@ class ChildTool(BaseTool):
                     msg = f"args_schema must be a Pydantic BaseModel, got {input_args}"
                     raise TypeError(msg)
             return tool_input
+
         if input_args is not None:
             if isinstance(input_args, dict):
                 return tool_input
@@ -710,9 +718,30 @@ class ChildTool(BaseTool):
                     f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"
                 )
                 raise NotImplementedError(msg)
-            validated_input = {
-                k: getattr(result, k) for k in result_dict if k in tool_input
-            }
+
+            # Include fields from tool_input, plus fields with explicit defaults.
+            # This applies Pydantic defaults (like Field(default=1)) while excluding
+            # synthetic "args"/"kwargs" fields that Pydantic creates for *args/**kwargs.
+            field_info = get_fields(input_args)
+            validated_input = {}
+            for k in result_dict:
+                if k in tool_input:
+                    # Field was provided in input - include it (validated)
+                    validated_input[k] = getattr(result, k)
+                elif k in field_info and k not in ("args", "kwargs"):
+                    # Check if field has an explicit default defined in the schema.
+                    # Exclude "args"/"kwargs" as these are synthetic fields for variadic
+                    # parameters that should not be passed as keyword arguments.
+                    fi = field_info[k]
+                    # Pydantic v2 uses is_required() method, v1 uses required attribute
+                    has_default = (
+                        not fi.is_required()
+                        if hasattr(fi, "is_required")
+                        else not getattr(fi, "required", True)
+                    )
+                    if has_default:
+                        validated_input[k] = getattr(result, k)
+
             for k in self._injected_args_keys:
                 if k in tool_input:
                     validated_input[k] = tool_input[k]
@@ -727,7 +756,9 @@ class ChildTool(BaseTool):
                         )
                         raise ValueError(msg)
                     validated_input[k] = tool_call_id
+
             return validated_input
+
         return tool_input
 
     @abstractmethod
@@ -1514,7 +1545,7 @@ def _replace_type_vars(
             _replace_type_vars(arg, generic_map, default_to_bound=default_to_bound)
             for arg in args
         )
-        return _py_38_safe_origin(origin)[new_args]  # type: ignore[index]
+        return cast("type", _py_38_safe_origin(origin)[new_args])  # type: ignore[index]
     return type_
 
 

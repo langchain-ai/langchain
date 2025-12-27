@@ -1403,7 +1403,7 @@ def test_data_prompt_template_deserializable() -> None:
                     )
                 ]
             )
-        )
+        ),
     )
 
 

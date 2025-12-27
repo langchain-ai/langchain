@@ -11,7 +11,7 @@ def test_image_prompt_template_deserializable() -> None:
             ChatPromptTemplate.from_messages(
                 [("system", [{"type": "image", "image_url": "{img}"}])]
             )
-        )
+        ),
     )
 
 
@@ -105,5 +105,5 @@ def test_image_prompt_template_deserializable_old() -> None:
                     "input_variables": ["img", "input"],
                 },
             }
-        )
+        ),
     )

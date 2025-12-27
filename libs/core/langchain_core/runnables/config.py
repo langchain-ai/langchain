@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
-import uuid
+
+# Cannot move uuid to TYPE_CHECKING as RunnableConfig is used in Pydantic models
+import uuid  # noqa: TC003
 import warnings
 from collections.abc import Awaitable, Callable, Generator, Iterable, Iterator, Sequence
 from concurrent.futures import Executor, Future, ThreadPoolExecutor

@@ -541,7 +541,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
 
 def _get_standardized_inputs(
     run: Run, schema_format: Literal["original", "streaming_events"]
-) -> dict[str, Any] | None:
+) -> Any:
     """Extract standardized inputs from a run.
 
     Standardizes the inputs based on the type of the runnable used.
@@ -563,14 +563,14 @@ def _get_standardized_inputs(
         )
         raise NotImplementedError(msg)
 
-    inputs = load(run.inputs)
+    inputs = load(run.inputs, allowed_objects="all")
 
     if run.run_type in {"retriever", "llm", "chat_model"}:
         return inputs
 
     # new style chains
     # These nest an additional 'input' key inside the 'inputs' to make sure
-    # the input is always a dict. We need to unpack and user the inner value.
+    # the input is always a dict. We need to unpack and use the inner value.
     inputs = inputs["input"]
     # We should try to fix this in Runnables and callbacks/tracers
     # Runnables should be using a None type here not a placeholder
@@ -595,7 +595,7 @@ def _get_standardized_outputs(
     Returns:
         An output if returned, otherwise a None
     """
-    outputs = load(run.outputs)
+    outputs = load(run.outputs, allowed_objects="all")
     if schema_format == "original":
         if run.run_type == "prompt" and "output" in outputs:
             # These were previously dumped before the tracer.

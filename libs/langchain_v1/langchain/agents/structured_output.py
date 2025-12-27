@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import uuid
 from dataclasses import dataclass, is_dataclass
 from types import UnionType
@@ -227,7 +228,7 @@ class ToolStrategy(Generic[SchemaT]):
 
         def _iter_variants(schema: Any) -> Iterable[Any]:
             """Yield leaf variants from Union and JSON Schema oneOf."""
-            if get_origin(schema) in (UnionType, Union):
+            if get_origin(schema) in {UnionType, Union}:
                 for arg in get_args(schema):
                     yield from _iter_variants(arg)
                 return
@@ -384,8 +385,6 @@ class ProviderStrategyBinding(Generic[SchemaT]):
         """
         # Extract text content from AIMessage and parse as JSON
         raw_text = self._extract_text_content_from_message(response)
-
-        import json
 
         try:
             data = json.loads(raw_text)

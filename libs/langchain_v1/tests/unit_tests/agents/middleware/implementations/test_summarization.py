@@ -1,4 +1,3 @@
-from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -9,8 +8,7 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 
 from langchain.agents.middleware.summarization import SummarizationMiddleware
-
-from ...model import FakeToolCallingModel
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 class MockChatModel(BaseChatModel):
@@ -33,7 +31,7 @@ class ProfileChatModel(BaseChatModel):
     def _generate(self, messages, **kwargs):  # type: ignore[no-untyped-def]
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
-    profile: ModelProfile | None = {"max_input_tokens": 1000}
+    profile: ModelProfile | None = ModelProfile(max_input_tokens=1000)
 
     @property
     def _llm_type(self) -> str:
@@ -56,7 +54,11 @@ def test_summarization_middleware_initialization() -> None:
     assert middleware.summary_prompt == "Custom prompt: {messages}"
     assert middleware.trim_tokens_to_summarize == 4000
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Model profile information is required to use fractional token limits, "
+        "and is unavailable for the specified model",
+    ):
         SummarizationMiddleware(model=model, keep=("fraction", 0.5))  # no model profile
 
     # Test with string model
@@ -138,7 +140,8 @@ def test_summarization_middleware_summary_creation() -> None:
     # Test error handling
     class ErrorModel(BaseChatModel):
         def invoke(self, prompt):
-            raise Exception("Model error")
+            msg = "Model error"
+            raise ValueError(msg)
 
         def _generate(self, messages, **kwargs):
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
@@ -165,7 +168,7 @@ def test_summarization_middleware_trim_limit_none_keeps_all_messages() -> None:
         model=MockChatModel(),
         trim_tokens_to_summarize=None,
     )
-    middleware.token_counter = lambda msgs: len(msgs)
+    middleware.token_counter = len
 
     trimmed = middleware._trim_messages_for_summary(messages)
     assert trimmed is messages
@@ -173,7 +176,9 @@ def test_summarization_middleware_trim_limit_none_keeps_all_messages() -> None:
 
 def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     """Ensure automatic profile inference triggers summarization when limits are exceeded."""
-    token_counter = lambda messages: len(messages) * 200
+
+    def token_counter(messages):
+        return len(messages) * 200
 
     middleware = SummarizationMiddleware(
         model=ProfileChatModel(),
@@ -192,14 +197,14 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     }
 
     # Test we don't engage summarization
-    # total_tokens = 4 * 200 = 800
-    # max_input_tokens = 1000
-    # 0.81 * 1000 == 810 > 800 -> summarization not triggered
+    # we have total_tokens = 4 * 200 = 800
+    # and max_input_tokens = 1000
+    # since 0.81 * 1000 == 810 > 800 -> summarization not triggered
     result = middleware.before_model(state, None)
     assert result is None
 
     # Engage summarization
-    # 0.80 * 1000 == 800 <= 800
+    # since 0.80 * 1000 == 800 <= 800
     middleware = SummarizationMiddleware(
         model=ProfileChatModel(),
         trigger=("fraction", 0.80),
@@ -331,7 +336,8 @@ def test_summarization_middleware_missing_profile() -> None:
 
         @property
         def profile(self):
-            raise ImportError("Profile not available")
+            msg = "Profile not available"
+            raise ImportError(msg)
 
     with pytest.raises(
         ValueError,
@@ -344,7 +350,7 @@ def test_summarization_middleware_missing_profile() -> None:
 
 def test_summarization_middleware_full_workflow() -> None:
     """Test SummarizationMiddleware complete summarization workflow."""
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning, match="messages_to_keep is deprecated"):
         # keep test for functionality
         middleware = SummarizationMiddleware(
             model=MockChatModel(), max_tokens_before_summary=1000, messages_to_keep=2
@@ -470,7 +476,7 @@ def test_summarization_middleware_keep_messages() -> None:
     assert [message.content for message in result["messages"][2:]] == ["4", "5"]
 
     # Above threshold - should also trigger summarization
-    messages_above = messages_at_threshold + [HumanMessage(content="6")]
+    messages_above = [*messages_at_threshold, HumanMessage(content="6")]
     state_above = {"messages": messages_above}
     result = middleware.before_model(state_above, None)
     assert result is not None
@@ -616,7 +622,8 @@ def test_summarization_middleware_trim_messages_error_fallback() -> None:
 
     # Create a mock token counter that raises an exception
     def failing_token_counter(messages):
-        raise Exception("Token counting failed")
+        msg = "Token counting failed"
+        raise ValueError(msg)
 
     middleware.token_counter = failing_token_counter
 
@@ -700,7 +707,6 @@ def test_summarization_middleware_zero_and_negative_target_tokens() -> None:
 
     # Should set threshold to 1 when calculated value is <= 0
     messages = [HumanMessage(content="test")]
-    state = {"messages": messages}
 
     # The trigger fraction calculation: int(1000 * 0.0001) = 0, but should be set to 1
     # Token count of 1 message should exceed threshold of 1
@@ -719,7 +725,8 @@ async def test_summarization_middleware_async_error_handling() -> None:
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
         async def _agenerate(self, messages, **kwargs):
-            raise Exception("Async model error")
+            msg = "Async model error"
+            raise ValueError(msg)
 
         @property
         def _llm_type(self):
@@ -750,14 +757,14 @@ def test_summarization_middleware_cutoff_at_boundary() -> None:
 def test_summarization_middleware_deprecated_parameters_with_defaults() -> None:
     """Test that deprecated parameters work correctly with default values."""
     # Test that deprecated max_tokens_before_summary is ignored when trigger is set
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning, match="max_tokens_before_summary is deprecated"):
         middleware = SummarizationMiddleware(
             model=MockChatModel(), trigger=("tokens", 2000), max_tokens_before_summary=1000
         )
     assert middleware.trigger == ("tokens", 2000)
 
     # Test that messages_to_keep is ignored when keep is not default
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning, match="messages_to_keep is deprecated"):
         middleware = SummarizationMiddleware(
             model=MockChatModel(), keep=("messages", 5), messages_to_keep=10
         )
@@ -836,7 +843,7 @@ def test_summarization_middleware_find_safe_cutoff_advances_past_tools() -> None
         model=MockChatModel(), trigger=("messages", 10), keep=("messages", 3)
     )
 
-    # Messages: [Human, AI, Tool, Tool, Tool, Human]
+    # Messages list: [Human, AI, Tool, Tool, Tool, Human]
     messages: list[AnyMessage] = [
         HumanMessage(content="msg1"),
         AIMessage(
