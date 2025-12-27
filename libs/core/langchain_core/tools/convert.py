@@ -2,7 +2,7 @@
 
 import inspect
 from collections.abc import Callable
-from typing import Any, Literal, get_type_hints, overload
+from typing import Any, Literal, cast, get_type_hints, overload
 
 from pydantic import BaseModel, Field, create_model
 
@@ -407,7 +407,7 @@ def _get_schema_from_runnable_and_arg_types(
             )
             raise TypeError(msg) from e
     fields = {key: (key_type, Field(...)) for key, key_type in arg_types.items()}
-    return create_model(name, **fields)  # type: ignore[call-overload]
+    return cast("type[BaseModel]", create_model(name, **fields))  # type: ignore[call-overload]
 
 
 def convert_runnable_to_tool(
