@@ -34,7 +34,7 @@ class ProfileChatModel(BaseChatModel):
     def _generate(self, messages, **kwargs):  # type: ignore[no-untyped-def]
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
-    profile: ModelProfile | None = {"max_input_tokens": 1000}
+    profile: ModelProfile | None = ModelProfile(max_input_tokens=1000)
 
     @property
     def _llm_type(self) -> str:
@@ -171,7 +171,7 @@ def test_summarization_middleware_trim_limit_none_keeps_all_messages() -> None:
         model=MockChatModel(),
         trim_tokens_to_summarize=None,
     )
-    middleware.token_counter = lambda msgs: len(msgs)
+    middleware.token_counter = len
 
     trimmed = middleware._trim_messages_for_summary(messages)
     assert trimmed is messages

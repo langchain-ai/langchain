@@ -51,8 +51,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/InvalidToolCall',
             }),
@@ -76,8 +74,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCall',
             }),
@@ -162,8 +158,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/InvalidToolCall',
             }),
@@ -187,8 +181,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCallChunk',
             }),
@@ -196,8 +188,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCall',
             }),
@@ -1469,8 +1459,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/InvalidToolCall',
             }),
@@ -1494,8 +1482,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCall',
             }),
@@ -1580,8 +1566,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/InvalidToolCall',
             }),
@@ -1605,8 +1589,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCallChunk',
             }),
@@ -1614,8 +1596,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCall',
             }),

@@ -605,7 +605,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
             return
         for command in self._startup_commands:
             result = session.execute(command, timeout=self._execution_policy.startup_timeout)
-            if result.timed_out or (result.exit_code not in (0, None)):
+            if result.timed_out or (result.exit_code not in {0, None}):
                 msg = f"Startup command '{command}' failed with exit code {result.exit_code}"
                 raise RuntimeError(msg)
 
@@ -617,7 +617,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
                 result = session.execute(command, timeout=self._execution_policy.command_timeout)
                 if result.timed_out:
                     LOGGER.warning("Shutdown command '%s' timed out.", command)
-                elif result.exit_code not in (0, None):
+                elif result.exit_code not in {0, None}:
                     LOGGER.warning(
                         "Shutdown command '%s' exited with %s.", command, result.exit_code
                     )
@@ -708,7 +708,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
                 f"(observed {result.total_bytes})."
             )
 
-        if result.exit_code not in (0, None):
+        if result.exit_code not in {0, None}:
             sanitized_output = f"{sanitized_output.rstrip()}\n\nExit code: {result.exit_code}"
             final_status: Literal["success", "error"] = "error"
         else:

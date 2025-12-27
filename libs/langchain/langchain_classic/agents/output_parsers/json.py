@@ -38,9 +38,9 @@ class JSONAgentOutputParser(AgentOutputParser):
     def parse(self, text: str) -> AgentAction | AgentFinish:
         try:
             response = parse_json_markdown(text)
-            if isinstance(response, list):  # type: ignore[unreachable]
+            if isinstance(response, list):
                 # gpt turbo frequently ignores the directive to emit a single action
-                logger.warning("Got multiple action responses: %s", response)  # type: ignore[unreachable]
+                logger.warning("Got multiple action responses: %s", response)
                 response = response[0]
             if response["action"] == "Final Answer":
                 return AgentFinish({"output": response["action_input"]}, text)

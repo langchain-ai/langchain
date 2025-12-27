@@ -102,7 +102,7 @@ def test_infer_model_and_provider_errors() -> None:
 )
 def test_supported_providers_package_names(provider: str) -> None:
     """Test that all supported providers have valid package names."""
-    package = _SUPPORTED_PROVIDERS[provider]
+    package = _SUPPORTED_PROVIDERS[provider][0]
     assert "-" not in package
     assert package.startswith("langchain_")
     assert package.islower()

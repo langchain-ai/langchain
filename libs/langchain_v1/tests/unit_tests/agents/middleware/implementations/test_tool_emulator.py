@@ -1,7 +1,7 @@
 """Unit tests for tool emulator middleware."""
 
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from itertools import cycle
 from typing import Any, Literal
 
@@ -86,7 +86,7 @@ class FakeModel(GenericFakeChatModel):
 class FakeEmulatorModel(BaseChatModel):
     """Fake model for emulating tool responses."""
 
-    responses: list[str] = ["Emulated response"]
+    responses: Sequence[str] = ("Emulated response",)
     response_index: int = 0
 
     def _generate(

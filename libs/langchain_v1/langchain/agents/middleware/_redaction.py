@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import ipaddress
+import operator
 import re
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -127,7 +128,7 @@ def detect_url(content: str) -> list[PIIMatch]:
     for match in re.finditer(scheme_pattern, content):
         url = match.group()
         result = urlparse(url)
-        if result.scheme in ("http", "https") and result.netloc:
+        if result.scheme in {"http", "https"} and result.netloc:
             matches.append(
                 PIIMatch(
                     type="url",
@@ -202,7 +203,7 @@ def _passes_luhn(card_number: str) -> bool:
 
 def _apply_redact_strategy(content: str, matches: list[PIIMatch]) -> str:
     result = content
-    for match in sorted(matches, key=lambda item: item["start"], reverse=True):
+    for match in sorted(matches, key=operator.itemgetter("start"), reverse=True):
         replacement = f"[REDACTED_{match['type'].upper()}]"
         result = result[: match["start"]] + replacement + result[match["end"] :]
     return result
@@ -214,7 +215,7 @@ _IPV4_PARTS_NUMBER = 4
 
 def _apply_mask_strategy(content: str, matches: list[PIIMatch]) -> str:
     result = content
-    for match in sorted(matches, key=lambda item: item["start"], reverse=True):
+    for match in sorted(matches, key=operator.itemgetter("start"), reverse=True):
         value = match["value"]
         pii_type = match["type"]
         if pii_type == "email":
@@ -260,7 +261,7 @@ def _apply_mask_strategy(content: str, matches: list[PIIMatch]) -> str:
 
 def _apply_hash_strategy(content: str, matches: list[PIIMatch]) -> str:
     result = content
-    for match in sorted(matches, key=lambda item: item["start"], reverse=True):
+    for match in sorted(matches, key=operator.itemgetter("start"), reverse=True):
         digest = hashlib.sha256(match["value"].encode()).hexdigest()[:8]
         replacement = f"<{match['type']}_hash:{digest}>"
         result = result[: match["start"]] + replacement + result[match["end"] :]

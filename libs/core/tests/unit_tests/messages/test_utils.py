@@ -1032,9 +1032,9 @@ def test_convert_to_openai_messages_openai_block() -> None:
 
 def test_convert_to_openai_messages_invalid_format() -> None:
     with pytest.raises(ValueError, match="Unrecognized text_format="):
-        convert_to_openai_messages(
+        convert_to_openai_messages(  # type: ignore[call-overload]
             [HumanMessage(content="Hello")],
-            text_format="invalid",  # type: ignore[arg-type]
+            text_format="invalid",
         )
 
 

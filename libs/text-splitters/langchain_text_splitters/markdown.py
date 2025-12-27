@@ -316,15 +316,6 @@ class ExperimentalMarkdownSyntaxTextSplitter:
     further development.
     """
 
-    DEFAULT_HEADER_KEYS = {
-        "#": "Header 1",
-        "##": "Header 2",
-        "###": "Header 3",
-        "####": "Header 4",
-        "#####": "Header 5",
-        "######": "Header 6",
-    }
-
     def __init__(
         self,
         headers_to_split_on: list[tuple[str, str]] | None = None,
@@ -353,7 +344,14 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         if headers_to_split_on:
             self.splittable_headers = dict(headers_to_split_on)
         else:
-            self.splittable_headers = self.DEFAULT_HEADER_KEYS
+            self.splittable_headers = {
+                "#": "Header 1",
+                "##": "Header 2",
+                "###": "Header 3",
+                "####": "Header 4",
+                "#####": "Header 5",
+                "######": "Header 6",
+            }
 
         self.return_each_line = return_each_line
 

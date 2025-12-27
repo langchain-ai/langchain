@@ -1,12 +1,14 @@
 """Unit tests for _chain_model_call_handlers handler composition."""
 
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from langchain_core.messages import AIMessage
-from langgraph.runtime import Runtime
 
 from langchain.agents.factory import _chain_model_call_handlers
 from langchain.agents.middleware.types import ModelRequest, ModelResponse
+
+if TYPE_CHECKING:
+    from langgraph.runtime import Runtime
 
 
 def create_test_request(**kwargs):

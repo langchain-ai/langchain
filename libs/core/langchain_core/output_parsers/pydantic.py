@@ -1,7 +1,7 @@
 """Output parsers using Pydantic."""
 
 import json
-from typing import Annotated, Generic
+from typing import Annotated, Generic, Literal, overload
 
 import pydantic
 from pydantic import SkipValidation
@@ -42,6 +42,16 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         msg = f"Failed to parse {name} from completion {json_string}. Got: {e}"
         return OutputParserException(msg, llm_output=json_string)
 
+    @overload
+    def parse_result(
+        self, result: list[Generation], *, partial: Literal[False] = False
+    ) -> TBaseModel: ...
+
+    @overload
+    def parse_result(
+        self, result: list[Generation], *, partial: bool = False
+    ) -> TBaseModel | None: ...
+
     def parse_result(
         self, result: list[Generation], *, partial: bool = False
     ) -> TBaseModel | None:
@@ -77,7 +87,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         Returns:
             The parsed Pydantic object.
         """
-        return super().parse(text)
+        return self.parse_result([Generation(text=text)])
 
     def get_format_instructions(self) -> str:
         """Return the format instructions for the JSON output.
