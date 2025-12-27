@@ -12,7 +12,8 @@ import pytest
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.tools import tool
+from typing_extensions import TypedDict
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.types import (
@@ -20,8 +21,7 @@ from langchain.agents.middleware.types import (
     ModelRequest,
     wrap_model_call,
 )
-
-from ...model import FakeToolCallingModel
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 class TestBasicWrapModelCall:
@@ -93,7 +93,8 @@ class TestRetryLogic:
             def _generate(self, messages, **kwargs):
                 call_count["value"] += 1
                 if call_count["value"] == 1:
-                    raise ValueError("First call fails")
+                    msg = "First call fails"
+                    raise ValueError(msg)
                 return super()._generate(messages, **kwargs)
 
         class RetryOnceMiddleware(AgentMiddleware):
@@ -122,7 +123,8 @@ class TestRetryLogic:
 
         class AlwaysFailModel(GenericFakeChatModel):
             def _generate(self, messages, **kwargs):
-                raise ValueError("Always fails")
+                msg = "Always fails"
+                raise ValueError(msg)
 
         class MaxRetriesMiddleware(AgentMiddleware):
             def __init__(self, max_retries=3):
@@ -142,6 +144,7 @@ class TestRetryLogic:
                 # Re-raise the last exception
                 if last_exception:
                     raise last_exception
+                pytest.fail("Should have raised an exception")
 
         retry_middleware = MaxRetriesMiddleware(max_retries=3)
         model = AlwaysFailModel(messages=iter([]))
@@ -159,7 +162,8 @@ class TestRetryLogic:
             """Model that always fails."""
 
             def _generate(self, messages, **kwargs):
-                raise ValueError("Model error")
+                msg = "Model error"
+                raise ValueError(msg)
 
             @property
             def _llm_type(self):
@@ -181,7 +185,8 @@ class TestRetryLogic:
             """Model that always fails."""
 
             def _generate(self, messages, **kwargs):
-                raise ValueError("Always fails")
+                msg = "Always fails"
+                raise ValueError(msg)
 
             @property
             def _llm_type(self):
@@ -197,7 +202,7 @@ class TestRetryLogic:
 
             def wrap_model_call(self, request, handler):
                 last_exception = None
-                for attempt in range(self.max_retries):
+                for _attempt in range(self.max_retries):
                     self.attempt_count += 1
                     try:
                         return handler(request)
@@ -208,6 +213,7 @@ class TestRetryLogic:
                 # All retries exhausted, re-raise the last error
                 if last_exception:
                     raise last_exception
+                pytest.fail("Should have raised an exception")
 
         model = AlwaysFailingModel()
         middleware = LimitedRetryMiddleware(max_retries=10)
@@ -294,7 +300,8 @@ class TestErrorHandling:
 
         class AlwaysFailModel(GenericFakeChatModel):
             def _generate(self, messages, **kwargs):
-                raise ValueError("Model error")
+                msg = "Model error"
+                raise ValueError(msg)
 
         class ErrorToSuccessMiddleware(AgentMiddleware):
             def wrap_model_call(self, request, handler):
@@ -317,7 +324,8 @@ class TestErrorHandling:
 
         class SpecificErrorModel(GenericFakeChatModel):
             def _generate(self, messages, **kwargs):
-                raise ConnectionError("Network error")
+                msg = "Network error"
+                raise ConnectionError(msg)
 
         class SelectiveErrorMiddleware(AgentMiddleware):
             def wrap_model_call(self, request, handler):
@@ -343,10 +351,10 @@ class TestErrorHandling:
                     call_log.append("before-yield")
                     result = handler(request)
                     call_log.append("after-yield-success")
-                    return result
                 except Exception:
                     call_log.append("caught-error")
                     return AIMessage(content="Recovered from error")
+                return result
 
         # Test 1: Success path
         call_log.clear()
@@ -362,7 +370,8 @@ class TestErrorHandling:
 
         class AlwaysFailModel(GenericFakeChatModel):
             def _generate(self, messages, **kwargs):
-                raise ValueError("Model error")
+                msg = "Model error"
+                raise ValueError(msg)
 
         model2 = AlwaysFailModel(messages=iter([]))
         agent2 = create_agent(model=model2, middleware=[ErrorRecoveryMiddleware()])
@@ -388,11 +397,10 @@ class TestShortCircuit:
                 if cache_key in cache:
                     # Short-circuit with cached result
                     return cache[cache_key]
-                else:
-                    # Execute and cache
-                    result = handler(request)
-                    cache[cache_key] = result
-                    return result
+                # Execute and cache
+                result = handler(request)
+                cache[cache_key] = result
+                return result
 
         class TrackingModel(GenericFakeChatModel):
             def _generate(self, messages, **kwargs):
@@ -504,6 +512,7 @@ class TestStateAndRuntime:
                     except Exception:
                         if attempt == max_retries - 1:
                             raise
+                pytest.fail("Should have raised an exception")
 
         call_count = {"value": 0}
 
@@ -511,7 +520,8 @@ class TestStateAndRuntime:
             def _generate(self, messages, **kwargs):
                 call_count["value"] += 1
                 if call_count["value"] == 1:
-                    raise ValueError("First fails")
+                    msg = "First fails"
+                    raise ValueError(msg)
                 return super()._generate(messages, **kwargs)
 
         model = FailOnceThenSucceed(messages=iter([AIMessage(content="Success")]))
@@ -590,7 +600,8 @@ class TestMiddlewareComposition:
 
         agent.invoke({"messages": [HumanMessage("Test")]})
 
-        # First wraps Second wraps Third: 1-before, 2-before, 3-before, model, 3-after, 2-after, 1-after
+        # First wraps Second wraps Third:
+        # 1-before, 2-before, 3-before, model, 3-after, 2-after, 1-after
         assert execution_order == [
             "first-before",
             "second-before",
@@ -609,7 +620,8 @@ class TestMiddlewareComposition:
             def _generate(self, messages, **kwargs):
                 call_count["value"] += 1
                 if call_count["value"] == 1:
-                    raise ValueError("First call fails")
+                    msg = "First call fails"
+                    raise ValueError(msg)
                 return super()._generate(messages, **kwargs)
 
         class LoggingMiddleware(AgentMiddleware):
@@ -625,12 +637,12 @@ class TestMiddlewareComposition:
                 try:
                     result = handler(request)
                     log.append("retry-after")
-                    return result
                 except Exception:
                     log.append("retry-retrying")
                     result = handler(request)
                     log.append("retry-after")
-                    return result
+
+                return result
 
         model = FailOnceThenSucceed(messages=iter([AIMessage(content="Success")]))
         # Logging is outer, Retry is inner
@@ -683,7 +695,8 @@ class TestMiddlewareComposition:
             def _generate(self, messages, **kwargs):
                 call_count["value"] += 1
                 if call_count["value"] == 1:
-                    raise ValueError("First call fails")
+                    msg = "First call fails"
+                    raise ValueError(msg)
                 return super()._generate(messages, **kwargs)
 
         class RetryMiddleware(AgentMiddleware):
@@ -808,7 +821,8 @@ class TestWrapModelCallDecorator:
             def _generate(self, messages, **kwargs):
                 call_count["value"] += 1
                 if call_count["value"] == 1:
-                    raise ValueError("First call fails")
+                    msg = "First call fails"
+                    raise ValueError(msg)
                 return super()._generate(messages, **kwargs)
 
         @wrap_model_call
@@ -849,7 +863,8 @@ class TestWrapModelCallDecorator:
 
         class AlwaysFailModel(GenericFakeChatModel):
             def _generate(self, messages, **kwargs):
-                raise ValueError("Model error")
+                msg = "Model error"
+                raise ValueError(msg)
 
         @wrap_model_call
         def error_to_fallback(request, handler):
@@ -916,7 +931,6 @@ class TestWrapModelCallDecorator:
 
     def test_decorator_with_custom_state_schema(self) -> None:
         """Test decorator with custom state schema."""
-        from typing_extensions import TypedDict
 
         class CustomState(TypedDict):
             messages: list
@@ -932,7 +946,6 @@ class TestWrapModelCallDecorator:
 
     def test_decorator_with_tools_parameter(self) -> None:
         """Test decorator with tools parameter."""
-        from langchain_core.tools import tool
 
         @tool
         def test_tool(query: str) -> str:
@@ -1015,7 +1028,8 @@ class TestWrapModelCallDecorator:
             def _generate(self, messages, **kwargs):
                 call_count["value"] += 1
                 if call_count["value"] <= 2:
-                    raise ValueError(f"Attempt {call_count['value']} failed")
+                    msg = f"Attempt {call_count['value']} failed"
+                    raise ValueError(msg)
                 return super()._generate(messages, **kwargs)
 
         @wrap_model_call
@@ -1029,8 +1043,8 @@ class TestWrapModelCallDecorator:
                     # On error, continue to next attempt
                     if attempt < max_retries - 1:
                         continue  # Retry
-                    else:
-                        raise  # All retries failed
+                    raise  # All retries failed
+            pytest.fail("Should have raised an exception")
 
         model = UnreliableModel(messages=iter([AIMessage(content="Finally worked")]))
         agent = create_agent(model=model, middleware=[retry_with_tracking])
@@ -1098,7 +1112,8 @@ class TestAsyncWrapModelCall:
             async def _agenerate(self, messages, **kwargs):
                 call_count["value"] += 1
                 if call_count["value"] == 1:
-                    raise ValueError("First async call fails")
+                    msg = "First async call fails"
+                    raise ValueError(msg)
                 return await super()._agenerate(messages, **kwargs)
 
         class RetryMiddleware(AgentMiddleware):
@@ -1194,7 +1209,7 @@ class TestSyncAsyncInterop:
             middleware=[MixedMiddleware()],
         )
 
-        result = agent.invoke({"messages": [HumanMessage("hello")]})
+        agent.invoke({"messages": [HumanMessage("hello")]})
 
         # In sync mode, only sync methods should be called
         assert calls == [
@@ -1243,7 +1258,8 @@ class TestEdgeCases:
             def _generate(self, messages, **kwargs):
                 call_count["value"] += 1
                 if call_count["value"] == 1:
-                    raise ValueError("First fails")
+                    msg = "First fails"
+                    raise ValueError(msg)
                 return super()._generate(messages, **kwargs)
 
         model = FailFirstSucceedSecond(messages=iter([AIMessage(content="Success")]))

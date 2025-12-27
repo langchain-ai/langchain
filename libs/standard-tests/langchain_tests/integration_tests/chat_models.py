@@ -37,7 +37,7 @@ from langchain_tests.unit_tests.chat_models import ChatModelTests
 from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 if TYPE_CHECKING:
-    from pytest_benchmark.fixture import (  # type: ignore[import-untyped]
+    from pytest_benchmark.fixture import (
         BenchmarkFixture,
     )
     from vcr.cassette import Cassette
@@ -75,7 +75,7 @@ def _get_joke_class(  # noqa: RET503
 
 
 class _TestCallbackHandler(BaseCallbackHandler):
-    options: list[dict | None]
+    options: list[dict[str, Any] | None]
 
     def __init__(self) -> None:
         super().__init__()
@@ -236,24 +236,6 @@ class ChatModelIntegrationTests(ChatModelTests):
             return True
         ```
 
-    ??? info "`tool_choice_value`"
-
-        Value to use for tool choice when used in tests.
-
-        !!! warning
-            Deprecated since version 0.3.15.
-            This property will be removed in version 0.3.20. If a model supports
-            `tool_choice`, it should accept `tool_choice="any"` and
-            `tool_choice=<string name of tool>`. If a model does not
-            support forcing tool calling, override the `has_tool_choice` property to
-            return `False`.
-
-        ```python
-        @property
-        def tool_choice_value(self) -> str | None:
-            return "any"
-        ```
-
     ??? info "`has_tool_choice`"
 
         Boolean property indicating whether the chat model supports forcing tool
@@ -263,7 +245,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         signature for the corresponding `bind_tools` method.
 
         If `True`, the minimum requirement for this feature is that
-        `tool_choice="any"` will force a tool call, and `tool_choice=<tool name>`
+        `tool_choice='any'` will force a tool call, and `tool_choice=<tool name>`
         will force a call to a specific tool.
 
         ```python
@@ -646,9 +628,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             ```python title="tests/conftest.py"
             import pytest
-            from langchain_tests.conftest import (
-                _base_vcr_config as _base_vcr_config,
-            )
+            from langchain_tests.conftest import base_vcr_config
 
             _EXTRA_HEADERS = [
                 # Specify additional headers to redact
@@ -663,9 +643,9 @@ class ChatModelIntegrationTests(ChatModelTests):
 
 
             @pytest.fixture(scope="session")
-            def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
+            def vcr_config() -> dict:
                 """Extend the default configuration from langchain_tests."""
-                config = _base_vcr_config.copy()
+                config = base_vcr_config()
                 config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
                 config["before_record_response"] = remove_response_headers
 
@@ -685,9 +665,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     CustomPersister,
                     CustomSerializer,
                 )
-                from langchain_tests.conftest import (
-                    _base_vcr_config as _base_vcr_config,
-                )
+                from langchain_tests.conftest import base_vcr_config
                 from vcr import VCR
 
                 _EXTRA_HEADERS = [
@@ -703,9 +681,9 @@ class ChatModelIntegrationTests(ChatModelTests):
 
 
                 @pytest.fixture(scope="session")
-                def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
+                def vcr_config() -> dict:
                     """Extend the default configuration from langchain_tests."""
-                    config = _base_vcr_config.copy()
+                    config = base_vcr_config()
                     config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
                     config["before_record_response"] = remove_response_headers
                     # New: enable serializer and set file extension
@@ -761,7 +739,7 @@ class ChatModelIntegrationTests(ChatModelTests):
     '''  # noqa: E501
 
     @property
-    def standard_chat_model_params(self) -> dict:
+    def standard_chat_model_params(self) -> dict[str, Any]:
         """Standard parameters for chat model."""
         return {}
 
@@ -897,6 +875,135 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert full.content
         assert len(full.content_blocks) == 1
         assert full.content_blocks[0]["type"] == "text"
+
+    def test_invoke_with_model_override(self, model: BaseChatModel) -> None:
+        """Test that model name can be overridden at invoke time via kwargs.
+
+        This enables dynamic model selection without creating new instances,
+        which is useful for fallback strategies, A/B testing, or cost optimization.
+
+        Test is skipped if `supports_model_override` is `False`.
+
+        ??? question "Troubleshooting"
+
+            If this test fails, ensure that your `_generate` method passes
+            `**kwargs` through to the API request payload in a way that allows
+            the `model` parameter to be overridden.
+
+            For example:
+            ```python
+            def _get_request_payload(self, ..., **kwargs) -> dict:
+                return {
+                    "model": self.model,
+                    ...
+                    **kwargs,  # kwargs should come last to allow overrides
+                }
+            ```
+        """
+        if not self.supports_model_override:
+            pytest.skip("Model override not supported.")
+
+        override_model = self.model_override_value
+        if not override_model:
+            pytest.skip("model_override_value not specified.")
+
+        result = model.invoke("Hello", model=override_model)
+        assert result is not None
+        assert isinstance(result, AIMessage)
+
+        # Verify the overridden model was used
+        model_name = result.response_metadata.get("model_name")
+        assert model_name is not None, "model_name not found in response_metadata"
+        assert override_model in model_name, (
+            f"Expected model '{override_model}' but got '{model_name}'"
+        )
+
+    async def test_ainvoke_with_model_override(self, model: BaseChatModel) -> None:
+        """Test that model name can be overridden at ainvoke time via kwargs.
+
+        Test is skipped if `supports_model_override` is `False`.
+
+        ??? question "Troubleshooting"
+
+            See troubleshooting for `test_invoke_with_model_override`.
+        """
+        if not self.supports_model_override:
+            pytest.skip("Model override not supported.")
+
+        override_model = self.model_override_value
+        if not override_model:
+            pytest.skip("model_override_value not specified.")
+
+        result = await model.ainvoke("Hello", model=override_model)
+        assert result is not None
+        assert isinstance(result, AIMessage)
+
+        # Verify the overridden model was used
+        model_name = result.response_metadata.get("model_name")
+        assert model_name is not None, "model_name not found in response_metadata"
+        assert override_model in model_name, (
+            f"Expected model '{override_model}' but got '{model_name}'"
+        )
+
+    def test_stream_with_model_override(self, model: BaseChatModel) -> None:
+        """Test that model name can be overridden at stream time via kwargs.
+
+        Test is skipped if `supports_model_override` is `False`.
+
+        ??? question "Troubleshooting"
+
+            See troubleshooting for `test_invoke_with_model_override`.
+        """
+        if not self.supports_model_override:
+            pytest.skip("Model override not supported.")
+
+        override_model = self.model_override_value
+        if not override_model:
+            pytest.skip("model_override_value not specified.")
+
+        full: AIMessageChunk | None = None
+        for chunk in model.stream("Hello", model=override_model):
+            assert isinstance(chunk, AIMessageChunk)
+            full = chunk if full is None else full + chunk
+
+        assert full is not None
+
+        # Verify the overridden model was used
+        model_name = full.response_metadata.get("model_name")
+        assert model_name is not None, "model_name not found in response_metadata"
+        assert override_model in model_name, (
+            f"Expected model '{override_model}' but got '{model_name}'"
+        )
+
+    async def test_astream_with_model_override(self, model: BaseChatModel) -> None:
+        """Test that model name can be overridden at astream time via kwargs.
+
+        Test is skipped if `supports_model_override` is `False`.
+
+        ??? question "Troubleshooting"
+
+            See troubleshooting for `test_invoke_with_model_override`.
+        """
+        if not self.supports_model_override:
+            pytest.skip("Model override not supported.")
+
+        override_model = self.model_override_value
+        if not override_model:
+            pytest.skip("model_override_value not specified.")
+
+        full: AIMessageChunk | None = None
+        async for chunk in model.astream("Hello", model=override_model):
+            assert isinstance(chunk, AIMessageChunk)
+            full = chunk if full is None else full + chunk
+
+        assert full is not None
+
+        # Verify the overridden model was used
+        model_name = full.response_metadata.get("model_name")
+        assert model_name is not None, "model_name not found in response_metadata"
+        assert override_model in model_name, (
+            f"Expected model '{override_model}' but got '{model_name}'"
+        )
 
     def test_batch(self, model: BaseChatModel) -> None:
         """Test to verify that `model.batch([messages])` works.
@@ -1321,6 +1428,12 @@ class ChatModelIntegrationTests(ChatModelTests):
                     "Only one chunk should set input_tokens,"
                     " the rest should be 0 or None"
                 )
+            # only one chunk is allowed to set usage_metadata.model_name
+            # if multiple do, they'll be concatenated incorrectly
+            if full and full.usage_metadata and full.usage_metadata.get("model_name"):
+                assert not chunk.usage_metadata or not chunk.usage_metadata.get(
+                    "model_name"
+                ), "Only one chunk should set model_name, the rest should be None"
             full = chunk if full is None else full + chunk
 
         assert isinstance(full, AIMessageChunk)
@@ -1560,17 +1673,14 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             This test may fail if the chat model does not support a `tool_choice`
             parameter. This parameter can be used to force a tool call. If
-            `tool_choice` is not supported and the model consistently fails this
-            test, you can `xfail` the test:
+            `tool_choice` is not supported, set `has_tool_choice` to `False` in
+            your test class:
 
             ```python
-            @pytest.mark.xfail(reason=("Does not support tool_choice."))
-            def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
-                super().test_bind_runnables_as_tools(model)
+            @property
+            def has_tool_choice(self) -> bool:
+                return False
             ```
-
-            Otherwise, ensure that the `tool_choice_value` property is correctly
-            specified on the test class.
 
         """
         if not self.has_tool_calling:
@@ -2077,11 +2187,12 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         stream_callback = _TestCallbackHandler()
 
+        chunk = None
         for chunk in chat.stream(
             "Tell me a joke about cats.", config={"callbacks": [stream_callback]}
         ):
             validation_function(chunk)
-        assert chunk
+        assert chunk is not None, "Stream returned no chunks - possible API issue"
 
         assert len(stream_callback.options) == 1, (
             "Expected on_chat_model_start to be called once"
@@ -2158,11 +2269,12 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         astream_callback = _TestCallbackHandler()
 
+        chunk = None
         async for chunk in chat.astream(
             "Tell me a joke about cats.", config={"callbacks": [astream_callback]}
         ):
             validation_function(chunk)
-        assert chunk
+        assert chunk is not None, "Stream returned no chunks - possible API issue"
 
         assert len(astream_callback.options) == 1, (
             "Expected on_chat_model_start to be called once"
@@ -2228,8 +2340,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, Joke)
 
+        chunk = None
         for chunk in chat.stream("Tell me a joke about cats."):
             assert isinstance(chunk, Joke)
+        assert chunk is not None, "Stream returned no chunks - possible API issue"
 
         # Schema
         chat = model.with_structured_output(
@@ -2239,9 +2353,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result, dict)
         assert set(result.keys()) == {"setup", "punchline"}
 
+        chunk = None
         for chunk in chat.stream("Tell me a joke about cats."):
             assert isinstance(chunk, dict)
-        assert isinstance(chunk, dict)  # for mypy
+        assert chunk is not None, "Stream returned no chunks - possible API issue"
         assert set(chunk.keys()) == {"setup", "punchline"}
 
     def test_structured_output_optional_param(self, model: BaseChatModel) -> None:
@@ -2363,8 +2478,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = chat.invoke(msg)
         assert isinstance(result, Joke)
 
+        chunk = None
         for chunk in chat.stream(msg):
             assert isinstance(chunk, Joke)
+        assert chunk is not None, "Stream returned no chunks - possible API issue"
 
         # Schema
         chat = model.with_structured_output(
@@ -2374,9 +2491,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result, dict)
         assert set(result.keys()) == {"setup", "punchline"}
 
+        chunk = None
         for chunk in chat.stream(msg):
             assert isinstance(chunk, dict)
-        assert isinstance(chunk, dict)  # for mypy
+        assert chunk is not None, "Stream returned no chunks - possible API issue"
         assert set(chunk.keys()) == {"setup", "punchline"}
 
     def test_pdf_inputs(self, model: BaseChatModel) -> None:
@@ -2962,7 +3080,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             "cache_control": {"type": "ephemeral"},
         }
 
-        human_content: list[dict] = [
+        human_content = [
             {
                 "type": "text",
                 "text": "what's your favorite color in this image",

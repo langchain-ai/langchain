@@ -29,7 +29,7 @@ from .conftest_store import (
 )
 
 # Global variables for checkpointer and store configurations
-FAST_MODE = os.getenv("LANGGRAPH_TEST_FAST", "true").lower() in ("true", "1", "yes")
+FAST_MODE = os.getenv("LANGGRAPH_TEST_FAST", "true").lower() in {"true", "1", "yes"}
 
 SYNC_CHECKPOINTER_PARAMS = (
     ["memory"]

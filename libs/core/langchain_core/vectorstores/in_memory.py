@@ -528,7 +528,7 @@ class InMemoryVectorStore(VectorStore):
         """
         path_: Path = Path(path)
         with path_.open("r", encoding="utf-8") as f:
-            store = load(json.load(f))
+            store = load(json.load(f), allowed_objects=[Document])
         vectorstore = cls(embedding=embedding, **kwargs)
         vectorstore.store = store
         return vectorstore

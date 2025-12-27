@@ -47,22 +47,24 @@ def parse_tool_call(
     """
     if "function" not in raw_tool_call:
         return None
+
+    arguments = raw_tool_call["function"]["arguments"]
+
     if partial:
         try:
-            function_args = parse_partial_json(
-                raw_tool_call["function"]["arguments"], strict=strict
-            )
+            function_args = parse_partial_json(arguments, strict=strict)
         except (JSONDecodeError, TypeError):  # None args raise TypeError
             return None
+    # Handle None or empty string arguments for parameter-less tools
+    elif not arguments:
+        function_args = {}
     else:
         try:
-            function_args = json.loads(
-                raw_tool_call["function"]["arguments"], strict=strict
-            )
+            function_args = json.loads(arguments, strict=strict)
         except JSONDecodeError as e:
             msg = (
                 f"Function {raw_tool_call['function']['name']} arguments:\n\n"
-                f"{raw_tool_call['function']['arguments']}\n\nare not valid JSON. "
+                f"{arguments}\n\nare not valid JSON. "
                 f"Received JSONDecodeError {e}"
             )
             raise OutputParserException(msg) from e

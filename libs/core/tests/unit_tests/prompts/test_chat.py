@@ -30,9 +30,7 @@ from langchain_core.prompts.chat import (
 )
 from langchain_core.prompts.message import BaseMessagePromptTemplate
 from langchain_core.prompts.string import PromptTemplateFormat
-from langchain_core.utils.pydantic import (
-    PYDANTIC_VERSION,
-)
+from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
 CUR_DIR = Path(__file__).parent.absolute().resolve()
@@ -315,6 +313,288 @@ def test_chat_prompt_template_from_messages_jinja2() -> None:
         AIMessage(content="I'm doing well, thanks!", additional_kwargs={}),
         HumanMessage(content="What is your name?", additional_kwargs={}),
     ]
+
+
+def test_chat_prompt_template_from_messages_using_message_classes() -> None:
+    """Test creating a chat prompt template using message class tuples."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            (SystemMessage, "You are a helpful AI bot. Your name is {name}."),
+            (HumanMessage, "Hello, how are you doing?"),
+            (AIMessage, "I'm doing well, thanks!"),
+            (HumanMessage, "{user_input}"),
+        ]
+    )
+
+    expected = [
+        SystemMessage(
+            content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
+        ),
+        HumanMessage(content="Hello, how are you doing?", additional_kwargs={}),
+        AIMessage(content="I'm doing well, thanks!", additional_kwargs={}),
+        HumanMessage(content="What is your name?", additional_kwargs={}),
+    ]
+
+    messages = template.format_messages(name="Bob", user_input="What is your name?")
+    assert messages == expected
+
+
+def test_chat_prompt_template_message_class_tuples_with_invoke() -> None:
+    """Test message class tuples work with invoke() method."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            (SystemMessage, "You are {name}."),
+            (HumanMessage, "{question}"),
+        ]
+    )
+
+    result = template.invoke({"name": "Alice", "question": "Hello?"})
+    messages = result.to_messages()
+
+    assert len(messages) == 2
+    assert isinstance(messages[0], SystemMessage)
+    assert isinstance(messages[1], HumanMessage)
+    assert messages[0].content == "You are Alice."
+    assert messages[1].content == "Hello?"
+
+
+def test_chat_prompt_template_message_class_tuples_mixed_syntax() -> None:
+    """Test mixing message class tuples with string tuples."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            (SystemMessage, "System prompt."),  # class tuple
+            ("human", "{user_input}"),  # string tuple
+            (AIMessage, "AI response."),  # class tuple
+        ]
+    )
+
+    messages = template.format_messages(user_input="Hello!")
+
+    assert len(messages) == 3
+    assert isinstance(messages[0], SystemMessage)
+    assert isinstance(messages[1], HumanMessage)
+    assert isinstance(messages[2], AIMessage)
+    assert messages[0].content == "System prompt."
+    assert messages[1].content == "Hello!"
+    assert messages[2].content == "AI response."
+
+
+def test_chat_prompt_template_message_class_tuples_multiple_variables() -> None:
+    """Test message class tuples with multiple template variables."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            (SystemMessage, "You are {name}, a {role} assistant."),
+            (HumanMessage, "My question about {topic} is: {question}"),
+        ]
+    )
+
+    messages = template.format_messages(
+        name="Bob", role="helpful", topic="Python", question="What is a list?"
+    )
+
+    assert len(messages) == 2
+    assert messages[0].content == "You are Bob, a helpful assistant."
+    assert messages[1].content == "My question about Python is: What is a list?"
+
+
+def test_chat_prompt_template_message_class_tuples_empty_template() -> None:
+    """Test message class tuples with empty string template."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            (HumanMessage, ""),
+        ]
+    )
+
+    messages = template.format_messages()
+
+    assert len(messages) == 1
+    assert isinstance(messages[0], HumanMessage)
+    assert messages[0].content == ""
+
+
+def test_chat_prompt_template_message_class_tuples_static_text() -> None:
+    """Test message class tuples with no template variables (static text)."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            (SystemMessage, "You are a helpful assistant."),
+            (HumanMessage, "Hello there!"),
+            (AIMessage, "Hi! How can I help?"),
+        ]
+    )
+
+    messages = template.format_messages()
+
+    assert len(messages) == 3
+    assert messages[0].content == "You are a helpful assistant."
+    assert messages[1].content == "Hello there!"
+    assert messages[2].content == "Hi! How can I help?"
+
+
+def test_chat_prompt_template_message_class_tuples_input_variables() -> None:
+    """Test that input_variables are correctly extracted from message class tuples."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            (SystemMessage, "You are {name}."),
+            (HumanMessage, "{question}"),
+        ]
+    )
+
+    assert sorted(template.input_variables) == ["name", "question"]
+
+
+def test_chat_prompt_template_message_class_tuples_partial_variables() -> None:
+    """Test message class tuples with partial variables."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            (SystemMessage, "You are {name}, a {role} assistant."),
+            (HumanMessage, "{question}"),
+        ]
+    )
+
+    partial_template = template.partial(name="Alice", role="helpful")
+    messages = partial_template.format_messages(question="What is Python?")
+
+    assert len(messages) == 2
+    assert messages[0].content == "You are Alice, a helpful assistant."
+    assert messages[1].content == "What is Python?"
+
+
+def test_chat_prompt_template_message_class_tuples_with_placeholder() -> None:
+    """Test message class tuples combined with MessagesPlaceholder."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            (SystemMessage, "You are a helpful assistant."),
+            MessagesPlaceholder("history"),
+            (HumanMessage, "{question}"),
+        ]
+    )
+
+    messages = template.format_messages(
+        history=[HumanMessage(content="Hi"), AIMessage(content="Hello!")],
+        question="How are you?",
+    )
+
+    assert len(messages) == 4
+    assert isinstance(messages[0], SystemMessage)
+    assert isinstance(messages[1], HumanMessage)
+    assert isinstance(messages[2], AIMessage)
+    assert isinstance(messages[3], HumanMessage)
+    assert messages[3].content == "How are you?"
+
+
+def test_chat_prompt_template_message_class_tuples_mustache_format() -> None:
+    """Test message class tuples with mustache template format."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            (SystemMessage, "You are {{name}}."),
+            (HumanMessage, "{{question}}"),
+        ],
+        template_format="mustache",
+    )
+
+    messages = template.format_messages(name="Bob", question="Hello?")
+
+    assert len(messages) == 2
+    assert messages[0].content == "You are Bob."
+    assert messages[1].content == "Hello?"
+
+
+def test_chat_prompt_template_message_class_tuples_append() -> None:
+    """Test appending message class tuples to existing template."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            (SystemMessage, "You are helpful."),
+        ]
+    )
+
+    template.append((HumanMessage, "{question}"))
+
+    messages = template.format_messages(question="What is AI?")
+
+    assert len(messages) == 2
+    assert isinstance(messages[0], SystemMessage)
+    assert isinstance(messages[1], HumanMessage)
+    assert messages[1].content == "What is AI?"
+
+
+def test_chat_prompt_template_message_class_tuples_extend() -> None:
+    """Test extending template with message class tuples."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            (SystemMessage, "System message."),
+        ]
+    )
+
+    template.extend(
+        [
+            (HumanMessage, "{q1}"),
+            (AIMessage, "Response."),
+            (HumanMessage, "{q2}"),
+        ]
+    )
+
+    messages = template.format_messages(q1="First?", q2="Second?")
+
+    assert len(messages) == 4
+    assert messages[1].content == "First?"
+    assert messages[3].content == "Second?"
+
+
+def test_chat_prompt_template_message_class_tuples_concatenation() -> None:
+    """Test concatenating two templates with message class tuples."""
+    template1 = ChatPromptTemplate.from_messages(
+        [
+            (SystemMessage, "You are {name}."),
+        ]
+    )
+
+    template2 = ChatPromptTemplate.from_messages(
+        [
+            (HumanMessage, "{question}"),
+        ]
+    )
+
+    combined = template1 + template2
+    messages = combined.format_messages(name="Alice", question="Hello?")
+
+    assert len(messages) == 2
+    assert messages[0].content == "You are Alice."
+    assert messages[1].content == "Hello?"
+
+
+def test_chat_prompt_template_message_class_tuples_slicing() -> None:
+    """Test slicing a template with message class tuples."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            (SystemMessage, "System."),
+            (HumanMessage, "Human 1."),
+            (AIMessage, "AI."),
+            (HumanMessage, "Human 2."),
+        ]
+    )
+
+    sliced = template[1:3]
+    messages = sliced.format_messages()
+
+    assert len(messages) == 2
+    assert isinstance(messages[0], HumanMessage)
+    assert isinstance(messages[1], AIMessage)
+
+
+def test_chat_prompt_template_message_class_tuples_special_characters() -> None:
+    """Test message class tuples with special characters in template."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            (SystemMessage, "You are a helpful assistant! 🤖"),
+            (HumanMessage, "Question: {question}? (please answer)"),
+        ]
+    )
+
+    messages = template.format_messages(question="What is 2+2")
+
+    assert len(messages) == 2
+    assert messages[0].content == "You are a helpful assistant! 🤖"
+    assert messages[1].content == "Question: What is 2+2? (please answer)"
 
 
 @pytest.mark.requires("jinja2")
@@ -1123,7 +1403,7 @@ def test_data_prompt_template_deserializable() -> None:
                     )
                 ]
             )
-        )
+        ),
     )
 
 
@@ -1636,68 +1916,3 @@ def test_mustache_template_attribute_access_vulnerability() -> None:
     )
     result_dict = prompt_dict.invoke({"person": {"name": "Alice"}})
     assert result_dict.messages[0].content == "Alice"  # type: ignore[attr-defined]
-
-
-@pytest.mark.requires("jinja2")
-def test_jinja2_template_attribute_access_is_blocked() -> None:
-    """Test that Jinja2 SandboxedEnvironment blocks dangerous attribute access.
-
-    This test verifies that Jinja2's sandbox successfully blocks access to
-    dangerous dunder attributes like __class__, unlike Mustache.
-
-    GOOD: Jinja2 SandboxedEnvironment raises SecurityError when attempting
-    to access __class__, __globals__, etc. This is expected behavior.
-    """
-    msg = HumanMessage("howdy")
-
-    # Create a Jinja2 template that attempts to access __class__.__name__
-    prompt = ChatPromptTemplate.from_messages(
-        [("human", "{{question.__class__.__name__}}")],
-        template_format="jinja2",
-    )
-
-    # Jinja2 sandbox should block this with SecurityError
-    with pytest.raises(Exception, match="attribute") as exc_info:
-        prompt.invoke(
-            {"question": msg, "question.__class__.__name__": "safe_placeholder"}
-        )
-
-    # Verify it's a SecurityError from Jinja2 blocking __class__ access
-    error_msg = str(exc_info.value)
-    assert (
-        "SecurityError" in str(type(exc_info.value))
-        or "access to attribute '__class__'" in error_msg
-    ), f"Expected SecurityError blocking __class__, got: {error_msg}"
-
-
-@pytest.mark.requires("jinja2")
-def test_jinja2_blocks_all_attribute_access() -> None:
-    """Test that Jinja2 now blocks ALL attribute/method access for security.
-
-    After the fix, Jinja2 uses _RestrictedSandboxedEnvironment which blocks
-    ALL attribute access, not just dunder attributes. This prevents the
-    parse_raw() vulnerability.
-    """
-    msg = HumanMessage("test content")
-
-    # Test 1: Simple variable access should still work
-    prompt_simple = ChatPromptTemplate.from_messages(
-        [("human", "Message: {{message}}")],
-        template_format="jinja2",
-    )
-    result = prompt_simple.invoke({"message": "hello world"})
-    assert "hello world" in result.messages[0].content  # type: ignore[attr-defined]
-
-    # Test 2: Attribute access should now be blocked (including safe attributes)
-    prompt_attr = ChatPromptTemplate.from_messages(
-        [("human", "Content: {{msg.content}}")],
-        template_format="jinja2",
-    )
-    with pytest.raises(Exception, match="attribute") as exc_info:
-        prompt_attr.invoke({"msg": msg})
-
-    error_msg = str(exc_info.value)
-    assert (
-        "SecurityError" in str(type(exc_info.value))
-        or "Access to attributes is not allowed" in error_msg
-    ), f"Expected SecurityError blocking attribute access, got: {error_msg}"

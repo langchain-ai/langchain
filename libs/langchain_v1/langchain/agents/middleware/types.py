@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field, replace
 from inspect import iscoroutinefunction
 from typing import (
@@ -19,6 +19,8 @@ from typing import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
+    from langgraph.types import Command
+
 # Needed as top level import for Pydantic schema generation on AgentState
 import warnings
 from typing import TypeAlias
@@ -33,7 +35,6 @@ from langchain_core.messages import (
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
-from langgraph.types import Command  # noqa: TC002
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
@@ -270,7 +271,7 @@ class ModelResponse:
 
 
 # Type alias for middleware return type - allows returning either full response or just AIMessage
-ModelCallResult: TypeAlias = "ModelResponse | AIMessage"
+ModelCallResult: TypeAlias = ModelResponse | AIMessage
 """`TypeAlias` for model call handler return value.
 
 Middleware can return either:
@@ -337,7 +338,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     state_schema: type[StateT] = cast("type[StateT]", AgentState)
     """The schema for state passed to the middleware nodes."""
 
-    tools: list[BaseTool]
+    tools: Sequence[BaseTool]
     """Additional tools registered by the middleware."""
 
     @property
@@ -883,6 +884,23 @@ def before_model(
             def custom_before_model(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
                 return {"custom_field": "updated_value"}
             ```
+
+        !!! example "Streaming custom events before model call"
+
+            Use `runtime.stream_writer` to emit custom events before each model invocation.
+            Events are received when streaming with `stream_mode="custom"`.
+
+            ```python
+            @before_model
+            async def notify_model_call(state: AgentState, runtime: Runtime) -> None:
+                '''Notify user before model is called.'''
+                runtime.stream_writer(
+                    {
+                        "type": "status",
+                        "message": "Thinking...",
+                    }
+                )
+            ```
     """
 
     def decorator(
@@ -897,7 +915,7 @@ def before_model(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
@@ -922,7 +940,7 @@ def before_model(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command | None:
@@ -1024,6 +1042,25 @@ def after_model(
             def custom_after_model(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
                 return {"custom_field": "updated_after_model"}
             ```
+
+        !!! example "Streaming custom events after model call"
+
+            Use `runtime.stream_writer` to emit custom events after model responds.
+            Events are received when streaming with `stream_mode="custom"`.
+
+            ```python
+            @after_model
+            async def notify_model_response(state: AgentState, runtime: Runtime) -> None:
+                '''Notify user after model has responded.'''
+                last_message = state["messages"][-1]
+                has_tool_calls = hasattr(last_message, "tool_calls") and last_message.tool_calls
+                runtime.stream_writer(
+                    {
+                        "type": "status",
+                        "message": "Using tools..." if has_tool_calls else "Response ready!",
+                    }
+                )
+            ```
     """
 
     def decorator(
@@ -1038,7 +1075,7 @@ def after_model(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
@@ -1061,7 +1098,7 @@ def after_model(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command | None:
@@ -1175,6 +1212,46 @@ def before_agent(
             def custom_before_agent(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
                 return {"custom_field": "initialized_value"}
             ```
+
+        !!! example "Streaming custom events"
+
+            Use `runtime.stream_writer` to emit custom events during agent execution.
+            Events are received when streaming with `stream_mode="custom"`.
+
+            ```python
+            from langchain.agents import create_agent
+            from langchain.agents.middleware import before_agent, AgentState
+            from langchain.messages import HumanMessage
+            from langgraph.runtime import Runtime
+
+
+            @before_agent
+            async def notify_start(state: AgentState, runtime: Runtime) -> None:
+                '''Notify user that agent is starting.'''
+                runtime.stream_writer(
+                    {
+                        "type": "status",
+                        "message": "Initializing agent session...",
+                    }
+                )
+                # Perform prerequisite tasks here
+                runtime.stream_writer({"type": "status", "message": "Agent ready!"})
+
+
+            agent = create_agent(
+                model="openai:gpt-5.2",
+                tools=[...],
+                middleware=[notify_start],
+            )
+
+            # Consume with stream_mode="custom" to receive events
+            async for mode, event in agent.astream(
+                {"messages": [HumanMessage("Hello")]},
+                stream_mode=["updates", "custom"],
+            ):
+                if mode == "custom":
+                    print(f"Status: {event}")
+            ```
     """
 
     def decorator(
@@ -1189,7 +1266,7 @@ def before_agent(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
@@ -1214,7 +1291,7 @@ def before_agent(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command | None:
@@ -1318,6 +1395,24 @@ def after_agent(
             def custom_after_agent(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
                 return {"custom_field": "finalized_value"}
             ```
+
+        !!! example "Streaming custom events on completion"
+
+            Use `runtime.stream_writer` to emit custom events when agent completes.
+            Events are received when streaming with `stream_mode="custom"`.
+
+            ```python
+            @after_agent
+            async def notify_completion(state: AgentState, runtime: Runtime) -> None:
+                '''Notify user that agent has completed.'''
+                runtime.stream_writer(
+                    {
+                        "type": "status",
+                        "message": "Agent execution complete!",
+                        "total_messages": len(state["messages"]),
+                    }
+                )
+            ```
     """
 
     def decorator(
@@ -1332,7 +1427,7 @@ def after_agent(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
@@ -1355,7 +1450,7 @@ def after_agent(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command | None:
@@ -1463,7 +1558,7 @@ def dynamic_prompt(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
             ) -> ModelCallResult:
@@ -1487,7 +1582,7 @@ def dynamic_prompt(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
         ) -> ModelCallResult:
@@ -1499,7 +1594,7 @@ def dynamic_prompt(
             return handler(request)
 
         async def async_wrapped_from_sync(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             request: ModelRequest,
             handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
         ) -> ModelCallResult:
@@ -1644,7 +1739,7 @@ def wrap_model_call(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
             ) -> ModelCallResult:
@@ -1665,7 +1760,7 @@ def wrap_model_call(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
         ) -> ModelCallResult:
@@ -1804,7 +1899,7 @@ def wrap_tool_call(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware,  # noqa: ARG001
+                _self: AgentMiddleware,
                 request: ToolCallRequest,
                 handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
             ) -> ToolMessage | Command:
@@ -1825,7 +1920,7 @@ def wrap_tool_call(
             )()
 
         def wrapped(
-            self: AgentMiddleware,  # noqa: ARG001
+            _self: AgentMiddleware,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
         ) -> ToolMessage | Command:

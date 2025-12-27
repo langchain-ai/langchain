@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field, SecretStr, ValidationError
 from langchain_tests.base import BaseStandardTests
 
 if TYPE_CHECKING:
-    from pytest_benchmark.fixture import (  # type: ignore[import-untyped]
+    from pytest_benchmark.fixture import (
         BenchmarkFixture,
     )
     from syrupy.assertion import SnapshotAssertion
@@ -49,12 +49,12 @@ class ChatModelTests(BaseStandardTests):
         ...
 
     @property
-    def chat_model_params(self) -> dict:
+    def chat_model_params(self) -> dict[str, Any]:
         """Initialization parameters for the chat model."""
         return {}
 
     @property
-    def standard_chat_model_params(self) -> dict:
+    def standard_chat_model_params(self) -> dict[str, Any]:
         """Standard chat model parameters."""
         return {
             "temperature": 0,
@@ -96,11 +96,6 @@ class ChatModelTests(BaseStandardTests):
         return self.chat_model_class.bind_tools is not BaseChatModel.bind_tools
 
     @property
-    def tool_choice_value(self) -> str | None:
-        """(None or str) to use for tool choice when used in tests."""
-        return None
-
-    @property
     def has_tool_choice(self) -> bool:
         """Whether the model supports tool calling."""
         bind_tools_params = inspect.signature(
@@ -117,7 +112,7 @@ class ChatModelTests(BaseStandardTests):
         ) or self.has_tool_calling
 
     @property
-    def structured_output_kwargs(self) -> dict:
+    def structured_output_kwargs(self) -> dict[str, Any]:
         """Additional kwargs to pass to `with_structured_output()` in tests.
 
         Override this property to customize how structured output is generated
@@ -255,6 +250,28 @@ class ChatModelTests(BaseStandardTests):
         """
         return {"invoke": [], "stream": []}
 
+    @property
+    def supports_model_override(self) -> bool:
+        """Whether the model supports overriding the model name at runtime.
+
+        Defaults to `True`.
+
+        If `True`, the model accepts a `model` kwarg in `invoke()`, `stream()`,
+        etc. that overrides the model specified at initialization.
+
+        This enables dynamic model selection without creating new instances.
+        """
+        return True
+
+    @property
+    def model_override_value(self) -> str | None:
+        """Alternative model name to use when testing model override.
+
+        Should return a valid model name that differs from the default model.
+        Required if `supports_model_override` is `True`.
+        """
+        return None
+
 
 class ChatModelUnitTests(ChatModelTests):
     '''Base class for chat model unit tests.
@@ -322,23 +339,6 @@ class ChatModelUnitTests(ChatModelTests):
             return True
         ```
 
-    ??? info "`tool_choice_value`"
-
-        Value to use for tool choice when used in tests.
-
-        !!! warning
-            Deprecated since version 0.3.15.
-            This property will be removed in version 0.3.20. If a model does not
-            support forcing tool calling, override the `has_tool_choice` property to
-            return `False`. Otherwise, models should accept values of `'any'` or
-            the name of a tool in `tool_choice`.
-
-        ```python
-        @property
-        def tool_choice_value(self) -> str | None:
-            return "any"
-        ```
-
     ??? info "`has_tool_choice`"
 
         Boolean property indicating whether the chat model supports forcing tool
@@ -348,7 +348,7 @@ class ChatModelUnitTests(ChatModelTests):
         signature for the corresponding `bind_tools` method.
 
         If `True`, the minimum requirement for this feature is that
-        `tool_choice="any"` will force a tool call, and `tool_choice=<tool name>`
+        `tool_choice='any'` will force a tool call, and `tool_choice=<tool name>`
         will force a call to a specific tool.
 
         ```python
@@ -694,6 +694,36 @@ class ChatModelUnitTests(ChatModelTests):
 
         Only needs to be overridden if these details are supplied.
 
+    ??? info "`supports_model_override`"
+
+        Boolean property indicating whether the chat model supports overriding the
+        model name at runtime via kwargs.
+
+        If `True`, the model accepts a `model` kwarg in `invoke()`, `stream()`, etc.
+        that overrides the model specified at initialization. This enables dynamic
+        model selection without creating new chat model instances.
+
+        Defaults to `False`.
+
+        ```python
+        @property
+        def supports_model_override(self) -> bool:
+            return True
+        ```
+
+    ??? info "`model_override_value`"
+
+        Alternative model name to use when testing model override.
+
+        Should return a valid model name that differs from the default model.
+        Required if `supports_model_override` is `True`.
+
+        ```python
+        @property
+        def model_override_value(self) -> str:
+            return "gpt-4o-mini"  # e.g. if default is "gpt-4o"
+        ```
+
     ??? info "`enable_vcr_tests`"
 
         Property controlling whether to enable select tests that rely on
@@ -729,9 +759,7 @@ class ChatModelUnitTests(ChatModelTests):
 
             ```python title="tests/conftest.py"
             import pytest
-            from langchain_tests.conftest import (
-                _base_vcr_config as _base_vcr_config,
-            )
+            from langchain_tests.conftest import base_vcr_config
 
             _EXTRA_HEADERS = [
                 # Specify additional headers to redact
@@ -746,9 +774,9 @@ class ChatModelUnitTests(ChatModelTests):
 
 
             @pytest.fixture(scope="session")
-            def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
+            def vcr_config() -> dict:
                 """Extend the default configuration from langchain_tests."""
-                config = _base_vcr_config.copy()
+                config = base_vcr_config()
                 config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
                 config["before_record_response"] = remove_response_headers
 
@@ -768,9 +796,7 @@ class ChatModelUnitTests(ChatModelTests):
                     CustomPersister,
                     CustomSerializer,
                 )
-                from langchain_tests.conftest import (
-                    _base_vcr_config as _base_vcr_config,
-                )
+                from langchain_tests.conftest import base_vcr_config
                 from vcr import VCR
 
                 _EXTRA_HEADERS = [
@@ -786,9 +812,9 @@ class ChatModelUnitTests(ChatModelTests):
 
 
                 @pytest.fixture(scope="session")
-                def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
+                def vcr_config() -> dict:
                     """Extend the default configuration from langchain_tests."""
-                    config = _base_vcr_config.copy()
+                    config = base_vcr_config()
                     config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
                     config["before_record_response"] = remove_response_headers
                     # New: enable serializer and set file extension
@@ -876,14 +902,16 @@ class ChatModelUnitTests(ChatModelTests):
     '''  # noqa: E501,D214
 
     @property
-    def standard_chat_model_params(self) -> dict:
+    def standard_chat_model_params(self) -> dict[str, Any]:
         """Standard chat model parameters."""
         params = super().standard_chat_model_params
         params["api_key"] = "test"
         return params
 
     @property
-    def init_from_env_params(self) -> tuple[dict, dict, dict]:
+    def init_from_env_params(
+        self,
+    ) -> tuple[dict[str, str], dict[str, Any], dict[str, Any]]:
         """Init from env params.
 
         Environment variables, additional initialization args, and expected instance
@@ -1098,7 +1126,10 @@ class ChatModelUnitTests(ChatModelTests):
                 assert (
                     model.dict()
                     == load(
-                        dumpd(model), valid_namespaces=model.get_lc_namespace()[:1]
+                        dumpd(model),
+                        valid_namespaces=model.get_lc_namespace()[:1],
+                        allowed_objects="all",
+                        secrets_from_env=True,
                     ).dict()
                 )
 

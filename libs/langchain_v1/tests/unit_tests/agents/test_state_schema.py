@@ -8,14 +8,15 @@ from __future__ import annotations
 
 from typing import Any
 
-import pytest
-
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.types import AgentMiddleware, AgentState
-from langchain.tools import ToolRuntime
+
+# Cannot move ToolRuntime to TYPE_CHECKING as parameters of @tool annotated functions
+# are inspected at runtime.
+from langchain.tools import ToolRuntime  # noqa: TC001
 
 from .model import FakeToolCallingModel
 
@@ -181,7 +182,10 @@ async def test_state_schema_async() -> None:
     )
 
     result = await agent.ainvoke(
-        {"messages": [HumanMessage("Test async")], "async_field": "async_value"}
+        {
+            "messages": [HumanMessage("Test async")],
+            "async_field": "async_value",
+        }
     )
 
     assert result["async_field"] == "async_value"

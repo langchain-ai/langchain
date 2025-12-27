@@ -12,7 +12,6 @@ from typing import (
     TypeVar,
     cast,
 )
-from uuid import UUID
 
 from typing_extensions import NotRequired, override
 
@@ -42,11 +41,12 @@ from langchain_core.tracers.log_stream import (
     _astream_log_implementation,
 )
 from langchain_core.tracers.memory_stream import _MemoryStream
-from langchain_core.utils.aiter import aclosing, py_anext
+from langchain_core.utils.aiter import aclosing
 from langchain_core.utils.uuid import uuid7
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
+    from uuid import UUID
 
     from langchain_core.documents import Document
     from langchain_core.runnables import Runnable, RunnableConfig
@@ -81,9 +81,9 @@ def _assign_name(name: str | None, serialized: dict[str, Any] | None) -> str:
         return name
     if serialized is not None:
         if "name" in serialized:
-            return serialized["name"]
+            return cast("str", serialized["name"])
         if "id" in serialized:
-            return serialized["id"][-1]
+            return cast("str", serialized["id"][-1])
     return "Unnamed"
 
 
@@ -189,7 +189,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         # atomic check and set
         tap = self.is_tapped.setdefault(run_id, sentinel)
         # wait for first chunk
-        first = await py_anext(output, default=sentinel)
+        first = await anext(output, sentinel)
         if first is sentinel:
             return
         # get run info
@@ -426,6 +426,10 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Run on new output token. Only available when streaming is enabled.
 
         For both chat models and non-chat models (legacy LLMs).
+
+        Raises:
+            ValueError: If the run type is not `llm` or `chat_model`.
+            AssertionError: If the run ID is not found in the run map.
         """
         run_info = self.run_map.get(run_id)
         chunk_: GenerationChunk | BaseMessageChunk
@@ -707,11 +711,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
     @override
     async def on_tool_end(self, output: Any, *, run_id: UUID, **kwargs: Any) -> None:
-        """End a trace for a tool run.
-
-        Raises:
-            AssertionError: If the run ID is a tool call and does not have inputs
-        """
+        """End a trace for a tool run."""
         run_info, inputs = self._get_tool_run_info_with_inputs(run_id)
 
         self._send(
