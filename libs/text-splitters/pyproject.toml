@@ -9,10 +9,10 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.0.0"
+version = "1.1.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0,<2.0.0",
+    "langchain-core>=1.2.0,<2.0.0",
 ]
 
 [project.urls]
@@ -86,13 +86,8 @@ ignore = [
     "COM812",  # Messes with the formatter
     "CPY",     # No copyright
     "FIX002",  # Line contains TODO
-    "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
     "PLR09",   # Too many something (arg, statements, etc)
-    "RUF012",  # Doesn't play well with Pydantic
-    "TC001",   # Doesn't play well with Pydantic
-    "TC002",   # Doesn't play well with Pydantic
-    "TC003",   # Doesn't play well with Pydantic
     "TD002",   # Missing author in TODO
     "TD003",   # Missing issue link in TODO
 ]

@@ -85,7 +85,7 @@ def l_sa_check(
         # If all the characters since the last newline are spaces
         # Then the next tag could be a standalone
         # Otherwise it can't be
-        return padding.isspace() or padding == ""
+        return padding.isspace() or not padding
     return False
 
 
@@ -305,7 +305,7 @@ def tokenize(
 
         # Start yielding
         # Ignore literals that are empty
-        if literal != "":
+        if literal:
             yield ("literal", literal)
 
         # Ignore comments and set delimiters

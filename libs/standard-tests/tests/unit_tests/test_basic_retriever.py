@@ -21,7 +21,7 @@ class TestParrotRetrieverIntegration(RetrieversIntegrationTests):
         return ParrotRetriever
 
     @property
-    def retriever_constructor_params(self) -> dict:
+    def retriever_constructor_params(self) -> dict[str, Any]:
         return {"parrot_name": "Polly"}
 
     @property

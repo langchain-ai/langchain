@@ -189,7 +189,7 @@ class ContextEditingMiddleware(AgentMiddleware):
     configured thresholds.
 
     Currently the `ClearToolUsesEdit` strategy is supported, aligning with Anthropic's
-    `clear_tool_uses_20250919` behavior [(read more)](https://docs.claude.com/en/docs/agents-and-tools/tool-use/memory-tool).
+    `clear_tool_uses_20250919` behavior [(read more)](https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool).
     """
 
     edits: list[ContextEdit]
@@ -228,6 +228,7 @@ class ContextEditingMiddleware(AgentMiddleware):
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return count_tokens_approximately(messages)
+
         else:
             system_msg = [request.system_message] if request.system_message else []
 
@@ -255,6 +256,7 @@ class ContextEditingMiddleware(AgentMiddleware):
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return count_tokens_approximately(messages)
+
         else:
             system_msg = [request.system_message] if request.system_message else []
 

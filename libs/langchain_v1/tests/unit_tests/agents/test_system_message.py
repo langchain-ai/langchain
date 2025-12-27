@@ -21,9 +21,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langgraph.runtime import Runtime
 
 from langchain.agents.factory import create_agent
-from langchain.agents.middleware.types import ModelRequest, ModelResponse
-
-from .model import FakeToolCallingModel
+from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
 
 
 def _fake_runtime(context: dict | None = None) -> Runtime:
@@ -34,8 +32,8 @@ def _fake_runtime(context: dict | None = None) -> Runtime:
             def __init__(self):
                 self.context = type("Context", (), context)()
 
-        return cast(Runtime, FakeRuntime())
-    return cast(Runtime, object())
+        return cast("Runtime", FakeRuntime())
+    return cast("Runtime", object())
 
 
 def _make_request(
@@ -67,7 +65,7 @@ class TestModelRequestSystemMessage:
     """Test ModelRequest with system_message field."""
 
     @pytest.mark.parametrize(
-        "system_message,system_prompt,expected_msg,expected_prompt",
+        ("system_message", "system_prompt", "expected_msg", "expected_prompt"),
         [
             # Test with SystemMessage
             (
@@ -126,7 +124,7 @@ class TestModelRequestSystemMessage:
         assert "Part 1" in request.system_prompt
 
     @pytest.mark.parametrize(
-        "override_with,expected_text",
+        ("override_with", "expected_text"),
         [
             ("system_message", "New"),
             ("system_prompt", "New prompt"),
@@ -186,8 +184,8 @@ class TestModelRequestSystemMessage:
         """Test that setting both system_prompt and system_message raises error."""
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
 
-        with pytest.raises(ValueError, match="Cannot specify both"):
-            if use_constructor:
+        if use_constructor:
+            with pytest.raises(ValueError, match="Cannot specify both"):
                 ModelRequest(
                     model=model,
                     system_prompt="String prompt",
@@ -199,24 +197,25 @@ class TestModelRequestSystemMessage:
                     state={},
                     runtime=None,
                 )
-            else:
-                request = ModelRequest(
-                    model=model,
-                    system_message=None,
-                    messages=[],
-                    tool_choice=None,
-                    tools=[],
-                    response_format=None,
-                    state={},
-                    runtime=None,
-                )
+        else:
+            request = ModelRequest(
+                model=model,
+                system_message=None,
+                messages=[],
+                tool_choice=None,
+                tools=[],
+                response_format=None,
+                state={},
+                runtime=None,
+            )
+            with pytest.raises(ValueError, match="Cannot specify both"):
                 request.override(
                     system_prompt="String prompt",
                     system_message=SystemMessage(content="Message prompt"),
                 )
 
     @pytest.mark.parametrize(
-        "new_value,should_be_none",
+        ("new_value", "should_be_none"),
         [
             ("New prompt", False),
             (None, True),
@@ -439,7 +438,7 @@ class TestSystemMessageUpdateViaMiddleware:
         append_with_metadata_middleware(request, mock_handler)
 
         assert captured_request is not None
-        assert "Base prompt Additional instructions." == captured_request.system_message.text
+        assert captured_request.system_message.text == "Base prompt Additional instructions."
         assert captured_request.system_message.additional_kwargs["base"] == "value"
         assert captured_request.system_message.additional_kwargs["middleware"] == "applied"
 
@@ -544,7 +543,7 @@ class TestMultipleMiddlewareChaining:
         )
 
         def final_handler(req: ModelRequest) -> ModelResponse:
-            assert "String prompt + SystemMessage" == req.system_message.text
+            assert req.system_message.text == "String prompt + SystemMessage"
             assert req.system_message.additional_kwargs["metadata"] == "added"
             return ModelResponse(result=[AIMessage(content="response")])
 
@@ -619,7 +618,7 @@ class TestCacheControlPreservation:
         def second_middleware_appends(request: ModelRequest, handler) -> ModelResponse:
             """Append to system message while preserving cache control."""
             existing_content = request.system_message.content_blocks
-            new_content = existing_content + [{"type": "text", "text": "Additional text"}]
+            new_content = [*existing_content, {"type": "text", "text": "Additional text"}]
 
             new_message = SystemMessage(content=new_content)
             new_request = request.override(system_message=new_message)
@@ -653,7 +652,7 @@ class TestMetadataMerging:
     """Test metadata merging behavior when updating system messages."""
 
     @pytest.mark.parametrize(
-        "metadata_type,initial_metadata,update_metadata,expected_result",
+        ("metadata_type", "initial_metadata", "update_metadata", "expected_result"),
         [
             # additional_kwargs merging
             (
@@ -923,9 +922,8 @@ class TestSystemMessageMiddlewareIntegration:
             if request.system_message:
                 new_message = SystemMessage(content=request.system_message.text + " [modified]")
                 return request.override(system_message=new_message)
-            else:
-                new_message = SystemMessage(content="[created]")
-                return request.override(system_message=new_message)
+            new_message = SystemMessage(content="[created]")
+            return request.override(system_message=new_message)
 
         if isinstance(initial_value, SystemMessage):
             request = _make_request(system_message=initial_value)
@@ -951,7 +949,7 @@ class TestEdgeCasesAndErrorHandling:
     """Test edge cases and error handling for system messages."""
 
     @pytest.mark.parametrize(
-        "content,expected_blocks,expected_prompt",
+        ("content", "expected_blocks", "expected_prompt"),
         [
             ("", 0, ""),
             (

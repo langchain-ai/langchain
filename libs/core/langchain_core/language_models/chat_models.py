@@ -341,6 +341,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     """Profile detailing model capabilities.
 
     !!! warning "Beta feature"
+
         This is a beta feature. The format of model profiles is subject to change.
 
     If not specified, automatically loaded from the provider package on initialization
@@ -358,7 +359,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     @cached_property
     def _serialized(self) -> dict[str, Any]:
-        return dumpd(self)
+        # self is always a Serializable object in this case, thus the result is
+        # guaranteed to be a dict since dumps uses the default callback, which uses
+        # obj.to_json which always returns TypedDict subclasses
+        return cast("dict[str, Any]", dumpd(self))
 
     # --- Runnable methods ---
 
@@ -461,7 +465,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         # Check if a runtime streaming flag has been passed in.
         if "stream" in kwargs:
-            return kwargs["stream"]
+            return bool(kwargs["stream"])
 
         if "streaming" in self.model_fields_set:
             streaming_value = getattr(self, "streaming", None)
@@ -547,7 +551,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                         ):
                             if block["type"] != index_type:
                                 index_type = block["type"]
-                                index = index + 1
+                                index += 1
                             if "index" not in block:
                                 block["index"] = index
                     run_manager.on_llm_new_token(
@@ -679,7 +683,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     ):
                         if block["type"] != index_type:
                             index_type = block["type"]
-                            index = index + 1
+                            index += 1
                         if "index" not in block:
                             block["index"] = index
                 await run_manager.on_llm_new_token(
@@ -730,7 +734,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     # --- Custom methods ---
 
-    def _combine_llm_outputs(self, llm_outputs: list[dict | None]) -> dict:  # noqa: ARG002
+    def _combine_llm_outputs(self, _llm_outputs: list[dict | None], /) -> dict:
         return {}
 
     def _convert_cached_generations(self, cache_val: list) -> list[ChatGeneration]:
@@ -1187,7 +1191,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     ):
                         if block["type"] != index_type:
                             index_type = block["type"]
-                            index = index + 1
+                            index += 1
                         if "index" not in block:
                             block["index"] = index
                 if run_manager:
@@ -1305,7 +1309,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     ):
                         if block["type"] != index_type:
                             index_type = block["type"]
-                            index = index + 1
+                            index += 1
                         if "index" not in block:
                             block["index"] = index
                 if run_manager:
@@ -1578,86 +1582,86 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     depends on the `schema` as described above.
                 - `'parsing_error'`: `BaseException | None`
 
-        Example: Pydantic schema (`include_raw=False`):
+        ???+ example "Pydantic schema (`include_raw=False`)"
 
-        ```python
-        from pydantic import BaseModel
-
-
-        class AnswerWithJustification(BaseModel):
-            '''An answer to the user question along with justification for the answer.'''
-
-            answer: str
-            justification: str
+            ```python
+            from pydantic import BaseModel
 
 
-        model = ChatModel(model="model-name", temperature=0)
-        structured_model = model.with_structured_output(AnswerWithJustification)
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
 
-        structured_model.invoke(
-            "What weighs more a pound of bricks or a pound of feathers"
-        )
-
-        # -> AnswerWithJustification(
-        #     answer='They weigh the same',
-        #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
-        # )
-        ```
-
-        Example: Pydantic schema (`include_raw=True`):
-
-        ```python
-        from pydantic import BaseModel
+                answer: str
+                justification: str
 
 
-        class AnswerWithJustification(BaseModel):
-            '''An answer to the user question along with justification for the answer.'''
+            model = ChatModel(model="model-name", temperature=0)
+            structured_model = model.with_structured_output(AnswerWithJustification)
 
-            answer: str
-            justification: str
+            structured_model.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
 
+            # -> AnswerWithJustification(
+            #     answer='They weigh the same',
+            #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+            # )
+            ```
 
-        model = ChatModel(model="model-name", temperature=0)
-        structured_model = model.with_structured_output(
-            AnswerWithJustification, include_raw=True
-        )
+        ??? example "Pydantic schema (`include_raw=True`)"
 
-        structured_model.invoke(
-            "What weighs more a pound of bricks or a pound of feathers"
-        )
-        # -> {
-        #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
-        #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
-        #     'parsing_error': None
-        # }
-        ```
-
-        Example: `dict` schema (`include_raw=False`):
-
-        ```python
-        from pydantic import BaseModel
-        from langchain_core.utils.function_calling import convert_to_openai_tool
+            ```python
+            from pydantic import BaseModel
 
 
-        class AnswerWithJustification(BaseModel):
-            '''An answer to the user question along with justification for the answer.'''
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
 
-            answer: str
-            justification: str
+                answer: str
+                justification: str
 
 
-        dict_schema = convert_to_openai_tool(AnswerWithJustification)
-        model = ChatModel(model="model-name", temperature=0)
-        structured_model = model.with_structured_output(dict_schema)
+            model = ChatModel(model="model-name", temperature=0)
+            structured_model = model.with_structured_output(
+                AnswerWithJustification, include_raw=True
+            )
 
-        structured_model.invoke(
-            "What weighs more a pound of bricks or a pound of feathers"
-        )
-        # -> {
-        #     'answer': 'They weigh the same',
-        #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
-        # }
-        ```
+            structured_model.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+            # -> {
+            #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
+            #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
+            #     'parsing_error': None
+            # }
+            ```
+
+        ??? example "Dictionary schema (`include_raw=False`)"
+
+            ```python
+            from pydantic import BaseModel
+            from langchain_core.utils.function_calling import convert_to_openai_tool
+
+
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
+
+                answer: str
+                justification: str
+
+
+            dict_schema = convert_to_openai_tool(AnswerWithJustification)
+            model = ChatModel(model="model-name", temperature=0)
+            structured_model = model.with_structured_output(dict_schema)
+
+            structured_model.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+            # -> {
+            #     'answer': 'They weigh the same',
+            #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+            # }
+            ```
 
         !!! warning "Behavior changed in `langchain-core` 0.2.26"
 
