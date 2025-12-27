@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 
 
 def _call(cls: type[BaseChatModel], **kwargs: Any) -> BaseChatModel:
+    # TODO: replace with operator.call when lower bounding to Python 3.11
     return cls(**kwargs)
 
 
