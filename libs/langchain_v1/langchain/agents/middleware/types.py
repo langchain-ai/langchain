@@ -19,6 +19,8 @@ from typing import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
+    from langgraph.types import Command
+
 # Needed as top level import for Pydantic schema generation on AgentState
 import warnings
 from typing import TypeAlias
@@ -33,7 +35,6 @@ from langchain_core.messages import (
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
-from langgraph.types import Command
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
