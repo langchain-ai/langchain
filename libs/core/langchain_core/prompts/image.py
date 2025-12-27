@@ -1,6 +1,6 @@
 """Image prompt template for a multimodal model."""
 
-from typing import Any
+from typing import Any, Literal, cast
 
 from pydantic import Field
 
@@ -125,7 +125,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         output: ImageURL = {"url": url}
         if detail:
             # Don't check literal values here: let the API check them
-            output["detail"] = detail
+            output["detail"] = cast("Literal['auto', 'low', 'high']", detail)
         return output
 
     async def aformat(self, **kwargs: Any) -> ImageURL:
