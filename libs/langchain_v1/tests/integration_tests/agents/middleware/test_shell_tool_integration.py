@@ -19,7 +19,7 @@ def _get_model(provider: str) -> Any:
     if provider == "anthropic":
         from langchain_anthropic import ChatAnthropic
 
-        return ChatAnthropic(model="claude-sonnet-4-5-20250929")
+        return ChatAnthropic(model="claude-sonnet-4-5-20250929")  # type: ignore[call-arg]
     if provider == "openai":
         from langchain_openai import ChatOpenAI
 
