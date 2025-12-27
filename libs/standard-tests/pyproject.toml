@@ -49,6 +49,7 @@ typing = [
 langchain-core = { path = "../core", editable = true }
 
 [tool.mypy]
+# See ../shared/mypy.ini for base config
 plugins = ["pydantic.mypy"]
 strict = true
 enable_error_code = "deprecated"
@@ -59,6 +60,7 @@ module = ["vcr.*",]
 ignore_missing_imports = true
 
 [tool.ruff.format]
+# See ../shared/ruff.toml for base config
 docstring-code-format = true
 
 [tool.ruff.lint]

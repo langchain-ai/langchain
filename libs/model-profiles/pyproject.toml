@@ -61,6 +61,7 @@ langchain-core = { path = "../core", editable = true }
 langchain = { path = "../langchain_v1", editable = true }
 
 [tool.ruff.format]
+# See ../shared/ruff.toml for base config
 docstring-code-format = true
 
 [tool.ruff.lint]

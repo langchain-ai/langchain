@@ -67,6 +67,7 @@ langchain-core = { path = "../core", editable = true }
 en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
 
 [tool.mypy]
+# See ../shared/mypy.ini for base config
 plugins = ["pydantic.mypy"]
 strict = true
 enable_error_code = "deprecated"
@@ -77,6 +78,7 @@ module = ["konlpy", "nltk",]
 ignore_missing_imports = true
 
 [tool.ruff.format]
+# See ../shared/ruff.toml for base config
 docstring-code-format = true
 
 [tool.ruff.lint]

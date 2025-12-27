@@ -53,6 +53,7 @@ langchain-core = { path = "../core", editable = true }
 langchain-classic = { path = "../langchain", editable = true }
 
 [tool.ruff.format]
+# See ../shared/ruff.toml for base config
 docstring-code-format = true
 
 [tool.ruff.lint]
@@ -96,6 +97,7 @@ markers = [
 ]
 
 [tool.mypy]
+# See ../shared/mypy.ini for base config
 plugins = ["pydantic.mypy"]
 strict = true
 enable_error_code = "deprecated"

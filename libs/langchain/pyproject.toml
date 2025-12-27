@@ -126,6 +126,7 @@ langchain-openai = { path = "../partners/openai", editable = true }
 exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]
 
 [tool.mypy]
+# See ../shared/mypy.ini for base config
 plugins = ["pydantic.mypy"]
 strict = true
 ignore_missing_imports = true
@@ -137,6 +138,7 @@ disallow_any_generics = false
 warn_return_any = false
 
 [tool.ruff.format]
+# See ../shared/ruff.toml for base config
 docstring-code-format = true
 
 [tool.ruff.lint]

@@ -70,6 +70,7 @@ langchain-text-splitters = { path = "../text-splitters" }
 
 
 [tool.mypy]
+# See ../shared/mypy.ini for base config
 plugins = ["pydantic.mypy"]
 strict = true
 enable_error_code = "deprecated"
@@ -79,6 +80,7 @@ disallow_any_generics = false
 
 
 [tool.ruff.format]
+# See ../shared/ruff.toml for base config
 docstring-code-format = true
 
 [tool.ruff.lint]
