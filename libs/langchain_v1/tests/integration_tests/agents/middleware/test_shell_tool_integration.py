@@ -2,17 +2,21 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
-from langgraph.graph.state import CompiledStateGraph
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.shell_tool import ShellToolMiddleware
-from langchain.agents.middleware.types import _InputAgentState
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from langgraph.graph.state import CompiledStateGraph
+
+    from langchain.agents.middleware.types import _InputAgentState
 
 
 def _get_model(provider: str) -> Any:
