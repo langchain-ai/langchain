@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import uuid
-from collections.abc import Callable
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -20,7 +19,7 @@ from langchain_core.vectorstores.utils import _cosine_similarity as cosine_simil
 from langchain_core.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Callable, Iterator, Sequence
 
     from langchain_core.embeddings import Embeddings
 
@@ -529,7 +528,7 @@ class InMemoryVectorStore(VectorStore):
         """
         path_: Path = Path(path)
         with path_.open("r", encoding="utf-8") as f:
-            store = load(json.load(f))
+            store = load(json.load(f), allowed_objects=[Document])
         vectorstore = cls(embedding=embedding, **kwargs)
         vectorstore.store = store
         return vectorstore

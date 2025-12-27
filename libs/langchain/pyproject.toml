@@ -9,11 +9,11 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.0.0"
+version = "1.0.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0,<2.0.0",
-    "langchain-text-splitters>=1.0.0,<2.0.0",
+    "langchain-core>=1.2.5,<2.0.0",
+    "langchain-text-splitters>=1.1.0,<2.0.0",
     "langsmith>=0.1.17,<1.0.0",
     "pydantic>=2.7.4,<3.0.0",
     "SQLAlchemy>=1.4.0,<3.0.0",
@@ -70,7 +70,6 @@ test = [
     "pandas>=2.0.0,<3.0.0",
     "syrupy>=4.0.2,<5.0.0",
     "requests-mock>=1.11.0,<2.0.0",
-    "blockbuster>=1.5.18,<1.6.0",
     "toml>=0.10.2,<1.0.0",
     "packaging>=24.2.0,<26.0.0",
     "langchain-tests",

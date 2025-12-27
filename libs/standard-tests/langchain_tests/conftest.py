@@ -3,15 +3,18 @@
 from __future__ import annotations
 
 import gzip
-from os import PathLike
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 import yaml
+from langchain_core._api.deprecation import deprecated
 from vcr import VCR
 from vcr.persisters.filesystem import CassetteNotFoundError
 from vcr.request import Request
+
+if TYPE_CHECKING:
+    from os import PathLike
 
 
 class CustomSerializer:
@@ -26,7 +29,7 @@ class CustomSerializer:
     """
 
     @staticmethod
-    def serialize(cassette_dict: dict) -> bytes:
+    def serialize(cassette_dict: dict[str, Any]) -> bytes:
         """Convert cassette to YAML and compress it."""
         cassette_dict["requests"] = [
             {
@@ -41,7 +44,7 @@ class CustomSerializer:
         return gzip.compress(yml.encode("utf-8"))
 
     @staticmethod
-    def deserialize(data: bytes) -> dict:
+    def deserialize(data: bytes) -> dict[str, Any]:
         """Decompress data and convert it from YAML."""
         decoded_yaml = gzip.decompress(data).decode("utf-8")
         cassette = cast("dict[str, Any]", yaml.safe_load(decoded_yaml))
@@ -57,7 +60,7 @@ class CustomPersister:
         cls,
         cassette_path: str | PathLike[str],
         serializer: CustomSerializer,
-    ) -> tuple[dict, dict]:
+    ) -> tuple[list[Any], list[Any]]:
         """Load a cassette from a file."""
         # If cassette path is already Path this is a no-op
         cassette_path = Path(cassette_path)
@@ -72,7 +75,7 @@ class CustomPersister:
     @staticmethod
     def save_cassette(
         cassette_path: str | PathLike[str],
-        cassette_dict: dict,
+        cassette_dict: dict[str, Any],
         serializer: CustomSerializer,
     ) -> None:
         """Save a cassette to a file."""
@@ -96,8 +99,7 @@ _BASE_FILTER_HEADERS = [
 ]
 
 
-@pytest.fixture(scope="session")
-def _base_vcr_config() -> dict:
+def base_vcr_config() -> dict[str, Any]:
     """Return VCR configuration that every cassette will receive.
 
     (Anything permitted by `vcr.VCR(**kwargs)` can be put here.)
@@ -114,6 +116,12 @@ def _base_vcr_config() -> dict:
 
 
 @pytest.fixture(scope="session")
-def vcr_config(_base_vcr_config: dict) -> dict:
+@deprecated("1.0.3", alternative="base_vcr_config", removal="2.0")
+def _base_vcr_config() -> dict[str, Any]:
+    return base_vcr_config()
+
+
+@pytest.fixture(scope="session")
+def vcr_config() -> dict[str, Any]:
     """VCR config fixture."""
-    return _base_vcr_config
+    return base_vcr_config()

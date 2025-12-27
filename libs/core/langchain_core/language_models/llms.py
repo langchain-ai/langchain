@@ -61,6 +61,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_background_tasks: set[asyncio.Task] = set()
+
 
 @functools.lru_cache
 def _log_error_once(msg: str) -> None:
@@ -100,9 +102,9 @@ def create_base_retry_decorator(
                         asyncio.run(coro)
                     else:
                         if loop.is_running():
-                            # TODO: Fix RUF006 - this task should have a reference
-                            #  and be awaited somewhere
-                            loop.create_task(coro)  # noqa: RUF006
+                            task = loop.create_task(coro)
+                            _background_tasks.add(task)
+                            task.add_done_callback(_background_tasks.discard)
                         else:
                             asyncio.run(coro)
                 except Exception as e:
@@ -299,7 +301,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     @functools.cached_property
     def _serialized(self) -> dict[str, Any]:
-        return dumpd(self)
+        # self is always a Serializable object in this case, thus the result is
+        # guaranteed to be a dict since dumps uses the default callback, which uses
+        # obj.to_json which always returns TypedDict subclasses
+        return cast("dict[str, Any]", dumpd(self))
 
     # --- Runnable methods ---
 

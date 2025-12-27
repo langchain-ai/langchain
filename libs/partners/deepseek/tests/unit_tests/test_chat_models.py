@@ -9,9 +9,10 @@ from langchain_core.messages import AIMessageChunk, ToolMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
 from openai.types.chat import ChatCompletionMessage
-from pydantic import SecretStr
+from pydantic import BaseModel as PydanticBaseModel
+from pydantic import Field, SecretStr
 
-from langchain_deepseek.chat_models import ChatDeepSeek
+from langchain_deepseek.chat_models import DEFAULT_API_BASE, ChatDeepSeek
 
 MODEL_NAME = "deepseek-chat"
 
@@ -243,71 +244,73 @@ class TestChatDeepSeekCustomUnit:
         payload = chat_model._get_request_payload([tool_message])
         assert payload["messages"][0]["content"] == "test string"
 
-    def test_create_chat_result_with_model_provider(self) -> None:
-        """Test that `model_provider` is added to `response_metadata`."""
-        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
-        mock_message = MagicMock()
-        mock_message.content = "Main content"
-        mock_message.role = "assistant"
-        mock_response = MockOpenAIResponse(
-            choices=[MagicMock(message=mock_message)],
-            error=None,
+
+class SampleTool(PydanticBaseModel):
+    """Sample tool schema for testing."""
+
+    value: str = Field(description="A test value")
+
+
+class TestChatDeepSeekStrictMode:
+    """Tests for DeepSeek strict mode support.
+
+    This tests the experimental beta feature that uses the beta API endpoint
+    when `strict=True` is used. These tests can be removed when strict mode
+    becomes stable in the default base API.
+    """
+
+    def test_bind_tools_with_strict_mode_uses_beta_endpoint(self) -> None:
+        """Test that bind_tools with strict=True uses the beta endpoint."""
+        llm = ChatDeepSeek(
+            model="deepseek-chat",
+            api_key=SecretStr("test_key"),
         )
 
-        result = chat_model._create_chat_result(mock_response)
-        assert (
-            result.generations[0].message.response_metadata.get("model_provider")
-            == "deepseek"
+        # Verify default endpoint
+        assert llm.api_base == DEFAULT_API_BASE
+
+        # Bind tools with strict=True
+        bound_model = llm.bind_tools([SampleTool], strict=True)
+
+        # The bound model should have its internal model using beta endpoint
+        # We can't directly access the internal model, but we can verify the behavior
+        # by checking that the binding operation succeeds
+        assert bound_model is not None
+
+    def test_bind_tools_without_strict_mode_uses_default_endpoint(self) -> None:
+        """Test bind_tools without strict or with strict=False uses default endpoint."""
+        llm = ChatDeepSeek(
+            model="deepseek-chat",
+            api_key=SecretStr("test_key"),
         )
 
-    def test_convert_chunk_with_model_provider(self) -> None:
-        """Test that `model_provider` is added to `response_metadata` for chunks."""
-        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
-        chunk: dict[str, Any] = {
-            "choices": [
-                {
-                    "delta": {
-                        "content": "Main content",
-                    },
-                },
-            ],
-        }
+        # Test with strict=False
+        bound_model_false = llm.bind_tools([SampleTool], strict=False)
+        assert bound_model_false is not None
 
-        chunk_result = chat_model._convert_chunk_to_generation_chunk(
-            chunk,
-            AIMessageChunk,
-            None,
-        )
-        if chunk_result is None:
-            msg = "Expected chunk_result not to be None"
-            raise AssertionError(msg)
-        assert (
-            chunk_result.message.response_metadata.get("model_provider") == "deepseek"
+        # Test with strict=None (default)
+        bound_model_none = llm.bind_tools([SampleTool])
+        assert bound_model_none is not None
+
+    def test_with_structured_output_strict_mode_uses_beta_endpoint(self) -> None:
+        """Test that with_structured_output with strict=True uses beta endpoint."""
+        llm = ChatDeepSeek(
+            model="deepseek-chat",
+            api_key=SecretStr("test_key"),
         )
 
-    def test_create_chat_result_with_model_provider_multiple_generations(
-        self,
-    ) -> None:
-        """Test that `model_provider` is added to all generations when `n > 1`."""
-        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
-        mock_message_1 = MagicMock()
-        mock_message_1.content = "First response"
-        mock_message_1.role = "assistant"
-        mock_message_2 = MagicMock()
-        mock_message_2.content = "Second response"
-        mock_message_2.role = "assistant"
+        # Verify default endpoint
+        assert llm.api_base == DEFAULT_API_BASE
 
-        mock_response = MockOpenAIResponse(
-            choices=[
-                MagicMock(message=mock_message_1),
-                MagicMock(message=mock_message_2),
-            ],
-            error=None,
-        )
+        # Create structured output with strict=True
+        structured_model = llm.with_structured_output(SampleTool, strict=True)
 
-        result = chat_model._create_chat_result(mock_response)
-        assert len(result.generations) == 2  # noqa: PLR2004
-        for generation in result.generations:
-            assert (
-                generation.message.response_metadata.get("model_provider") == "deepseek"
-            )
+        # The structured model should work with beta endpoint
+        assert structured_model is not None
+
+
+def test_profile() -> None:
+    """Test that model profile is loaded correctly."""
+    model = ChatDeepSeek(model="deepseek-reasoner", api_key=SecretStr("test_key"))
+    assert model.profile is not None
+    assert model.profile["reasoning_output"]

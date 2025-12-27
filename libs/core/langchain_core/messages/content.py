@@ -504,7 +504,7 @@ class ImageContentBlock(TypedDict):
     """Image data.
 
     !!! note "Factory function"
-        `create_image_block` may also be used as a factory to create a
+        `create_image_block` may also be used as a factory to create an
         `ImageContentBlock`. Benefits include:
 
         * Automatic ID generation (when not provided)
@@ -654,7 +654,7 @@ class PlainTextContentBlock(TypedDict):
 
     !!! note
         Title and context are optional fields that may be passed to the model. See
-        Anthropic [example](https://docs.claude.com/en/docs/build-with-claude/citations#citable-vs-non-citable-content).
+        Anthropic [example](https://platform.claude.com/docs/en/build-with-claude/citations#citable-vs-non-citable-content).
 
     !!! note "Factory function"
         `create_plaintext_block` may also be used as a factory to create a

@@ -1,9 +1,8 @@
 """Planning and task management middleware for agents."""
-# ruff: noqa: E501
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Literal
+from typing import TYPE_CHECKING, Annotated, Literal, cast
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -99,7 +98,7 @@ It is important to skip using this tool when:
    - Use clear, descriptive task names
 
 Being proactive with task management demonstrates attentiveness and ensures you complete all requirements successfully
-Remember: If you only need to make a few tool calls to complete a task, and it is clear what you need to do, it is better to just do the task directly and NOT call this tool at all."""
+Remember: If you only need to make a few tool calls to complete a task, and it is clear what you need to do, it is better to just do the task directly and NOT call this tool at all."""  # noqa: E501
 
 WRITE_TODOS_SYSTEM_PROMPT = """## `write_todos`
 
@@ -113,7 +112,7 @@ Writing todos takes time and tokens, use it when it is helpful for managing comp
 
 ## Important To-Do List Usage Notes to Remember
 - The `write_todos` tool should never be called multiple times in parallel.
-- Don't be afraid to revise the To-Do list as you go. New information may reveal new tasks that need to be done, or old tasks that are irrelevant."""
+- Don't be afraid to revise the To-Do list as you go. New information may reveal new tasks that need to be done, or old tasks that are irrelevant."""  # noqa: E501
 
 
 @tool(description=WRITE_TODOS_TOOL_DESCRIPTION)
@@ -150,12 +149,6 @@ class TodoListMiddleware(AgentMiddleware):
 
         print(result["todos"])  # Array of todo items with status tracking
         ```
-
-    Args:
-        system_prompt: Custom system prompt to guide the agent on using the todo tool.
-            If not provided, uses the default `WRITE_TODOS_SYSTEM_PROMPT`.
-        tool_description: Custom description for the write_todos tool.
-            If not provided, uses the default `WRITE_TODOS_TOOL_DESCRIPTION`.
     """
 
     state_schema = PlanningState
@@ -166,11 +159,12 @@ class TodoListMiddleware(AgentMiddleware):
         system_prompt: str = WRITE_TODOS_SYSTEM_PROMPT,
         tool_description: str = WRITE_TODOS_TOOL_DESCRIPTION,
     ) -> None:
-        """Initialize the TodoListMiddleware with optional custom prompts.
+        """Initialize the `TodoListMiddleware` with optional custom prompts.
 
         Args:
-            system_prompt: Custom system prompt to guide the agent on using the todo tool.
-            tool_description: Custom description for the write_todos tool.
+            system_prompt: Custom system prompt to guide the agent on using the todo
+                tool.
+            tool_description: Custom description for the `write_todos` tool.
         """
         super().__init__()
         self.system_prompt = system_prompt
@@ -198,45 +192,33 @@ class TodoListMiddleware(AgentMiddleware):
         request: ModelRequest,
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
-        """Update the system prompt to include the todo system prompt."""
-        if request.system_prompt is None:
-            request.system_prompt = self.system_prompt
-        elif isinstance(request.system_prompt, str):
-            request.system_prompt = request.system_prompt + "\n\n" + self.system_prompt
-        elif isinstance(request.system_prompt, SystemMessage) and isinstance(
-            request.system_prompt.content, str
-        ):
-            request.system_prompt = SystemMessage(
-                content=request.system_prompt.content + self.system_prompt
-            )
-        elif isinstance(request.system_prompt, SystemMessage) and isinstance(
-            request.system_prompt.content, list
-        ):
-            request.system_prompt = SystemMessage(
-                content=[*request.system_prompt.content, self.system_prompt]
-            )
-        return handler(request)
+        """Update the system message to include the todo system prompt."""
+        if request.system_message is not None:
+            new_system_content = [
+                *request.system_message.content_blocks,
+                {"type": "text", "text": f"\n\n{self.system_prompt}"},
+            ]
+        else:
+            new_system_content = [{"type": "text", "text": self.system_prompt}]
+        new_system_message = SystemMessage(
+            content=cast("list[str | dict[str, str]]", new_system_content)
+        )
+        return handler(request.override(system_message=new_system_message))
 
     async def awrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
-        """Update the system prompt to include the todo system prompt (async version)."""
-        if request.system_prompt is None:
-            request.system_prompt = self.system_prompt
-        elif isinstance(request.system_prompt, str):
-            request.system_prompt = request.system_prompt + "\n\n" + self.system_prompt
-        elif isinstance(request.system_prompt, SystemMessage) and isinstance(
-            request.system_prompt.content, str
-        ):
-            request.system_prompt = SystemMessage(
-                content=request.system_prompt.content + self.system_prompt
-            )
-        elif isinstance(request.system_prompt, SystemMessage) and isinstance(
-            request.system_prompt.content, list
-        ):
-            request.system_prompt = SystemMessage(
-                content=[*request.system_prompt.content, self.system_prompt]
-            )
-        return await handler(request)
+        """Update the system message to include the todo system prompt (async version)."""
+        if request.system_message is not None:
+            new_system_content = [
+                *request.system_message.content_blocks,
+                {"type": "text", "text": f"\n\n{self.system_prompt}"},
+            ]
+        else:
+            new_system_content = [{"type": "text", "text": self.system_prompt}]
+        new_system_message = SystemMessage(
+            content=cast("list[str | dict[str, str]]", new_system_content)
+        )
+        return await handler(request.override(system_message=new_system_message))

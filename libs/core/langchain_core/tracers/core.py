@@ -15,12 +15,6 @@ from typing import (
 
 from langchain_core.exceptions import TracerException
 from langchain_core.load import dumpd
-from langchain_core.outputs import (
-    ChatGeneration,
-    ChatGenerationChunk,
-    GenerationChunk,
-    LLMResult,
-)
 from langchain_core.tracers.schemas import Run
 
 if TYPE_CHECKING:
@@ -31,6 +25,12 @@ if TYPE_CHECKING:
 
     from langchain_core.documents import Document
     from langchain_core.messages import BaseMessage
+    from langchain_core.outputs import (
+        ChatGeneration,
+        ChatGenerationChunk,
+        GenerationChunk,
+        LLMResult,
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -283,6 +283,16 @@ class _TracerCore(ABC):
                     )
         llm_run.end_time = datetime.now(timezone.utc)
         llm_run.events.append({"name": "end", "time": llm_run.end_time})
+
+        tool_call_count = 0
+        for generations in response.generations:
+            for generation in generations:
+                if hasattr(generation, "message"):
+                    msg = generation.message
+                    if hasattr(msg, "tool_calls") and msg.tool_calls:
+                        tool_call_count += len(msg.tool_calls)
+        if tool_call_count > 0:
+            llm_run.extra["tool_call_count"] = tool_call_count
 
         return llm_run
 

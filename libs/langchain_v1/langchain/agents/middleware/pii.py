@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Literal
 
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage
+from typing_extensions import override
 
 from langchain.agents.middleware._redaction import (
     PIIDetectionError,
@@ -27,24 +28,26 @@ if TYPE_CHECKING:
 
 
 class PIIMiddleware(AgentMiddleware):
-    """Detect and handle Personally Identifiable Information (PII) in agent conversations.
+    """Detect and handle Personally Identifiable Information (PII) in conversations.
 
     This middleware detects common PII types and applies configurable strategies
-    to handle them. It can detect emails, credit cards, IP addresses,
-    MAC addresses, and URLs in both user input and agent output.
+    to handle them. It can detect emails, credit cards, IP addresses, MAC addresses, and
+    URLs in both user input and agent output.
 
     Built-in PII types:
-        - `email`: Email addresses
-        - `credit_card`: Credit card numbers (validated with Luhn algorithm)
-        - `ip`: IP addresses (validated with stdlib)
-        - `mac_address`: MAC addresses
-        - `url`: URLs (both `http`/`https` and bare URLs)
+
+    - `email`: Email addresses
+    - `credit_card`: Credit card numbers (validated with Luhn algorithm)
+    - `ip`: IP addresses (validated with stdlib)
+    - `mac_address`: MAC addresses
+    - `url`: URLs (both `http`/`https` and bare URLs)
 
     Strategies:
-        - `block`: Raise an exception when PII is detected
-        - `redact`: Replace PII with `[REDACTED_TYPE]` placeholders
-        - `mask`: Partially mask PII (e.g., `****-****-****-1234` for credit card)
-        - `hash`: Replace PII with deterministic hash (e.g., `<email_hash:a1b2c3d4>`)
+
+    - `block`: Raise an exception when PII is detected
+    - `redact`: Replace PII with `[REDACTED_TYPE]` placeholders
+    - `mask`: Partially mask PII (e.g., `****-****-****-1234` for credit card)
+    - `hash`: Replace PII with deterministic hash (e.g., `<email_hash:a1b2c3d4>`)
 
     Strategy Selection Guide:
 
@@ -90,6 +93,8 @@ class PIIMiddleware(AgentMiddleware):
 
     def __init__(
         self,
+        # From a typing point of view, the literals are covered by 'str'.
+        # Nonetheless, we escape PYI051 to keep hints and autocompletion for the caller.
         pii_type: Literal["email", "credit_card", "ip", "mac_address", "url"] | str,  # noqa: PYI051
         *,
         strategy: Literal["block", "redact", "mask", "hash"] = "redact",
@@ -101,12 +106,15 @@ class PIIMiddleware(AgentMiddleware):
         """Initialize the PII detection middleware.
 
         Args:
-            pii_type: Type of PII to detect. Can be a built-in type
-                (`email`, `credit_card`, `ip`, `mac_address`, `url`)
-                or a custom type name.
-            strategy: How to handle detected PII:
+            pii_type: Type of PII to detect.
 
-                * `block`: Raise PIIDetectionError when PII is detected
+                Can be a built-in type (`email`, `credit_card`, `ip`, `mac_address`,
+                `url`) or a custom type name.
+            strategy: How to handle detected PII.
+
+                Options:
+
+                * `block`: Raise `PIIDetectionError` when PII is detected
                 * `redact`: Replace with `[REDACTED_TYPE]` placeholders
                 * `mask`: Partially mask PII (show last few characters)
                 * `hash`: Replace with deterministic hash (format: `<type_hash:digest>`)
@@ -114,16 +122,15 @@ class PIIMiddleware(AgentMiddleware):
             detector: Custom detector function or regex pattern.
 
                 * If `Callable`: Function that takes content string and returns
-                    list of PIIMatch objects
+                    list of `PIIMatch` objects
                 * If `str`: Regex pattern to match PII
-                * If `None`: Uses built-in detector for the pii_type
-
+                * If `None`: Uses built-in detector for the `pii_type`
             apply_to_input: Whether to check user messages before model call.
             apply_to_output: Whether to check AI messages after model call.
             apply_to_tool_results: Whether to check tool result messages after tool execution.
 
         Raises:
-            ValueError: If pii_type is not built-in and no detector is provided.
+            ValueError: If `pii_type` is not built-in and no detector is provided.
         """
         super().__init__()
 
@@ -154,10 +161,11 @@ class PIIMiddleware(AgentMiddleware):
         return sanitized, matches
 
     @hook_config(can_jump_to=["end"])
+    @override
     def before_model(
         self,
         state: AgentState,
-        runtime: Runtime,  # noqa: ARG002
+        runtime: Runtime,
     ) -> dict[str, Any] | None:
         """Check user messages and tool results for PII before model invocation.
 
@@ -166,10 +174,11 @@ class PIIMiddleware(AgentMiddleware):
             runtime: The langgraph runtime.
 
         Returns:
-            Updated state with PII handled according to strategy, or None if no PII detected.
+            Updated state with PII handled according to strategy, or `None` if no PII
+                detected.
 
         Raises:
-            PIIDetectionError: If PII is detected and strategy is "block".
+            PIIDetectionError: If PII is detected and strategy is `'block'`.
         """
         if not self.apply_to_input and not self.apply_to_tool_results:
             return None
@@ -247,10 +256,32 @@ class PIIMiddleware(AgentMiddleware):
 
         return None
 
+    @hook_config(can_jump_to=["end"])
+    async def abefore_model(
+        self,
+        state: AgentState,
+        runtime: Runtime,
+    ) -> dict[str, Any] | None:
+        """Async check user messages and tool results for PII before model invocation.
+
+        Args:
+            state: The current agent state.
+            runtime: The langgraph runtime.
+
+        Returns:
+            Updated state with PII handled according to strategy, or `None` if no PII
+                detected.
+
+        Raises:
+            PIIDetectionError: If PII is detected and strategy is `'block'`.
+        """
+        return self.before_model(state, runtime)
+
+    @override
     def after_model(
         self,
         state: AgentState,
-        runtime: Runtime,  # noqa: ARG002
+        runtime: Runtime,
     ) -> dict[str, Any] | None:
         """Check AI messages for PII after model invocation.
 
@@ -259,10 +290,11 @@ class PIIMiddleware(AgentMiddleware):
             runtime: The langgraph runtime.
 
         Returns:
-            Updated state with PII handled according to strategy, or None if no PII detected.
+            Updated state with PII handled according to strategy, or None if no PII
+                detected.
 
         Raises:
-            PIIDetectionError: If PII is detected and strategy is "block".
+            PIIDetectionError: If PII is detected and strategy is `'block'`.
         """
         if not self.apply_to_output:
             return None
@@ -304,6 +336,26 @@ class PIIMiddleware(AgentMiddleware):
         new_messages[last_ai_idx] = updated_message
 
         return {"messages": new_messages}
+
+    async def aafter_model(
+        self,
+        state: AgentState,
+        runtime: Runtime,
+    ) -> dict[str, Any] | None:
+        """Async check AI messages for PII after model invocation.
+
+        Args:
+            state: The current agent state.
+            runtime: The langgraph runtime.
+
+        Returns:
+            Updated state with PII handled according to strategy, or None if no PII
+                detected.
+
+        Raises:
+            PIIDetectionError: If PII is detected and strategy is `'block'`.
+        """
+        return self.after_model(state, runtime)
 
 
 __all__ = [

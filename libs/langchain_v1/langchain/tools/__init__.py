@@ -1,10 +1,4 @@
-"""Tools.
-
-!!! warning "Reference docs"
-    This page contains **reference documentation** for Tools. See
-    [the docs](https://docs.langchain.com/oss/python/langchain/tools) for conceptual
-    guides, tutorials, and examples on using Tools.
-"""
+"""Tools."""
 
 from langchain_core.tools import (
     BaseTool,
