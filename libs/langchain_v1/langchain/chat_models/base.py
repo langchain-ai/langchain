@@ -5,7 +5,6 @@ from __future__ import annotations
 import functools
 import importlib
 import warnings
-from collections.abc import Callable
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -22,7 +21,7 @@ from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from typing_extensions import override
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterator, Sequence
+    from collections.abc import AsyncIterator, Callable, Iterator, Sequence
     from types import ModuleType
 
     from langchain_core.runnables.schema import StreamEvent
