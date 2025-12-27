@@ -281,7 +281,7 @@ class TestRunnableSequenceParallelTraceNesting:
             return x
 
         def after(x: dict) -> int:
-            return x["chain_result"]
+            return int(x["chain_result"])
 
         sequence = before | parallel | after
         if isasyncgenfunction(other_thing):
@@ -392,15 +392,21 @@ class TestRunnableSequenceParallelTraceNesting:
         self._check_posts()
 
     @staticmethod
-    async def ainvoke(parent: RunnableLambda, cb: list[BaseCallbackHandler]) -> int:
+    async def ainvoke(
+        parent: RunnableLambda[int, int], cb: list[BaseCallbackHandler]
+    ) -> int:
         return await parent.ainvoke(1, {"callbacks": cb})
 
     @staticmethod
-    async def astream(parent: RunnableLambda, cb: list[BaseCallbackHandler]) -> int:
+    async def astream(
+        parent: RunnableLambda[int, int], cb: list[BaseCallbackHandler]
+    ) -> int:
         return [res async for res in parent.astream(1, {"callbacks": cb})][-1]
 
     @staticmethod
-    async def abatch(parent: RunnableLambda, cb: list[BaseCallbackHandler]) -> int:
+    async def abatch(
+        parent: RunnableLambda[int, int], cb: list[BaseCallbackHandler]
+    ) -> int:
         return (await parent.abatch([1], {"callbacks": cb}))[0]
 
     @pytest.mark.skipif(
