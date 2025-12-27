@@ -9,6 +9,7 @@ _SUPPORTED_PROVIDERS = {
     "azure_openai": "langchain_openai",
     "bedrock": "langchain_aws",
     "cohere": "langchain_cohere",
+    "google_genai": "langchain_google_genai",
     "google_vertexai": "langchain_google_vertexai",
     "huggingface": "langchain_huggingface",
     "mistralai": "langchain_mistralai",
@@ -155,9 +156,10 @@ def init_embeddings(
             - `azure_openai`            -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
             - `bedrock`                 -> [`langchain-aws`](https://docs.langchain.com/oss/python/integrations/providers/aws)
             - `cohere`                  -> [`langchain-cohere`](https://docs.langchain.com/oss/python/integrations/providers/cohere)
+            - `google_genai`            -> [`langchain-google-genai`](https://docs.langchain.com/oss/python/integrations/providers/google)
             - `google_vertexai`         -> [`langchain-google-vertexai`](https://docs.langchain.com/oss/python/integrations/providers/google)
             - `huggingface`             -> [`langchain-huggingface`](https://docs.langchain.com/oss/python/integrations/providers/huggingface)
-            - `mistraiai`               -> [`langchain-mistralai`](https://docs.langchain.com/oss/python/integrations/providers/mistralai)
+            - `mistralai`               -> [`langchain-mistralai`](https://docs.langchain.com/oss/python/integrations/providers/mistralai)
             - `ollama`                  -> [`langchain-ollama`](https://docs.langchain.com/oss/python/integrations/providers/ollama)
 
         **kwargs: Additional model-specific parameters passed to the embedding model.
@@ -207,6 +209,10 @@ def init_embeddings(
         from langchain_openai import AzureOpenAIEmbeddings
 
         return AzureOpenAIEmbeddings(model=model_name, **kwargs)
+    if provider == "google_genai":
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+        return GoogleGenerativeAIEmbeddings(model=model_name, **kwargs)
     if provider == "google_vertexai":
         from langchain_google_vertexai import VertexAIEmbeddings
 

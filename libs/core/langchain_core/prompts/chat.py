@@ -903,23 +903,28 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 5. A string which is shorthand for `("human", template)`; e.g.,
                     `"{user_input}"`
             template_format: Format of the template.
-            input_variables: A list of the names of the variables whose values are
-                required as inputs to the prompt.
-            optional_variables: A list of the names of the variables for placeholder
-                or MessagePlaceholder that are optional.
+            **kwargs: Additional keyword arguments passed to `BasePromptTemplate`,
+                including (but not limited to):
 
-                These variables are auto inferred from the prompt and user need not
-                provide them.
-            partial_variables: A dictionary of the partial variables the prompt
-                template carries.
+                - `input_variables`: A list of the names of the variables whose values
+                    are required as inputs to the prompt.
+                - `optional_variables`: A list of the names of the variables for
+                    placeholder or `MessagePlaceholder` that are optional.
 
-                Partial variables populate the template so that you don't need to pass
-                them in every time you call the prompt.
-            validate_template: Whether to validate the template.
-            input_types: A dictionary of the types of the variables the prompt template
-                expects.
+                    These variables are auto inferred from the prompt and user need not
+                    provide them.
 
-                If not provided, all variables are assumed to be strings.
+                - `partial_variables`: A dictionary of the partial variables the prompt
+                    template carries.
+
+                    Partial variables populate the template so that you don't need to
+                    pass them in every time you call the prompt.
+
+                - `validate_template`: Whether to validate the template.
+                - `input_types`: A dictionary of the types of the variables the prompt
+                    template expects.
+
+                    If not provided, all variables are assumed to be strings.
 
         Examples:
             Instantiation from a list of message templates:
@@ -1432,6 +1437,14 @@ def _convert_to_message_template(
         if isinstance(message_type_str, str):
             message_ = _create_template_from_message_type(
                 message_type_str, template, template_format=template_format
+            )
+        elif (
+            hasattr(message_type_str, "model_fields")
+            and "type" in message_type_str.model_fields
+        ):
+            message_type = message_type_str.model_fields["type"].default
+            message_ = _create_template_from_message_type(
+                message_type, template, template_format=template_format
             )
         else:
             message_ = message_type_str(

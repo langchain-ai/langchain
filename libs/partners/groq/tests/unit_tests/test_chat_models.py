@@ -274,6 +274,7 @@ def test_groq_serialization() -> None:
         dump,
         valid_namespaces=["langchain_groq"],
         secrets_map={"GROQ_API_KEY": api_key2},
+        allowed_objects="all",
     )
 
     assert type(llm2) is ChatGroq
@@ -939,3 +940,8 @@ def test_combine_llm_outputs_with_missing_details() -> None:
     assert result["token_usage"]["total_tokens"] == 450
     assert result["token_usage"]["output_tokens_details"]["reasoning_tokens"] == 40
     assert "input_tokens_details" not in result["token_usage"]
+
+
+def test_profile() -> None:
+    model = ChatGroq(model="openai/gpt-oss-20b")
+    assert model.profile

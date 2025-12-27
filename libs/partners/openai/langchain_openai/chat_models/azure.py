@@ -17,7 +17,7 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, SecretStr, model_validator
 from typing_extensions import Self
 
-from langchain_openai.chat_models.base import BaseChatOpenAI
+from langchain_openai.chat_models.base import BaseChatOpenAI, _get_default_model_profile
 
 logger = logging.getLogger(__name__)
 
@@ -701,6 +701,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
             self.async_client = self.root_async_client.chat.completions
         return self
 
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None and self.deployment_name is not None:
+            self.profile = _get_default_model_profile(self.deployment_name)
+        return self
+
     @property
     def _identifying_params(self) -> dict[str, Any]:
         """Get the identifying parameters."""
@@ -898,51 +905,6 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 !!! note
                     `strict` can only be non-null if `method` is `'json_schema'`
                     or `'function_calling'`.
-            tools:
-                A list of tool-like objects to bind to the chat model. Requires that:
-
-                - `method` is `'json_schema'` (default).
-                - `strict=True`
-                - `include_raw=True`
-
-                If a model elects to call a
-                tool, the resulting `AIMessage` in `'raw'` will include tool calls.
-
-                ??? example
-
-                    ```python
-                    from langchain.chat_models import init_chat_model
-                    from pydantic import BaseModel
-
-
-                    class ResponseSchema(BaseModel):
-                        response: str
-
-
-                    def get_weather(location: str) -> str:
-                        \"\"\"Get weather at a location.\"\"\"
-                        pass
-
-                    model = init_chat_model("openai:gpt-4o-mini")
-
-                    structured_model = model.with_structured_output(
-                        ResponseSchema,
-                        tools=[get_weather],
-                        strict=True,
-                        include_raw=True,
-                    )
-
-                    structured_model.invoke("What's the weather in Boston?")
-                    ```
-
-                    ```python
-                    {
-                        "raw": AIMessage(content="", tool_calls=[...], ...),
-                        "parsing_error": None,
-                        "parsed": None,
-                    }
-                    ```
-
             kwargs: Additional keyword args are passed through to the model.
 
         Returns:
@@ -960,12 +922,15 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 - `'parsing_error'`: `BaseException | None`
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.0"
+
             `method` default changed from "function_calling" to "json_schema".
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.12"
+
             Support for `tools` added.
 
         !!! warning "Behavior changed in `langchain-openai` 0.3.21"
+
             Pass `kwargs` through to the model.
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`, `strict=True`"

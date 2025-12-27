@@ -9,7 +9,6 @@ import pytest
 from typing_extensions import override
 
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import (
@@ -165,9 +164,9 @@ async def test_stream_error_callback() -> None:
         cb_async = FakeAsyncCallbackHandler()
         llm_astream = llm.astream("Dummy message", config={"callbacks": [cb_async]})
         for _ in range(i):
-            await llm_astream.__anext__()
+            await anext(llm_astream)
         with pytest.raises(FakeListChatModelError):
-            await llm_astream.__anext__()
+            await anext(llm_astream)
         eval_response(cb_async, i)
 
         cb_sync = FakeCallbackHandler()
@@ -932,38 +931,30 @@ class _AnotherFakeChatModel(BaseChatModel):
 
     def _generate(
         self,
-        messages: list[BaseMessage],  # noqa: ARG002
-        stop: list[str] | None = None,  # noqa: ARG002
-        run_manager: CallbackManagerForLLMRun | None = None,  # noqa: ARG002
-        **kwargs: Any,  # noqa: ARG002
+        *_args: Any,
+        **_kwargs: Any,
     ) -> ChatResult:
         return ChatResult(generations=[ChatGeneration(message=next(self.responses))])
 
     async def _agenerate(
         self,
-        messages: list[BaseMessage],  # noqa: ARG002
-        stop: list[str] | None = None,  # noqa: ARG002
-        run_manager: AsyncCallbackManagerForLLMRun | None = None,  # noqa: ARG002
-        **kwargs: Any,  # noqa: ARG002
+        *_args: Any,
+        **_kwargs: Any,
     ) -> ChatResult:
         return ChatResult(generations=[ChatGeneration(message=next(self.responses))])
 
     def _stream(
         self,
-        messages: list[BaseMessage],  # noqa: ARG002
-        stop: list[str] | None = None,  # noqa: ARG002
-        run_manager: CallbackManagerForLLMRun | None = None,  # noqa: ARG002
-        **kwargs: Any,  # noqa: ARG002
+        *_args: Any,
+        **_kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         for chunk in self.chunks:
             yield ChatGenerationChunk(message=chunk)
 
     async def _astream(
         self,
-        messages: list[BaseMessage],  # noqa: ARG002
-        stop: list[str] | None = None,  # noqa: ARG002
-        run_manager: AsyncCallbackManagerForLLMRun | None = None,  # noqa: ARG002
-        **kwargs: Any,  # noqa: ARG002
+        *_args: Any,
+        **_kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         for chunk in self.chunks:
             yield ChatGenerationChunk(message=chunk)
@@ -1222,19 +1213,12 @@ def test_get_ls_params() -> None:
 
 def test_model_profiles() -> None:
     model = GenericFakeChatModel(messages=iter([]))
-    profile = model.profile
-    assert profile == {}
+    assert model.profile is None
 
-    class MyModel(GenericFakeChatModel):
-        model: str = "gpt-5"
-
-        @property
-        def _llm_type(self) -> str:
-            return "openai-chat"
-
-    model = MyModel(messages=iter([]))
-    profile = model.profile
-    assert profile
+    model_with_profile = GenericFakeChatModel(
+        messages=iter([]), profile={"max_input_tokens": 100}
+    )
+    assert model_with_profile.profile == {"max_input_tokens": 100}
 
 
 class MockResponse:
