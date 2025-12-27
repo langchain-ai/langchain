@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field, replace
 from inspect import iscoroutinefunction
 from typing import (
@@ -19,6 +19,8 @@ from typing import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
+    from langgraph.types import Command
+
 # Needed as top level import for Pydantic schema generation on AgentState
 import warnings
 from typing import TypeAlias
@@ -33,7 +35,6 @@ from langchain_core.messages import (
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
-from langgraph.types import Command
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
@@ -337,7 +338,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     state_schema: type[StateT] = cast("type[StateT]", AgentState)
     """The schema for state passed to the middleware nodes."""
 
-    tools: list[BaseTool]
+    tools: Sequence[BaseTool]
     """Additional tools registered by the middleware."""
 
     @property

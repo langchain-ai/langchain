@@ -31,7 +31,7 @@ class ProfileChatModel(BaseChatModel):
     def _generate(self, messages, **kwargs):  # type: ignore[no-untyped-def]
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
-    profile: ModelProfile | None = {"max_input_tokens": 1000}
+    profile: ModelProfile | None = ModelProfile(max_input_tokens=1000)
 
     @property
     def _llm_type(self) -> str:
