@@ -75,7 +75,7 @@ def _get_joke_class(  # noqa: RET503
 
 
 class _TestCallbackHandler(BaseCallbackHandler):
-    options: list[dict | None]
+    options: list[dict[str, Any] | None]
 
     def __init__(self) -> None:
         super().__init__()
@@ -628,9 +628,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             ```python title="tests/conftest.py"
             import pytest
-            from langchain_tests.conftest import (
-                _base_vcr_config as _base_vcr_config,
-            )
+            from langchain_tests.conftest import base_vcr_config
 
             _EXTRA_HEADERS = [
                 # Specify additional headers to redact
@@ -645,9 +643,9 @@ class ChatModelIntegrationTests(ChatModelTests):
 
 
             @pytest.fixture(scope="session")
-            def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
+            def vcr_config() -> dict:
                 """Extend the default configuration from langchain_tests."""
-                config = _base_vcr_config.copy()
+                config = base_vcr_config()
                 config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
                 config["before_record_response"] = remove_response_headers
 
@@ -667,9 +665,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     CustomPersister,
                     CustomSerializer,
                 )
-                from langchain_tests.conftest import (
-                    _base_vcr_config as _base_vcr_config,
-                )
+                from langchain_tests.conftest import base_vcr_config
                 from vcr import VCR
 
                 _EXTRA_HEADERS = [
@@ -685,9 +681,9 @@ class ChatModelIntegrationTests(ChatModelTests):
 
 
                 @pytest.fixture(scope="session")
-                def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
+                def vcr_config() -> dict:
                     """Extend the default configuration from langchain_tests."""
-                    config = _base_vcr_config.copy()
+                    config = base_vcr_config()
                     config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
                     config["before_record_response"] = remove_response_headers
                     # New: enable serializer and set file extension
@@ -743,7 +739,7 @@ class ChatModelIntegrationTests(ChatModelTests):
     '''  # noqa: E501
 
     @property
-    def standard_chat_model_params(self) -> dict:
+    def standard_chat_model_params(self) -> dict[str, Any]:
         """Standard parameters for chat model."""
         return {}
 
@@ -2191,11 +2187,12 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         stream_callback = _TestCallbackHandler()
 
+        chunk = None
         for chunk in chat.stream(
             "Tell me a joke about cats.", config={"callbacks": [stream_callback]}
         ):
             validation_function(chunk)
-        assert chunk
+        assert chunk is not None, "Stream returned no chunks - possible API issue"
 
         assert len(stream_callback.options) == 1, (
             "Expected on_chat_model_start to be called once"
@@ -2272,11 +2269,12 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         astream_callback = _TestCallbackHandler()
 
+        chunk = None
         async for chunk in chat.astream(
             "Tell me a joke about cats.", config={"callbacks": [astream_callback]}
         ):
             validation_function(chunk)
-        assert chunk
+        assert chunk is not None, "Stream returned no chunks - possible API issue"
 
         assert len(astream_callback.options) == 1, (
             "Expected on_chat_model_start to be called once"
@@ -2342,8 +2340,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, Joke)
 
+        chunk = None
         for chunk in chat.stream("Tell me a joke about cats."):
             assert isinstance(chunk, Joke)
+        assert chunk is not None, "Stream returned no chunks - possible API issue"
 
         # Schema
         chat = model.with_structured_output(
@@ -2353,9 +2353,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result, dict)
         assert set(result.keys()) == {"setup", "punchline"}
 
+        chunk = None
         for chunk in chat.stream("Tell me a joke about cats."):
             assert isinstance(chunk, dict)
-        assert isinstance(chunk, dict)  # for mypy
+        assert chunk is not None, "Stream returned no chunks - possible API issue"
         assert set(chunk.keys()) == {"setup", "punchline"}
 
     def test_structured_output_optional_param(self, model: BaseChatModel) -> None:
@@ -2477,8 +2478,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = chat.invoke(msg)
         assert isinstance(result, Joke)
 
+        chunk = None
         for chunk in chat.stream(msg):
             assert isinstance(chunk, Joke)
+        assert chunk is not None, "Stream returned no chunks - possible API issue"
 
         # Schema
         chat = model.with_structured_output(
@@ -2488,9 +2491,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result, dict)
         assert set(result.keys()) == {"setup", "punchline"}
 
+        chunk = None
         for chunk in chat.stream(msg):
             assert isinstance(chunk, dict)
-        assert isinstance(chunk, dict)  # for mypy
+        assert chunk is not None, "Stream returned no chunks - possible API issue"
         assert set(chunk.keys()) == {"setup", "punchline"}
 
     def test_pdf_inputs(self, model: BaseChatModel) -> None:
@@ -3076,7 +3080,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             "cache_control": {"type": "ephemeral"},
         }
 
-        human_content: list[dict] = [
+        human_content = [
             {
                 "type": "text",
                 "text": "what's your favorite color in this image",

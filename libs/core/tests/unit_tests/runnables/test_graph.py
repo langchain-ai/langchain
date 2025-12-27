@@ -655,6 +655,48 @@ def test_graph_draw_mermaid_png_base_url() -> None:
         assert url.startswith(custom_url)
 
 
+def test_mermaid_bgcolor_url_encoding() -> None:
+    """Test that background_color with special chars is properly URL-encoded.
+
+    Regression test for issue #34444: Named colors like 'white' get prefixed
+    with '!' which must be URL-encoded to avoid HTTP 400 errors from mermaid.ink.
+    """
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.content = b"fake image data"
+
+    with patch("requests.get", return_value=mock_response) as mock_get:
+        _render_mermaid_using_api(
+            "graph TD;\n    A --> B;",
+            background_color="white",
+        )
+
+        assert mock_get.called
+        url = mock_get.call_args[0][0]
+        # The '!' character should be URL-encoded as '%21'
+        assert "%21white" in url or "!white" not in url
+        # Verify the URL doesn't contain unencoded '!'
+        assert "bgColor=!white" not in url
+
+
+def test_mermaid_bgcolor_hex_not_encoded() -> None:
+    """Test that hex color codes are not prefixed with '!' and work correctly."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.content = b"fake image data"
+
+    with patch("requests.get", return_value=mock_response) as mock_get:
+        _render_mermaid_using_api(
+            "graph TD;\n    A --> B;",
+            background_color="#ffffff",
+        )
+
+        assert mock_get.called
+        url = mock_get.call_args[0][0]
+        # Hex colors should be URL-encoded but not prefixed with '!'
+        assert "%23ffffff" in url  # '#' encoded as '%23'
+
+
 def test_graph_mermaid_special_chars(snapshot: SnapshotAssertion) -> None:
     graph = Graph(
         nodes={

@@ -673,6 +673,82 @@ def test_trim_messages_start_on_with_allow_partial() -> None:
     assert messages == messages_copy
 
 
+def test_trim_messages_token_counter_shortcut_approximate() -> None:
+    """Test that `'approximate'` shortcut works for `token_counter`."""
+    messages = [
+        SystemMessage("This is a test message"),
+        HumanMessage("Another test message", id="first"),
+        AIMessage("AI response here", id="second"),
+    ]
+    messages_copy = [m.model_copy(deep=True) for m in messages]
+
+    # Test using the "approximate" shortcut
+    result_shortcut = trim_messages(
+        messages,
+        max_tokens=50,
+        token_counter="approximate",
+        strategy="last",
+    )
+
+    # Test using count_tokens_approximately directly
+    result_direct = trim_messages(
+        messages,
+        max_tokens=50,
+        token_counter=count_tokens_approximately,
+        strategy="last",
+    )
+
+    # Both should produce the same result
+    assert result_shortcut == result_direct
+    assert messages == messages_copy
+
+
+def test_trim_messages_token_counter_shortcut_invalid() -> None:
+    """Test that invalid `token_counter` shortcut raises `ValueError`."""
+    messages = [
+        SystemMessage("This is a test message"),
+        HumanMessage("Another test message"),
+    ]
+
+    # Test with invalid shortcut - intentionally passing invalid string to verify
+    # runtime error handling for dynamically-constructed inputs
+    with pytest.raises(ValueError, match="Invalid token_counter shortcut 'invalid'"):
+        trim_messages(  # type: ignore[call-overload]
+            messages,
+            max_tokens=50,
+            token_counter="invalid",
+            strategy="last",
+        )
+
+
+def test_trim_messages_token_counter_shortcut_with_options() -> None:
+    """Test that `'approximate'` shortcut works with different trim options."""
+    messages = [
+        SystemMessage("System instructions"),
+        HumanMessage("First human message", id="first"),
+        AIMessage("First AI response", id="ai1"),
+        HumanMessage("Second human message", id="second"),
+        AIMessage("Second AI response", id="ai2"),
+    ]
+    messages_copy = [m.model_copy(deep=True) for m in messages]
+
+    # Test with various options
+    result = trim_messages(
+        messages,
+        max_tokens=100,
+        token_counter="approximate",
+        strategy="last",
+        include_system=True,
+        start_on="human",
+    )
+
+    # Should include system message and start on human
+    assert len(result) >= 2
+    assert isinstance(result[0], SystemMessage)
+    assert any(isinstance(msg, HumanMessage) for msg in result[1:])
+    assert messages == messages_copy
+
+
 class FakeTokenCountingModel(FakeChatModel):
     @override
     def get_num_tokens_from_messages(
@@ -956,9 +1032,9 @@ def test_convert_to_openai_messages_openai_block() -> None:
 
 def test_convert_to_openai_messages_invalid_format() -> None:
     with pytest.raises(ValueError, match="Unrecognized text_format="):
-        convert_to_openai_messages(
+        convert_to_openai_messages(  # type: ignore[call-overload]
             [HumanMessage(content="Hello")],
-            text_format="invalid",  # type: ignore[arg-type]
+            text_format="invalid",
         )
 
 
@@ -1197,7 +1273,47 @@ def test_convert_to_openai_messages_guard_content() -> None:
 def test_convert_to_openai_messages_invalid_block() -> None:
     messages = [HumanMessage(content=[{"type": "invalid", "foo": "bar"}])]
     with pytest.raises(ValueError, match="Unrecognized content block"):
-        convert_to_openai_messages(messages, text_format="block")
+        convert_to_openai_messages(
+            messages,
+            text_format="block",
+            pass_through_unknown_blocks=False,
+        )
+    # Accept by default
+    result = convert_to_openai_messages(messages, text_format="block")
+    assert result == [{"role": "user", "content": [{"type": "invalid", "foo": "bar"}]}]
+
+
+def test_handle_openai_responses_blocks() -> None:
+    blocks: str | list[str | dict] = [
+        {"type": "reasoning", "id": "1"},
+        {
+            "type": "function_call",
+            "name": "multiply",
+            "arguments": '{"x":5,"y":4}',
+            "call_id": "call_abc123",
+            "id": "fc_abc123",
+            "status": "completed",
+        },
+    ]
+    message = AIMessage(content=blocks)
+
+    expected_tool_call = {
+        "type": "function",
+        "function": {
+            "name": "multiply",
+            "arguments": '{"x":5,"y":4}',
+        },
+        "id": "call_abc123",
+    }
+    result = convert_to_openai_messages(message)
+    assert isinstance(result, dict)
+    assert result["content"] == blocks
+    assert result["tool_calls"] == [expected_tool_call]
+
+    result = convert_to_openai_messages(message, pass_through_unknown_blocks=False)
+    assert isinstance(result, dict)
+    assert result["content"] == [{"type": "reasoning", "id": "1"}]
+    assert result["tool_calls"] == [expected_tool_call]
 
 
 def test_convert_to_openai_messages_empty_message() -> None:
@@ -1534,6 +1650,72 @@ def test_get_buffer_string_with_empty_content() -> None:
     expected = "Human: \nAI: \nSystem: "
     actual = get_buffer_string(messages)
     assert actual == expected
+
+
+def test_get_buffer_string_with_tool_calls() -> None:
+    """Test `get_buffer_string` with `tool_calls` field."""
+    messages = [
+        HumanMessage(content="What's the weather?"),
+        AIMessage(
+            content="Let me check the weather",
+            tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": {"city": "NYC"},
+                    "id": "call_1",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+    ]
+    result = get_buffer_string(messages)
+    assert "Human: What's the weather?" in result
+    assert "AI: Let me check the weather" in result
+    assert "get_weather" in result
+    assert "NYC" in result
+
+
+def test_get_buffer_string_with_tool_calls_empty_content() -> None:
+    """Test `get_buffer_string` with `tool_calls` and empty `content`."""
+    messages = [
+        AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": "search",
+                    "args": {"query": "test"},
+                    "id": "call_2",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+    ]
+    result = get_buffer_string(messages)
+    assert "AI: " in result
+    assert "search" in result
+
+
+def test_get_buffer_string_tool_calls_preferred_over_function_call() -> None:
+    """Test that `tool_calls` takes precedence over legacy `function_call`."""
+    messages = [
+        AIMessage(
+            content="Calling tools",
+            tool_calls=[
+                {
+                    "name": "modern_tool",
+                    "args": {"key": "value"},
+                    "id": "call_3",
+                    "type": "tool_call",
+                }
+            ],
+            additional_kwargs={
+                "function_call": {"name": "legacy_function", "arguments": "{}"}
+            },
+        ),
+    ]
+    result = get_buffer_string(messages)
+    assert "modern_tool" in result
+    assert "legacy_function" not in result
 
 
 def test_convert_to_openai_messages_reasoning_content() -> None:

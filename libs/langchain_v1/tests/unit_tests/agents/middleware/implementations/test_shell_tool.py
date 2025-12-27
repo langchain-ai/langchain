@@ -5,9 +5,10 @@ import gc
 import tempfile
 import time
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
-from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.messages import ToolMessage
 from langchain_core.tools.base import ToolException
 
 from langchain.agents.middleware.shell_tool import (
@@ -17,7 +18,9 @@ from langchain.agents.middleware.shell_tool import (
     _SessionResources,
     _ShellToolInput,
 )
-from langchain.agents.middleware.types import AgentState
+
+if TYPE_CHECKING:
+    from langchain.agents.middleware.types import AgentState
 
 
 def _empty_state() -> AgentState:
@@ -161,14 +164,14 @@ def test_session_resources_finalizer_cleans_up(tmp_path: Path) -> None:
         def __init__(self) -> None:
             self.stopped: bool = False
 
-        def stop(self, timeout: float) -> None:  # noqa: ARG002
+        def stop(self, timeout: float) -> None:
             self.stopped = True
 
     session = DummySession()
     tempdir = tempfile.TemporaryDirectory(dir=tmp_path)
     tempdir_path = Path(tempdir.name)
     resources = _SessionResources(session=session, tempdir=tempdir, policy=policy)  # type: ignore[arg-type]
-    finalizer = resources._finalizer
+    finalizer = resources.finalizer
 
     # Drop our last strong reference and force collection.
     del resources
@@ -339,7 +342,7 @@ def test_startup_command_failure(tmp_path: Path) -> None:
         workspace_root=tmp_path / "workspace", startup_commands=("exit 1",), execution_policy=policy
     )
     state: AgentState = _empty_state()
-    with pytest.raises(RuntimeError, match="Startup command.*failed"):
+    with pytest.raises(RuntimeError, match=r"Startup command.*failed"):
         middleware.before_agent(state, None)
 
 
@@ -533,7 +536,7 @@ def test_get_or_create_resources_creates_when_missing(tmp_path: Path) -> None:
     assert state.get("shell_session_resources") is resources
 
     # Clean up
-    resources._finalizer()
+    resources.finalizer()
 
 
 def test_get_or_create_resources_reuses_existing(tmp_path: Path) -> None:
@@ -553,4 +556,4 @@ def test_get_or_create_resources_reuses_existing(tmp_path: Path) -> None:
     assert resources1.session is resources2.session
 
     # Clean up
-    resources1._finalizer()
+    resources1.finalizer()
