@@ -229,17 +229,14 @@ def message_chunk_to_message(chunk: BaseMessage) -> BaseMessage:
 
 
 MessageLikeRepresentation = (
-    BaseMessage
-    | list[str]
-    | tuple[str, str | list[str | dict[str, Any]]]
-    | str
-    | dict[str, Any]
+    BaseMessage | list[str] | tuple[str, str] | str | dict[str, Any]
 )
+"""A type representing the various ways a message can be represented."""
 
 
 def _create_message_from_message_type(
     message_type: str,
-    content: str | list[str | dict[str, Any]],
+    content: str,
     name: str | None = None,
     tool_call_id: str | None = None,
     tool_calls: list[dict[str, Any]] | None = None,
@@ -1246,13 +1243,12 @@ def convert_to_openai_messages(
 
     oai_messages: list[dict] = []
 
-    messages_ = (
-        [messages]
-        if (is_single := isinstance(messages, (BaseMessage, dict, str, tuple)))
-        else messages
-    )
+    if is_single := isinstance(messages, (BaseMessage, dict, str)):
+        messages = [messages]
 
-    for i, message in enumerate(convert_to_messages(messages_)):
+    messages = convert_to_messages(messages)
+
+    for i, message in enumerate(messages):
         oai_msg: dict = {"role": _get_message_openai_role(message)}
         tool_messages: list = []
         content: str | list[dict]
