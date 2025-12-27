@@ -76,7 +76,6 @@ enable_error_code = "deprecated"
 
 # TODO: activate for 'strict' checking
 disallow_any_generics = false
-warn_return_any = false
 
 
 [tool.ruff.format]
@@ -89,7 +88,6 @@ ignore = [
     "COM812",  # Messes with the formatter
     "CPY",     # No copyright
     "FIX002",  # Line contains TODO
-    "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
     "PLR09",   # Too many something (arg, statements, etc)
     "RUF012",  # Doesn't play well with Pydantic

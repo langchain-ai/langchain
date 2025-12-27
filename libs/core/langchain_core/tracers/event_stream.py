@@ -81,9 +81,9 @@ def _assign_name(name: str | None, serialized: dict[str, Any] | None) -> str:
         return name
     if serialized is not None:
         if "name" in serialized:
-            return serialized["name"]
+            return cast("str", serialized["name"])
         if "id" in serialized:
-            return serialized["id"][-1]
+            return cast("str", serialized["id"][-1])
     return "Unnamed"
 
 

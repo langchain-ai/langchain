@@ -776,7 +776,7 @@ class TestDynamicModelWithResponseFormat:
         # Custom model that we'll use to test whether the tool strategy is applied
         # correctly at runtime.
         class CustomModel(GenericFakeChatModel):
-            tool_bindings: list[Any] = []
+            tool_bindings: list[Any] = Field(default_factory=list)
 
             def bind_tools(
                 self,
