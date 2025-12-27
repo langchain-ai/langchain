@@ -63,6 +63,7 @@ _SUPPORTED_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] =
         lambda cls, model, **kwargs: cls(model_id=model, **kwargs),
     ),
     "mistralai": ("langchain_mistralai", "ChatMistralAI", _call),
+    "nvidia": ("langchain_nvidia_ai_endpoints", "ChatNVIDIA", _call),
     "ollama": ("langchain_ollama", "ChatOllama", _call),
     "openai": ("langchain_openai", "ChatOpenAI", _call),
     "perplexity": ("langchain_perplexity", "ChatPerplexity", _call),
