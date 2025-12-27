@@ -11,7 +11,7 @@ import time
 import urllib.parse
 from dataclasses import asdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import yaml
 
@@ -393,7 +393,7 @@ async def _render_mermaid_using_pyppeteer(
         }
     )
 
-    img_bytes = await page.screenshot({"fullPage": False})
+    img_bytes = cast("bytes", await page.screenshot({"fullPage": False}))
     await browser.close()
 
     if output_file_path is not None:

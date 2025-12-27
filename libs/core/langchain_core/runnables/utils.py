@@ -132,9 +132,12 @@ def asyncio_accepts_context() -> bool:
     return sys.version_info >= (3, 11)
 
 
+_T = TypeVar("_T")
+
+
 def coro_with_context(
-    coro: Awaitable[Any], context: Context, *, create_task: bool = False
-) -> Awaitable[Any]:
+    coro: Awaitable[_T], context: Context, *, create_task: bool = False
+) -> Awaitable[_T]:
     """Await a coroutine with a context.
 
     Args:
