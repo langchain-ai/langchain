@@ -58,6 +58,7 @@ langchain-core = { path = "../../core", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
 
 [tool.ruff.format]
+# See ../../shared/ruff.toml for base config
 docstring-code-format = true
 
 [tool.ruff.lint]
@@ -87,6 +88,7 @@ convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.mypy]
+# See ../../shared/mypy.ini for base config
 disallow_untyped_defs = true
 
 [tool.coverage.run]

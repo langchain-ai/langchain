@@ -65,12 +65,14 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 langchain = { path = "../../langchain_v1", editable = true }
 
 [tool.mypy]
+# See ../../shared/mypy.ini for base config
 disallow_untyped_defs = "True"
 [[tool.mypy.overrides]]
 module = "transformers"
 ignore_missing_imports = true
 
 [tool.ruff.format]
+# See ../../shared/ruff.toml for base config
 docstring-code-format = true
 
 [tool.ruff.lint]
