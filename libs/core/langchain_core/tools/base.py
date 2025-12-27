@@ -1271,7 +1271,7 @@ def _is_message_content_type(obj: Any) -> bool:
     Returns:
         `True` if the object is valid message content, `False` otherwise.
     """
-    if isinstance(obj, list) and not obj:  # Check if it's an empty list
+    if isinstance(obj, list) and not obj:
         return False  # Empty lists should be considered invalid
     return isinstance(obj, str) or (
         isinstance(obj, list) and all(_is_message_content_block(e) for e in obj)
