@@ -58,6 +58,26 @@ def _check_response(response: BaseMessage | None) -> None:
     assert response.response_metadata["service_tier"]  # type: ignore[typeddict-item]
 
 
+@pytest.mark.vcr
+def test_incomplete_response() -> None:
+    model = ChatOpenAI(
+        model=MODEL_NAME, use_responses_api=True, max_completion_tokens=16
+    )
+    response = model.invoke("Tell me a 100 word story about a bear.")
+    assert response.response_metadata["incomplete_details"]
+    assert response.response_metadata["incomplete_details"]["reason"]
+    assert response.response_metadata["status"] == "incomplete"
+
+    full: AIMessageChunk | None = None
+    for chunk in model.stream("Tell me a 100 word story about a bear."):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.response_metadata["incomplete_details"]
+    assert full.response_metadata["incomplete_details"]["reason"]
+    assert full.response_metadata["status"] == "incomplete"
+
+
 @pytest.mark.default_cassette("test_web_search.yaml.gz")
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
@@ -298,18 +318,23 @@ async def test_parsed_dict_schema_async(schema: Any) -> None:
     assert isinstance(parsed["response"], str)
 
 
-def test_function_calling_and_structured_output() -> None:
+@pytest.mark.parametrize("schema", [Foo, Foo.model_json_schema(), FooDict])
+def test_function_calling_and_structured_output(schema: Any) -> None:
     def multiply(x: int, y: int) -> int:
         """return x * y"""
         return x * y
 
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
-    bound_llm = llm.bind_tools([multiply], response_format=Foo, strict=True)
+    bound_llm = llm.bind_tools([multiply], response_format=schema, strict=True)
     # Test structured output
-    response = llm.invoke("how are ya", response_format=Foo)
-    parsed = Foo(**json.loads(response.text))
+    response = llm.invoke("how are ya", response_format=schema)
+    if schema == Foo:
+        parsed = schema(**json.loads(response.text))
+        assert parsed.response
+    else:
+        parsed = json.loads(response.text)
+        assert parsed["response"]
     assert parsed == response.additional_kwargs["parsed"]
-    assert parsed.response
 
     # Test function calling
     ai_msg = cast(AIMessage, bound_llm.invoke("whats 5 * 4"))

@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import math
 import os
-from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 try:
@@ -20,6 +19,8 @@ except ImportError:
     _HAS_GRANDALF = False
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
+
     from langchain_core.runnables.graph import Edge as LangEdge
 
 
@@ -164,6 +165,9 @@ class AsciiCanvas:
             y0: y coordinate of the box corner.
             width: box width.
             height: box height.
+
+        Raises:
+            ValueError: if box dimensions are invalid.
         """
         if width <= 1 or height <= 1:
             msg = "Box dimensions should be > 1"

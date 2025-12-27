@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 import openai
 from langchain_core.messages import AIMessageChunk
@@ -11,7 +11,13 @@ from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_xai.data._profiles import _PROFILES
+
 if TYPE_CHECKING:
+    from langchain_core.language_models import (
+        ModelProfile,
+        ModelProfileRegistry,
+    )
     from langchain_core.language_models.chat_models import (
         LangSmithParams,
         LanguageModelInput,
@@ -21,6 +27,14 @@ if TYPE_CHECKING:
 
 _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[BaseModel] | type
 _DictOrPydantic: TypeAlias = dict | BaseModel
+
+
+_MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
@@ -514,6 +528,13 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             )
         return self
 
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model_name)
+        return self
+
     @property
     def _default_params(self) -> dict[str, Any]:
         """Get default parameters."""
@@ -600,10 +621,10 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         Args:
             schema: The output schema. Can be passed in as:
 
-                - an OpenAI function/tool schema,
-                - a JSON Schema,
-                - a `TypedDict` class,
-                - or a Pydantic class.
+                - An OpenAI function/tool schema,
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - Or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
@@ -624,15 +645,18 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                     Uses xAI's JSON mode feature.
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a `BaseMessage`) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
-
             strict:
                 - `True`:
                     Model output is guaranteed to exactly match the schema.

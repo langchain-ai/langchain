@@ -24,7 +24,7 @@ class ConversationBufferWindowMemory(BaseChatMemory):
 
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
-    memory_key: str = "history"  #: :meta private:
+    memory_key: str = "history"
     k: int = 5
     """Number of messages to store in buffer."""
 
@@ -50,10 +50,7 @@ class ConversationBufferWindowMemory(BaseChatMemory):
 
     @property
     def memory_variables(self) -> list[str]:
-        """Will always return list of memory variables.
-
-        :meta private:
-        """
+        """Will always return list of memory variables."""
         return [self.memory_key]
 
     @override

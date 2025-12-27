@@ -148,7 +148,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
         default_factory=TrajectoryOutputParser,
     )
     """The output parser used to parse the output."""
-    return_reasoning: bool = False  # :meta private:
+    return_reasoning: bool = False
     """DEPRECATED. Reasoning always returned."""
 
     model_config = ConfigDict(

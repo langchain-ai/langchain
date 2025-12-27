@@ -23,7 +23,10 @@ class ForecastV2(pydantic.BaseModel):
     forecast: str
 
 
-if sys.version_info < (3, 14):
+if sys.version_info >= (3, 14):
+    _FORECAST_MODELS_TYPES = type[ForecastV2]
+    _FORECAST_MODELS = [ForecastV2]
+else:
 
     class ForecastV1(V1BaseModel):
         temperature: int
@@ -32,9 +35,6 @@ if sys.version_info < (3, 14):
 
     _FORECAST_MODELS_TYPES = type[ForecastV2] | type[ForecastV1]
     _FORECAST_MODELS = [ForecastV2, ForecastV1]
-else:
-    _FORECAST_MODELS_TYPES = type[ForecastV2]
-    _FORECAST_MODELS = [ForecastV2]
 
 
 @pytest.mark.parametrize("pydantic_object", _FORECAST_MODELS)

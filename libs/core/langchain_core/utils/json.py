@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.exceptions import OutputParserException
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def _replace_new_line(match: re.Match[str]) -> str:
@@ -132,7 +134,7 @@ _json_markdown_re = re.compile(r"```(json)?(.*)", re.DOTALL)
 
 def parse_json_markdown(
     json_string: str, *, parser: Callable[[str], Any] = parse_partial_json
-) -> dict:
+) -> Any:
     """Parse a JSON string from a Markdown string.
 
     Args:
@@ -159,7 +161,7 @@ _json_strip_chars = " \n\r\t`"
 
 def _parse_json(
     json_str: str, *, parser: Callable[[str], Any] = parse_partial_json
-) -> dict:
+) -> Any:
     # Strip whitespace,newlines,backtick from the start and end
     json_str = json_str.strip(_json_strip_chars)
 

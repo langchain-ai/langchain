@@ -9,19 +9,19 @@ from __future__ import annotations
 import fnmatch
 import re
 from pathlib import Path, PurePosixPath
-from typing import TYPE_CHECKING, Annotated, Literal, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 if TYPE_CHECKING:
     from typing import Any
 
 from langchain.agents.middleware.types import AgentMiddleware
-from langchain_core.tools import InjectedToolArg, tool
+from langchain.tools import ToolRuntime, tool
 
 from langchain_anthropic.middleware.anthropic_tools import AnthropicToolsState
 
 
 def _expand_include_patterns(pattern: str) -> list[str] | None:
-    """Expand brace patterns like ``*.{py,pyi}`` into a list of globs."""
+    """Expand brace patterns like `*.{py,pyi}` into a list of globs."""
     if "}" in pattern and "{" not in pattern:
         return None
 
@@ -76,7 +76,7 @@ def _is_valid_include_pattern(pattern: str) -> bool:
 
 
 def _match_include_pattern(basename: str, pattern: str) -> bool:
-    """Return True if the basename matches the include pattern."""
+    """Return `True` if the basename matches the include pattern."""
     expanded = _expand_include_patterns(pattern)
     if not expanded:
         return False
@@ -88,6 +88,7 @@ class StateFileSearchMiddleware(AgentMiddleware):
     """Provides Glob and Grep search over state-based files.
 
     This middleware adds two tools that search through virtual files in state:
+
     - Glob: Fast file pattern matching by file path
     - Grep: Fast content search using regular expressions
 
@@ -120,144 +121,203 @@ class StateFileSearchMiddleware(AgentMiddleware):
         """Initialize the search middleware.
 
         Args:
-            state_key: State key to search (default: "text_editor_files").
-                Use "memory_files" to search memory tool files.
+            state_key: State key to search
+
+                Use `'memory_files'` to search memory tool files.
         """
         self.state_key = state_key
 
         # Create tool instances
         @tool
         def glob_search(  # noqa: D417
+            runtime: ToolRuntime[None, AnthropicToolsState],
             pattern: str,
             path: str = "/",
-            state: Annotated[AnthropicToolsState, InjectedToolArg] = None,  # type: ignore[assignment]
         ) -> str:
             """Fast file pattern matching tool that works with any codebase size.
 
-            Supports glob patterns like **/*.js or src/**/*.ts.
+            Supports glob patterns like `**/*.js` or `src/**/*.ts`.
+
             Returns matching file paths sorted by modification time.
+
             Use this tool when you need to find files by name patterns.
 
             Args:
                 pattern: The glob pattern to match files against.
-                path: The directory to search in. If not specified, searches from root.
+                path: The directory to search in.
+
+                    If not specified, searches from root.
 
             Returns:
                 Newline-separated list of matching file paths, sorted by modification
-                time (most recently modified first). Returns "No files found" if no
-                matches.
+                    time (most recently modified first).
+
+                    Returns `'No files found'` if no matches.
             """
-            # Normalize base path
-            base_path = path if path.startswith("/") else "/" + path
-
-            # Get files from state
-            files = cast("dict[str, Any]", state.get(self.state_key, {}))
-
-            # Match files
-            matches = []
-            for file_path, file_data in files.items():
-                if file_path.startswith(base_path):
-                    # Get relative path from base
-                    if base_path == "/":
-                        relative = file_path[1:]  # Remove leading /
-                    elif file_path == base_path:
-                        relative = Path(file_path).name
-                    elif file_path.startswith(base_path + "/"):
-                        relative = file_path[len(base_path) + 1 :]
-                    else:
-                        continue
-
-                    # Match against pattern
-                    # Handle ** pattern which requires special care
-                    # PurePosixPath.match doesn't match single-level paths
-                    # against **/pattern
-                    is_match = PurePosixPath(relative).match(pattern)
-                    if not is_match and pattern.startswith("**/"):
-                        # Also try matching without the **/ prefix for files in base dir
-                        is_match = PurePosixPath(relative).match(pattern[3:])
-
-                    if is_match:
-                        matches.append((file_path, file_data["modified_at"]))
-
-            if not matches:
-                return "No files found"
-
-            # Sort by modification time
-            matches.sort(key=lambda x: x[1], reverse=True)
-            file_paths = [path for path, _ in matches]
-
-            return "\n".join(file_paths)
+            return self._handle_glob_search(pattern, path, runtime.state)
 
         @tool
         def grep_search(  # noqa: D417
+            runtime: ToolRuntime[None, AnthropicToolsState],
             pattern: str,
             path: str = "/",
             include: str | None = None,
             output_mode: Literal[
                 "files_with_matches", "content", "count"
             ] = "files_with_matches",
-            state: Annotated[AnthropicToolsState, InjectedToolArg] = None,  # type: ignore[assignment]
         ) -> str:
             """Fast content search tool that works with any codebase size.
 
-            Searches file contents using regular expressions. Supports full regex
-            syntax and filters files by pattern with the include parameter.
+            Searches file contents using regular expressions.
+
+            Supports full regex syntax and filters files by pattern with the include
+            parameter.
 
             Args:
                 pattern: The regular expression pattern to search for in file contents.
                 path: The directory to search in. If not specified, searches from root.
-                include: File pattern to filter (e.g., "*.js", "*.{ts,tsx}").
-                output_mode: Output format:
-                    - "files_with_matches": Only file paths containing matches (default)
-                    - "content": Matching lines with file:line:content format
-                    - "count": Count of matches per file
+                include: File pattern to filter (e.g., `'*.js'`, `'*.{ts,tsx}'`).
+                output_mode: Output format.
+
+                    Options:
+
+                    - `'files_with_matches'`: Only file paths containing matches
+                    - `'content'`: Matching lines with file:line:content format
+                    - `'count'`: Count of matches per file
 
             Returns:
-                Search results formatted according to output_mode. Returns "No matches
-                found" if no results.
+                Search results formatted according to `output_mode`.
+
+                    Returns `'No matches found'` if no results.
             """
-            # Normalize base path
-            base_path = path if path.startswith("/") else "/" + path
-
-            # Compile regex pattern (for validation)
-            try:
-                regex = re.compile(pattern)
-            except re.error as e:
-                return f"Invalid regex pattern: {e}"
-
-            if include and not _is_valid_include_pattern(include):
-                return "Invalid include pattern"
-
-            # Search files
-            files = cast("dict[str, Any]", state.get(self.state_key, {}))
-            results: dict[str, list[tuple[int, str]]] = {}
-
-            for file_path, file_data in files.items():
-                if not file_path.startswith(base_path):
-                    continue
-
-                # Check include filter
-                if include:
-                    basename = Path(file_path).name
-                    if not _match_include_pattern(basename, include):
-                        continue
-
-                # Search file content
-                for line_num, line in enumerate(file_data["content"], 1):
-                    if regex.search(line):
-                        if file_path not in results:
-                            results[file_path] = []
-                        results[file_path].append((line_num, line))
-
-            if not results:
-                return "No matches found"
-
-            # Format output based on mode
-            return self._format_grep_results(results, output_mode)
+            return self._handle_grep_search(
+                pattern, path, include, output_mode, runtime.state
+            )
 
         self.glob_search = glob_search
         self.grep_search = grep_search
         self.tools = [glob_search, grep_search]
+
+    def _handle_glob_search(
+        self,
+        pattern: str,
+        path: str,
+        state: AnthropicToolsState,
+    ) -> str:
+        """Handle glob search operation.
+
+        Args:
+            pattern: The glob pattern to match files against.
+            path: The directory to search in.
+            state: The current agent state.
+
+        Returns:
+            Newline-separated list of matching file paths, sorted by modification
+                time (most recently modified first).
+
+                Returns `'No files found'` if no matches.
+        """
+        # Normalize base path
+        base_path = path if path.startswith("/") else "/" + path
+
+        # Get files from state
+        files = cast("dict[str, Any]", state.get(self.state_key, {}))
+
+        # Match files
+        matches = []
+        for file_path, file_data in files.items():
+            if file_path.startswith(base_path):
+                # Get relative path from base
+                if base_path == "/":
+                    relative = file_path[1:]  # Remove leading /
+                elif file_path == base_path:
+                    relative = Path(file_path).name
+                elif file_path.startswith(base_path + "/"):
+                    relative = file_path[len(base_path) + 1 :]
+                else:
+                    continue
+
+                # Match against pattern
+                # Handle ** pattern which requires special care
+                # PurePosixPath.match doesn't match single-level paths
+                # against **/pattern
+                is_match = PurePosixPath(relative).match(pattern)
+                if not is_match and pattern.startswith("**/"):
+                    # Also try matching without the **/ prefix for files in base dir
+                    is_match = PurePosixPath(relative).match(pattern[3:])
+
+                if is_match:
+                    matches.append((file_path, file_data["modified_at"]))
+
+        if not matches:
+            return "No files found"
+
+        # Sort by modification time
+        matches.sort(key=lambda x: x[1], reverse=True)
+        file_paths = [path for path, _ in matches]
+
+        return "\n".join(file_paths)
+
+    def _handle_grep_search(
+        self,
+        pattern: str,
+        path: str,
+        include: str | None,
+        output_mode: str,
+        state: AnthropicToolsState,
+    ) -> str:
+        """Handle grep search operation.
+
+        Args:
+            pattern: The regular expression pattern to search for in file contents.
+            path: The directory to search in.
+            include: File pattern to filter (e.g., `'*.js'`, `'*.{ts,tsx}'`).
+            output_mode: Output format.
+            state: The current agent state.
+
+        Returns:
+            Search results formatted according to `output_mode`.
+
+                Returns `'No matches found'` if no results.
+        """
+        # Normalize base path
+        base_path = path if path.startswith("/") else "/" + path
+
+        # Compile regex pattern (for validation)
+        try:
+            regex = re.compile(pattern)
+        except re.error as e:
+            return f"Invalid regex pattern: {e}"
+
+        if include and not _is_valid_include_pattern(include):
+            return "Invalid include pattern"
+
+        # Search files
+        files = cast("dict[str, Any]", state.get(self.state_key, {}))
+        results: dict[str, list[tuple[int, str]]] = {}
+
+        for file_path, file_data in files.items():
+            if not file_path.startswith(base_path):
+                continue
+
+            # Check include filter
+            if include:
+                basename = Path(file_path).name
+                if not _match_include_pattern(basename, include):
+                    continue
+
+            # Search file content
+            for line_num, line in enumerate(file_data["content"], 1):
+                if regex.search(line):
+                    if file_path not in results:
+                        results[file_path] = []
+                    results[file_path].append((line_num, line))
+
+        if not results:
+            return "No matches found"
+
+        # Format output based on mode
+        return self._format_grep_results(results, output_mode)
 
     def _format_grep_results(
         self,

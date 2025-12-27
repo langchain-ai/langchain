@@ -8,6 +8,7 @@ from langchain_core.runnables import RunnableConfig, RunnableSequence
 from pydantic import SecretStr
 
 from langchain.chat_models import __all__, init_chat_model
+from langchain.chat_models.base import _SUPPORTED_PROVIDERS
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
@@ -57,8 +58,13 @@ def test_init_missing_dep() -> None:
 
 
 def test_init_unknown_provider() -> None:
-    with pytest.raises(ValueError, match="Unsupported model_provider='bar'."):
+    with pytest.raises(ValueError, match="Unsupported provider='bar'"):
         init_chat_model("foo", model_provider="bar")
+
+
+def test_supported_providers_is_sorted() -> None:
+    """Test that supported providers are sorted alphabetically."""
+    assert list(_SUPPORTED_PROVIDERS) == sorted(_SUPPORTED_PROVIDERS.keys())
 
 
 @pytest.mark.requires("langchain_openai")
@@ -178,7 +184,13 @@ def test_configurable() -> None:
                 },
             ],
         },
-        "config": {"tags": ["foo"], "configurable": {}},
+        "config": {
+            "callbacks": None,
+            "configurable": {},
+            "metadata": {"model": "gpt-4o"},
+            "recursion_limit": 25,
+            "tags": ["foo"],
+        },
         "config_factories": [],
         "custom_input_type": None,
         "custom_output_type": None,
@@ -251,6 +263,7 @@ def test_configurable_with_default() -> None:
         "bound": {
             "name": None,
             "disable_streaming": False,
+            "effort": None,
             "model": "claude-sonnet-4-5-20250929",
             "mcp_servers": None,
             "max_tokens": 64000,
@@ -268,6 +281,7 @@ def test_configurable_with_default() -> None:
             "betas": None,
             "default_headers": None,
             "model_kwargs": {},
+            "reuse_last_container": None,
             "streaming": False,
             "stream_usage": True,
             "output_version": None,
@@ -275,7 +289,13 @@ def test_configurable_with_default() -> None:
         "kwargs": {
             "tools": [{"name": "foo", "description": "foo", "input_schema": {}}],
         },
-        "config": {"tags": ["foo"], "configurable": {}},
+        "config": {
+            "callbacks": None,
+            "configurable": {},
+            "metadata": {"bar_model": "claude-sonnet-4-5-20250929"},
+            "recursion_limit": 25,
+            "tags": ["foo"],
+        },
         "config_factories": [],
         "custom_input_type": None,
         "custom_output_type": None,

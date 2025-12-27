@@ -504,7 +504,7 @@ class ImageContentBlock(TypedDict):
     """Image data.
 
     !!! note "Factory function"
-        `create_image_block` may also be used as a factory to create a
+        `create_image_block` may also be used as a factory to create an
         `ImageContentBlock`. Benefits include:
 
         * Automatic ID generation (when not provided)
@@ -654,7 +654,7 @@ class PlainTextContentBlock(TypedDict):
 
     !!! note
         Title and context are optional fields that may be passed to the model. See
-        Anthropic [example](https://docs.claude.com/en/docs/build-with-claude/citations#citable-vs-non-citable-content).
+        Anthropic [example](https://platform.claude.com/docs/en/build-with-claude/citations#citable-vs-non-citable-content).
 
     !!! note "Factory function"
         `create_plaintext_block` may also be used as a factory to create a
@@ -867,7 +867,7 @@ def _get_data_content_block_types() -> tuple[str, ...]:
     Example: ("image", "video", "audio", "text-plain", "file")
 
     Note that old style multimodal blocks type literals with new style blocks.
-    Speficially, "image", "audio", and "file".
+    Specifically, "image", "audio", and "file".
 
     See the docstring of `_normalize_messages` in `language_models._utils` for details.
     """
@@ -906,7 +906,7 @@ def is_data_content_block(block: dict) -> bool:
 
         # 'text' is checked to support v0 PlainTextContentBlock types
         # We must guard against new style TextContentBlock which also has 'text' `type`
-        # by ensuring the presense of `source_type`
+        # by ensuring the presence of `source_type`
         if block["type"] == "text" and "source_type" not in block:  # noqa: SIM103  # This is more readable
             return False
 

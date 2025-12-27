@@ -12,13 +12,14 @@ from typing import (
     Literal,
     TypeAlias,
     TypeVar,
+    cast,
 )
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import TypedDict, override
 
-from langchain_core.caches import BaseCache
-from langchain_core.callbacks import Callbacks
+from langchain_core.caches import BaseCache  # noqa: TC001
+from langchain_core.callbacks import Callbacks  # noqa: TC001
 from langchain_core.globals import get_verbose
 from langchain_core.messages import (
     AIMessage,
@@ -92,7 +93,7 @@ def _get_token_ids_default_method(text: str) -> list[int]:
     tokenizer = get_tokenizer()
 
     # tokenize the text using the GPT-2 tokenizer
-    return tokenizer.encode(text)
+    return cast("list[int]", tokenizer.encode(text))
 
 
 LanguageModelInput = PromptValue | str | Sequence[MessageLikeRepresentation]
@@ -131,14 +132,19 @@ class BaseLanguageModel(
 
     Caching is not currently supported for streaming methods of models.
     """
+
     verbose: bool = Field(default_factory=_get_verbosity, exclude=True, repr=False)
     """Whether to print out response text."""
+
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to add to the run trace."""
+
     tags: list[str] | None = Field(default=None, exclude=True)
     """Tags to add to the run trace."""
+
     metadata: dict[str, Any] | None = Field(default=None, exclude=True)
     """Metadata to add to the run trace."""
+
     custom_get_token_ids: Callable[[str], list[int]] | None = Field(
         default=None, exclude=True
     )
@@ -195,15 +201,22 @@ class BaseLanguageModel(
             type (e.g., pure text completion models vs chat models).
 
         Args:
-            prompts: List of `PromptValue` objects. A `PromptValue` is an object that
-                can be converted to match the format of any language model (string for
-                pure text generation models and `BaseMessage` objects for chat models).
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: `Callbacks` to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            prompts: List of `PromptValue` objects.
+
+                A `PromptValue` is an object that can be converted to match the format
+                of any language model (string for pure text generation models and
+                `BaseMessage` objects for chat models).
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
             An `LLMResult`, which contains a list of candidate `Generation` objects for
@@ -232,15 +245,22 @@ class BaseLanguageModel(
             type (e.g., pure text completion models vs chat models).
 
         Args:
-            prompts: List of `PromptValue` objects. A `PromptValue` is an object that
-                can be converted to match the format of any language model (string for
-                pure text generation models and `BaseMessage` objects for chat models).
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: `Callbacks` to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            prompts: List of `PromptValue` objects.
+
+                A `PromptValue` is an object that can be converted to match the format
+                of any language model (string for pure text generation models and
+                `BaseMessage` objects for chat models).
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
             An `LLMResult`, which contains a list of candidate `Generation` objects for
@@ -280,6 +300,9 @@ class BaseLanguageModel(
 
         Useful for checking if an input fits in a model's context window.
 
+        This should be overridden by model-specific implementations to provide accurate
+        token counts via model-specific tokenizers.
+
         Args:
             text: The string input to tokenize.
 
@@ -298,9 +321,17 @@ class BaseLanguageModel(
 
         Useful for checking if an input fits in a model's context window.
 
+        This should be overridden by model-specific implementations to provide accurate
+        token counts via model-specific tokenizers.
+
         !!! note
-            The base implementation of `get_num_tokens_from_messages` ignores tool
-            schemas.
+
+            * The base implementation of `get_num_tokens_from_messages` ignores tool
+                schemas.
+            * The base implementation of `get_num_tokens_from_messages` adds additional
+                prefixes to messages in represent user roles, which will add to the
+                overall token count. Model-specific implementations may choose to
+                handle this differently.
 
         Args:
             messages: The message inputs to tokenize.

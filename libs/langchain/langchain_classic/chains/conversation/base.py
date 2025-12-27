@@ -108,8 +108,8 @@ class ConversationChain(LLMChain):
     prompt: BasePromptTemplate = PROMPT
     """Default conversation prompt to use."""
 
-    input_key: str = "input"  #: :meta private:
-    output_key: str = "response"  #: :meta private:
+    input_key: str = "input"
+    output_key: str = "response"
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,

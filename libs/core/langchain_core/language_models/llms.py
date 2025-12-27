@@ -61,6 +61,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_background_tasks: set[asyncio.Task] = set()
+
 
 @functools.lru_cache
 def _log_error_once(msg: str) -> None:
@@ -100,9 +102,9 @@ def create_base_retry_decorator(
                         asyncio.run(coro)
                     else:
                         if loop.is_running():
-                            # TODO: Fix RUF006 - this task should have a reference
-                            #  and be awaited somewhere
-                            loop.create_task(coro)  # noqa: RUF006
+                            task = loop.create_task(coro)
+                            _background_tasks.add(task)
+                            task.add_done_callback(_background_tasks.discard)
                         else:
                             asyncio.run(coro)
                 except Exception as e:
@@ -299,7 +301,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     @functools.cached_property
     def _serialized(self) -> dict[str, Any]:
-        return dumpd(self)
+        # self is always a Serializable object in this case, thus the result is
+        # guaranteed to be a dict since dumps uses the default callback, which uses
+        # obj.to_json which always returns TypedDict subclasses
+        return cast("dict[str, Any]", dumpd(self))
 
     # --- Runnable methods ---
 
@@ -651,9 +656,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         Args:
             prompts: The prompts to generate from.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of the stop substrings.
-                If stop tokens are not supported consider raising NotImplementedError.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+
+                If stop tokens are not supported consider raising `NotImplementedError`.
             run_manager: Callback manager for the run.
 
         Returns:
@@ -671,9 +679,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         Args:
             prompts: The prompts to generate from.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of the stop substrings.
-                If stop tokens are not supported consider raising NotImplementedError.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+
+                If stop tokens are not supported consider raising `NotImplementedError`.
             run_manager: Callback manager for the run.
 
         Returns:
@@ -705,11 +716,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         Args:
             prompt: The prompt to generate from.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
             run_manager: Callback manager for the run.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Yields:
             Generation chunks.
@@ -731,11 +745,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         Args:
             prompt: The prompt to generate from.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
             run_manager: Callback manager for the run.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Yields:
             Generation chunks.
@@ -846,10 +863,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         Args:
             prompts: List of string prompts.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: `Callbacks` to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
             tags: List of tags to associate with each prompt. If provided, the length
                 of the list must match the length of the prompts list.
             metadata: List of metadata dictionaries to associate with each prompt. If
@@ -859,8 +880,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 length of the list must match the length of the prompts list.
             run_id: List of run IDs to associate with each prompt. If provided, the
                 length of the list must match the length of the prompts list.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Raises:
             ValueError: If prompts is not a list.
@@ -1116,10 +1138,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         Args:
             prompts: List of string prompts.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: `Callbacks` to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
             tags: List of tags to associate with each prompt. If provided, the length
                 of the list must match the length of the prompts list.
             metadata: List of metadata dictionaries to associate with each prompt. If
@@ -1129,8 +1155,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 length of the list must match the length of the prompts list.
             run_id: List of run IDs to associate with each prompt. If provided, the
                 length of the list must match the length of the prompts list.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Raises:
             ValueError: If the length of `callbacks`, `tags`, `metadata`, or
@@ -1410,12 +1437,16 @@ class LLM(BaseLLM):
 
         Args:
             prompt: The prompt to generate from.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of the stop substrings.
-                If stop tokens are not supported consider raising NotImplementedError.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+
+                If stop tokens are not supported consider raising `NotImplementedError`.
             run_manager: Callback manager for the run.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
             The model output as a string. SHOULD NOT include the prompt.
@@ -1436,12 +1467,16 @@ class LLM(BaseLLM):
 
         Args:
             prompt: The prompt to generate from.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of the stop substrings.
-                If stop tokens are not supported consider raising NotImplementedError.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+
+                If stop tokens are not supported consider raising `NotImplementedError`.
             run_manager: Callback manager for the run.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
             The model output as a string. SHOULD NOT include the prompt.

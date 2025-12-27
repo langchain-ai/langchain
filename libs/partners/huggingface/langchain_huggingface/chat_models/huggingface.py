@@ -7,13 +7,21 @@ import json
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from operator import itemgetter
-from typing import Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
+
+if TYPE_CHECKING:
+    from langchain_huggingface.llms.huggingface_endpoint import HuggingFaceEndpoint
+    from langchain_huggingface.llms.huggingface_pipeline import HuggingFacePipeline
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models import (
+    LanguageModelInput,
+    ModelProfile,
+    ModelProfileRegistry,
+)
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     agenerate_from_stream,
@@ -61,8 +69,16 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Self
 
+from langchain_huggingface.data._profiles import _PROFILES
 from langchain_huggingface.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain_huggingface.llms.huggingface_pipeline import HuggingFacePipeline
+
+_MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 @dataclass
@@ -513,7 +529,56 @@ class ChatHuggingFace(BaseChatModel):
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
+
+        # Inherit properties from the LLM if they weren't explicitly set
+        self._inherit_llm_properties()
+
         self._resolve_model_id()
+
+    def _inherit_llm_properties(self) -> None:
+        """Inherit properties from the wrapped LLM instance if not explicitly set."""
+        if not hasattr(self, "llm") or self.llm is None:
+            return
+
+        # Map of ChatHuggingFace properties to LLM properties
+        property_mappings = {
+            "temperature": "temperature",
+            "max_tokens": "max_new_tokens",  # Different naming convention
+            "top_p": "top_p",
+            "seed": "seed",
+            "streaming": "streaming",
+            "stop": "stop_sequences",
+        }
+
+        # Inherit properties from LLM and not explicitly set here
+        for chat_prop, llm_prop in property_mappings.items():
+            if hasattr(self.llm, llm_prop):
+                llm_value = getattr(self.llm, llm_prop)
+                chat_value = getattr(self, chat_prop, None)
+                if not chat_value and llm_value:
+                    setattr(self, chat_prop, llm_value)
+
+        # Handle special cases for HuggingFaceEndpoint
+        if _is_huggingface_endpoint(self.llm):
+            # Inherit additional HuggingFaceEndpoint specific properties
+            endpoint_mappings = {
+                "frequency_penalty": "repetition_penalty",
+            }
+
+            for chat_prop, llm_prop in endpoint_mappings.items():
+                if hasattr(self.llm, llm_prop):
+                    llm_value = getattr(self.llm, llm_prop)
+                    chat_value = getattr(self, chat_prop, None)
+                    if chat_value is None and llm_value is not None:
+                        setattr(self, chat_prop, llm_value)
+
+        # Inherit model_kwargs if not explicitly set
+        if (
+            not self.model_kwargs
+            and hasattr(self.llm, "model_kwargs")
+            and isinstance(self.llm.model_kwargs, dict)
+        ):
+            self.model_kwargs = self.llm.model_kwargs.copy()
 
     @model_validator(mode="after")
     def validate_llm(self) -> Self:
@@ -530,6 +595,104 @@ class ChatHuggingFace(BaseChatModel):
             )
             raise TypeError(msg)
         return self
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None and self.model_id:
+            self.profile = _get_default_model_profile(self.model_id)
+        return self
+
+    @classmethod
+    def from_model_id(
+        cls,
+        model_id: str,
+        task: str | None = None,
+        backend: Literal["pipeline", "endpoint", "text-gen"] = "pipeline",
+        **kwargs: Any,
+    ) -> ChatHuggingFace:
+        """Construct a ChatHuggingFace model from a model_id.
+
+        Args:
+            model_id: The model ID of the Hugging Face model.
+            task: The task to perform (e.g., "text-generation").
+            backend: The backend to use. One of "pipeline", "endpoint", "text-gen".
+            **kwargs: Additional arguments to pass to the backend or ChatHuggingFace.
+        """
+        llm: (
+            Any  # HuggingFacePipeline, HuggingFaceEndpoint, HuggingFaceTextGenInference
+        )
+        if backend == "pipeline":
+            from langchain_huggingface.llms.huggingface_pipeline import (
+                HuggingFacePipeline,
+            )
+
+            task = task if task is not None else "text-generation"
+
+            # Separate pipeline-specific kwargs from ChatHuggingFace kwargs
+            # Parameters that should go to HuggingFacePipeline.from_model_id
+            pipeline_specific_kwargs = {}
+
+            # Extract pipeline-specific parameters
+            pipeline_keys = [
+                "backend",
+                "device",
+                "device_map",
+                "model_kwargs",
+                "pipeline_kwargs",
+                "batch_size",
+            ]
+            for key in pipeline_keys:
+                if key in kwargs:
+                    pipeline_specific_kwargs[key] = kwargs.pop(key)
+
+            # Remaining kwargs (temperature, max_tokens, etc.) should go to
+            # pipeline_kwargs for generation parameters, which ChatHuggingFace
+            # will inherit from the LLM
+            if "pipeline_kwargs" not in pipeline_specific_kwargs:
+                pipeline_specific_kwargs["pipeline_kwargs"] = {}
+
+            # Add generation parameters to pipeline_kwargs
+            # Map max_tokens to max_new_tokens for HuggingFace pipeline
+            generation_params = {}
+            for k, v in list(kwargs.items()):
+                if k == "max_tokens":
+                    generation_params["max_new_tokens"] = v
+                    kwargs.pop(k)
+                elif k in (
+                    "temperature",
+                    "max_new_tokens",
+                    "top_p",
+                    "top_k",
+                    "repetition_penalty",
+                    "do_sample",
+                ):
+                    generation_params[k] = v
+                    kwargs.pop(k)
+
+            pipeline_specific_kwargs["pipeline_kwargs"].update(generation_params)
+
+            # Create the HuggingFacePipeline
+            llm = HuggingFacePipeline.from_model_id(
+                model_id=model_id, task=task, **pipeline_specific_kwargs
+            )
+        elif backend == "endpoint":
+            from langchain_huggingface.llms.huggingface_endpoint import (
+                HuggingFaceEndpoint,
+            )
+
+            llm = HuggingFaceEndpoint(repo_id=model_id, task=task, **kwargs)
+        elif backend == "text-gen":
+            from langchain_community.llms.huggingface_text_gen_inference import (  # type: ignore[import-not-found]
+                HuggingFaceTextGenInference,
+            )
+
+            llm = HuggingFaceTextGenInference(inference_server_url=model_id, **kwargs)
+        else:
+            msg = f"Unknown backend: {backend}"
+            raise ValueError(msg)
+
+        return cls(llm=llm, **kwargs)
 
     def _create_chat_result(self, response: dict) -> ChatResult:
         generations = []
@@ -879,8 +1042,8 @@ class ChatHuggingFace(BaseChatModel):
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
-                Supports any tool definition handled by
-                `langchain_core.utils.function_calling.convert_to_openai_tool`.
+
+                Supports any tool definition handled by [`convert_to_openai_tool`][langchain_core.utils.function_calling.convert_to_openai_tool].
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function or
                 `'auto'` to automatically determine which function to call
@@ -888,8 +1051,7 @@ class ChatHuggingFace(BaseChatModel):
                 {"type": "function", "function": {"name": <<tool_name>>}}.
             **kwargs: Any additional parameters to pass to the
                 `langchain.runnable.Runnable` constructor.
-
-        """
+        """  # noqa: E501
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None and tool_choice:
             if len(formatted_tools) != 1:
@@ -940,9 +1102,9 @@ class ChatHuggingFace(BaseChatModel):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - an OpenAI function/tool schema,
-                - a JSON Schema,
-                - a `TypedDict` class
+                - An OpenAI function/tool schema,
+                - A JSON Schema,
+                - A `TypedDict` class
 
                 Pydantic class is currently supported.
 
@@ -953,11 +1115,15 @@ class ChatHuggingFace(BaseChatModel):
                 - `'json_mode'`: uses JSON mode.
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a `BaseMessage`) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.

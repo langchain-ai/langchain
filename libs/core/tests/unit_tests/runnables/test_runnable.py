@@ -4,7 +4,13 @@ import sys
 import time
 import uuid
 import warnings
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Sequence
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Iterator,
+    Sequence,
+)
 from functools import partial
 from operator import itemgetter
 from typing import Any, cast
@@ -3500,7 +3506,7 @@ def test_bind_bind() -> None:
 
 def test_bind_with_lambda() -> None:
     def my_function(_: Any, **kwargs: Any) -> int:
-        return 3 + kwargs.get("n", 0)
+        return 3 + int(kwargs.get("n", 0))
 
     runnable = RunnableLambda(my_function).bind(n=1)
     assert runnable.invoke({}) == 4
@@ -3510,7 +3516,7 @@ def test_bind_with_lambda() -> None:
 
 async def test_bind_with_lambda_async() -> None:
     def my_function(_: Any, **kwargs: Any) -> int:
-        return 3 + kwargs.get("n", 0)
+        return 3 + int(kwargs.get("n", 0))
 
     runnable = RunnableLambda(my_function).bind(n=1)
     assert await runnable.ainvoke({}) == 4
@@ -5725,3 +5731,37 @@ def test_runnable_assign() -> None:
 
     result = runnable_assign.invoke({"input": 5})
     assert result == {"input": 5, "add_step": {"added": 15}}
+
+
+def test_runnable_typed_dict_schema() -> None:
+    """Testing that the schema is generated properly(not empty) when using TypedDict.
+
+    subclasses to annotate the arguments of a RunnableParallel children.
+    """
+
+    class Foo(TypedDict):
+        foo: str
+
+    class InputData(Foo):
+        bar: str
+
+    def forward_foo(input_data: InputData) -> str:
+        return input_data["foo"]
+
+    def transform_input(input_data: InputData) -> dict[str, str]:
+        foo = input_data["foo"]
+        bar = input_data["bar"]
+
+        return {"transformed": foo + bar}
+
+    foo_runnable = RunnableLambda(forward_foo)
+    other_runnable = RunnableLambda(transform_input)
+
+    parallel = RunnableParallel(
+        foo=foo_runnable,
+        other=other_runnable,
+    )
+    assert (
+        repr(parallel.input_schema.model_validate({"foo": "Y", "bar": "Z"}))
+        == "RunnableParallel<foo,other>Input(root={'foo': 'Y', 'bar': 'Z'})"
+    )

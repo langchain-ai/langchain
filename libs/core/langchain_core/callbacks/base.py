@@ -5,13 +5,12 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from typing_extensions import Self
-
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from uuid import UUID
 
     from tenacity import RetryCallState
+    from typing_extensions import Self
 
     from langchain_core.agents import AgentAction, AgentFinish
     from langchain_core.documents import Document

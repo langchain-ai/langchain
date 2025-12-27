@@ -3,7 +3,15 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING, Annotated, Any, cast, get_args, get_origin, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    cast,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
@@ -12,10 +20,8 @@ from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
 from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
-from langgraph.runtime import Runtime  # noqa: TC002
 from langgraph.types import Command, Send
-from langgraph.typing import ContextT  # noqa: TC002
-from typing_extensions import NotRequired, Required, TypedDict, TypeVar
+from typing_extensions import NotRequired, Required, TypedDict
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -24,6 +30,8 @@ from langchain.agents.middleware.types import (
     ModelRequest,
     ModelResponse,
     OmitFromSchema,
+    ResponseT,
+    StateT_co,
     _InputAgentState,
     _OutputAgentState,
 )
@@ -46,14 +54,26 @@ if TYPE_CHECKING:
     from langchain_core.runnables import Runnable
     from langgraph.cache.base import BaseCache
     from langgraph.graph.state import CompiledStateGraph
+    from langgraph.runtime import Runtime
     from langgraph.store.base import BaseStore
     from langgraph.types import Checkpointer
+    from langgraph.typing import ContextT
 
     from langchain.agents.middleware.types import ToolCallRequest, ToolCallWrapper
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
-ResponseT = TypeVar("ResponseT")
+FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
+    # if model profile data are not available, these models are assumed to support
+    # structured output
+    "grok",
+    "gpt-5",
+    "gpt-4.1",
+    "gpt-4o",
+    "gpt-oss",
+    "o3-pro",
+    "o3-mini",
+]
 
 
 def _normalize_to_model_response(result: ModelResponse | AIMessage) -> ModelResponse:
@@ -294,7 +314,7 @@ def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None 
 def _extract_metadata(type_: type) -> list:
     """Extract metadata from a field type, handling Required/NotRequired and Annotated wrappers."""
     # Handle Required[Annotated[...]] or NotRequired[Annotated[...]]
-    if get_origin(type_) in (Required, NotRequired):
+    if get_origin(type_) in {Required, NotRequired}:
         inner_type = get_args(type_)[0]
         if get_origin(inner_type) is Annotated:
             return list(get_args(inner_type)[1:])
@@ -341,11 +361,13 @@ def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> l
     return []
 
 
-def _supports_provider_strategy(model: str | BaseChatModel) -> bool:
+def _supports_provider_strategy(model: str | BaseChatModel, tools: list | None = None) -> bool:
     """Check if a model supports provider-specific structured output.
 
     Args:
         model: Model name string or `BaseChatModel` instance.
+        tools: Optional list of tools provided to the agent. Needed because some models
+            don't support structured output together with tool calling.
 
     Returns:
         `True` if the model supports provider-specific structured output, `False` otherwise.
@@ -354,11 +376,23 @@ def _supports_provider_strategy(model: str | BaseChatModel) -> bool:
     if isinstance(model, str):
         model_name = model
     elif isinstance(model, BaseChatModel):
-        model_name = getattr(model, "model_name", None)
+        model_name = (
+            getattr(model, "model_name", None)
+            or getattr(model, "model", None)
+            or getattr(model, "model_id", "")
+        )
+        model_profile = model.profile
+        if (
+            model_profile is not None
+            and model_profile.get("structured_output")
+            # We make an exception for Gemini models, which currently do not support
+            # simultaneous tool use with structured output
+            and not (tools and isinstance(model_name, str) and "gemini" in model_name.lower())
+        ):
+            return True
 
     return (
-        "grok" in model_name.lower()
-        or any(part in model_name for part in ["gpt-5", "gpt-4.1", "gpt-oss", "o3-pro", "o3-mini"])
+        any(part in model_name.lower() for part in FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT)
         if model_name
         else False
     )
@@ -504,12 +538,12 @@ def _chain_async_tool_call_wrappers(
     return result
 
 
-def create_agent(  # noqa: PLR0915
+def create_agent(
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
     *,
-    system_prompt: str | None = None,
-    middleware: Sequence[AgentMiddleware[AgentState[ResponseT], ContextT]] = (),
+    system_prompt: str | SystemMessage | None = None,
+    middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
     response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
     state_schema: type[AgentState[ResponseT]] | None = None,
     context_schema: type[ContextT] | None = None,
@@ -529,42 +563,64 @@ def create_agent(  # noqa: PLR0915
     visit the [Agents](https://docs.langchain.com/oss/python/langchain/agents) docs.
 
     Args:
-        model: The language model for the agent. Can be a string identifier
-            (e.g., `"openai:gpt-4"`) or a direct chat model instance (e.g.,
-            [`ChatOpenAI`][langchain_openai.ChatOpenAI] or other another
-            [chat model](https://docs.langchain.com/oss/python/integrations/chat)).
+        model: The language model for the agent.
+
+            Can be a string identifier (e.g., `"openai:gpt-4"`) or a direct chat model
+            instance (e.g., [`ChatOpenAI`][langchain_openai.ChatOpenAI] or other another
+            [LangChain chat model](https://docs.langchain.com/oss/python/integrations/chat)).
 
             For a full list of supported model strings, see
             [`init_chat_model`][langchain.chat_models.init_chat_model(model_provider)].
-        tools: A list of tools, `dicts`, or `Callable`.
+
+            !!! tip ""
+
+                See the [Models](https://docs.langchain.com/oss/python/langchain/models)
+                docs for more information.
+        tools: A list of tools, `dict`, or `Callable`.
 
             If `None` or an empty list, the agent will consist of a model node without a
             tool calling loop.
+
+
+            !!! tip ""
+
+                See the [Tools](https://docs.langchain.com/oss/python/langchain/tools)
+                docs for more information.
         system_prompt: An optional system prompt for the LLM.
 
-            Prompts are converted to a
-            [`SystemMessage`][langchain.messages.SystemMessage] and added to the
-            beginning of the message list.
+            Can be a `str` (which will be converted to a `SystemMessage`) or a
+            `SystemMessage` instance directly. The system message is added to the
+            beginning of the message list when calling the model.
         middleware: A sequence of middleware instances to apply to the agent.
 
-            Middleware can intercept and modify agent behavior at various stages. See
-            the [full guide](https://docs.langchain.com/oss/python/langchain/middleware).
+            Middleware can intercept and modify agent behavior at various stages.
+
+            !!! tip ""
+
+                See the [Middleware](https://docs.langchain.com/oss/python/langchain/middleware)
+                docs for more information.
         response_format: An optional configuration for structured responses.
 
             Can be a `ToolStrategy`, `ProviderStrategy`, or a Pydantic model class.
 
             If provided, the agent will handle structured output during the
-            conversation flow. Raw schemas will be wrapped in an appropriate strategy
-            based on model capabilities.
+            conversation flow.
+
+            Raw schemas will be wrapped in an appropriate strategy based on model
+            capabilities.
+
+            !!! tip ""
+
+                See the [Structured output](https://docs.langchain.com/oss/python/langchain/structured-output)
+                docs for more information.
         state_schema: An optional `TypedDict` schema that extends `AgentState`.
 
             When provided, this schema is used instead of `AgentState` as the base
             schema for merging with middleware state schemas. This allows users to
             add custom state fields without needing to create custom middleware.
+
             Generally, it's recommended to use `state_schema` extensions via middleware
             to keep relevant extensions scoped to corresponding hooks / tools.
-
-            The schema must be a subclass of `AgentState[ResponseT]`.
         context_schema: An optional schema for runtime context.
         checkpointer: An optional checkpoint saver object.
 
@@ -628,6 +684,14 @@ def create_agent(  # noqa: PLR0915
     # init chat model
     if isinstance(model, str):
         model = init_chat_model(model)
+
+    # Convert system_prompt to SystemMessage if needed
+    system_message: SystemMessage | None = None
+    if system_prompt is not None:
+        if isinstance(system_prompt, SystemMessage):
+            system_message = system_prompt
+        else:
+            system_message = SystemMessage(content=system_prompt)
 
     # Handle tools being None or empty
     if tools is None:
@@ -727,9 +791,9 @@ def create_agent(  # noqa: PLR0915
         default_tools = list(built_in_tools)
 
     # validate middleware
-    assert len({m.name for m in middleware}) == len(middleware), (  # noqa: S101
-        "Please remove duplicate middleware instances."
-    )
+    if len({m.name for m in middleware}) != len(middleware):
+        msg = "Please remove duplicate middleware instances."
+        raise AssertionError(msg)
     middleware_w_before_agent = [
         m
         for m in middleware
@@ -785,7 +849,7 @@ def create_agent(  # noqa: PLR0915
         async_handlers = [m.awrap_model_call for m in middleware_w_awrap_model_call]
         awrap_model_call_handler = _chain_async_model_call_handlers(async_handlers)
 
-    state_schemas = {m.state_schema for m in middleware}
+    state_schemas: set[type] = {m.state_schema for m in middleware}
     # Use provided state_schema if available, otherwise use base AgentState
     base_state = state_schema if state_schema is not None else AgentState
     state_schemas.add(base_state)
@@ -822,12 +886,12 @@ def create_agent(  # noqa: PLR0915
                 )
                 try:
                     structured_response = provider_strategy_binding.parse(output)
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     schema_name = getattr(
                         effective_response_format.schema_spec.schema, "__name__", "response_format"
                     )
                     validation_error = StructuredOutputValidationError(schema_name, exc, output)
-                    raise validation_error
+                    raise validation_error from exc
                 else:
                     return {"messages": [output], "structured_response": structured_response}
             return {"messages": [output]}
@@ -873,8 +937,7 @@ def create_agent(  # noqa: PLR0915
 
                     tool_message_content = (
                         effective_response_format.tool_message_content
-                        if effective_response_format.tool_message_content
-                        else f"Returning structured response: {structured_response}"
+                        or f"Returning structured response: {structured_response}"
                     )
 
                     return {
@@ -888,13 +951,13 @@ def create_agent(  # noqa: PLR0915
                         ],
                         "structured_response": structured_response,
                     }
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     exception = StructuredOutputValidationError(tool_call["name"], exc, output)
                     should_retry, error_message = _handle_structured_output_error(
                         exception, effective_response_format
                     )
                     if not should_retry:
-                        raise exception
+                        raise exception from exc
 
                     return {
                         "messages": [
@@ -958,7 +1021,7 @@ def create_agent(  # noqa: PLR0915
         effective_response_format: ResponseFormat | None
         if isinstance(request.response_format, AutoStrategy):
             # User provided raw schema via AutoStrategy - auto-detect best strategy based on model
-            if _supports_provider_strategy(request.model):
+            if _supports_provider_strategy(request.model, tools=request.tools):
                 # Model supports provider strategy - use it
                 effective_response_format = ProviderStrategy(schema=request.response_format.schema)
             else:
@@ -979,7 +1042,7 @@ def create_agent(  # noqa: PLR0915
 
         # Bind model based on effective response format
         if isinstance(effective_response_format, ProviderStrategy):
-            # Use provider-specific structured output
+            # (Backward compatibility) Use OpenAI format structured output
             kwargs = effective_response_format.to_model_kwargs()
             return (
                 request.model.bind_tools(
@@ -1032,10 +1095,12 @@ def create_agent(  # noqa: PLR0915
         # Get the bound model (with auto-detection if needed)
         model_, effective_response_format = _get_bound_model(request)
         messages = request.messages
-        if request.system_prompt:
-            messages = [SystemMessage(request.system_prompt), *messages]
+        if request.system_message:
+            messages = [request.system_message, *messages]
 
         output = model_.invoke(messages)
+        if name:
+            output.name = name
 
         # Handle model output to get messages and structured_response
         handled_output = _handle_model_output(output, effective_response_format)
@@ -1052,7 +1117,7 @@ def create_agent(  # noqa: PLR0915
         request = ModelRequest(
             model=model,
             tools=default_tools,
-            system_prompt=system_prompt,
+            system_message=system_message,
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
@@ -1085,10 +1150,12 @@ def create_agent(  # noqa: PLR0915
         # Get the bound model (with auto-detection if needed)
         model_, effective_response_format = _get_bound_model(request)
         messages = request.messages
-        if request.system_prompt:
-            messages = [SystemMessage(request.system_prompt), *messages]
+        if request.system_message:
+            messages = [request.system_message, *messages]
 
         output = await model_.ainvoke(messages)
+        if name:
+            output.name = name
 
         # Handle model output to get messages and structured_response
         handled_output = _handle_model_output(output, effective_response_format)
@@ -1105,7 +1172,7 @@ def create_agent(  # noqa: PLR0915
         request = ModelRequest(
             model=model,
             tools=default_tools,
-            system_prompt=system_prompt,
+            system_message=system_message,
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
@@ -1260,11 +1327,14 @@ def create_agent(  # noqa: PLR0915
 
         graph.add_conditional_edges(
             "tools",
-            _make_tools_to_model_edge(
-                tool_node=tool_node,
-                model_destination=loop_entry_node,
-                structured_output_tools=structured_output_tools,
-                end_destination=exit_node,
+            RunnableCallable(
+                _make_tools_to_model_edge(
+                    tool_node=tool_node,
+                    model_destination=loop_entry_node,
+                    structured_output_tools=structured_output_tools,
+                    end_destination=exit_node,
+                ),
+                trace=False,
             ),
             tools_to_model_destinations,
         )
@@ -1281,19 +1351,25 @@ def create_agent(  # noqa: PLR0915
 
         graph.add_conditional_edges(
             loop_exit_node,
-            _make_model_to_tools_edge(
-                model_destination=loop_entry_node,
-                structured_output_tools=structured_output_tools,
-                end_destination=exit_node,
+            RunnableCallable(
+                _make_model_to_tools_edge(
+                    model_destination=loop_entry_node,
+                    structured_output_tools=structured_output_tools,
+                    end_destination=exit_node,
+                ),
+                trace=False,
             ),
             model_to_tools_destinations,
         )
     elif len(structured_output_tools) > 0:
         graph.add_conditional_edges(
             loop_exit_node,
-            _make_model_to_model_edge(
-                model_destination=loop_entry_node,
-                end_destination=exit_node,
+            RunnableCallable(
+                _make_model_to_model_edge(
+                    model_destination=loop_entry_node,
+                    end_destination=exit_node,
+                ),
+                trace=False,
             ),
             [loop_entry_node, exit_node],
         )
@@ -1403,7 +1479,7 @@ def create_agent(  # noqa: PLR0915
         debug=debug,
         name=name,
         cache=cache,
-    )
+    ).with_config({"recursion_limit": 10_000})
 
 
 def _resolve_jump(
@@ -1594,7 +1670,7 @@ def _add_middleware_edge(
         if "model" in can_jump_to and name != model_destination:
             destinations.append(model_destination)
 
-        graph.add_conditional_edges(name, jump_edge, destinations)
+        graph.add_conditional_edges(name, RunnableCallable(jump_edge, trace=False), destinations)
 
     else:
         graph.add_edge(name, default_destination)

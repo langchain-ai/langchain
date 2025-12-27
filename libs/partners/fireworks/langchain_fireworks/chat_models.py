@@ -18,7 +18,11 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models import (
+    LanguageModelInput,
+    ModelProfile,
+    ModelProfileRegistry,
+)
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     LangSmithParams,
@@ -79,8 +83,17 @@ from pydantic import (
 from typing_extensions import Self
 
 from langchain_fireworks._compat import _convert_from_v1_to_chat_completions
+from langchain_fireworks.data._profiles import _PROFILES
 
 logger = logging.getLogger(__name__)
+
+
+_MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -274,9 +287,7 @@ class ChatFireworks(BaseChatModel):
         ```python
         from langchain_fireworks.chat_models import ChatFireworks
 
-        fireworks = ChatFireworks(
-            model_name="accounts/fireworks/models/llama-v3p1-8b-instruct"
-        )
+        fireworks = ChatFireworks(model_name="accounts/fireworks/models/gpt-oss-120b")
         ```
     """
 
@@ -306,16 +317,22 @@ class ChatFireworks(BaseChatModel):
         """Return whether this model can be serialized by LangChain."""
         return True
 
-    client: Any = Field(default=None, exclude=True)  #: :meta private:
-    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
+    client: Any = Field(default=None, exclude=True)
+
+    async_client: Any = Field(default=None, exclude=True)
+
     model_name: str = Field(alias="model")
     """Model name to use."""
+
     temperature: float | None = None
     """What sampling temperature to use."""
+
     stop: str | list[str] | None = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
+
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
+
     fireworks_api_key: SecretStr = Field(
         alias="api_key",
         default_factory=secret_from_env(
@@ -336,18 +353,25 @@ class ChatFireworks(BaseChatModel):
         alias="base_url", default_factory=from_env("FIREWORKS_API_BASE", default=None)
     )
     """Base URL path for API requests, leave blank if not using a proxy or service
-        emulator."""
+    emulator.
+    """
+
     request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
     """Timeout for requests to Fireworks completion API. Can be `float`,
-    `httpx.Timeout` or `None`."""
+    `httpx.Timeout` or `None`.
+    """
+
     streaming: bool = False
     """Whether to stream the results or not."""
+
     n: int = 1
     """Number of chat completions to generate for each prompt."""
+
     max_tokens: int | None = None
     """Maximum number of tokens to generate."""
+
     max_retries: int | None = None
     """Maximum number of retries to make when generating."""
 
@@ -389,6 +413,13 @@ class ChatFireworks(BaseChatModel):
         if self.max_retries:
             self.client._max_retries = self.max_retries
             self.async_client._max_retries = self.max_retries
+        return self
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model_name)
         return self
 
     @property
@@ -636,8 +667,8 @@ class ChatFireworks(BaseChatModel):
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
-                Supports any tool definition handled by
-                `langchain_core.utils.function_calling.convert_to_openai_tool`.
+
+                Supports any tool definition handled by [`convert_to_openai_tool`][langchain_core.utils.function_calling.convert_to_openai_tool].
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function,
                 `'auto'` to automatically determine which function to call
@@ -646,8 +677,7 @@ class ChatFireworks(BaseChatModel):
                 `{"type": "function", "function": {"name": <<tool_name>>}}`.
             **kwargs: Any additional parameters to pass to
                 `langchain_fireworks.chat_models.ChatFireworks.bind`
-
-        """
+        """  # noqa: E501
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None and tool_choice:
             if isinstance(tool_choice, str) and (
@@ -685,10 +715,10 @@ class ChatFireworks(BaseChatModel):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - an OpenAI function/tool schema,
-                - a JSON Schema,
-                - a `TypedDict` class,
-                - or a Pydantic class.
+                - An OpenAI function/tool schema,
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - Or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
@@ -708,15 +738,20 @@ class ChatFireworks(BaseChatModel):
                 - `'json_mode'`:
                     Uses Fireworks's [JSON mode feature](https://docs.fireworks.ai/structured-responses/structured-response-formatting).
 
-                !!! warning "Behavior changed in 0.2.8"
+                !!! warning "Behavior changed in `langchain-fireworks` 0.2.8"
+
                     Added support for `'json_schema'`.
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a `BaseMessage`) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
@@ -761,7 +796,7 @@ class ChatFireworks(BaseChatModel):
 
 
         model = ChatFireworks(
-            model="accounts/fireworks/models/firefunction-v1",
+            model="accounts/fireworks/models/gpt-oss-120b",
             temperature=0,
         )
         structured_model = model.with_structured_output(AnswerWithJustification)
@@ -791,7 +826,7 @@ class ChatFireworks(BaseChatModel):
 
 
         model = ChatFireworks(
-            model="accounts/fireworks/models/firefunction-v1",
+            model="accounts/fireworks/models/gpt-oss-120b",
             temperature=0,
         )
         structured_model = model.with_structured_output(
@@ -826,7 +861,7 @@ class ChatFireworks(BaseChatModel):
 
 
         model = ChatFireworks(
-            model="accounts/fireworks/models/firefunction-v1",
+            model="accounts/fireworks/models/gpt-oss-120b",
             temperature=0,
         )
         structured_model = model.with_structured_output(AnswerWithJustification)
@@ -862,7 +897,7 @@ class ChatFireworks(BaseChatModel):
         }
 
         model = ChatFireworks(
-            model="accounts/fireworks/models/firefunction-v1",
+            model="accounts/fireworks/models/gpt-oss-120b",
             temperature=0,
         )
         structured_model = model.with_structured_output(oai_schema)
@@ -889,7 +924,7 @@ class ChatFireworks(BaseChatModel):
 
 
         model = ChatFireworks(
-            model="accounts/fireworks/models/firefunction-v1", temperature=0
+            model="accounts/fireworks/models/gpt-oss-120b", temperature=0
         )
         structured_model = model.with_structured_output(
             AnswerWithJustification, method="json_mode", include_raw=True

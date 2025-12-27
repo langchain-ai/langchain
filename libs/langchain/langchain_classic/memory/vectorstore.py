@@ -30,7 +30,7 @@ class VectorStoreRetrieverMemory(BaseMemory):
     retriever: VectorStoreRetriever = Field(exclude=True)
     """VectorStoreRetriever object to connect to."""
 
-    memory_key: str = "history"  #: :meta private:
+    memory_key: str = "history"
     """Key name to locate the memories in the result of load_memory_variables."""
 
     input_key: str | None = None

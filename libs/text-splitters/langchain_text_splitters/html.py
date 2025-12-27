@@ -5,7 +5,6 @@ from __future__ import annotations
 import copy
 import pathlib
 import re
-from collections.abc import Iterator
 from io import StringIO
 from typing import (
     IO,
@@ -24,7 +23,7 @@ from typing_extensions import override
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Sequence
+    from collections.abc import Callable, Iterable, Iterator, Sequence
 
     from bs4.element import ResultSet
 
@@ -529,7 +528,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
     Markdown format. Note that some chunks may exceed the maximum size to maintain
     semantic integrity.
 
-    !!! version-added "Added in version 0.3.5"
+    !!! version-added "Added in `langchain-text-splitters` 0.3.5"
 
     Example:
         ```python
