@@ -149,7 +149,7 @@ class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, ContextT]):
             msg = "At least one limit must be specified (thread_limit or run_limit)"
             raise ValueError(msg)
 
-        if exit_behavior not in ("end", "error"):
+        if exit_behavior not in {"end", "error"}:
             msg = f"Invalid exit_behavior: {exit_behavior}. Must be 'end' or 'error'"
             raise ValueError(msg)
 
