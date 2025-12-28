@@ -125,7 +125,7 @@ class LangSmithLoader(BaseLoader):
             yield Document(content_str, metadata=metadata)
 
 
-def _stringify(x: str | dict) -> str:
+def _stringify(x: str | dict[str, Any]) -> str:
     if isinstance(x, str):
         return x
     try:

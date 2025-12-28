@@ -4,9 +4,11 @@ import json
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage as CoreAIMessage
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.runnables import Runnable
@@ -15,6 +17,7 @@ from typing_extensions import TypedDict
 
 from langchain.agents import create_agent
 from langchain.agents.factory import _supports_provider_strategy
+from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
     ProviderStrategy,
@@ -770,16 +773,11 @@ class TestDynamicModelWithResponseFormat:
         on the middleware-modified model (not the original), ensuring the correct strategy is
         selected based on the final model's capabilities.
         """
-        from unittest.mock import patch
-
-        from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-
-        from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
 
         # Custom model that we'll use to test whether the tool strategy is applied
         # correctly at runtime.
         class CustomModel(GenericFakeChatModel):
-            tool_bindings: list[Any] = []
+            tool_bindings: list[Any] = Field(default_factory=list)
 
             def bind_tools(
                 self,

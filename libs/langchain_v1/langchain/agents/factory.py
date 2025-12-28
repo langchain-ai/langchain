@@ -20,9 +20,7 @@ from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
 from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
-from langgraph.runtime import Runtime
 from langgraph.types import Command, Send
-from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict
 
 from langchain.agents.middleware.types import (
@@ -56,8 +54,10 @@ if TYPE_CHECKING:
     from langchain_core.runnables import Runnable
     from langgraph.cache.base import BaseCache
     from langgraph.graph.state import CompiledStateGraph
+    from langgraph.runtime import Runtime
     from langgraph.store.base import BaseStore
     from langgraph.types import Checkpointer
+    from langgraph.typing import ContextT
 
     from langchain.agents.middleware.types import ToolCallRequest, ToolCallWrapper
 
@@ -314,7 +314,7 @@ def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None 
 def _extract_metadata(type_: type) -> list:
     """Extract metadata from a field type, handling Required/NotRequired and Annotated wrappers."""
     # Handle Required[Annotated[...]] or NotRequired[Annotated[...]]
-    if get_origin(type_) in (Required, NotRequired):
+    if get_origin(type_) in {Required, NotRequired}:
         inner_type = get_args(type_)[0]
         if get_origin(inner_type) is Annotated:
             return list(get_args(inner_type)[1:])
@@ -942,8 +942,7 @@ def create_agent(
 
                     tool_message_content = (
                         effective_response_format.tool_message_content
-                        if effective_response_format.tool_message_content
-                        else f"Returning structured response: {structured_response}"
+                        or f"Returning structured response: {structured_response}"
                     )
 
                     return {

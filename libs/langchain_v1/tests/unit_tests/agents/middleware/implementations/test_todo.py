@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
-from langgraph.runtime import Runtime
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.todo import (
@@ -19,6 +18,9 @@ from langchain.agents.middleware.todo import (
 )
 from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+if TYPE_CHECKING:
+    from langgraph.runtime import Runtime
 
 
 def _fake_runtime() -> Runtime:
