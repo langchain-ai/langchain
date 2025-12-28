@@ -94,7 +94,9 @@ def test_file_search_with_depends_on() -> None:
 
 def test_tool_emulator_with_depends_on() -> None:
     """Test that LLMToolEmulator accepts depends_on parameter."""
-    middleware = LLMToolEmulator(depends_on=(ModelRetryMiddleware,))
+    # Use FakeToolCallingModel to avoid requiring langchain-anthropic
+    model = FakeToolCallingModel()
+    middleware = LLMToolEmulator(model=model, depends_on=(ModelRetryMiddleware,))
     assert len(middleware.depends_on) == 1
     assert middleware.depends_on[0] == ModelRetryMiddleware
 
