@@ -1455,12 +1455,6 @@ class BaseChatOpenAI(BaseChatModel):
         response_dict = (
             response if isinstance(response, dict) else response.model_dump()
         )
-        # Sometimes the AI Model calling will get error, we should raise it (this is
-        # typically followed by a null value for `choices`, which we raise for
-        # separately below).
-        if response_dict.get("error"):
-            raise ValueError(response_dict.get("error"))
-
         # Raise informative error messages for non-OpenAI chat completions APIs
         # that return malformed responses.
         try:
@@ -1470,8 +1464,41 @@ class BaseChatOpenAI(BaseChatModel):
             raise KeyError(msg) from e
 
         if choices is None:
-            msg = "Received response with null value for `choices`."
+            # Provide more diagnostic information for null choices
+            # This can happen with some OpenAI-compatible APIs (e.g., vLLM) that
+            # return null choices in error cases or edge cases
+            error_info = response_dict.get("error")
+            if error_info:
+                # If there's an error field, raise it with more context
+                if isinstance(error_info, dict):
+                    error_msg = error_info.get("message", str(error_info))
+                    error_type = error_info.get("type", "UnknownError")
+                    msg = (
+                        f"API returned error with null choices: "
+                        f"{error_type}: {error_msg}. "
+                        f"Full response keys: {list(response_dict.keys())}"
+                    )
+                else:
+                    msg = (
+                        f"API returned error with null choices: {error_info}. "
+                        f"Full response keys: {list(response_dict.keys())}"
+                    )
+                raise ValueError(msg) from None
+            # No explicit error field, but choices is null - provide diagnostic info
+            msg = (
+                "Received response with null value for `choices`. "
+                "This may indicate an API error or incompatibility with the "
+                "OpenAI-compatible API. "
+                f"Response keys: {list(response_dict.keys())}. "
+                "If using a custom base_url, ensure the API endpoint is "
+                "fully OpenAI-compatible."
+            )
             raise TypeError(msg)
+
+        # Sometimes the AI Model calling will get error, we should raise it
+        # (check this after validating choices to provide better error messages)
+        if response_dict.get("error"):
+            raise ValueError(response_dict.get("error"))
 
         token_usage = response_dict.get("usage")
         service_tier = response_dict.get("service_tier")

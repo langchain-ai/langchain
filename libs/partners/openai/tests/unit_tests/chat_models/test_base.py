@@ -3276,3 +3276,71 @@ def test_openrouter_reasoning_details() -> None:
 def test_model_prefers_responses_api() -> None:
     assert _model_prefers_responses_api("gpt-5.2-pro")
     assert not _model_prefers_responses_api("gpt-5.1")
+
+
+def test_create_chat_result_null_choices_with_error() -> None:
+    """Test that null choices with error field raises ValueError with context."""
+    llm = ChatOpenAI(model="test-model", api_key=SecretStr("test-key"))
+    response_dict = {
+        "id": "chatcmpl-123",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "test-model",
+        "choices": None,
+        "error": {
+            "message": "Rate limit exceeded",
+            "type": "rate_limit_error",
+            "code": "rate_limit_exceeded",
+        },
+    }
+
+    with pytest.raises(ValueError) as excinfo:
+        llm._create_chat_result(response_dict)
+
+    error_msg = str(excinfo.value)
+    assert "API returned error with null choices" in error_msg
+    assert "rate_limit_error" in error_msg
+    assert "Rate limit exceeded" in error_msg
+    assert "Full response keys" in error_msg
+
+
+def test_create_chat_result_null_choices_without_error() -> None:
+    """Test null choices without error field raises TypeError with diagnostic info."""
+    llm = ChatOpenAI(model="test-model", api_key=SecretStr("test-key"))
+    response_dict = {
+        "id": "chatcmpl-123",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "test-model",
+        "choices": None,
+        "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+    }
+
+    with pytest.raises(TypeError) as excinfo:
+        llm._create_chat_result(response_dict)
+
+    error_msg = str(excinfo.value)
+    assert "Received response with null value for `choices`" in error_msg
+    assert "API error or incompatibility" in error_msg
+    assert "Response keys" in error_msg
+    assert "custom base_url" in error_msg
+
+
+def test_create_chat_result_null_choices_with_string_error() -> None:
+    """Test that null choices with string error field raises ValueError."""
+    llm = ChatOpenAI(model="test-model", api_key=SecretStr("test-key"))
+    response_dict = {
+        "id": "chatcmpl-123",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "test-model",
+        "choices": None,
+        "error": "Internal server error",
+    }
+
+    with pytest.raises(ValueError) as excinfo:
+        llm._create_chat_result(response_dict)
+
+    error_msg = str(excinfo.value)
+    assert "API returned error with null choices" in error_msg
+    assert "Internal server error" in error_msg
