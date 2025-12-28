@@ -121,6 +121,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         system_prompt: str = DEFAULT_SYSTEM_PROMPT,
         max_tools: int | None = None,
         always_include: list[str] | None = None,
+        depends_on: tuple[type[AgentMiddleware] | AgentMiddleware, ...] = (),
     ) -> None:
         """Initialize the tool selector.
 
@@ -139,11 +140,14 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
             always_include: Tool names to always include regardless of selection.
 
                 These do not count against the `max_tools` limit.
+            depends_on: Optional tuple of middleware classes or instances that must be
+                executed before this middleware.
         """
         super().__init__()
         self.system_prompt = system_prompt
         self.max_tools = max_tools
         self.always_include = always_include or []
+        self.depends_on = depends_on
 
         if isinstance(model, (BaseChatModel, type(None))):
             self.model: BaseChatModel | None = model

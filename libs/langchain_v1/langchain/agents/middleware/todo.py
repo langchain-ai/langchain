@@ -158,6 +158,7 @@ class TodoListMiddleware(AgentMiddleware):
         *,
         system_prompt: str = WRITE_TODOS_SYSTEM_PROMPT,
         tool_description: str = WRITE_TODOS_TOOL_DESCRIPTION,
+        depends_on: tuple[type[AgentMiddleware] | AgentMiddleware, ...] = (),
     ) -> None:
         """Initialize the `TodoListMiddleware` with optional custom prompts.
 
@@ -165,10 +166,13 @@ class TodoListMiddleware(AgentMiddleware):
             system_prompt: Custom system prompt to guide the agent on using the todo
                 tool.
             tool_description: Custom description for the `write_todos` tool.
+            depends_on: Optional tuple of middleware classes or instances that must be
+                executed before this middleware.
         """
         super().__init__()
         self.system_prompt = system_prompt
         self.tool_description = tool_description
+        self.depends_on = depends_on
 
         # Dynamically create the write_todos tool with the custom description
         @tool(description=self.tool_description)

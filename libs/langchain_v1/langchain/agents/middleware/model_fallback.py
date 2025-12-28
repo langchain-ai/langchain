@@ -48,12 +48,15 @@ class ModelFallbackMiddleware(AgentMiddleware):
         self,
         first_model: str | BaseChatModel,
         *additional_models: str | BaseChatModel,
+        depends_on: tuple[type[AgentMiddleware] | AgentMiddleware, ...] = (),
     ) -> None:
         """Initialize model fallback middleware.
 
         Args:
             first_model: First fallback model (string name or instance).
             *additional_models: Additional fallbacks in order.
+            depends_on: Optional tuple of middleware classes or instances that must be
+                executed before this middleware.
         """
         super().__init__()
 
@@ -65,6 +68,7 @@ class ModelFallbackMiddleware(AgentMiddleware):
                 self.models.append(init_chat_model(model))
             else:
                 self.models.append(model)
+        self.depends_on = depends_on
 
     def wrap_model_call(
         self,

@@ -205,6 +205,7 @@ class ToolCallLimitMiddleware(
         thread_limit: int | None = None,
         run_limit: int | None = None,
         exit_behavior: ExitBehavior = "continue",
+        depends_on: tuple[type[AgentMiddleware] | AgentMiddleware, ...] = (),
     ) -> None:
         """Initialize the tool call limit middleware.
 
@@ -224,6 +225,8 @@ class ToolCallLimitMiddleware(
                     for the single tool call that exceeded the limit. Raises
                     `NotImplementedError` if there are multiple parallel tool
                     calls to other tools or multiple pending tool calls.
+            depends_on: Optional tuple of middleware classes or instances that must be
+                executed before this middleware.
 
         Raises:
             ValueError: If both limits are `None`, if `exit_behavior` is invalid,
@@ -251,6 +254,7 @@ class ToolCallLimitMiddleware(
         self.thread_limit = thread_limit
         self.run_limit = run_limit
         self.exit_behavior = exit_behavior
+        self.depends_on = depends_on
 
     @property
     def name(self) -> str:

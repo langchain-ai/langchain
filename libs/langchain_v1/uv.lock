@@ -1866,6 +1866,7 @@ name = "langchain"
 version = "1.2.0"
 source = { editable = "." }
 dependencies = [
+    { name = "langchain-anthropic" },
     { name = "langchain-core" },
     { name = "langgraph" },
     { name = "pydantic" },
@@ -1953,6 +1954,7 @@ typing = [
 
 [package.metadata]
 requires-dist = [
+    { name = "langchain-anthropic", specifier = ">=1.0.3" },
     { name = "langchain-anthropic", marker = "extra == 'anthropic'" },
     { name = "langchain-aws", marker = "extra == 'aws'" },
     { name = "langchain-azure-ai", marker = "extra == 'azure-ai'" },
@@ -2102,7 +2104,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.2.4"
+version = "1.2.5"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -2346,7 +2348,7 @@ wheels = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.1.1"
+version = "1.1.2"
 source = { editable = "../standard-tests" }
 dependencies = [
     { name = "httpx" },

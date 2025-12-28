@@ -538,6 +538,178 @@ def _chain_async_tool_call_wrappers(
     return result
 
 
+def _resolve_middleware_dependencies(
+    middleware: Sequence[AgentMiddleware[StateT_co, ContextT]],
+) -> list[AgentMiddleware[StateT_co, ContextT]]:
+    """Resolve middleware dependencies and return ordered list with auto-instantiated deps.
+
+    This function:
+    1. Collects all dependencies from middleware instances
+    2. Auto-instantiates missing class dependencies with default parameters
+    3. Uses provided instance dependencies as-is
+    4. Performs topological sort to ensure dependencies come before dependents
+    5. Preserves original order for middleware without dependency constraints
+    6. Detects and raises errors for circular dependencies
+
+    Args:
+        middleware: Original sequence of middleware instances.
+
+    Returns:
+        Ordered list of middleware with dependencies resolved and auto-instantiated.
+
+    Raises:
+        ValueError: If circular dependencies are detected.
+
+    Example:
+        ```python
+        # MyMiddleware depends on ModelRetryMiddleware class
+        middleware = [MyMiddleware(depends_on=(ModelRetryMiddleware,))]
+        resolved = _resolve_middleware_dependencies(middleware)
+        # Result: [ModelRetryMiddleware(), MyMiddleware(...)]
+
+        # Or with an instance
+        retry = ModelRetryMiddleware(max_retries=5)
+        middleware = [MyMiddleware(depends_on=(retry,))]
+        resolved = _resolve_middleware_dependencies(middleware)
+        # Result: [retry, MyMiddleware(...)]
+        ```
+    """
+    # If no middleware has dependencies, return as-is
+    has_dependencies = any(getattr(m, "depends_on", ()) for m in middleware)
+    if not has_dependencies:
+        return list(middleware)
+
+    # Build a map: class -> instance for all middleware
+    # For original middleware, use the first instance of each class
+    instance_by_class: dict[type[AgentMiddleware[Any, Any]], AgentMiddleware[Any, Any]] = {}
+    original_classes: set[type[AgentMiddleware[Any, Any]]] = set()
+
+    for m in middleware:
+        cls = type(m)
+        original_classes.add(cls)
+        # Use the first instance of each class
+        if cls not in instance_by_class:
+            instance_by_class[cls] = m
+
+    # First pass: collect all instance dependencies (these take priority)
+    def collect_instance_dependencies(
+        instance: AgentMiddleware[Any, Any], visited: set[type[AgentMiddleware[Any, Any]]]
+    ) -> None:
+        """Collect instance dependencies first (they take priority)."""
+        deps = getattr(instance, "depends_on", ())
+
+        for dep in deps:
+            if not isinstance(dep, type):
+                # It's an instance
+                dep_class = type(dep)
+                # Check for circular dependencies
+                if dep_class in visited:
+                    msg = f"Circular dependency detected in middleware: {dep_class.__name__}"
+                    raise ValueError(msg)
+
+                # Store the instance (overwrite if already present from original)
+                instance_by_class[dep_class] = dep
+
+                # Recursively collect instance dependencies
+                collect_instance_dependencies(dep, visited | {dep_class})
+
+    # Collect instance dependencies for all original middleware
+    for m in middleware:
+        collect_instance_dependencies(m, {type(m)})
+
+    # Second pass: collect class dependencies and auto-instantiate
+    def collect_class_dependencies(
+        instance: AgentMiddleware[Any, Any], visited: set[type[AgentMiddleware[Any, Any]]]
+    ) -> None:
+        """Collect class dependencies and auto-instantiate if needed."""
+        deps = getattr(instance, "depends_on", ())
+
+        for dep in deps:
+            if isinstance(dep, type):
+                # It's a class
+                dep_class = dep
+                # Check for circular dependencies
+                if dep_class in visited:
+                    msg = f"Circular dependency detected in middleware: {dep_class.__name__}"
+                    raise ValueError(msg)
+
+                # Instantiate if not already present
+                if dep_class not in instance_by_class:
+                    try:
+                        instance_by_class[dep_class] = dep_class()
+                    except Exception as e:
+                        # Log and skip if instantiation fails
+                        import logging
+
+                        logging.getLogger(__name__).debug(
+                            "Failed to auto-instantiate middleware %s: %s", dep_class.__name__, e
+                        )
+                        continue
+
+                # Recursively collect dependencies
+                dep_instance = instance_by_class[dep_class]
+                collect_class_dependencies(dep_instance, visited | {dep_class})
+            else:
+                # It's an instance - already handled in first pass
+                dep_class = type(dep)
+                dep_instance = instance_by_class[dep_class]
+                collect_class_dependencies(dep_instance, visited | {dep_class})
+
+    # Collect class dependencies for all original middleware
+    for m in middleware:
+        collect_class_dependencies(m, {type(m)})
+
+    # Topological sort using Kahn's algorithm
+    # Build dependency graph: class -> set of classes it depends on
+    dep_graph: dict[type[AgentMiddleware[Any, Any]], set[type[AgentMiddleware[Any, Any]]]] = {}
+    for cls, instance in instance_by_class.items():
+        deps = getattr(instance, "depends_on", ())
+        dep_classes = set()
+        for dep in deps:
+            dep_class = type(dep) if not isinstance(dep, type) else dep
+            dep_classes.add(dep_class)
+        dep_graph[cls] = dep_classes
+    # Calculate in-degree for each class
+    in_degree: dict[type[AgentMiddleware[Any, Any]], int] = {
+        cls: len(dep_graph.get(cls, set())) for cls in instance_by_class
+    }
+
+    # Find all nodes with in-degree 0
+    queue: list[type[AgentMiddleware[Any, Any]]] = [
+        cls for cls in instance_by_class if in_degree[cls] == 0
+    ]
+    # Sort queue for stability
+    queue.sort(key=lambda c: c.__name__)
+
+    sorted_classes: list[type[AgentMiddleware[Any, Any]]] = []
+
+    while queue:
+        # Remove a node with in-degree 0
+        current = queue.pop(0)
+        sorted_classes.append(current)
+
+        # For each node that depends on current, decrease its in-degree
+        for cls, deps in dep_graph.items():
+            if current in deps:
+                in_degree[cls] -= 1
+                if in_degree[cls] == 0:
+                    queue.append(cls)
+                    # Keep queue sorted for stability
+                    queue.sort(key=lambda c: c.__name__)
+
+    # Check for circular dependencies
+    if len(sorted_classes) != len(instance_by_class):
+        msg = "Circular dependency detected in middleware"
+        raise ValueError(msg)
+
+    # Build result list
+    result: list[AgentMiddleware[StateT_co, ContextT]] = [
+        instance_by_class[cls] for cls in sorted_classes
+    ]
+
+    return result
+
+
 def create_agent(
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
@@ -696,6 +868,9 @@ def create_agent(
     # Handle tools being None or empty
     if tools is None:
         tools = []
+
+    # Resolve middleware dependencies and auto-instantiate missing dependencies
+    middleware = _resolve_middleware_dependencies(middleware)
 
     # Convert response format and setup structured output tools
     # Raw schemas are wrapped in AutoStrategy to preserve auto-detection intent.

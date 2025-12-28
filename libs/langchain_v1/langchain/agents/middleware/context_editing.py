@@ -200,6 +200,7 @@ class ContextEditingMiddleware(AgentMiddleware):
         *,
         edits: Iterable[ContextEdit] | None = None,
         token_count_method: Literal["approximate", "model"] = "approximate",  # noqa: S107
+        depends_on: tuple[type[AgentMiddleware] | AgentMiddleware, ...] = (),
     ) -> None:
         """Initialize an instance of context editing middleware.
 
@@ -210,10 +211,13 @@ class ContextEditingMiddleware(AgentMiddleware):
             token_count_method: Whether to use approximate token counting
                 (faster, less accurate) or exact counting implemented by the
                 chat model (potentially slower, more accurate).
+            depends_on: Optional tuple of middleware classes or instances that must be
+                executed before this middleware.
         """
         super().__init__()
         self.edits = list(edits or (ClearToolUsesEdit(),))
         self.token_count_method = token_count_method
+        self.depends_on = depends_on
 
     def wrap_model_call(
         self,

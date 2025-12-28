@@ -102,6 +102,7 @@ class PIIMiddleware(AgentMiddleware):
         apply_to_input: bool = True,
         apply_to_output: bool = False,
         apply_to_tool_results: bool = False,
+        depends_on: tuple[type[AgentMiddleware] | AgentMiddleware, ...] = (),
     ) -> None:
         """Initialize the PII detection middleware.
 
@@ -128,6 +129,8 @@ class PIIMiddleware(AgentMiddleware):
             apply_to_input: Whether to check user messages before model call.
             apply_to_output: Whether to check AI messages after model call.
             apply_to_tool_results: Whether to check tool result messages after tool execution.
+            depends_on: Optional tuple of middleware classes or instances that must be
+                executed before this middleware.
 
         Raises:
             ValueError: If `pii_type` is not built-in and no detector is provided.
@@ -137,6 +140,7 @@ class PIIMiddleware(AgentMiddleware):
         self.apply_to_input = apply_to_input
         self.apply_to_output = apply_to_output
         self.apply_to_tool_results = apply_to_tool_results
+        self.depends_on = depends_on
 
         self._resolved_rule: ResolvedRedactionRule = RedactionRule(
             pii_type=pii_type,
