@@ -103,7 +103,7 @@ class EvaluatorCallbackHandler(BaseTracer):
             )
         else:
             self.executor = None
-        self.futures = weakref.WeakSet()
+        self.futures = weakref.WeakSet[Future[None]]()
         self.skip_unfinished = skip_unfinished
         self.project_name = project_name
         self.logged_eval_results = {}
@@ -154,8 +154,8 @@ class EvaluatorCallbackHandler(BaseTracer):
                     res
                 )
 
+    @staticmethod
     def _select_eval_results(
-        self,
         results: EvaluationResult | EvaluationResults,
     ) -> list[EvaluationResult]:
         if isinstance(results, EvaluationResult):

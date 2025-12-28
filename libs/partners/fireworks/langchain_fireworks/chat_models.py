@@ -114,8 +114,12 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         # Also Fireworks returns None for tool invocations
         content = _dict.get("content", "") or ""
         additional_kwargs: dict = {}
+        if reasoning_content := _dict.get("reasoning_content"):
+            additional_kwargs["reasoning_content"] = reasoning_content
+
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
+
         tool_calls = []
         invalid_tool_calls = []
         if raw_tool_calls := _dict.get("tool_calls"):
@@ -287,9 +291,7 @@ class ChatFireworks(BaseChatModel):
         ```python
         from langchain_fireworks.chat_models import ChatFireworks
 
-        fireworks = ChatFireworks(
-            model_name="accounts/fireworks/models/llama-v3p1-8b-instruct"
-        )
+        fireworks = ChatFireworks(model_name="accounts/fireworks/models/gpt-oss-120b")
         ```
     """
 
@@ -680,7 +682,10 @@ class ChatFireworks(BaseChatModel):
             **kwargs: Any additional parameters to pass to
                 `langchain_fireworks.chat_models.ChatFireworks.bind`
         """  # noqa: E501
-        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        strict = kwargs.pop("strict", None)
+        formatted_tools = [
+            convert_to_openai_tool(tool, strict=strict) for tool in tools
+        ]
         if tool_choice is not None and tool_choice:
             if isinstance(tool_choice, str) and (
                 tool_choice not in ("auto", "any", "none")
@@ -798,7 +803,7 @@ class ChatFireworks(BaseChatModel):
 
 
         model = ChatFireworks(
-            model="accounts/fireworks/models/firefunction-v1",
+            model="accounts/fireworks/models/gpt-oss-120b",
             temperature=0,
         )
         structured_model = model.with_structured_output(AnswerWithJustification)
@@ -828,7 +833,7 @@ class ChatFireworks(BaseChatModel):
 
 
         model = ChatFireworks(
-            model="accounts/fireworks/models/firefunction-v1",
+            model="accounts/fireworks/models/gpt-oss-120b",
             temperature=0,
         )
         structured_model = model.with_structured_output(
@@ -863,7 +868,7 @@ class ChatFireworks(BaseChatModel):
 
 
         model = ChatFireworks(
-            model="accounts/fireworks/models/firefunction-v1",
+            model="accounts/fireworks/models/gpt-oss-120b",
             temperature=0,
         )
         structured_model = model.with_structured_output(AnswerWithJustification)
@@ -899,7 +904,7 @@ class ChatFireworks(BaseChatModel):
         }
 
         model = ChatFireworks(
-            model="accounts/fireworks/models/firefunction-v1",
+            model="accounts/fireworks/models/gpt-oss-120b",
             temperature=0,
         )
         structured_model = model.with_structured_output(oai_schema)
@@ -926,7 +931,7 @@ class ChatFireworks(BaseChatModel):
 
 
         model = ChatFireworks(
-            model="accounts/fireworks/models/firefunction-v1", temperature=0
+            model="accounts/fireworks/models/gpt-oss-120b", temperature=0
         )
         structured_model = model.with_structured_output(
             AnswerWithJustification, method="json_mode", include_raw=True

@@ -248,6 +248,10 @@ class ShellSession:
             if source == "stdout" and data.startswith(marker):
                 _, _, status = data.partition(" ")
                 exit_code = self._safe_int(status.strip())
+                # Drain any remaining stderr that may have arrived concurrently.
+                # The stderr reader thread runs independently, so output might
+                # still be in flight when the stdout marker arrives.
+                self._drain_remaining_stderr(collected, deadline)
                 break
 
             total_lines += 1
@@ -322,6 +326,37 @@ class ShellSession:
                 self._queue.get_nowait()
             except queue.Empty:
                 break
+
+    def _drain_remaining_stderr(
+        self, collected: list[str], deadline: float, drain_timeout: float = 0.05
+    ) -> None:
+        """Drain any stderr output that arrived concurrently with the done marker.
+
+        The stdout and stderr reader threads run independently. When a command writes to
+        stderr just before exiting, the stderr output may still be in transit when the
+        done marker arrives on stdout. This method briefly polls the queue to capture
+        such output.
+
+        Args:
+            collected: The list to append collected stderr lines to.
+            deadline: The original command deadline (used as an upper bound).
+            drain_timeout: Maximum time to wait for additional stderr output.
+        """
+        drain_deadline = min(time.monotonic() + drain_timeout, deadline)
+        while True:
+            remaining = drain_deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            try:
+                source, data = self._queue.get(timeout=remaining)
+            except queue.Empty:
+                break
+            if data is None or source != "stderr":
+                continue
+            stripped = data.rstrip("\n")
+            collected.append(f"[stderr] {stripped}")
+            if data.endswith("\n"):
+                collected.append("\n")
 
     @staticmethod
     def _safe_int(value: str) -> int | None:
@@ -570,7 +605,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
             return
         for command in self._startup_commands:
             result = session.execute(command, timeout=self._execution_policy.startup_timeout)
-            if result.timed_out or (result.exit_code not in (0, None)):
+            if result.timed_out or (result.exit_code not in {0, None}):
                 msg = f"Startup command '{command}' failed with exit code {result.exit_code}"
                 raise RuntimeError(msg)
 
@@ -582,7 +617,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
                 result = session.execute(command, timeout=self._execution_policy.command_timeout)
                 if result.timed_out:
                     LOGGER.warning("Shutdown command '%s' timed out.", command)
-                elif result.exit_code not in (0, None):
+                elif result.exit_code not in {0, None}:
                     LOGGER.warning(
                         "Shutdown command '%s' exited with %s.", command, result.exit_code
                     )
@@ -673,7 +708,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
                 f"(observed {result.total_bytes})."
             )
 
-        if result.exit_code not in (0, None):
+        if result.exit_code not in {0, None}:
             sanitized_output = f"{sanitized_output.rstrip()}\n\nExit code: {result.exit_code}"
             final_status: Literal["success", "error"] = "error"
         else:

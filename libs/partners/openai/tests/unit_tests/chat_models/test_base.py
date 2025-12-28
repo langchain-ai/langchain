@@ -76,6 +76,7 @@ from langchain_openai.chat_models.base import (
     _make_computer_call_output_from_message,
     _model_prefers_responses_api,
     _oai_structured_outputs_parser,
+    _resize,
 )
 
 
@@ -143,6 +144,10 @@ def test_profile() -> None:
     # Test passing in profile
     model = ChatOpenAI(model="gpt-5", profile={"tool_calling": False})
     assert model.profile == {"tool_calling": False}
+
+    # Test overrides for gpt-5 input tokens
+    model = ChatOpenAI(model="gpt-5")
+    assert model.profile["max_input_tokens"] == 272_000
 
 
 def test_openai_o1_temperature() -> None:
@@ -996,6 +1001,32 @@ def test_get_num_tokens_from_messages() -> None:
         actual = llm.get_num_tokens_from_messages(messages)
     assert actual == 13
 
+    # Test Responses
+    messages = [
+        AIMessage(
+            [
+                {
+                    "type": "function_call",
+                    "name": "multiply",
+                    "arguments": '{"x":5,"y":4}',
+                    "call_id": "call_abc123",
+                    "id": "fc_abc123",
+                    "status": "completed",
+                },
+            ],
+            tool_calls=[
+                {
+                    "type": "tool_call",
+                    "name": "multiply",
+                    "args": {"x": 5, "y": 4},
+                    "id": "call_abc123",
+                }
+            ],
+        )
+    ]
+    actual = llm.get_num_tokens_from_messages(messages)
+    assert actual
+
 
 class Foo(BaseModel):
     bar: int
@@ -1066,6 +1097,12 @@ def test__create_usage_metadata_responses() -> None:
         input_token_details={"cache_read": 50},
         output_token_details={"reasoning": 10},
     )
+
+
+def test__resize_caps_dimensions_preserving_ratio() -> None:
+    """Larger side capped at 2048 then smaller at 768 keeping aspect ratio."""
+    assert _resize(2048, 4096) == (768, 1536)
+    assert _resize(4096, 2048) == (1536, 768)
 
 
 def test__convert_to_openai_response_format() -> None:
@@ -1323,7 +1360,7 @@ def test_structured_outputs_parser() -> None:
         partial(_oai_structured_outputs_parser, schema=GenerateUsername)
     )
     serialized = dumps(llm_output)
-    deserialized = loads(serialized)
+    deserialized = loads(serialized, allowed_objects=[ChatGeneration, AIMessage])
     assert isinstance(deserialized, ChatGeneration)
     result = output_parser.invoke(cast(AIMessage, deserialized.message))
     assert result == parsed_response
