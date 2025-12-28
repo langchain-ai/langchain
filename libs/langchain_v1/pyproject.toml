@@ -12,7 +12,6 @@ authors = []
 version = "1.2.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-anthropic>=1.0.3",
     "langchain-core>=1.2.1,<2.0.0",
     "langgraph>=1.0.2,<1.1.0",
     "pydantic>=2.7.4,<3.0.0",
