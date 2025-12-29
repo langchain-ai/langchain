@@ -87,8 +87,6 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 "tests/**/*.py" = [
     "S101", # Tests need assertions
     "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
-
-    # TODO
     "PT011",
     "PLR2004",
 ]

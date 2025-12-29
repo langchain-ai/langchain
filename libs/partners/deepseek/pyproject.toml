@@ -58,8 +58,6 @@ select = [ "ALL" ]
 ignore = [
     "COM812",  # Conflicts with formatter
     "PLR0913", # Too many arguments
-
-    # TODO
     "ANN401",
     "TC002",
     "TC003",
@@ -86,9 +84,7 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
     "S101",   # Tests need assertions
     "S311",   # Standard pseudo-random generators are not suitable for cryptographic purposes
     "SLF001", # Private member access
-
-    # TODO
-    "ARG002", # Unused method argument:
+    "ARG002", # Unused method argument
 ]
 "scripts/*.py" = [
     "INP001",   # Not a package

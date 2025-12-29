@@ -67,8 +67,6 @@ ignore = [
     "PLR0912",
     "C901",
     "FIX",
-
-    # TODO
     "TC002",
     "ANN401",
     "ARG001",

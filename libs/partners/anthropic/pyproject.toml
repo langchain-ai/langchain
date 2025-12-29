@@ -85,8 +85,6 @@ ignore = [
     "PLR0915", # Too many statements
     "ARG001",
     "PLR0911", # Too many return statements
-
-    # TODO
     "PLR2004", # Comparison to magic number
     "ANN401",
     "ARG002",

@@ -66,8 +66,6 @@ ignore = [
     "PLR0911",
     "PLR0912",
     "C901",
-
-    # TODO
     "ERA001",
     "ANN401",
     "BLE001",
@@ -103,8 +101,6 @@ asyncio_mode = "auto"
     "ANN401",
     "ARG001",
     "ARG002",
-
-    # TODO
     "D",
 ]
 "scripts/*.py" = [

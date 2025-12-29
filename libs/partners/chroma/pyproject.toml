@@ -76,8 +76,6 @@ ignore = [
     "PLR0912", # Too many branches
     "PLR0913", # Too many arguments
     "C901",    # Too complex
-
-    # TODO
     "ANN204",
     "ANN401",
     "TRY201",

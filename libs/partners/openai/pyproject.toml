@@ -92,8 +92,6 @@ ignore = [
     "ERA001",
     "PLR0911",
     "FA100",  # from __future__ import annotations breaks some schema conversion logic
-
-    # TODO
     "PLR2004", # Comparison to magic number
     "ANN401",
     "ARG002",
@@ -139,8 +137,6 @@ filterwarnings = [
     "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
     "SLF001", # Private member access in tests
     "D",     # Docstring checks in tests
-
-    # TODO
     "B018",
     "PGH003",
     "PERF401",

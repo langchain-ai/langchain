@@ -73,8 +73,6 @@ ignore = [
     "C901",    # Function too complex
     "FBT001",  # Boolean function param
     "ERA001",  # Commented-out code
-
-    # TODO
     "ANN401",
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
