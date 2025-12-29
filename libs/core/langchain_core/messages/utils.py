@@ -1899,7 +1899,7 @@ def count_tokens_approximately(
                         message_chars += len(block.get("text", ""))
                     elif block.get("type") == "image_url":
                         # Approximate 85 tokens per image
-                        message_chars += 85 * chars_per_token
+                        message_chars += int(85 * chars_per_token)
                     else:
                         message_chars += len(repr(block))
         else:

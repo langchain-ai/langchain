@@ -1789,7 +1789,10 @@ def test_count_tokens_approximately_with_image() -> None:
     message = HumanMessage(
         content=[
             {"type": "text", "text": "Describe this image:"},
-            {"type": "image_url", "image_url": {"url": "https://example.com/image.png"}},
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/image.png"},
+            },
         ]
     )
     count = count_tokens_approximately([message])
