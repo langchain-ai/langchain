@@ -526,6 +526,11 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 **client_params,
                 **async_specific,
             )
+
+        # Enable streaming usage metadata by default
+        if self.stream_usage is not False:
+            self.stream_usage = True
+
         return self
 
     @model_validator(mode="after")
