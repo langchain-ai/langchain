@@ -8,9 +8,10 @@ formats.
 
 from __future__ import annotations
 
-from typing import Any, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
-from typing_extensions import NotRequired, Required
+if TYPE_CHECKING:
+    from typing_extensions import NotRequired, Required
 
 __all__ = [
     "BashTool",
