@@ -26,11 +26,11 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 lint = [
-    "ruff>=0.13.1,<0.14.0",
+    "ruff>=0.14.10,<0.15.0",
     "langchain-core"
 ]
 typing = [
-    "mypy>=1.18.1,<1.19.0",
+    "mypy>=1.19.1,<1.20.0",
     "lxml-stubs>=0.5.1,<1.0.0",
     "types-requests>=2.31.0.20240218,<3.0.0.0",
     "tiktoken>=0.8.0,<1.0.0",
