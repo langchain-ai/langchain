@@ -24,6 +24,20 @@ _dynamic_imports = {
 
 
 def __getattr__(attr_name: str) -> object:
+    """Dynamically import and return an attribute from a submodule.
+
+    This function enables lazy loading of vectorstore classes from submodules,
+    reducing initial import time and circular dependency issues.
+
+    Args:
+        attr_name: Name of the attribute to import.
+
+    Returns:
+        The imported attribute object.
+
+    Raises:
+        AttributeError: If the attribute is not found in _dynamic_imports.
+    """
     module_name = _dynamic_imports.get(attr_name)
     result = import_attr(attr_name, module_name, __spec__.parent)
     globals()[attr_name] = result
@@ -31,4 +45,9 @@ def __getattr__(attr_name: str) -> object:
 
 
 def __dir__() -> list[str]:
+    """Return a list of available attributes for this module.
+
+    Returns:
+        List of attribute names that can be imported from this module.
+    """
     return list(__all__)

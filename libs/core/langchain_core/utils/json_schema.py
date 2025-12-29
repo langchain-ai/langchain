@@ -10,6 +10,22 @@ if TYPE_CHECKING:
 
 
 def _retrieve_ref(path: str, schema: dict) -> list | dict:
+    """Retrieve a referenced object from a JSON schema using a path.
+
+    Resolves JSON schema references (e.g., "#/definitions/MyType") by
+    traversing the schema structure.
+
+    Args:
+        path: Reference path starting with "#" (e.g., "#/definitions/MyType").
+        schema: The JSON schema dictionary to search in.
+
+    Returns:
+        A deep copy of the referenced object (dict or list).
+
+    Raises:
+        ValueError: If the path does not start with "#".
+        KeyError: If the reference path is not found in the schema.
+    """
     components = path.split("/")
     if components[0] != "#":
         msg = (
