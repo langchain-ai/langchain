@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from langchain_core.callbacks import BaseCallbackHandler
 
 
-def _get_posts(client: Client) -> list:
+def _get_posts(client: Client) -> list[dict[str, Any]]:
     mock_calls = client.session.request.mock_calls  # type: ignore[attr-defined]
     posts = []
     for call in mock_calls:
@@ -280,7 +280,7 @@ class TestRunnableSequenceParallelTraceNesting:
         def before(x: int) -> int:
             return x
 
-        def after(x: dict) -> int:
+        def after(x: dict[str, Any]) -> int:
             return int(x["chain_result"])
 
         sequence = before | parallel | after
