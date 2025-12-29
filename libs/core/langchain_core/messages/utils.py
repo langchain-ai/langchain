@@ -1890,7 +1890,18 @@ def count_tokens_approximately(
         if isinstance(message.content, str):
             message_chars += len(message.content)
 
-        # TODO: add support for approximate counting for image blocks
+        elif isinstance(message.content, list):
+            for block in message.content:
+                if isinstance(block, str):
+                    message_chars += len(block)
+                elif isinstance(block, dict):
+                    if block.get("type") == "text":
+                        message_chars += len(block.get("text", ""))
+                    elif block.get("type") == "image_url":
+                        # Approximate 85 tokens per image
+                        message_chars += 85 * chars_per_token
+                    else:
+                        message_chars += len(repr(block))
         else:
             content = repr(message.content)
             message_chars += len(content)

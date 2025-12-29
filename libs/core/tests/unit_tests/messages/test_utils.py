@@ -1778,3 +1778,20 @@ def test_convert_to_openai_messages_reasoning_content() -> None:
         ],
     }
     assert mixed_result == expected_mixed
+
+
+def test_count_tokens_approximately_with_image() -> None:
+    """Test that images are counted as approximately 85 tokens."""
+    # Text = 20 chars = 5 tokens
+    # Image = 85 tokens
+    # Overhead = 3 tokens
+    # Total expected ~ 93
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": "Describe this image:"},
+            {"type": "image_url", "image_url": {"url": "https://example.com/image.png"}},
+        ]
+    )
+    count = count_tokens_approximately([message])
+    # allow for some small Floating point variance / change in default constants
+    assert 90 <= count <= 100
