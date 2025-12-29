@@ -736,6 +736,42 @@ def merge_message_runs(
     return merged
 
 
+@overload
+def trim_messages(
+    messages: Iterable[MessageLikeRepresentation] | PromptValue,
+    *,
+    max_tokens: int,
+    token_counter: Callable[[list[BaseMessage]], int]
+    | Callable[[BaseMessage], int]
+    | BaseLanguageModel
+    | Literal["approximate"],
+    strategy: Literal["first", "last"] = "last",
+    allow_partial: bool = False,
+    end_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
+    start_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
+    include_system: bool = False,
+    text_splitter: Callable[[str], list[str]] | TextSplitter | None = None,
+) -> list[BaseMessage]: ...
+
+
+@overload
+def trim_messages(
+    messages: None = None,
+    *,
+    max_tokens: int,
+    token_counter: Callable[[list[BaseMessage]], int]
+    | Callable[[BaseMessage], int]
+    | BaseLanguageModel
+    | Literal["approximate"],
+    strategy: Literal["first", "last"] = "last",
+    allow_partial: bool = False,
+    end_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
+    start_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
+    include_system: bool = False,
+    text_splitter: Callable[[str], list[str]] | TextSplitter | None = None,
+) -> Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]]: ...
+
+
 def trim_messages(
     messages: Iterable[MessageLikeRepresentation] | PromptValue | None = None,
     *,
@@ -750,7 +786,9 @@ def trim_messages(
     start_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
     include_system: bool = False,
     text_splitter: Callable[[str], list[str]] | TextSplitter | None = None,
-) -> list[BaseMessage] | Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]]:
+) -> (
+    list[BaseMessage] | Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]]
+):
     r"""Trim messages to be below a token count.
 
     `trim_messages` can be used to reduce the size of a chat history to a specified
@@ -1100,7 +1138,7 @@ def trim_messages(
         text_splitter_fn = _default_text_splitter
 
     if messages is None:
-        from langchain_core.runnables.base import RunnableLambda
+        from langchain_core.runnables.base import RunnableLambda  # noqa: PLC0415
 
         # We return a runnable lambda that will re-run this function with the
         # validated arguments.
