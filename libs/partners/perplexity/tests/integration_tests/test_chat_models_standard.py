@@ -16,7 +16,7 @@ class TestPerplexityStandard(ChatModelIntegrationTests):
     def chat_model_params(self) -> dict:
         return {"model": "sonar"}
 
-    @pytest.mark.xfail(reason="TODO: handle in integration.")
+    @pytest.mark.xfail(reason="TODO: Fix double messages conversation handling in integration tests.")
     def test_double_messages_conversation(self, model: BaseChatModel) -> None:
         super().test_double_messages_conversation(model)
 
@@ -24,4 +24,4 @@ class TestPerplexityStandard(ChatModelIntegrationTests):
     def test_stop_sequence(self, model: BaseChatModel) -> None:
         super().test_stop_sequence(model)
 
-    # TODO, API regressed for some reason after 2025-04-15
+    # TODO: Investigate and fix API regression that occurred after 2025-04-15

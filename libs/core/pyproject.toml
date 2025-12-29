@@ -74,7 +74,8 @@ plugins = ["pydantic.mypy"]
 strict = true
 enable_error_code = "deprecated"
 
-# TODO: activate for 'strict' checking
+# TODO: Enable `disallow_any_generics` for stricter type checking once all
+# generic type annotations are properly typed throughout the codebase.
 disallow_any_generics = false
 
 

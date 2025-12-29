@@ -448,7 +448,7 @@ class BaseOpenAI(BaseLLM):
             response = openai.generate(["Tell me a joke."])
             ```
         """
-        # TODO: write a unit test for this
+        # TODO: Add unit test for `generate()` method with multiple prompts and stop sequences
         params = self._invocation_params
         params = {**params, **kwargs}
         sub_prompts = self.get_sub_prompts(params, prompts, stop)

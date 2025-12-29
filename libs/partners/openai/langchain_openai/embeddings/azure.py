@@ -114,8 +114,8 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
 
     """
     # Check OPENAI_KEY for backwards compatibility.
-    # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
-    # other forms of azure credentials.
+    # TODO: Remove OPENAI_API_KEY support in a future major version to avoid possible
+    # conflict when using other forms of Azure credentials (e.g., managed identity).
     openai_api_key: SecretStr | None = Field(
         alias="api_key",
         default_factory=secret_from_env(

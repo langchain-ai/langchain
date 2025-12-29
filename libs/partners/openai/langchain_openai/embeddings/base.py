@@ -177,7 +177,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     # to support Azure OpenAI Service custom deployment names
     deployment: str | None = model
 
-    # TODO: Move to AzureOpenAIEmbeddings.
+    # TODO: Move `openai_api_version` field to AzureOpenAIEmbeddings class in a future
+    # major version to better align with Azure-specific configuration.
     openai_api_version: str | None = Field(
         default_factory=from_env("OPENAI_API_VERSION", default=None),
         alias="api_version",
