@@ -13,10 +13,10 @@ from __future__ import annotations
 
 import logging
 import warnings
+from importlib import util
 from typing import TYPE_CHECKING, Any, Literal
 
 from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
-from langchain.chat_models.base import _check_pkg
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -166,7 +166,12 @@ class BuiltinToolsMiddleware(AgentMiddleware):
         # Convert to provider-specific format using conversion utilities
         if provider == "openai":
             try:
-                _check_pkg("langchain_openai")
+                if not util.find_spec("langchain_openai"):
+                    logger.debug(
+                        "langchain-openai package not installed, cannot convert tool: %s",
+                        tool_name,
+                    )
+                    return None
                 from langchain_openai.utils.builtin_tools import (
                     convert_standard_to_openai,
                 )
@@ -181,7 +186,12 @@ class BuiltinToolsMiddleware(AgentMiddleware):
 
         if provider == "anthropic":
             try:
-                _check_pkg("langchain_anthropic")
+                if not util.find_spec("langchain_anthropic"):
+                    logger.debug(
+                        "langchain-anthropic package not installed, cannot convert tool: %s",
+                        tool_name,
+                    )
+                    return None
                 from langchain_anthropic.utils.builtin_tools import (
                     convert_standard_to_anthropic,
                 )
@@ -196,7 +206,12 @@ class BuiltinToolsMiddleware(AgentMiddleware):
 
         if provider == "xai":
             try:
-                _check_pkg("langchain_xai")
+                if not util.find_spec("langchain_xai"):
+                    logger.debug(
+                        "langchain-xai package not installed, cannot convert tool: %s",
+                        tool_name,
+                    )
+                    return None
                 from langchain_xai.utils.builtin_tools import convert_standard_to_xai
 
                 return convert_standard_to_xai(standard_tool)
