@@ -736,11 +736,8 @@ def merge_message_runs(
     return merged
 
 
-# TODO: Update so validation errors (for token_counter, for example) are raised on
-# init not at runtime.
-@_runnable_support
 def trim_messages(
-    messages: Iterable[MessageLikeRepresentation] | PromptValue,
+    messages: Iterable[MessageLikeRepresentation] | PromptValue | None = None,
     *,
     max_tokens: int,
     token_counter: Callable[[list[BaseMessage]], int]
@@ -753,7 +750,7 @@ def trim_messages(
     start_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
     include_system: bool = False,
     text_splitter: Callable[[str], list[str]] | TextSplitter | None = None,
-) -> list[BaseMessage]:
+) -> list[BaseMessage] | Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]]:
     r"""Trim messages to be below a token count.
 
     `trim_messages` can be used to reduce the size of a chat history to a specified
@@ -1055,8 +1052,6 @@ def trim_messages(
         msg = "include_system parameter is only valid with strategy='last'"
         raise ValueError(msg)
 
-    messages = convert_to_messages(messages)
-
     # Handle string shortcuts for token counter
     if isinstance(token_counter, str):
         if token_counter in _TOKEN_COUNTER_SHORTCUTS:
@@ -1103,6 +1098,31 @@ def trim_messages(
         text_splitter_fn = cast("Callable", text_splitter)
     else:
         text_splitter_fn = _default_text_splitter
+
+    if messages is None:
+        from langchain_core.runnables.base import RunnableLambda
+
+        # We return a runnable lambda that will re-run this function with the
+        # validated arguments.
+        # It's possible that we could use the validated arguments instead of the
+        # original arguments, but that would require binding the validated arguments
+        # to the function which is more complex.
+        return RunnableLambda(
+            partial(
+                trim_messages,
+                max_tokens=max_tokens,
+                token_counter=token_counter,
+                strategy=strategy,
+                allow_partial=allow_partial,
+                end_on=end_on,
+                start_on=start_on,
+                include_system=include_system,
+                text_splitter=text_splitter,
+            ),
+            name="trim_messages",
+        )
+
+    messages = convert_to_messages(messages)
 
     if strategy == "first":
         return _first_max_tokens(
