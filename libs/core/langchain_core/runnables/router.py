@@ -151,7 +151,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
             raise ValueError(msg)
 
         def invoke(
-            runnable: Runnable, input_: Input, config: RunnableConfig
+            runnable: Runnable[Input, Output], input_: Input, config: RunnableConfig
         ) -> Output | Exception:
             if return_exceptions:
                 try:
@@ -188,7 +188,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
             raise ValueError(msg)
 
         async def ainvoke(
-            runnable: Runnable, input_: Input, config: RunnableConfig
+            runnable: Runnable[Input, Output], input_: Input, config: RunnableConfig
         ) -> Output | Exception:
             if return_exceptions:
                 try:

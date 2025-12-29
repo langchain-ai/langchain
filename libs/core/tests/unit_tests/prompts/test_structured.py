@@ -13,15 +13,14 @@ from langchain_core.messages import HumanMessage
 from langchain_core.prompts.structured import StructuredPrompt
 from langchain_core.runnables.base import Runnable, RunnableLambda
 from langchain_core.utils.mustache import ChevronError
-from langchain_core.utils.pydantic import is_basemodel_subclass
 
 
 def _fake_runnable(
-    _: Any, *, schema: dict | type[BaseModel], value: Any = 42, **_kwargs: Any
-) -> BaseModel | dict:
-    if isclass(schema) and is_basemodel_subclass(schema):
+    _: Any, *, schema: dict[str, Any] | type[BaseModel], value: Any = 42, **_kwargs: Any
+) -> BaseModel | dict[str, Any]:
+    if isclass(schema) and issubclass(schema, BaseModel):
         return schema(name="yo", value=value)
-    params = cast("dict", schema)["parameters"]
+    params = cast("dict[str, Any]", schema)["parameters"]
     return {k: 1 if k != "value" else value for k, v in params.items()}
 
 
