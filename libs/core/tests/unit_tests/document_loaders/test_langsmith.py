@@ -6,6 +6,7 @@ from langsmith.schemas import Example
 
 from langchain_core.document_loaders import LangSmithLoader
 from langchain_core.documents import Document
+from langchain_core.tracers._compat import pydantic_to_dict
 
 
 def test_init() -> None:
@@ -47,9 +48,7 @@ def test_lazy_load() -> None:
     )
     expected = []
     for example in EXAMPLES:
-        example_dict = (
-            example.model_dump() if hasattr(example, "model_dump") else example.dict()  # type: ignore[deprecated]
-        )
+        example_dict = pydantic_to_dict(example)
         metadata = {
             k: v if not v or isinstance(v, dict) else str(v)
             for k, v in example_dict.items()

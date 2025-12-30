@@ -13,6 +13,7 @@ from langchain_core.callbacks import AsyncCallbackManager
 from langchain_core.exceptions import TracerException
 from langchain_core.messages import HumanMessage
 from langchain_core.outputs import LLMResult
+from langchain_core.tracers._compat import pydantic_to_dict
 from langchain_core.tracers.base import AsyncBaseTracer
 from langchain_core.tracers.schemas import Run
 
@@ -39,17 +40,9 @@ def _compare_run_with_error(run: Any, expected_run: Any) -> None:
             run.child_runs, expected_run.child_runs, strict=False
         ):
             _compare_run_with_error(received, expected)
-    received = (
-        run.model_dump(exclude={"child_runs"})
-        if hasattr(run, "model_dump")
-        else run.dict(exclude={"child_runs"})
-    )
+    received = pydantic_to_dict(run, exclude={"child_runs"})
     received_err = received.pop("error")
-    expected = (
-        expected_run.model_dump(exclude={"child_runs"})
-        if hasattr(expected_run, "model_dump")
-        else expected_run.dict(exclude={"child_runs"})
-    )
+    expected = pydantic_to_dict(expected_run, exclude={"child_runs"})
     expected_err = expected.pop("error")
 
     assert received == expected

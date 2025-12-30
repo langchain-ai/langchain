@@ -88,6 +88,7 @@ from langchain_core.tracers import (
     RunLog,
     RunLogPatch,
 )
+from langchain_core.tracers._compat import pydantic_copy
 from langchain_core.tracers.context import collect_runs
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
@@ -158,9 +159,7 @@ class FakeTracer(BaseTracer):
             "inputs": self._replace_message_id(run.inputs),
             "outputs": self._replace_message_id(run.outputs),
         }
-        if hasattr(run, "model_copy"):
-            return run.model_copy(update=update_dict)
-        return run.copy(update=update_dict)  # type: ignore[deprecated]
+        return pydantic_copy(run, update=update_dict)
 
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
