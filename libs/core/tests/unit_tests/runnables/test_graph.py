@@ -231,7 +231,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
             return str_parser
         return xml_parser
 
-    sequence: Runnable = (
+    sequence = (
         prompt
         | fake_llm
         | {

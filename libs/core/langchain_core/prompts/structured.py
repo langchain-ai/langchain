@@ -1,8 +1,16 @@
 """Structured prompt template for a language model."""
 
-from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Iterator,
+    Mapping,
+    Sequence,
+)
 from typing import (
     Any,
+    overload,
 )
 
 from pydantic import BaseModel, Field
@@ -10,6 +18,7 @@ from typing_extensions import override
 
 from langchain_core._api.beta_decorator import beta
 from langchain_core.language_models.base import BaseLanguageModel
+from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     MessageLikeRepresentation,
@@ -133,15 +142,38 @@ class StructuredPrompt(ChatPromptTemplate):
         """
         return cls(messages, schema, **kwargs)
 
+    @overload
+    def __or__(
+        self, other: Mapping[str, Any]
+    ) -> RunnableSerializable[dict[str, Any], dict[str, Any]]: ...
+
+    @overload
+    def __or__(
+        self,
+        other: Callable[[PromptValue], Runnable[PromptValue, Other]]
+        | Callable[[PromptValue], Awaitable[Runnable[PromptValue, Other]]],
+    ) -> RunnableSerializable[dict[str, Any], Other]: ...
+
+    @overload
+    def __or__(
+        self,
+        other: Runnable[PromptValue, Other]
+        | Callable[[Iterator[PromptValue]], Iterator[Other]]
+        | Callable[[AsyncIterator[PromptValue]], AsyncIterator[Other]]
+        | Callable[[PromptValue], Runnable[PromptValue, Other]]
+        | Callable[[PromptValue], Awaitable[Runnable[PromptValue, Other]]]
+        | Callable[[PromptValue], Other],
+    ) -> RunnableSerializable[dict[str, Any], Other]: ...
+
     @override
     def __or__(
         self,
-        other: Runnable[Any, Other]
-        | Callable[[Iterator[Any]], Iterator[Other]]
-        | Callable[[AsyncIterator[Any]], AsyncIterator[Other]]
-        | Callable[[Any], Other]
-        | Mapping[str, Runnable[Any, Other] | Callable[[Any], Other] | Any],
-    ) -> RunnableSerializable[dict, Other]:
+        other: Runnable[PromptValue, Other]
+        | Callable[[Iterator[PromptValue]], Iterator[Other]]
+        | Callable[[AsyncIterator[PromptValue]], AsyncIterator[Other]]
+        | Callable[[PromptValue], Other]
+        | Mapping[str, Runnable[PromptValue, Any] | Callable[[PromptValue], Any] | Any],
+    ) -> RunnableSerializable[dict[str, Any], Any]:
         return self.pipe(other)
 
     def pipe(

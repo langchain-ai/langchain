@@ -23,7 +23,7 @@ class TestSyncInMemoryStore(BaseStoreSyncTests[Any]):
         return "value1", "value2", "value3"
 
 
-class TestAsyncInMemoryStore(BaseStoreAsyncTests):
+class TestAsyncInMemoryStore(BaseStoreAsyncTests[Any]):
     @pytest.fixture
     @override
     async def kv_store(self) -> InMemoryStore:
