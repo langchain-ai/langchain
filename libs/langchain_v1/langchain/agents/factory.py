@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import itertools
+import logging
+from collections import deque
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -637,14 +639,17 @@ def _resolve_middleware_dependencies(
                 if dep_class not in instance_by_class:
                     try:
                         instance_by_class[dep_class] = dep_class()
-                    except Exception as e:
+                    except Exception:
                         # Log and skip if instantiation fails
-                        import logging
-
-                        logging.getLogger(__name__).debug(
-                            "Failed to auto-instantiate middleware %s: %s", dep_class.__name__, e
+                        logging.getLogger(__name__).exception(
+                            "Failed to auto-instantiate middleware %s", dep_class.__name__
                         )
                         continue
+
+                # Check if instantiation succeeded before accessing
+                if dep_class not in instance_by_class:
+                    # Instantiation failed, skip this dependency
+                    continue
 
                 # Recursively collect dependencies
                 dep_instance = instance_by_class[dep_class]
@@ -662,40 +667,53 @@ def _resolve_middleware_dependencies(
     # Topological sort using Kahn's algorithm
     # Build dependency graph: class -> set of classes it depends on
     dep_graph: dict[type[AgentMiddleware[Any, Any]], set[type[AgentMiddleware[Any, Any]]]] = {}
+    # Build reverse dependency graph: class -> set of classes that depend on it
+    reverse_deps: dict[type[AgentMiddleware[Any, Any]], set[type[AgentMiddleware[Any, Any]]]] = {
+        cls: set() for cls in instance_by_class
+    }
+
     for cls, instance in instance_by_class.items():
         deps = getattr(instance, "depends_on", ())
         dep_classes = set()
         for dep in deps:
             dep_class = type(dep) if not isinstance(dep, type) else dep
             dep_classes.add(dep_class)
+            # Build reverse dependency mapping
+            if dep_class not in reverse_deps:
+                reverse_deps[dep_class] = set()
+            reverse_deps[dep_class].add(cls)
         dep_graph[cls] = dep_classes
+
     # Calculate in-degree for each class
     in_degree: dict[type[AgentMiddleware[Any, Any]], int] = {
         cls: len(dep_graph.get(cls, set())) for cls in instance_by_class
     }
 
-    # Find all nodes with in-degree 0
-    queue: list[type[AgentMiddleware[Any, Any]]] = [
-        cls for cls in instance_by_class if in_degree[cls] == 0
-    ]
-    # Sort queue for stability
-    queue.sort(key=lambda c: c.__name__)
+    # Find all nodes with in-degree 0 and sort for stability
+    zero_degree_nodes = sorted(
+        [cls for cls in instance_by_class if in_degree[cls] == 0], key=lambda c: c.__name__
+    )
+    # Use deque for O(1) popleft operations
+    queue: deque[type[AgentMiddleware[Any, Any]]] = deque(zero_degree_nodes)
 
     sorted_classes: list[type[AgentMiddleware[Any, Any]]] = []
 
     while queue:
-        # Remove a node with in-degree 0
-        current = queue.pop(0)
+        # Remove a node with in-degree 0 (O(1) operation)
+        current = queue.popleft()
         sorted_classes.append(current)
 
-        # For each node that depends on current, decrease its in-degree
-        for cls, deps in dep_graph.items():
-            if current in deps:
-                in_degree[cls] -= 1
-                if in_degree[cls] == 0:
-                    queue.append(cls)
-                    # Keep queue sorted for stability
-                    queue.sort(key=lambda c: c.__name__)
+        # Iterate only through nodes that depend on current (O(degree) instead of O(M))
+        ready_nodes = []
+        for dependent_cls in reverse_deps.get(current, set()):
+            in_degree[dependent_cls] -= 1
+            if in_degree[dependent_cls] == 0:
+                ready_nodes.append(dependent_cls)
+
+        # Sort ready nodes for stability and add to queue
+        if ready_nodes:
+            ready_nodes.sort(key=lambda c: c.__name__)
+            queue.extend(ready_nodes)
 
     # Check for circular dependencies
     if len(sorted_classes) != len(instance_by_class):
