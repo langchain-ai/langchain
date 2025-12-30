@@ -895,8 +895,7 @@ class ChildTool(BaseTool):
         """
         #  FIX: inherit callbacks/tags/metadata from Runnable config
         config = ensure_config(config)
-        if callbacks is None:
-            callbacks = config.get("callbacks")
+        callbacks = config.get("callbacks") if callbacks is None else callbacks
         if tags is None:
             tags = config.get("tags")
         if metadata is None:
