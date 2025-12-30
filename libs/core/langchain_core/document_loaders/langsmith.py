@@ -118,7 +118,10 @@ class LangSmithLoader(BaseLoader):
             for key in self.content_key:
                 content = content[key]
             content_str = self.format_content(content)
-            metadata = example.dict()
+            if hasattr(example, "model_dump"):
+                metadata = example.model_dump()
+            else:
+                metadata = example.dict()  # type: ignore[deprecated]
             # Stringify datetime and UUID types.
             for k in ("dataset_id", "created_at", "modified_at", "source_run_id", "id"):
                 metadata[k] = str(metadata[k]) if metadata[k] else metadata[k]

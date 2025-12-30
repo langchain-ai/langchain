@@ -35,6 +35,9 @@ class RunCollectorCallbackHandler(BaseTracer):
         Args:
             run: The run to be persisted.
         """
-        run_ = run.copy()
+        if hasattr(run, "model_copy"):
+            run_ = run.model_copy()
+        else:
+            run_ = run.copy()  # type: ignore[deprecated]
         run_.reference_example_id = self.example_id
         self.traced_runs.append(run_)

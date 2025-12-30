@@ -188,7 +188,7 @@ class EvaluatorCallbackHandler(BaseTracer):
                 run_id_,
                 res.key,
                 score=res.score,
-                value=res.value,
+                value=res.value,  # type: ignore[arg-type]
                 comment=res.comment,
                 correction=res.correction,
                 source_info=source_info_,
@@ -206,7 +206,10 @@ class EvaluatorCallbackHandler(BaseTracer):
         if self.skip_unfinished and not run.outputs:
             logger.debug("Skipping unfinished run %s", run.id)
             return
-        run_ = run.copy()
+        if hasattr(run, "model_copy"):
+            run_ = run.model_copy()
+        else:
+            run_ = run.copy()  # type: ignore[deprecated]
         run_.reference_example_id = self.example_id
         for evaluator in self.evaluators:
             if self.executor is None:
