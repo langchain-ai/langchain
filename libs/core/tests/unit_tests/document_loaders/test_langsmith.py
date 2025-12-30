@@ -48,9 +48,7 @@ def test_lazy_load() -> None:
     expected = []
     for example in EXAMPLES:
         example_dict = (
-            example.model_dump()
-            if hasattr(example, "model_dump")
-            else example.dict()  # type: ignore[deprecated]
+            example.model_dump() if hasattr(example, "model_dump") else example.dict()  # type: ignore[deprecated]
         )
         metadata = {
             k: v if not v or isinstance(v, dict) else str(v)
