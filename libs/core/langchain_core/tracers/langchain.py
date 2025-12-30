@@ -183,7 +183,7 @@ class LangChainTracer(BaseTracer):
             start_time=start_time,
             run_type="llm",
             tags=tags,
-            name=name,  # type: ignore[arg-type]
+            name=name,
         )
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
@@ -192,11 +192,24 @@ class LangChainTracer(BaseTracer):
     def _persist_run(self, run: Run) -> None:
         # We want to free up more memory by avoiding keeping a reference to the
         # whole nested run tree.
-        self.latest_run = Run.construct(
-            **run.dict(exclude={"child_runs", "inputs", "outputs"}),
-            inputs=run.inputs,
-            outputs=run.outputs,
-        )
+        # Use Pydantic v2 methods if available, fall back to v1 for compatibility
+        if hasattr(run, "model_dump"):
+            run_data = run.model_dump(exclude={"child_runs", "inputs", "outputs"})
+        else:
+            run_data = run.dict(exclude={"child_runs", "inputs", "outputs"})  # type: ignore[deprecated]
+
+        if hasattr(Run, "model_construct"):
+            self.latest_run = Run.model_construct(
+                **run_data,
+                inputs=run.inputs,
+                outputs=run.outputs,
+            )
+        else:
+            self.latest_run = Run.construct(  # type: ignore[deprecated]
+                **run_data,
+                inputs=run.inputs,
+                outputs=run.outputs,
+            )
 
     def get_run_url(self) -> str:
         """Get the LangSmith root run URL.

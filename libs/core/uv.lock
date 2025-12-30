@@ -1034,7 +1034,7 @@ typing = [
 [package.metadata]
 requires-dist = [
     { name = "jsonpatch", specifier = ">=1.33.0,<2.0.0" },
-    { name = "langsmith", specifier = ">=0.3.45,<1.0.0" },
+    { name = "langsmith", specifier = ">=0.6.0rc0,<1.0.0" },
     { name = "packaging", specifier = ">=23.2.0,<26.0.0" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
     { name = "pyyaml", specifier = ">=5.3.0,<7.0.0" },
@@ -1112,12 +1112,12 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
+lint = [{ name = "ruff", specifier = ">=0.14.10,<0.15.0" }]
 test = [{ name = "langchain-core", editable = "." }]
 test-integration = []
 typing = [
     { name = "langchain-core", editable = "." },
-    { name = "mypy", specifier = ">=1.18.1,<1.19.0" },
+    { name = "mypy", specifier = ">=1.19.1,<1.20.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
 ]
 
@@ -1139,7 +1139,7 @@ dev = [
 ]
 lint = [
     { name = "langchain-core", editable = "." },
-    { name = "ruff", specifier = ">=0.13.1,<0.14.0" },
+    { name = "ruff", specifier = ">=0.14.10,<0.15.0" },
 ]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
@@ -1156,7 +1156,7 @@ test-integration = [
     { name = "nltk", specifier = ">=3.9.1,<4.0.0" },
     { name = "scipy", marker = "python_full_version == '3.12.*'", specifier = ">=1.7.0,<2.0.0" },
     { name = "scipy", marker = "python_full_version >= '3.13'", specifier = ">=1.14.1,<2.0.0" },
-    { name = "sentence-transformers", marker = "python_full_version < '3.14'", specifier = ">=3.0.1,<4.0.0" },
+    { name = "sentence-transformers", specifier = ">=3.0.1,<4.0.0" },
     { name = "spacy", marker = "python_full_version < '3.14'", specifier = ">=3.8.7,<4.0.0" },
     { name = "thinc", specifier = ">=8.3.6,<9.0.0" },
     { name = "tiktoken", specifier = ">=0.8.0,<1.0.0" },
@@ -1165,14 +1165,14 @@ test-integration = [
 typing = [
     { name = "beautifulsoup4", specifier = ">=4.13.5,<5.0.0" },
     { name = "lxml-stubs", specifier = ">=0.5.1,<1.0.0" },
-    { name = "mypy", specifier = ">=1.18.1,<1.19.0" },
+    { name = "mypy", specifier = ">=1.19.1,<1.20.0" },
     { name = "tiktoken", specifier = ">=0.8.0,<1.0.0" },
     { name = "types-requests", specifier = ">=2.31.0.20240218,<3.0.0.0" },
 ]
 
 [[package]]
 name = "langsmith"
-version = "0.4.56"
+version = "0.6.0rc0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -1184,9 +1184,9 @@ dependencies = [
     { name = "uuid-utils" },
     { name = "zstandard" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4b/e0/6d8a07b25a3ac308156707edaeffebbc30b2737bba8a75e65c40908beb94/langsmith-0.4.56.tar.gz", hash = "sha256:c3dc53509972689dbbc24f9ac92a095dcce00f76bb0db03ae385815945572540", size = 991755, upload-time = "2025-12-06T00:15:52.893Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/09/58/08d0038d43ad479e838167f7caec1741c65a845a8c572ab7465d595e1aad/langsmith-0.6.0rc0.tar.gz", hash = "sha256:df07150c83a509d264adeaf80f11bd87fd58adc1bf816890e35260df99dbd2a0", size = 883154, upload-time = "2025-12-30T13:55:07.23Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b8/6f/d5f9c4f1e03c91045d3675dc99df0682bc657952ad158c92c1f423de04f4/langsmith-0.4.56-py3-none-any.whl", hash = "sha256:f2c61d3f10210e78f16f77e3115f407d40f562ab00ac8c76927c7dd55b5c17b2", size = 411849, upload-time = "2025-12-06T00:15:50.828Z" },
+    { url = "https://files.pythonhosted.org/packages/24/32/f3c24b1628012598abd15fa3331b1aa7cdee4e111b9631c334eab99de60f/langsmith-0.6.0rc0-py3-none-any.whl", hash = "sha256:6052a99b7d67cc651f23a66e5a20697a36b13de22020048133de30cc1b23e4ac", size = 283322, upload-time = "2025-12-30T13:55:05.633Z" },
 ]
 
 [[package]]
