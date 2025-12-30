@@ -255,8 +255,6 @@ def _create_subset_model_v2(
         ),
     )
 
-
-
     # TODO(0.3): Determine if there is a more "pydantic" way to preserve annotations.
     # This is done to preserve __annotations__ when working with pydantic 2.x
     # and using the Annotated type with TypedDict.
