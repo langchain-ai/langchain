@@ -7,21 +7,19 @@ import textwrap
 from collections.abc import Awaitable, Callable
 from inspect import signature
 from typing import (
-    TYPE_CHECKING,
     Annotated,
     Any,
     Literal,
 )
 
 from pydantic import Field, SkipValidation
-from typing_extensions import override
 
 # Cannot move to TYPE_CHECKING as _run/_arun parameter annotations are needed at runtime
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,  # noqa: TC001
     CallbackManagerForToolRun,  # noqa: TC001
 )
-from langchain_core.runnables import RunnableConfig, run_in_executor
+from langchain_core.runnables import RunnableConfig  # noqa: TC001
 from langchain_core.tools.base import (
     _EMPTY_SET,
     FILTERED_ARGS,
@@ -32,9 +30,6 @@ from langchain_core.tools.base import (
     create_schema_from_function,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
-
-if TYPE_CHECKING:
-    from langchain_core.messages import ToolCall
 
 
 class StructuredTool(BaseTool):
@@ -52,19 +47,7 @@ class StructuredTool(BaseTool):
 
     # --- Runnable ---
 
-    # TODO: Is this needed?
-    @override
-    async def ainvoke(
-        self,
-        input: str | dict | ToolCall,
-        config: RunnableConfig | None = None,
-        **kwargs: Any,
-    ) -> Any:
-        if not self.coroutine:
-            # If the tool does not implement async, fall back to default implementation
-            return await run_in_executor(config, self.invoke, input, config, **kwargs)
 
-        return await super().ainvoke(input, config, **kwargs)
 
     # --- Tool ---
 
@@ -204,6 +187,7 @@ class StructuredTool(BaseTool):
                 filter_args=_filter_schema_args(source_function),
             )
         description_ = description
+
         if description is None and not parse_docstring:
             description_ = source_function.__doc__ or None
         if description_ is None and args_schema:
@@ -238,8 +222,9 @@ class StructuredTool(BaseTool):
             name=name,
             func=func,
             coroutine=coroutine,
-            args_schema=args_schema,
+            args_schema=args_schema,  # type: ignore[arg-type]
             description=description_,
+
             return_direct=return_direct,
             response_format=response_format,
             **kwargs,
