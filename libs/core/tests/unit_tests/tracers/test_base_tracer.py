@@ -519,7 +519,7 @@ def test_tracer_nested_runs_on_error() -> None:
         dotted_order=f"20230101T000000000000Z{chain_uuid}",
         child_runs=[
             Run(
-                id=str(llm_uuid1),  # type: ignore[arg-type]
+                id=str(llm_uuid1),
                 parent_run_id=str(chain_uuid),
                 start_time=datetime.now(timezone.utc),
                 end_time=datetime.now(timezone.utc),
@@ -555,7 +555,7 @@ def test_tracer_nested_runs_on_error() -> None:
                 dotted_order=f"20230101T000000000000Z{chain_uuid}.20230101T000000000000Z{llm_uuid2}",
             ),
             Run(
-                id=str(tool_uuid),  # type: ignore[arg-type]
+                id=str(tool_uuid),
                 parent_run_id=str(chain_uuid),
                 start_time=datetime.now(timezone.utc),
                 end_time=datetime.now(timezone.utc),
@@ -572,7 +572,7 @@ def test_tracer_nested_runs_on_error() -> None:
                 dotted_order=f"20230101T000000000000Z{chain_uuid}.20230101T000000000000Z{tool_uuid}",
                 child_runs=[
                     Run(
-                        id=str(llm_uuid3),  # type: ignore[arg-type]
+                        id=str(llm_uuid3),
                         parent_run_id=str(tool_uuid),
                         start_time=datetime.now(timezone.utc),
                         end_time=datetime.now(timezone.utc),
