@@ -11,6 +11,7 @@ from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
     Any,
+    ContextManager,
     TypeVar,
     cast,
     overload,
@@ -255,6 +256,18 @@ def _create_subset_model_v2(
     )
 
 
+
+    # TODO(0.3): Determine if there is a more "pydantic" way to preserve annotations.
+    # This is done to preserve __annotations__ when working with pydantic 2.x
+    # and using the Annotated type with TypedDict.
+    # See tests/unit_tests/test_tools.py::test_tool_annotations_preserved
+    selected_annotations = [
+        (name, annotation)
+        for name, annotation in model.__annotations__.items()
+        if name in field_names
+    ]
+
+    rtn.__annotations__ = dict(selected_annotations)
     rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
     return rtn
 
@@ -557,7 +570,10 @@ def create_model_v2(
         if name.startswith("model"):
             capture_warnings = True
 
-    with warnings.catch_warnings() if capture_warnings else nullcontext():
+    ctx = cast(
+        ContextManager, warnings.catch_warnings() if capture_warnings else nullcontext()
+    )
+    with ctx:
         if capture_warnings:
             warnings.filterwarnings(action="ignore")
         try:
