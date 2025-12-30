@@ -49,7 +49,7 @@ def test_lazy_load() -> None:
     for example in EXAMPLES:
         metadata = {
             k: v if not v or isinstance(v, dict) else str(v)
-            for k, v in example.dict().items()
+            for k, v in (example.model_dump() if hasattr(example, "model_dump") else example.dict()).items()  # type: ignore[deprecated]
         }
         expected.append(
             Document(example.inputs["first"]["second"].upper(), metadata=metadata)
