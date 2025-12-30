@@ -192,7 +192,6 @@ class LangChainTracer(BaseTracer):
     def _persist_run(self, run: Run) -> None:
         # We want to free up more memory by avoiding keeping a reference to the
         # whole nested run tree.
-        # Use Pydantic v2 methods if available, fall back to v1 for compatibility
         if hasattr(run, "model_dump"):
             run_data = run.model_dump(exclude={"child_runs", "inputs", "outputs"})
         else:
