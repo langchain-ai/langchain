@@ -44,9 +44,15 @@ def _compare_run_with_error(run: Any, expected_run: Any) -> None:
             run.child_runs, expected_run.child_runs, strict=False
         ):
             _compare_run_with_error(received, expected)
-    received = run.model_dump(exclude={"child_runs"}) if hasattr(run, "model_dump") else run.dict(exclude={"child_runs"})  # type: ignore[deprecated]
+    if hasattr(run, "model_dump"):
+        received = run.model_dump(exclude={"child_runs"})
+    else:
+        received = run.dict(exclude={"child_runs"})  # type: ignore[deprecated]
     received_err = received.pop("error")
-    expected = expected_run.model_dump(exclude={"child_runs"}) if hasattr(expected_run, "model_dump") else expected_run.dict(exclude={"child_runs"})  # type: ignore[deprecated]
+    if hasattr(expected_run, "model_dump"):
+        expected = expected_run.model_dump(exclude={"child_runs"})
+    else:
+        expected = expected_run.dict(exclude={"child_runs"})  # type: ignore[deprecated]
     expected_err = expected.pop("error")
 
     assert received == expected
