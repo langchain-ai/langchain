@@ -1013,9 +1013,41 @@ class ChatAnthropic(BaseChatModel):
         # block).
         cache_control = kwargs.pop("cache_control", None)
         if cache_control and formatted_messages:
+                    # Collect tool_use_ids that were called by code_execution
+        # These blocks cannot have cache_control per Anthropic API
+        code_execution_tool_ids = set()
+        for msg in formatted_messages:
+            content = msg.get("content", [])
+            if isinstance(content, list):
+                for block in content:
+                    if (
+                        isinstance(block, dict)
+                        and block.get("type") == "tool_use"
+                        and "code_execution" in block.get("caller", {}).get("type", "")
+                    ):
+                        code_execution_tool_ids.add(block.get("id"))
+        
             for formatted_message in reversed(formatted_messages):
                 content = formatted_message.get("content")
                 if isinstance(content, list) and content:
+                                    # Skip tool_use blocks called by code_execution
+                last_block = content[-1]
+                if isinstance(last_block, dict):
+                    block_type = last_block.get("type")
+                    # Skip tool_use with code_execution caller
+                    if (
+                        block_type == "tool_use"
+                        and "code_execution"
+                        in last_block.get("caller", {}).get("type", "")
+                    ):
+                        continue
+                    # Skip tool_result for code_execution tools
+                    if (
+                        block_type == "tool_result"
+                        and last_block.get("tool_use_id") in code_execution_tool_ids
+                    ):
+                        continue
+                
                     content[-1]["cache_control"] = cache_control
                     break
                 if isinstance(content, str):
