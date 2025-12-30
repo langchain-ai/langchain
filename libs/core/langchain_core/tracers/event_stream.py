@@ -12,7 +12,6 @@ from typing import (
     TypeVar,
     cast,
 )
-from uuid import UUID
 
 from typing_extensions import NotRequired, override
 
@@ -47,6 +46,7 @@ from langchain_core.utils.uuid import uuid7
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
+    from uuid import UUID
 
     from langchain_core.documents import Document
     from langchain_core.runnables import Runnable, RunnableConfig
@@ -81,9 +81,9 @@ def _assign_name(name: str | None, serialized: dict[str, Any] | None) -> str:
         return name
     if serialized is not None:
         if "name" in serialized:
-            return serialized["name"]
+            return cast("str", serialized["name"])
         if "id" in serialized:
-            return serialized["id"][-1]
+            return cast("str", serialized["id"][-1])
     return "Unnamed"
 
 

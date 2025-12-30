@@ -65,14 +65,19 @@ logger = logging.getLogger(__name__)
 def _get_type(v: Any) -> str:
     """Get the type associated with the object for serialization purposes."""
     if isinstance(v, dict) and "type" in v:
-        return v["type"]
-    if hasattr(v, "type"):
-        return v.type
-    msg = (
-        f"Expected either a dictionary with a 'type' key or an object "
-        f"with a 'type' attribute. Instead got type {type(v)}."
-    )
-    raise TypeError(msg)
+        result = v["type"]
+    elif hasattr(v, "type"):
+        result = v.type
+    else:
+        msg = (
+            f"Expected either a dictionary with a 'type' key or an object "
+            f"with a 'type' attribute. Instead got type {type(v)}."
+        )
+        raise TypeError(msg)
+    if not isinstance(result, str):
+        msg = f"Expected 'type' to be a str, got {type(result).__name__}"
+        raise TypeError(msg)
+    return result
 
 
 AnyMessage = Annotated[
@@ -215,8 +220,11 @@ def message_chunk_to_message(chunk: BaseMessage) -> BaseMessage:
     ignore_keys = ["type"]
     if isinstance(chunk, AIMessageChunk):
         ignore_keys.extend(["tool_call_chunks", "chunk_position"])
-    return chunk.__class__.__mro__[1](
-        **{k: v for k, v in chunk.__dict__.items() if k not in ignore_keys}
+    return cast(
+        "BaseMessage",
+        chunk.__class__.__mro__[1](
+            **{k: v for k, v in chunk.__dict__.items() if k not in ignore_keys}
+        ),
     )
 
 
@@ -238,13 +246,13 @@ def _create_message_from_message_type(
     """Create a message from a `Message` type and content string.
 
     Args:
-        message_type: (str) the type of the message (e.g., `'human'`, `'ai'`, etc.).
-        content: (str) the content string.
-        name: (str) the name of the message.
-        tool_call_id: (str) the tool call id.
-        tool_calls: (list[dict[str, Any]]) the tool calls.
-        id: (str) the id of the message.
-        additional_kwargs: (dict[str, Any]) additional keyword arguments.
+        message_type: the type of the message (e.g., `'human'`, `'ai'`, etc.).
+        content: the content string.
+        name: the name of the message.
+        tool_call_id: the tool call id.
+        tool_calls: the tool calls.
+        id: the id of the message.
+        additional_kwargs: additional keyword arguments.
 
     Returns:
         a message of the appropriate type.
@@ -1112,6 +1120,32 @@ def trim_messages(
     raise ValueError(msg)
 
 
+_SingleMessage = BaseMessage | str | dict[str, Any]
+_T = TypeVar("_T", bound=_SingleMessage)
+# A sequence of _SingleMessage that is NOT a bare str
+_MultipleMessages = Sequence[_T]
+
+
+@overload
+def convert_to_openai_messages(
+    messages: _SingleMessage,
+    *,
+    text_format: Literal["string", "block"] = "string",
+    include_id: bool = False,
+    pass_through_unknown_blocks: bool = True,
+) -> dict: ...
+
+
+@overload
+def convert_to_openai_messages(
+    messages: _MultipleMessages,
+    *,
+    text_format: Literal["string", "block"] = "string",
+    include_id: bool = False,
+    pass_through_unknown_blocks: bool = True,
+) -> list[dict]: ...
+
+
 def convert_to_openai_messages(
     messages: MessageLikeRepresentation | Sequence[MessageLikeRepresentation],
     *,
@@ -1207,7 +1241,7 @@ def convert_to_openai_messages(
         err = f"Unrecognized {text_format=}, expected one of 'string' or 'block'."
         raise ValueError(err)
 
-    oai_messages: list = []
+    oai_messages: list[dict] = []
 
     if is_single := isinstance(messages, (BaseMessage, dict, str)):
         messages = [messages]
@@ -1774,7 +1808,11 @@ def _get_message_openai_role(message: BaseMessage) -> str:
     if isinstance(message, ToolMessage):
         return "tool"
     if isinstance(message, SystemMessage):
-        return message.additional_kwargs.get("__openai_role__", "system")
+        role = message.additional_kwargs.get("__openai_role__", "system")
+        if not isinstance(role, str):
+            msg = f"Expected '__openai_role__' to be a str, got {type(role).__name__}"
+            raise TypeError(msg)
+        return role
     if isinstance(message, FunctionMessage):
         return "function"
     if isinstance(message, ChatMessage):

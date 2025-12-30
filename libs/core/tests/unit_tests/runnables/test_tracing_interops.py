@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from langchain_core.callbacks import BaseCallbackHandler
 
 
-def _get_posts(client: Client) -> list:
+def _get_posts(client: Client) -> list[dict[str, Any]]:
     mock_calls = client.session.request.mock_calls  # type: ignore[attr-defined]
     posts = []
     for call in mock_calls:
@@ -280,8 +280,8 @@ class TestRunnableSequenceParallelTraceNesting:
         def before(x: int) -> int:
             return x
 
-        def after(x: dict) -> int:
-            return x["chain_result"]
+        def after(x: dict[str, Any]) -> int:
+            return int(x["chain_result"])
 
         sequence = before | parallel | after
         if isasyncgenfunction(other_thing):
@@ -392,15 +392,21 @@ class TestRunnableSequenceParallelTraceNesting:
         self._check_posts()
 
     @staticmethod
-    async def ainvoke(parent: RunnableLambda, cb: list[BaseCallbackHandler]) -> int:
+    async def ainvoke(
+        parent: RunnableLambda[int, int], cb: list[BaseCallbackHandler]
+    ) -> int:
         return await parent.ainvoke(1, {"callbacks": cb})
 
     @staticmethod
-    async def astream(parent: RunnableLambda, cb: list[BaseCallbackHandler]) -> int:
+    async def astream(
+        parent: RunnableLambda[int, int], cb: list[BaseCallbackHandler]
+    ) -> int:
         return [res async for res in parent.astream(1, {"callbacks": cb})][-1]
 
     @staticmethod
-    async def abatch(parent: RunnableLambda, cb: list[BaseCallbackHandler]) -> int:
+    async def abatch(
+        parent: RunnableLambda[int, int], cb: list[BaseCallbackHandler]
+    ) -> int:
         return (await parent.abatch([1], {"callbacks": cb}))[0]
 
     @pytest.mark.skipif(
