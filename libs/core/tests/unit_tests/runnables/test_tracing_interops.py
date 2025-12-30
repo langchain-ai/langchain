@@ -77,7 +77,7 @@ def test_tracing_context() -> None:
 
 def test_config_traceable_handoff() -> None:
     if hasattr(get_env_var, "cache_clear"):
-        get_env_var.cache_clear()
+        get_env_var.cache_clear()  # type: ignore[attr-defined]
     tracer = _create_tracer_with_mocked_client(
         project_name="another-flippin-project", tags=["such-a-tag"]
     )
@@ -240,7 +240,7 @@ def test_tracing_enable_disable(
         return a + 1
 
     if hasattr(get_env_var, "cache_clear"):
-        get_env_var.cache_clear()
+        get_env_var.cache_clear()  # type: ignore[attr-defined]
     env_on = env == "true"
     with (
         patch.dict("os.environ", {"LANGSMITH_TRACING": env}),

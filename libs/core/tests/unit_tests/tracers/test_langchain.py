@@ -125,9 +125,9 @@ def test_correct_get_tracer_project(
     envvars: dict[str, str], expected_project_name: str
 ) -> None:
     if hasattr(get_env_var, "cache_clear"):
-        get_env_var.cache_clear()
+        get_env_var.cache_clear()  # type: ignore[attr-defined]
     if hasattr(get_tracer_project, "cache_clear"):
-        get_tracer_project.cache_clear()
+        get_tracer_project.cache_clear()  # type: ignore[attr-defined]
     with pytest.MonkeyPatch.context() as mp:
         for k, v in envvars.items():
             mp.setenv(k, v)

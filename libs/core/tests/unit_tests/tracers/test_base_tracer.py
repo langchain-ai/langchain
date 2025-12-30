@@ -44,15 +44,17 @@ def _compare_run_with_error(run: Any, expected_run: Any) -> None:
             run.child_runs, expected_run.child_runs, strict=False
         ):
             _compare_run_with_error(received, expected)
-    if hasattr(run, "model_dump"):
-        received = run.model_dump(exclude={"child_runs"})
-    else:
-        received = run.dict(exclude={"child_runs"})  # type: ignore[deprecated]
+    received = (
+        run.model_dump(exclude={"child_runs"})
+        if hasattr(run, "model_dump")
+        else run.dict(exclude={"child_runs"})
+    )
     received_err = received.pop("error")
-    if hasattr(expected_run, "model_dump"):
-        expected = expected_run.model_dump(exclude={"child_runs"})
-    else:
-        expected = expected_run.dict(exclude={"child_runs"})  # type: ignore[deprecated]
+    expected = (
+        expected_run.model_dump(exclude={"child_runs"})
+        if hasattr(expected_run, "model_dump")
+        else expected_run.dict(exclude={"child_runs"})
+    )
     expected_err = expected.pop("error")
 
     assert received == expected
@@ -69,6 +71,7 @@ def test_tracer_llm_run() -> None:
     uuid = uuid4()
     compare_run = Run(
         id=uuid,
+        name="llm",
         parent_run_id=None,
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc),
@@ -170,6 +173,7 @@ def test_tracer_chain_run() -> None:
     uuid = uuid4()
     compare_run = Run(
         id=str(uuid),
+        name="chain",
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc),
         events=[
@@ -198,6 +202,7 @@ def test_tracer_tool_run() -> None:
     uuid = uuid4()
     compare_run = Run(
         id=str(uuid),
+        name="tool",
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc),
         events=[
@@ -257,6 +262,7 @@ def test_tracer_nested_run() -> None:
 
     compare_run = Run(
         id=str(chain_uuid),
+        name="chain",
         error=None,
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc),
@@ -274,6 +280,7 @@ def test_tracer_nested_run() -> None:
         child_runs=[
             Run(
                 id=tool_uuid,
+                name="tool",
                 parent_run_id=chain_uuid,
                 start_time=datetime.now(timezone.utc),
                 end_time=datetime.now(timezone.utc),
@@ -292,6 +299,7 @@ def test_tracer_nested_run() -> None:
                 child_runs=[
                     Run(
                         id=str(llm_uuid1),
+                        name="llm",
                         parent_run_id=str(tool_uuid),
                         error=None,
                         start_time=datetime.now(timezone.utc),
@@ -312,6 +320,7 @@ def test_tracer_nested_run() -> None:
             ),
             Run(
                 id=str(llm_uuid2),
+                name="llm",
                 parent_run_id=str(chain_uuid),
                 error=None,
                 start_time=datetime.now(timezone.utc),
@@ -342,6 +351,7 @@ def test_tracer_llm_run_on_error() -> None:
 
     compare_run = Run(
         id=str(uuid),
+        name="llm",
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc),
         events=[
@@ -373,6 +383,7 @@ def test_tracer_llm_run_on_error_callback() -> None:
 
     compare_run = Run(
         id=str(uuid),
+        name="llm",
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc),
         events=[
@@ -409,6 +420,7 @@ def test_tracer_chain_run_on_error() -> None:
 
     compare_run = Run(
         id=str(uuid),
+        name="chain",
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc),
         events=[
@@ -439,6 +451,7 @@ def test_tracer_tool_run_on_error() -> None:
 
     compare_run = Run(
         id=str(uuid),
+        name="tool",
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc),
         events=[
@@ -509,6 +522,7 @@ def test_tracer_nested_runs_on_error() -> None:
 
     compare_run = Run(
         id=str(chain_uuid),
+        name="chain",
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc),
         events=[
@@ -526,6 +540,7 @@ def test_tracer_nested_runs_on_error() -> None:
         child_runs=[
             Run(
                 id=str(llm_uuid1),
+                name="llm",
                 parent_run_id=str(chain_uuid),
                 start_time=datetime.now(timezone.utc),
                 end_time=datetime.now(timezone.utc),
@@ -544,6 +559,7 @@ def test_tracer_nested_runs_on_error() -> None:
             ),
             Run(
                 id=str(llm_uuid2),
+                name="llm",
                 parent_run_id=str(chain_uuid),
                 start_time=datetime.now(timezone.utc),
                 end_time=datetime.now(timezone.utc),
@@ -562,6 +578,7 @@ def test_tracer_nested_runs_on_error() -> None:
             ),
             Run(
                 id=str(tool_uuid),
+                name="tool",
                 parent_run_id=str(chain_uuid),
                 start_time=datetime.now(timezone.utc),
                 end_time=datetime.now(timezone.utc),
@@ -579,6 +596,7 @@ def test_tracer_nested_runs_on_error() -> None:
                 child_runs=[
                     Run(
                         id=str(llm_uuid3),
+                        name="llm",
                         parent_run_id=str(tool_uuid),
                         start_time=datetime.now(timezone.utc),
                         end_time=datetime.now(timezone.utc),
