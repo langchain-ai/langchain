@@ -5,13 +5,12 @@ from __future__ import annotations
 import inspect
 import textwrap
 import warnings
-from contextlib import nullcontext
+from contextlib import AbstractContextManager, nullcontext
 from functools import lru_cache, wraps
 from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
     Any,
-    ContextManager,
     TypeVar,
     cast,
     overload,
@@ -569,7 +568,8 @@ def create_model_v2(
             capture_warnings = True
 
     ctx = cast(
-        ContextManager, warnings.catch_warnings() if capture_warnings else nullcontext()
+        "AbstractContextManager",
+        warnings.catch_warnings() if capture_warnings else nullcontext(),
     )
     with ctx:
         if capture_warnings:
