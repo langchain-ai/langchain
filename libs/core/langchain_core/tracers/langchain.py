@@ -22,6 +22,7 @@ from typing_extensions import override
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
 from langchain_core.messages.ai import UsageMetadata, add_usage
+from langchain_core.tracers._compat import run_construct, run_to_dict
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
@@ -192,23 +193,12 @@ class LangChainTracer(BaseTracer):
     def _persist_run(self, run: Run) -> None:
         # We want to free up more memory by avoiding keeping a reference to the
         # whole nested run tree.
-        if hasattr(run, "model_dump"):
-            run_data = run.model_dump(exclude={"child_runs", "inputs", "outputs"})
-        else:
-            run_data = run.dict(exclude={"child_runs", "inputs", "outputs"})  # type: ignore[deprecated]
-
-        if hasattr(Run, "model_construct"):
-            self.latest_run = Run.model_construct(
-                **run_data,
-                inputs=run.inputs,
-                outputs=run.outputs,
-            )
-        else:
-            self.latest_run = Run.construct(  # type: ignore[deprecated]
-                **run_data,
-                inputs=run.inputs,
-                outputs=run.outputs,
-            )
+        run_data = run_to_dict(run, exclude={"child_runs", "inputs", "outputs"})
+        self.latest_run = run_construct(
+            **run_data,
+            inputs=run.inputs,
+            outputs=run.outputs,
+        )
 
     def get_run_url(self) -> str:
         """Get the LangSmith root run URL.

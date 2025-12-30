@@ -13,6 +13,7 @@ import langsmith
 from langsmith.evaluation.evaluator import EvaluationResult, EvaluationResults
 
 from langchain_core.tracers import langchain as langchain_tracer
+from langchain_core.tracers._compat import run_copy
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import tracing_v2_enabled
 from langchain_core.tracers.langchain import _get_executor
@@ -206,7 +207,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         if self.skip_unfinished and not run.outputs:
             logger.debug("Skipping unfinished run %s", run.id)
             return
-        run_ = run.model_copy() if hasattr(run, "model_copy") else run.copy()  # type: ignore[deprecated]
+        run_ = run_copy(run)
         run_.reference_example_id = self.example_id
         for evaluator in self.evaluators:
             if self.executor is None:
