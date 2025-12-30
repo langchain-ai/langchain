@@ -18,7 +18,9 @@ from pydantic import BaseModel
 from typing_extensions import override
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
-from langchain_core.callbacks.manager import adispatch_custom_event
+from langchain_core.callbacks.manager import (
+    adispatch_custom_event,
+)
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.documents import Document
 from langchain_core.language_models import FakeStreamingListLLM, GenericFakeChatModel
@@ -459,9 +461,9 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
 
 
 async def test_event_stream_with_lambdas_from_lambda() -> None:
-    as_lambdas = RunnableLambda(lambda _: {"answer": "goodbye"}).with_config(
-        {"run_name": "my_lambda"}
-    )
+    as_lambdas = RunnableLambda[Any, dict[str, str]](
+        lambda _: {"answer": "goodbye"}
+    ).with_config({"run_name": "my_lambda"})
     events = await _collect_events(
         as_lambdas.astream_events({"question": "hello"}, version="v2")
     )
@@ -1101,8 +1103,6 @@ async def test_event_streaming_with_tools() -> None:
         """A tool that does nothing."""
         return {"x": x, "y": y}
 
-    # type ignores below because the tools don't appear to be runnables to type checkers
-    # we can remove as soon as that's fixed
     events = await _collect_events(parameterless.astream_events({}, version="v2"))
     _assert_events_equal_allow_superset_metadata(
         events,
@@ -1395,8 +1395,6 @@ async def test_event_stream_on_chain_with_tool() -> None:
         """Reverse a string."""
         return s[::-1]
 
-    # For whatever reason type annotations fail here because reverse
-    # does not appear to be a runnable
     chain = concat | reverse
 
     events = await _collect_events(
@@ -1812,7 +1810,7 @@ async def test_runnable_each() -> None:
     async def add_one(x: int) -> int:
         return x + 1
 
-    add_one_map = RunnableLambda(add_one).map()  # type: ignore[arg-type,var-annotated]
+    add_one_map = RunnableLambda(add_one).map()
     assert await add_one_map.ainvoke([1, 2, 3]) == [2, 3, 4]
 
     with pytest.raises(NotImplementedError):
@@ -2070,7 +2068,7 @@ async def test_sync_in_async_stream_lambdas(blockbuster: BlockBuster) -> None:
         results = list(streaming)
         return results[0]
 
-    add_one_proxy_ = RunnableLambda(add_one_proxy)  # type: ignore[arg-type,var-annotated]
+    add_one_proxy_ = RunnableLambda(add_one_proxy)
 
     events = await _collect_events(add_one_proxy_.astream_events(1, version="v2"))
     _assert_events_equal_allow_superset_metadata(events, EXPECTED_EVENTS)
@@ -2082,7 +2080,7 @@ async def test_async_in_async_stream_lambdas() -> None:
     async def add_one(x: int) -> int:
         return x + 1
 
-    add_one_ = RunnableLambda[int, int](add_one)
+    add_one_ = RunnableLambda(add_one)
 
     async def add_one_proxy(x: int, config: RunnableConfig) -> int:
         # Use sync streaming
@@ -2242,22 +2240,19 @@ async def test_astream_events_from_custom_runnable() -> None:
 async def test_parent_run_id_assignment() -> None:
     """Test assignment of parent run id."""
 
-    # Type ignores in the code below need to be investigated.
-    # Looks like a typing issue when using RunnableLambda as a decorator
-    # with async functions.
-    @RunnableLambda  # type: ignore[arg-type]
+    @RunnableLambda
     async def grandchild(x: str) -> str:
         return x
 
-    @RunnableLambda  # type: ignore[arg-type]
+    @RunnableLambda[str, str]
     async def child(x: str, config: RunnableConfig) -> str:
         config["run_id"] = uuid.UUID(int=9)
-        return await grandchild.ainvoke(x, config)  # type: ignore[arg-type]
+        return await grandchild.ainvoke(x, config)
 
-    @RunnableLambda  # type: ignore[arg-type]
+    @RunnableLambda[str, str]
     async def parent(x: str, config: RunnableConfig) -> str:
         config["run_id"] = uuid.UUID(int=8)
-        return await child.ainvoke(x, config)  # type: ignore[arg-type]
+        return await child.ainvoke(x, config)
 
     bond = uuid.UUID(int=7)
     events = await _collect_events(
@@ -2343,17 +2338,14 @@ async def test_parent_run_id_assignment() -> None:
 async def test_bad_parent_ids() -> None:
     """Test handling of situation where a run id is duplicated in the run tree."""
 
-    # Type ignores in the code below need to be investigated.
-    # Looks like a typing issue when using RunnableLambda as a decorator
-    # with async functions.
-    @RunnableLambda  # type: ignore[arg-type]
+    @RunnableLambda
     async def child(x: str) -> str:
         return x
 
-    @RunnableLambda  # type: ignore[arg-type]
+    @RunnableLambda
     async def parent(x: str, config: RunnableConfig) -> str:
         config["run_id"] = uuid.UUID(int=7)
-        return await child.ainvoke(x, config)  # type: ignore[arg-type]
+        return await child.ainvoke(x, config)
 
     bond = uuid.UUID(int=7)
     events = await _collect_events(
@@ -2603,9 +2595,7 @@ async def test_cancel_astream_events() -> None:
 async def test_custom_event() -> None:
     """Test adhoc event."""
 
-    # Ignoring type due to RunnableLamdba being dynamic when it comes to being
-    # applied as a decorator to async functions.
-    @RunnableLambda  # type: ignore[arg-type]
+    @RunnableLambda
     async def foo(x: int, config: RunnableConfig) -> int:
         """Simple function that emits some adhoc events."""
         await adispatch_custom_event("event1", {"x": x}, config=config)
@@ -2679,9 +2669,7 @@ async def test_custom_event() -> None:
 async def test_custom_event_nested() -> None:
     """Test adhoc event in a nested chain."""
 
-    # Ignoring type due to RunnableLamdba being dynamic when it comes to being
-    # applied as a decorator to async functions.
-    @RunnableLambda  # type: ignore[arg-type]
+    @RunnableLambda[int, int]
     async def foo(x: int, config: RunnableConfig) -> int:
         """Simple function that emits some adhoc events."""
         await adispatch_custom_event("event1", {"x": x}, config=config)
@@ -2691,13 +2679,11 @@ async def test_custom_event_nested() -> None:
     run_id = uuid.UUID(int=7)
     child_run_id = uuid.UUID(int=8)
 
-    # Ignoring type due to RunnableLamdba being dynamic when it comes to being
-    # applied as a decorator to async functions.
-    @RunnableLambda  # type: ignore[arg-type]
+    @RunnableLambda[int, int]
     async def bar(x: int, config: RunnableConfig) -> int:
         """Simple function that emits some adhoc events."""
         return await foo.ainvoke(
-            x,  # type: ignore[arg-type]
+            x,
             {"run_id": child_run_id, **config},
         )
 
@@ -2808,7 +2794,6 @@ async def test_custom_event_root_dispatch_with_in_tool() -> None:
         await adispatch_custom_event("event1", {"x": x})
         return x + 1
 
-    # Ignoring type due to @tool not returning correct type annotations
     events = await _collect_events(foo.astream_events({"x": 2}, version="v2"))
     _assert_events_equal_allow_superset_metadata(
         events,
