@@ -254,17 +254,7 @@ def _create_subset_model_v2(
         ),
     )
 
-    # TODO(0.3): Determine if there is a more "pydantic" way to preserve annotations.
-    # This is done to preserve __annotations__ when working with pydantic 2.x
-    # and using the Annotated type with TypedDict.
-    # Comment out the following line, to trigger the relevant test case.
-    selected_annotations = [
-        (name, annotation)
-        for name, annotation in model.__annotations__.items()
-        if name in field_names
-    ]
 
-    rtn.__annotations__ = dict(selected_annotations)
     rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
     return rtn
 
