@@ -4,12 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Literal, Union
-
-if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
-
-    from langchain.tools import BaseTool
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Union
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
@@ -23,6 +18,11 @@ from langchain.agents.middleware.types import (
     ModelResponse,
 )
 from langchain.chat_models.base import init_chat_model
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
+    from langchain.tools import BaseTool
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class _SelectionRequest:
     valid_tool_names: list[str]
 
 
-def _create_tool_selection_response(tools: list[BaseTool]) -> TypeAdapter:
+def _create_tool_selection_response(tools: list[BaseTool]) -> TypeAdapter[Any]:
     """Create a structured output schema for tool selection.
 
     Args:
@@ -217,7 +217,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
 
     def _process_selection_response(
         self,
-        response: dict,
+        response: dict[str, Any],
         available_tools: list[BaseTool],
         valid_tool_names: list[str],
         request: ModelRequest,

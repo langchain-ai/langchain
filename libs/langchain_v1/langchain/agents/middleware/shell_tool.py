@@ -78,7 +78,7 @@ class _SessionResources:
     session: ShellSession
     tempdir: tempfile.TemporaryDirectory[str] | None
     policy: BaseExecutionPolicy
-    finalizer: weakref.finalize = field(init=False, repr=False)
+    finalizer: weakref.finalize[..., Any] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         self.finalizer = weakref.finalize(
@@ -90,7 +90,7 @@ class _SessionResources:
         )
 
 
-class ShellToolState(AgentState):
+class ShellToolState(AgentState[Any]):
     """Agent state extension for tracking shell session resources."""
 
     shell_session_resources: NotRequired[

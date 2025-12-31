@@ -102,7 +102,9 @@ class HITLResponse(TypedDict):
 class _DescriptionFactory(Protocol):
     """Callable that generates a description for a tool call."""
 
-    def __call__(self, tool_call: ToolCall, state: AgentState, runtime: Runtime[ContextT]) -> str:
+    def __call__(
+        self, tool_call: ToolCall, state: AgentState[Any], runtime: Runtime[ContextT]
+    ) -> str:
         """Generate a description for a tool call."""
         ...
 
@@ -203,7 +205,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT]):
         self,
         tool_call: ToolCall,
         config: InterruptOnConfig,
-        state: AgentState,
+        state: AgentState[Any],
         runtime: Runtime[ContextT],
     ) -> tuple[ActionRequest, ReviewConfig]:
         """Create an ActionRequest and ReviewConfig for a tool call."""
@@ -277,7 +279,9 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT]):
         )
         raise ValueError(msg)
 
-    def after_model(self, state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
+    def after_model(
+        self, state: AgentState[Any], runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
         """Trigger interrupt flows for relevant tool calls after an `AIMessage`."""
         messages = state["messages"]
         if not messages:
@@ -351,7 +355,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT]):
         return {"messages": [last_ai_msg, *artificial_tool_messages]}
 
     async def aafter_model(
-        self, state: AgentState, runtime: Runtime[ContextT]
+        self, state: AgentState[Any], runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
         """Async trigger interrupt flows for relevant tool calls after an `AIMessage`."""
         return self.after_model(state, runtime)

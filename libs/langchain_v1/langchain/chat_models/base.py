@@ -577,12 +577,12 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     def __init__(
         self,
         *,
-        default_config: dict | None = None,
+        default_config: dict[str, Any] | None = None,
         configurable_fields: Literal["any"] | list[str] | tuple[str, ...] = "any",
         config_prefix: str = "",
-        queued_declarative_operations: Sequence[tuple[str, tuple, dict]] = (),
+        queued_declarative_operations: Sequence[tuple[str, tuple[Any, ...], dict[str, Any]]] = (),
     ) -> None:
-        self._default_config: dict = default_config or {}
+        self._default_config: dict[str, Any] = default_config or {}
         self._configurable_fields: Literal["any"] | list[str] = (
             "any" if configurable_fields == "any" else list(configurable_fields)
         )
@@ -591,8 +591,10 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             if config_prefix and not config_prefix.endswith("_")
             else config_prefix
         )
-        self._queued_declarative_operations: list[tuple[str, tuple, dict]] = list(
-            queued_declarative_operations,
+        self._queued_declarative_operations: list[tuple[str, tuple[Any, ...], dict[str, Any]]] = (
+            list(
+                queued_declarative_operations,
+            )
         )
 
     def __getattr__(self, name: str) -> Any:
@@ -625,14 +627,14 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         msg += "."
         raise AttributeError(msg)
 
-    def _model(self, config: RunnableConfig | None = None) -> Runnable:
+    def _model(self, config: RunnableConfig | None = None) -> Runnable[Any, Any]:
         params = {**self._default_config, **self._model_params(config)}
         model = _init_chat_model_helper(**params)
         for name, args, kwargs in self._queued_declarative_operations:
             model = getattr(model, name)(*args, **kwargs)
         return model
 
-    def _model_params(self, config: RunnableConfig | None) -> dict:
+    def _model_params(self, config: RunnableConfig | None) -> dict[str, Any]:
         config = ensure_config(config)
         model_params = {
             _remove_prefix(k, self._config_prefix): v
@@ -959,7 +961,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     # Explicitly added to satisfy downstream linters.
     def bind_tools(
         self,
-        tools: Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
+        tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         return self.__getattr__("bind_tools")(tools, **kwargs)
@@ -967,7 +969,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     # Explicitly added to satisfy downstream linters.
     def with_structured_output(
         self,
-        schema: dict | type[BaseModel],
+        schema: dict[str, Any] | type[BaseModel],
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, dict | BaseModel]:
+    ) -> Runnable[LanguageModelInput, dict[str, Any] | BaseModel]:
         return self.__getattr__("with_structured_output")(schema, **kwargs)
