@@ -605,6 +605,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             (citations := chunk.get("citations"))
             and generation_chunk
             and isinstance(generation_chunk.message, AIMessageChunk)
+            and not chunk.get("usage")  # citations are repeated in final usage chunk
         ):
             generation_chunk.message.additional_kwargs["citations"] = citations
 
