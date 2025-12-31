@@ -115,9 +115,6 @@ exclude = [
     "tests/unit_tests/agents/test_.*\\.py",
 ]
 
-# TODO: activate for 'strict' checking
-warn_return_any = false
-
 [[tool.mypy.overrides]]
 module = ["pytest_socket.*", "vcr.*"]
 ignore_missing_imports = true
