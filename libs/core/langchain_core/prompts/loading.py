@@ -4,6 +4,7 @@ import json
 import logging
 from collections.abc import Callable
 from pathlib import Path
+from typing import cast
 
 import yaml
 
@@ -31,9 +32,7 @@ def load_prompt_from_config(config: dict) -> BasePromptTemplate:
         ValueError: If the prompt type is not supported.
     """
     if "lc" in config and "type" in config:
-        from typing import cast
-
-        return cast(BasePromptTemplate, load(config))
+        return cast("BasePromptTemplate", load(config))
 
     if "_type" not in config:
         logger.warning("No `_type` key found, defaulting to `prompt`.")
