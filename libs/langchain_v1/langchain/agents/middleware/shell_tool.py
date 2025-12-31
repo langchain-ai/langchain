@@ -598,7 +598,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         normalized: dict[str, str] = {}
         for key, value in env.items():
             if not isinstance(key, str):
-                msg = "Environment variable names must be strings."
+                msg = "Environment variable names must be strings."  # type: ignore[unreachable]
                 raise TypeError(msg)
             normalized[key] = str(value)
         return normalized
