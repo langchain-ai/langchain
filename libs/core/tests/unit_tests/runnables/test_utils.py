@@ -56,7 +56,7 @@ def test_nonlocals() -> None:
     def my_func4(value: str) -> str:
         return global_agent.invoke(value)
 
-    def my_func5() -> tuple[Callable[[str], str], RunnableLambda]:
+    def my_func5() -> tuple[Callable[[str], str], RunnableLambda[str, str]]:
         global_agent = RunnableLambda[str, str](lambda x: x * 3)
 
         def my_func6(value: str) -> str:

@@ -21,6 +21,8 @@ from langchain_core.runnables import Runnable, RunnableConfig, RunnableSerializa
 from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
+    import builtins
+
     from langchain_core.prompt_values import PromptValue
 
 T = TypeVar("T")
@@ -62,7 +64,7 @@ class BaseLLMOutputParser(ABC, Generic[T]):
 
 
 class BaseGenerationOutputParser(
-    BaseLLMOutputParser, RunnableSerializable[LanguageModelOutput, T]
+    BaseLLMOutputParser[T], RunnableSerializable[LanguageModelOutput, T]
 ):
     """Base class to parse the output of an LLM call."""
 
@@ -128,7 +130,7 @@ class BaseGenerationOutputParser(
 
 
 class BaseOutputParser(
-    BaseLLMOutputParser, RunnableSerializable[LanguageModelOutput, T]
+    BaseLLMOutputParser[T], RunnableSerializable[LanguageModelOutput, T]
 ):
     """Base class to parse the output of an LLM call.
 
@@ -329,7 +331,7 @@ class BaseOutputParser(
         )
         raise NotImplementedError(msg)
 
-    def dict(self, **kwargs: Any) -> dict:
+    def dict(self, **kwargs: Any) -> builtins.dict[str, Any]:
         """Return dictionary representation of output parser."""
         output_parser_dict = super().model_dump(**kwargs)
         with contextlib.suppress(NotImplementedError):

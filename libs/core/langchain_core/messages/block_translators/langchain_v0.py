@@ -44,8 +44,8 @@ def _convert_v0_multimodal_input_to_v1(
 
 
 def _convert_legacy_v0_content_block_to_v1(
-    block: dict,
-) -> types.ContentBlock | dict:
+    block: dict[str, Any],
+) -> types.ContentBlock | dict[str, Any]:
     """Convert a LangChain v0 content block to v1 format.
 
     Preserves unknown keys as extras to avoid data loss.
@@ -53,7 +53,9 @@ def _convert_legacy_v0_content_block_to_v1(
     Returns the original block unchanged if it's not in v0 format.
     """
 
-    def _extract_v0_extras(block_dict: dict, known_keys: set[str]) -> dict[str, Any]:
+    def _extract_v0_extras(
+        block_dict: dict[str, Any], known_keys: set[str]
+    ) -> dict[str, Any]:
         """Extract unknown keys from v0 block to preserve as extras.
 
         Args:

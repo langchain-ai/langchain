@@ -12,14 +12,14 @@ used in the code.
 import asyncio
 from asyncio import AbstractEventLoop, Queue
 from collections.abc import AsyncIterator
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 T = TypeVar("T")
 
 
 class _SendStream(Generic[T]):
     def __init__(
-        self, reader_loop: AbstractEventLoop, queue: Queue, done: object
+        self, reader_loop: AbstractEventLoop, queue: Queue[Any], done: object
     ) -> None:
         """Create a writer for the queue and done object.
 
@@ -82,7 +82,7 @@ class _SendStream(Generic[T]):
 
 
 class _ReceiveStream(Generic[T]):
-    def __init__(self, queue: Queue, done: object) -> None:
+    def __init__(self, queue: Queue[Any], done: object) -> None:
         """Create a reader for the queue and done object.
 
         This reader should be used in the same loop as the loop that was passed
@@ -123,7 +123,7 @@ class _MemoryStream(Generic[T]):
                   This will NOT be validated at run time.
         """
         self._loop = loop
-        self._queue: asyncio.Queue = asyncio.Queue(maxsize=0)
+        self._queue = asyncio.Queue[Any](maxsize=0)
         self._done = object()
 
     def get_send_stream(self) -> _SendStream[T]:

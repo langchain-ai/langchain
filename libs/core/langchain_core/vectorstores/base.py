@@ -46,7 +46,7 @@ class VectorStore(ABC):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: list[dict] | None = None,
+        metadatas: list[dict[str, Any]] | None = None,
         *,
         ids: list[str] | None = None,
         **kwargs: Any,
@@ -184,7 +184,7 @@ class VectorStore(ABC):
     async def aadd_texts(
         self,
         texts: Iterable[str],
-        metadatas: list[dict] | None = None,
+        metadatas: list[dict[str, Any]] | None = None,
         *,
         ids: list[str] | None = None,
         **kwargs: Any,
@@ -848,7 +848,7 @@ class VectorStore(ABC):
         cls: type[VST],
         texts: list[str],
         embedding: Embeddings,
-        metadatas: list[dict] | None = None,
+        metadatas: list[dict[str, Any]] | None = None,
         *,
         ids: list[str] | None = None,
         **kwargs: Any,
@@ -871,7 +871,7 @@ class VectorStore(ABC):
         cls,
         texts: list[str],
         embedding: Embeddings,
-        metadatas: list[dict] | None = None,
+        metadatas: list[dict[str, Any]] | None = None,
         *,
         ids: list[str] | None = None,
         **kwargs: Any,
@@ -967,7 +967,7 @@ class VectorStoreRetriever(BaseRetriever):
     """VectorStore to use for retrieval."""
     search_type: str = "similarity"
     """Type of search to perform."""
-    search_kwargs: dict = Field(default_factory=dict)
+    search_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Keyword arguments to pass to the search function."""
     allowed_search_types: ClassVar[Collection[str]] = (
         "similarity",
@@ -981,7 +981,7 @@ class VectorStoreRetriever(BaseRetriever):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_search_type(cls, values: dict) -> Any:
+    def validate_search_type(cls, values: dict[str, Any]) -> Any:
         """Validate search type.
 
         Args:
