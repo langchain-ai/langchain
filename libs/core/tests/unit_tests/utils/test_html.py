@@ -207,3 +207,12 @@ def test_extract_sub_links_with_query() -> None:
         )
     )
     assert actual == expected, f"Expected {expected}, but got {actual}"
+
+
+def test_find_all_links_ignore_new_suffixes() -> None:
+    """Test that newly added binary suffixes are ignored."""
+    new_suffixes = [".webp", ".pdf", ".docx", ".xlsx", ".pptx", ".pptm"]
+    for suffix in new_suffixes:
+        html = f'href="https://example.com/file{suffix}"'
+        actual = find_all_links(html)
+        assert actual == [], f"Failed to ignore {suffix}"
