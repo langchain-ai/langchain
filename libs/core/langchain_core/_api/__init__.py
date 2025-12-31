@@ -60,8 +60,8 @@ _dynamic_imports = {
 def __getattr__(attr_name: str) -> object:
     """Dynamically import and return an attribute from a submodule.
 
-    This function enables lazy loading of API functions from submodules,
-    reducing initial import time and circular dependency issues.
+    This function enables lazy loading of API functions from submodules, reducing
+    initial import time and circular dependency issues.
 
     Args:
         attr_name: Name of the attribute to import.
@@ -70,7 +70,7 @@ def __getattr__(attr_name: str) -> object:
         The imported attribute object.
 
     Raises:
-        AttributeError: If the attribute is not found in _dynamic_imports.
+        AttributeError: If the attribute is not a valid dynamic import.
     """
     module_name = _dynamic_imports.get(attr_name)
     result = import_attr(attr_name, module_name, __spec__.parent)

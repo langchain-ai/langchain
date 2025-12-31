@@ -250,7 +250,8 @@ def _delete(
 
     Raises:
         IndexingException: If the delete operation fails.
-        TypeError: If the vector_store is neither a VectorStore nor a DocumentIndex.
+        TypeError: If the `vector_store` is neither a `VectorStore` nor a
+            `DocumentIndex`.
     """
     if isinstance(vector_store, VectorStore):
         delete_ok = vector_store.delete(ids)

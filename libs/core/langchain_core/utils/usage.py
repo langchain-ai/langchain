@@ -14,8 +14,10 @@ def _dict_int_op(
 ) -> dict:
     """Apply an integer operation to corresponding values in two dictionaries.
 
-    Recursively combines two dictionaries by applying the given operation to
-    integer values at matching keys. Supports nested dictionaries.
+    Recursively combines two dictionaries by applying the given operation to integer
+    values at matching keys.
+
+    Supports nested dictionaries.
 
     Args:
         left: First dictionary to combine.
@@ -23,13 +25,13 @@ def _dict_int_op(
         op: Binary operation function to apply to integer values.
         default: Default value to use when a key is missing from a dictionary.
         depth: Current recursion depth (used internally).
-        max_depth: Maximum recursion depth to prevent infinite loops.
+        max_depth: Maximum recursion depth (to prevent infinite loops).
 
     Returns:
         A new dictionary with combined values.
 
     Raises:
-        ValueError: If max_depth is exceeded or if value types are not supported.
+        ValueError: If `max_depth` is exceeded or if value types are not supported.
     """
     if depth >= max_depth:
         msg = f"{max_depth=} exceeded, unable to combine dicts."

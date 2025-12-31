@@ -172,12 +172,14 @@ def _parse_json(
 ) -> Any:
     """Parse a JSON string, handling special characters and whitespace.
 
-    Strips whitespace, newlines, and backticks from the start and end of the
-    string, then processes special characters before parsing.
+    Strips whitespace, newlines, and backticks from the start and end of the string,
+    then processes special characters before parsing.
 
     Args:
         json_str: The JSON string to parse.
-        parser: Optional custom parser function. Defaults to parse_partial_json.
+        parser: Optional custom parser function.
+
+            Defaults to `parse_partial_json`.
 
     Returns:
         Parsed JSON object.

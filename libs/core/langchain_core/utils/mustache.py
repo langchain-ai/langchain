@@ -355,23 +355,22 @@ def _get_key(
     """Retrieve a value from the current scope using a dot-separated key path.
 
     Traverses through nested dictionaries and lists using dot notation.
-    Supports special key "." to return the current scope.
+
+    Supports special key `'.'` to return the current scope.
 
     Args:
-        key: Dot-separated key path (e.g., "user.name" or "." for current scope).
+        key: Dot-separated key path (e.g., `'user.name'` or `'.'` for current scope).
         scopes: List of scope dictionaries to search through.
-        warn: Whether to issue warnings (unused in current implementation).
-        keep: Whether to keep the key (unused in current implementation).
-        def_ldel: Left delimiter for template (unused in current implementation).
-        def_rdel: Right delimiter for template (unused in current implementation).
+        warn: Whether to log a warning when a key is not found.
+        keep: Whether to return the original template tag when key is not found.
+        def_ldel: Left delimiter for template (used when keep is `True`).
+        def_rdel: Right delimiter for template (used when keep is `True`).
 
     Returns:
-        The value found at the key path, or empty string if not found.
+        The value found at the key path.
 
-    Raises:
-        KeyError: If a key is not found in a dictionary.
-        IndexError: If an index is invalid for a list/tuple.
-        TypeError: If attempting to traverse into an unsupported type.
+            If not found, returns the original template tag when keep is `True`,
+            otherwise returns an empty string.
     """
     # If the key is a dot
     if key == ".":
