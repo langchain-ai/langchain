@@ -1,4 +1,11 @@
-"""Compatibility helpers for Pydantic v1/v2 with langsmith Run objects."""
+"""Compatibility helpers for Pydantic v1/v2 with langsmith Run objects.
+
+Note: The generic helpers (`pydantic_to_dict`, `pydantic_copy`) detect Pydantic
+version based on the langsmith `Run` model. They're intended for langsmith objects
+(`Run`, `Example`) which migrate together.
+
+For general Pydantic v1/v2 handling, see `langchain_core.utils.pydantic`.
+"""
 
 from __future__ import annotations
 
