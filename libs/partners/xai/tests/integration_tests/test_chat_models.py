@@ -77,6 +77,7 @@ def test_reasoning(output_version: Literal["", "v1"]) -> None:
 
 
 def test_web_search() -> None:
+    """Test deprecated search_parameters API."""
     llm = ChatXAI(
         model=MODEL_NAME,
         search_parameters={"mode": "on", "max_search_results": 3},
@@ -95,3 +96,85 @@ def test_web_search() -> None:
     assert isinstance(full, AIMessageChunk)
     assert full.additional_kwargs["citations"]
     assert len(full.additional_kwargs["citations"]) <= 3
+
+
+def test_server_tools_web_search() -> None:
+    """Test agentic tool calling API with web_search."""
+    llm = ChatXAI(
+        model=MODEL_NAME,
+        server_tools=[{"type": "web_search"}],
+    )
+
+    # Test invoke
+    response = llm.invoke("What are the latest developments in AI this week?")
+    assert response.content
+    # Response should contain information from web search
+    assert len(response.content) > 0
+
+    # Test streaming
+    full = None
+    for chunk in llm.stream("What is the current weather in San Francisco?"):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.content
+
+
+def test_server_tools_x_search() -> None:
+    """Test agentic tool calling API with x_search."""
+    llm = ChatXAI(
+        model=MODEL_NAME,
+        server_tools=[{"type": "x_search"}],
+    )
+
+    # Test invoke - ask about something trending on X
+    response = llm.invoke("What are people saying about AI on X today?")
+    assert response.content
+    assert len(response.content) > 0
+
+
+def test_server_tools_code_execution() -> None:
+    """Test agentic tool calling API with code_execution."""
+    llm = ChatXAI(
+        model=MODEL_NAME,
+        server_tools=[{"type": "code_execution"}],
+    )
+
+    # Test invoke - ask it to solve a problem that requires computation
+    response = llm.invoke(
+        "Calculate the first 10 Fibonacci numbers and return them as a list."
+    )
+    assert response.content
+    assert len(response.content) > 0
+    # Should contain the Fibonacci sequence in some form
+    content_str = (
+        response.content if isinstance(response.content, str) else str(response.content)
+    )
+    assert "1" in content_str or "fibonacci" in content_str.lower()
+
+
+def test_server_tools_multiple() -> None:
+    """Test agentic tool calling API with multiple server tools."""
+    llm = ChatXAI(
+        model=MODEL_NAME,
+        server_tools=[
+            {"type": "web_search"},
+            {"type": "x_search"},
+            {"type": "code_execution"},
+        ],
+    )
+
+    # Test invoke - complex query that might use multiple tools
+    response = llm.invoke(
+        "Search the web for the latest AI news, "
+        "check what people are saying about it on X, "
+        "and calculate how many days until the end of 2025."
+    )
+    assert response.content
+    assert len(response.content) > 0
+
+    # Test streaming
+    full = None
+    for chunk in llm.stream("What is 2^10 and what are people saying about AI?"):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.content
