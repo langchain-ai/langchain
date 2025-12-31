@@ -891,3 +891,109 @@ class TestJinja2SecurityBlocking:
         # jinja2 should be blocked by default
         with pytest.raises(ValueError, match="Jinja2 templates are not allowed"):
             load(serialized_jinja2, allowed_objects=[PromptTemplate])
+
+
+class TestClassSpecificValidatorsInLoad:
+    """Tests that load() properly integrates with class-specific validators."""
+
+    def test_class_validator_registry_exists(self) -> None:
+        """Test that the CLASS_INIT_VALIDATORS registry is accessible."""
+        from langchain_core.load.validators import CLASS_INIT_VALIDATORS
+
+        # Registry should exist and have Bedrock entries
+        assert isinstance(CLASS_INIT_VALIDATORS, dict)
+        assert len(CLASS_INIT_VALIDATORS) > 0
+
+    def test_init_validator_called_when_no_class_validator(self) -> None:
+        """Test that init_validator is called if no class-specific validator."""
+        msg = AIMessage(content="test")
+        serialized = dumpd(msg)
+
+        init_validator_called = []
+
+        def custom_init_validator(
+            _class_path: tuple[str, ...], _kwargs: dict[str, Any]
+        ) -> None:
+            init_validator_called.append(True)
+
+        # Should successfully deserialize and call init_validator
+        loaded = load(
+            serialized,
+            allowed_objects=[AIMessage],
+            init_validator=custom_init_validator
+        )
+        assert loaded == msg
+        assert len(init_validator_called) == 1
+
+
+class TestBedrockValidators:
+    """Tests for Bedrock SSRF protection validator."""
+
+    def test_bedrock_validator_blocks_endpoint_url(self) -> None:
+        """Test that _bedrock_validator blocks `endpoint_url` parameter."""
+        from langchain_core.load.validators import _bedrock_validator
+
+        class_path = ("langchain", "llms", "bedrock", "BedrockLLM")
+        kwargs = {
+            "model_id": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+            "region_name": "us-west-2",
+            "endpoint_url": "http://169.254.169.254/latest/meta-data",
+        }
+
+        with pytest.raises(ValueError, match="endpoint_url"):
+            _bedrock_validator(class_path, kwargs)
+
+        with pytest.raises(ValueError, match="SSRF"):
+            _bedrock_validator(class_path, kwargs)
+
+    def test_bedrock_validator_blocks_base_url(self) -> None:
+        """Test that _bedrock_validator blocks `base_url` parameter."""
+        from langchain_core.load.validators import _bedrock_validator
+
+        class_path = ("langchain_aws", "chat_models", "ChatBedrockConverse")
+        kwargs = {
+            "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+            "region_name": "us-west-2",
+            "base_url": "http://malicious-site.com",
+        }
+
+        with pytest.raises(ValueError, match="base_url"):
+            _bedrock_validator(class_path, kwargs)
+
+        with pytest.raises(ValueError, match="SSRF"):
+            _bedrock_validator(class_path, kwargs)
+
+    def test_bedrock_validator_blocks_both_parameters(self) -> None:
+        """Test that _bedrock_validator blocks when both params are present."""
+        from langchain_core.load.validators import _bedrock_validator
+
+        class_path = ("langchain", "chat_models", "bedrock", "ChatBedrock")
+        kwargs = {
+            "model_id": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+            "region_name": "us-west-2",
+            "endpoint_url": "http://attacker.com",
+            "base_url": "http://another-attacker.com",
+        }
+
+        with pytest.raises(ValueError) as exc_info:
+            _bedrock_validator(class_path, kwargs)
+
+        error_msg = str(exc_info.value)
+
+        assert "endpoint_url" in error_msg or "base_url" in error_msg
+        assert "SSRF" in error_msg
+
+    def test_bedrock_validator_allows_safe_parameters(self) -> None:
+        """Test that _bedrock_validator allows safe parameters through."""
+        from langchain_core.load.validators import _bedrock_validator
+
+        class_path = ("langchain", "llms", "bedrock", "Bedrock")
+        kwargs = {
+            "model_id": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+            "region_name": "us-west-2",
+            "credentials_profile_name": "default",
+            "streaming": True,
+            "model_kwargs": {"temperature": 0.7},
+        }
+
+        _bedrock_validator(class_path, kwargs)

@@ -370,6 +370,12 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "bedrock",
         "BedrockLLM",
     ),
+    ("langchain", "llms", "bedrock", "BedrockLLM"): (
+        "langchain_aws",
+        "llms",
+        "bedrock",
+        "BedrockLLM",
+    ),
     ("langchain", "llms", "fireworks", "Fireworks"): (
         "langchain_fireworks",
         "llms",
