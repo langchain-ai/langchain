@@ -2903,8 +2903,9 @@ def test_router_runnable(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 2
     router_run = parent_run.child_runs[1]
-    assert router_run.name == "RunnableSequence"  # TODO: should be RunnableRouter
-    assert len(router_run.child_runs) == 2
+    assert router_run.name == "RouterRunnable"
+    assert len(router_run.child_runs) == 1
+    assert len(router_run.child_runs[0].child_runs) == 2
 
 
 async def test_router_runnable_async() -> None:

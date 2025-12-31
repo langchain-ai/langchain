@@ -12,6 +12,8 @@ from typing import (
 from pydantic import ConfigDict
 from typing_extensions import TypedDict, override
 
+import langchain_core.callbacks.manager as cb_manager
+import langchain_core.runnables.config as run_config
 from langchain_core.runnables.base import (
     Runnable,
     RunnableSerializable,
@@ -80,8 +82,10 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
             runnables: A mapping of keys to `Runnable` objects.
         """
         super().__init__(
-            runnables={key: coerce_to_runnable(r) for key, r in runnables.items()}
+            runnables={key: coerce_to_runnable(r) for key, r in runnables.items()},
+            name="RouterRunnable",
         )
+        self.name = "RouterRunnable"
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -107,14 +111,41 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     def invoke(
         self, input: RouterInput, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Output:
+        config = run_config.ensure_config(config)
+        callback_manager = cb_manager.CallbackManager.configure(
+            inheritable_callbacks=config.get("callbacks"),
+            local_callbacks=None,
+            verbose=False,
+            inheritable_tags=config.get("tags"),
+            local_tags=None,
+            inheritable_metadata=config.get("metadata"),
+            local_metadata=None,
+        )
+        run_manager = callback_manager.on_chain_start(
+            None,
+            input,
+            name=config.get("run_name") or self.get_name(),
+            run_id=config.pop("run_id", None),
+        )
         key = input["key"]
         actual_input = input["input"]
         if key not in self.runnables:
             msg = f"No runnable associated with key '{key}'"
+            run_manager.on_chain_error(ValueError(msg))
             raise ValueError(msg)
 
-        runnable = self.runnables[key]
-        return runnable.invoke(actual_input, config)
+        try:
+            runnable = self.runnables[key]
+            child_config = run_config.patch_config(
+                config, callbacks=run_manager.get_child()
+            )
+            output = runnable.invoke(actual_input, child_config)
+        except BaseException as e:
+            run_manager.on_chain_error(e)
+            raise
+        else:
+            run_manager.on_chain_end(output)
+            return output
 
     @override
     async def ainvoke(
@@ -123,14 +154,33 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         config: RunnableConfig | None = None,
         **kwargs: Any | None,
     ) -> Output:
+        config = run_config.ensure_config(config)
+        callback_manager = run_config.get_async_callback_manager_for_config(config)
+        run_manager = await callback_manager.on_chain_start(
+            None,
+            input,
+            name=config.get("run_name") or self.get_name(),
+            run_id=config.pop("run_id", None),
+        )
         key = input["key"]
         actual_input = input["input"]
         if key not in self.runnables:
             msg = f"No runnable associated with key '{key}'"
+            await run_manager.on_chain_error(ValueError(msg))
             raise ValueError(msg)
 
-        runnable = self.runnables[key]
-        return await runnable.ainvoke(actual_input, config)
+        try:
+            runnable = self.runnables[key]
+            child_config = run_config.patch_config(
+                config, callbacks=run_manager.get_child()
+            )
+            output = await runnable.ainvoke(actual_input, child_config)
+        except BaseException as e:
+            await run_manager.on_chain_error(e)
+            raise
+        else:
+            await run_manager.on_chain_end(output)
+            return output
 
     @override
     def batch(
