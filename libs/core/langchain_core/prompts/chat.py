@@ -24,7 +24,7 @@ from pydantic import (
 )
 from typing_extensions import Self, override
 
-from langchain_core.load import dumpd
+
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
@@ -1292,6 +1292,8 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Args:
             file_path: path to file.
         """
+        from langchain_core.load import dumpd
+
         # Convert file to Path object.
         save_path = Path(file_path)
         directory_path = save_path.parent
