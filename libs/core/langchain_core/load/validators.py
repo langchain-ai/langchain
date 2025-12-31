@@ -13,9 +13,7 @@ if TYPE_CHECKING:
     from langchain_core.load.load import InitValidator
 
 
-def _bedrock_validator(
-    class_path: tuple[str, ...], kwargs: dict[str, Any]
-) -> None:
+def _bedrock_validator(class_path: tuple[str, ...], kwargs: dict[str, Any]) -> None:
     """Args input validator for AWS Bedrock integrations.
 
     Blocks deserialization if endpoint_url or base_url parameters are present, which

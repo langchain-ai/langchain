@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from langchain_core.documents import Document
 from langchain_core.load import InitValidator, Serializable, dumpd, dumps, load, loads
 from langchain_core.load.serializable import _is_field_useful
+from langchain_core.load.validators import CLASS_INIT_VALIDATORS, _bedrock_validator
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.prompts import (
@@ -898,8 +899,6 @@ class TestClassSpecificValidatorsInLoad:
 
     def test_class_validator_registry_exists(self) -> None:
         """Test that the CLASS_INIT_VALIDATORS registry is accessible."""
-        from langchain_core.load.validators import CLASS_INIT_VALIDATORS
-
         # Registry should exist and have Bedrock entries
         assert isinstance(CLASS_INIT_VALIDATORS, dict)
         assert len(CLASS_INIT_VALIDATORS) > 0
@@ -920,7 +919,7 @@ class TestClassSpecificValidatorsInLoad:
         loaded = load(
             serialized,
             allowed_objects=[AIMessage],
-            init_validator=custom_init_validator
+            init_validator=custom_init_validator,
         )
         assert loaded == msg
         assert len(init_validator_called) == 1
@@ -931,8 +930,6 @@ class TestBedrockValidators:
 
     def test_bedrock_validator_blocks_endpoint_url(self) -> None:
         """Test that _bedrock_validator blocks `endpoint_url` parameter."""
-        from langchain_core.load.validators import _bedrock_validator
-
         class_path = ("langchain", "llms", "bedrock", "BedrockLLM")
         kwargs = {
             "model_id": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
@@ -948,8 +945,6 @@ class TestBedrockValidators:
 
     def test_bedrock_validator_blocks_base_url(self) -> None:
         """Test that _bedrock_validator blocks `base_url` parameter."""
-        from langchain_core.load.validators import _bedrock_validator
-
         class_path = ("langchain_aws", "chat_models", "ChatBedrockConverse")
         kwargs = {
             "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
@@ -965,8 +960,6 @@ class TestBedrockValidators:
 
     def test_bedrock_validator_blocks_both_parameters(self) -> None:
         """Test that _bedrock_validator blocks when both params are present."""
-        from langchain_core.load.validators import _bedrock_validator
-
         class_path = ("langchain", "chat_models", "bedrock", "ChatBedrock")
         kwargs = {
             "model_id": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
@@ -975,7 +968,7 @@ class TestBedrockValidators:
             "base_url": "http://another-attacker.com",
         }
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="SSRF") as exc_info:
             _bedrock_validator(class_path, kwargs)
 
         error_msg = str(exc_info.value)
@@ -985,8 +978,6 @@ class TestBedrockValidators:
 
     def test_bedrock_validator_allows_safe_parameters(self) -> None:
         """Test that _bedrock_validator allows safe parameters through."""
-        from langchain_core.load.validators import _bedrock_validator
-
         class_path = ("langchain", "llms", "bedrock", "Bedrock")
         kwargs = {
             "model_id": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
