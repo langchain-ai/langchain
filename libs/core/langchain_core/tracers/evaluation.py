@@ -189,7 +189,7 @@ class EvaluatorCallbackHandler(BaseTracer):
                 run_id_,
                 res.key,
                 score=res.score,
-                value=res.value,  # type: ignore[arg-type]
+                value=res.value,
                 comment=res.comment,
                 correction=res.correction,
                 source_info=source_info_,
