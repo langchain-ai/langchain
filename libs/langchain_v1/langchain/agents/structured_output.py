@@ -182,10 +182,10 @@ class _SchemaSpec(Generic[SchemaT]):
 class ToolStrategy(Generic[SchemaT]):
     """Use a tool calling strategy for model responses."""
 
-    schema: type[SchemaT]
+    schema: type[SchemaT] | UnionType
     """Schema for the tool calls."""
 
-    schema_specs: list[_SchemaSpec[SchemaT]]
+    schema_specs: list[_SchemaSpec[Any]]
     """Schema specs for the tool calls."""
 
     tool_message_content: str | None
@@ -208,7 +208,7 @@ class ToolStrategy(Generic[SchemaT]):
 
     def __init__(
         self,
-        schema: type[SchemaT],
+        schema: type[SchemaT] | UnionType,
         *,
         tool_message_content: str | None = None,
         handle_errors: bool
