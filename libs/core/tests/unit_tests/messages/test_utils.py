@@ -17,6 +17,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.utils import (
+    MessageLikeRepresentation,
     convert_to_messages,
     convert_to_openai_messages,
     count_tokens_approximately,
@@ -1032,9 +1033,9 @@ def test_convert_to_openai_messages_openai_block() -> None:
 
 def test_convert_to_openai_messages_invalid_format() -> None:
     with pytest.raises(ValueError, match="Unrecognized text_format="):
-        convert_to_openai_messages(
+        convert_to_openai_messages(  # type: ignore[call-overload]
             [HumanMessage(content="Hello")],
-            text_format="invalid",  # type: ignore[arg-type]
+            text_format="invalid",
         )
 
 
@@ -1344,7 +1345,7 @@ def test_convert_to_openai_messages_mixed_content_types() -> None:
 
 
 def test_convert_to_openai_messages_developer() -> None:
-    messages: list = [
+    messages: list[MessageLikeRepresentation] = [
         SystemMessage("a", additional_kwargs={"__openai_role__": "developer"}),
         {"role": "developer", "content": "a"},
     ]

@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from pathlib import Path
 from typing import (
-    TYPE_CHECKING,
     Annotated,
     Any,
     TypedDict,
@@ -47,9 +47,6 @@ from langchain_core.prompts.string import (
 )
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.interactive_env import is_interactive_env
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
 
 class MessagesPlaceholder(BaseMessagePromptTemplate):
@@ -765,7 +762,7 @@ MessageLike = BaseMessagePromptTemplate | BaseMessage | BaseChatPromptTemplate
 
 MessageLikeRepresentation = (
     MessageLike
-    | tuple[str | type, str | list[dict] | list[object]]
+    | tuple[str | type, str | Sequence[dict] | Sequence[object]]
     | str
     | dict[str, Any]
 )
@@ -1428,15 +1425,25 @@ def _convert_to_message_template(
                     f" Got: {message}"
                 )
                 raise ValueError(msg)
-            message = (message["role"], message["content"])
-        try:
+            message_type_str = message["role"]
+            template = message["content"]
+        else:
+            if len(message) != 2:  # noqa: PLR2004
+                msg = f"Expected 2-tuple of (role, template), got {message}"
+                raise ValueError(msg)
             message_type_str, template = message
-        except ValueError as e:
-            msg = f"Expected 2-tuple of (role, template), got {message}"
-            raise ValueError(msg) from e
+
         if isinstance(message_type_str, str):
             message_ = _create_template_from_message_type(
                 message_type_str, template, template_format=template_format
+            )
+        elif (
+            hasattr(message_type_str, "model_fields")
+            and "type" in message_type_str.model_fields
+        ):
+            message_type = message_type_str.model_fields["type"].default
+            message_ = _create_template_from_message_type(
+                message_type, template, template_format=template_format
             )
         else:
             message_ = message_type_str(

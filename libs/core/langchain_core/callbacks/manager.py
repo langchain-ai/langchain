@@ -12,7 +12,6 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import copy_context
 from typing import TYPE_CHECKING, Any, TypeVar, cast
-from uuid import UUID
 
 from langsmith.run_helpers import get_tracing_context
 from typing_extensions import Self, override
@@ -44,6 +43,7 @@ from langchain_core.utils.uuid import uuid7
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Coroutine, Generator, Sequence
+    from uuid import UUID
 
     from tenacity import RetryCallState
 

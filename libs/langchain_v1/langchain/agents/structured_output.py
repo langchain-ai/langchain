@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import uuid
 from dataclasses import dataclass, is_dataclass
 from types import UnionType
@@ -384,8 +385,6 @@ class ProviderStrategyBinding(Generic[SchemaT]):
         """
         # Extract text content from AIMessage and parse as JSON
         raw_text = self._extract_text_content_from_message(response)
-
-        import json
 
         try:
             data = json.loads(raw_text)

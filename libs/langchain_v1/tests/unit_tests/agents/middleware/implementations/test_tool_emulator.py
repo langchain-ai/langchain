@@ -1,7 +1,7 @@
 """Unit tests for tool emulator middleware."""
 
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from itertools import cycle
 from typing import Any, Literal
 
@@ -9,6 +9,7 @@ from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel
@@ -85,7 +86,7 @@ class FakeModel(GenericFakeChatModel):
 class FakeEmulatorModel(BaseChatModel):
     """Fake model for emulating tool responses."""
 
-    responses: list[str] = ["Emulated response"]
+    responses: Sequence[str] = ("Emulated response",)
     response_index: int = 0
 
     def _generate(
@@ -95,8 +96,6 @@ class FakeEmulatorModel(BaseChatModel):
         run_manager: Any = None,
         **kwargs: Any,
     ) -> Any:
-        from langchain_core.outputs import ChatGeneration, ChatResult
-
         response = self.responses[self.response_index % len(self.responses)]
         self.response_index += 1
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content=response))])
@@ -108,8 +107,6 @@ class FakeEmulatorModel(BaseChatModel):
         run_manager: Any = None,
         **kwargs: Any,
     ) -> Any:
-        from langchain_core.outputs import ChatGeneration, ChatResult
-
         response = self.responses[self.response_index % len(self.responses)]
         self.response_index += 1
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content=response))])
