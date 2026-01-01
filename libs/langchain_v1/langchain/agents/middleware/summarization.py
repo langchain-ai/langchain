@@ -559,7 +559,7 @@ class SummarizationMiddleware(AgentMiddleware):
         Returns:
             Sanitized message copies with only essential content.
         """
-        sanitized = []
+        sanitized: list[AnyMessage] = []
         for msg in messages:
             if isinstance(msg, AIMessage):
                 # Simplify tool_calls to just name and args
@@ -607,12 +607,7 @@ class SummarizationMiddleware(AgentMiddleware):
                     )
                 )
             else:
-                # For other message types, create a basic copy
-                sanitized.append(
-                    msg.__class__(
-                        content=msg.content,
-                        name=msg.name,
-                        id=msg.id,
-                    )
-                )
+                # For other message types, preserve the original message
+                # since we don't know what fields are required
+                sanitized.append(msg)
         return sanitized
