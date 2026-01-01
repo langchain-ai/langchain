@@ -12,7 +12,9 @@ from langchain_core.messages import (
     RemoveMessage,
     ToolMessage,
 )
+from langchain_core.messages.ai import AIMessage
 from langchain_core.messages.human import HumanMessage
+from langchain_core.messages.system import SystemMessage
 from langchain_core.messages.utils import count_tokens_approximately, trim_messages
 from langgraph.graph.message import (
     REMOVE_ALL_MESSAGES,
@@ -491,8 +493,11 @@ class SummarizationMiddleware(AgentMiddleware):
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
+        # Sanitize messages to remove irrelevant metadata
+        sanitized_messages = self._sanitize_messages_for_summary(trimmed_messages)
+
         try:
-            response = self.model.invoke(self.summary_prompt.format(messages=trimmed_messages))
+            response = self.model.invoke(self.summary_prompt.format(messages=sanitized_messages))
             return response.text.strip()
         except Exception as e:
             return f"Error generating summary: {e!s}"
@@ -506,9 +511,12 @@ class SummarizationMiddleware(AgentMiddleware):
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
+        # Sanitize messages to remove irrelevant metadata
+        sanitized_messages = self._sanitize_messages_for_summary(trimmed_messages)
+
         try:
             response = await self.model.ainvoke(
-                self.summary_prompt.format(messages=trimmed_messages)
+                self.summary_prompt.format(messages=sanitized_messages)
             )
             return response.text.strip()
         except Exception as e:
@@ -533,3 +541,78 @@ class SummarizationMiddleware(AgentMiddleware):
             )
         except Exception:
             return messages[-_DEFAULT_FALLBACK_MESSAGE_COUNT:]
+
+    def _sanitize_messages_for_summary(self, messages: list[AnyMessage]) -> list[AnyMessage]:
+        """Create lightweight message copies with only essential content for summarization.
+
+        Strips metadata fields that consume tokens but don't contribute to context:
+
+        - usage_metadata (token counts)
+        - response_metadata (headers, logprobs, model info)
+        - additional_kwargs (provider-specific data)
+        - Simplifies tool_calls to just name and args
+        - Removes artifact from ToolMessages
+
+        Args:
+            messages: Messages to sanitize.
+
+        Returns:
+            Sanitized message copies with only essential content.
+        """
+        sanitized = []
+        for msg in messages:
+            if isinstance(msg, AIMessage):
+                # Simplify tool_calls to just name and args
+                simplified_tool_calls = (
+                    [
+                        {"name": tc["name"], "args": tc.get("args", {}), "id": tc.get("id", "")}
+                        for tc in msg.tool_calls
+                    ]
+                    if msg.tool_calls
+                    else []
+                )
+
+                sanitized.append(
+                    AIMessage(
+                        content=msg.content,
+                        tool_calls=simplified_tool_calls,
+                        name=msg.name,
+                        id=msg.id,
+                    )
+                )
+            elif isinstance(msg, ToolMessage):
+                sanitized.append(
+                    ToolMessage(
+                        content=msg.content,
+                        tool_call_id=msg.tool_call_id,
+                        name=msg.name,
+                        id=msg.id,
+                        status=msg.status,
+                    )
+                )
+            elif isinstance(msg, HumanMessage):
+                sanitized.append(
+                    HumanMessage(
+                        content=msg.content,
+                        name=msg.name,
+                        id=msg.id,
+                    )
+                )
+            elif isinstance(msg, SystemMessage):
+                sanitized.append(
+                    SystemMessage(
+                        content=msg.content,
+                        name=msg.name,
+                        id=msg.id,
+                    )
+                )
+            else:
+                # For other message types, create a basic copy
+                sanitized.append(
+                    msg.__class__(
+                        content=msg.content,
+                        name=msg.name,
+                        id=msg.id,
+                    )
+                )
+        return sanitized
