@@ -940,10 +940,14 @@ class ChildTool(BaseTool):
                 tool_args, tool_kwargs = self._to_args_and_kwargs(
                     tool_input, tool_call_id
                 )
-                if signature(self._run).parameters.get("run_manager"):
+                run_parameters = signature(self._run).parameters
+                if run_parameters.get("run_manager"):
                     tool_kwargs |= {"run_manager": run_manager}
                 if config_param := _get_runnable_config_param(self._run):
                     tool_kwargs |= {config_param: config}
+                for key, value in kwargs.items():
+                    if key in run_parameters and key not in tool_kwargs:
+                        tool_kwargs[key] = value
                 response = context.run(self._run, *tool_args, **tool_kwargs)
             if self.response_format == "content_and_artifact":
                 msg = (
@@ -1068,11 +1072,14 @@ class ChildTool(BaseTool):
                 func_to_check = (
                     self._run if self.__class__._arun is BaseTool._arun else self._arun  # noqa: SLF001
                 )
-                if signature(func_to_check).parameters.get("run_manager"):
+                run_parameters = signature(func_to_check).parameters
+                if run_parameters.get("run_manager"):
                     tool_kwargs["run_manager"] = run_manager
                 if config_param := _get_runnable_config_param(func_to_check):
                     tool_kwargs[config_param] = config
-
+                for key, value in kwargs.items():
+                    if key in run_parameters and key not in tool_kwargs:
+                        tool_kwargs[key] = value
                 coro = self._arun(*tool_args, **tool_kwargs)
                 response = await coro_with_context(coro, context)
             if self.response_format == "content_and_artifact":
