@@ -23,6 +23,7 @@ from langchain_core.runnables.config import (
     RunnableConfig,
     get_config_list,
     get_executor_for_config,
+    set_config_context,
 )
 from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
@@ -85,7 +86,6 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
             runnables={key: coerce_to_runnable(r) for key, r in runnables.items()},
             name="RouterRunnable",
         )
-        self.name = "RouterRunnable"
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -139,7 +139,8 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
             child_config = run_config.patch_config(
                 config, callbacks=run_manager.get_child()
             )
-            output = runnable.invoke(actual_input, child_config)
+            with set_config_context(child_config) as context:
+                output = context.run(runnable.invoke, actual_input, child_config)
         except BaseException as e:
             run_manager.on_chain_error(e)
             raise
@@ -174,7 +175,8 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
             child_config = run_config.patch_config(
                 config, callbacks=run_manager.get_child()
             )
-            output = await runnable.ainvoke(actual_input, child_config)
+            with set_config_context(child_config) as context:
+                output = await context.run(runnable.ainvoke, actual_input, child_config)
         except BaseException as e:
             await run_manager.on_chain_error(e)
             raise
