@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
-from langgraph.runtime import Runtime
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.todo import (
@@ -19,6 +18,9 @@ from langchain.agents.middleware.todo import (
 )
 from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+if TYPE_CHECKING:
+    from langgraph.runtime import Runtime
 
 
 def _fake_runtime() -> Runtime:
@@ -125,7 +127,7 @@ def test_appends_to_existing_system_prompt() -> None:
 
 
 @pytest.mark.parametrize(
-    "original_prompt,expected_prompt_prefix",
+    ("original_prompt", "expected_prompt_prefix"),
     [
         ("Original prompt", "Original prompt\n\n## `write_todos`"),
         (None, "## `write_todos`"),
@@ -291,7 +293,7 @@ def test_todo_middleware_custom_system_prompt_and_tool_description() -> None:
 
 
 @pytest.mark.parametrize(
-    "todos,expected_message",
+    ("todos", "expected_message"),
     [
         ([], "Updated todo list to []"),
         (

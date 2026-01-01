@@ -6,7 +6,7 @@ import operator
 from collections.abc import Sequence
 from typing import Any, Literal, cast, overload
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
 
 from langchain_core.messages import content as types
@@ -166,10 +166,10 @@ class AIMessage(BaseMessage):
     (e.g., tool calls, usage metadata) added by the LangChain framework.
     """
 
-    tool_calls: list[ToolCall] = []
+    tool_calls: list[ToolCall] = Field(default_factory=list)
     """If present, tool calls associated with the message."""
 
-    invalid_tool_calls: list[InvalidToolCall] = []
+    invalid_tool_calls: list[InvalidToolCall] = Field(default_factory=list)
     """If present, tool calls with parsing errors associated with the message."""
 
     usage_metadata: UsageMetadata | None = None
@@ -326,7 +326,7 @@ class AIMessage(BaseMessage):
         if tool_calls := values.get("tool_calls"):
             values["tool_calls"] = [
                 create_tool_call(
-                    **{k: v for k, v in tc.items() if k not in ("type", "extras")}
+                    **{k: v for k, v in tc.items() if k not in {"type", "extras"}}
                 )
                 for tc in tool_calls
             ]
@@ -394,7 +394,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment]
     """The type of the message (used for deserialization)."""
 
-    tool_call_chunks: list[ToolCallChunk] = []
+    tool_call_chunks: list[ToolCallChunk] = Field(default_factory=list)
     """If provided, tool call chunks associated with the message."""
 
     chunk_position: Literal["last"] | None = None
@@ -442,7 +442,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             blocks = [
                 block
                 for block in blocks
-                if block["type"] not in ("tool_call", "invalid_tool_call")
+                if block["type"] not in {"tool_call", "invalid_tool_call"}
             ]
             for tool_call_chunk in self.tool_call_chunks:
                 tc: types.ToolCallChunk = {
@@ -573,7 +573,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 if (
                     isinstance(block, dict)
                     and block.get("type")
-                    in ("server_tool_call", "server_tool_call_chunk")
+                    in {"server_tool_call", "server_tool_call_chunk"}
                     and (args_str := block.get("args"))
                     and isinstance(args_str, str)
                 ):

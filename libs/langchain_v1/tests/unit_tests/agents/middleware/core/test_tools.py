@@ -79,7 +79,7 @@ def test_middleware_can_modify_tools() -> None:
             handler: Callable[[ModelRequest], AIMessage],
         ) -> AIMessage:
             # Only allow tool_a and tool_b
-            filtered_tools = [t for t in request.tools if t.name in ["tool_a", "tool_b"]]
+            filtered_tools = [t for t in request.tools if t.name in {"tool_a", "tool_b"}]
             return handler(request.override(tools=filtered_tools))
 
     # Model will try to call tool_a
@@ -293,7 +293,7 @@ def test_middleware_with_additional_tools() -> None:
         return "middleware"
 
     class ToolProvidingMiddleware(AgentMiddleware):
-        tools = [middleware_tool]
+        tools = (middleware_tool,)
 
     # Model calls the middleware-provided tool
     model = FakeToolCallingModel(

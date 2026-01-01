@@ -64,4 +64,16 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "reasoning_output": True,
         "tool_calling": False,
     },
+    "sonar-deep-research": {
+        "max_input_tokens": 128000,
+        "max_output_tokens": 8192,
+        "image_inputs": True,
+        "audio_inputs": False,
+        "video_inputs": False,
+        "image_outputs": False,
+        "audio_outputs": False,
+        "video_outputs": False,
+        "reasoning_output": True,
+        "tool_calling": False,
+    },
 }
