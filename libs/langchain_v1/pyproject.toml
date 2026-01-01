@@ -118,7 +118,6 @@ ignore = [
     # TODO rules
     "ANN401",  # Any in type annotations
     "BLE",     # Blind exceptions
-    "PLC0415", # Imports should be at the top. Not always desirable
 ]
 unfixable = [
     "B028",    # People should intentionally tune the stacklevel
@@ -137,7 +136,6 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
     "ANN", # Annotations, needs to fix
     "ARG", # Arguments, needs to fix
 ]
-"tests/unit_tests/agents/test_return_direct_spec.py" = ["F821"]
 "tests/unit_tests/agents/test_responses_spec.py" = ["F821"]
 "tests/unit_tests/agents/test_responses.py" = ["F821"]
 "tests/unit_tests/agents/test_react_agent.py" = ["ALL"]
