@@ -482,6 +482,49 @@ class SummarizationMiddleware(AgentMiddleware):
             cutoff_index += 1
         return cutoff_index
 
+    def _format_clean_history(self, messages: list[AnyMessage]) -> str:
+        """Formats messages to a simple string (Role: Content) to save tokens.
+
+        This method strips away metadata (token usage, logprobs) and handles
+        multimodal content (like images) by extracting only the text.
+
+        Args:
+            messages: The list of conversation messages to format.
+
+        Returns:
+            A clean string representation of the conversation history.
+        """
+        formatted_lines = []
+        for msg in messages:
+            # 1. Map standard message types to readable roles
+            role = msg.type
+            role_mapping = {
+                "human": "User",
+                "ai": "Assistant",
+                "system": "System",
+                "tool": "Tool Output",
+                "function": "Function Output",
+                "chat": "Chat",
+            }
+            display_role = role_mapping.get(role.lower(), role.capitalize())
+
+            # 2. Handle content (strings vs multimodal lists)
+            content = msg.content
+            if isinstance(content, list):
+                text_parts = []
+                for item in content:
+                    if isinstance(item, str):
+                        text_parts.append(item)
+                    elif isinstance(item, dict):
+                        text_parts.append(item.get("text", str(item)))
+                    else:
+                        text_parts.append(str(item))
+                content = " ".join(text_parts)
+
+            formatted_lines.append(f"{display_role}: {content}")
+
+        return "\n".join(formatted_lines)
+
     def _create_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
         """Generate summary for the given messages."""
         if not messages_to_summarize:
@@ -491,8 +534,11 @@ class SummarizationMiddleware(AgentMiddleware):
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
+        # FIX: Convert rich objects to a plain string before formatting
+        clean_history = self._format_clean_history(trimmed_messages)
+
         try:
-            response = self.model.invoke(self.summary_prompt.format(messages=trimmed_messages))
+            response = self.model.invoke(self.summary_prompt.format(messages=clean_history))
             return response.text.strip()
         except Exception as e:
             return f"Error generating summary: {e!s}"
@@ -506,10 +552,11 @@ class SummarizationMiddleware(AgentMiddleware):
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
+        # FIX: Convert rich objects to a plain string before formatting
+        clean_history = self._format_clean_history(trimmed_messages)
+
         try:
-            response = await self.model.ainvoke(
-                self.summary_prompt.format(messages=trimmed_messages)
-            )
+            response = await self.model.ainvoke(self.summary_prompt.format(messages=clean_history))
             return response.text.strip()
         except Exception as e:
             return f"Error generating summary: {e!s}"
