@@ -3,7 +3,6 @@ from collections.abc import Callable, Sequence
 from dataclasses import asdict, is_dataclass
 from typing import (
     Any,
-    Generic,
     Literal,
     TypeVar,
 )
@@ -23,9 +22,9 @@ from pydantic import BaseModel
 StructuredResponseT = TypeVar("StructuredResponseT")
 
 
-class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
+class FakeToolCallingModel(BaseChatModel):
     tool_calls: list[list[ToolCall]] | list[list[dict]] | None = None
-    structured_response: StructuredResponseT | None = None
+    structured_response: Any = None
     index: int = 0
     tool_style: Literal["openai", "anthropic"] = "openai"
 
