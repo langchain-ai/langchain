@@ -1182,7 +1182,9 @@ async def test_sanitize_messages_integration_with_acreate_summary() -> None:
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Sync"))])
 
         async def _agenerate(self, messages, **kwargs):
-            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Async summary"))])
+            return ChatResult(
+                generations=[ChatGeneration(message=AIMessage(content="Async summary"))]
+            )
 
         @property
         def _llm_type(self):
