@@ -669,6 +669,7 @@ def test_trim_messages_start_on_with_allow_partial() -> None:
     )
 
     assert len(result) == 1
+    assert isinstance(result, list)
     assert result[0].content == "Second human message"
     assert messages == messages_copy
 
@@ -743,6 +744,7 @@ def test_trim_messages_token_counter_shortcut_with_options() -> None:
     )
 
     # Should include system message and start on human
+    assert isinstance(result, list)
     assert len(result) >= 2
     assert isinstance(result[0], SystemMessage)
     assert any(isinstance(msg, HumanMessage) for msg in result[1:])

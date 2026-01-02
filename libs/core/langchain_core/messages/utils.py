@@ -730,6 +730,42 @@ def merge_message_runs(
 
 # TODO: Update so validation errors (for token_counter, for example) are raised on
 # init not at runtime.
+@overload
+def trim_messages(
+    messages: None = None,
+    *,
+    max_tokens: int,
+    token_counter: Callable[[list[BaseMessage]], int]
+    | Callable[[BaseMessage], int]
+    | BaseLanguageModel
+    | Literal["approximate"],
+    strategy: Literal["first", "last"] = "last",
+    allow_partial: bool = False,
+    end_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
+    start_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
+    include_system: bool = False,
+    text_splitter: Callable[[str], list[str]] | TextSplitter | None = None,
+) -> Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]]: ...
+
+
+@overload
+def trim_messages(
+    messages: Iterable[MessageLikeRepresentation] | PromptValue,
+    *,
+    max_tokens: int,
+    token_counter: Callable[[list[BaseMessage]], int]
+    | Callable[[BaseMessage], int]
+    | BaseLanguageModel
+    | Literal["approximate"],
+    strategy: Literal["first", "last"] = "last",
+    allow_partial: bool = False,
+    end_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
+    start_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
+    include_system: bool = False,
+    text_splitter: Callable[[str], list[str]] | TextSplitter | None = None,
+) -> list[BaseMessage]: ...
+
+
 def trim_messages(
     messages: Iterable[MessageLikeRepresentation] | PromptValue | None = None,
     *,
@@ -1094,7 +1130,7 @@ def trim_messages(
         # Avoid circular import.
         return RunnableLambda(
             partial(
-                trim_messages,  # type: ignore[arg-type]
+                trim_messages,
                 max_tokens=max_tokens,
                 token_counter=token_counter,
                 strategy=strategy,
@@ -1223,7 +1259,7 @@ def convert_to_openai_messages(
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "whats in this"},
+                    {"type": "text", "text": "what's in this"},
                     {
                         "type": "image_url",
                         "image_url": {"url": "data:image/png;base64,'/9j/4AAQSk'"},
@@ -1242,15 +1278,15 @@ def convert_to_openai_messages(
                 ],
             ),
             ToolMessage("foobar", tool_call_id="1", name="bar"),
-            {"role": "assistant", "content": "thats nice"},
+            {"role": "assistant", "content": "that's nice"},
         ]
         oai_messages = convert_to_openai_messages(messages)
         # -> [
         #   {'role': 'system', 'content': 'foo'},
-        #   {'role': 'user', 'content': [{'type': 'text', 'text': 'whats in this'}, {'type': 'image_url', 'image_url': {'url': "data:image/png;base64,'/9j/4AAQSk'"}}]},
+        #   {'role': 'user', 'content': [{'type': 'text', 'text': "what's in this"}, {'type': 'image_url', 'image_url': {'url': "data:image/png;base64,'/9j/4AAQSk'"}}]},
         #   {'role': 'assistant', 'tool_calls': [{'type': 'function', 'id': '1','function': {'name': 'analyze', 'arguments': '{"baz": "buz"}'}}], 'content': ''},
         #   {'role': 'tool', 'name': 'bar', 'content': 'foobar'},
-        #   {'role': 'assistant', 'content': 'thats nice'}
+        #   {'role': 'assistant', 'content': 'that's nice'}
         # ]
         ```
 
