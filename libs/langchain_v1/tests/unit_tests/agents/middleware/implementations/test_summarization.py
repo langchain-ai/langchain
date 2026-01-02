@@ -891,3 +891,305 @@ def test_summarization_middleware_cutoff_at_start_of_tool_sequence() -> None:
     # Index 2 is an AIMessage (safe cutoff point), so no adjustment needed
     cutoff = middleware._find_safe_cutoff(messages, messages_to_keep=4)
     assert cutoff == 2
+
+
+def test_and_trigger_conditions() -> None:
+    """Test AND-capable trigger conditions (all conditions in dict must be met)."""
+    model = FakeToolCallingModel()
+
+    # Create middleware with AND condition: tokens >= 1000 AND messages >= 5
+    middleware = SummarizationMiddleware(
+        model=model,
+        trigger={"tokens": 1000, "messages": 5},
+        keep=("messages", 2),  # Explicitly set a smaller keep value
+    )
+
+    # Test case 1: Only tokens threshold met (messages = 3 < 5)
+    # Should NOT trigger summarization
+    def token_counter_high(messages):
+        return 1500  # Above token threshold
+
+    middleware.token_counter = token_counter_high
+    state = {
+        "messages": [
+            HumanMessage(content="1"),
+            AIMessage(content="2"),
+            HumanMessage(content="3"),
+        ]
+    }
+    result = middleware.before_model(state, None)
+    assert result is None, "Should not summarize when only tokens condition is met"
+
+    # Test case 2: Only messages threshold met (tokens = 500 < 1000)
+    # Should NOT trigger summarization
+    def token_counter_low(messages):
+        return 500  # Below token threshold
+
+    middleware.token_counter = token_counter_low
+    state = {
+        "messages": [
+            HumanMessage(content="1"),
+            AIMessage(content="2"),
+            HumanMessage(content="3"),
+            AIMessage(content="4"),
+            HumanMessage(content="5"),
+            AIMessage(content="6"),
+        ]
+    }
+    result = middleware.before_model(state, None)
+    assert result is None, "Should not summarize when only messages condition is met"
+
+    # Test case 3: Both conditions met (tokens >= 1000 AND messages >= 5)
+    # Should trigger summarization
+    middleware.token_counter = token_counter_high
+    result = middleware.before_model(state, None)
+    assert result is not None, "Should summarize when both conditions are met"
+    assert isinstance(result["messages"][0], RemoveMessage)
+
+
+def test_or_trigger_conditions_with_and_clauses() -> None:
+    """Test OR across multiple AND clauses."""
+    model = FakeToolCallingModel()
+
+    # Create middleware with OR of AND conditions:
+    # (tokens >= 5000 AND messages >= 3) OR (tokens >= 3000 AND messages >= 6)
+    middleware = SummarizationMiddleware(
+        model=model,
+        trigger=[
+            {"tokens": 5000, "messages": 3},
+            {"tokens": 3000, "messages": 6},
+        ],
+    )
+
+    # Test case 1: First clause met (tokens = 5500, messages = 4)
+    # Should trigger summarization
+    def token_counter_5500(messages):
+        return 5500
+
+    middleware.token_counter = token_counter_5500
+    state = {
+        "messages": [
+            HumanMessage(content="1"),
+            AIMessage(content="2"),
+            HumanMessage(content="3"),
+            AIMessage(content="4"),
+        ]
+    }
+    result = middleware.before_model(state, None)
+    assert result is not None, "Should summarize when first OR clause is met"
+
+    # Test case 2: Second clause met (tokens = 3500, messages = 7)
+    # Should trigger summarization
+    def token_counter_3500(messages):
+        return 3500
+
+    middleware.token_counter = token_counter_3500
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(7)]}
+    result = middleware.before_model(state, None)
+    assert result is not None, "Should summarize when second OR clause is met"
+
+    # Test case 3: Neither clause fully met
+    # (tokens = 4500 meets second token threshold but not message count)
+    # (messages = 4 meets first message threshold but not token count)
+    # Should NOT trigger summarization
+    def token_counter_4500(messages):
+        return 4500
+
+    middleware.token_counter = token_counter_4500
+    state = {
+        "messages": [
+            HumanMessage(content="1"),
+            AIMessage(content="2"),
+            HumanMessage(content="3"),
+            AIMessage(content="4"),
+        ]
+    }
+    result = middleware.before_model(state, None)
+    assert result is None, "Should not summarize when no complete clause is met"
+
+
+def test_backward_compatibility_tuple_trigger() -> None:
+    """Test backward compatibility with existing tuple-based triggers."""
+    model = FakeToolCallingModel()
+
+    # Single tuple trigger
+    middleware_single = SummarizationMiddleware(
+        model=model,
+        trigger=("tokens", 1000),
+    )
+
+    def token_counter_high(messages):
+        return 1500
+
+    middleware_single.token_counter = token_counter_high
+    state = {"messages": [HumanMessage(content="test")]}
+    result = middleware_single.before_model(state, None)
+    assert result is not None, "Single tuple trigger should work"
+
+    # List of tuples trigger
+    middleware_list = SummarizationMiddleware(
+        model=model,
+        trigger=[("tokens", 1000), ("messages", 5)],
+    )
+
+    # Should trigger with high tokens (first condition met)
+    middleware_list.token_counter = token_counter_high
+    state = {"messages": [HumanMessage(content="test")]}
+    result = middleware_list.before_model(state, None)
+    assert result is not None, "List of tuples should trigger when any condition met"
+
+    # Should trigger with many messages (second condition met)
+    def token_counter_low(messages):
+        return 100
+
+    middleware_list.token_counter = token_counter_low
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(6)]}
+    result = middleware_list.before_model(state, None)
+    assert result is not None, "List of tuples should trigger when second condition met"
+
+
+def test_mixed_and_or_conditions() -> None:
+    """Test mixing dict (AND) and tuple (single condition) triggers in a list (OR)."""
+    model = FakeToolCallingModel()
+
+    # (tokens >= 4000 AND messages >= 10) OR (messages >= 50)
+    middleware = SummarizationMiddleware(
+        model=model,
+        trigger=[
+            {"tokens": 4000, "messages": 10},
+            ("messages", 50),
+        ],
+    )
+
+    # Test case 1: First AND clause met
+    def token_counter_high(messages):
+        return 4500
+
+    middleware.token_counter = token_counter_high
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(12)]}
+    result = middleware.before_model(state, None)
+    assert result is not None, "Should trigger when AND clause is met"
+
+    # Test case 2: Second simple condition met
+    def token_counter_low(messages):
+        return 1000
+
+    middleware.token_counter = token_counter_low
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(55)]}
+    result = middleware.before_model(state, None)
+    assert result is not None, "Should trigger when simple messages condition is met"
+
+    # Test case 3: Neither condition met
+    middleware.token_counter = token_counter_low
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(8)]}
+    result = middleware.before_model(state, None)
+    assert result is None, "Should not trigger when no condition is met"
+
+
+def test_fraction_in_and_trigger() -> None:
+    """Test using fraction threshold in AND conditions."""
+    # Create middleware with AND condition: fraction >= 0.8 AND messages >= 5
+    middleware = SummarizationMiddleware(
+        model=ProfileChatModel(),
+        trigger={"fraction": 0.8, "messages": 5},
+    )
+
+    def token_counter(messages):
+        return len(messages) * 200  # Each message = 200 tokens
+
+    middleware.token_counter = token_counter
+
+    # Test case 1: Both conditions met
+    # 5 messages * 200 = 1000 tokens (profile max is 1000)
+    # 1000 / 1000 = 1.0 >= 0.8  AND messages = 5 >= 5
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(5)]}
+    result = middleware.before_model(state, None)
+    assert result is not None, "Should trigger when both fraction and messages conditions met"
+
+    # Test case 2: Only messages condition met
+    # 3 messages * 200 = 600 tokens
+    # 600 / 1000 = 0.6 < 0.8 and messages = 3 < 5
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(3)]}
+    result = middleware.before_model(state, None)
+    assert result is None, "Should not trigger when neither condition is fully met"
+
+    # Test case 3: High fraction but not enough messages
+    # 4 messages * 200 = 800 tokens
+    # 800 / 1000 = 0.8 >= 0.8 but messages = 4 < 5
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(4)]}
+    result = middleware.before_model(state, None)
+    assert result is None, "Should not trigger when only fraction condition is met"
+
+
+def test_trigger_validation_errors() -> None:
+    """Test validation errors for invalid trigger configurations."""
+    model = FakeToolCallingModel()
+
+    # Invalid metric name
+    with pytest.raises(ValueError, match="Unsupported trigger metric"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={"invalid_metric": 100},
+        )
+
+    # Invalid fraction value (> 1)
+    with pytest.raises(ValueError, match="fraction must be > 0 and <= 1"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={"fraction": 1.5},
+        )
+
+    # Invalid fraction value (<= 0)
+    with pytest.raises(ValueError, match="fraction must be > 0 and <= 1"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={"fraction": 0},
+        )
+
+    # Invalid token threshold (<= 0)
+    with pytest.raises(ValueError, match="tokens threshold must be > 0"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={"tokens": 0},
+        )
+
+    # Invalid message threshold (<= 0)
+    with pytest.raises(ValueError, match="messages threshold must be > 0"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={"messages": -5},
+        )
+
+    # Non-numeric fraction value
+    with pytest.raises(ValueError, match="Fraction trigger values must be numeric"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={"fraction": "invalid"},
+        )
+
+    # Invalid list item type
+    with pytest.raises(TypeError, match="Unsupported trigger item type"):
+        SummarizationMiddleware(
+            model=model,
+            trigger=["invalid"],
+        )
+
+
+def test_empty_and_condition() -> None:
+    """Test that empty dict trigger clause is rejected or handled appropriately."""
+    model = FakeToolCallingModel()
+
+    # Empty dict should be allowed but never triggers (no conditions to check)
+    middleware = SummarizationMiddleware(
+        model=model,
+        trigger={},
+    )
+
+    def token_counter_high(messages):
+        return 5000
+
+    middleware.token_counter = token_counter_high
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(100)]}
+    # Empty clause should vacuously be true (all zero conditions are met)
+    result = middleware.before_model(state, None)
+    assert result is not None, "Empty trigger clause should trigger"
