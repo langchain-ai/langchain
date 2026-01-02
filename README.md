@@ -67,6 +67,11 @@ To improve your LLM application development, pair LangChain with:
 - [LangSmith Deployment](https://docs.langchain.com/langsmith/deployments) – Deploy and scale agents effortlessly with a purpose-built deployment platform for long-running, stateful workflows. Discover, reuse, configure, and share agents across teams – and iterate quickly with visual prototyping in [LangSmith Studio](https://docs.langchain.com/langsmith/studio).
 - [Deep Agents](https://github.com/langchain-ai/deepagents) *(new!)* – Build agents that can plan, use subagents, and leverage file systems for complex tasks
 
+## What's New
+
+LangChain is under active development. For the latest updates, release notes, and breaking changes,
+please refer to the official [Releases page](https://github.com/langchain-ai/langchain/releases).
+
 ## Additional resources
 
 - [API Reference](https://reference.langchain.com/python) – Detailed reference on navigating base packages and integrations for LangChain.
