@@ -526,7 +526,6 @@ def test_trim_messages_bound_model_token_counter() -> None:
 
 
 def test_trim_messages_bad_token_counter() -> None:
-    trimmer = trim_messages(max_tokens=10, token_counter={})  # type: ignore[call-overload]
     with pytest.raises(
         ValueError,
         match=re.escape(
@@ -535,7 +534,7 @@ def test_trim_messages_bad_token_counter() -> None:
             "Received object of type <class 'dict'>."
         ),
     ):
-        trimmer.invoke([HumanMessage("foobar")])
+        trim_messages(max_tokens=10, token_counter={})  # type: ignore[call-overload]
 
 
 def dummy_token_counter(messages: list[BaseMessage]) -> int:

@@ -730,9 +730,8 @@ def merge_message_runs(
 
 # TODO: Update so validation errors (for token_counter, for example) are raised on
 # init not at runtime.
-@_runnable_support
 def trim_messages(
-    messages: Iterable[MessageLikeRepresentation] | PromptValue,
+    messages: Iterable[MessageLikeRepresentation] | PromptValue | None = None,
     *,
     max_tokens: int,
     token_counter: Callable[[list[BaseMessage]], int]
@@ -745,7 +744,9 @@ def trim_messages(
     start_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
     include_system: bool = False,
     text_splitter: Callable[[str], list[str]] | TextSplitter | None = None,
-) -> list[BaseMessage]:
+) -> (
+    list[BaseMessage] | Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]]
+):
     r"""Trim messages to be below a token count.
 
     `trim_messages` can be used to reduce the size of a chat history to a specified
@@ -1047,8 +1048,6 @@ def trim_messages(
         msg = "include_system parameter is only valid with strategy='last'"
         raise ValueError(msg)
 
-    messages = convert_to_messages(messages)
-
     # Handle string shortcuts for token counter
     if isinstance(token_counter, str):
         if token_counter in _TOKEN_COUNTER_SHORTCUTS:
@@ -1084,10 +1083,31 @@ def trim_messages(
     else:
         msg = (
             f"'token_counter' expected to be a model that implements "
-            f"'get_num_tokens_from_messages()' or a function. Received object of type "
-            f"{type(actual_token_counter)}."
+            f"'get_num_tokens_from_messages()' or a function. "
+            f"Received object of type {type(actual_token_counter)}."
         )
         raise ValueError(msg)
+
+    if messages is None:
+        from langchain_core.runnables import RunnableLambda  # noqa: PLC0415
+
+        # Avoid circular import.
+        return RunnableLambda(
+            partial(
+                trim_messages,  # type: ignore[arg-type]
+                max_tokens=max_tokens,
+                token_counter=token_counter,
+                strategy=strategy,
+                allow_partial=allow_partial,
+                end_on=end_on,
+                start_on=start_on,
+                include_system=include_system,
+                text_splitter=text_splitter,
+            ),
+            name="trim_messages",
+        )
+
+    messages = convert_to_messages(messages)
 
     if _HAS_LANGCHAIN_TEXT_SPLITTERS and isinstance(text_splitter, TextSplitter):
         text_splitter_fn = text_splitter.split_text
