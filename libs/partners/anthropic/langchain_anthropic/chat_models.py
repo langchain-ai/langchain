@@ -650,6 +650,7 @@ def _format_messages(
         formatted_messages.append({"role": role, "content": content})
     return system, formatted_messages
 
+
 def _collect_code_execution_tool_ids(formatted_messages: list[dict]) -> set[str]:
     """Collect tool_use IDs that were called by code_execution.
 
