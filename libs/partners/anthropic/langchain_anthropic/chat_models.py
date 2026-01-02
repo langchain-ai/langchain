@@ -1102,8 +1102,8 @@ class ChatAnthropic(BaseChatModel):
                     ]
                     cache_applied = True
             # If we didn't find an eligible block we silently drop the control.
-            # Anthropic would reject a payload with cache_control on code_execution blocks.
-
+            # Anthropic would reject a payload with cache_control on
+            # code_execution blocks.
         payload = {
             "model": self.model,
             "max_tokens": self.max_tokens,
