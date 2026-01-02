@@ -1034,7 +1034,7 @@ typing = [
 [package.metadata]
 requires-dist = [
     { name = "jsonpatch", specifier = ">=1.33.0,<2.0.0" },
-    { name = "langsmith", specifier = ">=0.6.0,<1.0.0" },
+    { name = "langsmith", specifier = ">=0.3.45,<1.0.0" },
     { name = "packaging", specifier = ">=23.2.0,<26.0.0" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
     { name = "pyyaml", specifier = ">=5.3.0,<7.0.0" },
