@@ -1,11 +1,5 @@
-"""
-Unit tests for cache_control handling with code_execution blocks.
+"""Unit tests for cache_control handling with code_execution blocks."""
 
-Tests specifically focus on correct handling of code_execution server tool
-blocks, which cannot have cache_control applied per Anthropic API requirements.
-"""
-
-import pytest
 from langchain_anthropic.chat_models import (
     _collect_code_execution_tool_ids,
     _is_code_execution_related_block,
@@ -15,12 +9,12 @@ from langchain_anthropic.chat_models import (
 class TestCollectCodeExecutionToolIds:
     """Tests for _collect_code_execution_tool_ids function."""
 
-    def test_empty_messages(self):
+    def test_empty_messages(self) -> None:
         """Test with empty messages list."""
         result = _collect_code_execution_tool_ids([])
         assert result == set()
 
-    def test_no_code_execution_calls(self):
+    def test_no_code_execution_calls(self) -> None:
         """Test messages without any code_execution calls."""
         messages = [
             {
@@ -42,7 +36,7 @@ class TestCollectCodeExecutionToolIds:
         result = _collect_code_execution_tool_ids(messages)
         assert result == set()
 
-    def test_single_code_execution_call(self):
+    def test_single_code_execution_call(self) -> None:
         """Test with a single code_execution tool call."""
         messages = [
             {
@@ -64,7 +58,7 @@ class TestCollectCodeExecutionToolIds:
         result = _collect_code_execution_tool_ids(messages)
         assert result == {"toolu_code_exec_1"}
 
-    def test_multiple_code_execution_calls(self):
+    def test_multiple_code_execution_calls(self) -> None:
         """Test with multiple code_execution tool calls."""
         messages = [
             {
@@ -103,7 +97,7 @@ class TestCollectCodeExecutionToolIds:
         assert result == {"toolu_code_exec_1", "toolu_code_exec_2"}
         assert "toolu_regular" not in result
 
-    def test_future_code_execution_version(self):
+    def test_future_code_execution_version(self) -> None:
         """Test with a hypothetical future code_execution version."""
         messages = [
             {
@@ -115,7 +109,7 @@ class TestCollectCodeExecutionToolIds:
                         "name": "get_weather",
                         "input": {},
                         "caller": {
-                            "type": "code_execution_20260101",  # Future version
+                            "type": "code_execution_20260101",
                             "tool_id": "srvtoolu_future",
                         },
                     }
@@ -125,7 +119,7 @@ class TestCollectCodeExecutionToolIds:
         result = _collect_code_execution_tool_ids(messages)
         assert result == {"toolu_future"}
 
-    def test_ignores_user_messages(self):
+    def test_ignores_user_messages(self) -> None:
         """Test that user messages are ignored."""
         messages = [
             {
@@ -142,7 +136,7 @@ class TestCollectCodeExecutionToolIds:
         result = _collect_code_execution_tool_ids(messages)
         assert result == set()
 
-    def test_handles_string_content(self):
+    def test_handles_string_content(self) -> None:
         """Test that string content is handled gracefully."""
         messages = [
             {
@@ -157,7 +151,7 @@ class TestCollectCodeExecutionToolIds:
 class TestIsCodeExecutionRelatedBlock:
     """Tests for _is_code_execution_related_block function."""
 
-    def test_regular_tool_use_block(self):
+    def test_regular_tool_use_block(self) -> None:
         """Test regular tool_use block without caller."""
         block = {
             "type": "tool_use",
@@ -167,7 +161,7 @@ class TestIsCodeExecutionRelatedBlock:
         }
         assert not _is_code_execution_related_block(block, set())
 
-    def test_code_execution_tool_use_block(self):
+    def test_code_execution_tool_use_block(self) -> None:
         """Test tool_use block called by code_execution."""
         block = {
             "type": "tool_use",
@@ -181,7 +175,7 @@ class TestIsCodeExecutionRelatedBlock:
         }
         assert _is_code_execution_related_block(block, set())
 
-    def test_regular_tool_result_block(self):
+    def test_regular_tool_result_block(self) -> None:
         """Test tool_result block for regular tool."""
         block = {
             "type": "tool_result",
@@ -191,7 +185,7 @@ class TestIsCodeExecutionRelatedBlock:
         code_exec_ids = {"toolu_code_exec"}
         assert not _is_code_execution_related_block(block, code_exec_ids)
 
-    def test_code_execution_tool_result_block(self):
+    def test_code_execution_tool_result_block(self) -> None:
         """Test tool_result block for code_execution called tool."""
         block = {
             "type": "tool_result",
@@ -201,13 +195,13 @@ class TestIsCodeExecutionRelatedBlock:
         code_exec_ids = {"toolu_code_exec"}
         assert _is_code_execution_related_block(block, code_exec_ids)
 
-    def test_text_block(self):
+    def test_text_block(self) -> None:
         """Test that text blocks are not flagged."""
         block = {"type": "text", "text": "Hello world"}
         assert not _is_code_execution_related_block(block, set())
 
-    def test_non_dict_block(self):
+    def test_non_dict_block(self) -> None:
         """Test that non-dict values return False."""
-        assert not _is_code_execution_related_block("string", set())  # type: ignore
-        assert not _is_code_execution_related_block(None, set())  # type: ignore
-        assert not _is_code_execution_related_block(123, set())  # type: ignore
+        assert not _is_code_execution_related_block("string", set())  # type: ignore[arg-type]
+        assert not _is_code_execution_related_block(None, set())  # type: ignore[arg-type]
+        assert not _is_code_execution_related_block(123, set())  # type: ignore[arg-type]
