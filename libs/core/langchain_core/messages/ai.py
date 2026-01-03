@@ -5,6 +5,7 @@ import logging
 import operator
 from collections.abc import Sequence
 from typing import Any, Literal, cast, overload
+import itertools
 
 from pydantic import Field, model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
@@ -651,29 +652,27 @@ def add_ai_message_chunks(
     else:
         usage_metadata = None
 
+    # higher is better
+    best_id = -1
     chunk_id = None
-    candidates = [left.id] + [o.id for o in others]
-    # first pass: pick the first provider-assigned id (non-run-* and non-lc_*)
+    candidates = itertools.chain([left.id], (o.id for o in others))
+
     for id_ in candidates:
-        if (
-            id_
-            and not id_.startswith(LC_ID_PREFIX)
-            and not id_.startswith(LC_AUTO_PREFIX)
-        ):
+        if not id_:
+            continue
+
+        # pick the first provider-assigned id (non-run-* and non-lc_*)
+        if not id_.startswith(LC_ID_PREFIX) and not id_.startswith(LC_AUTO_PREFIX):
             chunk_id = id_
             break
-    else:
-        # second pass: prefer lc_run-* IDs over lc_* IDs
-        for id_ in candidates:
-            if id_ and id_.startswith(LC_ID_PREFIX):
-                chunk_id = id_
-                break
-        else:
-            # third pass: take any remaining ID (auto-generated lc_* IDs)
-            for id_ in candidates:
-                if id_:
-                    chunk_id = id_
-                    break
+
+        # prefer lc_run-* IDs over lc_* IDs
+        rank = 1 if id_.startswith(LC_ID_PREFIX) else 0
+        # otherwise take any remaining ID (auto-generated lc_* IDs)
+
+        if rank > best_id:
+            best_id = rank
+            chunk_id = id_
 
     chunk_position: Literal["last"] | None = (
         "last" if any(x.chunk_position == "last" for x in [left, *others]) else None
