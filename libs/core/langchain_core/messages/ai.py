@@ -1,11 +1,11 @@
 """AI message."""
 
+import itertools
 import json
 import logging
 import operator
 from collections.abc import Sequence
 from typing import Any, Literal, cast, overload
-import itertools
 
 from pydantic import Field, model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
