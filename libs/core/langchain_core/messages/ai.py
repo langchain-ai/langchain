@@ -652,8 +652,8 @@ def add_ai_message_chunks(
     else:
         usage_metadata = None
 
-    # Ranks are defined by the order of precedence. Higher is better:
-    # 2. Provider-assigned IDs (non-run-* and non-lc_*)
+    # Ranks are defined by the order of preference. Higher is better:
+    # 2. Provider-assigned IDs (non lc_* and non lc_run-*)
     # 1. lc_run-* IDs
     # 0. lc_* and other remaining IDs
     best_rank = -1
