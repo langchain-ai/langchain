@@ -652,7 +652,10 @@ def add_ai_message_chunks(
     else:
         usage_metadata = None
 
-    # higher is better
+    # Ranks are defined by the order of precedence. Higher is better:
+    # 2. Provider-assigned IDs (non-run-* and non-lc_*)
+    # 1. lc_run-* IDs
+    # 0. lc_* and other remaining IDs
     best_rank = -1
     chunk_id = None
     candidates = itertools.chain([left.id], (o.id for o in others))
@@ -661,14 +664,12 @@ def add_ai_message_chunks(
         if not id_:
             continue
 
-        # pick the first provider-assigned id (non-run-* and non-lc_*)
         if not id_.startswith(LC_ID_PREFIX) and not id_.startswith(LC_AUTO_PREFIX):
             chunk_id = id_
+            # Highest rank, return instantly
             break
 
-        # prefer lc_run-* IDs over lc_* IDs
         rank = 1 if id_.startswith(LC_ID_PREFIX) else 0
-        # otherwise take any remaining ID (auto-generated lc_* IDs)
 
         if rank > best_rank:
             best_rank = rank
