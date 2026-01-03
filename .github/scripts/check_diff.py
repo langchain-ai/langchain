@@ -302,6 +302,17 @@ if __name__ == "__main__":
                 if partner_dir not in IGNORED_PARTNERS:
                     dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
+
+        elif file.startswith("libs/community"):
+            community_dir = file.split("/")[2]
+            if os.path.isdir(f"libs/community/{community_dir}") and [
+                filename
+                for filename in os.listdir(f"libs/community/{community_dir}")
+                if not filename.startswith(".")
+            ] != ["README.md"]:
+                dirs_to_run["test"].add(f"libs/community/{community_dir}")
+            # Community packages don't automatically get codspeed
+    
         elif file.startswith("libs/"):
             # Check if this is a root-level file in libs/ (e.g., libs/README.md)
             file_parts = file.split("/")
