@@ -104,18 +104,31 @@ class ChatPromptValue(PromptValue):
 
 
 class ImageURL(TypedDict, total=False):
-    """Image URL."""
+    """Image URL for multimodal model inputs (OpenAI format).
+
+    Represents the inner `image_url` object in OpenAI's Chat Completion API format. This
+    is used by `ImagePromptTemplate` and `ChatPromptTemplate`.
+
+    See Also:
+        `ImageContentBlock`: LangChain's provider-agnostic image format used in message
+        content blocks. Use `ImageContentBlock` when working with the standardized
+        message format across different providers.
+
+    Note:
+        The `detail` field values are not validated locally. Invalid values
+        will be rejected by the downstream API, allowing new valid values to
+        be used without requiring a LangChain update.
+    """
 
     detail: Literal["auto", "low", "high"]
     """Specifies the detail level of the image.
 
-    Can be `'auto'`, `'low'`, or `'high'`.
-
-    This follows OpenAI's Chat Completion API's image URL format.
+    Defaults to ``'auto'`` if not specified. Higher detail levels consume
+    more tokens but provide better image understanding.
     """
 
     url: str
-    """Either a URL of the image or the base64 encoded image data."""
+    """URL of the image or base64-encoded image data."""
 
 
 class ImagePromptValue(PromptValue):

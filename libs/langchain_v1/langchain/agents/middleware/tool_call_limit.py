@@ -361,7 +361,7 @@ class ToolCallLimitMiddleware(
             return None
 
         # Get the count key for this middleware instance
-        count_key = self.tool_name if self.tool_name else "__all__"
+        count_key = self.tool_name or "__all__"
 
         # Get current counts
         thread_counts = state.get("thread_tool_call_count", {}).copy()

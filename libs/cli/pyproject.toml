@@ -38,14 +38,16 @@ dev = [
     "pytest-watcher>=0.3.4,<1.0.0"
 ]
 lint = [
-    "ruff>=0.13.1,<0.14",
-    "mypy>=1.18.1,<1.19"
+    "ruff>=0.14.10,<0.15.0"
 ]
 test = [
     "langchain-core",
     "langchain-classic"
 ]
-typing = ["langchain-classic"]
+typing = [
+    "mypy>=1.19.1,<1.20",
+    "langchain-classic"
+]
 test_integration = []
 
 [tool.uv.sources]
@@ -64,10 +66,6 @@ ignore = [
     "FIX002",  # Line contains TODO
     "PERF203", # Rarely useful
     "PLR09",   # Too many something (arg, statements, etc)
-    "RUF012",  # Doesn't play well with Pydantic
-    "TC001",   # Doesn't play well with Pydantic
-    "TC002",   # Doesn't play well with Pydantic
-    "TC003",   # Doesn't play well with Pydantic
     "TD002",   # Missing author in TODO
     "TD003",   # Missing issue link in TODO
 

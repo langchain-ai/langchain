@@ -620,8 +620,6 @@ class TestMultipleMiddleware:
 
         # Combine multiple detectors into one
         def detect_email_and_ip(content):
-            from langchain.agents.middleware.pii import detect_email, detect_ip
-
             return detect_email(content) + detect_ip(content)
 
         middleware = PIIMiddleware(
