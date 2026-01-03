@@ -653,7 +653,7 @@ def add_ai_message_chunks(
         usage_metadata = None
 
     # higher is better
-    best_id = -1
+    best_rank = -1
     chunk_id = None
     candidates = itertools.chain([left.id], (o.id for o in others))
 
@@ -670,8 +670,8 @@ def add_ai_message_chunks(
         rank = 1 if id_.startswith(LC_ID_PREFIX) else 0
         # otherwise take any remaining ID (auto-generated lc_* IDs)
 
-        if rank > best_id:
-            best_id = rank
+        if rank > best_rank:
+            best_rank = rank
             chunk_id = id_
 
     chunk_position: Literal["last"] | None = (
