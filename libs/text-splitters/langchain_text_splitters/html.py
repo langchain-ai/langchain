@@ -892,9 +892,43 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                     current_content.append(placeholder)
                     placeholder_count += 1
                 else:
-                    content = _get_element_text(elem)
-                    if content:
-                        current_content.append(content)
+                    # For non-special elements (not headers, preserved,
+                    # or containers), recursively check if they contain any
+                    # preserved child elements. This allows preservation to work
+                    # at any nesting level, not just in hard-coded containers
+                    # like html, body, div, main.
+                    children = _find_all_tags(elem, recursive=False)
+                    if children:
+                        # Element has children, we recursively process them to find
+                        # nested preserved elements deeper in the tree.
+                        (
+                            documents,
+                            current_headers,
+                            current_content,
+                            preserved_elements,
+                            placeholder_count,
+                        ) = _process_element(
+                            children,
+                            documents,
+                            current_headers,
+                            current_content,
+                            preserved_elements,
+                            placeholder_count,
+                        )
+                        # After processing children, extract only text
+                        # strings from this element (not its children). Used
+                        # recursive=False to avoid double-counting.
+                        content = " ".join(_find_all_strings(elem, recursive=False))
+                        if content:
+                            content = self._normalize_and_clean_text(content)
+                            current_content.append(content)
+                    else:
+                        # Leaf element with no children, so we extract its
+                        # text and add to current content. Handles
+                        # text-only elements like <p>, <span>, <div>
+                        content = _get_element_text(elem)
+                        if content:
+                            current_content.append(content)
 
             return (
                 documents,
