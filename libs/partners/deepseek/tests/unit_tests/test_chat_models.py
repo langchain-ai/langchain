@@ -314,11 +314,3 @@ def test_profile() -> None:
     model = ChatDeepSeek(model="deepseek-reasoner", api_key=SecretStr("test_key"))
     assert model.profile is not None
     assert model.profile["reasoning_output"]
-
-
-def test_deepseek_v3_profile() -> None:
-    """Test that deepseek-v3 profile is loaded correctly."""
-    model = ChatDeepSeek(model="deepseek-v3", api_key=SecretStr("test_key"))
-    assert model.profile is not None
-    assert model.profile["max_input_tokens"] == 128000  # noqa: PLR2004
-    assert not model.profile["reasoning_output"]
