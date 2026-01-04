@@ -118,7 +118,6 @@ ignore = [
     # TODO rules
     "ANN401",  # Any in type annotations
     "BLE",     # Blind exceptions
-    "PLC0415", # Imports should be at the top. Not always desirable
 ]
 unfixable = [
     "B028",    # People should intentionally tune the stacklevel
