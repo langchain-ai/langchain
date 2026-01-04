@@ -52,7 +52,13 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     @staticmethod
     def _get_schema(pydantic_object: type[TBaseModel]) -> dict[str, Any]:
         if issubclass(pydantic_object, pydantic.BaseModel):
-            return pydantic_object.model_json_schema()
+            try:
+                # Serialization mode removes non-JSON-serializable FieldInfo metadata.
+                return pydantic_object.model_json_schema(mode="serialization")
+            except TypeError:
+                # Some user-defined subclasses could override `model_json_schema`
+                # without supporting the `mode` kwarg. Fall back to the default.
+                return pydantic_object.model_json_schema()
         return pydantic_object.schema()
 
     @override

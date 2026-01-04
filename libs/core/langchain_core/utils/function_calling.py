@@ -174,7 +174,7 @@ def _convert_pydantic_to_openai_function(
         The function description.
     """
     if hasattr(model, "model_json_schema"):
-        schema = model.model_json_schema()  # Pydantic 2
+        schema = model.model_json_schema(mode="serialization")  # Pydantic 2
     elif hasattr(model, "schema"):
         schema = model.schema()  # Pydantic 1
     else:
