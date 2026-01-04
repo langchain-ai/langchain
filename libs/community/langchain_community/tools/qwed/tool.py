@@ -22,8 +22,9 @@ class QWEDInput(BaseModel):
 class QWEDTool(BaseTool):
     """Tool for neurosymbolic verification using QWED.
     
-    QWED combines neural networks (LLMs) with symbolic reasoning 
-    (SymPy, Z3, AST) to provide deterministic verification of AI outputs.
+    QWED (Query with Evidence and Determinism) combines neural networks 
+    (LLMs) with symbolic reasoning (SymPy, Z3, AST) to provide 
+    deterministic verification of AI outputs.
     
     Supports verification of:
     - Mathematical calculations (calculus, algebra, etc.)
