@@ -22,6 +22,7 @@ from langchain_text_splitters.html import (
     HTMLSectionSplitter,
     HTMLSemanticPreservingSplitter,
 )
+from langchain_text_splitters.jieba import JiebaTextSplitter
 from langchain_text_splitters.json import RecursiveJsonSplitter
 from langchain_text_splitters.jsx import JSFrameworkTextSplitter
 from langchain_text_splitters.konlpy import KonlpyTextSplitter
@@ -49,6 +50,7 @@ __all__ = [
     "HTMLSemanticPreservingSplitter",
     "HeaderType",
     "JSFrameworkTextSplitter",
+    "JiebaTextSplitter",
     "KonlpyTextSplitter",
     "Language",
     "LatexTextSplitter",

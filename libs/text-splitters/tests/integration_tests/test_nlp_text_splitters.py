@@ -1,13 +1,17 @@
 """Test text splitting functionality using NLTK and Spacy based sentence splitters."""
 
 import re
+from importlib.util import find_spec
 
 import nltk
 import pytest
 from langchain_core.documents import Document
 
+from langchain_text_splitters.jieba import JiebaTextSplitter
 from langchain_text_splitters.nltk import NLTKTextSplitter
 from langchain_text_splitters.spacy import SpacyTextSplitter
+
+_HAS_JIEBA = find_spec("jieba") is not None
 
 
 def setup_module() -> None:
@@ -121,3 +125,39 @@ def test_nltk_text_splitter_with_add_start_index() -> None:
     for chunk in chunks:
         s_i = chunk.metadata["start_index"]
         assert chunk.page_content == txt[s_i : s_i + len(chunk.page_content)]
+
+
+@pytest.mark.skipif(not _HAS_JIEBA, reason="jieba not installed")
+def test_jieba_text_splitter_simple() -> None:
+    """Test basic Chinese text splitting using Jieba."""
+    text = "今天天气很好，我喜欢学习编程。"  # noqa: RUF001
+    splitter = JiebaTextSplitter(chunk_size=30, chunk_overlap=0)
+    splits = splitter.split_text(text)
+    expected_splits = ["今天天气很好，我喜欢学习编程。"]  # noqa: RUF001
+    assert splits == expected_splits
+
+
+@pytest.mark.skipif(not _HAS_JIEBA, reason="jieba not installed")
+def test_jieba_text_splitter_mixed_content() -> None:
+    """Test Chinese text splitting with mixed English, numbers, and punctuation."""
+    text = "LangChain是一个AI框架，支持Python开发。版本号3.10以上即可使用！"  # noqa: RUF001
+    splitter = JiebaTextSplitter(chunk_size=50, chunk_overlap=0)
+    splits = splitter.split_text(text)
+    expected_splits = [
+        "LangChain是一个AI框架，支持Python开发。版本号3.10以上即可使用！"  # noqa: RUF001
+    ]
+    assert splits == expected_splits
+
+
+@pytest.mark.skipif(not _HAS_JIEBA, reason="jieba not installed")
+def test_jieba_text_splitter_with_chunk_size() -> None:
+    """Test Chinese text splitting with chunk_size constraint."""
+    text = "人工智能技术发展迅速，深度学习模型不断进步，自然语言处理领域取得重大突破。"  # noqa: RUF001
+    splitter = JiebaTextSplitter(chunk_size=20, chunk_overlap=0)
+    splits = splitter.split_text(text)
+    assert len(splits) > 1
+    expected_splits = [
+        "人工智能技术发展迅速，深度学习模型",  # noqa: RUF001
+        "不断进步，自然语言处理领域取得重大突破。",  # noqa: RUF001
+    ]
+    assert splits == expected_splits

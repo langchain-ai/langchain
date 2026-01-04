@@ -10,6 +10,7 @@ from langchain_text_splitters import (
 from langchain_text_splitters.base import split_text_on_tokens
 from langchain_text_splitters.character import CharacterTextSplitter
 from langchain_text_splitters.html import ElementType, HTMLHeaderTextSplitter
+from langchain_text_splitters.jieba import JiebaTextSplitter
 from langchain_text_splitters.json import RecursiveJsonSplitter
 from langchain_text_splitters.konlpy import KonlpyTextSplitter
 from langchain_text_splitters.latex import LatexTextSplitter
@@ -31,6 +32,7 @@ __all__ = [
     "ElementType",
     "HTMLHeaderTextSplitter",
     "HeaderType",
+    "JiebaTextSplitter",
     "KonlpyTextSplitter",
     "Language",
     "LatexTextSplitter",

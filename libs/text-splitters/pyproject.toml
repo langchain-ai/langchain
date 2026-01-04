@@ -73,7 +73,7 @@ enable_error_code = "deprecated"
 warn_unreachable = true
 
 [[tool.mypy.overrides]]
-module = ["konlpy", "nltk",]
+module = ["jieba", "konlpy", "nltk",]
 ignore_missing_imports = true
 
 [tool.ruff.format]
