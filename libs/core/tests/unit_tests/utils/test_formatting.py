@@ -9,13 +9,13 @@ class TestStrictFormatter:
     """Tests for the `StrictFormatter` class."""
 
     def test_vformat_with_keyword_args(self) -> None:
-        """Test that vformat works with keyword arguments."""
+        """Test that `vformat` works with keyword arguments."""
         fmt = StrictFormatter()
         result = fmt.vformat("Hello, {name}!", [], {"name": "World"})
         assert result == "Hello, World!"
 
     def test_vformat_with_multiple_keyword_args(self) -> None:
-        """Test vformat with multiple keyword arguments."""
+        """Test `vformat` with multiple keyword arguments."""
         fmt = StrictFormatter()
         result = fmt.vformat(
             "{greeting}, {name}! You have {count} messages.",
