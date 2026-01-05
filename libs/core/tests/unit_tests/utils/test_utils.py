@@ -436,13 +436,13 @@ def test_merge_lists(
 
 
 def test_merge_lists_multiple_others() -> None:
-    """Test merge_lists with multiple lists."""
+    """Test `merge_lists` with multiple lists."""
     result = merge_lists([1], [2], [3])
     assert result == [1, 2, 3]
 
 
 def test_merge_lists_all_none() -> None:
-    """Test merge_lists with all None arguments."""
+    """Test `merge_lists` with all `None` arguments."""
     result = merge_lists(None, None, None)
     assert result is None
 
@@ -474,18 +474,18 @@ def test_merge_obj(left: Any, right: Any, expected: Any) -> None:
 
 
 def test_merge_obj_type_mismatch() -> None:
-    """Test merge_obj raises TypeError on type mismatch."""
+    """Test `merge_obj` raises `TypeError` on type mismatch."""
     with pytest.raises(TypeError, match="left and right are of different types"):
         merge_obj("string", 123)
 
 
 def test_merge_obj_unmergeable_values() -> None:
-    """Test merge_obj raises ValueError on unmergeable values."""
+    """Test `merge_obj` raises `ValueError` on unmergeable values."""
     with pytest.raises(ValueError, match="Unable to merge"):
         merge_obj(1, 2)  # Different integers
 
 
 def test_merge_obj_tuple_raises() -> None:
-    """Test merge_obj raises ValueError for tuples."""
+    """Test `merge_obj` raises `ValueError` for tuples."""
     with pytest.raises(ValueError, match="Unable to merge"):
         merge_obj((1, 2), (3, 4))
