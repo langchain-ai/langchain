@@ -46,6 +46,8 @@ def test_tool_runtime_basic_injection() -> None:
         injected_data["stream_writer"] = runtime.stream_writer
         return f"Processed {x}"
 
+    assert runtime_tool.args
+
     agent = create_agent(
         model=FakeToolCallingModel(
             tool_calls=[
