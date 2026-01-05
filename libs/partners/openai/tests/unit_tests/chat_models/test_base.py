@@ -66,6 +66,7 @@ from langchain_openai.chat_models._compat import (
 from langchain_openai.chat_models.base import (
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
+    _convert_delta_to_message_chunk,
     _convert_dict_to_message,
     _convert_message_to_dict,
     _convert_to_openai_response_format,
@@ -3191,3 +3192,44 @@ def test_gpt_5_1_temperature_with_reasoning_effort_none(
 def test_model_prefers_responses_api() -> None:
     assert _model_prefers_responses_api("gpt-5.2-pro")
     assert not _model_prefers_responses_api("gpt-5.1")
+
+
+def test_convert_delta_to_message_chunk_with_missing_function() -> None:
+    """Test handling of tool_calls with missing function field."""
+    delta_dict = {
+        "role": "assistant",
+        "tool_calls": [
+            {
+                "index": 0,
+                "id": "call_abc123",
+                "type": "function",
+                # Note: no function field
+            }
+        ],
+    }
+    result = _convert_delta_to_message_chunk(delta_dict, AIMessageChunk)
+
+    assert isinstance(result, AIMessageChunk)
+    assert len(result.tool_call_chunks) == 1
+    assert result.tool_call_chunks[0]["name"] is None
+    assert result.tool_call_chunks[0]["args"] is None
+
+
+def test_convert_delta_to_message_chunk_with_none_function() -> None:
+    """Test handling of tool_calls with function=None."""
+    delta_dict = {
+        "role": "assistant",
+        "tool_calls": [
+            {
+                "index": 0,
+                "id": "call_abc123",
+                "type": "function",
+                "function": None,
+            }
+        ],
+    }
+    result = _convert_delta_to_message_chunk(delta_dict, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    assert len(result.tool_call_chunks) == 1
+    assert result.tool_call_chunks[0]["name"] is None
+    assert result.tool_call_chunks[0]["args"] is None
