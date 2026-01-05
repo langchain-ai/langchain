@@ -3,7 +3,14 @@ from unittest.mock import patch
 import pytest
 from langchain_core.language_models import ModelProfile
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, RemoveMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    AnyMessage,
+    HumanMessage,
+    RemoveMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 
@@ -1031,8 +1038,6 @@ def test_sanitize_messages_for_summary_preserves_essential_fields() -> None:
 
 def test_sanitize_messages_for_summary_handles_system_messages() -> None:
     """Test that SystemMessage is handled correctly."""
-    from langchain_core.messages import SystemMessage
-
     middleware = SummarizationMiddleware(model=MockChatModel(), trigger=("messages", 5))
 
     messages: list[AnyMessage] = [
@@ -1056,8 +1061,6 @@ def test_sanitize_messages_for_summary_handles_system_messages() -> None:
 
 def test_sanitize_messages_for_summary_handles_mixed_message_types() -> None:
     """Test sanitization with a realistic mix of message types."""
-    from langchain_core.messages import SystemMessage
-
     middleware = SummarizationMiddleware(model=MockChatModel(), trigger=("messages", 5))
 
     messages: list[AnyMessage] = [
