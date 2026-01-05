@@ -1,12 +1,13 @@
 """AI message."""
 
+import itertools
 import json
 import logging
 import operator
 from collections.abc import Sequence
 from typing import Any, Literal, cast, overload
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
 
 from langchain_core.messages import content as types
@@ -166,10 +167,10 @@ class AIMessage(BaseMessage):
     (e.g., tool calls, usage metadata) added by the LangChain framework.
     """
 
-    tool_calls: list[ToolCall] = []
+    tool_calls: list[ToolCall] = Field(default_factory=list)
     """If present, tool calls associated with the message."""
 
-    invalid_tool_calls: list[InvalidToolCall] = []
+    invalid_tool_calls: list[InvalidToolCall] = Field(default_factory=list)
     """If present, tool calls with parsing errors associated with the message."""
 
     usage_metadata: UsageMetadata | None = None
@@ -394,7 +395,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment]
     """The type of the message (used for deserialization)."""
 
-    tool_call_chunks: list[ToolCallChunk] = []
+    tool_call_chunks: list[ToolCallChunk] = Field(default_factory=list)
     """If provided, tool call chunks associated with the message."""
 
     chunk_position: Literal["last"] | None = None
@@ -651,29 +652,28 @@ def add_ai_message_chunks(
     else:
         usage_metadata = None
 
+    # Ranks are defined by the order of preference. Higher is better:
+    # 2. Provider-assigned IDs (non lc_* and non lc_run-*)
+    # 1. lc_run-* IDs
+    # 0. lc_* and other remaining IDs
+    best_rank = -1
     chunk_id = None
-    candidates = [left.id] + [o.id for o in others]
-    # first pass: pick the first provider-assigned id (non-run-* and non-lc_*)
+    candidates = itertools.chain([left.id], (o.id for o in others))
+
     for id_ in candidates:
-        if (
-            id_
-            and not id_.startswith(LC_ID_PREFIX)
-            and not id_.startswith(LC_AUTO_PREFIX)
-        ):
+        if not id_:
+            continue
+
+        if not id_.startswith(LC_ID_PREFIX) and not id_.startswith(LC_AUTO_PREFIX):
             chunk_id = id_
+            # Highest rank, return instantly
             break
-    else:
-        # second pass: prefer lc_run-* IDs over lc_* IDs
-        for id_ in candidates:
-            if id_ and id_.startswith(LC_ID_PREFIX):
-                chunk_id = id_
-                break
-        else:
-            # third pass: take any remaining ID (auto-generated lc_* IDs)
-            for id_ in candidates:
-                if id_:
-                    chunk_id = id_
-                    break
+
+        rank = 1 if id_.startswith(LC_ID_PREFIX) else 0
+
+        if rank > best_rank:
+            best_rank = rank
+            chunk_id = id_
 
     chunk_position: Literal["last"] | None = (
         "last" if any(x.chunk_position == "last" for x in [left, *others]) else None

@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from langchain_core.callbacks import BaseCallbackHandler
 
 
-def _get_posts(client: Client) -> list:
+def _get_posts(client: Client) -> list[dict[str, Any]]:
     mock_calls = client.session.request.mock_calls  # type: ignore[attr-defined]
     posts = []
     for call in mock_calls:
@@ -76,7 +76,8 @@ def test_tracing_context() -> None:
 
 
 def test_config_traceable_handoff() -> None:
-    get_env_var.cache_clear()
+    if hasattr(get_env_var, "cache_clear"):
+        get_env_var.cache_clear()  # type: ignore[attr-defined]
     tracer = _create_tracer_with_mocked_client(
         project_name="another-flippin-project", tags=["such-a-tag"]
     )
@@ -238,7 +239,8 @@ def test_tracing_enable_disable(
     def my_func(a: int) -> int:
         return a + 1
 
-    get_env_var.cache_clear()
+    if hasattr(get_env_var, "cache_clear"):
+        get_env_var.cache_clear()  # type: ignore[attr-defined]
     env_on = env == "true"
     with (
         patch.dict("os.environ", {"LANGSMITH_TRACING": env}),
@@ -280,7 +282,7 @@ class TestRunnableSequenceParallelTraceNesting:
         def before(x: int) -> int:
             return x
 
-        def after(x: dict) -> int:
+        def after(x: dict[str, Any]) -> int:
             return int(x["chain_result"])
 
         sequence = before | parallel | after

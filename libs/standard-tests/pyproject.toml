@@ -9,7 +9,7 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.1.1"
+version = "1.1.2"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.2.2,<2.0.0",
@@ -38,9 +38,9 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 [dependency-groups]
 test = ["langchain-core"]
 test_integration = []
-lint = ["ruff>=0.13.1,<0.14.0"]
+lint = ["ruff>=0.14.10,<0.15.0"]
 typing = [
-    "mypy>=1.18.1,<1.19.0",
+    "mypy>=1.19.1,<1.20.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
     "langchain-core",
 ]
