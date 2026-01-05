@@ -172,7 +172,7 @@ class BuiltinToolsMiddleware(AgentMiddleware):
                         tool_name,
                     )
                     return None
-                from langchain_openai.utils.builtin_tools import (
+                from langchain_openai.utils.builtin_tools import (  # noqa: PLC0415
                     convert_standard_to_openai,
                 )
 
@@ -192,7 +192,7 @@ class BuiltinToolsMiddleware(AgentMiddleware):
                         tool_name,
                     )
                     return None
-                from langchain_anthropic.utils.builtin_tools import (
+                from langchain_anthropic.utils.builtin_tools import (  # noqa: PLC0415
                     convert_standard_to_anthropic,
                 )
 
@@ -212,7 +212,9 @@ class BuiltinToolsMiddleware(AgentMiddleware):
                         tool_name,
                     )
                     return None
-                from langchain_xai.utils.builtin_tools import convert_standard_to_xai
+                from langchain_xai.utils.builtin_tools import (  # noqa: PLC0415
+                    convert_standard_to_xai,
+                )
 
                 return convert_standard_to_xai(standard_tool)
             except ImportError:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 import warnings
 from typing import Any
 from unittest.mock import MagicMock
@@ -9,6 +10,7 @@ from unittest.mock import MagicMock
 import pytest
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage
+from langchain_core.tools import tool
 
 from langchain.agents.middleware.builtin_tools import (
     BuiltinToolsMiddleware,
@@ -154,8 +156,6 @@ def _mock_convert_to_xai(tool: dict[str, Any]) -> dict[str, Any] | None:
 @pytest.fixture(autouse=True)
 def mock_conversion_utilities(monkeypatch: pytest.MonkeyPatch) -> None:
     """Mock the conversion utilities from partner packages."""
-    import sys
-
     # Mock the modules to make _check_pkg pass
     mock_openai = MagicMock()
     mock_openai.__spec__ = MagicMock()
@@ -462,7 +462,6 @@ def test_builtin_tools_middleware_multiple_tools() -> None:
 
 def test_builtin_tools_middleware_with_existing_tools() -> None:
     """Test that builtin tools are added to existing tools."""
-    from langchain_core.tools import tool
 
     @tool
     def my_custom_tool(query: str) -> str:
