@@ -88,6 +88,7 @@ from langchain_core.tracers import (
     RunLog,
     RunLogPatch,
 )
+from langchain_core.tracers._compat import pydantic_copy
 from langchain_core.tracers.context import collect_runs
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
@@ -147,19 +148,18 @@ class FakeTracer(BaseTracer):
             new_dotted_order = ".".join(processed_levels)
         else:
             new_dotted_order = None
-        return run.copy(
-            update={
-                "id": self._replace_uuid(run.id),
-                "parent_run_id": (
-                    self.uuids_map[run.parent_run_id] if run.parent_run_id else None
-                ),
-                "child_runs": [self._copy_run(child) for child in run.child_runs],
-                "trace_id": self._replace_uuid(run.trace_id) if run.trace_id else None,
-                "dotted_order": new_dotted_order,
-                "inputs": self._replace_message_id(run.inputs),
-                "outputs": self._replace_message_id(run.outputs),
-            }
-        )
+        update_dict = {
+            "id": self._replace_uuid(run.id),
+            "parent_run_id": (
+                self.uuids_map[run.parent_run_id] if run.parent_run_id else None
+            ),
+            "child_runs": [self._copy_run(child) for child in run.child_runs],
+            "trace_id": self._replace_uuid(run.trace_id) if run.trace_id else None,
+            "dotted_order": new_dotted_order,
+            "inputs": self._replace_message_id(run.inputs),
+            "outputs": self._replace_message_id(run.outputs),
+        }
+        return pydantic_copy(run, update=update_dict)
 
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
