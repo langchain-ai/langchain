@@ -849,28 +849,6 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             placeholder_count: int,
         ) -> tuple[list[Document], dict[str, str], list[str], dict[str, str], int]:
             for elem in element:
-                if elem.name.lower() in {"html", "body", "div", "main"}:
-                    children = _find_all_tags(elem, recursive=False)
-                    (
-                        documents,
-                        current_headers,
-                        current_content,
-                        preserved_elements,
-                        placeholder_count,
-                    ) = _process_element(
-                        children,
-                        documents,
-                        current_headers,
-                        current_content,
-                        preserved_elements,
-                        placeholder_count,
-                    )
-                    content = " ".join(_find_all_strings(elem, recursive=False))
-                    if content:
-                        content = self._normalize_and_clean_text(content)
-                        current_content.append(content)
-                    continue
-
                 if elem.name in [h[0] for h in self._headers_to_split_on]:
                     if current_content:
                         documents.extend(
@@ -892,15 +870,11 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                     current_content.append(placeholder)
                     placeholder_count += 1
                 else:
-                    # For non-special elements (not headers, preserved,
-                    # or containers), recursively check if they contain any
-                    # preserved child elements. This allows preservation to work
-                    # at any nesting level, not just in hard-coded containers
-                    # like html, body, div, main.
+                    # Recursively process children to find nested headers or
+                    # preserved elements.
                     children = _find_all_tags(elem, recursive=False)
                     if children:
-                        # Element has children, we recursively process them to find
-                        # nested preserved elements deeper in the tree.
+                        # Element has children - recursively process them.
                         (
                             documents,
                             current_headers,
