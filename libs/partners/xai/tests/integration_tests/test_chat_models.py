@@ -37,12 +37,30 @@ def test_reasoning(output_version: Literal["", "v1"]) -> None:
     assert response.content
     assert response.additional_kwargs["reasoning_content"]
 
+    ## Check output tokens
+    reasoning_tokens = response.usage_metadata.get("output_token_details", {}).get(
+        "reasoning"
+    )
+    total_tokens = response.usage_metadata.get("output_tokens")
+    assert total_tokens > 0
+    assert reasoning_tokens > 0
+    assert total_tokens > reasoning_tokens
+
     # Test streaming
     full: BaseMessageChunk | None = None
     for chunk in chat_model.stream(input_message):
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.additional_kwargs["reasoning_content"]
+
+    ## Check output tokens
+    reasoning_tokens = full.usage_metadata.get("output_token_details", {}).get(
+        "reasoning"
+    )
+    total_tokens = full.usage_metadata.get("output_tokens")
+    assert total_tokens > 0
+    assert reasoning_tokens > 0
+    assert total_tokens > reasoning_tokens
 
     # Check that we can access reasoning content blocks
     assert response.content_blocks
