@@ -41,15 +41,15 @@ class TestStrictFormatter:
         fmt = StrictFormatter()
         with pytest.raises(
             ValueError,
-            match="No arguments should be provided, "
-            "everything should be passed as keyword arguments.",
+            match=r"No arguments should be provided, "
+            r"everything should be passed as keyword arguments\.",
         ):
             fmt.vformat("{}", ["arg"], {})
 
     def test_vformat_raises_on_multiple_positional_args(self) -> None:
         """Test that vformat raises ValueError with multiple positional args."""
         fmt = StrictFormatter()
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match=r"No arguments should be provided"):
             fmt.vformat("{} {}", ["arg1", "arg2"], {})
 
     def test_vformat_with_special_characters(self) -> None:
@@ -61,7 +61,9 @@ class TestStrictFormatter:
     def test_vformat_with_unicode(self) -> None:
         """Test vformat with unicode characters."""
         fmt = StrictFormatter()
-        result = fmt.vformat("{emoji} {text}", [], {"emoji": "🎉", "text": "こんにちは"})
+        result = fmt.vformat(
+            "{emoji} {text}", [], {"emoji": "🎉", "text": "こんにちは"}
+        )
         assert result == "🎉 こんにちは"
 
     def test_vformat_with_format_spec(self) -> None:
@@ -121,5 +123,5 @@ class TestFormatterSingleton:
 
     def test_formatter_rejects_positional_args(self) -> None:
         """Test that the formatter singleton rejects positional arguments."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match=r"No arguments should be provided"):
             formatter.format("{}", "arg")
