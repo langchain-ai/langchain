@@ -1,7 +1,7 @@
 import re
 import warnings
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import pytest
 from packaging import version
@@ -115,11 +115,10 @@ def test_create_system_message_prompt_template_from_template_partial() -> None:
     History:
     {history}
     """
-    json_prompt_instructions: dict = {}
     graph_analyst_template = SystemMessagePromptTemplate.from_template(
         template=graph_creator_content,
         input_variables=["history"],
-        partial_variables={"instructions": json_prompt_instructions},
+        partial_variables={"instructions": {}},
     )
     assert graph_analyst_template.format(history="history") == SystemMessage(
         content="\n    Your instructions are:\n    {}\n    History:\n    history\n    "
@@ -1214,46 +1213,43 @@ def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
             ("system", "You are an AI assistant named {name}."),
             ("system", [{"text": "You are an AI assistant named {name}."}]),
             SystemMessagePromptTemplate.from_template("you are {foo}"),
-            cast(
-                "tuple",
-                (
-                    "human",
-                    [
-                        "hello",
-                        {"text": "What's in this image?"},
-                        {"type": "text", "text": "What's in this image?"},
-                        {
-                            "type": "text",
-                            "text": "What's in this image?",
-                            "cache_control": {"type": "{foo}"},
+            (
+                "human",
+                [
+                    "hello",
+                    {"text": "What's in this image?"},
+                    {"type": "text", "text": "What's in this image?"},
+                    {
+                        "type": "text",
+                        "text": "What's in this image?",
+                        "cache_control": {"type": "{foo}"},
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": "data:image/jpeg;base64,{my_image}",
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/jpeg;base64,{my_image}"},
+                    },
+                    {"type": "image_url", "image_url": "{my_other_image}"},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": "{my_other_image}",
+                            "detail": "medium",
                         },
-                        {
-                            "type": "image_url",
-                            "image_url": "data:image/jpeg;base64,{my_image}",
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": "data:image/jpeg;base64,{my_image}"},
-                        },
-                        {"type": "image_url", "image_url": "{my_other_image}"},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": "{my_other_image}",
-                                "detail": "medium",
-                            },
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": "https://www.langchain.com/image.png"},
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": "data:image/jpeg;base64,foobar"},
-                        },
-                        {"image_url": {"url": "data:image/jpeg;base64,foobar"}},
-                    ],
-                ),
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "https://www.langchain.com/image.png"},
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/jpeg;base64,foobar"},
+                    },
+                    {"image_url": {"url": "data:image/jpeg;base64,foobar"}},
+                ],
             ),
             ("placeholder", "{chat_history}"),
             MessagesPlaceholder("more_history", optional=False),
@@ -1420,7 +1416,7 @@ def test_chat_prompt_template_data_prompt_from_message(
     cache_control_placeholder: str,
     source_data_placeholder: str,
 ) -> None:
-    prompt: dict = {
+    prompt: dict[str, Any] = {
         "type": "image",
         "source_type": "base64",
         "data": f"{source_data_placeholder}",
