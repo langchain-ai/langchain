@@ -2,11 +2,15 @@
 
 from langchain.agents.middleware.context_editing import ContextEditingMiddleware
 from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
+from langchain.agents.middleware.human_in_the_loop import HumanInTheLoopMiddleware
+from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddleware
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
 from langchain.agents.middleware.pii import PIIMiddleware
+from langchain.agents.middleware.shell_tool import ShellToolMiddleware
 from langchain.agents.middleware.summarization import SummarizationMiddleware
 from langchain.agents.middleware.todo import TodoListMiddleware
+from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
 from langchain.agents.middleware.tool_emulator import LLMToolEmulator
 from langchain.agents.middleware.tool_retry import ToolRetryMiddleware
 from langchain.agents.middleware.tool_selection import LLMToolSelectorMiddleware
@@ -115,8 +119,6 @@ def test_mixed_depends_on_types() -> None:
 
 def test_human_in_the_loop_with_depends_on() -> None:
     """Test that HumanInTheLoopMiddleware accepts depends_on parameter."""
-    from langchain.agents.middleware.human_in_the_loop import HumanInTheLoopMiddleware
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"search": True},
         depends_on=(ModelRetryMiddleware,),
@@ -127,8 +129,6 @@ def test_human_in_the_loop_with_depends_on() -> None:
 
 def test_model_call_limit_with_depends_on() -> None:
     """Test that ModelCallLimitMiddleware accepts depends_on parameter."""
-    from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddleware
-
     middleware = ModelCallLimitMiddleware(
         thread_limit=10,
         depends_on=(ModelRetryMiddleware,),
@@ -139,8 +139,6 @@ def test_model_call_limit_with_depends_on() -> None:
 
 def test_tool_call_limit_with_depends_on() -> None:
     """Test that ToolCallLimitMiddleware accepts depends_on parameter."""
-    from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
-
     middleware = ToolCallLimitMiddleware(
         thread_limit=5,
         depends_on=(ModelRetryMiddleware,),
@@ -151,8 +149,6 @@ def test_tool_call_limit_with_depends_on() -> None:
 
 def test_shell_tool_with_depends_on() -> None:
     """Test that ShellToolMiddleware accepts depends_on parameter."""
-    from langchain.agents.middleware.shell_tool import ShellToolMiddleware
-
     middleware = ShellToolMiddleware(
         workspace_root="/test",
         depends_on=(ModelRetryMiddleware,),

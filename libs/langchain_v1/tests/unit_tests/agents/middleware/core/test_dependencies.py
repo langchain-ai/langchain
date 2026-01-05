@@ -8,6 +8,7 @@ import pytest
 from langchain_core.messages import HumanMessage
 
 from langchain.agents import create_agent
+from langchain.agents.factory import _resolve_middleware_dependencies
 from langchain.agents.middleware import AgentMiddleware, before_model
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
@@ -111,8 +112,6 @@ def test_auto_instantiate_chain_dependencies():
 
 def test_dependency_ordering():
     """Test that dependencies are ordered correctly (dependencies before dependents)."""
-    from langchain.agents.factory import _resolve_middleware_dependencies
-
     middleware_c = MiddlewareC()
     middleware_b = MiddlewareB()
     middleware_a = MiddlewareA()
@@ -130,8 +129,6 @@ def test_dependency_ordering():
 
 def test_auto_instantiate_with_existing_dependency():
     """Test that existing dependencies are not duplicated."""
-    from langchain.agents.factory import _resolve_middleware_dependencies
-
     middleware_a = MiddlewareA(value="custom_A")
     middleware_b = MiddlewareB()
 
@@ -148,8 +145,6 @@ def test_auto_instantiate_with_existing_dependency():
 
 def test_multiple_dependents_same_dependency():
     """Test that multiple middleware can depend on the same middleware."""
-    from langchain.agents.factory import _resolve_middleware_dependencies
-
     middleware_b = MiddlewareB()
     middleware_d = MiddlewareD()
 
@@ -164,8 +159,6 @@ def test_multiple_dependents_same_dependency():
 
 def test_circular_dependency_detection():
     """Test that circular dependencies are detected and raise an error."""
-    from langchain.agents.factory import _resolve_middleware_dependencies
-
     middleware_1 = MiddlewareCircular1()
 
     # Should raise ValueError for circular dependency
@@ -192,8 +185,6 @@ def test_decorator_with_depends_on():
 
 def test_complex_dependency_graph():
     """Test a complex dependency graph with multiple levels."""
-    from langchain.agents.factory import _resolve_middleware_dependencies
-
     # Create a complex graph:
     # D depends on A and B
     # C depends on B
@@ -221,15 +212,12 @@ def test_complex_dependency_graph():
 
 def test_empty_middleware_list():
     """Test that empty middleware list works correctly."""
-    from langchain.agents.factory import _resolve_middleware_dependencies
-
     resolved = _resolve_middleware_dependencies([])
     assert len(resolved) == 0
 
 
 def test_middleware_with_no_depends_on_attribute():
     """Test middleware that doesn't have depends_on attribute (legacy middleware)."""
-    from langchain.agents.factory import _resolve_middleware_dependencies
 
     class LegacyMiddleware(AgentMiddleware):
         """Legacy middleware without depends_on."""
@@ -294,8 +282,6 @@ def test_agent_execution_with_dependencies():
 
 def test_dependency_with_instance():
     """Test that middleware can depend on an instance (not just a class)."""
-    from langchain.agents.factory import _resolve_middleware_dependencies
-
     # Create a custom instance with specific configuration
     middleware_a = MiddlewareA(value="custom_instance")
 
@@ -323,8 +309,6 @@ def test_dependency_with_instance():
 
 def test_mixed_class_and_instance_dependencies():
     """Test that middleware can depend on both classes and instances."""
-    from langchain.agents.factory import _resolve_middleware_dependencies
-
     # Create a custom instance
     middleware_a_instance = MiddlewareA(value="instance_A")
 
