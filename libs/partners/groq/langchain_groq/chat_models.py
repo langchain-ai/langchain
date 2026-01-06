@@ -72,6 +72,11 @@ from langchain_groq.version import __version__
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
 
+# Vision-capable models
+VISION_CAPABLE_MODELS = [
+    "meta-llama/llama-4-scout-17b-16e-instruct",
+    "meta-llama/llama-4-maverick-17b-128e-instruct",
+]
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
     default = _MODEL_PROFILES.get(model_name) or {}
@@ -169,7 +174,34 @@ class ChatGroq(BaseChatModel):
         'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
         'logprobs': None}, id='run-ecc71d70-e10c-4b69-8b8c-b8027d95d4b8-0')
         ```
+    Vision (multimodal):
+    ```python
+            from langchain_groq import ChatGroq
+            from langchain_core.messages import HumanMessage
 
+            model = ChatGroq(model="meta-llama/llama-4-scout-17b-16e-instruct")
+
+            message = HumanMessage(content=[
+                {"type": "text", "text": "Describe this image in detail"},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": "example_url.jpg"
+                    }
+                }
+            ])
+
+            response = model.invoke([message])
+            print(response.content)
+    ```
+
+            Vision-capable models:
+            - meta-llama/llama-4-scout-17b-16e-instruct
+            - meta-llama/llama-4-maverick-17b-128e-instruct
+
+            Maximum image size: 20MB per request
+    ```
+    ```
     Stream:
         ```python
         # Streaming `text` for each content chunk received
@@ -743,6 +775,36 @@ class ChatGroq(BaseChatModel):
             params["max_tokens"] = self.max_tokens
         return params
 
+    def _validate_vision_messages(self, messages: list[BaseMessage]) -> None:
+        """Validate that vision content is only used with vision-capable models.
+
+        Args:
+            messages: List of messages to validate.
+
+        Raises:
+            ValueError: If vision content is used with a non-vision model.
+        """
+        # Check if any message contains image content
+        has_vision_content = False
+        for message in messages:
+            if isinstance(message.content, list):
+                # Check if any content block is an image
+                for block in message.content:
+                    if isinstance(block, dict) and block.get("type") == "image_url":
+                        has_vision_content = True
+                        break
+                if has_vision_content:
+                    break
+
+        # If vision content found, validate model supports it
+        if has_vision_content and self.model_name not in VISION_CAPABLE_MODELS:
+            msg = (
+                f"Model '{self.model_name}' does not support vision inputs. "
+                f"Use one of the following vision-capable models: "
+                f"{', '.join(VISION_CAPABLE_MODELS)}"
+            )
+            raise ValueError(msg)
+
     def _create_chat_result(
         self, response: dict | BaseModel, params: dict
     ) -> ChatResult:
@@ -779,6 +841,7 @@ class ChatGroq(BaseChatModel):
         params = self._default_params
         if stop is not None:
             params["stop"] = stop
+        self._validate_vision_messages(messages)
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
@@ -1256,6 +1319,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         # Translate v1 content
+        # Content can be either:
+        # - str: "Hello, how are you?" (text-only)
+        # - list: [{"type": "text", ...}, {"type": "image_url", ...}] (multimodal)
+        # Groq API accepts both formats (OpenAI-compatible)
         if message.response_metadata.get("output_version") == "v1":
             new_content, new_additional_kwargs = _convert_from_v1_to_groq(
                 message.content_blocks, message.response_metadata.get("model_provider")
