@@ -608,6 +608,10 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         Returns:
             The chain output.
 
+            Note:
+                If the chain returns a structured output (e.g. a dict), this method will
+                return that dict.
+
         Example:
             ```python
             # Suppose we have a single-input chain that takes a 'question' string:
@@ -629,14 +633,38 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             if len(args) != 1:
                 msg = "`run` supports only one positional argument."
                 raise ValueError(msg)
-            return self(args[0], callbacks=callbacks, tags=tags, metadata=metadata)[
+            return_val = self(args[0], callbacks=callbacks, tags=tags, metadata=metadata)[
                 _output_key
             ]
+            if isinstance(return_val, dict):
+                warnings.warn(
+                    (
+                        "Chain.run returned a structured output (dict). "
+                        "This is expected for chains that produce structured outputs (e.g. structured-output/Tool calling). "
+                        "If you expected a string, either extract the desired key from the returned dict, "
+                        "or use an appropriate helper to serialize it (e.g., `json.dumps(result)`). "
+                        "See: https://docs.langchain.com/oss/python/langchain/structured-output for more details."
+                    ),
+                    UserWarning,
+                )
+            return return_val
 
         if kwargs and not args:
-            return self(kwargs, callbacks=callbacks, tags=tags, metadata=metadata)[
+            return_val = self(kwargs, callbacks=callbacks, tags=tags, metadata=metadata)[
                 _output_key
             ]
+            if isinstance(return_val, dict):
+                warnings.warn(
+                    (
+                        "Chain.run returned a structured output (dict). "
+                        "This is expected for chains that produce structured outputs (e.g. structured-output/Tool calling). "
+                        "If you expected a string, either extract the desired key from the returned dict, "
+                        "or use an appropriate helper to serialize it (e.g., `json.dumps(result)`). "
+                        "See: https://docs.langchain.com/oss/python/langchain/structured-output for more details."
+                    ),
+                    UserWarning,
+                )
+            return return_val
 
         if not kwargs and not args:
             msg = (
