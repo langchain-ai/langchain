@@ -184,7 +184,7 @@ class _TracerCore(ABC):
             # Changing this to "chat_model" may break triggering on_llm_start
             run_type="chat_model",
             tags=tags,
-            name=name,  # type: ignore[arg-type]
+            name=name,
         )
 
     def _create_llm_run(
@@ -213,7 +213,7 @@ class _TracerCore(ABC):
             start_time=start_time,
             run_type="llm",
             tags=tags or [],
-            name=name,  # type: ignore[arg-type]
+            name=name,
         )
 
     def _llm_run_with_token_event(
@@ -346,7 +346,7 @@ class _TracerCore(ABC):
             start_time=start_time,
             child_runs=[],
             run_type=run_type or "chain",
-            name=name,  # type: ignore[arg-type]
+            name=name,
             tags=tags or [],
         )
 
@@ -443,7 +443,7 @@ class _TracerCore(ABC):
             child_runs=[],
             run_type="tool",
             tags=tags or [],
-            name=name,  # type: ignore[arg-type]
+            name=name,
         )
 
     def _complete_tool_run(

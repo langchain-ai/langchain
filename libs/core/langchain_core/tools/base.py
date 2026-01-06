@@ -566,8 +566,11 @@ class ChildTool(BaseTool):
         elif self.args_schema and issubclass(self.args_schema, BaseModelV1):
             json_schema = self.args_schema.schema()
         else:
-            input_schema = self.get_input_schema()
-            json_schema = input_schema.model_json_schema()
+            input_schema = self.tool_call_schema
+            if isinstance(input_schema, dict):
+                json_schema = input_schema
+            else:
+                json_schema = input_schema.model_json_schema()
         return cast("dict", json_schema["properties"])
 
     @property
