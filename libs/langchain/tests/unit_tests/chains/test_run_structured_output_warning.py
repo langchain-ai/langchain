@@ -24,6 +24,7 @@ class DummyStructuredChain(Chain):
         # The 'output' key contains the structured result (a dict)
         return {"output": {"field1": "value1", "field2": 2}}
 
+
 def test_run_emits_warning_for_structured_output() -> None:
     c = DummyStructuredChain()
     with warnings.catch_warnings(record=True) as w:
