@@ -14,7 +14,10 @@ from tests.unit_tests.agents.model import FakeToolCallingModel
 class MockChatModel(BaseChatModel):
     """Mock chat model for testing."""
 
-    def invoke(self, prompt):  # type: ignore[no-untyped-def]
+    def invoke(self, prompt, **kwargs):  # type: ignore[no-untyped-def]
+        return AIMessage(content="Generated summary")
+
+    async def ainvoke(self, prompt, **kwargs):  # type: ignore[no-untyped-def]
         return AIMessage(content="Generated summary")
 
     def _generate(self, messages, **kwargs):  # type: ignore[no-untyped-def]
@@ -139,7 +142,7 @@ def test_summarization_middleware_summary_creation() -> None:
 
     # Test error handling
     class ErrorModel(BaseChatModel):
-        def invoke(self, prompt):
+        def invoke(self, prompt, **kwargs):
             msg = "Model error"
             raise ValueError(msg)
 
