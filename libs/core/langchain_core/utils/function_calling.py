@@ -121,7 +121,7 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
 
 def _get_schema_from_model(
     model: type, *, field_description: str | None = None
-) -> dict:
+) -> dict[str, Any]:
     """Gets the JSON schema for a Pydantic model, handling nested model descriptions.
 
     This function recursively generates a JSON schema for a Pydantic model.
@@ -136,6 +136,7 @@ def _get_schema_from_model(
     Returns:
         A dictionary representing the JSON schema of the model.
     """
+    schema: dict[str, Any]
     if hasattr(model, "model_json_schema"):
         schema = model.model_json_schema()
     elif hasattr(model, "schema"):
