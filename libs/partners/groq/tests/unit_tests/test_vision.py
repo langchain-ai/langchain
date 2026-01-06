@@ -4,7 +4,6 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from langchain_core.messages import HumanMessage
 
 from langchain_groq.chat_models import ChatGroq
@@ -75,7 +74,10 @@ def test_vision_with_unsupported_model() -> None:
     message = HumanMessage(
         content=[
             {"type": "text", "text": "What's in this image?"},
-            {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}},
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/image.jpg"},
+            },
         ]
     )
 
@@ -123,4 +125,3 @@ def test_text_only_still_works() -> None:
         assert len(messages) == 1
         assert messages[0]["role"] == "user"
         assert messages[0]["content"] == "Hello, how are you?"
-

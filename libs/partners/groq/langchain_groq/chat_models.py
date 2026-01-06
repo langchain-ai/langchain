@@ -78,6 +78,7 @@ VISION_CAPABLE_MODELS = [
     "meta-llama/llama-4-maverick-17b-128e-instruct",
 ]
 
+
 def _get_default_model_profile(model_name: str) -> ModelProfile:
     default = _MODEL_PROFILES.get(model_name) or {}
     return default.copy()
