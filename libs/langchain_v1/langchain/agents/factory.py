@@ -1513,6 +1513,37 @@ def _fetch_last_ai_and_tool_messages(
     return last_ai_message, tool_messages
 
 
+# Known state fields that contain non-serializable objects (e.g., subprocess handles,
+# file handles, threading objects) and should be excluded when passing state to Send.
+# These fields are typically marked with UntrackedValue/PrivateStateAttr annotations
+# but need to be filtered here because Send serializes its entire arg payload.
+_NON_SERIALIZABLE_STATE_FIELDS = frozenset(
+    {
+        # ShellToolMiddleware: contains subprocess.Popen, threading.Thread,
+        # queue.Queue, file handles, weakref.finalize - all non-serializable
+        "shell_session_resources",
+    }
+)
+
+
+def _filter_serializable_state(state: dict[str, Any]) -> dict[str, Any]:
+    """Filter out non-serializable state fields before passing to Send.
+
+    When Send objects are checkpointed, their entire arg payload (including state)
+    gets serialized via msgpack. Middleware state fields containing objects like
+    subprocess handles, threading objects, or file handles will cause serialization
+    failures. This function removes such fields while preserving all serializable
+    state needed for tool execution.
+
+    Args:
+        state: The full agent state dict.
+
+    Returns:
+        A filtered copy of the state with non-serializable fields removed.
+    """
+    return {k: v for k, v in state.items() if k not in _NON_SERIALIZABLE_STATE_FIELDS}
+
+
 def _make_model_to_tools_edge(
     *,
     model_destination: str,
@@ -1546,13 +1577,16 @@ def _make_model_to_tools_edge(
 
         # 3. if there are pending tool calls, jump to the tool node
         if pending_tool_calls:
+            # Filter out non-serializable state fields to prevent msgpack errors
+            # when checkpointing Send objects (fixes #34490)
+            serializable_state = _filter_serializable_state(state)
             return [
                 Send(
                     "tools",
                     ToolCallWithContext(
                         __type="tool_call_with_context",
                         tool_call=tool_call,
-                        state=state,
+                        state=serializable_state,
                     ),
                 )
                 for tool_call in pending_tool_calls
