@@ -150,7 +150,7 @@ def _get_schema_from_model(
         schema["description"] = field_description
 
     # Recursively handle nested models to propagate descriptions.
-    # Only apply to direct model references, not wrapped types like List[Model].
+    # Only update the description field, preserving other schema attributes.
     # Check for Pydantic v1.
     if (
         is_basemodel_subclass(model)
@@ -158,16 +158,22 @@ def _get_schema_from_model(
         and "definitions" in schema
     ):
         for field_name, field in model.__fields__.items():
-            # Only replace if field is a direct model reference (not List[Model], etc.)
+            # Only process if field is a direct model reference (not List[Model], etc.)
             # In Pydantic v1, outer_type_ == type_ for direct references.
             if (
                 field.type_.__name__ in schema["definitions"]
                 and field.outer_type_ == field.type_
+                and is_basemodel_subclass(field.type_)
             ):
-                # Recurse, passing the description from the parent field.
-                schema["properties"][field_name] = _get_schema_from_model(
+                # Get the nested schema to extract its description.
+                nested_schema = _get_schema_from_model(
                     field.type_, field_description=field.field_info.description
                 )
+                # Only update description, preserve existing property schema.
+                if nested_schema.get("description"):
+                    schema["properties"][field_name]["description"] = nested_schema[
+                        "description"
+                    ]
 
     # Check for Pydantic v2.
     if (
@@ -176,7 +182,7 @@ def _get_schema_from_model(
         and "$defs" in schema
     ):
         for field_name, field_info in model.model_fields.items():
-            # Only replace if field is a direct BaseModel reference.
+            # Only process if field is a direct BaseModel reference.
             # Skip generic types (List[Model], etc.) and non-BaseModel types.
             if (
                 field_info.annotation
@@ -185,10 +191,15 @@ def _get_schema_from_model(
                 and get_origin(field_info.annotation) is None
                 and is_basemodel_subclass(field_info.annotation)
             ):
-                # Recurse, passing the description from the parent field.
-                schema["properties"][field_name] = _get_schema_from_model(
+                # Get the nested schema to extract its description.
+                nested_schema = _get_schema_from_model(
                     field_info.annotation, field_description=field_info.description
                 )
+                # Only update description, preserve existing property schema.
+                if nested_schema.get("description"):
+                    schema["properties"][field_name]["description"] = nested_schema[
+                        "description"
+                    ]
 
     return schema
 
