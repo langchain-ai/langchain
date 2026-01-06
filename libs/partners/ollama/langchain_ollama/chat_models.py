@@ -738,6 +738,21 @@ class ChatOllama(BaseChatModel):
         if self.stop is not None:
             stop = self.stop
 
+        if "response_format" in kwargs:
+            response_format = kwargs.pop("response_format")
+            if response_format and "format" not in kwargs:
+                if (
+                    isinstance(response_format, dict)
+                    and response_format.get("type") == "json_object"
+                ):
+                    kwargs["format"] = "json"
+                elif isinstance(response_format, str) and "json" in response_format.lower():
+                    kwargs["format"] = "json"
+                else:
+                    log.warning(
+                        "Unsupported response_format: %s. ignoring.", response_format
+                    )
+
         options_dict = kwargs.pop("options", None)
         if options_dict is None:
             # Only include parameters that are explicitly set (not None)

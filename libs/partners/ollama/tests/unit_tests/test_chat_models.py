@@ -473,3 +473,46 @@ def test_chat_ollama_ignores_strict_arg() -> None:
         # Check that 'strict' was NOT passed to the client
         call_kwargs = mock_client.chat.call_args[1]
         assert "strict" not in call_kwargs
+
+
+def test_response_format_passed_to_format(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test that response_format is correctly mapped to format argument."""
+    response = [
+        {
+            "model": "test-model",
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "done": True,
+            "done_reason": "stop",
+            "message": {"role": "assistant", "content": "{}"},
+        }
+    ]
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = response
+
+        llm = ChatOllama(model="test-model")
+
+        # Case 1: response_format={"type": "json_object"} -> format="json"
+        llm.invoke([HumanMessage("Hello")], response_format={"type": "json_object"})
+        call_kwargs = mock_client.chat.call_args[1]
+        assert call_kwargs["format"] == "json"
+        assert "response_format" not in call_kwargs
+
+        # Case 2: response_format="json" -> format="json"
+        llm.invoke([HumanMessage("Hello")], response_format="json")
+        call_kwargs = mock_client.chat.call_args[1]
+        assert call_kwargs["format"] == "json"
+        assert "response_format" not in call_kwargs
+
+        # Case 3: Unsupported format -> warning logged, format not set
+        with caplog.at_level(logging.WARNING):
+            llm.invoke([HumanMessage("Hello")], response_format={"type": "xml"})
+            call_kwargs = mock_client.chat.call_args[1]
+            assert "format" not in call_kwargs or call_kwargs["format"] is None
+            assert "response_format" not in call_kwargs
+            assert "Unsupported response_format" in caplog.text
+
