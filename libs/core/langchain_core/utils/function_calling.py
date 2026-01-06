@@ -13,7 +13,6 @@ from typing import (
     Annotated,
     Any,
     Literal,
-    Optional,
     Union,
     cast,
     get_args,
@@ -121,7 +120,7 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
 
 
 def _get_schema_from_model(
-    model: type, *, field_description: Optional[str] = None
+    model: type, *, field_description: str | None = None
 ) -> dict:
     """Gets the JSON schema for a Pydantic model, handling nested model descriptions.
 
