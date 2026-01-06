@@ -521,7 +521,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
                 returning it to the model.
 
                 !!! warning
-                    Redaction rules are applied post execution and does not prevent
+                    Redaction rules are applied post execution and do not prevent
                     exfiltration of secrets or sensitive data when using
                     `HostExecutionPolicy`.
 
