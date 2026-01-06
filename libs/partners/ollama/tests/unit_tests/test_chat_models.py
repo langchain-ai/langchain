@@ -515,4 +515,3 @@ def test_response_format_passed_to_format(
             assert "format" not in call_kwargs or call_kwargs["format"] is None
             assert "response_format" not in call_kwargs
             assert "Unsupported response_format" in caplog.text
-

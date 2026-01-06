@@ -744,13 +744,15 @@ class ChatOllama(BaseChatModel):
                 if (
                     isinstance(response_format, dict)
                     and response_format.get("type") == "json_object"
+                ) or (
+                    isinstance(response_format, str)
+                    and "json" in response_format.lower()
                 ):
-                    kwargs["format"] = "json"
-                elif isinstance(response_format, str) and "json" in response_format.lower():
                     kwargs["format"] = "json"
                 else:
                     log.warning(
-                        "Unsupported response_format: %s. ignoring.", response_format
+                        "Unsupported response_format: %s. ignoring.",
+                        response_format,
                     )
 
         options_dict = kwargs.pop("options", None)
