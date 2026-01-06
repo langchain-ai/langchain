@@ -176,13 +176,14 @@ def _get_schema_from_model(
         and "$defs" in schema
     ):
         for field_name, field_info in model.model_fields.items():
-            # Only replace if field is a direct model reference (not List[Model], etc.)
-            # Check that annotation is not a generic type (has no origin).
+            # Only replace if field is a direct BaseModel reference.
+            # Skip generic types (List[Model], etc.) and non-BaseModel types.
             if (
                 field_info.annotation
                 and hasattr(field_info.annotation, "__name__")
                 and field_info.annotation.__name__ in schema["$defs"]
                 and get_origin(field_info.annotation) is None
+                and is_basemodel_subclass(field_info.annotation)
             ):
                 # Recurse, passing the description from the parent field.
                 schema["properties"][field_name] = _get_schema_from_model(
