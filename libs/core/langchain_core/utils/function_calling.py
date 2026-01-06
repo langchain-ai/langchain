@@ -13,6 +13,7 @@ from typing import (
     Annotated,
     Any,
     Literal,
+    Optional,
     Union,
     cast,
     get_args,
