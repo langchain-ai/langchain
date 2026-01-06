@@ -1841,6 +1841,7 @@ def count_tokens_approximately(
     chars_per_token: float = 4.0,
     extra_tokens_per_message: float = 3.0,
     count_name: bool = True,
+    use_usage_metadata_scaling: bool = False,
 ) -> int:
     """Approximate the total number of tokens in messages.
 
@@ -1860,6 +1861,14 @@ def count_tokens_approximately(
             [See more here](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb).
         count_name: Whether to include message names in the count.
             Enabled by default.
+        use_usage_metadata_scaling: If True and conditions are met, use usage metadata
+            from AIMessages to scale the approximate token count. Conditions:
+            (1) All AIMessages have usage_metadata with total_tokens,
+            (2) All AIMessages have consistent model_provider in response_metadata,
+            (3) total_tokens are monotonically non-decreasing.
+            When these conditions are met, the approximate count is scaled based on
+            the ratio of actual total_tokens to approximate count up to the last
+            AIMessage.
 
     Returns:
         Approximate number of tokens in the messages.
@@ -1874,8 +1883,24 @@ def count_tokens_approximately(
     !!! version-added "Added in `langchain-core` 0.3.46"
 
     """
+    message_list = list(convert_to_messages(messages))
+
+    # Track AIMessages for potential usage metadata scaling
+    ai_messages_with_indices: list[tuple[int, AIMessage]] = []
+    if use_usage_metadata_scaling:
+        ai_messages_with_indices = [
+            (i, msg) for i, msg in enumerate(message_list) if isinstance(msg, AIMessage)
+        ]
+
+    # Determine if we need to track partial count (up to last AIMessage)
+    last_ai_index = -1
+    if ai_messages_with_indices:
+        last_ai_index = ai_messages_with_indices[-1][0]
+
     token_count = 0.0
-    for message in convert_to_messages(messages):
+    token_count_partial = 0.0
+
+    for i, message in enumerate(message_list):
         message_chars = 0
         if isinstance(message.content, str):
             message_chars += len(message.content)
@@ -1906,13 +1931,93 @@ def count_tokens_approximately(
         # NOTE: we're rounding up per message to ensure that
         # individual message token counts add up to the total count
         # for a list of messages
-        token_count += math.ceil(message_chars / chars_per_token)
+        message_tokens = (
+            math.ceil(message_chars / chars_per_token) + extra_tokens_per_message
+        )
+        token_count += message_tokens
 
-        # add extra tokens per message
-        token_count += extra_tokens_per_message
+        # Track partial count if needed
+        if i <= last_ai_index:
+            token_count_partial += message_tokens
 
     # round up once more time in case extra_tokens_per_message is a float
-    return math.ceil(token_count)
+    approx_count_full = math.ceil(token_count)
+
+    # Apply usage metadata scaling if conditions are met
+    if use_usage_metadata_scaling and ai_messages_with_indices:
+        return _apply_usage_metadata_scaling(
+            ai_messages_with_indices,
+            token_count_partial,
+            approx_count_full,
+        )
+
+    return approx_count_full
+
+
+def _apply_usage_metadata_scaling(
+    ai_messages_with_indices: list[tuple[int, AIMessage]],
+    token_count_partial: float,
+    approx_count_full: int,
+) -> int:
+    """Apply scaling based on usage metadata from AIMessages.
+
+    Args:
+        ai_messages_with_indices: List of (index, AIMessage) tuples.
+        token_count_partial: Approximate token count up to last AIMessage.
+        approx_count_full: Approximate token count for full message sequence.
+
+    Returns:
+        Scaled token count if conditions are met, otherwise approx_count_full.
+    """
+    try:
+        # Condition 1: All AIMessages have usage_metadata with total_tokens
+        if not all(
+            msg.usage_metadata is not None and "total_tokens" in msg.usage_metadata
+            for _, msg in ai_messages_with_indices
+        ):
+            return approx_count_full
+
+        # Condition 2: All AIMessages have model_provider in response_metadata
+        if not all(
+            "model_provider" in msg.response_metadata
+            for _, msg in ai_messages_with_indices
+        ):
+            return approx_count_full
+
+        # Condition 2b: All model_providers are consistent
+        model_providers = {
+            msg.response_metadata["model_provider"]
+            for _, msg in ai_messages_with_indices
+        }
+        if len(model_providers) != 1:
+            return approx_count_full
+
+        # Condition 3: total_tokens are monotonically non-decreasing
+        for i in range(len(ai_messages_with_indices) - 1):
+            current_total = ai_messages_with_indices[i][1].usage_metadata[
+                "total_tokens"
+            ]  # type: ignore[index]
+            next_total = ai_messages_with_indices[i + 1][1].usage_metadata[
+                "total_tokens"
+            ]  # type: ignore[index]
+            if current_total > next_total:
+                return approx_count_full
+
+        # All conditions met - apply scaling
+        approx_count_partial = math.ceil(token_count_partial)
+        last_ai_msg = ai_messages_with_indices[-1][1]
+        actual_total = last_ai_msg.usage_metadata["total_tokens"]  # type: ignore[index]
+
+        # Avoid division by zero
+        if approx_count_partial == 0:
+            return approx_count_full
+
+        scale_factor = actual_total / approx_count_partial
+        return math.ceil(approx_count_full * scale_factor)
+
+    except (KeyError, TypeError, ZeroDivisionError):
+        # If anything goes wrong, fall back to approximate count
+        return approx_count_full
 
 
 # Mapping from string shortcuts to token counter functions
