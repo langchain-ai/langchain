@@ -473,3 +473,110 @@ def test_chat_ollama_ignores_strict_arg() -> None:
         # Check that 'strict' was NOT passed to the client
         call_kwargs = mock_client.chat.call_args[1]
         assert "strict" not in call_kwargs
+
+
+def test_chat_ollama_supports_response_format_json_schema() -> None:
+    """Test that ChatOllama correctly maps json_schema response_format to format."""
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = [
+            {
+                "model": "gpt-oss:20b",
+                "created_at": "2025-01-01T00:00:00.000000000Z",
+                "done": True,
+                "done_reason": "stop",
+                "message": {"role": "assistant", "content": "{}"},
+            }
+        ]
+
+        llm = ChatOllama(model="gpt-oss:20b")
+        schema = {"type": "object", "properties": {"foo": {"type": "string"}}}
+        response_format = {
+            "type": "json_schema",
+            "json_schema": {"name": "test", "schema": schema, "strict": True},
+        }
+
+        llm.invoke([HumanMessage("Hello")], response_format=response_format)
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert "response_format" not in call_kwargs
+        assert call_kwargs.get("format") == schema
+
+
+def test_chat_ollama_supports_response_format_json_object() -> None:
+    """Test ChatOllama maps json_object response_format to format='json'."""
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = [
+            {
+                "model": "gpt-oss:20b",
+                "created_at": "2025-01-01T00:00:00.000000000Z",
+                "done": True,
+                "done_reason": "stop",
+                "message": {"role": "assistant", "content": "{}"},
+            }
+        ]
+
+        llm = ChatOllama(model="gpt-oss:20b")
+        response_format = {"type": "json_object"}
+
+        llm.invoke([HumanMessage("Hello")], response_format=response_format)
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert "response_format" not in call_kwargs
+        assert call_kwargs.get("format") == "json"
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = [
+            {
+                "model": "gpt-oss:20b",
+                "created_at": "2025-01-01T00:00:00.000000000Z",
+                "done": True,
+                "done_reason": "stop",
+                "message": {"role": "assistant", "content": "{}"},
+            }
+        ]
+
+        llm = ChatOllama(model="gpt-oss:20b")
+        response_format = {"type": "json_object"}
+
+        # User passes BOTH format param and response_format
+        llm.invoke(
+            [HumanMessage("Hello")],
+            format="some_custom_format",
+            response_format=response_format,
+        )
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert "response_format" not in call_kwargs
+        assert call_kwargs.get("format") == "some_custom_format"
+
+
+def test_chat_ollama_ignores_invalid_response_format_type() -> None:
+    """Test that ChatOllama ignores non-dict response_format without crashing."""
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = [
+            {
+                "model": "gpt-oss:20b",
+                "created_at": "2025-01-01T00:00:00.000000000Z",
+                "done": True,
+                "done_reason": "stop",
+                "message": {"role": "assistant", "content": "{}"},
+            }
+        ]
+
+        llm = ChatOllama(model="gpt-oss:20b")
+        # Pass a list (invalid type) instead of a dict
+        response_format = ["invalid_type"]
+
+        # This should not raise AttributeError
+        llm.invoke([HumanMessage("Hello")], response_format=response_format)
+
+        call_kwargs = mock_client.chat.call_args[1]
+        # response_format should be removed even if invalid type
+        assert "response_format" not in call_kwargs
+        # Format should remain None since we couldn't parse it
+        assert call_kwargs.get("format") is None

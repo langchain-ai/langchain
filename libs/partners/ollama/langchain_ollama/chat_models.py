@@ -763,12 +763,25 @@ class ChatOllama(BaseChatModel):
                 if v is not None
             }
 
+        format_param = kwargs.pop("format", self.format)
+        if "response_format" in kwargs:
+            response_format = kwargs.pop("response_format")
+            if (
+                format_param is None
+                and response_format
+                and isinstance(response_format, dict)
+            ):
+                if response_format.get("type") == "json_object":
+                    format_param = "json"
+                elif response_format.get("type") == "json_schema":
+                    format_param = response_format.get("json_schema", {}).get("schema")
+
         params = {
             "messages": ollama_messages,
             "stream": kwargs.pop("stream", True),
             "model": kwargs.pop("model", self.model),
             "think": kwargs.pop("reasoning", self.reasoning),
-            "format": kwargs.pop("format", self.format),
+            "format": format_param,
             "options": options_dict,
             "keep_alive": kwargs.pop("keep_alive", self.keep_alive),
             **kwargs,
