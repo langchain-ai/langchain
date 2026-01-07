@@ -626,6 +626,132 @@ def test_single_write_todos_call_allowed() -> None:
     assert result is None
 
 
+async def test_parallel_write_todos_calls_rejected_async() -> None:
+    """Test async version - parallel write_todos calls are rejected with error messages."""
+    middleware = TodoListMiddleware()
+
+    # Create an AI message with two write_todos tool calls
+    ai_message = AIMessage(
+        content="I'll update the todos",
+        tool_calls=[
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                "id": "call_1",
+                "type": "tool_call",
+            },
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 2", "status": "pending"}]},
+                "id": "call_2",
+                "type": "tool_call",
+            },
+        ],
+    )
+
+    state: PlanningState = {"messages": [HumanMessage(content="Hello"), ai_message]}
+
+    # Call aafter_model hook
+    result = await middleware.aafter_model(state, _fake_runtime())
+
+    # Should return error messages
+    assert result is not None
+    assert "messages" in result
+    messages = result["messages"]
+
+    # Should have 2 error tool messages (tool calls remain in AI message)
+    assert len(messages) == 2
+
+    # Both should be error tool messages
+    error_msg_1 = messages[0]
+    assert isinstance(error_msg_1, ToolMessage)
+    assert error_msg_1.tool_call_id == "call_1"
+    assert error_msg_1.status == "error"
+    assert "never be called multiple times in parallel" in error_msg_1.content
+
+    error_msg_2 = messages[1]
+    assert isinstance(error_msg_2, ToolMessage)
+    assert error_msg_2.tool_call_id == "call_2"
+    assert error_msg_2.status == "error"
+    assert "never be called multiple times in parallel" in error_msg_2.content
+
+
+async def test_parallel_write_todos_with_other_tools_async() -> None:
+    """Test async version - parallel write_todos calls are rejected but other tool calls remain."""
+    middleware = TodoListMiddleware()
+
+    # Create an AI message with two write_todos calls and one other tool call
+    ai_message = AIMessage(
+        content="I'll do multiple things",
+        tool_calls=[
+            {
+                "name": "some_other_tool",
+                "args": {"param": "value"},
+                "id": "call_other",
+                "type": "tool_call",
+            },
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                "id": "call_1",
+                "type": "tool_call",
+            },
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 2", "status": "pending"}]},
+                "id": "call_2",
+                "type": "tool_call",
+            },
+        ],
+    )
+
+    state: PlanningState = {"messages": [HumanMessage(content="Hello"), ai_message]}
+
+    # Call aafter_model hook
+    result = await middleware.aafter_model(state, _fake_runtime())
+
+    # Should return error messages
+    assert result is not None
+    assert "messages" in result
+    messages = result["messages"]
+
+    # Should have 2 error tool messages (all tool calls remain in AI message)
+    assert len(messages) == 2
+
+    # Both should be error tool messages for write_todos
+    for i, msg in enumerate(messages, 1):
+        assert isinstance(msg, ToolMessage)
+        assert msg.tool_call_id == f"call_{i}"
+        assert msg.status == "error"
+        assert "never be called multiple times in parallel" in msg.content
+
+
+async def test_single_write_todos_call_allowed_async() -> None:
+    """Test async version - a single write_todos call is allowed."""
+    middleware = TodoListMiddleware()
+
+    # Create an AI message with one write_todos tool call
+    ai_message = AIMessage(
+        content="I'll update the todos",
+        tool_calls=[
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                "id": "call_1",
+                "type": "tool_call",
+            },
+        ],
+    )
+
+    state: PlanningState = {"messages": [HumanMessage(content="Hello"), ai_message]}
+
+    # Call aafter_model hook
+    result = await middleware.aafter_model(state, _fake_runtime())
+
+    # Should return None (no intervention needed)
+    assert result is None
+
+
 async def test_handler_called_with_modified_request_async() -> None:
     """Test async version - handler receives the modified request."""
     middleware = TodoListMiddleware()

@@ -137,7 +137,9 @@ class TodoListMiddleware(AgentMiddleware):
     into task completion status.
 
     The middleware automatically injects system prompts that guide the agent on when
-    and how to use the todo functionality effectively.
+    and how to use the todo functionality effectively. It also enforces that the
+    `write_todos` tool is called at most once per model turn, since the tool replaces
+    the entire todo list and parallel calls would create ambiguity about precedence.
 
     Example:
         ```python
@@ -226,23 +228,36 @@ class TodoListMiddleware(AgentMiddleware):
         return await handler(request.override(system_message=new_system_message))
 
     def after_model(
-        self, state: AgentState, runtime: Runtime
+        self,
+        state: AgentState,
+        runtime: Runtime,  # noqa: ARG002
     ) -> dict[str, Any] | None:
-        """Check for parallel write_todos tool calls and raise an error if detected."""
+        """Check for parallel write_todos tool calls and return errors if detected.
+
+        The todo list is designed to be updated at most once per model turn. Since
+        the `write_todos` tool replaces the entire todo list with each call, making
+        multiple parallel calls would create ambiguity about which update should take
+        precedence. This method prevents such conflicts by rejecting any response that
+        contains multiple write_todos tool calls.
+
+        Args:
+            state: The current agent state containing messages.
+            runtime: The LangGraph runtime instance.
+
+        Returns:
+            A dict containing error ToolMessages for each write_todos call if multiple
+            parallel calls are detected, otherwise None to allow normal execution.
+        """
         messages = state["messages"]
         if not messages:
             return None
 
-        last_ai_msg = next(
-            (msg for msg in reversed(messages) if isinstance(msg, AIMessage)), None
-        )
+        last_ai_msg = next((msg for msg in reversed(messages) if isinstance(msg, AIMessage)), None)
         if not last_ai_msg or not last_ai_msg.tool_calls:
             return None
 
         # Count write_todos tool calls
-        write_todos_calls = [
-            tc for tc in last_ai_msg.tool_calls if tc["name"] == "write_todos"
-        ]
+        write_todos_calls = [tc for tc in last_ai_msg.tool_calls if tc["name"] == "write_todos"]
 
         if len(write_todos_calls) > 1:
             # Create error tool messages for all write_todos calls
@@ -266,7 +281,24 @@ class TodoListMiddleware(AgentMiddleware):
         return None
 
     async def aafter_model(
-        self, state: AgentState, runtime: Runtime
+        self,
+        state: AgentState,
+        runtime: Runtime,
     ) -> dict[str, Any] | None:
-        """Async version - check for parallel write_todos tool calls."""
+        """Check for parallel write_todos tool calls and return errors if detected.
+
+        Async version of `after_model`. The todo list is designed to be updated at
+        most once per model turn. Since the `write_todos` tool replaces the entire
+        todo list with each call, making multiple parallel calls would create ambiguity
+        about which update should take precedence. This method prevents such conflicts
+        by rejecting any response that contains multiple write_todos tool calls.
+
+        Args:
+            state: The current agent state containing messages.
+            runtime: The LangGraph runtime instance.
+
+        Returns:
+            A dict containing error ToolMessages for each write_todos call if multiple
+            parallel calls are detected, otherwise None to allow normal execution.
+        """
         return self.after_model(state, runtime)
