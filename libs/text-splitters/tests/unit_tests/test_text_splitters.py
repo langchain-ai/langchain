@@ -104,7 +104,7 @@ def test_character_text_splitter_longer_words() -> None:
     expected_output = ["foo", "bar", "baz", "123"]
     assert output == expected_output
 
-#edge cases
+# edge cases
 def test_character_text_splitter_no_separator_in_text() -> None:
     """Text splitting where there is no seperator but a single word."""
     text = "singleword"
@@ -112,6 +112,7 @@ def test_character_text_splitter_no_separator_in_text() -> None:
     output = splitter.split_text(text)
     expected_output = ["singleword"]
     assert output == expected_output
+
 
 def test_character_text_splitter_no_loop_in_text() -> None:
     """Text splitting safe guards when single word is looped by word length."""
@@ -121,6 +122,7 @@ def test_character_text_splitter_no_loop_in_text() -> None:
     expected_output = ["hello"]
     assert output == expected_output
 
+
 def test_character_text_splitter_empty_input() -> None:
     """Test splitting safely where there is no input to process."""
     text = ""
@@ -129,6 +131,7 @@ def test_character_text_splitter_empty_input() -> None:
     expected_output = []
     assert output == expected_output
 
+
 def test_character_text_splitter_whitespace_only() -> None:
     """Test splitting safely where there is white space."""
     text = " "
@@ -136,6 +139,7 @@ def test_character_text_splitter_whitespace_only() -> None:
     output = splitter.split_text(text)
     expected_output = []
     assert output == expected_output
+
 
 @pytest.mark.parametrize(
     ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
