@@ -66,9 +66,9 @@ def test_selector_empty_example(
     """Test Empty Example result empty."""
     empty_list: list[dict] = []
     empty_selector = LengthBasedExampleSelector(
-        examples = empty_list,
-        example_prompt = selector.example_prompt,
-        max_length = 30,
+        examples=empty_list,
+        example_prompt=selector.example_prompt,
+        max_length=30,
     )
-    output =  empty_selector.select_examples({"question":"empty question"})
+    output = empty_selector.select_examples({"question": "empty question"})
     assert output == []
