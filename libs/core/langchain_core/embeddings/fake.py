@@ -60,13 +60,13 @@ class FakeEmbeddings(Embeddings, BaseModel):
 
     @override
     def embed_documents(
-        self, texts: list[str], output_dimensionality: int | None = None
+        self, texts: list[str]
     ) -> list[list[float]]:
         return [self._get_embedding() for _ in texts]
 
     @override
     def embed_query(
-        self, text: str, output_dimensionality: int | None = None
+        self, text: str
     ) -> list[float]:
         return self._get_embedding()
 
@@ -126,12 +126,12 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
 
     @override
     def embed_documents(
-        self, texts: list[str], output_dimensionality: int | None = None
+        self, texts: list[str]
     ) -> list[list[float]]:
         return [self._get_embedding(seed=self._get_seed(_)) for _ in texts]
 
     @override
     def embed_query(
-        self, text: str, output_dimensionality: int | None = None
+        self, text: str
     ) -> list[float]:
         return self._get_embedding(seed=self._get_seed(text))
