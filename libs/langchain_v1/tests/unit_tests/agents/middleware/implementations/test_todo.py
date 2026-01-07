@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, cast
 
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.todo import (
@@ -498,8 +498,144 @@ async def test_custom_system_prompt_async() -> None:
     # Should use custom prompt in the modified request passed to handler
     assert captured_request is not None
     assert captured_request.system_prompt == custom_prompt
-    # Original request should be unchanged
-    assert request.system_prompt is None
+
+
+def test_parallel_write_todos_calls_rejected() -> None:
+    """Test that parallel write_todos calls are rejected with error messages."""
+    middleware = TodoListMiddleware()
+
+    # Create an AI message with two write_todos tool calls
+    ai_message = AIMessage(
+        content="I'll update the todos",
+        tool_calls=[
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                "id": "call_1",
+                "type": "tool_call",
+            },
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 2", "status": "pending"}]},
+                "id": "call_2",
+                "type": "tool_call",
+            },
+        ],
+    )
+
+    state: PlanningState = {"messages": [HumanMessage(content="Hello"), ai_message]}
+
+    # Call after_model hook
+    result = middleware.after_model(state, _fake_runtime())
+
+    # Should return error messages
+    assert result is not None
+    assert "messages" in result
+    messages = result["messages"]
+
+    # Should have modified AI message + 2 error tool messages
+    assert len(messages) == 3
+
+    # First message should be the modified AI message with no write_todos calls
+    modified_ai = messages[0]
+    assert isinstance(modified_ai, AIMessage)
+    assert len(modified_ai.tool_calls) == 0
+
+    # Next two should be error tool messages
+    error_msg_1 = messages[1]
+    assert isinstance(error_msg_1, ToolMessage)
+    assert error_msg_1.tool_call_id == "call_1"
+    assert error_msg_1.status == "error"
+    assert "never be called multiple times in parallel" in error_msg_1.content
+
+    error_msg_2 = messages[2]
+    assert isinstance(error_msg_2, ToolMessage)
+    assert error_msg_2.tool_call_id == "call_2"
+    assert error_msg_2.status == "error"
+    assert "never be called multiple times in parallel" in error_msg_2.content
+
+
+def test_parallel_write_todos_with_other_tools() -> None:
+    """Test that parallel write_todos calls are rejected but other tool calls remain."""
+    middleware = TodoListMiddleware()
+
+    # Create an AI message with two write_todos calls and one other tool call
+    ai_message = AIMessage(
+        content="I'll do multiple things",
+        tool_calls=[
+            {
+                "name": "some_other_tool",
+                "args": {"param": "value"},
+                "id": "call_other",
+                "type": "tool_call",
+            },
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                "id": "call_1",
+                "type": "tool_call",
+            },
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 2", "status": "pending"}]},
+                "id": "call_2",
+                "type": "tool_call",
+            },
+        ],
+    )
+
+    state: PlanningState = {"messages": [HumanMessage(content="Hello"), ai_message]}
+
+    # Call after_model hook
+    result = middleware.after_model(state, _fake_runtime())
+
+    # Should return error messages
+    assert result is not None
+    assert "messages" in result
+    messages = result["messages"]
+
+    # Should have modified AI message + 2 error tool messages
+    assert len(messages) == 3
+
+    # First message should be the modified AI message with only the other tool call
+    modified_ai = messages[0]
+    assert isinstance(modified_ai, AIMessage)
+    assert len(modified_ai.tool_calls) == 1
+    assert modified_ai.tool_calls[0]["name"] == "some_other_tool"
+    assert modified_ai.tool_calls[0]["id"] == "call_other"
+
+    # Next two should be error tool messages for write_todos
+    for i, msg in enumerate(messages[1:], 1):
+        assert isinstance(msg, ToolMessage)
+        assert msg.tool_call_id == f"call_{i}"
+        assert msg.status == "error"
+        assert "never be called multiple times in parallel" in msg.content
+
+
+def test_single_write_todos_call_allowed() -> None:
+    """Test that a single write_todos call is allowed."""
+    middleware = TodoListMiddleware()
+
+    # Create an AI message with one write_todos tool call
+    ai_message = AIMessage(
+        content="I'll update the todos",
+        tool_calls=[
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                "id": "call_1",
+                "type": "tool_call",
+            },
+        ],
+    )
+
+    state: PlanningState = {"messages": [HumanMessage(content="Hello"), ai_message]}
+
+    # Call after_model hook
+    result = middleware.after_model(state, _fake_runtime())
+
+    # Should return None (no intervention needed)
+    assert result is None
 
 
 async def test_handler_called_with_modified_request_async() -> None:

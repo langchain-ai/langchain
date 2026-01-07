@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Literal, cast
+from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-from langchain_core.messages import SystemMessage, ToolMessage
+    from langgraph.runtime import Runtime
+
+from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
@@ -222,3 +224,52 @@ class TodoListMiddleware(AgentMiddleware):
             content=cast("list[str | dict[str, str]]", new_system_content)
         )
         return await handler(request.override(system_message=new_system_message))
+
+    def after_model(
+        self, state: AgentState, runtime: Runtime
+    ) -> dict[str, Any] | None:
+        """Check for parallel write_todos tool calls and raise an error if detected."""
+        messages = state["messages"]
+        if not messages:
+            return None
+
+        last_ai_msg = next(
+            (msg for msg in reversed(messages) if isinstance(msg, AIMessage)), None
+        )
+        if not last_ai_msg or not last_ai_msg.tool_calls:
+            return None
+
+        # Count write_todos tool calls
+        write_todos_calls = [
+            tc for tc in last_ai_msg.tool_calls if tc["name"] == "write_todos"
+        ]
+
+        if len(write_todos_calls) > 1:
+            # Create error tool messages for all write_todos calls
+            error_messages = [
+                ToolMessage(
+                    content=(
+                        "Error: The `write_todos` tool should never be called multiple times "
+                        "in parallel. Please call it only once per model invocation to update "
+                        "the todo list."
+                    ),
+                    tool_call_id=tc["id"],
+                    status="error",
+                )
+                for tc in write_todos_calls
+            ]
+
+            # Remove all write_todos tool calls from the AI message
+            last_ai_msg.tool_calls = [
+                tc for tc in last_ai_msg.tool_calls if tc["name"] != "write_todos"
+            ]
+
+            return {"messages": [last_ai_msg, *error_messages]}
+
+        return None
+
+    async def aafter_model(
+        self, state: AgentState, runtime: Runtime
+    ) -> dict[str, Any] | None:
+        """Async version - check for parallel write_todos tool calls."""
+        return self.after_model(state, runtime)
