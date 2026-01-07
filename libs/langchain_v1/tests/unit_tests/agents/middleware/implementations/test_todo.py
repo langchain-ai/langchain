@@ -529,25 +529,28 @@ def test_parallel_write_todos_calls_rejected() -> None:
     result = middleware.after_model(state, _fake_runtime())
 
     # Should return error messages
-    assert result is not None
-    assert "messages" in result
-    messages = result["messages"]
-
-    # Should have 2 error tool messages (tool calls remain in AI message)
-    assert len(messages) == 2
-
-    # Both should be error tool messages
-    error_msg_1 = messages[0]
-    assert isinstance(error_msg_1, ToolMessage)
-    assert error_msg_1.tool_call_id == "call_1"
-    assert error_msg_1.status == "error"
-    assert "never be called multiple times in parallel" in error_msg_1.content
-
-    error_msg_2 = messages[1]
-    assert isinstance(error_msg_2, ToolMessage)
-    assert error_msg_2.tool_call_id == "call_2"
-    assert error_msg_2.status == "error"
-    assert "never be called multiple times in parallel" in error_msg_2.content
+    assert result == {
+        "messages": [
+            ToolMessage(
+                content=(
+                    "Error: The `write_todos` tool should never be called multiple times "
+                    "in parallel. Please call it only once per model invocation to update "
+                    "the todo list."
+                ),
+                tool_call_id="call_1",
+                status="error",
+            ),
+            ToolMessage(
+                content=(
+                    "Error: The `write_todos` tool should never be called multiple times "
+                    "in parallel. Please call it only once per model invocation to update "
+                    "the todo list."
+                ),
+                tool_call_id="call_2",
+                status="error",
+            ),
+        ]
+    }
 
 
 def test_parallel_write_todos_with_other_tools() -> None:
@@ -584,20 +587,29 @@ def test_parallel_write_todos_with_other_tools() -> None:
     # Call after_model hook
     result = middleware.after_model(state, _fake_runtime())
 
-    # Should return error messages
-    assert result is not None
-    assert "messages" in result
-    messages = result["messages"]
-
-    # Should have 2 error tool messages (all tool calls remain in AI message)
-    assert len(messages) == 2
-
-    # Both should be error tool messages for write_todos
-    for i, msg in enumerate(messages, 1):
-        assert isinstance(msg, ToolMessage)
-        assert msg.tool_call_id == f"call_{i}"
-        assert msg.status == "error"
-        assert "never be called multiple times in parallel" in msg.content
+    # Should return error messages for write_todos calls only
+    assert result == {
+        "messages": [
+            ToolMessage(
+                content=(
+                    "Error: The `write_todos` tool should never be called multiple times "
+                    "in parallel. Please call it only once per model invocation to update "
+                    "the todo list."
+                ),
+                tool_call_id="call_1",
+                status="error",
+            ),
+            ToolMessage(
+                content=(
+                    "Error: The `write_todos` tool should never be called multiple times "
+                    "in parallel. Please call it only once per model invocation to update "
+                    "the todo list."
+                ),
+                tool_call_id="call_2",
+                status="error",
+            ),
+        ]
+    }
 
 
 def test_single_write_todos_call_allowed() -> None:
@@ -655,25 +667,28 @@ async def test_parallel_write_todos_calls_rejected_async() -> None:
     result = await middleware.aafter_model(state, _fake_runtime())
 
     # Should return error messages
-    assert result is not None
-    assert "messages" in result
-    messages = result["messages"]
-
-    # Should have 2 error tool messages (tool calls remain in AI message)
-    assert len(messages) == 2
-
-    # Both should be error tool messages
-    error_msg_1 = messages[0]
-    assert isinstance(error_msg_1, ToolMessage)
-    assert error_msg_1.tool_call_id == "call_1"
-    assert error_msg_1.status == "error"
-    assert "never be called multiple times in parallel" in error_msg_1.content
-
-    error_msg_2 = messages[1]
-    assert isinstance(error_msg_2, ToolMessage)
-    assert error_msg_2.tool_call_id == "call_2"
-    assert error_msg_2.status == "error"
-    assert "never be called multiple times in parallel" in error_msg_2.content
+    assert result == {
+        "messages": [
+            ToolMessage(
+                content=(
+                    "Error: The `write_todos` tool should never be called multiple times "
+                    "in parallel. Please call it only once per model invocation to update "
+                    "the todo list."
+                ),
+                tool_call_id="call_1",
+                status="error",
+            ),
+            ToolMessage(
+                content=(
+                    "Error: The `write_todos` tool should never be called multiple times "
+                    "in parallel. Please call it only once per model invocation to update "
+                    "the todo list."
+                ),
+                tool_call_id="call_2",
+                status="error",
+            ),
+        ]
+    }
 
 
 async def test_parallel_write_todos_with_other_tools_async() -> None:
