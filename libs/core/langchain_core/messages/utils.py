@@ -148,13 +148,16 @@ def get_buffer_string(
         else:
             msg = f"Got unsupported message type: {m}"
             raise ValueError(msg)  # noqa: TRY004
+
         message = f"{role}: {m.text}"
+
         if isinstance(m, AIMessage):
             if m.tool_calls:
                 message += f"{m.tool_calls}"
             elif "function_call" in m.additional_kwargs:
                 # Legacy behavior assumes only one function call per message
                 message += f"{m.additional_kwargs['function_call']}"
+
         string_messages.append(message)
 
     return "\n".join(string_messages)
@@ -1845,26 +1848,29 @@ def count_tokens_approximately(
     """Approximate the total number of tokens in messages.
 
     The token count includes stringified message content, role, and (optionally) name.
+
     - For AI messages, the token count also includes stringified tool calls.
     - For tool messages, the token count also includes the tool call ID.
 
     Args:
         messages: List of messages to count tokens for.
         chars_per_token: Number of characters per token to use for the approximation.
+
             One token corresponds to ~4 chars for common English text.
+
             You can also specify `float` values for more fine-grained control.
             [See more here](https://platform.openai.com/tokenizer).
         extra_tokens_per_message: Number of extra tokens to add per message, e.g.
             special tokens, including beginning/end of message.
+
             You can also specify `float` values for more fine-grained control.
             [See more here](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb).
         count_name: Whether to include message names in the count.
-            Enabled by default.
 
     Returns:
         Approximate number of tokens in the messages.
 
-    !!! note
+    Note:
         This is a simple approximation that may not match the exact token count used by
         specific models. For accurate counts, use model-specific tokenizers.
 
@@ -1872,7 +1878,6 @@ def count_tokens_approximately(
         This function does not currently support counting image tokens.
 
     !!! version-added "Added in `langchain-core` 0.3.46"
-
     """
     token_count = 0.0
     for message in convert_to_messages(messages):
