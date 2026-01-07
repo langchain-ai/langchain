@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 from langchain_core.embeddings import Embeddings
 from ollama import AsyncClient, Client
@@ -290,7 +290,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             validate_model(self._client, self.model)
         return self
 
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+    def embed_documents(self, texts: list[str], output_dimensionality: Optional[int]) -> list[list[float]]:
         """Embed search docs."""
         if not self._client:
             msg = (
@@ -299,14 +299,18 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             )
             raise ValueError(msg)
         return self._client.embed(
-            self.model, texts, options=self._default_params, keep_alive=self.keep_alive
+            self.model,
+            texts,
+            options=self._default_params,
+            keep_alive=self.keep_alive,
+            dimensions=output_dimensionality,
         )["embeddings"]
 
     def embed_query(self, text: str) -> list[float]:
         """Embed query text."""
         return self.embed_documents([text])[0]
 
-    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
+    async def aembed_documents(self, texts: list[str], output_dimensionality: Optional[int]) -> list[list[float]]:
         """Embed search docs."""
         if not self._async_client:
             msg = (
@@ -320,6 +324,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
                 texts,
                 options=self._default_params,
                 keep_alive=self.keep_alive,
+                dimensions=output_dimensionality,
             )
         )["embeddings"]
 
