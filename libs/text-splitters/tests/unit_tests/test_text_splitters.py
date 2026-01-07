@@ -105,6 +105,43 @@ def test_character_text_splitter_longer_words() -> None:
     assert output == expected_output
 
 
+# edge cases
+def test_character_text_splitter_no_separator_in_text() -> None:
+    """Text splitting where there is no seperator but a single word."""
+    text = "singleword"
+    splitter = CharacterTextSplitter(separator=" ", chunk_size=10, chunk_overlap=0)
+    output = splitter.split_text(text)
+    expected_output = ["singleword"]
+    assert output == expected_output
+
+
+def test_character_text_splitter_handle_chunksize_equal_to_chunkoverlap() -> None:
+    """Text splitting safe guards when chunk size is equal chunk overlap."""
+    text = "hello"
+    splitter = CharacterTextSplitter(separator=" ", chunk_size=5, chunk_overlap=5)
+    output = splitter.split_text(text)
+    expected_output = ["hello"]
+    assert output == expected_output
+
+
+def test_character_text_splitter_empty_input() -> None:
+    """Test splitting safely where there is no input to process."""
+    text = ""
+    splitter = CharacterTextSplitter(separator=" ", chunk_size=5, chunk_overlap=0)
+    output = splitter.split_text(text)
+    expected_output: list[str] = []
+    assert output == expected_output
+
+
+def test_character_text_splitter_whitespace_only() -> None:
+    """Test splitting safely where there is white space."""
+    text = " "
+    splitter = CharacterTextSplitter(separator=" ", chunk_size=5, chunk_overlap=0)
+    output = splitter.split_text(text)
+    expected_output: list[str] = []
+    assert output == expected_output
+
+
 @pytest.mark.parametrize(
     ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
