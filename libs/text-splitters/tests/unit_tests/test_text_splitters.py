@@ -129,7 +129,7 @@ def test_character_text_splitter_empty_input() -> None:
     text = ""
     splitter = CharacterTextSplitter(separator=" ", chunk_size=5, chunk_overlap=0)
     output = splitter.split_text(text)
-    expected_output = []
+    expected_output: list[str] = []
     assert output == expected_output
 
 
@@ -138,7 +138,7 @@ def test_character_text_splitter_whitespace_only() -> None:
     text = " "
     splitter = CharacterTextSplitter(separator=" ", chunk_size=5, chunk_overlap=0)
     output = splitter.split_text(text)
-    expected_output = []
+    expected_output: list[str] = []
     assert output == expected_output
 
 
