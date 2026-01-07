@@ -288,7 +288,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.2.0"
+version = "1.2.6"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -319,7 +319,7 @@ dev = [
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
     { name = "setuptools", specifier = ">=67.6.1,<68.0.0" },
 ]
-lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
+lint = [{ name = "ruff", specifier = ">=0.14.10,<0.15.0" }]
 test = [
     { name = "blockbuster", specifier = ">=1.5.18,<1.6.0" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
@@ -341,7 +341,7 @@ test = [
 test-integration = []
 typing = [
     { name = "langchain-text-splitters", directory = "../../text-splitters" },
-    { name = "mypy", specifier = ">=1.18.1,<1.19.0" },
+    { name = "mypy", specifier = ">=1.19.1,<1.20.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
     { name = "types-requests", specifier = ">=2.28.11.5,<3.0.0.0" },
 ]
@@ -402,7 +402,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.0.2"
+version = "1.1.2"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -436,12 +436,12 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
+lint = [{ name = "ruff", specifier = ">=0.14.10,<0.15.0" }]
 test = [{ name = "langchain-core", editable = "../../core" }]
 test-integration = []
 typing = [
     { name = "langchain-core", editable = "../../core" },
-    { name = "mypy", specifier = ">=1.18.1,<1.19.0" },
+    { name = "mypy", specifier = ">=1.19.1,<1.20.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
 ]
 

@@ -92,7 +92,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     Embed multiple texts:
         ```python
         input_texts = ["Document 1...", "Document 2..."]
-        vectors = embed.embed_documents(input_texts)
+        vectors = embed.embed_documents(input_texts, dimensions)
         print(len(vectors))
         # The first 3 coordinates for the first vector
         print(vectors[0][:3])
@@ -109,7 +109,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         print(vector[:3])
 
         # multiple:
-        # await embed.aembed_documents(input_texts)
+        # await embed.aembed_documents(input_texts, dimensions)
         ```
 
         ```python
@@ -291,7 +291,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         return self
 
     def embed_documents(
-        self, texts: list[str], output_dimensionality: int | None
+        self, texts: list[str], output_dimensionality: int | None = None
     ) -> list[list[float]]:
         """Embed search docs."""
         if not self._client:
@@ -308,12 +308,14 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             dimensions=output_dimensionality,
         )["embeddings"]
 
-    def embed_query(self, text: str) -> list[float]:
+    def embed_query(
+        self, text: str, output_dimensionality: int | None = None
+    ) -> list[float]:
         """Embed query text."""
-        return self.embed_documents([text])[0]
+        return self.embed_documents([text], output_dimensionality)[0]
 
     async def aembed_documents(
-        self, texts: list[str], output_dimensionality: int | None
+        self, texts: list[str], output_dimensionality: int | None = None
     ) -> list[list[float]]:
         """Embed search docs."""
         if not self._async_client:
@@ -332,6 +334,8 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             )
         )["embeddings"]
 
-    async def aembed_query(self, text: str) -> list[float]:
+    async def aembed_query(
+        self, text: str, output_dimensionality: int | None = None
+    ) -> list[float]:
         """Embed query text."""
-        return (await self.aembed_documents([text]))[0]
+        return (await self.aembed_documents([text], output_dimensionality))[0]
