@@ -99,7 +99,10 @@ AnyMessage = Annotated[
 
 
 def get_buffer_string(
-    messages: Sequence[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
+    messages: Sequence[BaseMessage],
+    human_prefix: str = "Human",
+    ai_prefix: str = "AI",
+    message_separator: str = "\n",
 ) -> str:
     r"""Convert a sequence of messages to strings and concatenate them into one string.
 
@@ -107,6 +110,7 @@ def get_buffer_string(
         messages: Messages to be converted to strings.
         human_prefix: The prefix to prepend to contents of `HumanMessage`s.
         ai_prefix: The prefix to prepend to contents of `AIMessage`.
+        message_separator: The separator to use between messages.
 
     Returns:
         A single string concatenation of all input messages.
@@ -160,7 +164,7 @@ def get_buffer_string(
 
         string_messages.append(message)
 
-    return "\n".join(string_messages)
+    return message_separator.join(string_messages)
 
 
 def _message_from_dict(message: dict) -> BaseMessage:
