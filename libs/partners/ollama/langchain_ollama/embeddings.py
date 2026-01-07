@@ -312,7 +312,9 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     def embed_query(self, text: str, **kwargs: Any) -> list[float]:
         """Embed query text."""
         output_dimensionality = kwargs.get("output_dimensionality")
-        return self.embed_documents([text], output_dimensionality=output_dimensionality)[0]
+        return self.embed_documents(
+            [text], output_dimensionality=output_dimensionality
+        )[0]
 
     async def aembed_documents(
         self, texts: list[str], **kwargs: Any
@@ -338,4 +340,8 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     async def aembed_query(self, text: str, **kwargs: Any) -> list[float]:
         """Embed query text."""
         output_dimensionality = kwargs.get("output_dimensionality")
-        return (await self.aembed_documents([text], output_dimensionality=output_dimensionality))[0]
+        return (
+            await self.aembed_documents(
+                [text], output_dimensionality=output_dimensionality
+            )
+        )[0]
