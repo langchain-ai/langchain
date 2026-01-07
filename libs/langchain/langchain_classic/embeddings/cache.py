@@ -14,7 +14,7 @@ import json
 import uuid
 import warnings
 from collections.abc import Callable, Sequence
-from typing import Literal, cast
+from typing import Any, Literal, cast
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.stores import BaseStore, ByteStore
@@ -162,7 +162,7 @@ class CacheBackedEmbeddings(Embeddings):
         self.underlying_embeddings = underlying_embeddings
         self.batch_size = batch_size
 
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+    def embed_documents(self, texts: list[str], **kwargs: Any) -> list[list[float]]:
         """Embed a list of texts.
 
         The method first checks the cache for the embeddings.
@@ -198,7 +198,7 @@ class CacheBackedEmbeddings(Embeddings):
             vectors,
         )  # Nones should have been resolved by now
 
-    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
+    async def aembed_documents(self, texts: list[str], **kwargs: Any) -> list[list[float]]:
         """Embed a list of texts.
 
         The method first checks the cache for the embeddings.
@@ -238,7 +238,7 @@ class CacheBackedEmbeddings(Embeddings):
             vectors,
         )  # Nones should have been resolved by now
 
-    def embed_query(self, text: str) -> list[float]:
+    def embed_query(self, text: str, **kwargs: Any) -> list[float]:
         """Embed query text.
 
         By default, this method does not cache queries. To enable caching, set the
@@ -261,7 +261,7 @@ class CacheBackedEmbeddings(Embeddings):
         self.query_embedding_store.mset([(text, vector)])
         return vector
 
-    async def aembed_query(self, text: str) -> list[float]:
+    async def aembed_query(self, text: str, **kwargs: Any) -> list[float]:
         """Embed query text.
 
         By default, this method does not cache queries. To enable caching, set the

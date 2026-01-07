@@ -49,7 +49,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
             return self.llm_chain.output_keys
         return ["text"]
 
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+    def embed_documents(self, texts: list[str], **kwargs: Any) -> list[list[float]]:
         """Call the base embeddings."""
         return self.base_embeddings.embed_documents(texts)
 
@@ -75,7 +75,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
                 for dim_values in zip(*embeddings, strict=False)
             ]
 
-    def embed_query(self, text: str) -> list[float]:
+    def embed_query(self, text: str, **kwargs: Any) -> list[float]:
         """Generate a hypothetical document and embedded it."""
         var_name = self.input_keys[0]
         result = self.llm_chain.invoke({var_name: text})
