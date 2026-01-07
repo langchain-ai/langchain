@@ -3588,13 +3588,17 @@ def _oai_structured_outputs_parser(
     if ai_msg.additional_kwargs.get("refusal"):
         raise OpenAIRefusalError(ai_msg.additional_kwargs["refusal"])
     if any(
-        isinstance(block, dict) and block.get("type") == "refusal"
-        for block in ai_msg.content
+        isinstance(block, dict)
+        and block.get("type") == "non_standard"
+        and "refusal" in block["value"]  # type: ignore[typeddict-item]
+        for block in ai_msg.content_blocks
     ):
         refusal = next(
-            block["refusal"]
-            for block in ai_msg.content
-            if isinstance(block, dict) and block["type"] == "refusal"
+            block["value"]["refusal"]
+            for block in ai_msg.content_blocks
+            if isinstance(block, dict)
+            and block["type"] == "non_standard"
+            and "refusal" in block["value"]
         )
         raise OpenAIRefusalError(refusal)
     if ai_msg.tool_calls:
