@@ -8,11 +8,11 @@ from langchain_qdrant import QdrantVectorStore
 class MockEmbeddings(Embeddings):
     """Mock embeddings for testing."""
 
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+    def embed_documents(self, texts: list[str], output_dimensionality: int | None = None) -> list[list[float]]:
         """Mock embed_documents method."""
         return [[1.0, 2.0, 3.0] for _ in texts]
 
-    def embed_query(self) -> list[float]:  # type: ignore[override]
+    def embed_query(self, output_dimensionality: int | None = None) -> list[float]:  # type: ignore[override]
         """Mock embed_query method."""
         return [1.0, 2.0, 3.0]
 
