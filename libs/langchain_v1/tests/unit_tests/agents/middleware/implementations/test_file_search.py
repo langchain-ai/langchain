@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from langchain_core.tools import StructuredTool
 
 from langchain.agents.middleware.file_search import (
     FilesystemFileSearchMiddleware,
@@ -22,6 +23,8 @@ class TestFilesystemGrepSearch:
 
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
 
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
         result = middleware.grep_search.func(pattern="print", include="*.{py")
 
         assert result == "Invalid include pattern"
@@ -63,6 +66,8 @@ class TestFilesystemGrepSearch:
 
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
 
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
         result = middleware.grep_search.func(pattern="hello")
 
         assert "/file1.py" in result
@@ -76,6 +81,8 @@ class TestFilesystemGrepSearch:
 
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
 
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
         result = middleware.grep_search.func(pattern="hello", include="*.py")
 
         assert "/file1.py" in result
@@ -87,6 +94,8 @@ class TestFilesystemGrepSearch:
 
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
 
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
         result = middleware.grep_search.func(pattern="hello", output_mode="content")
 
         assert "/test.py:2:hello" in result
@@ -97,6 +106,8 @@ class TestFilesystemGrepSearch:
 
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
 
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
         result = middleware.grep_search.func(pattern="hello", output_mode="count")
 
         assert "/test.py:2" in result
@@ -107,6 +118,8 @@ class TestFilesystemGrepSearch:
 
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
 
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
         result = middleware.grep_search.func(pattern="[invalid")
 
         assert "Invalid regex pattern" in result
@@ -117,6 +130,8 @@ class TestFilesystemGrepSearch:
 
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
 
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
         result = middleware.grep_search.func(pattern="notfound")
 
         assert result == "No matches found"
@@ -133,6 +148,8 @@ class TestFilesystemGlobSearch:
 
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
 
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
         result = middleware.glob_search.func(pattern="*.py")
 
         assert "/file1.py" in result
@@ -148,6 +165,8 @@ class TestFilesystemGlobSearch:
 
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
 
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
         result = middleware.glob_search.func(pattern="**/*.py")
 
         assert "/src/test.py" in result
@@ -162,6 +181,8 @@ class TestFilesystemGlobSearch:
 
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
 
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
         result = middleware.glob_search.func(pattern="*.py", path="/src")
 
         assert "/src/file1.py" in result
@@ -173,6 +194,8 @@ class TestFilesystemGlobSearch:
 
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
 
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
         result = middleware.glob_search.func(pattern="*.py")
 
         assert result == "No files found"
@@ -181,6 +204,8 @@ class TestFilesystemGlobSearch:
         """Test glob search with non-existent path."""
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
 
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
         result = middleware.glob_search.func(pattern="*.py", path="/nonexistent")
 
         assert result == "No files found"
@@ -201,6 +226,8 @@ class TestPathTraversalSecurity:
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path / "allowed"))
 
         # Try to escape with ..
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
         result = middleware.glob_search.func(pattern="*.txt", path="/../")
 
         assert result == "No files found"
@@ -216,6 +243,8 @@ class TestPathTraversalSecurity:
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path / "allowed"))
 
         # Try to access with absolute path
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
         result = middleware.glob_search.func(pattern="*.txt", path=str(tmp_path))
 
         assert result == "No files found"
@@ -234,6 +263,8 @@ class TestPathTraversalSecurity:
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path / "allowed"))
 
         # Try to access via symlink
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
         result = middleware.glob_search.func(pattern="*.txt", path="/link")
 
         assert result == "No files found"
@@ -242,6 +273,8 @@ class TestPathTraversalSecurity:
         """Test that tilde paths are handled safely."""
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
 
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
         result = middleware.glob_search.func(pattern="*.txt", path="~/")
 
         assert result == "No files found"
@@ -256,6 +289,8 @@ class TestPathTraversalSecurity:
         )
 
         # Try to search outside root
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
         result = middleware.grep_search.func(pattern="secret", path="/../")
 
         assert result == "No matches found"
@@ -331,6 +366,8 @@ class TestGrepEdgeCases:
 
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
 
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
         result = middleware.grep_search.func(pattern="def.*:")
 
         assert "/test.py" in result
@@ -341,6 +378,8 @@ class TestGrepEdgeCases:
 
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
 
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
         result = middleware.grep_search.func(pattern="(?i)hello")
 
         assert "/test.py" in result
@@ -358,6 +397,8 @@ class TestGrepEdgeCases:
             max_file_size_mb=1,  # 1MB limit
         )
 
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
         result = middleware.grep_search.func(pattern="x")
 
         # Large file should be skipped

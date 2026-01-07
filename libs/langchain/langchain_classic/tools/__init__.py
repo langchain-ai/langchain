@@ -27,11 +27,11 @@ _DEPRECATED_TOOLS = {"PythonAstREPLTool", "PythonREPLTool"}
 
 def _import_python_tool_python_ast_repl_tool() -> Any:
     msg = (
-        "This tool has been moved to langchain experiment. "
+        "This tool has been moved to langchain_experimental. "
         "This tool has access to a python REPL. "
         "For best practices make sure to sandbox this tool. "
         "Read https://github.com/langchain-ai/langchain/blob/master/SECURITY.md "
-        "To keep using this code as is, install langchain experimental and "
+        "To keep using this code as is, install langchain_experimental and "
         "update relevant imports replacing 'langchain' with 'langchain_experimental'"
     )
     raise ImportError(msg)
@@ -39,11 +39,11 @@ def _import_python_tool_python_ast_repl_tool() -> Any:
 
 def _import_python_tool_python_repl_tool() -> Any:
     msg = (
-        "This tool has been moved to langchain experiment. "
+        "This tool has been moved to langchain_experimental. "
         "This tool has access to a python REPL. "
         "For best practices make sure to sandbox this tool. "
         "Read https://github.com/langchain-ai/langchain/blob/master/SECURITY.md "
-        "To keep using this code as is, install langchain experimental and "
+        "To keep using this code as is, install langchain_experimental and "
         "update relevant imports replacing 'langchain' with 'langchain_experimental'"
     )
     raise ImportError(msg)
