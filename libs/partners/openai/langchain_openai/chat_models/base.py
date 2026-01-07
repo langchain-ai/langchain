@@ -3590,12 +3590,12 @@ def _oai_structured_outputs_parser(
     if any(
         isinstance(block, dict)
         and block.get("type") == "non_standard"
-        and "refusal" in block["value"]
-        for block in ai_msg.content
+        and "refusal" in block["value"]  # type: ignore[typeddict-item]
+        for block in ai_msg.content_blocks
     ):
         refusal = next(
             block["value"]["refusal"]
-            for block in ai_msg.content
+            for block in ai_msg.content_blocks
             if isinstance(block, dict)
             and block["type"] == "non_standard"
             and "refusal" in block["value"]
