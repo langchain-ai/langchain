@@ -533,22 +533,17 @@ def test_parallel_write_todos_calls_rejected() -> None:
     assert "messages" in result
     messages = result["messages"]
 
-    # Should have modified AI message + 2 error tool messages
-    assert len(messages) == 3
+    # Should have 2 error tool messages (tool calls remain in AI message)
+    assert len(messages) == 2
 
-    # First message should be the modified AI message with no write_todos calls
-    modified_ai = messages[0]
-    assert isinstance(modified_ai, AIMessage)
-    assert len(modified_ai.tool_calls) == 0
-
-    # Next two should be error tool messages
-    error_msg_1 = messages[1]
+    # Both should be error tool messages
+    error_msg_1 = messages[0]
     assert isinstance(error_msg_1, ToolMessage)
     assert error_msg_1.tool_call_id == "call_1"
     assert error_msg_1.status == "error"
     assert "never be called multiple times in parallel" in error_msg_1.content
 
-    error_msg_2 = messages[2]
+    error_msg_2 = messages[1]
     assert isinstance(error_msg_2, ToolMessage)
     assert error_msg_2.tool_call_id == "call_2"
     assert error_msg_2.status == "error"
@@ -594,18 +589,11 @@ def test_parallel_write_todos_with_other_tools() -> None:
     assert "messages" in result
     messages = result["messages"]
 
-    # Should have modified AI message + 2 error tool messages
-    assert len(messages) == 3
+    # Should have 2 error tool messages (all tool calls remain in AI message)
+    assert len(messages) == 2
 
-    # First message should be the modified AI message with only the other tool call
-    modified_ai = messages[0]
-    assert isinstance(modified_ai, AIMessage)
-    assert len(modified_ai.tool_calls) == 1
-    assert modified_ai.tool_calls[0]["name"] == "some_other_tool"
-    assert modified_ai.tool_calls[0]["id"] == "call_other"
-
-    # Next two should be error tool messages for write_todos
-    for i, msg in enumerate(messages[1:], 1):
+    # Both should be error tool messages for write_todos
+    for i, msg in enumerate(messages, 1):
         assert isinstance(msg, ToolMessage)
         assert msg.tool_call_id == f"call_{i}"
         assert msg.status == "error"

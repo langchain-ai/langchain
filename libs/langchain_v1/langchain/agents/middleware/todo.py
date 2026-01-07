@@ -259,12 +259,9 @@ class TodoListMiddleware(AgentMiddleware):
                 for tc in write_todos_calls
             ]
 
-            # Remove all write_todos tool calls from the AI message
-            last_ai_msg.tool_calls = [
-                tc for tc in last_ai_msg.tool_calls if tc["name"] != "write_todos"
-            ]
-
-            return {"messages": [last_ai_msg, *error_messages]}
+            # Keep the tool calls in the AI message but return error messages
+            # This follows the same pattern as HumanInTheLoopMiddleware
+            return {"messages": error_messages}
 
         return None
 
