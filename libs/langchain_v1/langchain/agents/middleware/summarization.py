@@ -14,7 +14,11 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.human import HumanMessage
-from langchain_core.messages.utils import count_tokens_approximately, trim_messages
+from langchain_core.messages.utils import (
+    count_tokens_approximately,
+    get_buffer_string,
+    trim_messages,
+)
 from langgraph.graph.message import (
     REMOVE_ALL_MESSAGES,
 )
@@ -518,8 +522,12 @@ class SummarizationMiddleware(AgentMiddleware):
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
+        # Format messages to avoid token inflation from metadata when str() is called on
+        # message objects
+        formatted_messages = get_buffer_string(trimmed_messages)
+
         try:
-            response = self.model.invoke(self.summary_prompt.format(messages=trimmed_messages))
+            response = self.model.invoke(self.summary_prompt.format(messages=formatted_messages))
             return response.text.strip()
         except Exception as e:
             return f"Error generating summary: {e!s}"
@@ -533,9 +541,13 @@ class SummarizationMiddleware(AgentMiddleware):
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
+        # Format messages to avoid token inflation from metadata when str() is called on
+        # message objects
+        formatted_messages = get_buffer_string(trimmed_messages)
+
         try:
             response = await self.model.ainvoke(
-                self.summary_prompt.format(messages=trimmed_messages)
+                self.summary_prompt.format(messages=formatted_messages)
             )
             return response.text.strip()
         except Exception as e:
