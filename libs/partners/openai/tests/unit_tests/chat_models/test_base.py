@@ -64,6 +64,7 @@ from langchain_openai.chat_models._compat import (
     _convert_to_v03_ai_message,
 )
 from langchain_openai.chat_models.base import (
+    OpenAIRefusalError,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
     _convert_dict_to_message,
@@ -3191,3 +3192,62 @@ def test_gpt_5_1_temperature_with_reasoning_effort_none(
 def test_model_prefers_responses_api() -> None:
     assert _model_prefers_responses_api("gpt-5.2-pro")
     assert not _model_prefers_responses_api("gpt-5.1")
+
+
+def test_openai_structured_output_refusal_handling_responses_api() -> None:
+    """
+    Test that _oai_structured_outputs_parser raises OpenAIRefusalError
+    when the AIMessage contains a refusal block from OpenAI's Responses API.
+    """
+    # This is a AIMessage instance copied from a real langchain output
+    # which is an structured output from OpenAI's Responses API
+    # ids are faked
+    # The refusal content block to indicate a refusal response of structured output
+    mocked_ai_msg = AIMessage(
+        content=[
+            {
+                "id": "rs_fake_id",
+                "summary": [],
+                "type": "reasoning",
+                "encrypted_content": "fake_encrypted_content",
+            },
+            # This block represents a refusal message
+            {
+                "type": "refusal",
+                "refusal": "refused content in string",
+                "id": "msg_fake_id",
+            },
+        ],
+        additional_kwargs={},
+        response_metadata={
+            "id": "resp_fake_id",
+            "created_at": 1766276465.0,
+            "metadata": {},
+            "model": "o3",
+            "object": "response",
+            "service_tier": "default",
+            "status": "completed",
+            "model_provider": "openai",
+            "model_name": "o3",
+        },
+        id="resp_fake_id",
+        usage_metadata={
+            "input_tokens": 10260,
+            "output_tokens": 775,
+            "total_tokens": 11035,
+            "input_token_details": {"cache_read": 0},
+            "output_token_details": {"reasoning": 512},
+        },
+    )
+
+    # schema does not matter in this issue
+    class MySchema(BaseModel):
+        foo: int
+
+    try:
+        _oai_structured_outputs_parser(mocked_ai_msg, MySchema)
+    except OpenAIRefusalError:
+        # OpenAIRefusalError was raised. This is the proper behavior.
+        assert True
+    except ValueError as e:
+        pytest.fail(f"This is a wrong behavior. Error details: {e}")
