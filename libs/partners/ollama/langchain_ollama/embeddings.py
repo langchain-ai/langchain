@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.embeddings import Embeddings
 from ollama import AsyncClient, Client
@@ -290,7 +290,9 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             validate_model(self._client, self.model)
         return self
 
-    def embed_documents(self, texts: list[str], output_dimensionality: Optional[int]) -> list[list[float]]:
+    def embed_documents(
+        self, texts: list[str], output_dimensionality: int | None
+    ) -> list[list[float]]:
         """Embed search docs."""
         if not self._client:
             msg = (
@@ -310,7 +312,9 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         """Embed query text."""
         return self.embed_documents([text])[0]
 
-    async def aembed_documents(self, texts: list[str], output_dimensionality: Optional[int]) -> list[list[float]]:
+    async def aembed_documents(
+        self, texts: list[str], output_dimensionality: int | None
+    ) -> list[list[float]]:
         """Embed search docs."""
         if not self._async_client:
             msg = (
