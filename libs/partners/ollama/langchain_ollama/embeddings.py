@@ -290,9 +290,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             validate_model(self._client, self.model)
         return self
 
-    def embed_documents(
-        self, texts: list[str], **kwargs: Any
-    ) -> list[list[float]]:
+    def embed_documents(self, texts: list[str], **kwargs: Any) -> list[list[float]]:
         """Embed search docs."""
         if not self._client:
             msg = (
@@ -311,12 +309,10 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             dimensions=output_dimensionality,
         )["embeddings"]
 
-    def embed_query(
-        self, text: str, **kwargs: Any
-    ) -> list[float]:
+    def embed_query(self, text: str, **kwargs: Any) -> list[float]:
         """Embed query text."""
         output_dimensionality = kwargs.get("output_dimensionality")
-        return self.embed_documents([text], output_dimensionality)[0]
+        return self.embed_documents([text], output_dimensionality=output_dimensionality)[0]
 
     async def aembed_documents(
         self, texts: list[str], **kwargs: Any
@@ -339,9 +335,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             )
         )["embeddings"]
 
-    async def aembed_query(
-        self, text: str, **kwargs: Any
-    ) -> list[float]:
+    async def aembed_query(self, text: str, **kwargs: Any) -> list[float]:
         """Embed query text."""
         output_dimensionality = kwargs.get("output_dimensionality")
-        return (await self.aembed_documents([text], output_dimensionality))[0]
+        return (await self.aembed_documents([text], output_dimensionality=output_dimensionality))[0]
