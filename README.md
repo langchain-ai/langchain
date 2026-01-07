@@ -74,7 +74,21 @@ To improve your LLM application development, pair LangChain with:
 - [Code of Conduct](https://github.com/langchain-ai/langchain/?tab=coc-ov-file) – Our community guidelines and standards for participation.
 - [LangChain Academy](https://academy.langchain.com/) – Comprehensive, free courses on LangChain libraries and products, made by the LangChain team.
 
-## "Быстрый старт (Python)"
-Установите Langchain:
+## Мини-ЧаВо-ответов, запусков
+
+**1. Как запустить пример chain?**  
+- Убедитесь, что установлен Python 3.8+  
+- Установите зависимости: `pip install langchain`  
+- Запустите скрипт: `python3 example.py`
+
+**2. Можно ли запускать на телефоне (Termux)?**  
+- Да, убедитесь, что установлен Python, pip и есть интернет  
+- Используйте команду: `python3 example.py` в директории примера
+
+**3. Почему получаю ошибки импортов?**  
+- Проверьте, что установлены все зависимости из `requirements.txt`  
+- Попробуйте создать виртуальное окружение:
 ```bash
-pip install langchain
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
