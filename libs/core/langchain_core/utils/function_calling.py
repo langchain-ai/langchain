@@ -460,8 +460,6 @@ def convert_to_openai_function(
                     parameters = dict(parameters)
                     parameters["required"] = list(fields.keys())
                     oai_function["parameters"] = parameters
-            oai_function["parameters"]["additionalProperties"] = False
-
     return oai_function
 
 
