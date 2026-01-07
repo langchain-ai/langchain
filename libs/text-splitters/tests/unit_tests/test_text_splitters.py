@@ -104,6 +104,7 @@ def test_character_text_splitter_longer_words() -> None:
     expected_output = ["foo", "bar", "baz", "123"]
     assert output == expected_output
 
+
 # edge cases
 def test_character_text_splitter_no_separator_in_text() -> None:
     """Text splitting where there is no seperator but a single word."""
