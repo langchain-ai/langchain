@@ -34,7 +34,9 @@ class Embeddings(ABC):
     """
 
     @abstractmethod
-    def embed_documents(self, texts: list[str], output_dimensionality: int | None) -> list[list[float]]:
+    def embed_documents(
+        self, texts: list[str], output_dimensionality: int | None = None
+    ) -> list[list[float]]:
         """Embed search docs.
 
         Args:
@@ -46,7 +48,9 @@ class Embeddings(ABC):
         """
 
     @abstractmethod
-    def embed_query(self, text: str, output_dimensionality: int | None) -> list[float]:
+    def embed_query(
+        self, text: str, output_dimensionality: int | None = None
+    ) -> list[float]:
         """Embed query text.
 
         Args:
@@ -57,7 +61,9 @@ class Embeddings(ABC):
             Embedding.
         """
 
-    async def aembed_documents(self, texts: list[str], output_dimensionality: int | None = None) -> list[list[float]]:
+    async def aembed_documents(
+        self, texts: list[str], output_dimensionality: int | None = None
+    ) -> list[list[float]]:
         """Asynchronous Embed search docs.
 
         Args:
@@ -67,9 +73,13 @@ class Embeddings(ABC):
         Returns:
             List of embeddings.
         """
-        return await run_in_executor(None, self.embed_documents, texts, output_dimensionality)
+        return await run_in_executor(
+            None, self.embed_documents, texts, output_dimensionality
+        )
 
-    async def aembed_query(self, text: str, output_dimensionality: int | None = None) -> list[float]:
+    async def aembed_query(
+        self, text: str, output_dimensionality: int | None = None
+    ) -> list[float]:
         """Asynchronous Embed query text.
 
         Args:
@@ -79,4 +89,6 @@ class Embeddings(ABC):
         Returns:
             Embedding.
         """
-        return await run_in_executor(None, self.embed_query, text, output_dimensionality)
+        return await run_in_executor(
+            None, self.embed_query, text, output_dimensionality
+        )
