@@ -968,4 +968,4 @@ def test_usage_metadata_trigger() -> None:
             ),
         ]
     )
-    assert not middleware._should_summarize(messages, 0)
+    assert middleware._should_summarize(messages, 0)  # check test engages
