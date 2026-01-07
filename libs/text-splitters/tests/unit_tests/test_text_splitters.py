@@ -115,8 +115,8 @@ def test_character_text_splitter_no_separator_in_text() -> None:
     assert output == expected_output
 
 
-def test_character_text_splitter_no_loop_in_text() -> None:
-    """Text splitting safe guards when single word is looped by word length."""
+def test_character_text_splitter_handle_chunksize_equal_to_chunkoverlap() -> None:
+    """Text splitting safe guards when chunk size is equal chunk overlap."""
     text = "hello"
     splitter = CharacterTextSplitter(separator=" ", chunk_size=5, chunk_overlap=5)
     output = splitter.split_text(text)
