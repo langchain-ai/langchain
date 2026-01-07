@@ -3,6 +3,7 @@
 # Please do not add additional fake embedding model implementations here.
 import contextlib
 import hashlib
+from typing import Any
 
 from pydantic import BaseModel
 from typing_extensions import override
@@ -59,15 +60,11 @@ class FakeEmbeddings(Embeddings, BaseModel):
         return list(np.random.default_rng().normal(size=self.size))
 
     @override
-    def embed_documents(
-        self, texts: list[str]
-    ) -> list[list[float]]:
+    def embed_documents(self, texts: list[str], **kwargs: Any) -> list[list[float]]:
         return [self._get_embedding() for _ in texts]
 
     @override
-    def embed_query(
-        self, text: str
-    ) -> list[float]:
+    def embed_query(self, text: str, **kwargs: Any) -> list[float]:
         return self._get_embedding()
 
 
@@ -125,13 +122,9 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
         return int(hashlib.sha256(text.encode("utf-8")).hexdigest(), 16) % 10**8
 
     @override
-    def embed_documents(
-        self, texts: list[str]
-    ) -> list[list[float]]:
+    def embed_documents(self, texts: list[str], **kwargs: Any) -> list[list[float]]:
         return [self._get_embedding(seed=self._get_seed(_)) for _ in texts]
 
     @override
-    def embed_query(
-        self, text: str
-    ) -> list[float]:
+    def embed_query(self, text: str, **kwargs: Any) -> list[float]:
         return self._get_embedding(seed=self._get_seed(text))

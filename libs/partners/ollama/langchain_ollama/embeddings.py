@@ -291,7 +291,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         return self
 
     def embed_documents(
-        self, texts: list[str], output_dimensionality: int | None = None
+        self, texts: list[str], **kwargs: Any
     ) -> list[list[float]]:
         """Embed search docs."""
         if not self._client:
@@ -300,6 +300,9 @@ class OllamaEmbeddings(BaseModel, Embeddings):
                 "Please ensure Ollama is running and the model is loaded."
             )
             raise ValueError(msg)
+
+        output_dimensionality = kwargs.get("output_dimensionality")
+
         return self._client.embed(
             self.model,
             texts,
@@ -309,13 +312,14 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         )["embeddings"]
 
     def embed_query(
-        self, text: str, output_dimensionality: int | None = None
+        self, text: str, **kwargs: Any
     ) -> list[float]:
         """Embed query text."""
+        output_dimensionality = kwargs.get("output_dimensionality")
         return self.embed_documents([text], output_dimensionality)[0]
 
     async def aembed_documents(
-        self, texts: list[str], output_dimensionality: int | None = None
+        self, texts: list[str], **kwargs: Any
     ) -> list[list[float]]:
         """Embed search docs."""
         if not self._async_client:
@@ -324,6 +328,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
                 "Please ensure Ollama is running and the model is loaded."
             )
             raise ValueError(msg)
+        output_dimensionality = kwargs.get("output_dimensionality")
         return (
             await self._async_client.embed(
                 self.model,
@@ -335,7 +340,8 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         )["embeddings"]
 
     async def aembed_query(
-        self, text: str, output_dimensionality: int | None = None
+        self, text: str, **kwargs: Any
     ) -> list[float]:
         """Embed query text."""
+        output_dimensionality = kwargs.get("output_dimensionality")
         return (await self.aembed_documents([text], output_dimensionality))[0]

@@ -36,7 +36,9 @@ class Embeddings(ABC):
 
     @abstractmethod
     def embed_documents(
-        self, texts: list[str], **kwargs: Any,
+        self,
+        texts: list[str],
+        **kwargs: Any,
     ) -> list[list[float]]:
         """Embed search docs.
 
@@ -50,7 +52,9 @@ class Embeddings(ABC):
 
     @abstractmethod
     def embed_query(
-        self, text: str, **kwargs: Any,
+        self,
+        text: str,
+        **kwargs: Any,
     ) -> list[float]:
         """Embed query text.
 
@@ -63,7 +67,9 @@ class Embeddings(ABC):
         """
 
     async def aembed_documents(
-        self, texts: list[str], **kwargs: Any,
+        self,
+        texts: list[str],
+        **kwargs: Any,
     ) -> list[list[float]]:
         """Asynchronous Embed search docs.
 
@@ -74,12 +80,12 @@ class Embeddings(ABC):
         Returns:
             List of embeddings.
         """
-        return await run_in_executor(
-            None, self.embed_documents, texts, **kwargs
-        )
+        return await run_in_executor(None, self.embed_documents, texts, **kwargs)
 
     async def aembed_query(
-        self, text: str, **kwargs: Any,
+        self,
+        text: str,
+        **kwargs: Any,
     ) -> list[float]:
         """Asynchronous Embed query text.
 
@@ -90,6 +96,4 @@ class Embeddings(ABC):
         Returns:
             Embedding.
         """
-        return await run_in_executor(
-            None, self.embed_query, text, **kwargs
-        )
+        return await run_in_executor(None, self.embed_query, text, **kwargs)
