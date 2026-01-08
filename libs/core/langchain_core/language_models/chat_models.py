@@ -341,6 +341,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     """Profile detailing model capabilities.
 
     !!! warning "Beta feature"
+
         This is a beta feature. The format of model profiles is subject to change.
 
     If not specified, automatically loaded from the provider package on initialization
@@ -358,7 +359,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     @cached_property
     def _serialized(self) -> dict[str, Any]:
-        return dumpd(self)
+        # self is always a Serializable object in this case, thus the result is
+        # guaranteed to be a dict since dumps uses the default callback, which uses
+        # obj.to_json which always returns TypedDict subclasses
+        return cast("dict[str, Any]", dumpd(self))
 
     # --- Runnable methods ---
 
@@ -461,7 +465,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         # Check if a runtime streaming flag has been passed in.
         if "stream" in kwargs:
-            return kwargs["stream"]
+            return bool(kwargs["stream"])
 
         if "streaming" in self.model_fields_set:
             streaming_value = getattr(self, "streaming", None)
@@ -547,7 +551,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                         ):
                             if block["type"] != index_type:
                                 index_type = block["type"]
-                                index = index + 1
+                                index += 1
                             if "index" not in block:
                                 block["index"] = index
                     run_manager.on_llm_new_token(
@@ -679,7 +683,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     ):
                         if block["type"] != index_type:
                             index_type = block["type"]
-                            index = index + 1
+                            index += 1
                         if "index" not in block:
                             block["index"] = index
                 await run_manager.on_llm_new_token(
@@ -730,7 +734,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     # --- Custom methods ---
 
-    def _combine_llm_outputs(self, llm_outputs: list[dict | None]) -> dict:  # noqa: ARG002
+    def _combine_llm_outputs(self, _llm_outputs: list[dict | None], /) -> dict:
         return {}
 
     def _convert_cached_generations(self, cache_val: list) -> list[ChatGeneration]:
@@ -1144,7 +1148,15 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if check_cache:
             if llm_cache:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
-                prompt = dumps(messages)
+                normalized_messages = [
+                    (
+                        msg.model_copy(update={"id": None})
+                        if getattr(msg, "id", None) is not None
+                        else msg
+                    )
+                    for msg in messages
+                ]
+                prompt = dumps(normalized_messages)
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     converted_generations = self._convert_cached_generations(cache_val)
@@ -1187,7 +1199,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     ):
                         if block["type"] != index_type:
                             index_type = block["type"]
-                            index = index + 1
+                            index += 1
                         if "index" not in block:
                             block["index"] = index
                 if run_manager:
@@ -1262,7 +1274,15 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if check_cache:
             if llm_cache:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
-                prompt = dumps(messages)
+                normalized_messages = [
+                    (
+                        msg.model_copy(update={"id": None})
+                        if getattr(msg, "id", None) is not None
+                        else msg
+                    )
+                    for msg in messages
+                ]
+                prompt = dumps(normalized_messages)
                 cache_val = await llm_cache.alookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     converted_generations = self._convert_cached_generations(cache_val)
@@ -1305,7 +1325,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     ):
                         if block["type"] != index_type:
                             index_type = block["type"]
-                            index = index + 1
+                            index += 1
                         if "index" not in block:
                             block["index"] = index
                 if run_manager:

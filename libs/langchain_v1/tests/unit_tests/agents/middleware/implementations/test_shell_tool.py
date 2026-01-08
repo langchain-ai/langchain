@@ -5,6 +5,7 @@ import gc
 import tempfile
 import time
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 from langchain_core.messages import ToolMessage
@@ -17,7 +18,9 @@ from langchain.agents.middleware.shell_tool import (
     _SessionResources,
     _ShellToolInput,
 )
-from langchain.agents.middleware.types import AgentState
+
+if TYPE_CHECKING:
+    from langchain.agents.middleware.types import AgentState
 
 
 def _empty_state() -> AgentState:

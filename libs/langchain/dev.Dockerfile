@@ -28,7 +28,9 @@ COPY . .
 RUN mkdir -p $UV_CACHE_DIR && chmod 755 $UV_CACHE_DIR
 
 # Install dependencies using uv (let uv handle the venv creation)
+WORKDIR /workspaces/langchain/libs/langchain_v1
 RUN uv sync --dev
+WORKDIR /workspaces/langchain
 
 # Create a non-root user and set up proper permissions
 RUN useradd -m -s /bin/bash -u 1000 vscode && \

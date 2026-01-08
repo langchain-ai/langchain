@@ -80,8 +80,8 @@ def pytest_collection_modifyitems(config: pytest.Config, items: Sequence[pytest.
     # Used to avoid repeated calls to `util.find_spec`
     required_pkgs_info: dict[str, bool] = {}
 
-    only_extended = config.getoption("--only-extended") or False
-    only_core = config.getoption("--only-core") or False
+    only_extended = config.getoption("--only-extended", default=False)
+    only_core = config.getoption("--only-core", default=False)
 
     if only_extended and only_core:
         msg = "Cannot specify both `--only-extended` and `--only-core`."

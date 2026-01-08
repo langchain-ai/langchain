@@ -1,8 +1,8 @@
+from inspect import isclass
 from typing import Any
 
 from pydantic import BaseModel
-
-from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic.v1 import BaseModel as BaseModelV1
 
 
 # Function to replace allOf with $ref
@@ -75,27 +75,28 @@ def _remove_enum(obj: Any) -> None:
 
 def _schema(obj: Any) -> dict:
     """Return the schema of the object."""
-    if not is_basemodel_subclass(obj):
-        msg = f"Object must be a Pydantic BaseModel subclass. Got {type(obj)}"
-        raise TypeError(msg)
     # Remap to old style schema
-    if not hasattr(obj, "model_json_schema"):  # V1 model
-        return obj.schema()
+    if isclass(obj):
+        if issubclass(obj, BaseModelV1):
+            return obj.schema()
+        if issubclass(obj, BaseModel):
+            schema_ = obj.model_json_schema(ref_template="#/definitions/{model}")
+            if "$defs" in schema_:
+                schema_["definitions"] = schema_["$defs"]
+                del schema_["$defs"]
 
-    schema_ = obj.model_json_schema(ref_template="#/definitions/{model}")
-    if "$defs" in schema_:
-        schema_["definitions"] = schema_["$defs"]
-        del schema_["$defs"]
+            if "default" in schema_ and schema_["default"] is None:
+                del schema_["default"]
 
-    if "default" in schema_ and schema_["default"] is None:
-        del schema_["default"]
+            replace_all_of_with_ref(schema_)
+            remove_all_none_default(schema_)
+            _remove_additionalproperties(schema_)
+            _remove_enum(schema_)
 
-    replace_all_of_with_ref(schema_)
-    remove_all_none_default(schema_)
-    _remove_additionalproperties(schema_)
-    _remove_enum(schema_)
+            return schema_
 
-    return schema_
+    msg = f"Object must be a Pydantic BaseModel subclass. Got {type(obj)}"
+    raise TypeError(msg)
 
 
 def _remove_additionalproperties(schema: dict) -> dict[str, Any]:
