@@ -24,7 +24,6 @@ class CharacterTextSplitter(TextSplitter):
 
     def split_text(self, text: str) -> list[str]:
         """Split into chunks without re-inserting lookaround separators."""
-        # 🔒 Defensive validation
         if self._chunk_overlap > self._chunk_size:
             error_msg = "chunk_overlap must be <= chunk_size"
             raise ValueError(error_msg)
