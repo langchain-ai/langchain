@@ -162,7 +162,7 @@ class CacheBackedEmbeddings(Embeddings):
         self.underlying_embeddings = underlying_embeddings
         self.batch_size = batch_size
 
-    def embed_documents(self, texts: list[str], **kwargs: Any) -> list[list[float]]:
+    def embed_documents(self, texts: list[str], **_kwargs: Any) -> list[list[float]]:
         """Embed a list of texts.
 
         The method first checks the cache for the embeddings.
@@ -184,7 +184,9 @@ class CacheBackedEmbeddings(Embeddings):
 
         for missing_indices in batch_iterate(self.batch_size, all_missing_indices):
             missing_texts = [texts[i] for i in missing_indices]
-            missing_vectors = self.underlying_embeddings.embed_documents(missing_texts)
+            missing_vectors = self.underlying_embeddings.embed_documents(
+                missing_texts
+            )
             self.document_embedding_store.mset(
                 list(zip(missing_texts, missing_vectors, strict=False)),
             )
@@ -198,7 +200,9 @@ class CacheBackedEmbeddings(Embeddings):
             vectors,
         )  # Nones should have been resolved by now
 
-    async def aembed_documents(self, texts: list[str], **kwargs: Any) -> list[list[float]]:
+    async def aembed_documents(
+        self, texts: list[str], **_kwargs: Any
+    ) -> list[list[float]]:
         """Embed a list of texts.
 
         The method first checks the cache for the embeddings.
@@ -223,7 +227,7 @@ class CacheBackedEmbeddings(Embeddings):
         for missing_indices in batch_iterate(self.batch_size, all_missing_indices):
             missing_texts = [texts[i] for i in missing_indices]
             missing_vectors = await self.underlying_embeddings.aembed_documents(
-                missing_texts,
+                missing_texts
             )
             await self.document_embedding_store.amset(
                 list(zip(missing_texts, missing_vectors, strict=False)),
@@ -238,7 +242,7 @@ class CacheBackedEmbeddings(Embeddings):
             vectors,
         )  # Nones should have been resolved by now
 
-    def embed_query(self, text: str, **kwargs: Any) -> list[float]:
+    def embed_query(self, text: str, **_kwargs: Any) -> list[float]:
         """Embed query text.
 
         By default, this method does not cache queries. To enable caching, set the
@@ -261,7 +265,7 @@ class CacheBackedEmbeddings(Embeddings):
         self.query_embedding_store.mset([(text, vector)])
         return vector
 
-    async def aembed_query(self, text: str, **kwargs: Any) -> list[float]:
+    async def aembed_query(self, text: str, **_kwargs: Any) -> list[float]:
         """Embed query text.
 
         By default, this method does not cache queries. To enable caching, set the
