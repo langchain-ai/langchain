@@ -2007,8 +2007,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/InvalidToolCall',
             }),
@@ -2032,8 +2030,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCall',
             }),
@@ -2116,8 +2112,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/InvalidToolCall',
             }),
@@ -2141,8 +2135,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCallChunk',
             }),
@@ -2150,8 +2142,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCall',
             }),
@@ -3045,37 +3035,39 @@
           `ToolMessage` objects contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A `ToolMessage` representing a result of `42` from a tool call with id
+          `tool_call_id` is used to associate the tool call request with the tool call
+          response. Useful in situations where a chat model is able to request multiple tool
+          calls in parallel.
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` representing a result of `42` from a tool call with id
           
-          ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
-          ```
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          Example: A `ToolMessage` where only part of the tool output is sent to the model
-          and the full output is passed in to artifact.
+              ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ```
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` where only part of the tool output is sent to the model
+              and the full output is passed in to artifact.
           
-          tool_output = {
-              "stdout": "From the graph we can see that the correlation between "
-              "x and y is ...",
-              "stderr": None,
-              "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-          }
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          ToolMessage(
-              content=tool_output["stdout"],
-              artifact=tool_output,
-              tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-          )
-          ```
+              tool_output = {
+                  "stdout": "From the graph we can see that the correlation between "
+                  "x and y is ...",
+                  "stderr": None,
+                  "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+              }
           
-          The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. Useful in situations where a chat model is able
-          to request multiple tool calls in parallel.
+              ToolMessage(
+                  content=tool_output["stdout"],
+                  artifact=tool_output,
+                  tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+              )
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -3260,9 +3252,11 @@
               ```
           
           !!! warning "Behavior changed in `langchain-core` 0.3.9"
+          
               Added `input_token_details` and `output_token_details`.
           
           !!! note "LangSmith SDK"
+          
               The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
               LangSmith's `UsageMetadata` has additional fields to capture cost information
               used by the LangSmith platform.
@@ -3401,8 +3395,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/InvalidToolCall',
             }),
@@ -3426,8 +3418,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCall',
             }),
@@ -3510,8 +3500,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/InvalidToolCall',
             }),
@@ -3535,8 +3523,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCallChunk',
             }),
@@ -3544,8 +3530,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCall',
             }),
@@ -4521,37 +4505,39 @@
           `ToolMessage` objects contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A `ToolMessage` representing a result of `42` from a tool call with id
+          `tool_call_id` is used to associate the tool call request with the tool call
+          response. Useful in situations where a chat model is able to request multiple tool
+          calls in parallel.
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` representing a result of `42` from a tool call with id
           
-          ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
-          ```
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          Example: A `ToolMessage` where only part of the tool output is sent to the model
-          and the full output is passed in to artifact.
+              ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ```
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` where only part of the tool output is sent to the model
+              and the full output is passed in to artifact.
           
-          tool_output = {
-              "stdout": "From the graph we can see that the correlation between "
-              "x and y is ...",
-              "stderr": None,
-              "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-          }
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          ToolMessage(
-              content=tool_output["stdout"],
-              artifact=tool_output,
-              tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-          )
-          ```
+              tool_output = {
+                  "stdout": "From the graph we can see that the correlation between "
+                  "x and y is ...",
+                  "stderr": None,
+                  "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+              }
           
-          The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. Useful in situations where a chat model is able
-          to request multiple tool calls in parallel.
+              ToolMessage(
+                  content=tool_output["stdout"],
+                  artifact=tool_output,
+                  tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+              )
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -4736,9 +4722,11 @@
               ```
           
           !!! warning "Behavior changed in `langchain-core` 0.3.9"
+          
               Added `input_token_details` and `output_token_details`.
           
           !!! note "LangSmith SDK"
+          
               The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
               LangSmith's `UsageMetadata` has additional fields to capture cost information
               used by the LangSmith platform.
@@ -4889,8 +4877,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -4914,8 +4900,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -4998,8 +4982,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -5023,8 +5005,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCallChunk',
             }),
@@ -5032,8 +5012,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -6009,37 +5987,39 @@
           `ToolMessage` objects contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A `ToolMessage` representing a result of `42` from a tool call with id
+          `tool_call_id` is used to associate the tool call request with the tool call
+          response. Useful in situations where a chat model is able to request multiple tool
+          calls in parallel.
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` representing a result of `42` from a tool call with id
           
-          ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
-          ```
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          Example: A `ToolMessage` where only part of the tool output is sent to the model
-          and the full output is passed in to artifact.
+              ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ```
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` where only part of the tool output is sent to the model
+              and the full output is passed in to artifact.
           
-          tool_output = {
-              "stdout": "From the graph we can see that the correlation between "
-              "x and y is ...",
-              "stderr": None,
-              "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-          }
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          ToolMessage(
-              content=tool_output["stdout"],
-              artifact=tool_output,
-              tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-          )
-          ```
+              tool_output = {
+                  "stdout": "From the graph we can see that the correlation between "
+                  "x and y is ...",
+                  "stderr": None,
+                  "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+              }
           
-          The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. Useful in situations where a chat model is able
-          to request multiple tool calls in parallel.
+              ToolMessage(
+                  content=tool_output["stdout"],
+                  artifact=tool_output,
+                  tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+              )
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -6224,9 +6204,11 @@
               ```
           
           !!! warning "Behavior changed in `langchain-core` 0.3.9"
+          
               Added `input_token_details` and `output_token_details`.
           
           !!! note "LangSmith SDK"
+          
               The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
               LangSmith's `UsageMetadata` has additional fields to capture cost information
               used by the LangSmith platform.
@@ -6315,8 +6297,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -6340,8 +6320,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -6424,8 +6402,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -6449,8 +6425,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCallChunk',
             }),
@@ -6458,8 +6432,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -7353,37 +7325,39 @@
           `ToolMessage` objects contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A `ToolMessage` representing a result of `42` from a tool call with id
+          `tool_call_id` is used to associate the tool call request with the tool call
+          response. Useful in situations where a chat model is able to request multiple tool
+          calls in parallel.
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` representing a result of `42` from a tool call with id
           
-          ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
-          ```
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          Example: A `ToolMessage` where only part of the tool output is sent to the model
-          and the full output is passed in to artifact.
+              ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ```
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` where only part of the tool output is sent to the model
+              and the full output is passed in to artifact.
           
-          tool_output = {
-              "stdout": "From the graph we can see that the correlation between "
-              "x and y is ...",
-              "stderr": None,
-              "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-          }
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          ToolMessage(
-              content=tool_output["stdout"],
-              artifact=tool_output,
-              tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-          )
-          ```
+              tool_output = {
+                  "stdout": "From the graph we can see that the correlation between "
+                  "x and y is ...",
+                  "stderr": None,
+                  "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+              }
           
-          The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. Useful in situations where a chat model is able
-          to request multiple tool calls in parallel.
+              ToolMessage(
+                  content=tool_output["stdout"],
+                  artifact=tool_output,
+                  tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+              )
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -7568,9 +7542,11 @@
               ```
           
           !!! warning "Behavior changed in `langchain-core` 0.3.9"
+          
               Added `input_token_details` and `output_token_details`.
           
           !!! note "LangSmith SDK"
+          
               The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
               LangSmith's `UsageMetadata` has additional fields to capture cost information
               used by the LangSmith platform.
@@ -7751,8 +7727,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -7776,8 +7750,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -7860,8 +7832,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -7885,8 +7855,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCallChunk',
             }),
@@ -7894,8 +7862,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -8871,37 +8837,39 @@
           `ToolMessage` objects contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A `ToolMessage` representing a result of `42` from a tool call with id
+          `tool_call_id` is used to associate the tool call request with the tool call
+          response. Useful in situations where a chat model is able to request multiple tool
+          calls in parallel.
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` representing a result of `42` from a tool call with id
           
-          ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
-          ```
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          Example: A `ToolMessage` where only part of the tool output is sent to the model
-          and the full output is passed in to artifact.
+              ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ```
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` where only part of the tool output is sent to the model
+              and the full output is passed in to artifact.
           
-          tool_output = {
-              "stdout": "From the graph we can see that the correlation between "
-              "x and y is ...",
-              "stderr": None,
-              "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-          }
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          ToolMessage(
-              content=tool_output["stdout"],
-              artifact=tool_output,
-              tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-          )
-          ```
+              tool_output = {
+                  "stdout": "From the graph we can see that the correlation between "
+                  "x and y is ...",
+                  "stderr": None,
+                  "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+              }
           
-          The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. Useful in situations where a chat model is able
-          to request multiple tool calls in parallel.
+              ToolMessage(
+                  content=tool_output["stdout"],
+                  artifact=tool_output,
+                  tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+              )
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -9086,9 +9054,11 @@
               ```
           
           !!! warning "Behavior changed in `langchain-core` 0.3.9"
+          
               Added `input_token_details` and `output_token_details`.
           
           !!! note "LangSmith SDK"
+          
               The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
               LangSmith's `UsageMetadata` has additional fields to capture cost information
               used by the LangSmith platform.
@@ -9222,8 +9192,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -9247,8 +9215,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -9331,8 +9297,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -9356,8 +9320,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCallChunk',
             }),
@@ -9365,8 +9327,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -10260,37 +10220,39 @@
           `ToolMessage` objects contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A `ToolMessage` representing a result of `42` from a tool call with id
+          `tool_call_id` is used to associate the tool call request with the tool call
+          response. Useful in situations where a chat model is able to request multiple tool
+          calls in parallel.
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` representing a result of `42` from a tool call with id
           
-          ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
-          ```
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          Example: A `ToolMessage` where only part of the tool output is sent to the model
-          and the full output is passed in to artifact.
+              ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ```
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` where only part of the tool output is sent to the model
+              and the full output is passed in to artifact.
           
-          tool_output = {
-              "stdout": "From the graph we can see that the correlation between "
-              "x and y is ...",
-              "stderr": None,
-              "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-          }
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          ToolMessage(
-              content=tool_output["stdout"],
-              artifact=tool_output,
-              tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-          )
-          ```
+              tool_output = {
+                  "stdout": "From the graph we can see that the correlation between "
+                  "x and y is ...",
+                  "stderr": None,
+                  "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+              }
           
-          The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. Useful in situations where a chat model is able
-          to request multiple tool calls in parallel.
+              ToolMessage(
+                  content=tool_output["stdout"],
+                  artifact=tool_output,
+                  tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+              )
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -10475,9 +10437,11 @@
               ```
           
           !!! warning "Behavior changed in `langchain-core` 0.3.9"
+          
               Added `input_token_details` and `output_token_details`.
           
           !!! note "LangSmith SDK"
+          
               The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
               LangSmith's `UsageMetadata` has additional fields to capture cost information
               used by the LangSmith platform.
@@ -10566,8 +10530,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -10591,8 +10553,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -10675,8 +10635,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -10700,8 +10658,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCallChunk',
             }),
@@ -10709,8 +10665,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -11697,37 +11651,39 @@
           `ToolMessage` objects contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A `ToolMessage` representing a result of `42` from a tool call with id
+          `tool_call_id` is used to associate the tool call request with the tool call
+          response. Useful in situations where a chat model is able to request multiple tool
+          calls in parallel.
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` representing a result of `42` from a tool call with id
           
-          ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
-          ```
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          Example: A `ToolMessage` where only part of the tool output is sent to the model
-          and the full output is passed in to artifact.
+              ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ```
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` where only part of the tool output is sent to the model
+              and the full output is passed in to artifact.
           
-          tool_output = {
-              "stdout": "From the graph we can see that the correlation between "
-              "x and y is ...",
-              "stderr": None,
-              "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-          }
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          ToolMessage(
-              content=tool_output["stdout"],
-              artifact=tool_output,
-              tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-          )
-          ```
+              tool_output = {
+                  "stdout": "From the graph we can see that the correlation between "
+                  "x and y is ...",
+                  "stderr": None,
+                  "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+              }
           
-          The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. Useful in situations where a chat model is able
-          to request multiple tool calls in parallel.
+              ToolMessage(
+                  content=tool_output["stdout"],
+                  artifact=tool_output,
+                  tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+              )
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -11912,9 +11868,11 @@
               ```
           
           !!! warning "Behavior changed in `langchain-core` 0.3.9"
+          
               Added `input_token_details` and `output_token_details`.
           
           !!! note "LangSmith SDK"
+          
               The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
               LangSmith's `UsageMetadata` has additional fields to capture cost information
               used by the LangSmith platform.
@@ -12015,8 +11973,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -12040,8 +11996,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -12124,8 +12078,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -12149,8 +12101,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCallChunk',
             }),
@@ -12158,8 +12108,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -13135,37 +13083,39 @@
           `ToolMessage` objects contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A `ToolMessage` representing a result of `42` from a tool call with id
+          `tool_call_id` is used to associate the tool call request with the tool call
+          response. Useful in situations where a chat model is able to request multiple tool
+          calls in parallel.
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` representing a result of `42` from a tool call with id
           
-          ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
-          ```
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          Example: A `ToolMessage` where only part of the tool output is sent to the model
-          and the full output is passed in to artifact.
+              ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ```
           
-          ```python
-          from langchain_core.messages import ToolMessage
+          Example:
+              A `ToolMessage` where only part of the tool output is sent to the model
+              and the full output is passed in to artifact.
           
-          tool_output = {
-              "stdout": "From the graph we can see that the correlation between "
-              "x and y is ...",
-              "stderr": None,
-              "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-          }
+              ```python
+              from langchain_core.messages import ToolMessage
           
-          ToolMessage(
-              content=tool_output["stdout"],
-              artifact=tool_output,
-              tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-          )
-          ```
+              tool_output = {
+                  "stdout": "From the graph we can see that the correlation between "
+                  "x and y is ...",
+                  "stderr": None,
+                  "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+              }
           
-          The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. Useful in situations where a chat model is able
-          to request multiple tool calls in parallel.
+              ToolMessage(
+                  content=tool_output["stdout"],
+                  artifact=tool_output,
+                  tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+              )
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -13350,9 +13300,11 @@
               ```
           
           !!! warning "Behavior changed in `langchain-core` 0.3.9"
+          
               Added `input_token_details` and `output_token_details`.
           
           !!! note "LangSmith SDK"
+          
               The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
               LangSmith's `UsageMetadata` has additional fields to capture cost information
               used by the LangSmith platform.

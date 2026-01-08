@@ -3,12 +3,12 @@
 from collections.abc import Callable
 
 import pytest
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.tools import tool
+from langgraph.prebuilt.tool_node import ToolNode
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
-from langgraph.prebuilt.tool_node import ToolNode
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
-from langchain_core.tools import tool
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
@@ -58,17 +58,17 @@ def test_middleware_can_modify_tools() -> None:
     """Test that middleware can modify the list of tools in ModelRequest."""
 
     @tool
-    def tool_a(input: str) -> str:
+    def tool_a(value: str) -> str:
         """Tool A."""
         return "A"
 
     @tool
-    def tool_b(input: str) -> str:
+    def tool_b(value: str) -> str:
         """Tool B."""
         return "B"
 
     @tool
-    def tool_c(input: str) -> str:
+    def tool_c(value: str) -> str:
         """Tool C."""
         return "C"
 
@@ -79,7 +79,7 @@ def test_middleware_can_modify_tools() -> None:
             handler: Callable[[ModelRequest], AIMessage],
         ) -> AIMessage:
             # Only allow tool_a and tool_b
-            filtered_tools = [t for t in request.tools if t.name in ["tool_a", "tool_b"]]
+            filtered_tools = [t for t in request.tools if t.name in {"tool_a", "tool_b"}]
             return handler(request.override(tools=filtered_tools))
 
     # Model will try to call tool_a
@@ -107,12 +107,12 @@ def test_unknown_tool_raises_error() -> None:
     """Test that using an unknown tool in ModelRequest raises a clear error."""
 
     @tool
-    def known_tool(input: str) -> str:
+    def known_tool(value: str) -> str:
         """A known tool."""
         return "result"
 
     @tool
-    def unknown_tool(input: str) -> str:
+    def unknown_tool(value: str) -> str:
         """An unknown tool not passed to create_agent."""
         return "unknown"
 
@@ -123,7 +123,7 @@ def test_unknown_tool_raises_error() -> None:
             handler: Callable[[ModelRequest], AIMessage],
         ) -> AIMessage:
             # Add an unknown tool
-            return handler(request.override(tools=request.tools + [unknown_tool]))
+            return handler(request.override(tools=[*request.tools, unknown_tool]))
 
     agent = create_agent(
         model=FakeToolCallingModel(),
@@ -189,7 +189,7 @@ def test_empty_tools_list_is_valid() -> None:
     """Test that middleware can set tools to an empty list."""
 
     @tool
-    def some_tool(input: str) -> str:
+    def some_tool(value: str) -> str:
         """Some tool."""
         return "result"
 
@@ -222,17 +222,17 @@ def test_tools_preserved_across_multiple_middleware() -> None:
     modification_order: list[list[str]] = []
 
     @tool
-    def tool_a(input: str) -> str:
+    def tool_a(value: str) -> str:
         """Tool A."""
         return "A"
 
     @tool
-    def tool_b(input: str) -> str:
+    def tool_b(value: str) -> str:
         """Tool B."""
         return "B"
 
     @tool
-    def tool_c(input: str) -> str:
+    def tool_c(value: str) -> str:
         """Tool C."""
         return "C"
 
@@ -283,22 +283,22 @@ def test_middleware_with_additional_tools() -> None:
     """Test middleware that provides additional tools via tools attribute."""
 
     @tool
-    def base_tool(input: str) -> str:
+    def base_tool(value: str) -> str:
         """Base tool."""
         return "base"
 
     @tool
-    def middleware_tool(input: str) -> str:
+    def middleware_tool(value: str) -> str:
         """Tool provided by middleware."""
         return "middleware"
 
     class ToolProvidingMiddleware(AgentMiddleware):
-        tools = [middleware_tool]
+        tools = (middleware_tool,)
 
     # Model calls the middleware-provided tool
     model = FakeToolCallingModel(
         tool_calls=[
-            [{"args": {"input": "test"}, "id": "1", "name": "middleware_tool"}],
+            [{"args": {"value": "test"}, "id": "1", "name": "middleware_tool"}],
             [],
         ]
     )
@@ -324,7 +324,7 @@ def test_tool_node_not_accepted() -> None:
     """Test that passing a ToolNode instance to create_agent raises an error."""
 
     @tool
-    def some_tool(input: str) -> str:
+    def some_tool(value: str) -> str:
         """Some tool."""
         return "result"
 

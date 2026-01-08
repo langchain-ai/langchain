@@ -16,18 +16,15 @@ configurations.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 
-import pytest
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.prebuilt import InjectedStore
-from langgraph.store.base import BaseStore
 from langgraph.store.memory import InMemoryStore
-from typing_extensions import Annotated
 
 from langchain.agents import create_agent
-from langchain.agents.middleware.types import AgentState
+from langchain.agents.middleware.types import AgentMiddleware, AgentState
 from langchain.tools import InjectedState, ToolRuntime
 
 from .model import FakeToolCallingModel
@@ -48,6 +45,8 @@ def test_tool_runtime_basic_injection() -> None:
         injected_data["store"] = runtime.store
         injected_data["stream_writer"] = runtime.stream_writer
         return f"Processed {x}"
+
+    assert runtime_tool.args
 
     agent = create_agent(
         model=FakeToolCallingModel(
@@ -283,9 +282,6 @@ def test_tool_runtime_config_access() -> None:
 
 def test_tool_runtime_with_custom_state() -> None:
     """Test ToolRuntime works with custom state schemas."""
-    from typing_extensions import Annotated, TypedDict
-
-    from langchain.agents.middleware.types import AgentMiddleware
 
     class CustomState(AgentState):
         custom_field: str
@@ -314,7 +310,10 @@ def test_tool_runtime_with_custom_state() -> None:
     )
 
     result = agent.invoke(
-        {"messages": [HumanMessage("Test custom state")], "custom_field": "custom_value"}
+        {
+            "messages": [HumanMessage("Test custom state")],
+            "custom_field": "custom_value",
+        }
     )
 
     # Verify custom field was accessible
@@ -431,9 +430,9 @@ def test_tool_runtime_error_handling() -> None:
         try:
             if x == 0:
                 return "Error: Cannot process zero"
-            return f"Processed: {x}"
         except Exception as e:
             return f"Error: {e}"
+        return f"Processed: {x}"
 
     agent = create_agent(
         model=FakeToolCallingModel(
@@ -462,10 +461,6 @@ def test_tool_runtime_error_handling() -> None:
 
 def test_tool_runtime_with_middleware() -> None:
     """Test ToolRuntime injection works with agent middleware."""
-    from typing import Any
-
-    from langchain.agents.middleware.types import AgentMiddleware
-
     middleware_calls = []
     runtime_calls = []
 
@@ -541,7 +536,8 @@ def test_tool_runtime_type_hints() -> None:
 
     result = agent.invoke({"messages": [HumanMessage("Test")]})
 
-    # Verify typed runtime worked - should see 2 messages (HumanMessage + AIMessage) before tool executes
+    # Verify typed runtime worked -
+    # should see 2 messages (HumanMessage + AIMessage) before tool executes
     assert typed_runtime["message_count"] == 2
 
     tool_message = result["messages"][2]

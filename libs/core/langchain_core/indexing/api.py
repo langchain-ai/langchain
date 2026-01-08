@@ -242,6 +242,17 @@ def _delete(
     vector_store: VectorStore | DocumentIndex,
     ids: list[str],
 ) -> None:
+    """Delete documents from a vector store or document index by their IDs.
+
+    Args:
+        vector_store: The vector store or document index to delete from.
+        ids: List of document IDs to delete.
+
+    Raises:
+        IndexingException: If the delete operation fails.
+        TypeError: If the `vector_store` is neither a `VectorStore` nor a
+            `DocumentIndex`.
+    """
     if isinstance(vector_store, VectorStore):
         delete_ok = vector_store.delete(ids)
         if delete_ok is not None and delete_ok is False:
@@ -302,6 +313,7 @@ def index(
     are not able to specify the uid of the document.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.25"
+
         Added `scoped_full` cleanup mode.
 
     !!! warning
@@ -640,6 +652,7 @@ async def aindex(
     are not able to specify the uid of the document.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.25"
+
         Added `scoped_full` cleanup mode.
 
     !!! warning

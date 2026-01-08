@@ -362,6 +362,29 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        if language == Language.R:
+            return [
+                # Split along function definitions
+                "\nfunction ",
+                # Split along S4 class and method definitions
+                "\nsetClass\\(",
+                "\nsetMethod\\(",
+                "\nsetGeneric\\(",
+                # Split along control flow statements
+                "\nif ",
+                "\nelse ",
+                "\nfor ",
+                "\nwhile ",
+                "\nrepeat ",
+                # Split along package loading
+                "\nlibrary\\(",
+                "\nrequire\\(",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
         if language == Language.RST:
             return [
                 # Split along section titles

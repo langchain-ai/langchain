@@ -184,7 +184,7 @@ class _TracerCore(ABC):
             # Changing this to "chat_model" may break triggering on_llm_start
             run_type="chat_model",
             tags=tags,
-            name=name,  # type: ignore[arg-type]
+            name=name,
         )
 
     def _create_llm_run(
@@ -213,7 +213,7 @@ class _TracerCore(ABC):
             start_time=start_time,
             run_type="llm",
             tags=tags or [],
-            name=name,  # type: ignore[arg-type]
+            name=name,
         )
 
     def _llm_run_with_token_event(
@@ -284,6 +284,16 @@ class _TracerCore(ABC):
         llm_run.end_time = datetime.now(timezone.utc)
         llm_run.events.append({"name": "end", "time": llm_run.end_time})
 
+        tool_call_count = 0
+        for generations in response.generations:
+            for generation in generations:
+                if hasattr(generation, "message"):
+                    msg = generation.message
+                    if hasattr(msg, "tool_calls") and msg.tool_calls:
+                        tool_call_count += len(msg.tool_calls)
+        if tool_call_count > 0:
+            llm_run.extra["tool_call_count"] = tool_call_count
+
         return llm_run
 
     def _errored_llm_run(
@@ -336,7 +346,7 @@ class _TracerCore(ABC):
             start_time=start_time,
             child_runs=[],
             run_type=run_type or "chain",
-            name=name,  # type: ignore[arg-type]
+            name=name,
             tags=tags or [],
         )
 
@@ -433,7 +443,7 @@ class _TracerCore(ABC):
             child_runs=[],
             run_type="tool",
             tags=tags or [],
-            name=name,  # type: ignore[arg-type]
+            name=name,
         )
 
     def _complete_tool_run(

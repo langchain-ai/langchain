@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field, replace
 from inspect import iscoroutinefunction
 from typing import (
@@ -19,19 +19,22 @@ from typing import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
+    from langgraph.types import Command
+
 # Needed as top level import for Pydantic schema generation on AgentState
+import warnings
 from typing import TypeAlias
 
-from langchain_core.messages import (  # noqa: TC002
+from langchain_core.messages import (
     AIMessage,
     AnyMessage,
     BaseMessage,
+    SystemMessage,
     ToolMessage,
 )
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
-from langgraph.types import Command  # noqa: TC002
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
@@ -72,7 +75,7 @@ class _ModelRequestOverrides(TypedDict, total=False):
     """Possible overrides for `ModelRequest.override()` method."""
 
     model: BaseChatModel
-    system_prompt: str | None
+    system_message: SystemMessage | None
     messages: list[AnyMessage]
     tool_choice: Any | None
     tools: list[BaseTool | dict]
@@ -80,19 +83,78 @@ class _ModelRequestOverrides(TypedDict, total=False):
     model_settings: dict[str, Any]
 
 
-@dataclass
+@dataclass(init=False)
 class ModelRequest:
     """Model request information for the agent."""
 
     model: BaseChatModel
-    system_prompt: str | None
-    messages: list[AnyMessage]  # excluding system prompt
+    messages: list[AnyMessage]  # excluding system message
+    system_message: SystemMessage | None
     tool_choice: Any | None
     tools: list[BaseTool | dict]
     response_format: ResponseFormat | None
     state: AgentState
     runtime: Runtime[ContextT]  # type: ignore[valid-type]
     model_settings: dict[str, Any] = field(default_factory=dict)
+
+    def __init__(
+        self,
+        *,
+        model: BaseChatModel,
+        messages: list[AnyMessage],
+        system_message: SystemMessage | None = None,
+        system_prompt: str | None = None,
+        tool_choice: Any | None = None,
+        tools: list[BaseTool | dict] | None = None,
+        response_format: ResponseFormat | None = None,
+        state: AgentState | None = None,
+        runtime: Runtime[ContextT] | None = None,
+        model_settings: dict[str, Any] | None = None,
+    ) -> None:
+        """Initialize ModelRequest with backward compatibility for system_prompt.
+
+        Args:
+            model: The chat model to use.
+            messages: List of messages (excluding system prompt).
+            tool_choice: Tool choice configuration.
+            tools: List of available tools.
+            response_format: Response format specification.
+            state: Agent state.
+            runtime: Runtime context.
+            model_settings: Additional model settings.
+            system_message: System message instance (preferred).
+            system_prompt: System prompt string (deprecated, converted to SystemMessage).
+        """
+        # Handle system_prompt/system_message conversion and validation
+        if system_prompt is not None and system_message is not None:
+            msg = "Cannot specify both system_prompt and system_message"
+            raise ValueError(msg)
+
+        if system_prompt is not None:
+            system_message = SystemMessage(content=system_prompt)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            self.model = model
+            self.messages = messages
+            self.system_message = system_message
+            self.tool_choice = tool_choice
+            self.tools = tools if tools is not None else []
+            self.response_format = response_format
+            self.state = state if state is not None else {"messages": []}
+            self.runtime = runtime  # type: ignore[assignment]
+            self.model_settings = model_settings if model_settings is not None else {}
+
+    @property
+    def system_prompt(self) -> str | None:
+        """Get system prompt text from system_message.
+
+        Returns:
+            The content of the system message if present, otherwise `None`.
+        """
+        if self.system_message is None:
+            return None
+        return self.system_message.text
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Set an attribute with a deprecation warning.
@@ -104,20 +166,29 @@ class ModelRequest:
             name: Attribute name.
             value: Attribute value.
         """
-        import warnings
-
-        # Allow setting attributes during __init__ (when object is being constructed)
-        if not hasattr(self, "__dataclass_fields__") or not hasattr(self, name):
-            object.__setattr__(self, name, value)
-        else:
+        # Special handling for system_prompt - convert to system_message
+        if name == "system_prompt":
             warnings.warn(
-                f"Direct attribute assignment to ModelRequest.{name} is deprecated. "
-                f"Use request.override({name}=...) instead to create a new request "
-                f"with the modified attribute.",
+                "Direct attribute assignment to ModelRequest.system_prompt is deprecated. "
+                "Use request.override(system_message=SystemMessage(...)) instead to create "
+                "a new request with the modified system message.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            object.__setattr__(self, name, value)
+            if value is None:
+                object.__setattr__(self, "system_message", None)
+            else:
+                object.__setattr__(self, "system_message", SystemMessage(content=value))
+            return
+
+        warnings.warn(
+            f"Direct attribute assignment to ModelRequest.{name} is deprecated. "
+            f"Use request.override({name}=...) instead to create a new request "
+            f"with the modified attribute.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        object.__setattr__(self, name, value)
 
     def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest:
         """Replace the request with a new request with the given overrides.
@@ -132,7 +203,8 @@ class ModelRequest:
                 Supported keys:
 
                 - `model`: `BaseChatModel` instance
-                - `system_prompt`: Optional system prompt string
+                - `system_prompt`: deprecated, use `system_message` instead
+                - `system_message`: `SystemMessage` instance
                 - `messages`: `list` of messages
                 - `tool_choice`: Tool choice configuration
                 - `tools`: `list` of available tools
@@ -149,12 +221,37 @@ class ModelRequest:
                 new_request = request.override(model=different_model)
                 ```
 
+            !!! example "Override system message (preferred)"
+
+                ```python
+                from langchain_core.messages import SystemMessage
+
+                new_request = request.override(
+                    system_message=SystemMessage(content="New instructions")
+                )
+                ```
+
             !!! example "Override multiple attributes"
 
                 ```python
-                new_request = request.override(system_prompt="New instructions", tool_choice="auto")
+                new_request = request.override(
+                    model=ChatOpenAI(model="gpt-4o"),
+                    system_message=SystemMessage(content="New instructions"),
+                )
                 ```
         """
+        # Handle system_prompt/system_message conversion
+        if "system_prompt" in overrides and "system_message" in overrides:
+            msg = "Cannot specify both system_prompt and system_message"
+            raise ValueError(msg)
+
+        if "system_prompt" in overrides:
+            system_prompt = cast("str", overrides.pop("system_prompt"))  # type: ignore[typeddict-item]
+            if system_prompt is None:
+                overrides["system_message"] = None
+            else:
+                overrides["system_message"] = SystemMessage(content=system_prompt)
+
         return replace(self, **overrides)
 
 
@@ -174,7 +271,7 @@ class ModelResponse:
 
 
 # Type alias for middleware return type - allows returning either full response or just AIMessage
-ModelCallResult: TypeAlias = "ModelResponse | AIMessage"
+ModelCallResult: TypeAlias = ModelResponse | AIMessage
 """`TypeAlias` for model call handler return value.
 
 Middleware can return either:
@@ -241,7 +338,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     state_schema: type[StateT] = cast("type[StateT]", AgentState)
     """The schema for state passed to the middleware nodes."""
 
-    tools: list[BaseTool]
+    tools: Sequence[BaseTool]
     """Additional tools registered by the middleware."""
 
     @property
@@ -602,11 +699,13 @@ class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
         ...
 
 
-class _CallableReturningPromptString(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
-    """Callable that returns a prompt string given `ModelRequest` (contains state and runtime)."""
+class _CallableReturningSystemMessage(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
+    """Callable that returns a prompt string or SystemMessage given `ModelRequest`."""
 
-    def __call__(self, request: ModelRequest) -> str | Awaitable[str]:
-        """Generate a system prompt string based on the request."""
+    def __call__(
+        self, request: ModelRequest
+    ) -> str | SystemMessage | Awaitable[str | SystemMessage]:
+        """Generate a system prompt string or SystemMessage based on the request."""
         ...
 
 
@@ -785,6 +884,23 @@ def before_model(
             def custom_before_model(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
                 return {"custom_field": "updated_value"}
             ```
+
+        !!! example "Streaming custom events before model call"
+
+            Use `runtime.stream_writer` to emit custom events before each model invocation.
+            Events are received when streaming with `stream_mode="custom"`.
+
+            ```python
+            @before_model
+            async def notify_model_call(state: AgentState, runtime: Runtime) -> None:
+                '''Notify user before model is called.'''
+                runtime.stream_writer(
+                    {
+                        "type": "status",
+                        "message": "Thinking...",
+                    }
+                )
+            ```
     """
 
     def decorator(
@@ -799,7 +915,7 @@ def before_model(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
@@ -824,7 +940,7 @@ def before_model(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command | None:
@@ -926,6 +1042,25 @@ def after_model(
             def custom_after_model(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
                 return {"custom_field": "updated_after_model"}
             ```
+
+        !!! example "Streaming custom events after model call"
+
+            Use `runtime.stream_writer` to emit custom events after model responds.
+            Events are received when streaming with `stream_mode="custom"`.
+
+            ```python
+            @after_model
+            async def notify_model_response(state: AgentState, runtime: Runtime) -> None:
+                '''Notify user after model has responded.'''
+                last_message = state["messages"][-1]
+                has_tool_calls = hasattr(last_message, "tool_calls") and last_message.tool_calls
+                runtime.stream_writer(
+                    {
+                        "type": "status",
+                        "message": "Using tools..." if has_tool_calls else "Response ready!",
+                    }
+                )
+            ```
     """
 
     def decorator(
@@ -940,7 +1075,7 @@ def after_model(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
@@ -963,7 +1098,7 @@ def after_model(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command | None:
@@ -1077,6 +1212,46 @@ def before_agent(
             def custom_before_agent(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
                 return {"custom_field": "initialized_value"}
             ```
+
+        !!! example "Streaming custom events"
+
+            Use `runtime.stream_writer` to emit custom events during agent execution.
+            Events are received when streaming with `stream_mode="custom"`.
+
+            ```python
+            from langchain.agents import create_agent
+            from langchain.agents.middleware import before_agent, AgentState
+            from langchain.messages import HumanMessage
+            from langgraph.runtime import Runtime
+
+
+            @before_agent
+            async def notify_start(state: AgentState, runtime: Runtime) -> None:
+                '''Notify user that agent is starting.'''
+                runtime.stream_writer(
+                    {
+                        "type": "status",
+                        "message": "Initializing agent session...",
+                    }
+                )
+                # Perform prerequisite tasks here
+                runtime.stream_writer({"type": "status", "message": "Agent ready!"})
+
+
+            agent = create_agent(
+                model="openai:gpt-5.2",
+                tools=[...],
+                middleware=[notify_start],
+            )
+
+            # Consume with stream_mode="custom" to receive events
+            async for mode, event in agent.astream(
+                {"messages": [HumanMessage("Hello")]},
+                stream_mode=["updates", "custom"],
+            ):
+                if mode == "custom":
+                    print(f"Status: {event}")
+            ```
     """
 
     def decorator(
@@ -1091,7 +1266,7 @@ def before_agent(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
@@ -1116,7 +1291,7 @@ def before_agent(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command | None:
@@ -1220,6 +1395,24 @@ def after_agent(
             def custom_after_agent(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
                 return {"custom_field": "finalized_value"}
             ```
+
+        !!! example "Streaming custom events on completion"
+
+            Use `runtime.stream_writer` to emit custom events when agent completes.
+            Events are received when streaming with `stream_mode="custom"`.
+
+            ```python
+            @after_agent
+            async def notify_completion(state: AgentState, runtime: Runtime) -> None:
+                '''Notify user that agent has completed.'''
+                runtime.stream_writer(
+                    {
+                        "type": "status",
+                        "message": "Agent execution complete!",
+                        "total_messages": len(state["messages"]),
+                    }
+                )
+            ```
     """
 
     def decorator(
@@ -1234,7 +1427,7 @@ def after_agent(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
@@ -1257,7 +1450,7 @@ def after_agent(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command | None:
@@ -1287,7 +1480,7 @@ def after_agent(
 
 @overload
 def dynamic_prompt(
-    func: _CallableReturningPromptString[StateT, ContextT],
+    func: _CallableReturningSystemMessage[StateT, ContextT],
 ) -> AgentMiddleware[StateT, ContextT]: ...
 
 
@@ -1295,16 +1488,16 @@ def dynamic_prompt(
 def dynamic_prompt(
     func: None = None,
 ) -> Callable[
-    [_CallableReturningPromptString[StateT, ContextT]],
+    [_CallableReturningSystemMessage[StateT, ContextT]],
     AgentMiddleware[StateT, ContextT],
 ]: ...
 
 
 def dynamic_prompt(
-    func: _CallableReturningPromptString[StateT, ContextT] | None = None,
+    func: _CallableReturningSystemMessage[StateT, ContextT] | None = None,
 ) -> (
     Callable[
-        [_CallableReturningPromptString[StateT, ContextT]],
+        [_CallableReturningSystemMessage[StateT, ContextT]],
         AgentMiddleware[StateT, ContextT],
     ]
     | AgentMiddleware[StateT, ContextT]
@@ -1326,7 +1519,8 @@ def dynamic_prompt(
             function that can be applied to a function.
 
     The decorated function should return:
-        - `str` – The system prompt to use for the model request
+        - `str` – The system prompt string to use for the model request
+        - `SystemMessage` – A complete system message to use for the model request
 
     Examples:
         Basic usage with dynamic content:
@@ -1357,19 +1551,22 @@ def dynamic_prompt(
     """
 
     def decorator(
-        func: _CallableReturningPromptString[StateT, ContextT],
+        func: _CallableReturningSystemMessage[StateT, ContextT],
     ) -> AgentMiddleware[StateT, ContextT]:
         is_async = iscoroutinefunction(func)
 
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
             ) -> ModelCallResult:
                 prompt = await func(request)  # type: ignore[misc]
-                request = request.override(system_prompt=prompt)
+                if isinstance(prompt, SystemMessage):
+                    request = request.override(system_message=prompt)
+                else:
+                    request = request.override(system_message=SystemMessage(content=prompt))
                 return await handler(request)
 
             middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
@@ -1385,22 +1582,28 @@ def dynamic_prompt(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
         ) -> ModelCallResult:
-            prompt = cast("str", func(request))
-            request = request.override(system_prompt=prompt)
+            prompt = cast("Callable[[ModelRequest], SystemMessage | str]", func)(request)
+            if isinstance(prompt, SystemMessage):
+                request = request.override(system_message=prompt)
+            else:
+                request = request.override(system_message=SystemMessage(content=prompt))
             return handler(request)
 
         async def async_wrapped_from_sync(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             request: ModelRequest,
             handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
         ) -> ModelCallResult:
             # Delegate to sync function
-            prompt = cast("str", func(request))
-            request = request.override(system_prompt=prompt)
+            prompt = cast("Callable[[ModelRequest], SystemMessage | str]", func)(request)
+            if isinstance(prompt, SystemMessage):
+                request = request.override(system_message=prompt)
+            else:
+                request = request.override(system_message=SystemMessage(content=prompt))
             return await handler(request)
 
         middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
@@ -1536,7 +1739,7 @@ def wrap_model_call(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
             ) -> ModelCallResult:
@@ -1557,7 +1760,7 @@ def wrap_model_call(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
         ) -> ModelCallResult:
@@ -1696,7 +1899,7 @@ def wrap_tool_call(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware,  # noqa: ARG001
+                _self: AgentMiddleware,
                 request: ToolCallRequest,
                 handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
             ) -> ToolMessage | Command:
@@ -1717,7 +1920,7 @@ def wrap_tool_call(
             )()
 
         def wrapped(
-            self: AgentMiddleware,  # noqa: ARG001
+            _self: AgentMiddleware,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
         ) -> ToolMessage | Command:

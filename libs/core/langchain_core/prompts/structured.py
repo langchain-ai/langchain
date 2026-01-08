@@ -48,8 +48,17 @@ class StructuredPrompt(ChatPromptTemplate):
             schema_: schema for the structured prompt.
             structured_output_kwargs: additional kwargs for structured output.
             template_format: template format for the prompt.
+
+        Raises:
+            ValueError: if schema is not provided.
         """
-        schema_ = schema_ or kwargs.pop("schema")
+        schema_ = schema_ or kwargs.pop("schema", None)
+        if not schema_:
+            err_msg = (
+                "Must pass in a non-empty structured output schema. Received: "
+                f"{schema_}"
+            )
+            raise ValueError(err_msg)
         structured_output_kwargs = structured_output_kwargs or {}
         for k in set(kwargs).difference(get_pydantic_field_names(self.__class__)):
             structured_output_kwargs[k] = kwargs.pop(k)

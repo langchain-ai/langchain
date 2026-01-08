@@ -76,21 +76,36 @@ def translate_grounding_metadata_to_citations(
         for chunk_index in chunk_indices:
             if chunk_index < len(grounding_chunks):
                 chunk = grounding_chunks[chunk_index]
-                web_info = chunk.get("web", {})
+
+                # Handle web and maps grounding
+                web_info = chunk.get("web") or {}
+                maps_info = chunk.get("maps") or {}
+
+                # Extract citation info depending on source
+                url = maps_info.get("uri") or web_info.get("uri")
+                title = maps_info.get("title") or web_info.get("title")
+
+                # Note: confidence_scores is a legacy field from Gemini 2.0 and earlier
+                # that indicated confidence (0.0-1.0) for each grounding chunk.
+                #
+                # In Gemini 2.5+, this field is always None/empty and should be ignored.
+                extras_metadata = {
+                    "web_search_queries": web_search_queries,
+                    "grounding_chunk_index": chunk_index,
+                    "confidence_scores": support.get("confidence_scores") or [],
+                }
+
+                # Add maps-specific metadata if present
+                if maps_info.get("placeId"):
+                    extras_metadata["place_id"] = maps_info["placeId"]
 
                 citation = create_citation(
-                    url=web_info.get("uri"),
-                    title=web_info.get("title"),
+                    url=url,
+                    title=title,
                     start_index=start_index,
                     end_index=end_index,
                     cited_text=cited_text,
-                    extras={
-                        "google_ai_metadata": {
-                            "web_search_queries": web_search_queries,
-                            "grounding_chunk_index": chunk_index,
-                            "confidence_scores": support.get("confidence_scores", []),
-                        }
-                    },
+                    google_ai_metadata=extras_metadata,
                 )
                 citations.append(citation)
 
@@ -396,7 +411,10 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                         except Exception:
                             # Not valid base64, treat as non-standard
                             converted_blocks.append(
-                                {"type": "non_standard", "value": item}
+                                {
+                                    "type": "non_standard",
+                                    "value": item,
+                                }
                             )
                 else:
                     # This likely won't be reached according to previous implementations
@@ -508,12 +526,26 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
 
 
 def translate_content(message: AIMessage) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a message with Google (GenAI) content."""
+    """Derive standard content blocks from a message with Google (GenAI) content.
+
+    Args:
+        message: The message to translate.
+
+    Returns:
+        The derived content blocks.
+    """
     return _convert_to_v1_from_genai(message)
 
 
 def translate_content_chunk(message: AIMessageChunk) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a chunk with Google (GenAI) content."""
+    """Derive standard content blocks from a chunk with Google (GenAI) content.
+
+    Args:
+        message: The message chunk to translate.
+
+    Returns:
+        The derived content blocks.
+    """
     return _convert_to_v1_from_genai(message)
 
 

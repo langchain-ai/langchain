@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal
 
 from langchain_core.messages import AIMessage
 from langgraph.channels.untracked_value import UntrackedValue
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, override
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -148,7 +148,7 @@ class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, Any]):
             msg = "At least one limit must be specified (thread_limit or run_limit)"
             raise ValueError(msg)
 
-        if exit_behavior not in ("end", "error"):
+        if exit_behavior not in {"end", "error"}:
             msg = f"Invalid exit_behavior: {exit_behavior}. Must be 'end' or 'error'"
             raise ValueError(msg)
 
@@ -157,7 +157,8 @@ class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, Any]):
         self.exit_behavior = exit_behavior
 
     @hook_config(can_jump_to=["end"])
-    def before_model(self, state: ModelCallLimitState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
+    @override
+    def before_model(self, state: ModelCallLimitState, runtime: Runtime) -> dict[str, Any] | None:
         """Check model call limits before making a model call.
 
         Args:
@@ -222,7 +223,8 @@ class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, Any]):
         """
         return self.before_model(state, runtime)
 
-    def after_model(self, state: ModelCallLimitState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
+    @override
+    def after_model(self, state: ModelCallLimitState, runtime: Runtime) -> dict[str, Any] | None:
         """Increment model call counts after a model call.
 
         Args:

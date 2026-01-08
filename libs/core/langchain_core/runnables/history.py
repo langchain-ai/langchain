@@ -539,7 +539,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
 
         # Get the input messages
-        inputs = load(run.inputs)
+        inputs = load(run.inputs, allowed_objects="all")
         input_messages = self._get_input_messages(inputs)
         # If historic messages were prepended to the input messages, remove them to
         # avoid adding duplicate messages to history.
@@ -548,7 +548,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
             input_messages = input_messages[len(historic_messages) :]
 
         # Get the output messages
-        output_val = load(run.outputs)
+        output_val = load(run.outputs, allowed_objects="all")
         output_messages = self._get_output_messages(output_val)
         hist.add_messages(input_messages + output_messages)
 
@@ -556,7 +556,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
 
         # Get the input messages
-        inputs = load(run.inputs)
+        inputs = load(run.inputs, allowed_objects="all")
         input_messages = self._get_input_messages(inputs)
         # If historic messages were prepended to the input messages, remove them to
         # avoid adding duplicate messages to history.
@@ -565,7 +565,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
             input_messages = input_messages[len(historic_messages) :]
 
         # Get the output messages
-        output_val = load(run.outputs)
+        output_val = load(run.outputs, allowed_objects="all")
         output_messages = self._get_output_messages(output_val)
         await hist.aadd_messages(input_messages + output_messages)
 
