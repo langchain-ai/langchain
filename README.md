@@ -34,7 +34,7 @@ If you're looking for more advanced customization or agent orchestration, check 
 
 **Documentation**:
 
-- [docs.langchain.com](https://docs.langchain.com/oss/python/langchain/overview) – Comprehensive documentation, including conceptual overviews and guides
+ss/python/langchain/overview) – Comprehensive documentation, including conceptual overviews and guides
 - [reference.langchain.com/python](https://reference.langchain.com/python) – API reference docs for LangChain packages
 
 **Discussions**: Visit the [LangChain Forum](https://forum.langchain.com) to connect with the community and share all of your technical questions, ideas, and feedback.
