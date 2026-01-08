@@ -725,6 +725,46 @@ def test_summarization_middleware_find_safe_cutoff_point_orphan_tool() -> None:
     assert middleware._find_safe_cutoff_point(messages, 2) == 3
 
 
+def test_summarization_cutoff_moves_backward_to_include_ai_message() -> None:
+    """Test that cutoff moves backward to include `AIMessage` with its `ToolMessage`s.
+
+    Previously, when the cutoff landed on a `ToolMessage`, the code would advance
+    FORWARD past all `ToolMessage`s. This could result in orphaned `ToolMessage`s (kept
+    without their `AIMessage`) or aggressive summarization that removed AI/Tool pairs.
+
+    The fix searches backward from a `ToolMessage` to find the `AIMessage` with matching
+    `tool_calls`, ensuring the pair stays together in the preserved messages.
+    """
+    model = FakeToolCallingModel()
+    middleware = SummarizationMiddleware(
+        model=model, trigger=("messages", 10), keep=("messages", 2)
+    )
+
+    # Scenario: cutoff lands on ToolMessage that has a matching AIMessage before it
+    messages: list[AnyMessage] = [
+        HumanMessage(content="initial question"),  # index 0
+        AIMessage(
+            content="I'll use a tool",
+            tool_calls=[{"name": "search", "args": {"q": "test"}, "id": "call_abc"}],
+        ),  # index 1
+        ToolMessage(content="search result", tool_call_id="call_abc"),  # index 2
+        HumanMessage(content="followup"),  # index 3
+    ]
+
+    # When cutoff is at index 2 (ToolMessage), it should move BACKWARD to index 1
+    # to include the AIMessage that generated the tool call
+    result = middleware._find_safe_cutoff_point(messages, 2)
+
+    assert result == 1, (
+        f"Expected cutoff to move backward to index 1 (AIMessage), got {result}. "
+        "The cutoff should preserve AI/Tool pairs together."
+    )
+
+    assert isinstance(messages[result], AIMessage)
+    assert messages[result].tool_calls  # type: ignore[union-attr]
+    assert messages[result].tool_calls[0]["id"] == "call_abc"  # type: ignore[union-attr]
+
+
 def test_summarization_middleware_zero_and_negative_target_tokens() -> None:
     """Test handling of edge cases with target token calculations."""
     # Test with very small fraction that rounds to zero
