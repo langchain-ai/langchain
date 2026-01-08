@@ -97,7 +97,8 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
             merged = other.copy()
         else:
             for e in other:
-                if (
+                # Check if element has valid index for merging
+                has_valid_index = (
                     isinstance(e, dict)
                     and "index" in e
                     and (
@@ -106,7 +107,10 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
                             isinstance(e["index"], str) and e["index"].startswith("lc_")
                         )
                     )
-                ):
+                )
+
+                if has_valid_index:
+                    # Original logic: merge by index
                     to_merge = [
                         i
                         for i, e_left in enumerate(merged)
@@ -148,7 +152,59 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
                     else:
                         merged.append(e)
                 else:
-                    merged.append(e)
+                    # No valid index: try merging by id for tool_call_chunks
+                    # This handles streaming chunks where index may be None
+                    is_tool_call_chunk = (
+                        isinstance(e, dict) and e.get("type") == "tool_call_chunk"
+                    )
+
+                    if is_tool_call_chunk:
+                        # Strategy: Try to merge with existing chunk
+                        # Only merge if this looks like a continuation/fragment:
+                        # - Has name that is empty/None (continuation of existing call)
+                        # AND either:
+                        #   1. Has same non-empty id as existing chunk
+                        #   2. Has empty/no id (sequential streaming)
+                        to_merge = []
+
+                        # Check if this looks like a continuation chunk
+                        # (empty name suggests it's a fragment, not a new call)
+                        is_continuation = not e.get("name")
+
+                        if is_continuation:
+                            if e.get("id"):
+                                # Has non-empty id: match by id
+                                to_merge = [
+                                    i
+                                    for i, e_left in enumerate(merged)
+                                    if isinstance(e_left, dict)
+                                    and e_left.get("type") == "tool_call_chunk"
+                                    and e_left.get("id") == e["id"]
+                                ]
+                            else:
+                                # No id or empty id: merge with last tool_call_chunk
+                                # This handles sequential streaming where later
+                                # chunks have empty ids
+                                to_merge = [
+                                    i
+                                    for i, e_left in enumerate(merged)
+                                    if isinstance(e_left, dict)
+                                    and e_left.get("type") == "tool_call_chunk"
+                                ]
+
+                        if to_merge:
+                            # Merge with the last matching chunk (most recent)
+                            new_e = {k: v for k, v in e.items() if k != "type"}
+                            merged[to_merge[-1]] = merge_dicts(
+                                merged[to_merge[-1]], new_e
+                            )
+                        else:
+                            # No existing chunk to merge with, or this is a new
+                            # tool call (has a name), so append
+                            merged.append(e)
+                    else:
+                        # Not a tool_call_chunk, just append
+                        merged.append(e)
     return merged
 
 

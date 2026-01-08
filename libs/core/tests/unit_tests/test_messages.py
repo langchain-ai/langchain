@@ -1358,3 +1358,141 @@ def test_text_accessor() -> None:
     assert empty_msg.text == ""
     assert empty_msg.text == ""
     assert str(empty_msg.text) == str(empty_msg.text)
+
+
+def test_tool_call_chunk_merge_without_index() -> None:
+    """Test merging tool_call_chunks when index is None (issue #34654).
+
+    When streaming tool calls without proper index fields, chunks should still
+    merge correctly by id or sequentially to avoid creating invalid tool calls
+    with empty names.
+    """
+    # Test case 1: Chunks with same non-empty id should merge
+    chunk1 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="get_weather",
+                args="",
+                id="call_abc123",
+                index=None,
+            )
+        ],
+    )
+
+    chunk2 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="",
+                args="",
+                id="call_abc123",
+                index=None,
+            )
+        ],
+    )
+
+    chunk3 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="",
+                args='{"city": "Boston',
+                id="",  # Empty id - should merge with last chunk
+                index=None,
+            )
+        ],
+    )
+
+    chunk4 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="",
+                args='"}',
+                id="",  # Empty id - should merge with last chunk
+                index=None,
+            )
+        ],
+    )
+
+    # Merge all chunks
+    merged = chunk1 + chunk2 + chunk3 + chunk4
+
+    # Should result in a single merged chunk
+    assert len(merged.tool_call_chunks) == 1, (
+        "All chunks should merge into one when index is None"
+    )
+
+    # The merged chunk should have the complete name and args
+    assert merged.tool_call_chunks[0]["name"] == "get_weather"
+    assert merged.tool_call_chunks[0]["args"] == '{"city": "Boston"}'
+    assert merged.tool_call_chunks[0]["id"] == "call_abc123"
+
+    # Converting to tool_calls should produce a single valid tool call
+    assert len(merged.tool_calls) == 1, (
+        "Should produce exactly one tool call, not multiple partial calls"
+    )
+
+    tool_call = merged.tool_calls[0]
+    assert tool_call["name"] == "get_weather", (
+        "Tool call should have non-empty name "
+        "(not empty string that would cause 422 error)"
+    )
+    assert tool_call["id"] == "call_abc123"
+    assert tool_call["args"] == {"city": "Boston"}
+
+    # Test case 2: Multiple separate tool calls with different non-empty ids
+    chunk_a1 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="tool_a",
+                args='{"x": 1',
+                id="id_a",
+                index=None,
+            )
+        ],
+    )
+
+    chunk_a2 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="",
+                args="}",
+                id="id_a",  # Same id as chunk_a1
+                index=None,
+            )
+        ],
+    )
+
+    chunk_b1 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="tool_b",
+                args='{"y": 2}',
+                id="id_b",  # Different id
+                index=None,
+            )
+        ],
+    )
+
+    merged_multi = chunk_a1 + chunk_a2 + chunk_b1
+
+    # Should have 2 chunks for 2 different tool calls
+    assert len(merged_multi.tool_call_chunks) == 2
+
+    # Check both tool calls are valid
+    assert len(merged_multi.tool_calls) == 2
+
+    # tool_a should be merged
+    tool_a = next(tc for tc in merged_multi.tool_calls if tc["name"] == "tool_a")
+    assert tool_a["args"] == {"x": 1}
+    assert tool_a["id"] == "id_a"
+
+    # tool_b should be intact
+    tool_b = next(tc for tc in merged_multi.tool_calls if tc["name"] == "tool_b")
+    assert tool_b["args"] == {"y": 2}
+    assert tool_b["id"] == "id_b"
