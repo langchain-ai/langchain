@@ -24,7 +24,7 @@ from langgraph.prebuilt import InjectedStore
 from langgraph.store.memory import InMemoryStore
 
 from langchain.agents import create_agent
-from langchain.agents.middleware.types import AgentState
+from langchain.agents.middleware.types import AgentMiddleware, AgentState
 from langchain.tools import InjectedState, ToolRuntime
 
 from .model import FakeToolCallingModel
@@ -45,6 +45,8 @@ def test_tool_runtime_basic_injection() -> None:
         injected_data["store"] = runtime.store
         injected_data["stream_writer"] = runtime.stream_writer
         return f"Processed {x}"
+
+    assert runtime_tool.args
 
     agent = create_agent(
         model=FakeToolCallingModel(
@@ -280,7 +282,6 @@ def test_tool_runtime_config_access() -> None:
 
 def test_tool_runtime_with_custom_state() -> None:
     """Test ToolRuntime works with custom state schemas."""
-    from langchain.agents.middleware.types import AgentMiddleware
 
     class CustomState(AgentState):
         custom_field: str
@@ -460,8 +461,6 @@ def test_tool_runtime_error_handling() -> None:
 
 def test_tool_runtime_with_middleware() -> None:
     """Test ToolRuntime injection works with agent middleware."""
-    from langchain.agents.middleware.types import AgentMiddleware
-
     middleware_calls = []
     runtime_calls = []
 

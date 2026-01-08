@@ -3,13 +3,29 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
 def _retrieve_ref(path: str, schema: dict) -> list | dict:
+    """Retrieve a referenced object from a JSON schema using a path.
+
+    Resolves JSON schema references (e.g., `'#/definitions/MyType'`) by traversing the
+    schema structure.
+
+    Args:
+        path: Reference path starting with `'#'` (e.g., `'#/definitions/MyType'`).
+        schema: The JSON schema dictionary to search in.
+
+    Returns:
+        A deep copy of the referenced object (dict or list).
+
+    Raises:
+        ValueError: If the path does not start with `'#'`.
+        KeyError: If the reference path is not found in the schema.
+    """
     components = path.split("/")
     if components[0] != "#":
         msg = (
@@ -243,4 +259,6 @@ def dereference_refs(
     full = full_schema or schema_obj
     keys_to_skip = list(skip_keys) if skip_keys is not None else ["$defs"]
     shallow = skip_keys is None
-    return _dereference_refs_helper(schema_obj, full, None, keys_to_skip, shallow)
+    return cast(
+        "dict", _dereference_refs_helper(schema_obj, full, None, keys_to_skip, shallow)
+    )

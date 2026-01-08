@@ -13,6 +13,7 @@ import langsmith
 from langsmith.evaluation.evaluator import EvaluationResult, EvaluationResults
 
 from langchain_core.tracers import langchain as langchain_tracer
+from langchain_core.tracers._compat import run_copy
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import tracing_v2_enabled
 from langchain_core.tracers.langchain import _get_executor
@@ -103,7 +104,7 @@ class EvaluatorCallbackHandler(BaseTracer):
             )
         else:
             self.executor = None
-        self.futures = weakref.WeakSet()
+        self.futures = weakref.WeakSet[Future[None]]()
         self.skip_unfinished = skip_unfinished
         self.project_name = project_name
         self.logged_eval_results = {}
@@ -206,7 +207,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         if self.skip_unfinished and not run.outputs:
             logger.debug("Skipping unfinished run %s", run.id)
             return
-        run_ = run.copy()
+        run_ = run_copy(run)
         run_.reference_example_id = self.example_id
         for evaluator in self.evaluators:
             if self.executor is None:
