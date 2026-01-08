@@ -9,7 +9,7 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.2.0"
+version = "1.2.2"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.2.1,<2.0.0",
@@ -60,10 +60,10 @@ test = [
     "langchain-openai",
 ]
 lint = [
-    "ruff>=0.14.2,<0.15.0",
+    "ruff>=0.14.10,<0.15.0",
 ]
 typing = [
-    "mypy>=1.18.1,<1.19.0",
+    "mypy>=1.19.1,<1.20.0",
     "types-toml>=0.10.8.20240310,<1.0.0.0",
 ]
 
@@ -118,7 +118,6 @@ ignore = [
     # TODO rules
     "ANN401",  # Any in type annotations
     "BLE",     # Blind exceptions
-    "PLC0415", # Imports should be at the top. Not always desirable
 ]
 unfixable = [
     "B028",    # People should intentionally tune the stacklevel

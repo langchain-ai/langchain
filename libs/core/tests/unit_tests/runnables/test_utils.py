@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from typing import Any
 
 import pytest
 
@@ -18,7 +19,7 @@ from langchain_core.runnables.utils import (
         (lambda x: x if x > 0 else 0, "lambda x: x if x > 0 else 0"),  # noqa: FURB136
     ],
 )
-def test_get_lambda_source(func: Callable, expected_source: str) -> None:
+def test_get_lambda_source(func: Callable[..., Any], expected_source: str) -> None:
     """Test get_lambda_source function."""
     source = get_lambda_source(func)
     assert source == expected_source
