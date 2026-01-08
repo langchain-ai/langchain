@@ -49,8 +49,10 @@ class TestGlobSearch:
             },
         }
 
-        # Call tool function directly (state is injected in real usage)
-        result = middleware.glob_search.func(pattern="*.py", state=test_state)  # type: ignore[attr-defined]
+        # Call internal handler method directly
+        result = middleware._handle_glob_search(
+            pattern="*.py", path="/", state=test_state
+        )
 
         assert isinstance(result, str)
         assert "/src/main.py" in result
@@ -82,7 +84,9 @@ class TestGlobSearch:
             },
         }
 
-        result = middleware.glob_search.func(pattern="**/*.py", state=state)  # type: ignore[attr-defined]
+        result = middleware._handle_glob_search(
+            pattern="**/*.py", path="/", state=state
+        )
 
         assert isinstance(result, str)
         lines = result.split("\n")
@@ -109,7 +113,7 @@ class TestGlobSearch:
             },
         }
 
-        result = middleware.glob_search.func(  # type: ignore[attr-defined]
+        result = middleware._handle_glob_search(
             pattern="**/*.py", path="/src", state=state
         )
 
@@ -132,7 +136,7 @@ class TestGlobSearch:
             },
         }
 
-        result = middleware.glob_search.func(pattern="*.ts", state=state)  # type: ignore[attr-defined]
+        result = middleware._handle_glob_search(pattern="*.ts", path="/", state=state)
 
         assert isinstance(result, str)
         assert result == "No files found"
@@ -157,7 +161,7 @@ class TestGlobSearch:
             },
         }
 
-        result = middleware.glob_search.func(pattern="*.py", state=state)  # type: ignore[attr-defined]
+        result = middleware._handle_glob_search(pattern="*.py", path="/", state=state)
 
         lines = result.split("\n")
         # Most recent first
@@ -193,7 +197,13 @@ class TestGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(pattern=r"def \w+\(\):", state=state)  # type: ignore[attr-defined]
+        result = middleware._handle_grep_search(
+            pattern=r"def \w+\(\):",
+            path="/",
+            include=None,
+            output_mode="files_with_matches",
+            state=state,
+        )
 
         assert isinstance(result, str)
         assert "/src/main.py" in result
@@ -216,8 +226,12 @@ class TestGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(  # type: ignore[attr-defined]
-            pattern=r"def", include="*.{py", state=state
+        result = middleware._handle_grep_search(
+            pattern=r"def",
+            path="/",
+            include="*.{py",
+            output_mode="files_with_matches",
+            state=state,
         )
 
         assert result == "Invalid include pattern"
@@ -241,8 +255,12 @@ class TestFilesystemGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(  # type: ignore[attr-defined]
-            pattern=r"def \w+\(\):", output_mode="content", state=state
+        result = middleware._handle_grep_search(
+            pattern=r"def \w+\(\):",
+            path="/",
+            include=None,
+            output_mode="content",
+            state=state,
         )
 
         assert isinstance(result, str)
@@ -271,8 +289,8 @@ class TestFilesystemGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(  # type: ignore[attr-defined]
-            pattern=r"TODO", output_mode="count", state=state
+        result = middleware._handle_grep_search(
+            pattern=r"TODO", path="/", include=None, output_mode="count", state=state
         )
 
         assert isinstance(result, str)
@@ -300,8 +318,12 @@ class TestFilesystemGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(  # type: ignore[attr-defined]
-            pattern="import", include="*.py", state=state
+        result = middleware._handle_grep_search(
+            pattern="import",
+            path="/",
+            include="*.py",
+            output_mode="files_with_matches",
+            state=state,
         )
 
         assert isinstance(result, str)
@@ -333,8 +355,12 @@ class TestFilesystemGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(  # type: ignore[attr-defined]
-            pattern="const", include="*.{ts,tsx}", state=state
+        result = middleware._handle_grep_search(
+            pattern="const",
+            path="/",
+            include="*.{ts,tsx}",
+            output_mode="files_with_matches",
+            state=state,
         )
 
         assert isinstance(result, str)
@@ -362,7 +388,13 @@ class TestFilesystemGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(pattern="import", path="/src", state=state)  # type: ignore[attr-defined]
+        result = middleware._handle_grep_search(
+            pattern="import",
+            path="/src",
+            include=None,
+            output_mode="files_with_matches",
+            state=state,
+        )
 
         assert isinstance(result, str)
         assert "/src/main.py" in result
@@ -383,7 +415,13 @@ class TestFilesystemGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(pattern=r"TODO", state=state)  # type: ignore[attr-defined]
+        result = middleware._handle_grep_search(
+            pattern=r"TODO",
+            path="/",
+            include=None,
+            output_mode="files_with_matches",
+            state=state,
+        )
 
         assert isinstance(result, str)
         assert result == "No matches found"
@@ -397,7 +435,13 @@ class TestFilesystemGrepSearch:
             "text_editor_files": {},
         }
 
-        result = middleware.grep_search.func(pattern=r"[unclosed", state=state)  # type: ignore[attr-defined]
+        result = middleware._handle_grep_search(
+            pattern=r"[unclosed",
+            path="/",
+            include=None,
+            output_mode="files_with_matches",
+            state=state,
+        )
 
         assert isinstance(result, str)
         assert "Invalid regex pattern" in result
@@ -428,7 +472,7 @@ class TestSearchWithDifferentBackends:
             },
         }
 
-        result = middleware.glob_search.func(pattern="**/*", state=state)  # type: ignore[attr-defined]
+        result = middleware._handle_glob_search(pattern="**/*", path="/", state=state)
 
         assert isinstance(result, str)
         assert "/src/main.py" in result
@@ -457,7 +501,13 @@ class TestSearchWithDifferentBackends:
             },
         }
 
-        result = middleware.grep_search.func(pattern=r"TODO", state=state)  # type: ignore[attr-defined]
+        result = middleware._handle_grep_search(
+            pattern=r"TODO",
+            path="/",
+            include=None,
+            output_mode="files_with_matches",
+            state=state,
+        )
 
         assert isinstance(result, str)
         assert "/src/main.py" in result
@@ -486,7 +536,13 @@ class TestSearchWithDifferentBackends:
             },
         }
 
-        result = middleware.grep_search.func(pattern=r".*", state=state)  # type: ignore[attr-defined]
+        result = middleware._handle_grep_search(
+            pattern=r".*",
+            path="/",
+            include=None,
+            output_mode="files_with_matches",
+            state=state,
+        )
 
         assert isinstance(result, str)
         assert "/src/main.py" in result

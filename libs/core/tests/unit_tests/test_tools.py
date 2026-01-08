@@ -6,6 +6,7 @@ import sys
 import textwrap
 import threading
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from functools import partial
@@ -16,6 +17,7 @@ from typing import (
     Literal,
     TypeVar,
     cast,
+    get_type_hints,
 )
 
 import pytest
@@ -37,7 +39,6 @@ from langchain_core.messages import ToolCall, ToolMessage
 from langchain_core.messages.tool import ToolOutputMixin
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
-    Runnable,
     RunnableConfig,
     RunnableLambda,
     ensure_config,
@@ -55,6 +56,7 @@ from langchain_core.tools.base import (
     InjectedToolArg,
     InjectedToolCallId,
     SchemaAnnotationError,
+    _DirectlyInjectedToolArg,
     _is_message_content_block,
     _is_message_content_type,
     get_all_basemodel_annotations,
@@ -78,7 +80,7 @@ except ImportError:
     HAS_LANGGRAPH = False
 
 
-def _get_tool_call_json_schema(tool: BaseTool) -> dict:
+def _get_tool_call_json_schema(tool: BaseTool) -> dict[str, Any]:
     tool_schema = tool.tool_call_schema
     if isinstance(tool_schema, dict):
         return tool_schema
@@ -1405,6 +1407,39 @@ def test_tool_annotated_descriptions() -> None:
     }
 
 
+def test_tool_field_description_preserved() -> None:
+    """Test that `Field(description=...)` is preserved in `@tool` decorator."""
+
+    @tool
+    def my_tool(
+        topic: Annotated[str, Field(description="The research topic")],
+        depth: Annotated[int, Field(description="Search depth level")] = 3,
+    ) -> str:
+        """A tool for research."""
+        return f"{topic} at depth {depth}"
+
+    args_schema = _schema(my_tool.args_schema)
+    assert args_schema == {
+        "title": "my_tool",
+        "type": "object",
+        "description": "A tool for research.",
+        "properties": {
+            "topic": {
+                "title": "Topic",
+                "type": "string",
+                "description": "The research topic",
+            },
+            "depth": {
+                "title": "Depth",
+                "type": "integer",
+                "description": "Search depth level",
+                "default": 3,
+            },
+        },
+        "required": ["topic"],
+    }
+
+
 def test_tool_call_input_tool_message_output() -> None:
     tool_call = {
         "name": "structured_api",
@@ -1458,15 +1493,15 @@ class _MockStructuredToolWithRawOutput(BaseTool):
         self,
         arg1: int,
         arg2: bool,
-        arg3: dict | None = None,
-    ) -> tuple[str, dict]:
+        arg3: dict[str, Any] | None = None,
+    ) -> tuple[str, dict[str, Any]]:
         return f"{arg1} {arg2}", {"arg1": arg1, "arg2": arg2, "arg3": arg3}
 
 
 @tool("structured_api", response_format="content_and_artifact")
 def _mock_structured_tool_with_artifact(
-    *, arg1: int, arg2: bool, arg3: dict | None = None
-) -> tuple[str, dict]:
+    *, arg1: int, arg2: bool, arg3: dict[str, str] | None = None
+) -> tuple[str, dict[str, Any]]:
     """A Structured Tool."""
     return f"{arg1} {arg2}", {"arg1": arg1, "arg2": arg2, "arg3": arg3}
 
@@ -1475,7 +1510,7 @@ def _mock_structured_tool_with_artifact(
     "tool", [_MockStructuredToolWithRawOutput(), _mock_structured_tool_with_artifact]
 )
 def test_tool_call_input_tool_message_with_artifact(tool: BaseTool) -> None:
-    tool_call: dict = {
+    tool_call: dict[str, Any] = {
         "name": "structured_api",
         "args": {"arg1": 1, "arg2": True, "arg3": {"img": "base64string..."}},
         "id": "123",
@@ -1504,7 +1539,7 @@ def test_convert_from_runnable_dict() -> None:
     def f(x: Args) -> str:
         return str(x["a"] * max(x["b"]))
 
-    runnable: Runnable = RunnableLambda(f)
+    runnable = RunnableLambda(f)
     as_tool = runnable.as_tool()
     args_schema = as_tool.args_schema
     assert args_schema is not None
@@ -1536,14 +1571,14 @@ def test_convert_from_runnable_dict() -> None:
         a: int = Field(..., description="Integer")
         b: list[int] = Field(..., description="List of ints")
 
-    runnable = RunnableLambda(g)
-    as_tool = runnable.as_tool(GSchema)
-    as_tool.invoke({"a": 3, "b": [1, 2]})
+    runnable2 = RunnableLambda(g)
+    as_tool2 = runnable2.as_tool(GSchema)
+    as_tool2.invoke({"a": 3, "b": [1, 2]})
 
     # Specify via arg_types:
-    runnable = RunnableLambda(g)
-    as_tool = runnable.as_tool(arg_types={"a": int, "b": list[int]})
-    result = as_tool.invoke({"a": 3, "b": [1, 2]})
+    runnable3 = RunnableLambda(g)
+    as_tool3 = runnable3.as_tool(arg_types={"a": int, "b": list[int]})
+    result = as_tool3.invoke({"a": 3, "b": [1, 2]})
     assert result == "6"
 
     # Test with config
@@ -1552,9 +1587,9 @@ def test_convert_from_runnable_dict() -> None:
         assert config["configurable"]["foo"] == "not-bar"
         return str(x["a"] * max(x["b"]))
 
-    runnable = RunnableLambda(h)
-    as_tool = runnable.as_tool(arg_types={"a": int, "b": list[int]})
-    result = as_tool.invoke(
+    runnable4 = RunnableLambda(h)
+    as_tool4 = runnable4.as_tool(arg_types={"a": int, "b": list[int]})
+    result = as_tool4.invoke(
         {"a": 3, "b": [1, 2]}, config={"configurable": {"foo": "not-bar"}}
     )
     assert result == "6"
@@ -1568,7 +1603,7 @@ def test_convert_from_runnable_other() -> None:
     def g(x: str) -> str:
         return x + "z"
 
-    runnable: Runnable = RunnableLambda(f) | g
+    runnable = RunnableLambda(f) | g
     as_tool = runnable.as_tool()
     args_schema = as_tool.args_schema
     assert args_schema is None
@@ -1583,10 +1618,10 @@ def test_convert_from_runnable_other() -> None:
         assert config["configurable"]["foo"] == "not-bar"
         return x + "a"
 
-    runnable = RunnableLambda(h)
-    as_tool = runnable.as_tool()
-    result = as_tool.invoke("b", config={"configurable": {"foo": "not-bar"}})
-    assert result == "ba"
+    runnable2 = RunnableLambda(h)
+    as_tool2 = runnable2.as_tool()
+    result2 = as_tool2.invoke("b", config={"configurable": {"foo": "not-bar"}})
+    assert result2 == "ba"
 
 
 @tool("foo", parse_docstring=True)
@@ -1827,10 +1862,7 @@ def test_tool_inherited_injected_arg() -> None:
             "type": "tool_call",
         }
     ) == ToolMessage("bar", tool_call_id="123", name="foo")
-    expected_error = (
-        ValidationError if not isinstance(tool_, InjectedTool) else TypeError
-    )
-    with pytest.raises(expected_error):
+    with pytest.raises(ValidationError):
         tool_.invoke({"x": 5})
 
     assert convert_to_openai_function(tool_) == {
@@ -1844,22 +1876,22 @@ def test_tool_inherited_injected_arg() -> None:
     }
 
 
-def _get_parametrized_tools() -> list:
+def _get_parametrized_tools() -> list[Callable[..., Any]]:
     def my_tool(x: int, y: str, some_tool: Annotated[Any, InjectedToolArg]) -> str:
         """my_tool."""
-        return some_tool
+        return "my_tool"
 
     async def my_async_tool(
         x: int, y: str, *, some_tool: Annotated[Any, InjectedToolArg]
     ) -> str:
         """my_tool."""
-        return some_tool
+        return "my_tool"
 
     return [my_tool, my_async_tool]
 
 
 @pytest.mark.parametrize("tool_", _get_parametrized_tools())
-def test_fn_injected_arg_with_schema(tool_: Callable) -> None:
+def test_fn_injected_arg_with_schema(tool_: Callable[..., Any]) -> None:
     assert convert_to_openai_function(tool_) == {
         "name": tool_.__name__,
         "description": "my_tool.",
@@ -2243,6 +2275,32 @@ def test_create_retriever_tool() -> None:
     )
 
 
+def test_create_retriever_tool_get_type_hints() -> None:
+    """Verify get_type_hints works on retriever tool's func.
+
+    This test ensures compatibility with Python 3.12+ where get_type_hints()
+    raises TypeError on functools.partial objects. Tools like LangGraph's
+    ToolNode call get_type_hints(tool.func) to generate schemas.
+    """
+
+    class MyRetriever(BaseRetriever):
+        @override
+        def _get_relevant_documents(
+            self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        ) -> list[Document]:
+            return [Document(page_content="test")]
+
+    retriever = MyRetriever()
+    retriever_tool = tools.create_retriever_tool(
+        retriever, "test_tool", "Test tool for type hints"
+    )
+
+    # This should not raise TypeError (as it did with functools.partial)
+    hints = get_type_hints(retriever_tool.func)
+    assert "query" in hints
+    assert hints["query"] is str
+
+
 def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
     class Foo(BaseModel):
         x: list[int] = Field(
@@ -2252,7 +2310,7 @@ def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
     @tool(args_schema=Foo)
     def foo(x) -> list[int]:  # type: ignore[no-untyped-def] # noqa: ANN001
         """Foo."""
-        return x
+        return x  # type: ignore[no-any-return]
 
     assert _get_tool_call_json_schema(foo) == {
         "description": "Foo.",
@@ -2331,11 +2389,110 @@ def test_injected_arg_with_complex_type() -> None:
     assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"
 
 
+@pytest.mark.parametrize("schema_format", ["model", "json_schema"])
+def test_tool_allows_extra_runtime_args_with_custom_schema(
+    schema_format: Literal["model", "json_schema"],
+) -> None:
+    """Ensure runtime args are preserved even if not in the args schema."""
+
+    class InputSchema(BaseModel):
+        query: str
+
+    captured: dict[str, Any] = {}
+
+    @dataclass
+    class MyRuntime(_DirectlyInjectedToolArg):
+        some_obj: object
+
+    args_schema = (
+        InputSchema if schema_format == "model" else InputSchema.model_json_schema()
+    )
+
+    @tool(args_schema=args_schema)
+    def runtime_tool(query: str, runtime: MyRuntime) -> str:
+        """Echo the query and capture runtime value."""
+        captured["runtime"] = runtime
+        return query
+
+    runtime_obj = object()
+    runtime = MyRuntime(some_obj=runtime_obj)
+    assert runtime_tool.invoke({"query": "hello", "runtime": runtime}) == "hello"
+    assert captured["runtime"] is runtime
+
+
+def test_tool_injected_tool_call_id_with_custom_schema() -> None:
+    """Ensure InjectedToolCallId works with custom args schema."""
+
+    class InputSchema(BaseModel):
+        x: int
+
+    @tool(args_schema=InputSchema)
+    def injected_tool(
+        x: int, tool_call_id: Annotated[str, InjectedToolCallId]
+    ) -> ToolMessage:
+        """Tool with injected tool_call_id and custom schema."""
+        return ToolMessage(str(x), tool_call_id=tool_call_id)
+
+    # Test that tool_call_id is properly injected even though not in custom schema
+    result = injected_tool.invoke(
+        {
+            "type": "tool_call",
+            "args": {"x": 42},
+            "name": "injected_tool",
+            "id": "test_call_id",
+        }
+    )
+    assert result == ToolMessage("42", tool_call_id="test_call_id")
+
+    # Test that it still raises error when invoked without a ToolCall
+    with pytest.raises(
+        ValueError,
+        match="When tool includes an InjectedToolCallId argument, "
+        "tool must always be invoked with a full model ToolCall",
+    ):
+        injected_tool.invoke({"x": 42})
+
+    # Test that tool_call_id can be passed directly in input dict
+    result = injected_tool.invoke({"x": 42, "tool_call_id": "direct_id"})
+    assert result == ToolMessage("42", tool_call_id="direct_id")
+
+
+def test_tool_injected_arg_with_custom_schema() -> None:
+    """Ensure InjectedToolArg works with custom args schema."""
+
+    class InputSchema(BaseModel):
+        query: str
+
+    class CustomContext:
+        """Custom context object to be injected."""
+
+        def __init__(self, value: str) -> None:
+            self.value = value
+
+    captured: dict[str, Any] = {}
+
+    @tool(args_schema=InputSchema)
+    def search_tool(
+        query: str, context: Annotated[CustomContext, InjectedToolArg]
+    ) -> str:
+        """Search with custom context."""
+        captured["context"] = context
+        return f"Results for {query} with context {context.value}"
+
+    # Test that context is properly injected even though not in custom schema
+    ctx = CustomContext("test_context")
+    result = search_tool.invoke({"query": "hello", "context": ctx})
+
+    assert result == "Results for hello with context test_context"
+    assert captured["context"] is ctx
+    assert captured["context"].value == "test_context"
+
+
 def test_tool_injected_tool_call_id() -> None:
     @tool
     def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
         """Foo."""
-        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[call-overload]
+        return ToolMessage(str(x), tool_call_id=tool_call_id)
 
     assert foo.invoke(
         {
@@ -2344,7 +2501,7 @@ def test_tool_injected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[call-overload]
+    ) == ToolMessage("0", tool_call_id="bar")
 
     with pytest.raises(
         ValueError,
@@ -2356,7 +2513,7 @@ def test_tool_injected_tool_call_id() -> None:
     @tool
     def foo2(x: int, tool_call_id: Annotated[str, InjectedToolCallId()]) -> ToolMessage:
         """Foo."""
-        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[call-overload]
+        return ToolMessage(str(x), tool_call_id=tool_call_id)
 
     assert foo2.invoke(
         {
@@ -2365,7 +2522,7 @@ def test_tool_injected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[call-overload]
+    ) == ToolMessage("0", tool_call_id="bar")
 
 
 def test_tool_injected_tool_call_id_override_llm_generated() -> None:
@@ -2612,13 +2769,13 @@ def test_tool_decorator_description() -> None:
 
     assert foo_args_jsons_schema.description == "JSON Schema."
     assert (
-        cast("dict", foo_args_jsons_schema.tool_call_schema)["description"]
+        cast("dict[str, Any]", foo_args_jsons_schema.tool_call_schema)["description"]
         == "JSON Schema."
     )
 
     assert foo_args_jsons_schema_with_description.description == "description"
     assert (
-        cast("dict", foo_args_jsons_schema_with_description.tool_call_schema)[
+        cast("dict[str, Any]", foo_args_jsons_schema_with_description.tool_call_schema)[
             "description"
         ]
         == "description"
@@ -2785,7 +2942,7 @@ def test_tool_args_schema_with_annotated_type() -> None:
 class CallbackHandlerWithInputCapture(FakeCallbackHandler):
     """Callback handler that captures inputs passed to on_tool_start."""
 
-    captured_inputs: list[dict | None] = []
+    captured_inputs: list[dict | None] = Field(default_factory=list)
 
     def on_tool_start(
         self,
@@ -3000,19 +3157,18 @@ def test_filter_tool_runtime_directly_injected_arg() -> None:
 
     handler = CallbackHandlerWithInputCapture(captured_inputs=[])
 
-    # Create a mock ToolRuntime instance
-    class MockRuntime:
-        """Mock ToolRuntime for testing."""
-
-        agent_name = "test_agent"
-        context: dict[str, Any] = {}
-        state: dict[str, Any] = {}
-
     result = tool_with_runtime.invoke(
         {
             "query": "test",
             "limit": 5,
-            "runtime": MockRuntime(),
+            "runtime": ToolRuntime(
+                context={},
+                state={},
+                config={},
+                stream_writer=lambda _: None,
+                tool_call_id=None,
+                store=None,
+            ),
         },
         config={"callbacks": [handler]},
     )
@@ -3026,3 +3182,325 @@ def test_filter_tool_runtime_directly_injected_arg() -> None:
     assert captured is not None
     assert captured == {"query": "test", "limit": 5}
     assert "runtime" not in captured
+
+
+class CallbackHandlerWithToolCallIdCapture(FakeCallbackHandler):
+    """Callback handler that captures `tool_call_id` passed to `on_tool_start`.
+
+    Used to verify that `tool_call_id` is correctly forwarded to the `on_tool_start`
+    callback method.
+    """
+
+    captured_tool_call_ids: list[str | None] = Field(default_factory=list)
+
+    def on_tool_start(
+        self,
+        serialized: dict[str, Any],
+        input_str: str,
+        *,
+        run_id: Any,
+        parent_run_id: Any | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        inputs: dict[str, Any] | None = None,
+        tool_call_id: str | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Capture the `tool_call_id` passed to `on_tool_start`.
+
+        Args:
+            serialized: Serialized tool information.
+            input_str: String representation of tool input.
+            run_id: Unique identifier for this run.
+            parent_run_id: Identifier of the parent run.
+            tags: Optional tags for this run.
+            metadata: Optional metadata for this run.
+            inputs: Dictionary of tool inputs.
+            tool_call_id: The tool call identifier from the LLM.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Result from parent `on_tool_start` call.
+        """
+        self.captured_tool_call_ids.append(tool_call_id)
+        return super().on_tool_start(
+            serialized,
+            input_str,
+            run_id=run_id,
+            parent_run_id=parent_run_id,
+            tags=tags,
+            metadata=metadata,
+            inputs=inputs,
+            **kwargs,
+        )
+
+
+@pytest.mark.parametrize("method", ["invoke", "ainvoke"])
+async def test_tool_call_id_passed_to_on_tool_start_callback(method: str) -> None:
+    """Test that `tool_call_id` is passed to the `on_tool_start` callback."""
+
+    @tool
+    def simple_tool(query: str) -> str:
+        """Simple tool for testing.
+
+        Args:
+            query: The query string.
+        """
+        return f"Result: {query}"
+
+    handler = CallbackHandlerWithToolCallIdCapture(captured_tool_call_ids=[])
+
+    tool_call: ToolCall = {
+        "name": "simple_tool",
+        "args": {"query": "test"},
+        "id": "test_tool_call_id_123",
+        "type": "tool_call",
+    }
+
+    if method == "ainvoke":
+        result = await simple_tool.ainvoke(tool_call, config={"callbacks": [handler]})
+    else:
+        result = simple_tool.invoke(tool_call, config={"callbacks": [handler]})
+
+    assert result == ToolMessage(
+        content="Result: test", name="simple_tool", tool_call_id="test_tool_call_id_123"
+    )
+    assert handler.tool_starts == 1
+    assert len(handler.captured_tool_call_ids) == 1
+    assert handler.captured_tool_call_ids[0] == "test_tool_call_id_123"
+
+
+def test_tool_call_id_none_when_invoked_without_tool_call() -> None:
+    """Test that `tool_call_id` is `None` when tool is invoked without a `ToolCall`.
+
+    When a tool is invoked directly with arguments (not via a `ToolCall`),
+    the `tool_call_id` should be `None` in the callback.
+    """
+
+    @tool
+    def simple_tool(query: str) -> str:
+        """Simple tool for testing.
+
+        Args:
+            query: The query string.
+        """
+        return f"Result: {query}"
+
+    handler = CallbackHandlerWithToolCallIdCapture(captured_tool_call_ids=[])
+
+    # Invoke tool directly with arguments, not a ToolCall
+    result = simple_tool.invoke({"query": "test"}, config={"callbacks": [handler]})
+
+    assert result == "Result: test"
+    assert handler.tool_starts == 1
+    assert len(handler.captured_tool_call_ids) == 1
+    # tool_call_id should be None when not invoked with a ToolCall
+    assert handler.captured_tool_call_ids[0] is None
+
+
+def test_tool_call_id_empty_string_passed_to_callback() -> None:
+    """Test that empty string `tool_call_id` is correctly passed to callback.
+
+    Some systems may use empty strings as `tool_call_id`, and this should
+    be passed through correctly (not converted to `None`).
+    """
+
+    @tool
+    def simple_tool(query: str) -> str:
+        """Simple tool for testing.
+
+        Args:
+            query: The query string.
+        """
+        return f"Result: {query}"
+
+    handler = CallbackHandlerWithToolCallIdCapture(captured_tool_call_ids=[])
+
+    # Invoke tool with empty string tool_call_id
+    tool_call: ToolCall = {
+        "name": "simple_tool",
+        "args": {"query": "test"},
+        "id": "",
+        "type": "tool_call",
+    }
+
+    result = simple_tool.invoke(tool_call, config={"callbacks": [handler]})
+
+    assert result == ToolMessage(
+        content="Result: test", name="simple_tool", tool_call_id=""
+    )
+    assert handler.tool_starts == 1
+    assert len(handler.captured_tool_call_ids) == 1
+    # Empty string should be passed as-is, not converted to None
+    assert handler.captured_tool_call_ids[0] == ""
+
+
+@pytest.mark.parametrize("method", ["run", "arun"])
+async def test_tool_call_id_passed_via_run_method(method: str) -> None:
+    """Test that `tool_call_id` is passed to callback when using run/arun method.
+
+    The `run()` and `arun()` methods are the lower-level APIs that `invoke()`
+    and `ainvoke()` call internally. This test ensures `tool_call_id` works
+    at this level as well.
+    """
+
+    @tool
+    def simple_tool(query: str) -> str:
+        """Simple tool for testing.
+
+        Args:
+            query: The query string.
+        """
+        return f"Result: {query}"
+
+    handler = CallbackHandlerWithToolCallIdCapture(captured_tool_call_ids=[])
+
+    if method == "arun":
+        result = await simple_tool.arun(
+            {"query": "test"},
+            callbacks=[handler],
+            tool_call_id="run_method_tool_call_id",
+        )
+    else:
+        result = simple_tool.run(
+            {"query": "test"},
+            callbacks=[handler],
+            tool_call_id="run_method_tool_call_id",
+        )
+
+    assert result == ToolMessage(
+        content="Result: test",
+        name="simple_tool",
+        tool_call_id="run_method_tool_call_id",
+    )
+    assert handler.tool_starts == 1
+    assert len(handler.captured_tool_call_ids) == 1
+    assert handler.captured_tool_call_ids[0] == "run_method_tool_call_id"
+
+
+def test_tool_args_schema_default_values() -> None:
+    """Test that Pydantic default values from `args_schema` are applied.
+
+    When a tool has an `args_schema` with default values, those defaults
+    should be passed to the tool function when the caller omits them.
+    """
+
+    class SearchArgs(BaseModel):
+        """Schema for search tool arguments."""
+
+        query: str = Field(..., description="The search query")
+        page: int = Field(default=1, description="Page number")
+        size: int = Field(default=10, description="Results per page")
+
+    @tool("search", args_schema=SearchArgs)
+    def search_tool(query: str, page: int, size: int) -> str:
+        """Perform a search with pagination.
+
+        Args:
+            query: The search query.
+            page: Page number.
+            size: Results per page.
+        """
+        return f"query={query}, page={page}, size={size}"
+
+    # Invoke with only required argument - defaults should be applied
+    result = search_tool.invoke({"query": "test"})
+    assert result == "query=test, page=1, size=10"
+
+    # Invoke with partial defaults - mix of provided and default values
+    result = search_tool.invoke({"query": "test", "page": 5})
+    assert result == "query=test, page=5, size=10"
+
+    # Invoke with all arguments explicitly provided
+    result = search_tool.invoke({"query": "test", "page": 3, "size": 20})
+    assert result == "query=test, page=3, size=20"
+
+
+async def test_tool_args_schema_default_values_async() -> None:
+    """Test that Pydantic defaults work with async tool invocation."""
+
+    class SearchArgs(BaseModel):
+        """Schema for search tool arguments."""
+
+        query: str = Field(..., description="The search query")
+        limit: int = Field(default=5, description="Max results")
+
+    @tool("async_search", args_schema=SearchArgs)
+    async def async_search_tool(query: str, limit: int) -> str:
+        """Async search tool.
+
+        Args:
+            query: The search query.
+            limit: Max results.
+        """
+        return f"query={query}, limit={limit}"
+
+    # Invoke with only required argument - default should be applied
+    result = await async_search_tool.ainvoke({"query": "hello"})
+    assert result == "query=hello, limit=5"
+
+
+def test_tool_args_schema_none_default() -> None:
+    """Test that explicit `None` defaults are handled correctly.
+
+    When a field has `Field(default=None)`, that `None` value should be passed
+    to the tool function, not omitted from the arguments.
+    """
+
+    class FilterArgs(BaseModel):
+        """Schema for filter tool arguments."""
+
+        query: str = Field(..., description="The search query")
+        category: str | None = Field(default=None, description="Optional category")
+        tag: str | None = Field(default=None, description="Optional tag filter")
+
+    @tool("filter_search", args_schema=FilterArgs)
+    def filter_tool(query: str, category: str | None, tag: str | None) -> str:
+        """Search with optional filters.
+
+        Args:
+            query: The search query.
+            category: Optional category filter.
+            tag: Optional tag filter.
+        """
+        return f"query={query}, category={category}, tag={tag}"
+
+    # Invoke with only required argument - None defaults should be applied
+    result = filter_tool.invoke({"query": "test"})
+    assert result == "query=test, category=None, tag=None"
+
+    # Invoke with one optional provided
+    result = filter_tool.invoke({"query": "test", "category": "books"})
+    assert result == "query=test, category=books, tag=None"
+
+    # Invoke with all arguments
+    result = filter_tool.invoke({"query": "test", "category": "books", "tag": "new"})
+    assert result == "query=test, category=books, tag=new"
+
+
+def test_tool_args_schema_falsy_defaults() -> None:
+    """Test falsy default values (`0`, `False`, empty string) are handled correctly."""
+
+    class ConfigArgs(BaseModel):
+        """Schema for config tool arguments."""
+
+        name: str = Field(..., description="Config name")
+        enabled: bool = Field(default=False, description="Whether enabled")
+        count: int = Field(default=0, description="Initial count")
+        prefix: str = Field(default="", description="Optional prefix")
+
+    @tool("config_tool", args_schema=ConfigArgs)
+    def config_tool(name: str, *, enabled: bool, count: int, prefix: str) -> str:
+        """Configure settings.
+
+        Args:
+            name: Config name.
+            enabled: Whether enabled.
+            count: Initial count.
+            prefix: Optional prefix.
+        """
+        return f"name={name}, enabled={enabled}, count={count}, prefix={prefix!r}"
+
+    # Invoke with only required argument - falsy defaults should be applied
+    result = config_tool.invoke({"name": "test"})
+    assert result == "name=test, enabled=False, count=0, prefix=''"

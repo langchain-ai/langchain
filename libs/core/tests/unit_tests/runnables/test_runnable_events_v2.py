@@ -73,12 +73,6 @@ def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
     )
 
 
-async def _as_async_iterator(iterable: list) -> AsyncIterator:
-    """Converts an iterable into an async iterator."""
-    for item in iterable:
-        yield item
-
-
 async def _collect_events(
     events: AsyncIterator[StreamEvent], *, with_nulled_ids: bool = True
 ) -> list[StreamEvent]:
@@ -1504,7 +1498,7 @@ async def test_chain_ordering() -> None:
 
     try:
         for _ in range(10):
-            next_chunk = await iterable.__anext__()
+            next_chunk = await anext(iterable)
             events.append(next_chunk)
     except Exception:
         pass
@@ -1621,7 +1615,7 @@ async def test_event_stream_with_retry() -> None:
 
     try:
         for _ in range(10):
-            next_chunk = await iterable.__anext__()
+            next_chunk = await anext(iterable)
             events.append(next_chunk)
     except Exception:
         pass
@@ -1926,7 +1920,7 @@ async def test_runnable_with_message_history() -> None:
 
     # Here we use a global variable to store the chat message history.
     # This will make it easier to inspect it to see the underlying results.
-    store: dict = {}
+    store: dict[str, list[BaseMessage]] = {}
 
     def get_by_session_id(session_id: str) -> BaseChatMessageHistory:
         """Get a chat message history."""
@@ -2088,7 +2082,7 @@ async def test_async_in_async_stream_lambdas() -> None:
     async def add_one(x: int) -> int:
         return x + 1
 
-    add_one_ = RunnableLambda(add_one)  # type: ignore[arg-type,var-annotated]
+    add_one_ = RunnableLambda[int, int](add_one)
 
     async def add_one_proxy(x: int, config: RunnableConfig) -> int:
         # Use sync streaming
@@ -2096,7 +2090,7 @@ async def test_async_in_async_stream_lambdas() -> None:
         results = [result async for result in streaming]
         return results[0]
 
-    add_one_proxy_ = RunnableLambda(add_one_proxy)  # type: ignore[arg-type,var-annotated]
+    add_one_proxy_ = RunnableLambda[int, int](add_one_proxy)
 
     events = await _collect_events(add_one_proxy_.astream_events(1, version="v2"))
     _assert_events_equal_allow_superset_metadata(events, EXPECTED_EVENTS)

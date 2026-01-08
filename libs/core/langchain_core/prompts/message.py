@@ -6,10 +6,10 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.load import Serializable
-from langchain_core.messages import BaseMessage
 from langchain_core.utils.interactive_env import is_interactive_env
 
 if TYPE_CHECKING:
+    from langchain_core.messages import BaseMessage
     from langchain_core.prompts.chat import ChatPromptTemplate
 
 
@@ -92,4 +92,4 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         from langchain_core.prompts.chat import ChatPromptTemplate  # noqa: PLC0415
 
         prompt = ChatPromptTemplate(messages=[self])
-        return prompt + other
+        return prompt.__add__(other)

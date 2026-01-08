@@ -1,8 +1,8 @@
 """Anthropic prompt caching middleware.
 
 Requires:
-    - langchain: For agent middleware framework
-    - langchain-anthropic: For ChatAnthropic model (already a dependency)
+    - `langchain`: For agent middleware framework
+    - `langchain-anthropic`: For `ChatAnthropic` model (already a dependency)
 """
 
 from collections.abc import Awaitable, Callable
@@ -32,10 +32,10 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
 
     Optimizes API usage by caching conversation prefixes for Anthropic models.
 
-    Requires both 'langchain' and 'langchain-anthropic' packages to be installed.
+    Requires both `langchain` and `langchain-anthropic` packages to be installed.
 
     Learn more about Anthropic prompt caching
-    [here](https://docs.claude.com/en/docs/build-with-claude/prompt-caching).
+    [here](https://platform.claude.com/docs/en/build-with-claude/prompt-caching).
     """
 
     def __init__(
@@ -48,16 +48,20 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         """Initialize the middleware with cache control settings.
 
         Args:
-            type: The type of cache to use, only "ephemeral" is supported.
-            ttl: The time to live for the cache, only "5m" and "1h" are
+            type: The type of cache to use, only `'ephemeral'` is supported.
+            ttl: The time to live for the cache, only `'5m'` and `'1h'` are
                 supported.
             min_messages_to_cache: The minimum number of messages until the
-                cache is used, default is 0.
+                cache is used.
             unsupported_model_behavior: The behavior to take when an
-                unsupported model is used. "ignore" will ignore the unsupported
-                model and continue without caching. "warn" will warn the user
-                and continue without caching. "raise" will raise an error and
-                stop the agent.
+                unsupported model is used.
+
+                `'ignore'` will ignore the unsupported model and continue without
+                caching.
+
+                `'warn'` will warn the user and continue without caching.
+
+                `'raise'` will raise an error and stop the agent.
         """
         self.type = type
         self.ttl = ttl
@@ -71,10 +75,10 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
             request: The model request to check.
 
         Returns:
-            True if caching should be applied, False otherwise.
+            `True` if caching should be applied, `False` otherwise.
 
         Raises:
-            ValueError: If model is unsupported and behavior is set to "raise".
+            ValueError: If model is unsupported and behavior is set to `'raise'`.
         """
         if not isinstance(request.model, ChatAnthropic):
             msg = (
@@ -89,18 +93,10 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
 
         messages_count = (
             len(request.messages) + 1
-            if request.system_prompt
+            if request.system_message
             else len(request.messages)
         )
         return messages_count >= self.min_messages_to_cache
-
-    def _apply_cache_control(self, request: ModelRequest) -> None:
-        """Apply cache control settings to the request.
-
-        Args:
-            request: The model request to modify.
-        """
-        request.model_settings["cache_control"] = {"type": self.type, "ttl": self.ttl}
 
     def wrap_model_call(
         self,
@@ -119,8 +115,12 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         if not self._should_apply_caching(request):
             return handler(request)
 
-        self._apply_cache_control(request)
-        return handler(request)
+        model_settings = request.model_settings
+        new_model_settings = {
+            **model_settings,
+            "cache_control": {"type": self.type, "ttl": self.ttl},
+        }
+        return handler(request.override(model_settings=new_model_settings))
 
     async def awrap_model_call(
         self,
@@ -139,5 +139,9 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         if not self._should_apply_caching(request):
             return await handler(request)
 
-        self._apply_cache_control(request)
-        return await handler(request)
+        model_settings = request.model_settings
+        new_model_settings = {
+            **model_settings,
+            "cache_control": {"type": self.type, "ttl": self.ttl},
+        }
+        return await handler(request.override(model_settings=new_model_settings))
