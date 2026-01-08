@@ -207,6 +207,3 @@ def test_extract_sub_links_with_query() -> None:
         )
     )
     assert actual == expected, f"Expected {expected}, but got {actual}"
-
-
-
