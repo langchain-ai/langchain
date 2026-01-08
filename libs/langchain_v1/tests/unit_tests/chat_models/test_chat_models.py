@@ -79,6 +79,8 @@ def test_supported_providers_is_sorted() -> None:
         ("command-r-plus", "cohere"),
         ("accounts/fireworks/models/mixtral-8x7b-instruct", "fireworks"),
         ("gemini-1.5-pro", "google_vertexai"),
+        ("gemini-2.5-pro", "google_vertexai"),
+        ("gemini-3-pro-preview", "google_vertexai"),
         ("amazon.titan-text-express-v1", "bedrock"),
         ("anthropic.claude-v2", "bedrock"),
         ("mistral-small", "mistralai"),
