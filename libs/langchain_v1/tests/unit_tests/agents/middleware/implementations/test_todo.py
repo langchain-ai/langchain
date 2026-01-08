@@ -305,9 +305,11 @@ def test_todo_middleware_custom_system_prompt_and_tool_description() -> None:
                 {"content": "Task 1", "status": "pending"},
                 {"content": "Task 2", "status": "in_progress"},
             ],
-            "Updated todo list to ["
-            "{'content': 'Task 1', 'status': 'pending'}, "
-            "{'content': 'Task 2', 'status': 'in_progress'}]",
+            (
+                "Updated todo list to ["
+                "{'content': 'Task 1', 'status': 'pending'}, "
+                "{'content': 'Task 2', 'status': 'in_progress'}]"
+            ),
         ),
         (
             [
@@ -315,10 +317,12 @@ def test_todo_middleware_custom_system_prompt_and_tool_description() -> None:
                 {"content": "Task 2", "status": "in_progress"},
                 {"content": "Task 3", "status": "completed"},
             ],
-            "Updated todo list to ["
-            "{'content': 'Task 1', 'status': 'pending'}, "
-            "{'content': 'Task 2', 'status': 'in_progress'}, "
-            "{'content': 'Task 3', 'status': 'completed'}]",
+            (
+                "Updated todo list to ["
+                "{'content': 'Task 1', 'status': 'pending'}, "
+                "{'content': 'Task 2', 'status': 'in_progress'}, "
+                "{'content': 'Task 3', 'status': 'completed'}]"
+            ),
         ),
     ],
 )

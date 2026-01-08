@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.types import Command
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired, TypedDict, override
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -196,7 +196,16 @@ class TodoListMiddleware(AgentMiddleware):
         request: ModelRequest,
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
-        """Update the system message to include the todo system prompt."""
+        """Update the system message to include the todo system prompt.
+
+        Args:
+            request: Model request to execute (includes state and runtime).
+            handler: Async callback that executes the model request and returns
+                `ModelResponse`.
+
+        Returns:
+            The model call result.
+        """
         if request.system_message is not None:
             new_system_content = [
                 *request.system_message.content_blocks,
@@ -214,7 +223,16 @@ class TodoListMiddleware(AgentMiddleware):
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
-        """Update the system message to include the todo system prompt (async version)."""
+        """Update the system message to include the todo system prompt.
+
+        Args:
+            request: Model request to execute (includes state and runtime).
+            handler: Async callback that executes the model request and returns
+                `ModelResponse`.
+
+        Returns:
+            The model call result.
+        """
         if request.system_message is not None:
             new_system_content = [
                 *request.system_message.content_blocks,
@@ -227,10 +245,11 @@ class TodoListMiddleware(AgentMiddleware):
         )
         return await handler(request.override(system_message=new_system_message))
 
+    @override
     def after_model(
         self,
         state: AgentState,
-        runtime: Runtime,  # noqa: ARG002
+        runtime: Runtime,
     ) -> dict[str, Any] | None:
         """Check for parallel write_todos tool calls and return errors if detected.
 
