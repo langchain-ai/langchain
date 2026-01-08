@@ -20,12 +20,12 @@ class FakeEmbeddings(Embeddings):
     """Fake embedding class for tests."""
 
     @override
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+    def embed_documents(self, texts: list[str], **_kwargs: Any) -> list[list[float]]:
         """Return random floats."""
         return [list(np.random.default_rng().uniform(0, 1, 10)) for _ in range(10)]
 
     @override
-    def embed_query(self, text: str) -> list[float]:
+    def embed_query(self, text: str, **_kwargs: Any) -> list[float]:
         """Return random floats."""
         return list(np.random.default_rng().uniform(0, 1, 10))
 

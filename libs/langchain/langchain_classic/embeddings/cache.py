@@ -184,9 +184,7 @@ class CacheBackedEmbeddings(Embeddings):
 
         for missing_indices in batch_iterate(self.batch_size, all_missing_indices):
             missing_texts = [texts[i] for i in missing_indices]
-            missing_vectors = self.underlying_embeddings.embed_documents(
-                missing_texts
-            )
+            missing_vectors = self.underlying_embeddings.embed_documents(missing_texts)
             self.document_embedding_store.mset(
                 list(zip(missing_texts, missing_vectors, strict=False)),
             )
