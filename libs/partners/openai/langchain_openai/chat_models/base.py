@@ -1462,8 +1462,11 @@ class BaseChatOpenAI(BaseChatModel):
             raise KeyError(msg) from e
 
         if choices is None:
-            msg = "Received response with null value for `choices`."
-            raise TypeError(msg)
+            msg = (
+                "Invalid OpenAI response: received null value for `choices`. "
+                "This indicates the upstream response is malformed."
+            )
+            raise ValueError(msg)
 
         token_usage = response_dict.get("usage")
         service_tier = response_dict.get("service_tier")
