@@ -1014,3 +1014,387 @@ def test_create_summary_uses_get_buffer_string_format() -> None:
         f"str(messages) should produce significantly more tokens. "
         f"Got ratio {str_ratio:.2f}x (expected > 1.5)"
     )
+
+
+def test_summarization_middleware_min_preserve_turns_default() -> None:
+    """Test that `min_preserve_turns` defaults to 1 and keeps at least one turn."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=("messages", 5),
+        keep=("messages", 1),  # Would keep only 1 message (very aggressive)
+    )
+
+    # Default min_preserve_turns should be 1
+    assert middleware.min_preserve_turns == 1
+
+    # Mock token counter
+    def mock_token_counter(messages: list[AnyMessage]) -> int:
+        return 1500
+
+    middleware.token_counter = mock_token_counter
+
+    # Messages: 3 turns
+    messages: list[AnyMessage] = [
+        HumanMessage(content="Turn 1"),
+        AIMessage(content="Response 1"),
+        HumanMessage(content="Turn 2"),
+        AIMessage(content="Response 2"),
+        HumanMessage(content="Turn 3"),
+        AIMessage(content="Response 3"),
+    ]
+
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+
+    # Should preserve at least 1 turn (last HumanMessage at index 4)
+    assert result is not None
+    preserved = result["messages"][2:]  # After RemoveMessage and summary
+    # min_preserve_turns=1 means we preserve from the last HumanMessage (index 4)
+    # which includes Turn 3 (HumanMessage + AIMessage = 2 messages)
+    assert len(preserved) >= 2
+    # The last turn starts at the last HumanMessage
+    assert any(isinstance(m, HumanMessage) and m.content == "Turn 3" for m in preserved)
+
+
+def test_summarization_middleware_min_preserve_turns_with_massive_tool_result() -> None:
+    """Test that `min_preserve_turns` keeps turn even if tool result is massive."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=("messages", 4),
+        keep=("messages", 1),  # Would only keep 1 message
+        min_preserve_turns=1,
+    )
+
+    def mock_token_counter(messages: list[AnyMessage]) -> int:
+        return 10000  # Always above trigger
+
+    middleware.token_counter = mock_token_counter
+
+    # Turn 2 has a massive tool result
+    messages: list[AnyMessage] = [
+        HumanMessage(content="Turn 1"),
+        AIMessage(content="Response 1"),
+        HumanMessage(content="Turn 2 - Read file"),
+        AIMessage(
+            content="I'll read the file",
+            tool_calls=[{"name": "read", "args": {}, "id": "call_1"}],
+        ),
+        ToolMessage(content="X" * 10000, tool_call_id="call_1"),  # Massive result
+    ]
+
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+
+    # Should preserve turn 2 (HumanMessage + AIMessage + ToolMessage)
+    assert result is not None
+    preserved = result["messages"][2:]  # After RemoveMessage and summary
+    # Last turn starts at index 2 (HumanMessage "Turn 2 - Read file")
+    assert len(preserved) == 3
+    assert isinstance(preserved[0], HumanMessage)
+    assert preserved[0].content == "Turn 2 - Read file"
+
+
+def test_summarization_middleware_min_preserve_turns_zero_disables() -> None:
+    """Test that `min_preserve_turns=0` disables the floor."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=("messages", 3),
+        keep=("messages", 1),
+        min_preserve_turns=0,  # Disabled
+    )
+
+    def mock_token_counter(messages: list[AnyMessage]) -> int:
+        return 1500
+
+    middleware.token_counter = mock_token_counter
+
+    messages: list[AnyMessage] = [
+        HumanMessage(content="Turn 1"),
+        AIMessage(content="Response 1"),
+        HumanMessage(content="Turn 2"),
+    ]
+
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+
+    # With min_preserve_turns=0, should respect keep=1 strictly
+    assert result is not None
+    preserved = result["messages"][2:]
+    assert len(preserved) == 1  # Only keeps 1 message
+
+
+def test_summarization_middleware_cutoff_never_past_last_turn() -> None:
+    """Test that cutoff never goes past the last turn, even with tight token budget."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=("messages", 5),
+        keep=("messages", 1),  # Very aggressive - would keep only 1 message
+        min_preserve_turns=1,
+    )
+
+    def mock_token_counter(messages: list[AnyMessage]) -> int:
+        return 5000
+
+    middleware.token_counter = mock_token_counter
+
+    # Create messages where keep=1 would want to summarize almost everything
+    messages: list[AnyMessage] = [
+        HumanMessage(content="Old turn 1"),
+        AIMessage(content="Old response 1"),
+        HumanMessage(content="Old turn 2"),
+        AIMessage(content="Old response 2"),
+        HumanMessage(content="Last turn"),
+        AIMessage(content="Last response"),
+    ]
+
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+
+    assert result is not None
+    preserved = result["messages"][2:]
+
+    # Should preserve at least the last turn (HumanMessage + AIMessage)
+    # min_preserve_turns=1 overrides keep=1 to preserve the full last turn
+    assert len(preserved) >= 2
+    # Find the last HumanMessage in preserved
+    human_msgs = [m for m in preserved if isinstance(m, HumanMessage)]
+    assert len(human_msgs) >= 1
+    assert human_msgs[-1].content == "Last turn"
+
+
+def test_summarization_middleware_find_last_n_turns_basic() -> None:
+    """Test `_find_last_n_turns` with basic message sequences."""
+    middleware = SummarizationMiddleware(model=MockChatModel(), trigger=("messages", 10))
+
+    messages: list[AnyMessage] = [
+        HumanMessage(content="Turn 1"),  # index 0
+        AIMessage(content="Response 1"),  # index 1
+        HumanMessage(content="Turn 2"),  # index 2
+        AIMessage(content="Response 2"),  # index 3
+        HumanMessage(content="Turn 3"),  # index 4
+        AIMessage(content="Response 3"),  # index 5
+    ]
+
+    # n=1: should return index 4 (last HumanMessage)
+    assert middleware._find_last_n_turns(messages, 1) == 4
+
+    # n=2: should return index 2 (second-to-last HumanMessage)
+    assert middleware._find_last_n_turns(messages, 2) == 2
+
+    # n=3: should return index 0 (third-to-last HumanMessage)
+    assert middleware._find_last_n_turns(messages, 3) == 0
+
+    # n=4: fewer turns than requested, return 0
+    assert middleware._find_last_n_turns(messages, 4) == 0
+
+
+def test_summarization_middleware_find_last_n_turns_with_tools() -> None:
+    """Test `_find_last_n_turns` with tool messages in turns."""
+    middleware = SummarizationMiddleware(model=MockChatModel(), trigger=("messages", 10))
+
+    messages: list[AnyMessage] = [
+        HumanMessage(content="Turn 1"),  # index 0
+        AIMessage(content="Response 1"),  # index 1
+        HumanMessage(content="Turn 2"),  # index 2
+        AIMessage(
+            content="Using tools",
+            tool_calls=[{"name": "tool", "args": {}, "id": "call_1"}],
+        ),  # index 3
+        ToolMessage(content="Result 1", tool_call_id="call_1"),  # index 4
+        ToolMessage(content="Result 2", tool_call_id="call_2"),  # index 5
+        AIMessage(content="Final response"),  # index 6
+    ]
+
+    # n=1: should return index 2 (last turn starts at "Turn 2")
+    assert middleware._find_last_n_turns(messages, 1) == 2
+
+    # n=2: should return index 0 (first turn)
+    assert middleware._find_last_n_turns(messages, 2) == 0
+
+
+def test_summarization_middleware_find_last_n_turns_no_human_messages() -> None:
+    """Test `_find_last_n_turns` when there are no `HumanMessage`s."""
+    middleware = SummarizationMiddleware(model=MockChatModel(), trigger=("messages", 10))
+
+    messages: list[AnyMessage] = [
+        AIMessage(content="AI only 1"),
+        AIMessage(content="AI only 2"),
+    ]
+
+    # No turns defined by HumanMessages - preserve all
+    assert middleware._find_last_n_turns(messages, 1) == 0
+
+
+def test_summarization_middleware_find_last_n_turns_empty() -> None:
+    """Test _find_last_n_turns with empty messages."""
+    middleware = SummarizationMiddleware(model=MockChatModel(), trigger=("messages", 10))
+
+    # Empty messages
+    assert middleware._find_last_n_turns([], 1) == 0
+
+    # n=0 should return len(messages)
+    messages: list[AnyMessage] = [HumanMessage(content="Test")]
+    assert middleware._find_last_n_turns(messages, 0) == 1
+
+
+def test_summarization_middleware_turn_boundary_detection() -> None:
+    """Test that turn boundaries are correctly identified at `HumanMessage`s."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=("messages", 5),
+        keep=("messages", 2),
+        min_preserve_turns=1,
+    )
+
+    def mock_token_counter(messages: list[AnyMessage]) -> int:
+        return 1500
+
+    middleware.token_counter = mock_token_counter
+
+    # Complex sequence with tools
+    messages: list[AnyMessage] = [
+        HumanMessage(content="Question 1"),  # Turn 1 starts
+        AIMessage(content="Answer 1"),
+        HumanMessage(content="Question 2"),  # Turn 2 starts
+        AIMessage(
+            content="Let me check",
+            tool_calls=[{"name": "search", "args": {}, "id": "call_1"}],
+        ),
+        ToolMessage(content="Search result", tool_call_id="call_1"),
+        AIMessage(content="Based on search, here's my answer"),
+    ]
+
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+
+    assert result is not None
+    preserved = result["messages"][2:]
+
+    # Last turn (Turn 2) should be preserved completely
+    # It starts at index 2 (HumanMessage "Question 2") and includes:
+    # - HumanMessage (Question 2)
+    # - AIMessage (Let me check)
+    # - ToolMessage (Search result)
+    # - AIMessage (Based on search...)
+    assert len(preserved) == 4
+    assert isinstance(preserved[0], HumanMessage)
+    assert preserved[0].content == "Question 2"
+
+
+def test_summarization_middleware_multiple_turns_preserved() -> None:
+    """Test `min_preserve_turns=2` keeps 2 complete turns."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=("messages", 6),
+        keep=("messages", 1),  # Would only keep 1 message
+        min_preserve_turns=2,  # But we want 2 turns minimum
+    )
+
+    def mock_token_counter(messages: list[AnyMessage]) -> int:
+        return 2000
+
+    middleware.token_counter = mock_token_counter
+
+    messages: list[AnyMessage] = [
+        HumanMessage(content="Turn 1"),
+        AIMessage(content="Response 1"),
+        HumanMessage(content="Turn 2"),
+        AIMessage(content="Response 2"),
+        HumanMessage(content="Turn 3"),
+        AIMessage(content="Response 3"),
+    ]
+
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+
+    assert result is not None
+    preserved = result["messages"][2:]
+
+    # Should preserve turns 2 and 3 (starting from index 2)
+    assert len(preserved) == 4  # Turn 2 (2 msgs) + Turn 3 (2 msgs)
+    human_msgs = [m for m in preserved if isinstance(m, HumanMessage)]
+    assert len(human_msgs) == 2
+    assert human_msgs[0].content == "Turn 2"
+    assert human_msgs[1].content == "Turn 3"
+
+
+def test_summarization_middleware_safety_check_skips_large_turn() -> None:
+    """Test that `min_preserve_turns` is skipped if turn exceeds 80% of context."""
+    # Model with 1000 max tokens
+    model = MockChatModel()
+    model.profile = {"max_input_tokens": 1000}
+
+    middleware = SummarizationMiddleware(
+        model=model,
+        trigger=("messages", 4),
+        keep=("messages", 2),  # Would keep 2 messages
+        min_preserve_turns=1,  # Would want to keep full turn
+    )
+
+    # Token counter that makes the last turn very expensive
+    def mock_token_counter(messages: list[AnyMessage]) -> int:
+        # Make the last turn (messages from index 2 onward) exceed 80% of 1000 = 800 tokens
+        # If checking all messages, return high count to trigger summarization
+        if len(messages) >= 4:
+            return 1500  # Total exceeds trigger
+        if len(messages) == 2:
+            return 900  # Last turn alone exceeds 80% threshold
+        return len(messages) * 100
+
+    middleware.token_counter = mock_token_counter
+
+    messages: list[AnyMessage] = [
+        HumanMessage(content="Turn 1"),
+        AIMessage(content="Response 1"),
+        HumanMessage(content="Turn 2 with massive content"),  # Last turn starts here
+        AIMessage(content="X" * 10000),  # Massive response
+    ]
+
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+
+    assert result is not None
+    preserved = result["messages"][2:]
+
+    # Safety check should kick in - min_preserve_turns skipped, falls back to keep=2
+    # This means we keep only 2 messages (the keep policy) not the full turn
+    assert len(preserved) == 2
+
+
+def test_summarization_middleware_safety_check_allows_small_turn() -> None:
+    """Test that `min_preserve_turns` works normally when turn is small enough."""
+    # Model with 10000 max tokens
+    model = MockChatModel()
+    model.profile = {"max_input_tokens": 10000}
+
+    middleware = SummarizationMiddleware(
+        model=model,
+        trigger=("messages", 4),
+        keep=("messages", 1),  # Would keep 1 message
+        min_preserve_turns=1,  # Want to keep full turn
+    )
+
+    def mock_token_counter(messages: list[AnyMessage]) -> int:
+        # Last turn is small (well under 80% of 10000 = 8000)
+        return len(messages) * 100
+
+    middleware.token_counter = mock_token_counter
+
+    messages: list[AnyMessage] = [
+        HumanMessage(content="Turn 1"),
+        AIMessage(content="Response 1"),
+        HumanMessage(content="Turn 2"),  # Last turn starts here
+        AIMessage(content="Response 2"),
+    ]
+
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+
+    assert result is not None
+    preserved = result["messages"][2:]
+
+    # Turn is small enough, so min_preserve_turns applies
+    # Should keep full turn (2 messages) not just keep=1
+    assert len(preserved) == 2
+    assert isinstance(preserved[0], HumanMessage)
+    assert preserved[0].content == "Turn 2"

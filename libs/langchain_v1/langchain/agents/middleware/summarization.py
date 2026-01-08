@@ -61,6 +61,8 @@ Messages to summarize:
 _DEFAULT_MESSAGES_TO_KEEP = 20
 _DEFAULT_TRIM_TOKEN_LIMIT = 4000
 _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
+_DEFAULT_MIN_PRESERVE_TURNS = 1
+_TURN_PRESERVATION_SAFETY_THRESHOLD = 0.8  # Skip min_preserve_turns if turn exceeds this fraction
 
 ContextFraction = tuple[Literal["fraction"], float]
 """Fraction of model's maximum input tokens.
@@ -147,6 +149,7 @@ class SummarizationMiddleware(AgentMiddleware):
         *,
         trigger: ContextSize | list[ContextSize] | None = None,
         keep: ContextSize = ("messages", _DEFAULT_MESSAGES_TO_KEEP),
+        min_preserve_turns: int = _DEFAULT_MIN_PRESERVE_TURNS,
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
         trim_tokens_to_summarize: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
@@ -200,6 +203,17 @@ class SummarizationMiddleware(AgentMiddleware):
                     # Keep the most recent 30% of the model's max input tokens
                     ("fraction", 0.3)
                     ```
+            min_preserve_turns: Minimum number of complete turns to always preserve,
+                regardless of the `keep` policy.
+
+                A turn consists of a `HumanMessage` followed by any `AIMessage` responses
+                and their associated `ToolMessage` results.
+
+                Defaults to `1`, ensuring the most recent complete turn is always kept.
+
+                Set to `0` to disable this floor and rely solely on the `keep` policy.
+
+                This prevents aggressive summarization from removing all context.
             token_counter: Function to count tokens in messages.
             summary_prompt: Prompt template for generating summaries.
             trim_tokens_to_summarize: Maximum tokens to keep when preparing messages for
@@ -248,6 +262,7 @@ class SummarizationMiddleware(AgentMiddleware):
         self._trigger_conditions = trigger_conditions
 
         self.keep = self._validate_context_size(keep, "keep")
+        self.min_preserve_turns = min_preserve_turns
         if token_counter is count_tokens_approximately:
             self.token_counter = _get_approximate_token_counter(self.model)
         else:
@@ -346,16 +361,45 @@ class SummarizationMiddleware(AgentMiddleware):
         return False
 
     def _determine_cutoff_index(self, messages: list[AnyMessage]) -> int:
-        """Choose cutoff index respecting retention configuration."""
+        """Choose cutoff index respecting retention configuration and `min_preserve_turns`.
+
+        The cutoff is determined by the `keep` policy, but is further constrained by
+        `min_preserve_turns` to ensure at least N complete turns are always preserved.
+
+        Safety check: If preserving the minimum turns would exceed 80% of the model's
+        context window, fall back to the `keep` policy to avoid model rejection.
+        """
         kind, value = self.keep
         if kind in {"tokens", "fraction"}:
-            token_based_cutoff = self._find_token_based_cutoff(messages)
-            if token_based_cutoff is not None:
-                return token_based_cutoff
-            # None cutoff -> model profile data not available (caught in __init__ but
-            # here for safety), fallback to message count
-            return self._find_safe_cutoff(messages, _DEFAULT_MESSAGES_TO_KEEP)
-        return self._find_safe_cutoff(messages, cast("int", value))
+            calculated_cutoff = self._find_token_based_cutoff(messages)
+            if calculated_cutoff is None:
+                # None cutoff -> model profile data not available (caught in __init__ but
+                # here for safety), fallback to message count
+                calculated_cutoff = self._find_safe_cutoff(messages, _DEFAULT_MESSAGES_TO_KEEP)
+        else:
+            calculated_cutoff = self._find_safe_cutoff(messages, cast("int", value))
+
+        # Enforce minimum turn preservation floor (with safety check)
+        if self.min_preserve_turns > 0:
+            min_cutoff = self._find_last_n_turns(messages, self.min_preserve_turns)
+
+            # Safety check: ensure preserving these turns won't exceed context limit
+            if min_cutoff < calculated_cutoff:
+                preserved_messages = messages[min_cutoff:]
+                preserved_tokens = self.token_counter(preserved_messages)
+
+                # Check against safety threshold (80% of model's max tokens)
+                max_input_tokens = self._get_profile_limits()
+                if max_input_tokens is not None:
+                    safety_limit = int(max_input_tokens * _TURN_PRESERVATION_SAFETY_THRESHOLD)
+                    if preserved_tokens > safety_limit:
+                        # Turn is too large - fall back to keep policy
+                        return calculated_cutoff
+
+                # Safe to preserve the turn
+                calculated_cutoff = min_cutoff
+
+        return calculated_cutoff
 
     def _find_token_based_cutoff(self, messages: list[AnyMessage]) -> int | None:
         """Find cutoff index based on target token retention."""
@@ -460,6 +504,42 @@ class SummarizationMiddleware(AgentMiddleware):
         preserved_messages = conversation_messages[cutoff_index:]
 
         return messages_to_summarize, preserved_messages
+
+    def _find_last_n_turns(self, messages: list[AnyMessage], n: int) -> int:
+        """Find the cutoff index that preserves the last N complete turns.
+
+        A 'turn' is defined as starting with a `HumanMessage` and including all
+        subsequent `AIMessage` responses and their associated `ToolMessage` results,
+        until the next `HumanMessage` begins a new turn.
+
+        Args:
+            messages: The list of messages to analyze.
+            n: Number of turns to preserve.
+
+        Returns:
+            The cutoff index such that `messages[cutoff_index:]` contains at least the
+                last N complete turns.
+
+                Returns `0` if fewer than N turns exist (preserving all messages).
+        """
+        if n <= 0 or not messages:
+            return len(messages)
+
+        # Find indices of all HumanMessages (turn boundaries)
+        human_indices = [i for i, msg in enumerate(messages) if isinstance(msg, HumanMessage)]
+
+        if not human_indices:
+            # No HumanMessages - preserve all messages
+            return 0
+
+        if len(human_indices) <= n:
+            # Fewer turns than requested - preserve all
+            return 0
+
+        # Get the index of the HumanMessage that starts the Nth-to-last turn
+        # If n=1, we want the last HumanMessage
+        # If n=2, we want the second-to-last HumanMessage, etc.
+        return human_indices[-n]
 
     def _find_safe_cutoff(self, messages: list[AnyMessage], messages_to_keep: int) -> int:
         """Find safe cutoff point that preserves AI/Tool message pairs.

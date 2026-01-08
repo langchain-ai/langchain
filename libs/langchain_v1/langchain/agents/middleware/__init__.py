@@ -9,6 +9,7 @@ from .human_in_the_loop import (
     HumanInTheLoopMiddleware,
     InterruptOnConfig,
 )
+from .large_tool_result import LargeToolResultMiddleware
 from .model_call_limit import ModelCallLimitMiddleware
 from .model_fallback import ModelFallbackMiddleware
 from .model_retry import ModelRetryMiddleware
@@ -54,6 +55,7 @@ __all__ = [
     "InterruptOnConfig",
     "LLMToolEmulator",
     "LLMToolSelectorMiddleware",
+    "LargeToolResultMiddleware",
     "ModelCallLimitMiddleware",
     "ModelFallbackMiddleware",
     "ModelRequest",
