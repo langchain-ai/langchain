@@ -1,14 +1,16 @@
 """Context editing middleware.
 
-This middleware mirrors Anthropic's context editing capabilities by clearing
-older tool results once the conversation grows beyond a configurable token
-threshold. The implementation is intentionally model-agnostic so it can be used
-with any LangChain chat model.
+Mirrors Anthropic's context editing capabilities by clearing older tool results once the
+conversation grows beyond a configurable token threshold.
+
+The implementation is intentionally model-agnostic so it can be used with any LangChain
+chat model.
 """
 
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Iterable, Sequence
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Literal
 
@@ -16,7 +18,6 @@ from langchain_core.messages import (
     AIMessage,
     AnyMessage,
     BaseMessage,
-    SystemMessage,
     ToolMessage,
 )
 from langchain_core.messages.utils import count_tokens_approximately
@@ -182,11 +183,13 @@ class ClearToolUsesEdit(ContextEdit):
 
 
 class ContextEditingMiddleware(AgentMiddleware):
-    """Automatically prunes tool results to manage context size.
+    """Automatically prune tool results to manage context size.
 
-    The middleware applies a sequence of edits when the total input token count
-    exceeds configured thresholds. Currently the `ClearToolUsesEdit` strategy is
-    supported, aligning with Anthropic's `clear_tool_uses_20250919` behaviour.
+    The middleware applies a sequence of edits when the total input token count exceeds
+    configured thresholds.
+
+    Currently the `ClearToolUsesEdit` strategy is supported, aligning with Anthropic's
+    `clear_tool_uses_20250919` behavior [(read more)](https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool).
     """
 
     edits: list[ContextEdit]
@@ -198,11 +201,12 @@ class ContextEditingMiddleware(AgentMiddleware):
         edits: Iterable[ContextEdit] | None = None,
         token_count_method: Literal["approximate", "model"] = "approximate",  # noqa: S107
     ) -> None:
-        """Initializes a context editing middleware instance.
+        """Initialize an instance of context editing middleware.
 
         Args:
-            edits: Sequence of edit strategies to apply. Defaults to a single
-                `ClearToolUsesEdit` mirroring Anthropic defaults.
+            edits: Sequence of edit strategies to apply.
+
+                Defaults to a single `ClearToolUsesEdit` mirroring Anthropic defaults.
             token_count_method: Whether to use approximate token counting
                 (faster, less accurate) or exact counting implemented by the
                 chat model (potentially slower, more accurate).
@@ -224,20 +228,20 @@ class ContextEditingMiddleware(AgentMiddleware):
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return count_tokens_approximately(messages)
+
         else:
-            system_msg = (
-                [SystemMessage(content=request.system_prompt)] if request.system_prompt else []
-            )
+            system_msg = [request.system_message] if request.system_message else []
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return request.model.get_num_tokens_from_messages(
                     system_msg + list(messages), request.tools
                 )
 
+        edited_messages = deepcopy(list(request.messages))
         for edit in self.edits:
-            edit.apply(request.messages, count_tokens=count_tokens)
+            edit.apply(edited_messages, count_tokens=count_tokens)
 
-        return handler(request)
+        return handler(request.override(messages=edited_messages))
 
     async def awrap_model_call(
         self,
@@ -252,20 +256,20 @@ class ContextEditingMiddleware(AgentMiddleware):
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return count_tokens_approximately(messages)
+
         else:
-            system_msg = (
-                [SystemMessage(content=request.system_prompt)] if request.system_prompt else []
-            )
+            system_msg = [request.system_message] if request.system_message else []
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return request.model.get_num_tokens_from_messages(
                     system_msg + list(messages), request.tools
                 )
 
+        edited_messages = deepcopy(list(request.messages))
         for edit in self.edits:
-            edit.apply(request.messages, count_tokens=count_tokens)
+            edit.apply(edited_messages, count_tokens=count_tokens)
 
-        return await handler(request)
+        return await handler(request.override(messages=edited_messages))
 
 
 __all__ = [

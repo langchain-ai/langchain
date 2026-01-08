@@ -18,7 +18,7 @@ from langchain.embeddings.base import _SUPPORTED_PROVIDERS, init_embeddings
     ],
 )
 async def test_init_embedding_model(provider: str, model: str) -> None:
-    package = _SUPPORTED_PROVIDERS[provider]
+    package = _SUPPORTED_PROVIDERS[provider][0]
     try:
         importlib.import_module(package)
     except ImportError:

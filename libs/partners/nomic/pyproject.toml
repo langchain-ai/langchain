@@ -12,7 +12,7 @@ dependencies = [
     "pillow>=10.3.0,<12.0.0",
 ]
 name = "langchain-nomic"
-version = "1.0.0"
+version = "1.0.1"
 description = "An integration package connecting Nomic and LangChain"
 readme = "README.md"
 

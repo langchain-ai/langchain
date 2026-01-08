@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import inspect
 from collections import defaultdict
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import (
@@ -22,7 +21,7 @@ from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.utils.pydantic import _IgnoreUnserializable, is_basemodel_subclass
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     from pydantic import BaseModel
 
@@ -642,6 +641,7 @@ class Graph:
         retry_delay: float = 1.0,
         frontmatter_config: dict[str, Any] | None = None,
         base_url: str | None = None,
+        proxies: dict[str, str] | None = None,
     ) -> bytes:
         """Draw the graph as a PNG image using Mermaid.
 
@@ -674,11 +674,10 @@ class Graph:
                 }
                 ```
             base_url: The base URL of the Mermaid server for rendering via API.
-
+            proxies: HTTP/HTTPS proxies for requests (e.g. `{"http": "http://127.0.0.1:7890"}`).
 
         Returns:
             The PNG image as bytes.
-
         """
         # Import locally to prevent circular import
         from langchain_core.runnables.graph_mermaid import (  # noqa: PLC0415
@@ -699,6 +698,7 @@ class Graph:
             padding=padding,
             max_retries=max_retries,
             retry_delay=retry_delay,
+            proxies=proxies,
             base_url=base_url,
         )
 

@@ -1,254 +1,57 @@
-# Global Development Guidelines for LangChain Projects
+# Global development guidelines for the LangChain monorepo
 
-## Core Development Principles
+This document provides context to understand the LangChain Python project and assist with development.
 
-### 1. Maintain Stable Public Interfaces ⚠️ CRITICAL
+## Project architecture and context
 
-**Always attempt to preserve function signatures, argument positions, and names for exported/public methods.**
+### Monorepo structure
 
-❌ **Bad - Breaking Change:**
+This is a Python monorepo with multiple independently versioned packages that use `uv`.
 
-```python
-def get_user(id, verbose=False):  # Changed from `user_id`
-    pass
+```txt
+langchain/
+├── libs/
+│   ├── core/             # `langchain-core` primitives and base abstractions
+│   ├── langchain/        # `langchain-classic` (legacy, no new features)
+│   ├── langchain_v1/     # Actively maintained `langchain` package
+│   ├── partners/         # Third-party integrations
+│   │   ├── openai/       # OpenAI models and embeddings
+│   │   ├── anthropic/    # Anthropic (Claude) integration
+│   │   ├── ollama/       # Local model support
+│   │   └── ... (other integrations maintained by the LangChain team)
+│   ├── text-splitters/   # Document chunking utilities
+│   ├── standard-tests/   # Shared test suite for integrations
+│   ├── model-profiles/   # Model configuration profiles
+│   └── cli/              # Command-line interface tools
+├── .github/              # CI/CD workflows and templates
+├── .vscode/              # VSCode IDE standard settings and recommended extensions
+└── README.md             # Information about LangChain
 ```
 
-✅ **Good - Stable Interface:**
+- **Core layer** (`langchain-core`): Base abstractions, interfaces, and protocols. Users should not need to know about this layer directly.
+- **Implementation layer** (`langchain`): Concrete implementations and high-level public utilities
+- **Integration layer** (`partners/`): Third-party service integrations. Note that this monorepo is not exhaustive of all LangChain integrations; some are maintained in separate repos, such as `langchain-ai/langchain-google` and `langchain-ai/langchain-aws`. Usually these repos are cloned at the same level as this monorepo, so if needed, you can refer to their code directly by navigating to `../langchain-google/` from this monorepo.
+- **Testing layer** (`standard-tests/`): Standardized integration tests for partner integrations
 
-```python
-def get_user(user_id: str, verbose: bool = False) -> User:
-    """Retrieve user by ID with optional verbose output."""
-    pass
-```
+### Development tools & commands**
 
-**Before making ANY changes to public APIs:**
+- `uv` – Fast Python package installer and resolver (replaces pip/poetry)
+- `make` – Task runner for common development commands. Feel free to look at the `Makefile` for available commands and usage patterns.
+- `ruff` – Fast Python linter and formatter
+- `mypy` – Static type checking
+- `pytest` – Testing framework
 
-- Check if the function/class is exported in `__init__.py`
-- Look for existing usage patterns in tests and examples
-- Use keyword-only arguments for new parameters: `*, new_param: str = "default"`
-- Mark experimental features clearly with docstring warnings (using MkDocs Material admonitions, like `!!! warning`)
+This monorepo uses `uv` for dependency management. Local development uses editable installs: `[tool.uv.sources]`
 
-🧠 *Ask yourself:* "Would this change break someone's code if they used it last week?"
-
-### 2. Code Quality Standards
-
-**All Python code MUST include type hints and return types.**
-
-❌ **Bad:**
-
-```python
-def p(u, d):
-    return [x for x in u if x not in d]
-```
-
-✅ **Good:**
-
-```python
-def filter_unknown_users(users: list[str], known_users: set[str]) -> list[str]:
-    """Filter out users that are not in the known users set.
-
-    Args:
-        users: List of user identifiers to filter.
-        known_users: Set of known/valid user identifiers.
-
-    Returns:
-        List of users that are not in the known_users set.
-    """
-    return [user for user in users if user not in known_users]
-```
-
-**Style Requirements:**
-
-- Use descriptive, **self-explanatory variable names**. Avoid overly short or cryptic identifiers.
-- Attempt to break up complex functions (>20 lines) into smaller, focused functions where it makes sense
-- Avoid unnecessary abstraction or premature optimization
-- Follow existing patterns in the codebase you're modifying
-
-### 3. Testing Requirements
-
-**Every new feature or bugfix MUST be covered by unit tests.**
-
-**Test Organization:**
-
-- Unit tests: `tests/unit_tests/` (no network calls allowed)
-- Integration tests: `tests/integration_tests/` (network calls permitted)
-- Use `pytest` as the testing framework
-
-**Test Quality Checklist:**
-
-- [ ] Tests fail when your new logic is broken
-- [ ] Happy path is covered
-- [ ] Edge cases and error conditions are tested
-- [ ] Use fixtures/mocks for external dependencies
-- [ ] Tests are deterministic (no flaky tests)
-
-Checklist questions:
-
-- [ ] Does the test suite fail if your new logic is broken?
-- [ ] Are all expected behaviors exercised (happy path, invalid input, etc)?
-- [ ] Do tests use fixtures or mocks where needed?
-
-```python
-def test_filter_unknown_users():
-    """Test filtering unknown users from a list."""
-    users = ["alice", "bob", "charlie"]
-    known_users = {"alice", "bob"}
-
-    result = filter_unknown_users(users, known_users)
-
-    assert result == ["charlie"]
-    assert len(result) == 1
-```
-
-### 4. Security and Risk Assessment
-
-**Security Checklist:**
-
-- No `eval()`, `exec()`, or `pickle` on user-controlled input
-- Proper exception handling (no bare `except:`) and use a `msg` variable for error messages
-- Remove unreachable/commented code before committing
-- Race conditions or resource leaks (file handles, sockets, threads).
-- Ensure proper resource cleanup (file handles, connections)
-
-❌ **Bad:**
-
-```python
-def load_config(path):
-    with open(path) as f:
-        return eval(f.read())  # ⚠️ Never eval config
-```
-
-✅ **Good:**
-
-```python
-import json
-
-def load_config(path: str) -> dict:
-    with open(path) as f:
-        return json.load(f)
-```
-
-### 5. Documentation Standards
-
-**Use Google-style docstrings with Args section for all public functions.**
-
-❌ **Insufficient Documentation:**
-
-```python
-def send_email(to, msg):
-    """Send an email to a recipient."""
-```
-
-✅ **Complete Documentation:**
-
-```python
-def send_email(to: str, msg: str, *, priority: str = "normal") -> bool:
-    """
-    Send an email to a recipient with specified priority.
-
-    Args:
-        to: The email address of the recipient.
-        msg: The message body to send.
-        priority: Email priority level (`'low'`, `'normal'`, `'high'`).
-
-    Returns:
-        `True` if email was sent successfully, `False` otherwise.
-
-    Raises:
-        `InvalidEmailError`: If the email address format is invalid.
-        `SMTPConnectionError`: If unable to connect to email server.
-    """
-```
-
-**Documentation Guidelines:**
-
-- Types go in function signatures, NOT in docstrings
-  - If a default is present, DO NOT repeat it in the docstring unless there is post-processing or it is set conditionally.
-- Focus on "why" rather than "what" in descriptions
-- Document all parameters, return values, and exceptions
-- Keep descriptions concise but clear
-- Ensure American English spelling (e.g., "behavior", not "behaviour")
-
-📌 *Tip:* Keep descriptions concise but clear. Only document return values if non-obvious.
-
-### 6. Architectural Improvements
-
-**When you encounter code that could be improved, suggest better designs:**
-
-❌ **Poor Design:**
-
-```python
-def process_data(data, db_conn, email_client, logger):
-    # Function doing too many things
-    validated = validate_data(data)
-    result = db_conn.save(validated)
-    email_client.send_notification(result)
-    logger.log(f"Processed {len(data)} items")
-    return result
-```
-
-✅ **Better Design:**
-
-```python
-@dataclass
-class ProcessingResult:
-    """Result of data processing operation."""
-    items_processed: int
-    success: bool
-    errors: List[str] = field(default_factory=list)
-
-class DataProcessor:
-    """Handles data validation, storage, and notification."""
-
-    def __init__(self, db_conn: Database, email_client: EmailClient):
-        self.db = db_conn
-        self.email = email_client
-
-    def process(self, data: List[dict]) -> ProcessingResult:
-        """Process and store data with notifications."""
-        validated = self._validate_data(data)
-        result = self.db.save(validated)
-        self._notify_completion(result)
-        return result
-```
-
-**Design Improvement Areas:**
-
-If there's a **cleaner**, **more scalable**, or **simpler** design, highlight it and suggest improvements that would:
-
-- Reduce code duplication through shared utilities
-- Make unit testing easier
-- Improve separation of concerns (single responsibility)
-- Make unit testing easier through dependency injection
-- Add clarity without adding complexity
-- Prefer dataclasses for structured data
-
-## Development Tools & Commands
-
-### Package Management
-
-```bash
-# Add package
-uv add package-name
-
-# Sync project dependencies
-uv sync
-uv lock
-```
-
-### Testing
+Each package in `libs/` has its own `pyproject.toml` and `uv.lock`.
 
 ```bash
 # Run unit tests (no network)
 make test
 
-# Don't run integration tests, as API keys must be set
-
 # Run specific test file
 uv run --group test pytest tests/unit_tests/test_specific.py
 ```
-
-### Code Quality
 
 ```bash
 # Lint code
@@ -261,66 +64,118 @@ make format
 uv run --group lint mypy .
 ```
 
-### Dependency Management Patterns
+#### Key config files
 
-**Local Development Dependencies:**
+- pyproject.toml: Main workspace configuration with dependency groups
+- uv.lock: Locked dependencies for reproducible builds
+- Makefile: Development tasks
 
-```toml
-[tool.uv.sources]
-langchain-core = { path = "../core", editable = true }
-langchain-tests = { path = "../standard-tests", editable = true }
-```
+#### Commit standards
 
-**For tools, use the `@tool` decorator from `langchain_core.tools`:**
+Suggest PR titles that follow Conventional Commits format. Refer to .github/workflows/pr_lint for allowed types and scopes.
 
-```python
-from langchain_core.tools import tool
+#### Pull request guidelines
 
-@tool
-def search_database(query: str) -> str:
-    """Search the database for relevant information.
+- Always add a disclaimer to the PR description mentioning how AI agents are involved with the contribution.
+- Describe the "why" of the changes, why the proposed solution is the right one. Limit prose.
+- Highlight areas of the proposed changes that require careful review.
+
+## Core development principles
+
+### Maintain stable public interfaces
+
+CRITICAL: Always attempt to preserve function signatures, argument positions, and names for exported/public methods. Do not make breaking changes.
+
+**Before making ANY changes to public APIs:**
+
+- Check if the function/class is exported in `__init__.py`
+- Look for existing usage patterns in tests and examples
+- Use keyword-only arguments for new parameters: `*, new_param: str = "default"`
+- Mark experimental features clearly with docstring warnings (using MkDocs Material admonitions, like `!!! warning`)
+
+Ask: "Would this change break someone's code if they used it last week?"
+
+### Code quality standards
+
+All Python code MUST include type hints and return types.
+
+```python title="Example"
+def filter_unknown_users(users: list[str], known_users: set[str]) -> list[str]:
+    """Single line description of the function.
+
+    Any additional context about the function can go here.
 
     Args:
-        query: The search query string.
+        users: List of user identifiers to filter.
+        known_users: Set of known/valid user identifiers.
+
+    Returns:
+        List of users that are not in the known_users set.
     """
-    # Implementation here
-    return results
 ```
 
-## Commit Standards
+- Use descriptive, self-explanatory variable names.
+- Follow existing patterns in the codebase you're modifying
+- Attempt to break up complex functions (>20 lines) into smaller, focused functions where it makes sense
 
-**Use Conventional Commits format for PR titles:**
+### Testing requirements
 
-- `feat(core): add multi-tenant support`
-- `fix(cli): resolve flag parsing error`
-- `docs: update API usage examples`
-- `docs(openai): update API usage examples`
+Every new feature or bugfix MUST be covered by unit tests.
 
-## Framework-Specific Guidelines
+- Unit tests: `tests/unit_tests/` (no network calls allowed)
+- Integration tests: `tests/integration_tests/` (network calls permitted)
+- We use `pytest` as the testing framework; if in doubt, check other existing tests for examples.
+- The testing file structure should mirror the source code structure.
 
-- Follow the existing patterns in `langchain-core` for base abstractions
-- Use `langchain_core.callbacks` for execution tracking
-- Implement proper streaming support where applicable
-- Avoid deprecated components like legacy `LLMChain`
+**Checklist:**
 
-### Partner Integrations
+- [ ] Tests fail when your new logic is broken
+- [ ] Happy path is covered
+- [ ] Edge cases and error conditions are tested
+- [ ] Use fixtures/mocks for external dependencies
+- [ ] Tests are deterministic (no flaky tests)
+- [ ] Does the test suite fail if your new logic is broken?
 
-- Follow the established patterns in existing partner libraries
-- Implement standard interfaces (`BaseChatModel`, `BaseEmbeddings`, etc.)
-- Include comprehensive integration tests
-- Document API key requirements and authentication
+### Security and risk assessment
 
----
+- No `eval()`, `exec()`, or `pickle` on user-controlled input
+- Proper exception handling (no bare `except:`) and use a `msg` variable for error messages
+- Remove unreachable/commented code before committing
+- Race conditions or resource leaks (file handles, sockets, threads).
+- Ensure proper resource cleanup (file handles, connections)
 
-## Quick Reference Checklist
+### Documentation standards
 
-Before submitting code changes:
+Use Google-style docstrings with Args section for all public functions.
 
-- [ ] **Breaking Changes**: Verified no public API changes
-- [ ] **Type Hints**: All functions have complete type annotations
-- [ ] **Tests**: New functionality is fully tested
-- [ ] **Security**: No dangerous patterns (eval, silent failures, etc.)
-- [ ] **Documentation**: Google-style docstrings for public functions
-- [ ] **Code Quality**: `make lint` and `make format` pass
-- [ ] **Architecture**: Suggested improvements where applicable
-- [ ] **Commit Message**: Follows Conventional Commits format
+```python title="Example"
+def send_email(to: str, msg: str, *, priority: str = "normal") -> bool:
+    """Send an email to a recipient with specified priority.
+
+    Any additional context about the function can go here.
+
+    Args:
+        to: The email address of the recipient.
+        msg: The message body to send.
+        priority: Email priority level.
+
+    Returns:
+        `True` if email was sent successfully, `False` otherwise.
+
+    Raises:
+        InvalidEmailError: If the email address format is invalid.
+        SMTPConnectionError: If unable to connect to email server.
+    """
+```
+
+- Types go in function signatures, NOT in docstrings
+  - If a default is present, DO NOT repeat it in the docstring unless there is post-processing or it is set conditionally.
+- Focus on "why" rather than "what" in descriptions
+- Document all parameters, return values, and exceptions
+- Keep descriptions concise but clear
+- Ensure American English spelling (e.g., "behavior", not "behaviour")
+
+## Additional resources
+
+- **Documentation:** https://docs.langchain.com/oss/python/langchain/overview and source at https://github.com/langchain-ai/docs or `../docs/`. Prefer the local install and use file search tools for best results. If needed, use the docs MCP server as defined in `.mcp.json` for programmatic access.
+- **Contributing Guide:** [`.github/CONTRIBUTING.md`](https://docs.langchain.com/oss/python/contributing/overview)

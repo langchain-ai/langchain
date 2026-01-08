@@ -8,7 +8,6 @@ import logging
 import types
 import typing
 import uuid
-from collections.abc import Callable
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -18,8 +17,10 @@ from typing import (
     cast,
     get_args,
     get_origin,
+    get_type_hints,
 )
 
+import typing_extensions
 from pydantic import BaseModel
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as Field_v1
@@ -33,6 +34,8 @@ from langchain_core.utils.json_schema import dereference_refs
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from langchain_core.tools import BaseTool
 
 logger = logging.getLogger(__name__)
@@ -43,6 +46,20 @@ PYTHON_TO_JSON_TYPES = {
     "float": "number",
     "bool": "boolean",
 }
+
+_ORIGIN_MAP: dict[type, Any] = {
+    dict: dict,
+    list: list,
+    tuple: tuple,
+    set: set,
+    collections.abc.Iterable: typing.Iterable,
+    collections.abc.Mapping: typing.Mapping,
+    collections.abc.Sequence: typing.Sequence,
+    collections.abc.MutableMapping: typing.MutableMapping,
+}
+# Add UnionType mapping for Python 3.10+
+if hasattr(types, "UnionType"):
+    _ORIGIN_MAP[types.UnionType] = Union
 
 
 class FunctionDescription(TypedDict):
@@ -220,7 +237,7 @@ _MAX_TYPED_DICT_RECURSION = 25
 def _convert_any_typed_dicts_to_pydantic(
     type_: type,
     *,
-    visited: dict,
+    visited: dict[type, type],
     depth: int = 0,
 ) -> type:
     if type_ in visited:
@@ -230,13 +247,20 @@ def _convert_any_typed_dicts_to_pydantic(
     if is_typeddict(type_):
         typed_dict = type_
         docstring = inspect.getdoc(typed_dict)
-        annotations_ = typed_dict.__annotations__
+        # Use get_type_hints to properly resolve forward references and
+        # string annotations in Python 3.14+ (PEP 649 deferred annotations).
+        # include_extras=True preserves Annotated metadata.
+        try:
+            annotations_ = get_type_hints(typed_dict, include_extras=True)
+        except Exception:
+            # Fallback for edge cases where get_type_hints might fail
+            annotations_ = typed_dict.__annotations__
         description, arg_descriptions = _parse_google_docstring(
             docstring, list(annotations_)
         )
         fields: dict = {}
         for arg, arg_type in annotations_.items():
-            if get_origin(arg_type) is Annotated:  # type: ignore[comparison-overlap]
+            if get_origin(arg_type) in {Annotated, typing_extensions.Annotated}:
                 annotated_args = get_args(arg_type)
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     annotated_args[0], depth=depth + 1, visited=visited
@@ -264,7 +288,9 @@ def _convert_any_typed_dicts_to_pydantic(
                 if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
                 fields[arg] = (new_arg_type, Field_v1(**field_kwargs))
-        model = create_model_v1(typed_dict.__name__, **fields)
+        model = cast(
+            "type[BaseModelV1]", create_model_v1(typed_dict.__name__, **fields)
+        )
         model.__doc__ = description
         visited[typed_dict] = model
         return model
@@ -274,7 +300,7 @@ def _convert_any_typed_dicts_to_pydantic(
             _convert_any_typed_dicts_to_pydantic(arg, depth=depth + 1, visited=visited)
             for arg in type_args
         )
-        return subscriptable_origin[type_args]  # type: ignore[index]
+        return cast("type", subscriptable_origin[type_args])  # type: ignore[index]
     return type_
 
 
@@ -326,7 +352,7 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
 
 
 def convert_to_openai_function(
-    function: dict[str, Any] | type | Callable | BaseTool,
+    function: Mapping[str, Any] | type | Callable | BaseTool,
     *,
     strict: bool | None = None,
 ) -> dict[str, Any]:
@@ -352,6 +378,7 @@ def convert_to_openai_function(
         ValueError: If function is not in a supported format.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.16"
+
         `description` and `parameters` keys are now optional. Only `name` is
         required and guaranteed to be part of the output.
     """
@@ -412,19 +439,13 @@ def convert_to_openai_function(
     if strict is not None:
         if "strict" in oai_function and oai_function["strict"] != strict:
             msg = (
-                f"Tool/function already has a 'strict' key wth value "
+                f"Tool/function already has a 'strict' key with value "
                 f"{oai_function['strict']} which is different from the explicit "
                 f"`strict` arg received {strict=}."
             )
             raise ValueError(msg)
         oai_function["strict"] = strict
         if strict:
-            # As of 08/06/24, OpenAI requires that additionalProperties be supplied and
-            # set to False if strict is True.
-            # All properties layer needs 'additionalProperties=False'
-            oai_function["parameters"] = _recursive_set_additional_properties_false(
-                oai_function["parameters"]
-            )
             # All fields must be `required`
             parameters = oai_function.get("parameters")
             if isinstance(parameters, dict):
@@ -433,6 +454,13 @@ def convert_to_openai_function(
                     parameters = dict(parameters)
                     parameters["required"] = list(fields.keys())
                     oai_function["parameters"] = parameters
+
+            # As of 08/06/24, OpenAI requires that additionalProperties be supplied and
+            # set to False if strict is True.
+            # All properties layer needs 'additionalProperties=False'
+            oai_function["parameters"] = _recursive_set_additional_properties_false(
+                oai_function["parameters"]
+            )
     return oai_function
 
 
@@ -452,7 +480,7 @@ _WellKnownOpenAITools = (
 
 
 def convert_to_openai_tool(
-    tool: dict[str, Any] | type[BaseModel] | Callable | BaseTool,
+    tool: Mapping[str, Any] | type[BaseModel] | Callable | BaseTool,
     *,
     strict: bool | None = None,
 ) -> dict[str, Any]:
@@ -476,15 +504,18 @@ def convert_to_openai_tool(
         OpenAI tool-calling API.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.16"
+
         `description` and `parameters` keys are now optional. Only `name` is
         required and guaranteed to be part of the output.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.44"
+
         Return OpenAI Responses API-style tools unchanged. This includes
         any dict with `"type"` in `"file_search"`, `"function"`,
         `"computer_use_preview"`, `"web_search_preview"`.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.63"
+
         Added support for OpenAI's image generation built-in tool.
     """
     # Import locally to prevent circular import
@@ -717,22 +748,7 @@ def _parse_google_docstring(
 
 
 def _py_38_safe_origin(origin: type) -> type:
-    origin_union_type_map: dict[type, Any] = (
-        {types.UnionType: Union} if hasattr(types, "UnionType") else {}
-    )
-
-    origin_map: dict[type, Any] = {
-        dict: dict,
-        list: list,
-        tuple: tuple,
-        set: set,
-        collections.abc.Iterable: typing.Iterable,
-        collections.abc.Mapping: typing.Mapping,
-        collections.abc.Sequence: typing.Sequence,
-        collections.abc.MutableMapping: typing.MutableMapping,
-        **origin_union_type_map,
-    }
-    return cast("type", origin_map.get(origin, origin))
+    return cast("type", _ORIGIN_MAP.get(origin, origin))
 
 
 def _recursive_set_additional_properties_false(

@@ -18,7 +18,7 @@ from typing import (
 import chromadb
 import chromadb.config
 import numpy as np
-from chromadb import Settings
+from chromadb import Search, Settings
 from chromadb.api import CreateCollectionConfiguration
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -51,18 +51,25 @@ def _results_to_docs_and_scores(results: Any) -> list[tuple[Document, float]]:
             results["distances"][0],
             strict=False,
         )
+        if result[0] is not None
     ]
 
 
 def _results_to_docs_and_vectors(results: Any) -> list[tuple[Document, np.ndarray]]:
+    """Convert ChromaDB results to documents and vectors, filtering out None content."""
     return [
-        (Document(page_content=result[0], metadata=result[1] or {}), result[2])
+        (
+            Document(page_content=result[0], metadata=result[1] or {}, id=result[3]),
+            result[2],
+        )
         for result in zip(
             results["documents"][0],
             results["metadatas"][0],
             results["embeddings"][0],
+            results["ids"][0],
             strict=False,
         )
+        if result[0] is not None
     ]
 
 
@@ -674,6 +681,52 @@ class Chroma(VectorStore):
             )
         return ids
 
+    def hybrid_search(self, search: Search) -> list[Document]:
+        """Run hybrid search with Chroma.
+
+        Args:
+            search: The Search configuration for hybrid search.
+
+        Returns:
+            A list of documents resulting from the search operation.
+
+        Example:
+            from chromadb import Search, K, Knn, Rrf
+
+            # Create RRF ranking with text query
+            hybrid_rank = Rrf(
+                ranks=[
+                    Knn(query="query", return_rank=True, limit=300),
+                    Knn(query="query learning applications", key="sparse_embedding")
+                ],
+                weights=[2.0, 1.0],  # Dense 2x more important
+                k=60
+            )
+
+            # Build complete the search strategy
+            search = (Search()
+                .where(
+                    (K("language") == "en") &
+                    (K("year") >= 2020)
+                )
+                .rank(hybrid_rank)
+                .limit(10)
+                .select(K.DOCUMENT, K.SCORE, "title", "year")
+            )
+
+            results = vector_store.hybrid_search(search)
+        """
+        results = self._collection.search(search)
+        return [
+            Document(
+                page_content=record["document"],
+                metadata=record["metadata"],
+                id=record["id"],
+            )
+            for record in results.rows()[0]
+            if record["document"] is not None
+        ]
+
     def similarity_search(
         self,
         query: str,
@@ -918,7 +971,7 @@ class Chroma(VectorStore):
         ):
             # Obtain image embedding
             # Assuming embed_image returns a single embedding
-            image_embedding = self._embedding_function.embed_image(uris=[uri])
+            image_embedding = self._embedding_function.embed_image(uris=[uri])[0]
 
             # Perform similarity search based on the obtained embedding
             return self.similarity_search_by_vector(
@@ -1155,6 +1208,7 @@ class Chroma(VectorStore):
                 results["ids"],
                 strict=False,
             )
+            if doc is not None  # Filter out documents with None page_content
         ]
 
     def update_document(self, document_id: str, document: Document) -> None:

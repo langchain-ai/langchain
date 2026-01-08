@@ -23,7 +23,11 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models import (
+    LanguageModelInput,
+    ModelProfile,
+    ModelProfileRegistry,
+)
 from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import (
@@ -70,6 +74,7 @@ from pydantic import (
 from typing_extensions import Self
 
 from langchain_mistralai._compat import _convert_from_v1_to_mistral
+from langchain_mistralai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
@@ -84,6 +89,14 @@ TOOL_CALL_ID_PATTERN = re.compile(r"^[a-zA-Z0-9]{9}$")
 # This SSL context is equivalent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
+
+
+_MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 def _create_retry_decorator(
@@ -135,7 +148,8 @@ def _convert_mistral_chat_message_to_message(
     if role != "assistant":
         msg = f"Expected role to be 'assistant', got {role}"
         raise ValueError(msg)
-    content = cast("str", _message["content"])
+    # Mistral returns None for tool invocations
+    content = _message.get("content", "") or ""
 
     additional_kwargs: dict = {}
     tool_calls = []
@@ -632,6 +646,13 @@ class ChatMistralAI(BaseChatModel):
 
         return self
 
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model)
+        return self
+
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -772,8 +793,8 @@ class ChatMistralAI(BaseChatModel):
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
-                Supports any tool definition handled by
-                `langchain_core.utils.function_calling.convert_to_openai_tool`.
+
+                Supports any tool definition handled by [`convert_to_openai_tool`][langchain_core.utils.function_calling.convert_to_openai_tool].
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function or
                 `'auto'` to automatically determine which function to call
@@ -781,8 +802,7 @@ class ChatMistralAI(BaseChatModel):
                 {"type": "function", "function": {"name": <<tool_name>>}}.
             kwargs: Any additional parameters are passed directly to
                 `self.bind(**kwargs)`.
-
-        """
+        """  # noqa: E501
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice:
             tool_names = []
@@ -847,6 +867,7 @@ class ChatMistralAI(BaseChatModel):
                     desired schema into the model call.
 
                 !!! warning "Behavior changed in `langchain-mistralai` 0.2.5"
+
                     Added method="json_schema"
 
             include_raw:

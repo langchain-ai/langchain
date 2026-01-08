@@ -23,39 +23,44 @@ class LLMToolEmulator(AgentMiddleware):
     """Emulates specified tools using an LLM instead of executing them.
 
     This middleware allows selective emulation of tools for testing purposes.
-    By default (when tools=None), all tools are emulated. You can specify which
-    tools to emulate by passing a list of tool names or BaseTool instances.
+
+    By default (when `tools=None`), all tools are emulated. You can specify which
+    tools to emulate by passing a list of tool names or `BaseTool` instances.
 
     Examples:
-        Emulate all tools (default behavior):
-        ```python
-        from langchain.agents.middleware import LLMToolEmulator
+        !!! example "Emulate all tools (default behavior)"
 
-        middleware = LLMToolEmulator()
+            ```python
+            from langchain.agents.middleware import LLMToolEmulator
 
-        agent = create_agent(
-            model="openai:gpt-4o",
-            tools=[get_weather, get_user_location, calculator],
-            middleware=[middleware],
-        )
-        ```
+            middleware = LLMToolEmulator()
 
-        Emulate specific tools by name:
-        ```python
-        middleware = LLMToolEmulator(tools=["get_weather", "get_user_location"])
-        ```
+            agent = create_agent(
+                model="openai:gpt-4o",
+                tools=[get_weather, get_user_location, calculator],
+                middleware=[middleware],
+            )
+            ```
 
-        Use a custom model for emulation:
-        ```python
-        middleware = LLMToolEmulator(
-            tools=["get_weather"], model="anthropic:claude-sonnet-4-5-20250929"
-        )
-        ```
+        !!! example "Emulate specific tools by name"
 
-        Emulate specific tools by passing tool instances:
-        ```python
-        middleware = LLMToolEmulator(tools=[get_weather, get_user_location])
-        ```
+            ```python
+            middleware = LLMToolEmulator(tools=["get_weather", "get_user_location"])
+            ```
+
+        !!! example "Use a custom model for emulation"
+
+            ```python
+            middleware = LLMToolEmulator(
+                tools=["get_weather"], model="anthropic:claude-sonnet-4-5-20250929"
+            )
+            ```
+
+        !!! example "Emulate specific tools by passing tool instances"
+
+            ```python
+            middleware = LLMToolEmulator(tools=[get_weather, get_user_location])
+            ```
     """
 
     def __init__(
@@ -67,12 +72,16 @@ class LLMToolEmulator(AgentMiddleware):
         """Initialize the tool emulator.
 
         Args:
-            tools: List of tool names (str) or BaseTool instances to emulate.
-                If None (default), ALL tools will be emulated.
+            tools: List of tool names (`str`) or `BaseTool` instances to emulate.
+
+                If `None`, ALL tools will be emulated.
+
                 If empty list, no tools will be emulated.
             model: Model to use for emulation.
-                Defaults to "anthropic:claude-sonnet-4-5-20250929".
-                Can be a model identifier string or BaseChatModel instance.
+
+                Defaults to `'anthropic:claude-sonnet-4-5-20250929'`.
+
+                Can be a model identifier string or `BaseChatModel` instance.
         """
         super().__init__()
 
@@ -110,7 +119,7 @@ class LLMToolEmulator(AgentMiddleware):
 
         Returns:
             ToolMessage with emulated response if tool should be emulated,
-            otherwise calls handler for normal execution.
+                otherwise calls handler for normal execution.
         """
         tool_name = request.tool_call["name"]
 
@@ -152,7 +161,7 @@ class LLMToolEmulator(AgentMiddleware):
         request: ToolCallRequest,
         handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
     ) -> ToolMessage | Command:
-        """Async version of wrap_tool_call.
+        """Async version of `wrap_tool_call`.
 
         Emulate tool execution using LLM if tool should be emulated.
 
@@ -162,7 +171,7 @@ class LLMToolEmulator(AgentMiddleware):
 
         Returns:
             ToolMessage with emulated response if tool should be emulated,
-            otherwise calls handler for normal execution.
+                otherwise calls handler for normal execution.
         """
         tool_name = request.tool_call["name"]
 

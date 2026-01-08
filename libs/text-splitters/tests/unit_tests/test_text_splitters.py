@@ -5,11 +5,9 @@ from __future__ import annotations
 import random
 import re
 import string
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
-from bs4 import Tag
 from langchain_core._api import suppress_langchain_beta_warning
 from langchain_core.documents import Document
 
@@ -33,6 +31,11 @@ from langchain_text_splitters.markdown import (
     MarkdownHeaderTextSplitter,
 )
 from langchain_text_splitters.python import PythonCodeTextSplitter
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from bs4 import Tag
 
 FAKE_PYTHON_TEXT = """
 class Foo:
@@ -99,6 +102,43 @@ def test_character_text_splitter_longer_words() -> None:
     splitter = CharacterTextSplitter(separator=" ", chunk_size=1, chunk_overlap=1)
     output = splitter.split_text(text)
     expected_output = ["foo", "bar", "baz", "123"]
+    assert output == expected_output
+
+
+# edge cases
+def test_character_text_splitter_no_separator_in_text() -> None:
+    """Text splitting where there is no seperator but a single word."""
+    text = "singleword"
+    splitter = CharacterTextSplitter(separator=" ", chunk_size=10, chunk_overlap=0)
+    output = splitter.split_text(text)
+    expected_output = ["singleword"]
+    assert output == expected_output
+
+
+def test_character_text_splitter_handle_chunksize_equal_to_chunkoverlap() -> None:
+    """Text splitting safe guards when chunk size is equal chunk overlap."""
+    text = "hello"
+    splitter = CharacterTextSplitter(separator=" ", chunk_size=5, chunk_overlap=5)
+    output = splitter.split_text(text)
+    expected_output = ["hello"]
+    assert output == expected_output
+
+
+def test_character_text_splitter_empty_input() -> None:
+    """Test splitting safely where there is no input to process."""
+    text = ""
+    splitter = CharacterTextSplitter(separator=" ", chunk_size=5, chunk_overlap=0)
+    output = splitter.split_text(text)
+    expected_output: list[str] = []
+    assert output == expected_output
+
+
+def test_character_text_splitter_whitespace_only() -> None:
+    """Test splitting safely where there is white space."""
+    text = " "
+    splitter = CharacterTextSplitter(separator=" ", chunk_size=5, chunk_overlap=0)
+    output = splitter.split_text(text)
+    expected_output: list[str] = []
     assert output == expected_output
 
 
@@ -1066,6 +1106,35 @@ fn main() {
     """
     chunks = splitter.split_text(code)
     assert chunks == ["fn main() {", 'println!("Hello', ",", 'World!");', "}"]
+
+
+def test_r_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.R, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+library(dplyr)
+
+my_func <- function(x) {
+    return(x + 1)
+}
+
+if (TRUE) {
+    print("Hello")
+}
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "library(dplyr)",
+        "my_func <-",
+        "function(x) {",
+        "return(x +",
+        "1)",
+        "}",
+        "if (TRUE) {",
+        'print("Hello")',
+        "}",
+    ]
 
 
 def test_markdown_code_splitter() -> None:
@@ -3393,6 +3462,100 @@ def test_html_splitter_with_preserved_elements() -> None:
     ]
 
     assert documents == expected  # Shouldn't split the table or ul
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_nested_preserved_elements() -> None:
+    """Test HTML splitter with preserved elements nested in containers.
+
+    Test that preserved elements are correctly preserved even when they are
+    nested inside other container elements like <section> or <article>.
+    This is a regression test for issue #31569
+    """
+    html_content = """
+    <article>
+        <h1>Section 1</h1>
+        <section>
+            <p>Some context about the data:</p>
+            <table>
+                <tr><td>Col1</td><td>Col2</td></tr>
+                <tr><td>Data1</td><td>Data2</td></tr>
+            </table>
+            <p>Conclusion about data.</p>
+        </section>
+    </article>
+    """
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            elements_to_preserve=["table"],
+            max_chunk_size=1000,
+        )
+    documents = splitter.split_text(html_content)
+
+    # The table should be preserved in the output
+    assert len(documents) == 1
+    content = documents[0].page_content
+    # Check that the table structure is maintained (not flattened)
+    assert "Col1" in content
+    assert "Col2" in content
+    assert "Data1" in content
+    assert "Data2" in content
+    # Check metadata
+    assert documents[0].metadata == {"Header 1": "Section 1"}
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_nested_div_preserved() -> None:
+    """Test HTML splitter preserving nested div elements.
+
+    Nested div elements should be preserved when specified in elements_to_preserve
+    """
+    html_content = """
+    <div>
+        <h1>Header</h1>
+        <p>outer text</p>
+        <div>inner div content</div>
+        <p>more outer text</p>
+    </div>
+    """
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            elements_to_preserve=["div"],
+            max_chunk_size=1000,
+        )
+    documents = splitter.split_text(html_content)
+
+    assert len(documents) == 1
+    content = documents[0].page_content
+    # The inner div content should be preserved
+    assert "inner div content" in content
+    assert "outer text" in content
+    assert "more outer text" in content
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_preserve_nested_in_paragraph() -> None:
+    """Test preserving deeply nested elements (code inside paragraph).
+
+    tests the case where a preserved element (<code>) is nested
+    inside a non-container element (<p>)
+    """
+    html_content = "<p>before <code>KEEP_THIS</code> after</p>"
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[],
+            elements_to_preserve=["code"],
+        )
+    documents = splitter.split_text(html_content)
+
+    assert len(documents) == 1
+    content = documents[0].page_content
+    # All text should be preserved
+    assert "before" in content
+    assert "KEEP_THIS" in content
+    assert "after" in content
 
 
 @pytest.mark.requires("bs4")

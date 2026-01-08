@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import textwrap
 from collections.abc import Awaitable, Callable
 from inspect import signature
@@ -15,16 +16,19 @@ from typing import (
 from pydantic import Field, SkipValidation
 from typing_extensions import override
 
+# Cannot move to TYPE_CHECKING as _run/_arun parameter annotations are needed at runtime
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
+    AsyncCallbackManagerForToolRun,  # noqa: TC001
+    CallbackManagerForToolRun,  # noqa: TC001
 )
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
+    _EMPTY_SET,
     FILTERED_ARGS,
     ArgsSchema,
     BaseTool,
     _get_runnable_config_param,
+    _is_injected_arg_type,
     create_schema_from_function,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
@@ -239,6 +243,17 @@ class StructuredTool(BaseTool):
             return_direct=return_direct,
             response_format=response_format,
             **kwargs,
+        )
+
+    @functools.cached_property
+    def _injected_args_keys(self) -> frozenset[str]:
+        fn = self.func or self.coroutine
+        if fn is None:
+            return _EMPTY_SET
+        return frozenset(
+            k
+            for k, v in signature(fn).parameters.items()
+            if _is_injected_arg_type(v.annotation)
         )
 
 

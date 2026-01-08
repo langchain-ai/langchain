@@ -100,6 +100,21 @@ def init_chat_model(
 
             You can also specify model and model provider in a single argument using
             `'{model_provider}:{model}'` format, e.g. `'openai:o1'`.
+
+            Will attempt to infer `model_provider` from model if not specified.
+
+            The following providers will be inferred based on these model prefixes:
+
+            - `gpt-...` | `o1...` | `o3...`       -> `openai`
+            - `claude...`                         -> `anthropic`
+            - `amazon...`                         -> `bedrock`
+            - `gemini...`                         -> `google_vertexai`
+            - `command...`                        -> `cohere`
+            - `accounts/fireworks...`             -> `fireworks`
+            - `mistral...`                        -> `mistralai`
+            - `deepseek...`                       -> `deepseek`
+            - `grok...`                           -> `xai`
+            - `sonar...`                          -> `perplexity`
         model_provider: The model provider if not specified as part of the model arg
             (see above).
 
@@ -123,24 +138,10 @@ def init_chat_model(
             - `ollama`                  -> [`langchain-ollama`](https://docs.langchain.com/oss/python/integrations/providers/ollama)
             - `google_anthropic_vertex` -> [`langchain-google-vertexai`](https://docs.langchain.com/oss/python/integrations/providers/google)
             - `deepseek`                -> [`langchain-deepseek`](https://docs.langchain.com/oss/python/integrations/providers/deepseek)
-            - `ibm`                     -> [`langchain-ibm`](https://docs.langchain.com/oss/python/integrations/providers/deepseek)
+            - `ibm`                     -> [`langchain-ibm`](https://docs.langchain.com/oss/python/integrations/providers/ibm)
             - `nvidia`                  -> [`langchain-nvidia-ai-endpoints`](https://docs.langchain.com/oss/python/integrations/providers/nvidia)
             - `xai`                     -> [`langchain-xai`](https://docs.langchain.com/oss/python/integrations/providers/xai)
             - `perplexity`              -> [`langchain-perplexity`](https://docs.langchain.com/oss/python/integrations/providers/perplexity)
-
-            Will attempt to infer `model_provider` from model if not specified. The
-            following providers will be inferred based on these model prefixes:
-
-            - `gpt-...` | `o1...` | `o3...`       -> `openai`
-            - `claude...`                         -> `anthropic`
-            - `amazon...`                         -> `bedrock`
-            - `gemini...`                         -> `google_vertexai`
-            - `command...`                        -> `cohere`
-            - `accounts/fireworks...`             -> `fireworks`
-            - `mistral...`                        -> `mistralai`
-            - `deepseek...`                       -> `deepseek`
-            - `grok...`                           -> `xai`
-            - `sonar...`                          -> `perplexity`
         configurable_fields: Which model parameters are configurable at runtime:
 
             - `None`: No configurable fields (i.e., a fixed model).
@@ -155,6 +156,7 @@ def init_chat_model(
             If `model` is not specified, then defaults to `("model", "model_provider")`.
 
             !!! warning "Security note"
+
                 Setting `configurable_fields="any"` means fields like `api_key`,
                 `base_url`, etc., can be altered at runtime, potentially redirecting
                 model requests to a different service/user.
@@ -317,9 +319,11 @@ def init_chat_model(
         ```
 
     !!! warning "Behavior changed in `langchain` 0.2.8"
+
         Support for `configurable_fields` and `config_prefix` added.
 
     !!! warning "Behavior changed in `langchain` 0.2.12"
+
         Support for Ollama via langchain-ollama package added
         (`langchain_ollama.ChatOllama`). Previously,
         the now-deprecated langchain-community version of Ollama was imported
@@ -329,9 +333,11 @@ def init_chat_model(
         (`model_provider="bedrock_converse"`).
 
     !!! warning "Behavior changed in `langchain` 0.3.5"
+
         Out of beta.
 
     !!! warning "Behavior changed in `langchain` 0.3.19"
+
         Support for Deepseek, IBM, Nvidia, and xAI models added.
 
     """  # noqa: E501
@@ -438,10 +444,9 @@ def _init_chat_model_helper(
 
     if model_provider == "huggingface":
         _check_pkg("langchain_huggingface")
-        from langchain_huggingface import ChatHuggingFace, HuggingFacePipeline
+        from langchain_huggingface import ChatHuggingFace
 
-        llm = HuggingFacePipeline.from_model_id(model_id=model, **kwargs)
-        return ChatHuggingFace(llm=llm)
+        return ChatHuggingFace.from_model_id(model_id=model, **kwargs)
 
     if model_provider == "groq":
         _check_pkg("langchain_groq")
@@ -489,6 +494,11 @@ def _init_chat_model_helper(
         from langchain_perplexity import ChatPerplexity
 
         return ChatPerplexity(model=model, **kwargs)
+    if model_provider == "upstage":
+        _check_pkg("langchain_upstage")
+        from langchain_upstage import ChatUpstage
+
+        return ChatUpstage(model=model, **kwargs)
     supported = ", ".join(_SUPPORTED_PROVIDERS)
     msg = (
         f"Unsupported {model_provider=}.\n\nSupported model providers are: {supported}"
@@ -517,48 +527,105 @@ _SUPPORTED_PROVIDERS = {
     "ibm",
     "xai",
     "perplexity",
+    "upstage",
 }
 
 
 def _attempt_infer_model_provider(model_name: str) -> str | None:
-    if any(model_name.startswith(pre) for pre in ("gpt-", "o1", "o3")):
+    """Attempt to infer model provider from model name.
+
+    Args:
+        model_name: The name of the model to infer provider for.
+
+    Returns:
+        The inferred provider name, or `None` if no provider could be inferred.
+    """
+    model_lower = model_name.lower()
+
+    # OpenAI models (including newer models and aliases)
+    if any(
+        model_lower.startswith(pre)
+        for pre in (
+            "gpt-",
+            "o1",
+            "o3",
+            "chatgpt",
+            "text-davinci",
+        )
+    ):
         return "openai"
-    if model_name.startswith("claude"):
+
+    # Anthropic models
+    if model_lower.startswith("claude"):
         return "anthropic"
-    if model_name.startswith("command"):
+
+    # Cohere models
+    if model_lower.startswith("command"):
         return "cohere"
+
+    # Fireworks models
     if model_name.startswith("accounts/fireworks"):
         return "fireworks"
-    if model_name.startswith("gemini"):
+
+    # Google models
+    if model_lower.startswith("gemini"):
         return "google_vertexai"
-    if model_name.startswith("amazon."):
+
+    # AWS Bedrock models
+    if model_name.startswith("amazon.") or model_lower.startswith(
+        ("anthropic.", "meta.")
+    ):
         return "bedrock"
-    if model_name.startswith("mistral"):
+
+    # Mistral models
+    if model_lower.startswith(("mistral", "mixtral")):
         return "mistralai"
-    if model_name.startswith("deepseek"):
+
+    # DeepSeek models
+    if model_lower.startswith("deepseek"):
         return "deepseek"
-    if model_name.startswith("grok"):
+
+    # xAI models
+    if model_lower.startswith("grok"):
         return "xai"
-    if model_name.startswith("sonar"):
+
+    # Perplexity models
+    if model_lower.startswith("sonar"):
         return "perplexity"
+
+    # Upstage models
+    if model_lower.startswith("solar"):
+        return "upstage"
+
     return None
 
 
 def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
-    if (
-        not model_provider
-        and ":" in model
-        and model.split(":")[0] in _SUPPORTED_PROVIDERS
-    ):
-        model_provider = model.split(":")[0]
-        model = ":".join(model.split(":")[1:])
+    """Parse model name and provider, inferring provider if necessary."""
+    if not model_provider and ":" in model:
+        prefix, suffix = model.split(":", 1)
+        if prefix in _SUPPORTED_PROVIDERS:
+            model_provider = prefix
+            model = suffix
+        else:
+            inferred = _attempt_infer_model_provider(prefix)
+            if inferred:
+                model_provider = inferred
+                model = suffix
+
     model_provider = model_provider or _attempt_infer_model_provider(model)
     if not model_provider:
+        supported_list = ", ".join(sorted(_SUPPORTED_PROVIDERS))
         msg = (
-            f"Unable to infer model provider for {model=}, please specify "
-            f"model_provider directly."
+            f"Unable to infer model provider for {model=}. "
+            f"Please specify 'model_provider' directly.\n\n"
+            f"Supported providers: {supported_list}\n\n"
+            f"For help with specific providers, see: "
+            f"https://docs.langchain.com/oss/python/integrations/providers"
         )
         raise ValueError(msg)
+
+    # Normalize provider name
     model_provider = model_provider.replace("-", "_").lower()
     return model, model_provider
 
