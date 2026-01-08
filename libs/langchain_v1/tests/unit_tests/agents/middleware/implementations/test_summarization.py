@@ -1261,6 +1261,8 @@ def test_empty_and_condition() -> None:
     # Empty clause should vacuously be true (all zero conditions are met)
     result = middleware.before_model(state, None)
     assert result is not None, "Empty trigger clause should trigger"
+
+
 def test_create_summary_uses_get_buffer_string_format() -> None:
     """Test that `_create_summary` formats messages using `get_buffer_string`.
 
