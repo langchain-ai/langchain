@@ -95,7 +95,7 @@ def deterministic_uuids(mocker: MockerFixture) -> MockerFixture:
 @pytest.fixture(
     params=SYNC_STORE_PARAMS,
 )
-def sync_store(request: pytest.FixtureRequest) -> Iterator[BaseStore]:
+def sync_store(request: pytest.FixtureRequest) -> Iterator[BaseStore | None]:
     store_name = request.param
     if store_name is None:
         yield None
@@ -119,7 +119,7 @@ def sync_store(request: pytest.FixtureRequest) -> Iterator[BaseStore]:
 @pytest.fixture(
     params=ASYNC_STORE_PARAMS,
 )
-async def async_store(request: pytest.FixtureRequest) -> AsyncIterator[BaseStore]:
+async def async_store(request: pytest.FixtureRequest) -> AsyncIterator[BaseStore | None]:
     store_name = request.param
     if store_name is None:
         yield None
@@ -145,7 +145,7 @@ async def async_store(request: pytest.FixtureRequest) -> AsyncIterator[BaseStore
 )
 def sync_checkpointer(
     request: pytest.FixtureRequest,
-) -> Iterator[BaseCheckpointSaver]:
+) -> Iterator[BaseCheckpointSaver[str]]:
     checkpointer_name = request.param
     if checkpointer_name == "memory":
         with _checkpointer_memory() as checkpointer:
@@ -172,7 +172,7 @@ def sync_checkpointer(
 )
 async def async_checkpointer(
     request: pytest.FixtureRequest,
-) -> AsyncIterator[BaseCheckpointSaver]:
+) -> AsyncIterator[BaseCheckpointSaver[str]]:
     checkpointer_name = request.param
     if checkpointer_name == "memory":
         with _checkpointer_memory() as checkpointer:
