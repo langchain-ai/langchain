@@ -193,7 +193,7 @@ def _validate_docstring_args_against_annotations(
 def _infer_arg_descriptions(
     fn: Callable,
     *,
-    parse_docstring: bool = False,
+    parse_docstring: bool = True,
     error_on_invalid_docstring: bool = False,
 ) -> tuple[str, dict]:
     """Infer argument descriptions from function docstring and annotations.

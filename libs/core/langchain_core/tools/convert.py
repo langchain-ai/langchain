@@ -21,7 +21,7 @@ def tool(
     args_schema: ArgsSchema | None = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
-    parse_docstring: bool = False,
+    parse_docstring: bool = True,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
 ) -> Callable[[Callable | Runnable], BaseTool]: ...
@@ -37,7 +37,7 @@ def tool(
     args_schema: ArgsSchema | None = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
-    parse_docstring: bool = False,
+    parse_docstring: bool = True,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
 ) -> BaseTool: ...
@@ -52,7 +52,7 @@ def tool(
     args_schema: ArgsSchema | None = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
-    parse_docstring: bool = False,
+    parse_docstring: bool = True,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
 ) -> BaseTool: ...
@@ -67,7 +67,7 @@ def tool(
     args_schema: ArgsSchema | None = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
-    parse_docstring: bool = False,
+    parse_docstring: bool = True,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
 ) -> Callable[[Callable | Runnable], BaseTool]: ...
@@ -82,7 +82,7 @@ def tool(
     args_schema: ArgsSchema | None = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
-    parse_docstring: bool = False,
+    parse_docstring: bool = True,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
 ) -> BaseTool | Callable[[Callable | Runnable], BaseTool]:
