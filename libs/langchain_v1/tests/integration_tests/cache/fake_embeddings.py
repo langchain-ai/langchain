@@ -20,7 +20,7 @@ class FakeEmbeddings(Embeddings):
         """
         return [[1.0] * 9 + [float(i)] for i in range(len(texts))]
 
-    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
+    async def aembed_documents(self, texts: list[str], **_kwargs: Any) -> list[list[float]]:
         return self.embed_documents(texts)
 
     @override
