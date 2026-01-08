@@ -343,7 +343,7 @@ class TestResponseFormatAsToolStrategy:
             ],
         ]
 
-        model = FakeToolCallingModel[WeatherBaseModel | LocationResponse](tool_calls=tool_calls)
+        model = FakeToolCallingModel(tool_calls=tool_calls)
 
         agent = create_agent(
             model,
@@ -655,7 +655,7 @@ class TestResponseFormatAsProviderStrategy:
             [{"args": {}, "id": "1", "name": "get_weather"}],
         ]
 
-        model = FakeToolCallingModel[WeatherBaseModel](
+        model = FakeToolCallingModel(
             tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_PYDANTIC
         )
 
@@ -678,7 +678,7 @@ class TestResponseFormatAsProviderStrategy:
         ]
 
         # But we're using WeatherBaseModel which has different field requirements
-        model = FakeToolCallingModel[dict](
+        model = FakeToolCallingModel(
             tool_calls=tool_calls,
             structured_response={"invalid": "data"},  # Wrong structure
         )
@@ -699,7 +699,7 @@ class TestResponseFormatAsProviderStrategy:
             [{"args": {}, "id": "1", "name": "get_weather"}],
         ]
 
-        model = FakeToolCallingModel[WeatherDataclass](
+        model = FakeToolCallingModel(
             tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DATACLASS
         )
 
@@ -719,7 +719,7 @@ class TestResponseFormatAsProviderStrategy:
             [{"args": {}, "id": "1", "name": "get_weather"}],
         ]
 
-        model = FakeToolCallingModel[WeatherTypedDict](
+        model = FakeToolCallingModel(
             tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DICT
         )
 
@@ -737,7 +737,7 @@ class TestResponseFormatAsProviderStrategy:
             [{"args": {}, "id": "1", "name": "get_weather"}],
         ]
 
-        model = FakeToolCallingModel[dict](
+        model = FakeToolCallingModel(
             tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DICT
         )
 
@@ -858,7 +858,7 @@ def test_union_of_types() -> None:
         ],
     ]
 
-    model = FakeToolCallingModel[WeatherBaseModel | LocationResponse](
+    model = FakeToolCallingModel(
         tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_PYDANTIC
     )
 
