@@ -89,9 +89,7 @@ def test_supported_providers_is_sorted() -> None:
         ("solar-pro", "upstage"),
     ],
 )
-def test_attempt_infer_model_provider(
-    model_name: str, expected_provider: str
-) -> None:
+def test_attempt_infer_model_provider(model_name: str, expected_provider: str) -> None:
     assert _attempt_infer_model_provider(model_name) == expected_provider
 
 
