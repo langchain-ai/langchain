@@ -205,7 +205,7 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
     async def amdelete(self, keys: Sequence[str]) -> None:
         self.mdelete(keys)
 
-    def yield_keys(self, *, prefix: str | None = None) -> Iterator[str]:
+    def yield_keys(self, prefix: str | None = None) -> Iterator[str]:
         """Get an iterator over keys that match the given prefix.
 
         Args:
@@ -221,7 +221,7 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
                 if key.startswith(prefix):
                     yield key
 
-    async def ayield_keys(self, *, prefix: str | None = None) -> AsyncIterator[str]:
+    async def ayield_keys(self, prefix: str | None = None) -> AsyncIterator[str]:
         """Async get an async iterator over keys that match the given prefix.
 
         Args:

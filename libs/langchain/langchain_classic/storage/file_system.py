@@ -148,7 +148,7 @@ class LocalFileStore(ByteStore):
             if full_path.exists():
                 full_path.unlink()
 
-    def yield_keys(self, *, prefix: str | None = None) -> Iterator[str]:
+    def yield_keys(self, prefix: str | None = None) -> Iterator[str]:
         """Get an iterator over keys that match the given prefix.
 
         Args:
