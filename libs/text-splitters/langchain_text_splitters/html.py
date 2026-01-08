@@ -232,6 +232,9 @@ class HTMLHeaderTextSplitter:
 
         Yields:
             Document objects as they are created.
+
+        Raises:
+            ImportError: If BeautifulSoup is not installed.
         """
         if not _HAS_BS4:
             msg = (
@@ -362,7 +365,14 @@ class HTMLSectionSplitter:
         self.kwargs = kwargs
 
     def split_documents(self, documents: Iterable[Document]) -> list[Document]:
-        """Split documents."""
+        """Split documents.
+
+        Args:
+            documents: Iterable of Document objects to be split.
+
+        Returns:
+            A list of split Document objects.
+        """
         texts, metadatas = [], []
         for doc in documents:
             texts.append(doc.page_content)
@@ -378,13 +388,24 @@ class HTMLSectionSplitter:
 
         Args:
             text: HTML text
+
+        Returns:
+            A list of split Document objects.
         """
         return self.split_text_from_file(StringIO(text))
 
     def create_documents(
         self, texts: list[str], metadatas: list[dict[Any, Any]] | None = None
     ) -> list[Document]:
-        """Create a list of `Document` objects from a list of texts."""
+        """Create a list of `Document` objects from a list of texts.
+
+        Args:
+            texts: A list of texts to be split and converted into documents.
+            metadatas: Optional list of metadata to associate with each document.
+
+        Returns:
+            A list of `Document` objects.
+        """
         metadatas_ = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
@@ -415,6 +436,9 @@ class HTMLSectionSplitter:
                 * `'header'`: The header text or a default title for the first section.
                 * `'content'`: The content under the header.
                 * `'tag_name'`: The name of the header tag (e.g., `h1`, `h2`).
+
+        Raises:
+            ImportError: If BeautifulSoup is not installed.
         """
         if not _HAS_BS4:
             msg = "Unable to import BeautifulSoup/PageElement, \
@@ -467,6 +491,9 @@ class HTMLSectionSplitter:
 
         Returns:
             The transformed HTML content as a string.
+
+        Raises:
+            ImportError: If the `lxml` library is not installed.
         """
         if not _HAS_LXML:
             msg = "Unable to import lxml, please install with `pip install lxml`."
@@ -615,6 +642,10 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 `transform_documents/atransform_documents()`.
             keep_separator: Whether separators
                 should be at the beginning of a chunk, at the end, or not at all.
+
+        Raises:
+            ImportError: If BeautifulSoup or NLTK (when stopword removal is enabled)
+                is not installed.
         """
         if not _HAS_BS4:
             msg = (
@@ -697,7 +728,14 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> list[Document]:
-        """Transform sequence of documents by splitting them."""
+        """Transform sequence of documents by splitting them.
+
+        Args:
+            documents: A sequence of `Document` objects to be split.
+
+        Returns:
+            A sequence of split `Document` objects.
+        """
         transformed = []
         for doc in documents:
             splits = self.split_text(doc.page_content)
@@ -745,7 +783,8 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 wrapper.string = markdown_audio
                 audio_tag.replace_with(wrapper)
 
-    def _process_links(self, soup: BeautifulSoup) -> None:
+    @staticmethod
+    def _process_links(soup: BeautifulSoup) -> None:
         """Processes the links in the HTML content.
 
         Args:
@@ -994,8 +1033,9 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
         return result
 
+    @staticmethod
     def _reinsert_preserved_elements(
-        self, content: str, preserved_elements: dict[str, str]
+        content: str, preserved_elements: dict[str, str]
     ) -> str:
         """Reinserts preserved elements into the content into their original positions.
 

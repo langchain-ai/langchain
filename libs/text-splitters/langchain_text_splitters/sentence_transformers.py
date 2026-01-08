@@ -27,7 +27,17 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         tokens_per_chunk: int | None = None,
         **kwargs: Any,
     ) -> None:
-        """Create a new TextSplitter."""
+        """Create a new TextSplitter.
+
+        Args:
+            chunk_overlap: The number of tokens to overlap between chunks.
+            model_name: The name of the sentence transformer model to use.
+            tokens_per_chunk: The number of tokens per chunk. If None, uses the
+                maximum tokens allowed by the model.
+
+        Raises:
+            ImportError: If the sentence_transformers package is not installed.
+        """
         super().__init__(**kwargs, chunk_overlap=chunk_overlap)
 
         if not _HAS_SENTENCE_TRANSFORMERS:
