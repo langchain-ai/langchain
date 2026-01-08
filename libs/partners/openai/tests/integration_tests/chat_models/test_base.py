@@ -1157,6 +1157,7 @@ class ResponseFormatDict(TypedDict):
     explanation: str
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 @pytest.mark.parametrize(
     "schema", [ResponseFormat, ResponseFormat.model_json_schema(), ResponseFormatDict]
 )

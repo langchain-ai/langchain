@@ -9,10 +9,10 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.0.0"
+version = "1.1.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0,<2.0.0",
+    "langchain-core>=1.2.0,<2.0.0",
 ]
 
 [project.urls]
@@ -26,11 +26,11 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 lint = [
-    "ruff>=0.13.1,<0.14.0",
+    "ruff>=0.14.10,<0.15.0",
     "langchain-core"
 ]
 typing = [
-    "mypy>=1.18.1,<1.19.0",
+    "mypy>=1.19.1,<1.20.0",
     "lxml-stubs>=0.5.1,<1.0.0",
     "types-requests>=2.31.0.20240218,<3.0.0.0",
     "tiktoken>=0.8.0,<1.0.0",
@@ -55,7 +55,7 @@ test_integration = [
     "thinc>=8.3.6,<9.0.0",
     "nltk>=3.9.1,<4.0.0",
     "transformers>=4.51.3,<5.0.0",
-    "sentence-transformers>=3.0.1,<4.0.0; python_version < \"3.14\"",
+    "sentence-transformers>=3.0.1,<4.0.0",
     "scipy>=1.7.0,<2.0.0; python_version >= \"3.12\" and python_version < \"3.13\"",
     "scipy>=1.14.1,<2.0.0; python_version >= \"3.13\"",
     "tiktoken>=0.8.0,<1.0.0",
@@ -86,13 +86,8 @@ ignore = [
     "COM812",  # Messes with the formatter
     "CPY",     # No copyright
     "FIX002",  # Line contains TODO
-    "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
     "PLR09",   # Too many something (arg, statements, etc)
-    "RUF012",  # Doesn't play well with Pydantic
-    "TC001",   # Doesn't play well with Pydantic
-    "TC002",   # Doesn't play well with Pydantic
-    "TC003",   # Doesn't play well with Pydantic
     "TD002",   # Missing author in TODO
     "TD003",   # Missing issue link in TODO
 ]

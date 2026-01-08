@@ -38,7 +38,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: "📋 Checkout Code"
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: "🐍 Set up Python ${{ inputs.python-version }} + UV"
         uses: "./.github/actions/uv_setup"
@@ -46,6 +46,12 @@ jobs:
           python-version: ${{ inputs.python-version }}
           cache-suffix: lint-${{ inputs.working-directory }}
           working-directory: ${{ inputs.working-directory }}
+
+      # - name: "🔒 Verify Lockfile is Up-to-Date"
+      #   working-directory: ${{ inputs.working-directory }}
+      #   run: |
+      #     unset UV_FROZEN
+      #     uv lock --check
 
       - name: "📦 Install Lint & Typing Dependencies"
         working-directory: ${{ inputs.working-directory }}

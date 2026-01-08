@@ -5,10 +5,7 @@ from importlib import util
 from typing import Any
 
 import pytest
-from langchain_tests.conftest import CustomPersister, CustomSerializer
-from langchain_tests.conftest import (
-    _base_vcr_config as _base_vcr_config,
-)
+from langchain_tests.conftest import CustomPersister, CustomSerializer, base_vcr_config
 from vcr import VCR
 
 _EXTRA_HEADERS = [
@@ -34,9 +31,9 @@ def remove_response_headers(response: dict) -> dict:
 
 
 @pytest.fixture(scope="session")
-def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
+def vcr_config() -> dict:
     """Extend the default configuration coming from langchain_tests."""
-    config = _base_vcr_config.copy()
+    config = base_vcr_config()
     config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
     config["before_record_request"] = remove_request_headers
     config["before_record_response"] = remove_response_headers
@@ -83,8 +80,8 @@ def pytest_collection_modifyitems(config: pytest.Config, items: Sequence[pytest.
     # Used to avoid repeated calls to `util.find_spec`
     required_pkgs_info: dict[str, bool] = {}
 
-    only_extended = config.getoption("--only-extended") or False
-    only_core = config.getoption("--only-core") or False
+    only_extended = config.getoption("--only-extended", default=False)
+    only_core = config.getoption("--only-core", default=False)
 
     if only_extended and only_core:
         msg = "Cannot specify both `--only-extended` and `--only-core`."

@@ -9,10 +9,10 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.0.2"
+version = "1.1.2"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.1.0,<2.0.0",
+    "langchain-core>=1.2.2,<2.0.0",
     "pytest>=7.0.0,<9.0.0",
     "pytest-asyncio>=0.20.0,<2.0.0",
     "httpx>=0.28.1,<1.0.0",
@@ -38,9 +38,9 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 [dependency-groups]
 test = ["langchain-core"]
 test_integration = []
-lint = ["ruff>=0.13.1,<0.14.0"]
+lint = ["ruff>=0.14.10,<0.15.0"]
 typing = [
-    "mypy>=1.18.1,<1.19.0",
+    "mypy>=1.19.1,<1.20.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
     "langchain-core",
 ]
@@ -53,9 +53,6 @@ plugins = ["pydantic.mypy"]
 strict = true
 enable_error_code = "deprecated"
 warn_unreachable = true
-
-# TODO: activate for 'strict' checking
-disallow_any_generics = false
 
 [[tool.mypy.overrides]]
 module = ["vcr.*",]
@@ -70,17 +67,12 @@ ignore = [
     "C90",     # McCabe complexity
     "COM812",  # Messes with the formatter
     "FIX002",  # Line contains TODO
-    "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
     "PLR2004", # Magic numbers
     "PLR09",   # Too many something (arg, statements, etc)
-    "RUF012",  # Doesn't play well with Pydantic
     "S101",    # Asserts allowed in tests
     "S311",    # No need for strong crypto in tests
     "SLF001",  # Tests may call private methods
-    "TC001",   # Doesn't play well with Pydantic
-    "TC002",   # Doesn't play well with Pydantic
-    "TC003",   # Doesn't play well with Pydantic
     "TD002",   # Missing author in TODO
     "TD003",   # Missing issue link in TODO
 
@@ -97,7 +89,6 @@ flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
-pyupgrade.keep-runtime-typing = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

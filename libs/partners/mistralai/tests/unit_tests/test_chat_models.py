@@ -238,6 +238,58 @@ def test__convert_dict_to_message_tool_call() -> None:
     assert _convert_message_to_mistral_chat_message(expected_output) == message
 
 
+def test__convert_dict_to_message_tool_call_with_null_content() -> None:
+    raw_tool_call = {
+        "id": "ssAbar4Dr",
+        "function": {
+            "arguments": '{"name": "Sally", "hair_color": "green"}',
+            "name": "GenerateUsername",
+        },
+    }
+    message = {"role": "assistant", "content": None, "tool_calls": [raw_tool_call]}
+    result = _convert_mistral_chat_message_to_message(message)
+    expected_output = AIMessage(
+        content="",
+        additional_kwargs={"tool_calls": [raw_tool_call]},
+        tool_calls=[
+            ToolCall(
+                name="GenerateUsername",
+                args={"name": "Sally", "hair_color": "green"},
+                id="ssAbar4Dr",
+                type="tool_call",
+            )
+        ],
+        response_metadata={"model_provider": "mistralai"},
+    )
+    assert result == expected_output
+
+
+def test__convert_dict_to_message_with_missing_content() -> None:
+    raw_tool_call = {
+        "id": "ssAbar4Dr",
+        "function": {
+            "arguments": '{"query": "test search"}',
+            "name": "search",
+        },
+    }
+    message = {"role": "assistant", "tool_calls": [raw_tool_call]}
+    result = _convert_mistral_chat_message_to_message(message)
+    expected_output = AIMessage(
+        content="",
+        additional_kwargs={"tool_calls": [raw_tool_call]},
+        tool_calls=[
+            ToolCall(
+                name="search",
+                args={"query": "test search"},
+                id="ssAbar4Dr",
+                type="tool_call",
+            )
+        ],
+        response_metadata={"model_provider": "mistralai"},
+    )
+    assert result == expected_output
+
+
 def test_custom_token_counting() -> None:
     def token_encoder(text: str) -> list[int]:
         return [1, 2, 3]
@@ -321,7 +373,7 @@ def test_retry_with_failure_then_success() -> None:
 
 def test_no_duplicate_tool_calls_when_multiple_tools() -> None:
     """
-    Tests wether the conversion of an AIMessage with more than one tool call
+    Tests whether the conversion of an AIMessage with more than one tool call
     to a Mistral assistant message correctly returns each tool call exactly
     once in the final payload.
 
