@@ -364,6 +364,7 @@ class PIIMiddleware(AgentMiddleware):
 
 __all__ = [
     "PIIDetectionError",
+    "PIIMatch",
     "PIIMiddleware",
     "detect_credit_card",
     "detect_email",

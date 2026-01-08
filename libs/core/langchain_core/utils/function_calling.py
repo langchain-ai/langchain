@@ -446,12 +446,6 @@ def convert_to_openai_function(
             raise ValueError(msg)
         oai_function["strict"] = strict
         if strict:
-            # As of 08/06/24, OpenAI requires that additionalProperties be supplied and
-            # set to False if strict is True.
-            # All properties layer needs 'additionalProperties=False'
-            oai_function["parameters"] = _recursive_set_additional_properties_false(
-                oai_function["parameters"]
-            )
             # All fields must be `required`
             parameters = oai_function.get("parameters")
             if isinstance(parameters, dict):
@@ -460,6 +454,13 @@ def convert_to_openai_function(
                     parameters = dict(parameters)
                     parameters["required"] = list(fields.keys())
                     oai_function["parameters"] = parameters
+
+            # As of 08/06/24, OpenAI requires that additionalProperties be supplied and
+            # set to False if strict is True.
+            # All properties layer needs 'additionalProperties=False'
+            oai_function["parameters"] = _recursive_set_additional_properties_false(
+                oai_function["parameters"]
+            )
     return oai_function
 
 

@@ -520,6 +520,12 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
                 Defaults to `HostExecutionPolicy` for native execution.
             redaction_rules: Optional redaction rules to sanitize command output before
                 returning it to the model.
+
+                !!! warning
+                    Redaction rules are applied post execution and do not prevent
+                    exfiltration of secrets or sensitive data when using
+                    `HostExecutionPolicy`.
+
             tool_description: Optional override for the registered shell tool
                 description.
             tool_name: Name for the registered shell tool.
