@@ -439,7 +439,7 @@ class SummarizationMiddleware(AgentMiddleware):
             msg = f"Unsupported trigger type: {type(trigger)}"
             raise TypeError(msg)
         return clauses
-      
+
     def _should_summarize_based_on_reported_tokens(
         self, messages: list[AnyMessage], threshold: float
     ) -> bool:
@@ -470,9 +470,17 @@ class SummarizationMiddleware(AgentMiddleware):
                 if kind == "messages" and len(messages) < cast("int", value):
                     clause_met = False
                     break
-                if kind == "tokens" and total_tokens < cast("int", value):
-                    clause_met = False
-                    break
+                if kind == "tokens":
+                    threshold_tokens = cast("int", value)
+                    # Trigger if total tokens exceed threshold OR reported tokens do
+                    if (
+                        total_tokens < threshold_tokens
+                        and not self._should_summarize_based_on_reported_tokens(
+                            messages, float(threshold_tokens)
+                        )
+                    ):
+                        clause_met = False
+                        break
                 if kind == "fraction":
                     max_input_tokens = self._get_profile_limits()
                     if max_input_tokens is None:
@@ -486,23 +494,6 @@ class SummarizationMiddleware(AgentMiddleware):
                         break
             if clause_met:
                 return True
-              
-            if kind == "tokens" and self._should_summarize_based_on_reported_tokens(
-                messages, value
-            ):
-                return True
-            if kind == "fraction":
-                max_input_tokens = self._get_profile_limits()
-                if max_input_tokens is None:
-                    continue
-                threshold = int(max_input_tokens * value)
-                if threshold <= 0:
-                    threshold = 1
-                if total_tokens >= threshold:
-                    return True
-
-                if self._should_summarize_based_on_reported_tokens(messages, threshold):
-                    return True
         return False
 
     def _determine_cutoff_index(self, messages: list[AnyMessage]) -> int:
