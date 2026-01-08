@@ -255,9 +255,6 @@ def _create_subset_model_v2(
         ),
     )
 
-    # Resolving TODO: Use get_type_hints to correctly preserve Annotated types
-    # which are otherwise stripped by Pydantic V2 model creation.
-    # See tests/unit_tests/test_tools.py::test_tool_annotations_preserved
     type_hints = get_type_hints(model, include_extras=True)
     selected_annotations = {
         name: type_hints[name] for name in field_names if name in type_hints
