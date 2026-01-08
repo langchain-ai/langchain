@@ -287,7 +287,7 @@ def create_schema_from_function(
     func: Callable,
     *,
     filter_args: Sequence[str] | None = None,
-    parse_docstring: bool = False,
+    parse_docstring: bool = True,
     error_on_invalid_docstring: bool = False,
     include_injected: bool = True,
 ) -> type[BaseModel]:
