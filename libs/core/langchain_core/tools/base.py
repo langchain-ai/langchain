@@ -808,6 +808,9 @@ class ChildTool(BaseTool):
         # Start with filtered args from the constant
         filtered_keys = set[str](FILTERED_ARGS)
 
+        # Add injected args from function signature (e.g., ToolRuntime parameters)
+        filtered_keys.update(self._injected_args_keys)
+
         # If we have an args_schema, use it to identify injected args
         if self.args_schema is not None:
             try:
