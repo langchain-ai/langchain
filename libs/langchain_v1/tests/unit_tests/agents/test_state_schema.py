@@ -17,8 +17,7 @@ from langchain.agents.middleware.types import AgentMiddleware, AgentState
 # Cannot move ToolRuntime to TYPE_CHECKING as parameters of @tool annotated functions
 # are inspected at runtime.
 from langchain.tools import ToolRuntime  # noqa: TC001
-
-from .model import FakeToolCallingModel
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 @tool

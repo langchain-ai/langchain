@@ -90,6 +90,9 @@ flake8-annotations.mypy-init-return = true
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
 
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters

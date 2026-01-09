@@ -1,8 +1,6 @@
 from contextlib import asynccontextmanager, contextmanager
 
-from .memory_assert import (
-    MemorySaverAssertImmutable,
-)
+from tests.unit_tests.agents.memory_assert import MemorySaverAssertImmutable
 
 
 @contextmanager
