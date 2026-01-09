@@ -176,6 +176,9 @@ pyupgrade.keep-runtime-typing = true
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [
     "D1",      # Docstrings not mandatory in tests

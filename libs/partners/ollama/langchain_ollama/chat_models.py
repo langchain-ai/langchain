@@ -89,8 +89,11 @@ from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
 
 from langchain_ollama._compat import _convert_from_v1_to_ollama
-
-from ._utils import merge_auth_headers, parse_url_with_auth, validate_model
+from langchain_ollama._utils import (
+    merge_auth_headers,
+    parse_url_with_auth,
+    validate_model,
+)
 
 log = logging.getLogger(__name__)
 

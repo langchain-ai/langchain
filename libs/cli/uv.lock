@@ -402,7 +402,7 @@ dev = [
 lint = [
     { name = "cffi", marker = "python_full_version < '3.10'", specifier = "<1.17.1" },
     { name = "cffi", marker = "python_full_version >= '3.10'" },
-    { name = "ruff", specifier = ">=0.13.1,<0.14.0" },
+    { name = "ruff", specifier = ">=0.14.10,<0.15.0" },
 ]
 test = [
     { name = "cffi", marker = "python_full_version < '3.10'", specifier = "<1.17.1" },
@@ -444,7 +444,7 @@ typing = [
     { name = "fastapi", specifier = ">=0.116.1,<1.0.0" },
     { name = "langchain-core", editable = "../core" },
     { name = "langchain-text-splitters", editable = "../text-splitters" },
-    { name = "mypy", specifier = ">=1.18.2,<1.19.0" },
+    { name = "mypy", specifier = ">=1.19.1,<1.20.0" },
     { name = "mypy-protobuf", specifier = ">=3.0.0,<4.0.0" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
@@ -514,7 +514,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.2.5"
+version = "1.2.7"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -590,7 +590,7 @@ dev = [
 ]
 lint = [
     { name = "langchain-core", editable = "../core" },
-    { name = "ruff", specifier = ">=0.13.1,<0.14.0" },
+    { name = "ruff", specifier = ">=0.14.10,<0.15.0" },
 ]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
@@ -607,7 +607,7 @@ test-integration = [
     { name = "nltk", specifier = ">=3.9.1,<4.0.0" },
     { name = "scipy", marker = "python_full_version == '3.12.*'", specifier = ">=1.7.0,<2.0.0" },
     { name = "scipy", marker = "python_full_version >= '3.13'", specifier = ">=1.14.1,<2.0.0" },
-    { name = "sentence-transformers", marker = "python_full_version < '3.14'", specifier = ">=3.0.1,<4.0.0" },
+    { name = "sentence-transformers", specifier = ">=3.0.1,<4.0.0" },
     { name = "spacy", marker = "python_full_version < '3.14'", specifier = ">=3.8.7,<4.0.0" },
     { name = "thinc", specifier = ">=8.3.6,<9.0.0" },
     { name = "tiktoken", specifier = ">=0.8.0,<1.0.0" },
@@ -616,7 +616,7 @@ test-integration = [
 typing = [
     { name = "beautifulsoup4", specifier = ">=4.13.5,<5.0.0" },
     { name = "lxml-stubs", specifier = ">=0.5.1,<1.0.0" },
-    { name = "mypy", specifier = ">=1.18.1,<1.19.0" },
+    { name = "mypy", specifier = ">=1.19.1,<1.20.0" },
     { name = "tiktoken", specifier = ">=0.8.0,<1.0.0" },
     { name = "types-requests", specifier = ">=2.31.0.20240218,<3.0.0.0" },
 ]
