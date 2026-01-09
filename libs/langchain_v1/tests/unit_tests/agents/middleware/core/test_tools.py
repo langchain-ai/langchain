@@ -10,8 +10,13 @@ from langchain_core.tools.base import BaseTool
 from langgraph.prebuilt.tool_node import ToolNode
 
 from langchain.agents.factory import create_agent
-from langchain.agents.middleware import ModelResponse
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ModelCallResult,
+    ModelRequest,
+    ModelResponse,
+)
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
@@ -34,7 +39,7 @@ def test_model_request_tools_are_base_tools() -> None:
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelResponse:
+        ) -> ModelCallResult:
             captured_requests.append(request)
             return handler(request)
 
@@ -88,11 +93,13 @@ def test_middleware_can_modify_tools() -> None:
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelResponse:
+        ) -> ModelCallResult:
             # Only allow tool_a and tool_b
-            filtered_tools = [
-                t for t in request.tools if hasattr(t, "name") and t.name in {"tool_a", "tool_b"}
-            ]
+            filtered_tools: list[BaseTool | dict[str, Any]] = []
+            for t in request.tools:
+                assert isinstance(t, BaseTool)
+                if t.name in {"tool_a", "tool_b"}:
+                    filtered_tools.append(t)
             return handler(request.override(tools=filtered_tools))
 
     # Model will try to call tool_a
@@ -134,7 +141,7 @@ def test_unknown_tool_raises_error() -> None:
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelResponse:
+        ) -> ModelCallResult:
             # Add an unknown tool
             return handler(request.override(tools=[*request.tools, unknown_tool]))
 
@@ -172,12 +179,14 @@ def test_middleware_can_add_and_remove_tools() -> None:
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelResponse:
+        ) -> ModelCallResult:
             # Remove admin_tool if not admin
             if not request.state.get("is_admin", False):
-                filtered_tools = [
-                    t for t in request.tools if hasattr(t, "name") and t.name != "admin_tool"
-                ]
+                filtered_tools: list[BaseTool | dict[str, Any]] = []
+                for t in request.tools:
+                    assert isinstance(t, BaseTool)
+                    if t.name != "admin_tool":
+                        filtered_tools.append(t)
                 request = request.override(tools=filtered_tools)
             return handler(request)
 
@@ -213,7 +222,7 @@ def test_empty_tools_list_is_valid() -> None:
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelResponse:
+        ) -> ModelCallResult:
             # Remove all tools
             request = request.override(tools=[])
             return handler(request)
@@ -256,8 +265,8 @@ def test_tools_preserved_across_multiple_middleware() -> None:
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelResponse:
-            tools = []
+        ) -> ModelCallResult:
+            tools: list[str] = []
             filtered_tools: list[BaseTool | dict[str, Any]] = []
             for t in request.tools:
                 assert isinstance(t, BaseTool)
@@ -266,7 +275,6 @@ def test_tools_preserved_across_multiple_middleware() -> None:
                 if t.name != "tool_c":
                     filtered_tools.append(t)
             modification_order.append(tools)
-            # Remove tool_c
             request = request.override(tools=filtered_tools)
             return handler(request)
 
@@ -275,8 +283,8 @@ def test_tools_preserved_across_multiple_middleware() -> None:
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelResponse:
-            tools = []
+        ) -> ModelCallResult:
+            tools: list[str] = []
             filtered_tools: list[BaseTool | dict[str, Any]] = []
             for t in request.tools:
                 assert isinstance(t, BaseTool)
