@@ -10,8 +10,7 @@ from langgraph.store.memory import InMemoryStore
 from langchain.agents import AgentState, create_agent
 from langchain.tools import InjectedState
 from langchain.tools import tool as dec_tool
-
-from .model import FakeToolCallingModel
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 @pytest.mark.skipif(
@@ -182,7 +181,7 @@ async def test_tool_invocation_error_excludes_injected_state_async() -> None:
 @pytest.mark.skipif(
     sys.version_info >= (3, 14), reason="Pydantic model rebuild issue in Python 3.14"
 )
-async def test_create_agent_error_content_with_multiple_params() -> None:
+def test_create_agent_error_content_with_multiple_params() -> None:
     """Test that error messages only include LLM-controlled parameter errors.
 
     Uses create_agent to verify that when a tool with both LLM-controlled
@@ -302,7 +301,7 @@ async def test_create_agent_error_content_with_multiple_params() -> None:
 @pytest.mark.skipif(
     sys.version_info >= (3, 14), reason="Pydantic model rebuild issue in Python 3.14"
 )
-async def test_create_agent_error_only_model_controllable_params() -> None:
+def test_create_agent_error_only_model_controllable_params() -> None:
     """Test that errors only include LLM-controllable parameter issues.
 
     Focused test ensuring that validation errors for LLM-controlled parameters
