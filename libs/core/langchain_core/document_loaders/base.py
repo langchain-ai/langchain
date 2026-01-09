@@ -23,7 +23,7 @@ except ImportError:
     _HAS_TEXT_SPLITTERS = False
 
 
-class BaseLoader:
+class BaseLoader(ABC):  # noqa: B024
     """Interface for Document Loader.
 
     Implementations should implement the lazy-loading method using generators

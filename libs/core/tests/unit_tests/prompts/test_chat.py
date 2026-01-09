@@ -1615,7 +1615,7 @@ def test_rendering_prompt_with_conditionals_no_empty_text_blocks() -> None:
                                         "text": (
                                             "Note: This may be just one example of "
                                             "many possible correct ways for the "
-                                            "student to respond.\n",
+                                            "student to respond.\n"
                                         )
                                     },
                                 },
