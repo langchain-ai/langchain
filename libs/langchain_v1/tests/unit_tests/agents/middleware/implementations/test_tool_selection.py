@@ -8,7 +8,7 @@ import pytest
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import BaseMessage, HumanMessage
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel
 
@@ -234,7 +234,7 @@ class TestMaxToolsLimiting:
             )
         )
 
-        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        model = FakeModel(messages=[AIMessage(content="Done")])
 
         # But max_tools=2, so only first 2 should be used
         tool_selector = LLMToolSelectorMiddleware(max_tools=2, model=tool_selection_model)
@@ -288,7 +288,7 @@ class TestMaxToolsLimiting:
             )
         )
 
-        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        model = FakeModel(messages=[AIMessage(content="Done")])
 
         # No max_tools specified
         tool_selector = LLMToolSelectorMiddleware(model=tool_selection_model)
@@ -344,7 +344,7 @@ class TestAlwaysInclude:
             )
         )
 
-        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        model = FakeModel(messages=[AIMessage(content="Done")])
 
         # But send_email is always included
         tool_selector = LLMToolSelectorMiddleware(
@@ -394,7 +394,7 @@ class TestAlwaysInclude:
             )
         )
 
-        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        model = FakeModel(messages=[AIMessage(content="Done")])
 
         # max_tools=2, but we also have 2 always_include tools
         tool_selector = LLMToolSelectorMiddleware(
@@ -448,7 +448,7 @@ class TestAlwaysInclude:
             )
         )
 
-        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        model = FakeModel(messages=[AIMessage(content="Done")])
 
         tool_selector = LLMToolSelectorMiddleware(
             max_tools=1,
@@ -512,7 +512,7 @@ class TestDuplicateAndInvalidTools:
             )
         )
 
-        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        model = FakeModel(messages=[AIMessage(content="Done")])
 
         tool_selector = LLMToolSelectorMiddleware(max_tools=5, model=tool_selection_model)
 
@@ -566,7 +566,7 @@ class TestDuplicateAndInvalidTools:
             )
         )
 
-        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        model = FakeModel(messages=[AIMessage(content="Done")])
 
         tool_selector = LLMToolSelectorMiddleware(max_tools=2, model=tool_selection_model)
 
@@ -594,3 +594,89 @@ class TestEdgeCases:
         """Test that empty tools list raises an error in schema creation."""
         with pytest.raises(AssertionError, match="tools must be non-empty"):
             _create_tool_selection_response([])
+
+    def test_missing_tools_key_uses_all_tools(self) -> None:
+        """Test that missing 'tools' key in response uses all available tools."""
+        model_requests = []
+
+        @wrap_model_call
+        def trace_model_requests(request, handler):
+            model_requests.append(request)
+            return handler(request)
+
+        # Create a model that returns response without 'tools' key
+        class FakeModelMissingTools(FakeModel):
+            def with_structured_output(
+                self, schema: dict | type[BaseModel], **kwargs: Any
+            ) -> Runnable:
+                # Return a dict without 'tools' key to simulate malformed response
+                return RunnableLambda(lambda _: {})
+
+        tool_selection_model = FakeModelMissingTools(
+            messages=cycle([AIMessage(content="")])
+        )
+
+        model = FakeModel(messages=[AIMessage(content="Done")])
+
+        tool_selector = LLMToolSelectorMiddleware(max_tools=2, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web, calculate],
+            middleware=[tool_selector, trace_model_requests],
+        )
+
+        # Should not raise KeyError, should use all available tools
+        agent.invoke({"messages": [HumanMessage("test")]})
+
+        # Should have used all available tools (up to max_tools limit)
+        assert len(model_requests) > 0
+        for request in model_requests:
+            # Should have tools, even though response was malformed
+            assert len(request.tools) > 0
+            tool_names = [tool.name for tool in request.tools]
+            # Should use available tools (respecting max_tools=2)
+            assert len(tool_names) <= 2
+
+    def test_invalid_tools_type_uses_all_tools(self) -> None:
+        """Test that invalid 'tools' type in response uses all available tools."""
+        model_requests = []
+
+        @wrap_model_call
+        def trace_model_requests(request, handler):
+            model_requests.append(request)
+            return handler(request)
+
+        # Create a model that returns response with 'tools' as a string instead of list
+        class FakeModelInvalidTools(FakeModel):
+            def with_structured_output(
+                self, schema: dict | type[BaseModel], **kwargs: Any
+            ) -> Runnable:
+                # Return a dict with 'tools' as a string to simulate invalid response
+                return RunnableLambda(lambda _: {"tools": "invalid"})
+
+        tool_selection_model = FakeModelInvalidTools(
+            messages=cycle([AIMessage(content="")])
+        )
+
+        model = FakeModel(messages=[AIMessage(content="Done")])
+
+        tool_selector = LLMToolSelectorMiddleware(max_tools=2, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web, calculate],
+            middleware=[tool_selector, trace_model_requests],
+        )
+
+        # Should not raise TypeError, should use all available tools
+        agent.invoke({"messages": [HumanMessage("test")]})
+
+        # Should have used all available tools (up to max_tools limit)
+        assert len(model_requests) > 0
+        for request in model_requests:
+            # Should have tools, even though response was malformed
+            assert len(request.tools) > 0
+            tool_names = [tool.name for tool in request.tools]
+            # Should use available tools (respecting max_tools=2)
+            assert len(tool_names) <= 2
