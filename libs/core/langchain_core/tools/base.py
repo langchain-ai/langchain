@@ -8,7 +8,7 @@ import json
 import typing
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import Callable  # noqa: TC003
 from inspect import signature
 from typing import (
     TYPE_CHECKING,
@@ -566,9 +566,12 @@ class ChildTool(BaseTool):
         elif self.args_schema and issubclass(self.args_schema, BaseModelV1):
             json_schema = self.args_schema.schema()
         else:
-            input_schema = self.get_input_schema()
-            json_schema = input_schema.model_json_schema()
-        return json_schema["properties"]
+            input_schema = self.tool_call_schema
+            if isinstance(input_schema, dict):
+                json_schema = input_schema
+            else:
+                json_schema = input_schema.model_json_schema()
+        return cast("dict", json_schema["properties"])
 
     @property
     def tool_call_schema(self) -> ArgsSchema:
@@ -1545,7 +1548,7 @@ def _replace_type_vars(
             _replace_type_vars(arg, generic_map, default_to_bound=default_to_bound)
             for arg in args
         )
-        return _py_38_safe_origin(origin)[new_args]  # type: ignore[index]
+        return cast("type", _py_38_safe_origin(origin)[new_args])  # type: ignore[index]
     return type_
 
 

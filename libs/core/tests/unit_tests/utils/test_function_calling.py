@@ -1193,3 +1193,12 @@ def test_convert_to_openai_function_typed_dict_mixed_required() -> None:
 
     result = convert_to_openai_function(MyTypedDict)
     assert set(result["parameters"]["required"]) == {"name", "age"}
+def test_convert_to_openai_function_strict_defaults() -> None:
+    class MyModel(BaseModel):
+        """Dummy schema."""
+
+        arg1: int = Field(default=3, description="foo")
+        arg2: str | None = Field(default=None, description="bar")
+
+    func = convert_to_openai_function(MyModel, strict=True)
+    assert func["parameters"]["additionalProperties"] is False

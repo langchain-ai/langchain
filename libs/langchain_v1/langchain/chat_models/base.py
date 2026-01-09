@@ -2,22 +2,153 @@
 
 from __future__ import annotations
 
+import functools
+import importlib
 import warnings
-from importlib import util
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    TypeAlias,
+    cast,
+    overload,
+)
 
 from langchain_core.language_models import BaseChatModel, LanguageModelInput
 from langchain_core.messages import AIMessage, AnyMessage
+from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from typing_extensions import override
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable, Iterator, Sequence
+    from types import ModuleType
 
     from langchain_core.runnables.schema import StreamEvent
     from langchain_core.tools import BaseTool
     from langchain_core.tracers import RunLog, RunLogPatch
     from pydantic import BaseModel
+
+
+def _call(cls: type[BaseChatModel], **kwargs: Any) -> BaseChatModel:
+    # TODO: replace with operator.call when lower bounding to Python 3.11
+    return cls(**kwargs)
+
+
+_SUPPORTED_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
+    "anthropic": ("langchain_anthropic", "ChatAnthropic", _call),
+    "azure_ai": ("langchain_azure_ai.chat_models", "AzureAIChatCompletionsModel", _call),
+    "azure_openai": ("langchain_openai", "AzureChatOpenAI", _call),
+    "bedrock": ("langchain_aws", "ChatBedrock", _call),
+    "bedrock_converse": ("langchain_aws", "ChatBedrockConverse", _call),
+    "cohere": ("langchain_cohere", "ChatCohere", _call),
+    "deepseek": ("langchain_deepseek", "ChatDeepSeek", _call),
+    "fireworks": ("langchain_fireworks", "ChatFireworks", _call),
+    "google_anthropic_vertex": (
+        "langchain_google_vertexai.model_garden",
+        "ChatAnthropicVertex",
+        _call,
+    ),
+    "google_genai": ("langchain_google_genai", "ChatGoogleGenerativeAI", _call),
+    "google_vertexai": ("langchain_google_vertexai", "ChatVertexAI", _call),
+    "groq": ("langchain_groq", "ChatGroq", _call),
+    "huggingface": (
+        "langchain_huggingface",
+        "ChatHuggingFace",
+        lambda cls, model, **kwargs: cls.from_model_id(model_id=model, **kwargs),
+    ),
+    "ibm": (
+        "langchain_ibm",
+        "ChatWatsonx",
+        lambda cls, model, **kwargs: cls(model_id=model, **kwargs),
+    ),
+    "mistralai": ("langchain_mistralai", "ChatMistralAI", _call),
+    "nvidia": ("langchain_nvidia_ai_endpoints", "ChatNVIDIA", _call),
+    "ollama": ("langchain_ollama", "ChatOllama", _call),
+    "openai": ("langchain_openai", "ChatOpenAI", _call),
+    "perplexity": ("langchain_perplexity", "ChatPerplexity", _call),
+    "together": ("langchain_together", "ChatTogether", _call),
+    "upstage": ("langchain_upstage", "ChatUpstage", _call),
+    "xai": ("langchain_xai", "ChatXAI", _call),
+}
+"""Registry mapping provider names to their import configuration.
+
+Each entry maps a provider key to a tuple of:
+
+- `module_path`: The Python module path containing the chat model class.
+
+    This may be a submodule (e.g., `'langchain_azure_ai.chat_models'`) if the class is
+    not exported from the package root.
+- `class_name`: The name of the chat model class to import.
+- `creator_func`: A callable that instantiates the class with provided kwargs.
+"""
+
+
+def _import_module(module: str) -> ModuleType:
+    """Import a module by name.
+
+    Args:
+        module: The fully qualified module name to import (e.g., `'langchain_openai'`).
+
+    Returns:
+        The imported module.
+
+    Raises:
+        ImportError: If the module cannot be imported, with a message suggesting
+            the pip package to install.
+    """
+    try:
+        return importlib.import_module(module)
+    except ImportError as e:
+        # Extract package name from module path (e.g., "langchain_azure_ai.chat_models"
+        # becomes "langchain-azure-ai")
+        pkg = module.split(".", maxsplit=1)[0].replace("_", "-")
+        msg = f"Could not import {pkg} python package. Please install it with `pip install {pkg}`"
+        raise ImportError(msg) from e
+
+
+@functools.lru_cache(maxsize=len(_SUPPORTED_PROVIDERS))
+def _get_chat_model_creator(
+    provider: str,
+) -> Callable[..., BaseChatModel]:
+    """Return a factory function that creates a chat model for the given provider.
+
+    This function is cached to avoid repeated module imports.
+
+    Args:
+        provider: The name of the model provider (e.g., `'openai'`, `'anthropic'`).
+
+            Must be a key in `_SUPPORTED_PROVIDERS`.
+
+    Returns:
+        A callable that accepts model kwargs and returns a `BaseChatModel` instance for
+            the specified provider.
+
+    Raises:
+        ValueError: If the provider is not in `_SUPPORTED_PROVIDERS`.
+        ImportError: If the provider's integration package is not installed.
+    """
+    if provider not in _SUPPORTED_PROVIDERS:
+        supported = ", ".join(_SUPPORTED_PROVIDERS.keys())
+        msg = f"Unsupported {provider=}.\n\nSupported model providers are: {supported}"
+        raise ValueError(msg)
+
+    pkg, class_name, creator_func = _SUPPORTED_PROVIDERS[provider]
+    try:
+        module = _import_module(pkg)
+    except ImportError as e:
+        if provider != "ollama":
+            raise
+        # For backwards compatibility
+        try:
+            module = _import_module("langchain_community.chat_models")
+        except ImportError:
+            # If both langchain-ollama and langchain-community aren't available,
+            # raise an error related to langchain-ollama
+            raise e from None
+
+    cls = getattr(module, class_name)
+    return functools.partial(creator_func, cls=cls)
 
 
 @overload
@@ -333,154 +464,8 @@ def _init_chat_model_helper(
     **kwargs: Any,
 ) -> BaseChatModel:
     model, model_provider = _parse_model(model, model_provider)
-    if model_provider == "openai":
-        _check_pkg("langchain_openai")
-        from langchain_openai import ChatOpenAI
-
-        return ChatOpenAI(model=model, **kwargs)
-    if model_provider == "anthropic":
-        _check_pkg("langchain_anthropic")
-        from langchain_anthropic import ChatAnthropic
-
-        return ChatAnthropic(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
-    if model_provider == "azure_openai":
-        _check_pkg("langchain_openai")
-        from langchain_openai import AzureChatOpenAI
-
-        return AzureChatOpenAI(model=model, **kwargs)
-    if model_provider == "azure_ai":
-        _check_pkg("langchain_azure_ai")
-        from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
-
-        return AzureAIChatCompletionsModel(model=model, **kwargs)
-    if model_provider == "cohere":
-        _check_pkg("langchain_cohere")
-        from langchain_cohere import ChatCohere
-
-        return ChatCohere(model=model, **kwargs)
-    if model_provider == "google_vertexai":
-        _check_pkg("langchain_google_vertexai")
-        from langchain_google_vertexai import ChatVertexAI
-
-        return ChatVertexAI(model=model, **kwargs)
-    if model_provider == "google_genai":
-        _check_pkg("langchain_google_genai")
-        from langchain_google_genai import ChatGoogleGenerativeAI
-
-        return ChatGoogleGenerativeAI(model=model, **kwargs)
-    if model_provider == "fireworks":
-        _check_pkg("langchain_fireworks")
-        from langchain_fireworks import ChatFireworks
-
-        return ChatFireworks(model=model, **kwargs)
-    if model_provider == "ollama":
-        try:
-            _check_pkg("langchain_ollama")
-            from langchain_ollama import ChatOllama
-        except ImportError:
-            # For backwards compatibility
-            try:
-                _check_pkg("langchain_community")
-                from langchain_community.chat_models import ChatOllama
-            except ImportError:
-                # If both langchain-ollama and langchain-community aren't available,
-                # raise an error related to langchain-ollama
-                _check_pkg("langchain_ollama")
-
-        return ChatOllama(model=model, **kwargs)
-    if model_provider == "together":
-        _check_pkg("langchain_together")
-        from langchain_together import ChatTogether
-
-        return ChatTogether(model=model, **kwargs)
-    if model_provider == "mistralai":
-        _check_pkg("langchain_mistralai")
-        from langchain_mistralai import ChatMistralAI
-
-        return ChatMistralAI(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
-    if model_provider == "huggingface":
-        _check_pkg("langchain_huggingface")
-        from langchain_huggingface import ChatHuggingFace
-
-        return ChatHuggingFace.from_model_id(model_id=model, **kwargs)
-    if model_provider == "groq":
-        _check_pkg("langchain_groq")
-        from langchain_groq import ChatGroq
-
-        return ChatGroq(model=model, **kwargs)
-    if model_provider == "bedrock":
-        _check_pkg("langchain_aws")
-        from langchain_aws import ChatBedrock
-
-        return ChatBedrock(model_id=model, **kwargs)
-    if model_provider == "bedrock_converse":
-        _check_pkg("langchain_aws")
-        from langchain_aws import ChatBedrockConverse
-
-        return ChatBedrockConverse(model=model, **kwargs)
-    if model_provider == "google_anthropic_vertex":
-        _check_pkg("langchain_google_vertexai")
-        from langchain_google_vertexai.model_garden import ChatAnthropicVertex
-
-        return ChatAnthropicVertex(model=model, **kwargs)
-    if model_provider == "deepseek":
-        _check_pkg("langchain_deepseek", pkg_kebab="langchain-deepseek")
-        from langchain_deepseek import ChatDeepSeek
-
-        return ChatDeepSeek(model=model, **kwargs)
-    if model_provider == "nvidia":
-        _check_pkg("langchain_nvidia_ai_endpoints")
-        from langchain_nvidia_ai_endpoints import ChatNVIDIA
-
-        return ChatNVIDIA(model=model, **kwargs)
-    if model_provider == "ibm":
-        _check_pkg("langchain_ibm")
-        from langchain_ibm import ChatWatsonx
-
-        return ChatWatsonx(model_id=model, **kwargs)
-    if model_provider == "xai":
-        _check_pkg("langchain_xai")
-        from langchain_xai import ChatXAI
-
-        return ChatXAI(model=model, **kwargs)
-    if model_provider == "perplexity":
-        _check_pkg("langchain_perplexity")
-        from langchain_perplexity import ChatPerplexity
-
-        return ChatPerplexity(model=model, **kwargs)
-    if model_provider == "upstage":
-        _check_pkg("langchain_upstage")
-        from langchain_upstage import ChatUpstage
-
-        return ChatUpstage(model=model, **kwargs)
-    supported = ", ".join(_SUPPORTED_PROVIDERS)
-    msg = f"Unsupported {model_provider=}.\n\nSupported model providers are: {supported}"
-    raise ValueError(msg)
-
-
-_SUPPORTED_PROVIDERS = {
-    "openai",
-    "anthropic",
-    "azure_openai",
-    "azure_ai",
-    "cohere",
-    "google_vertexai",
-    "google_genai",
-    "fireworks",
-    "ollama",
-    "together",
-    "mistralai",
-    "huggingface",
-    "groq",
-    "bedrock",
-    "bedrock_converse",
-    "google_anthropic_vertex",
-    "deepseek",
-    "ibm",
-    "xai",
-    "perplexity",
-    "upstage",
-}
+    creator_func = _get_chat_model_creator(model_provider)
+    return creator_func(model=model, **kwargs)
 
 
 def _attempt_infer_model_provider(model_name: str) -> str | None:
@@ -553,8 +538,12 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
 def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
     """Parse model name and provider, inferring provider if necessary."""
     # Handle provider:model format
-    if not model_provider and ":" in model and model.split(":")[0] in _SUPPORTED_PROVIDERS:
-        model_provider = model.split(":")[0]
+    if (
+        not model_provider
+        and ":" in model
+        and model.split(":", maxsplit=1)[0] in _SUPPORTED_PROVIDERS
+    ):
+        model_provider = model.split(":", maxsplit=1)[0]
         model = ":".join(model.split(":")[1:])
 
     # Attempt to infer provider if not specified
@@ -575,13 +564,6 @@ def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
     # Normalize provider name
     model_provider = model_provider.replace("-", "_").lower()
     return model, model_provider
-
-
-def _check_pkg(pkg: str, *, pkg_kebab: str | None = None) -> None:
-    if not util.find_spec(pkg):
-        pkg_kebab = pkg_kebab if pkg_kebab is not None else pkg.replace("_", "-")
-        msg = f"Unable to import {pkg}. Please install with `pip install -U {pkg_kebab}`"
-        raise ImportError(msg)
 
 
 def _remove_prefix(s: str, prefix: str) -> str:
@@ -699,8 +681,6 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     @override
     def InputType(self) -> TypeAlias:
         """Get the input type for this `Runnable`."""
-        from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
-
         # This is a version of LanguageModelInput which replaces the abstract
         # base class BaseMessage with a union of its subclasses, which makes
         # for a much better schema.
