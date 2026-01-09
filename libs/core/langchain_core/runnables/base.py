@@ -2329,6 +2329,9 @@ class Runnable(ABC, Generic[Input, Output]):
         Use this to implement ``stream`` or ``transform`` in ``Runnable`` subclasses.
 
         """
+        # Extract defers_inputs from kwargs if present
+        defers_inputs = kwargs.pop("defers_inputs", False)
+
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = tee(inputs, 2)
         # Start the input iterator to ensure the input Runnable starts before this one
@@ -2345,6 +2348,7 @@ class Runnable(ABC, Generic[Input, Output]):
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
+            defers_inputs=defers_inputs,
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -2432,6 +2436,9 @@ class Runnable(ABC, Generic[Input, Output]):
         Use this to implement ``astream`` or ``atransform`` in ``Runnable`` subclasses.
 
         """
+        # Extract defers_inputs from kwargs if present
+        defers_inputs = kwargs.pop("defers_inputs", False)
+
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = atee(inputs, 2)
         # Start the input iterator to ensure the input Runnable starts before this one
@@ -2448,6 +2455,7 @@ class Runnable(ABC, Generic[Input, Output]):
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
+            defers_inputs=defers_inputs,
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -4462,6 +4470,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             input,
             self._transform,  # type: ignore[arg-type]
             config,
+            defers_inputs=True,
             **kwargs,
         )
 
@@ -4495,7 +4504,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             raise NotImplementedError(msg)
 
         return self._atransform_stream_with_config(
-            input, self._atransform, config, **kwargs
+            input, self._atransform, config, defers_inputs=True, **kwargs
         )
 
     @override
