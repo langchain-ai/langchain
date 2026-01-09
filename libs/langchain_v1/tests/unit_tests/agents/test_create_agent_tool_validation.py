@@ -10,8 +10,7 @@ from langgraph.store.memory import InMemoryStore
 from langchain.agents import AgentState, create_agent
 from langchain.tools import InjectedState
 from langchain.tools import tool as dec_tool
-
-from .model import FakeToolCallingModel
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 @pytest.mark.skipif(
