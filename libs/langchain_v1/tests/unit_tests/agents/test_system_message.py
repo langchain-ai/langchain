@@ -144,6 +144,7 @@ class TestModelRequestSystemMessage:
         if override_with == "system_message":
             new_request = original_request.override(system_message=SystemMessage(content="New"))
         else:  # system_prompt
+            # system_prompt is deprecated but supported at runtime for backward compatibility
             new_request = original_request.override(system_prompt="New prompt")  # type: ignore[call-arg]
 
         assert isinstance(new_request.system_message, SystemMessage)
@@ -165,6 +166,7 @@ class TestModelRequestSystemMessage:
             runtime=None,
         )
 
+        # system_prompt is deprecated but supported at runtime for backward compatibility
         new_request = original_request.override(system_prompt=None)  # type: ignore[call-arg]
 
         assert new_request.system_message is None
@@ -206,6 +208,7 @@ class TestModelRequestSystemMessage:
                 runtime=None,
             )
             with pytest.raises(ValueError, match="Cannot specify both"):
+                # system_prompt is deprecated but supported at runtime for backward compatibility
                 request.override(  # type: ignore[call-arg]
                     system_prompt="String prompt",
                     system_message=SystemMessage(content="Message prompt"),
@@ -941,6 +944,7 @@ class TestSystemMessageMiddlewareIntegration:
             """Middleware using string system prompt (backward compatible)."""
             current_prompt = request.system_prompt or ""
             new_prompt = current_prompt + " Additional instructions."
+            # system_prompt is deprecated but supported at runtime for backward compatibility
             return request.override(system_prompt=new_prompt.strip())  # type: ignore[call-arg]
 
         request = _make_request(system_prompt="Base prompt")
