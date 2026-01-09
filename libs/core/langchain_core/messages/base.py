@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any, cast, overload
 
 from pydantic import ConfigDict, Field
@@ -322,10 +323,15 @@ class BaseMessage(Serializable):
 
         """
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
-        # TODO: handle non-string content.
         if self.name is not None:
             title += f"\nName: {self.name}"
-        return f"{title}\n\n{self.content}"
+        content = self.content
+        if not isinstance(content, str):
+            try:
+                content = json.dumps(content, indent=2, ensure_ascii=False)
+            except (TypeError, ValueError):
+                content = repr(content)
+        return f"{title}\n\n{content}"
 
     def pretty_print(self) -> None:
         """Print a pretty representation of the message."""
