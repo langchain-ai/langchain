@@ -125,7 +125,7 @@ def beta(
             _name = _name or obj.__qualname__
             old_doc = obj.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
+            def finalize(_: Callable[..., Any], new_doc: str, /) -> T:
                 """Finalize the annotation of a class."""
                 # Can't set new_doc on some extension objects.
                 with contextlib.suppress(AttributeError):
@@ -168,7 +168,7 @@ def beta(
                     emit_warning()
                 obj.fdel(instance)
 
-            def finalize(_wrapper: Callable[..., Any], new_doc: str) -> Any:
+            def finalize(_: Callable[..., Any], new_doc: str, /) -> Any:
                 """Finalize the property."""
                 return property(fget=_fget, fset=_fset, fdel=_fdel, doc=new_doc)
 
@@ -181,7 +181,7 @@ def beta(
             wrapped = obj
             old_doc = wrapped.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str, /) -> T:
                 """Wrap the wrapped function using the wrapper and update the docstring.
 
                 Args:
