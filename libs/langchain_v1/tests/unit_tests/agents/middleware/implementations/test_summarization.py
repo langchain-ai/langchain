@@ -28,6 +28,7 @@ from typing_extensions import override
 
 from langchain.agents import AgentState
 from langchain.agents.middleware.summarization import SummarizationMiddleware
+from langchain.chat_models import init_chat_model
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
@@ -1133,3 +1134,80 @@ def test_create_summary_uses_get_buffer_string_format() -> None:
         f"str(messages) should produce significantly more tokens. "
         f"Got ratio {str_ratio:.2f}x (expected > 1.5)"
     )
+
+
+@pytest.mark.requires("langchain_anthropic")
+def test_usage_metadata_trigger() -> None:
+    model = init_chat_model("anthropic:claude-sonnet-4-5")
+    middleware = SummarizationMiddleware(
+        model=model, trigger=("tokens", 10_000), keep=("messages", 4)
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="msg1"),
+        AIMessage(
+            content="msg2",
+            tool_calls=[{"name": "tool", "args": {}, "id": "call1"}],
+            response_metadata={"model_provider": "anthropic"},
+            usage_metadata={
+                "input_tokens": 5000,
+                "output_tokens": 1000,
+                "total_tokens": 6000,
+            },
+        ),
+        ToolMessage(content="result", tool_call_id="call1"),
+        AIMessage(
+            content="msg3",
+            response_metadata={"model_provider": "anthropic"},
+            usage_metadata={
+                "input_tokens": 6100,
+                "output_tokens": 900,
+                "total_tokens": 7000,
+            },
+        ),
+        HumanMessage(content="msg4"),
+        AIMessage(
+            content="msg5",
+            response_metadata={"model_provider": "anthropic"},
+            usage_metadata={
+                "input_tokens": 7500,
+                "output_tokens": 2501,
+                "total_tokens": 10_001,
+            },
+        ),
+    ]
+    # reported token count should override count of zero
+    assert middleware._should_summarize(messages, 0)
+
+    # don't engage unless model provider matches
+    messages.extend(
+        [
+            HumanMessage(content="msg6"),
+            AIMessage(
+                content="msg7",
+                response_metadata={"model_provider": "not-anthropic"},
+                usage_metadata={
+                    "input_tokens": 7500,
+                    "output_tokens": 2501,
+                    "total_tokens": 10_001,
+                },
+            ),
+        ]
+    )
+    assert not middleware._should_summarize(messages, 0)
+
+    # don't engage if subsequent message stays under threshold (e.g., after summarization)
+    messages.extend(
+        [
+            HumanMessage(content="msg8"),
+            AIMessage(
+                content="msg9",
+                response_metadata={"model_provider": "anthropic"},
+                usage_metadata={
+                    "input_tokens": 7500,
+                    "output_tokens": 2499,
+                    "total_tokens": 9999,
+                },
+            ),
+        ]
+    )
+    assert not middleware._should_summarize(messages, 0)

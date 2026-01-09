@@ -288,6 +288,9 @@ def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None 
         schema_name: Name for the generated `TypedDict`
         omit_flag: If specified, omit fields with this flag set (`'input'` or
             `'output'`)
+
+    Returns:
+        Merged schema as `TypedDict`
     """
     all_annotations = {}
 
@@ -653,6 +656,9 @@ def create_agent(
     Returns:
         A compiled `StateGraph` that can be used for chat interactions.
 
+    Raises:
+        AssertionError: If duplicate middleware instances are provided.
+
     The agent node calls the language model with the messages list (after applying
     the system prompt). If the resulting [`AIMessage`][langchain.messages.AIMessage]
     contains `tool_calls`, the graph will then call the tools. The tools node executes
@@ -984,6 +990,10 @@ def create_agent(
             Tuple of `(bound_model, effective_response_format)` where
             `effective_response_format` is the actual strategy used (may differ from
             initial if auto-detected).
+
+        Raises:
+            ValueError: If middleware returned unknown client-side tool names.
+            ValueError: If `ToolStrategy` specifies tools not declared upfront.
         """
         # Validate ONLY client-side tools that need to exist in tool_node
         # Build map of available client-side tools from the ToolNode

@@ -4,7 +4,7 @@ import re
 class AnyStr(str):
     __slots__ = ("prefix",)
 
-    def __init__(self, prefix: str | re.Pattern = "") -> None:
+    def __init__(self, prefix: str | re.Pattern[str] = "") -> None:
         super().__init__()
         self.prefix = prefix
 
@@ -12,7 +12,7 @@ class AnyStr(str):
         return isinstance(other, str) and (
             other.startswith(self.prefix)
             if isinstance(self.prefix, str)
-            else self.prefix.match(other)
+            else self.prefix.match(other) is not None
         )
 
     def __hash__(self) -> int:

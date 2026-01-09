@@ -270,7 +270,15 @@ class SummarizationMiddleware(AgentMiddleware):
 
     @override
     def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-        """Process messages before model invocation, potentially triggering summarization."""
+        """Process messages before model invocation, potentially triggering summarization.
+
+        Args:
+            state: The agent state.
+            runtime: The runtime environment.
+
+        Returns:
+            An updated state with summarized messages if summarization was performed.
+        """
         messages = state["messages"]
         self._ensure_message_ids(messages)
 
@@ -298,7 +306,15 @@ class SummarizationMiddleware(AgentMiddleware):
 
     @override
     async def abefore_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-        """Process messages before model invocation, potentially triggering summarization."""
+        """Process messages before model invocation, potentially triggering summarization.
+
+        Args:
+            state: The agent state.
+            runtime: The runtime environment.
+
+        Returns:
+            An updated state with summarized messages if summarization was performed.
+        """
         messages = state["messages"]
         self._ensure_message_ids(messages)
 
@@ -324,6 +340,25 @@ class SummarizationMiddleware(AgentMiddleware):
             ]
         }
 
+    def _should_summarize_based_on_reported_tokens(
+        self, messages: list[AnyMessage], threshold: float
+    ) -> bool:
+        """Check if reported token usage from last AIMessage exceeds threshold."""
+        last_ai_message = next(
+            (msg for msg in reversed(messages) if isinstance(msg, AIMessage)),
+            None,
+        )
+        if (  # noqa: SIM103
+            isinstance(last_ai_message, AIMessage)
+            and last_ai_message.usage_metadata is not None
+            and (reported_tokens := last_ai_message.usage_metadata.get("total_tokens", -1))
+            and reported_tokens >= threshold
+            and (message_provider := last_ai_message.response_metadata.get("model_provider"))
+            and message_provider == self.model._get_ls_params().get("ls_provider")  # noqa: SLF001
+        ):
+            return True
+        return False
+
     def _should_summarize(self, messages: list[AnyMessage], total_tokens: int) -> bool:
         """Determine whether summarization should run for the current token usage."""
         if not self._trigger_conditions:
@@ -334,6 +369,10 @@ class SummarizationMiddleware(AgentMiddleware):
                 return True
             if kind == "tokens" and total_tokens >= value:
                 return True
+            if kind == "tokens" and self._should_summarize_based_on_reported_tokens(
+                messages, value
+            ):
+                return True
             if kind == "fraction":
                 max_input_tokens = self._get_profile_limits()
                 if max_input_tokens is None:
@@ -342,6 +381,9 @@ class SummarizationMiddleware(AgentMiddleware):
                 if threshold <= 0:
                     threshold = 1
                 if total_tokens >= threshold:
+                    return True
+
+                if self._should_summarize_based_on_reported_tokens(messages, threshold):
                     return True
         return False
 
@@ -423,7 +465,8 @@ class SummarizationMiddleware(AgentMiddleware):
 
         return max_input_tokens
 
-    def _validate_context_size(self, context: ContextSize, parameter_name: str) -> ContextSize:
+    @staticmethod
+    def _validate_context_size(context: ContextSize, parameter_name: str) -> ContextSize:
         """Validate context configuration tuples."""
         kind, value = context
         if kind == "fraction":
@@ -439,19 +482,21 @@ class SummarizationMiddleware(AgentMiddleware):
             raise ValueError(msg)
         return context
 
-    def _build_new_messages(self, summary: str) -> list[HumanMessage]:
+    @staticmethod
+    def _build_new_messages(summary: str) -> list[HumanMessage]:
         return [
             HumanMessage(content=f"Here is a summary of the conversation to date:\n\n{summary}")
         ]
 
-    def _ensure_message_ids(self, messages: list[AnyMessage]) -> None:
+    @staticmethod
+    def _ensure_message_ids(messages: list[AnyMessage]) -> None:
         """Ensure all messages have unique IDs for the add_messages reducer."""
         for msg in messages:
             if msg.id is None:
                 msg.id = str(uuid.uuid4())
 
+    @staticmethod
     def _partition_messages(
-        self,
         conversation_messages: list[AnyMessage],
         cutoff_index: int,
     ) -> tuple[list[AnyMessage], list[AnyMessage]]:
@@ -476,7 +521,8 @@ class SummarizationMiddleware(AgentMiddleware):
         target_cutoff = len(messages) - messages_to_keep
         return self._find_safe_cutoff_point(messages, target_cutoff)
 
-    def _find_safe_cutoff_point(self, messages: list[AnyMessage], cutoff_index: int) -> int:
+    @staticmethod
+    def _find_safe_cutoff_point(messages: list[AnyMessage], cutoff_index: int) -> int:
         """Find a safe cutoff point that doesn't split AI/Tool message pairs.
 
         If the message at `cutoff_index` is a `ToolMessage`, search backward for the
