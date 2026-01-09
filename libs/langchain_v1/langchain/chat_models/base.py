@@ -652,7 +652,6 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> _ConfigurableModel:
-        """Bind config to a `Runnable`, returning a new `Runnable`."""
         config = RunnableConfig(**(config or {}), **cast("RunnableConfig", kwargs))
         # Ensure config is not None after creation
         config = ensure_config(config)

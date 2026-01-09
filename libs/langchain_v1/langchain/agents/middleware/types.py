@@ -124,6 +124,9 @@ class ModelRequest:
             model_settings: Additional model settings.
             system_message: System message instance (preferred).
             system_prompt: System prompt string (deprecated, converted to SystemMessage).
+
+        Raises:
+            ValueError: If both `system_prompt` and `system_message` are provided.
         """
         # Handle system_prompt/system_message conversion and validation
         if system_prompt is not None and system_message is not None:
@@ -239,6 +242,9 @@ class ModelRequest:
                     system_message=SystemMessage(content="New instructions"),
                 )
                 ```
+
+        Raises:
+            ValueError: If both `system_prompt` and `system_message` are provided.
         """
         # Handle system_prompt/system_message conversion
         if "system_prompt" in overrides and "system_message" in overrides:
@@ -352,35 +358,74 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     def before_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run before the agent execution starts.
 
-        Async version is `abefore_agent`
+        Args:
+            state: The current agent state.
+            runtime: The runtime context.
+
+        Returns:
+            Agent state updates to apply before agent execution.
         """
 
     async def abefore_agent(
         self, state: StateT, runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
-        """Async logic to run before the agent execution starts."""
+        """Async logic to run before the agent execution starts.
+
+        Args:
+            state: The current agent state.
+            runtime: The runtime context.
+
+        Returns:
+            Agent state updates to apply before agent execution.
+        """
 
     def before_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run before the model is called.
 
-        Async version is `abefore_model`
+        Args:
+            state: The current agent state.
+            runtime: The runtime context.
+
+        Returns:
+            Agent state updates to apply before model call.
         """
 
     async def abefore_model(
         self, state: StateT, runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
-        """Async logic to run before the model is called."""
+        """Async logic to run before the model is called.
+
+        Args:
+            state: The agent state.
+            runtime: The runtime context.
+
+        Returns:
+            Agent state updates to apply before model call.
+        """
 
     def after_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run after the model is called.
 
-        Async version is `aafter_model`
+        Args:
+            state: The current agent state.
+            runtime: The runtime context.
+
+        Returns:
+            Agent state updates to apply after model call.
         """
 
     async def aafter_model(
         self, state: StateT, runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
-        """Async logic to run after the model is called."""
+        """Async logic to run after the model is called.
+
+        Args:
+            state: The current agent state.
+            runtime: The runtime context.
+
+        Returns:
+            Agent state updates to apply after model call.
+        """
 
     def wrap_model_call(
         self,
@@ -408,7 +453,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                 Can skip calling it to short-circuit.
 
         Returns:
-            `ModelCallResult`
+            The model call result.
 
         Examples:
             !!! example "Retry on error"
@@ -502,7 +547,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                 Can skip calling it to short-circuit.
 
         Returns:
-            `ModelCallResult`
+            The model call result.
 
         Examples:
             !!! example "Retry on error"
@@ -530,12 +575,28 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         raise NotImplementedError(msg)
 
     def after_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
-        """Logic to run after the agent execution completes."""
+        """Logic to run after the agent execution completes.
+
+        Args:
+            state: The current agent state.
+            runtime: The runtime context.
+
+        Returns:
+            Agent state updates to apply after agent execution.
+        """
 
     async def aafter_agent(
         self, state: StateT, runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
-        """Async logic to run after the agent execution completes."""
+        """Async logic to run after the agent execution completes.
+
+        Args:
+            state: The current agent state.
+            runtime: The runtime context.
+
+        Returns:
+            Agent state updates to apply after agent execution.
+        """
 
     def wrap_tool_call(
         self,
