@@ -91,13 +91,15 @@ async def _collect_events(
 async def test_event_stream_with_simple_function_tool() -> None:
     """Test the event stream with a function and tool."""
 
-    def foo(x: int) -> dict:  # noqa: ARG001
+    def foo(x: int) -> dict:
         """Foo."""
+        _ = x
         return {"x": 5}
 
     @tool
-    def get_docs(x: int) -> list[Document]:  # noqa: ARG001
+    def get_docs(x: int) -> list[Document]:
         """Hello Doc."""
+        _ = x
         return [Document(page_content="hello")]
 
     chain = RunnableLambda(foo) | get_docs
@@ -1087,8 +1089,9 @@ async def test_event_streaming_with_tools() -> None:
         return "hello"
 
     @tool
-    def with_callbacks(callbacks: Callbacks) -> str:  # noqa: ARG001
+    def with_callbacks(callbacks: Callbacks) -> str:
         """A tool that does nothing."""
+        _ = callbacks
         return "world"
 
     @tool
@@ -1097,8 +1100,9 @@ async def test_event_streaming_with_tools() -> None:
         return {"x": x, "y": y}
 
     @tool
-    def with_parameters_and_callbacks(x: int, y: str, callbacks: Callbacks) -> dict:  # noqa: ARG001
+    def with_parameters_and_callbacks(x: int, y: str, callbacks: Callbacks) -> dict:
         """A tool that does nothing."""
+        _ = callbacks
         return {"x": x, "y": y}
 
     # type ignores below because the tools don't appear to be runnables to type checkers
