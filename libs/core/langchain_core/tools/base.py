@@ -5,6 +5,7 @@ from __future__ import annotations
 import functools
 import inspect
 import json
+import logging
 import typing
 import warnings
 from abc import ABC, abstractmethod
@@ -81,6 +82,8 @@ TOOL_MESSAGE_BLOCK_TYPES = (
     "document",
     "file",
 )
+
+_logger = logging.getLogger(__name__)
 
 
 class SchemaAnnotationError(TypeError):
@@ -815,9 +818,12 @@ class ChildTool(BaseTool):
                 for field_name, field_type in annotations.items():
                     if _is_injected_arg_type(field_type):
                         filtered_keys.add(field_name)
-            except Exception:  # noqa: S110
+            except Exception:
                 # If we can't get annotations, just use FILTERED_ARGS
-                pass
+                _logger.debug(
+                    "Failed to get args_schema annotations for filtering.",
+                    exc_info=True,
+                )
 
         # Filter out the injected keys from tool_input
         return {k: v for k, v in tool_input.items() if k not in filtered_keys}
