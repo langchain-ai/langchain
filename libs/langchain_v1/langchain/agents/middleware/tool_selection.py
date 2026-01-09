@@ -18,9 +18,11 @@ from typing_extensions import TypedDict
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
+    ContextT,
     ModelCallResult,
     ModelRequest,
     ModelResponse,
+    StateT,
 )
 from langchain.chat_models.base import init_chat_model
 
@@ -85,7 +87,7 @@ def _render_tool_list(tools: list[BaseTool]) -> str:
     return "\n".join(f"- {tool.name}: {tool.description}" for tool in tools)
 
 
-class LLMToolSelectorMiddleware(AgentMiddleware):
+class LLMToolSelectorMiddleware(AgentMiddleware[StateT, ContextT]):
     """Uses an LLM to select relevant tools before calling the main model.
 
     When an agent has many tools available, this middleware filters them down
