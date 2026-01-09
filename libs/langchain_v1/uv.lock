@@ -1863,7 +1863,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.2.1"
+version = "1.2.2"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -2283,7 +2283,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.1.6"
+version = "1.1.7"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },
