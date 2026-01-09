@@ -2102,7 +2102,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.2.6"
+version = "1.2.7"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -2380,7 +2380,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-lint = [{ name = "ruff", specifier = ">=0.14.10,<0.15.0" }]
+lint = [{ name = "ruff", specifier = ">=0.14.11,<0.15.0" }]
 test = [{ name = "langchain-core", editable = "../core" }]
 test-integration = []
 typing = [
@@ -2407,7 +2407,7 @@ dev = [
 ]
 lint = [
     { name = "langchain-core", editable = "../core" },
-    { name = "ruff", specifier = ">=0.14.10,<0.15.0" },
+    { name = "ruff", specifier = ">=0.14.11,<0.15.0" },
 ]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },

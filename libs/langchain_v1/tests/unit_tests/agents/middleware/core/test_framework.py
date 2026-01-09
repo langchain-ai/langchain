@@ -672,9 +672,7 @@ async def test_create_agent_async_jump() -> None:
 
     class AsyncMiddlewareTwo(AgentMiddleware):
         @hook_config(can_jump_to=["end"])
-        async def abefore_model(
-            self, state: AgentState[Any], runtime: Runtime
-        ) -> dict[str, Any]:
+        async def abefore_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
             calls.append("AsyncMiddlewareTwo.abefore_model")
             return {"jump_to": "end"}
 
