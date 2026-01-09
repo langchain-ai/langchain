@@ -300,7 +300,7 @@ class ToolRetryMiddleware(AgentMiddleware):
             `ToolMessage` or `Command` (the final result).
 
         Raises:
-            RuntimeError: If the retry loop completes without returning. This should be not happen.
+            RuntimeError: If the retry loop completes without returning. This should not happen.
         """
         tool_name = request.tool.name if request.tool else request.tool_call["name"]
 
@@ -359,7 +359,7 @@ class ToolRetryMiddleware(AgentMiddleware):
             `ToolMessage` or `Command` (the final result).
 
         Raises:
-            RuntimeError: If the retry loop completes without returning. This should be not happen.
+            RuntimeError: If the retry loop completes without returning. This should not happen.
         """
         tool_name = request.tool.name if request.tool else request.tool_call["name"]
 
