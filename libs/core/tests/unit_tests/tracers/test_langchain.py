@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import threading
 import time
 import unittest
@@ -12,7 +14,10 @@ from langsmith.run_trees import RunTree
 from langsmith.utils import get_env_var, get_tracer_project
 
 from langchain_core.outputs import LLMResult
-from langchain_core.tracers.langchain import LangChainTracer
+from langchain_core.tracers.langchain import (
+    LangChainTracer,
+    _get_usage_metadata_from_generations,
+)
 from langchain_core.tracers.schemas import Run
 
 
@@ -145,3 +150,207 @@ def test_correct_get_tracer_project(
         )
         tracer.wait_for_futures()
         assert projects == [expected_project_name]
+
+
+@pytest.mark.parametrize(
+    ("generations", "expected"),
+    [
+        # Returns usage_metadata when present
+        (
+            [
+                [
+                    {
+                        "text": "Hello!",
+                        "message": {
+                            "content": "Hello!",
+                            "usage_metadata": {
+                                "input_tokens": 10,
+                                "output_tokens": 20,
+                                "total_tokens": 30,
+                            },
+                        },
+                    }
+                ]
+            ],
+            {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30},
+        ),
+        # Returns None when no usage_metadata
+        ([[{"text": "Hello!", "message": {"content": "Hello!"}}]], None),
+        # Returns None when no message
+        ([[{"text": "Hello!"}]], None),
+        # Returns None for empty generations
+        ([], None),
+        ([[]], None),
+        # Aggregates usage_metadata across multiple generations
+        (
+            [
+                [
+                    {
+                        "text": "First",
+                        "message": {
+                            "content": "First",
+                            "usage_metadata": {
+                                "input_tokens": 5,
+                                "output_tokens": 10,
+                                "total_tokens": 15,
+                            },
+                        },
+                    },
+                    {
+                        "text": "Second",
+                        "message": {
+                            "content": "Second",
+                            "usage_metadata": {
+                                "input_tokens": 50,
+                                "output_tokens": 100,
+                                "total_tokens": 150,
+                            },
+                        },
+                    },
+                ]
+            ],
+            {"input_tokens": 55, "output_tokens": 110, "total_tokens": 165},
+        ),
+        # Finds usage_metadata across multiple batches
+        (
+            [
+                [{"text": "No message here"}],
+                [
+                    {
+                        "text": "Has message",
+                        "message": {
+                            "content": "Has message",
+                            "usage_metadata": {
+                                "input_tokens": 10,
+                                "output_tokens": 20,
+                                "total_tokens": 30,
+                            },
+                        },
+                    }
+                ],
+            ],
+            {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30},
+        ),
+    ],
+    ids=[
+        "returns_usage_metadata_when_present",
+        "returns_none_when_no_usage_metadata",
+        "returns_none_when_no_message",
+        "returns_none_for_empty_list",
+        "returns_none_for_empty_batch",
+        "aggregates_across_multiple_generations",
+        "finds_across_multiple_batches",
+    ],
+)
+def test_get_usage_metadata_from_generations(
+    generations: list[list[dict[str, Any]]], expected: dict[str, Any] | None
+) -> None:
+    """Test `_get_usage_metadata_from_generations` utility function."""
+    result = _get_usage_metadata_from_generations(generations)
+    assert result == expected
+
+
+def test_on_llm_end_stores_usage_metadata_in_run_extra() -> None:
+    """Test that `usage_metadata` is stored in `run.extra.metadata` on llm end."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_llm_start({"name": "test_llm"}, ["foo"], run_id=run_id)
+
+    run = tracer.run_map[str(run_id)]
+    usage_metadata = {"input_tokens": 100, "output_tokens": 200, "total_tokens": 300}
+    run.outputs = {
+        "generations": [
+            [
+                {
+                    "text": "Hello!",
+                    "message": {"content": "Hello!", "usage_metadata": usage_metadata},
+                }
+            ]
+        ]
+    }
+
+    captured_run = None
+
+    def capture_run(r: Run) -> None:
+        nonlocal captured_run
+        captured_run = r
+
+    with unittest.mock.patch.object(tracer, "_update_run_single", capture_run):
+        tracer._on_llm_end(run)
+
+    assert captured_run is not None
+    assert "metadata" in captured_run.extra
+    assert captured_run.extra["metadata"]["usage_metadata"] == usage_metadata
+
+
+def test_on_llm_end_no_usage_metadata_when_not_present() -> None:
+    """Test that no `usage_metadata` is added when not present in outputs."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_llm_start({"name": "test_llm"}, ["foo"], run_id=run_id)
+
+    run = tracer.run_map[str(run_id)]
+    run.outputs = {
+        "generations": [[{"text": "Hello!", "message": {"content": "Hello!"}}]]
+    }
+
+    captured_run = None
+
+    def capture_run(r: Run) -> None:
+        nonlocal captured_run
+        captured_run = r
+
+    with unittest.mock.patch.object(tracer, "_update_run_single", capture_run):
+        tracer._on_llm_end(run)
+
+    assert captured_run is not None
+    extra_metadata = captured_run.extra.get("metadata", {})
+    assert "usage_metadata" not in extra_metadata
+
+
+def test_on_llm_end_preserves_existing_metadata() -> None:
+    """Test that existing metadata is preserved when adding `usage_metadata`."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_llm_start(
+        {"name": "test_llm"},
+        ["foo"],
+        run_id=run_id,
+        metadata={"existing_key": "existing_value"},
+    )
+
+    run = tracer.run_map[str(run_id)]
+    usage_metadata = {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30}
+    run.outputs = {
+        "generations": [
+            [
+                {
+                    "text": "Hello!",
+                    "message": {"content": "Hello!", "usage_metadata": usage_metadata},
+                }
+            ]
+        ]
+    }
+
+    captured_run = None
+
+    def capture_run(r: Run) -> None:
+        nonlocal captured_run
+        captured_run = r
+
+    with unittest.mock.patch.object(tracer, "_update_run_single", capture_run):
+        tracer._on_llm_end(run)
+
+    assert captured_run is not None
+    assert "metadata" in captured_run.extra
+    assert captured_run.extra["metadata"]["usage_metadata"] == usage_metadata
+    assert captured_run.extra["metadata"]["existing_key"] == "existing_value"
