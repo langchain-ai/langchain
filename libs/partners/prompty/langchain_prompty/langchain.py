@@ -3,8 +3,8 @@ from typing import Any
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import Runnable, RunnableLambda
 
-from langchain_prompty.parsers import RoleMap
-from langchain_prompty.utils import load, prepare
+from .parsers import RoleMap
+from .utils import load, prepare
 
 
 def create_chat_prompt(

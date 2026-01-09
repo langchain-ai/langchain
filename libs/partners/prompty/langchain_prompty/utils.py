@@ -2,7 +2,7 @@ import traceback
 from pathlib import Path
 from typing import Any
 
-from langchain_prompty.core import (
+from .core import (
     Frontmatter,
     InvokerFactory,
     ModelSettings,

@@ -64,10 +64,7 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 docstring-code-format = true
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201", "TID252", "UP", "S"]
-
-[tool.ruff.lint.flake8-tidy-imports]
-ban-relative-imports = "all"
+select = ["E", "F", "I", "T201", "UP", "S"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

@@ -11,9 +11,10 @@ from langchain_core.utils.function_calling import convert_to_openai_function
 from pydantic import BaseModel, Field
 
 import langchain_prompty
-from tests.unit_tests.fake_callback_handler import FakeCallbackHandler
-from tests.unit_tests.fake_chat_model import FakeEchoPromptChatModel
-from tests.unit_tests.fake_output_parser import FakeOutputParser
+
+from .fake_callback_handler import FakeCallbackHandler
+from .fake_chat_model import FakeEchoPromptChatModel
+from .fake_output_parser import FakeOutputParser
 
 prompty_folder_relative = "./prompts/"
 # Get the directory of the current script

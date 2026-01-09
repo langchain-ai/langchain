@@ -10,7 +10,7 @@ from langchain_core.messages import (
 )
 from pydantic import BaseModel
 
-from langchain_prompty.core import Invoker, Prompty, SimpleModel
+from .core import Invoker, Prompty, SimpleModel
 
 
 class RoleMap:
