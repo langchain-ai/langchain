@@ -993,7 +993,7 @@ def create_agent(
 
         Raises:
             ValueError: If middleware returned unknown client-side tool names.
-            ValueError: If ToolStrategy specifies tools not declared upfront.
+            ValueError: If `ToolStrategy` specifies tools not declared upfront.
         """
         # Validate ONLY client-side tools that need to exist in tool_node
         # Build map of available client-side tools from the ToolNode

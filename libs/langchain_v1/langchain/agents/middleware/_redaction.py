@@ -319,7 +319,7 @@ def apply_strategy(
         The content with the strategy applied.
 
     Raises:
-        PIIDetectionError: If the strategy is "block" and matches are found.
+        PIIDetectionError: If the strategy is `'block'` and matches are found.
         ValueError: If the strategy is unknown.
     """
     if not matches:
@@ -341,7 +341,7 @@ def resolve_detector(pii_type: str, detector: Detector | str | None) -> Detector
 
     Args:
         pii_type: The PII type name.
-        detector: Optional custom detector or regex pattern. If None, a built-in detector
+        detector: Optional custom detector or regex pattern. If `None`, a built-in detector
             for the given PII type will be used.
 
     Returns:

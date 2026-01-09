@@ -140,7 +140,7 @@ class _SchemaSpec(Generic[SchemaT]):
         description: str | None = None,
         strict: bool | None = None,
     ) -> None:
-        """Initialize SchemaSpec with schema and optional parameters.
+        """Initialize `SchemaSpec` with schema and optional parameters.
 
         Args:
             schema: Schema to describe.
