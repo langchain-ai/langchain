@@ -26,7 +26,7 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 lint = [
-    "ruff>=0.14.10,<0.15.0",
+    "ruff>=0.14.11,<0.15.0",
     "langchain-core"
 ]
 typing = [
@@ -93,7 +93,6 @@ ignore = [
 ]
 unfixable = [
     "B028",    # People should intentionally tune the stacklevel
-    "PLW1510", # People should intentionally set the check argument
 ]
 
 flake8-annotations.allow-star-arg-any = true

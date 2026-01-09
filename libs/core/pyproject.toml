@@ -32,7 +32,7 @@ Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
-lint = ["ruff>=0.14.10,<0.15.0"]
+lint = ["ruff>=0.14.11,<0.15.0"]
 typing = [
     "mypy>=1.19.1,<1.20.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
@@ -100,7 +100,6 @@ ignore = [
 ]
 unfixable = [
     "B028",    # People should intentionally tune the stacklevel
-    "PLW1510", # People should intentionally set the check argument
 ]
 
 flake8-annotations.allow-star-arg-any = true
