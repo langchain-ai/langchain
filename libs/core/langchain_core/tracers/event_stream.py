@@ -28,6 +28,7 @@ from langchain_core.runnables.schema import (
     EventData,
     StandardStreamEvent,
     StreamEvent,
+    get_event_name,
 )
 from langchain_core.runnables.utils import (
     Input,
@@ -201,7 +202,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         if tap is sentinel:
             # if we are the first to tap, issue stream events
             event: StandardStreamEvent = {
-                "event": f"on_{run_info['run_type']}_stream",
+                "event": get_event_name(run_info["run_type"], "stream"),
                 "run_id": str(run_id),
                 "name": run_info["name"],
                 "tags": run_info["tags"],
@@ -251,7 +252,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         if tap is sentinel:
             # if we are the first to tap, issue stream events
             event: StandardStreamEvent = {
-                "event": f"on_{run_info['run_type']}_stream",
+                "event": get_event_name(run_info["run_type"], "stream"),
                 "run_id": str(run_id),
                 "name": run_info["name"],
                 "tags": run_info["tags"],
@@ -440,7 +441,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         if self.is_tapped.get(run_id):
             return
         if run_info["run_type"] == "chat_model":
-            event = "on_chat_model_stream"
+            event = get_event_name("chat_model", "stream")
 
             if chunk is None:
                 chunk_ = AIMessageChunk(content=token)
@@ -448,7 +449,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 chunk_ = cast("ChatGenerationChunk", chunk).message
 
         elif run_info["run_type"] == "llm":
-            event = "on_llm_stream"
+            event = get_event_name("llm", "stream")
             if chunk is None:
                 chunk_ = GenerationChunk(text=token)
             else:
@@ -498,7 +499,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                     output = chunk.message
                     break
 
-            event = "on_chat_model_end"
+            event = get_event_name("chat_model", "end")
         elif run_info["run_type"] == "llm":
             generations = cast("list[list[GenerationChunk]]", response.generations)
             output = {
@@ -515,7 +516,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 ],
                 "llm_output": response.llm_output,
             }
-            event = "on_llm_end"
+            event = get_event_name("llm", "end")
         else:
             msg = f"Unexpected run type: {run_info['run_type']}"
             raise ValueError(msg)
@@ -570,7 +571,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
         self._send(
             {
-                "event": f"on_{run_type_}_start",
+                "event": get_event_name(run_type_, "start"),
                 "data": data,
                 "name": name_,
                 "tags": tags or [],
@@ -594,8 +595,6 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         run_info = self.run_map.pop(run_id)
         run_type = run_info["run_type"]
 
-        event = f"on_{run_type}_end"
-
         inputs = inputs or run_info.get("inputs") or {}
 
         data: EventData = {
@@ -605,7 +604,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
         self._send(
             {
-                "event": event,
+                "event": get_event_name(run_type, "end"),
                 "data": data,
                 "run_id": str(run_id),
                 "name": run_info["name"],
@@ -864,7 +863,7 @@ async def _astream_events_implementation_v1(
             state = run_log.state.copy()
 
             event = StandardStreamEvent(
-                event=f"on_{state['type']}_start",
+                event=get_event_name(state["type"], "start"),
                 run_id=state["id"],
                 name=root_name,
                 tags=root_tags,
@@ -926,7 +925,7 @@ async def _astream_events_implementation_v1(
                 log_entry["streamed_output"] = []
 
             yield StandardStreamEvent(
-                event=f"on_{log_entry['type']}_{event_type}",
+                event=get_event_name(log_entry["type"], event_type),  # type: ignore[arg-type]
                 name=log_entry["name"],
                 run_id=log_entry["id"],
                 tags=log_entry["tags"],
@@ -953,7 +952,7 @@ async def _astream_events_implementation_v1(
             state["streamed_output"] = []
 
             event = StandardStreamEvent(
-                event=f"on_{state['type']}_stream",
+                event=get_event_name(state["type"], "stream"),
                 run_id=state["id"],
                 tags=root_tags,
                 metadata=root_metadata,
@@ -968,7 +967,7 @@ async def _astream_events_implementation_v1(
 
     # Finally yield the end event for the root runnable.
     event = StandardStreamEvent(
-        event=f"on_{state['type']}_end",
+        event=get_event_name(state["type"], "end"),
         name=root_name,
         run_id=state["id"],
         tags=root_tags,

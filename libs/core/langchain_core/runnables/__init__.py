@@ -49,6 +49,7 @@ if TYPE_CHECKING:
         RunnablePick,
     )
     from langchain_core.runnables.router import RouterInput, RouterRunnable
+    from langchain_core.runnables.schema import StreamEventName
     from langchain_core.runnables.utils import (
         AddableDict,
         ConfigurableField,
@@ -82,6 +83,7 @@ __all__ = (
     "RunnableSerializable",
     "RunnableWithFallbacks",
     "RunnableWithMessageHistory",
+    "StreamEventName",
     "aadd",
     "add",
     "chain",
@@ -94,6 +96,7 @@ __all__ = (
 _dynamic_imports = {
     "chain": "base",
     "Runnable": "base",
+    "StreamEventName": "schema",
     "RunnableBinding": "base",
     "RunnableGenerator": "base",
     "RunnableLambda": "base",

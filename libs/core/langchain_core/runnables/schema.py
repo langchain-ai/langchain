@@ -9,6 +9,127 @@ from typing_extensions import NotRequired, TypedDict
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+# Type alias for stream event names used in astream_events
+#
+# When adding a new run_type, update these 3 locations:
+# 1. StreamEventName Literal (here)
+# 2. _RUN_TYPE_EVENTS mapping (below)
+# 3. tests/unit_tests/runnables/test_schema.py (EXPECTED_EVENT_NAMES)
+StreamEventName = Literal[
+    # LLM (non-chat models)
+    "on_llm_start",
+    "on_llm_stream",
+    "on_llm_end",
+    "on_llm_error",
+    # Chat Model
+    "on_chat_model_start",
+    "on_chat_model_stream",
+    "on_chat_model_end",
+    # Tool
+    "on_tool_start",
+    "on_tool_stream",
+    "on_tool_end",
+    "on_tool_error",
+    # Chain
+    "on_chain_start",
+    "on_chain_stream",
+    "on_chain_end",
+    "on_chain_error",
+    # Retriever
+    "on_retriever_start",
+    "on_retriever_stream",
+    "on_retriever_end",
+    "on_retriever_error",
+    # Prompt
+    "on_prompt_start",
+    "on_prompt_end",
+    # Parser
+    "on_parser_start",
+    "on_parser_stream",
+    "on_parser_end",
+    "on_parser_error",
+    # Custom
+    "on_custom_event",
+]
+
+# Type alias for event phases
+StreamEventPhase = Literal["start", "stream", "end", "error"]
+
+# Centralized mapping of run_type/phase to event names
+# This ensures type safety and provides runtime validation
+_RUN_TYPE_EVENTS: dict[str, dict[str, StreamEventName]] = {
+    "llm": {
+        "start": "on_llm_start",
+        "stream": "on_llm_stream",
+        "end": "on_llm_end",
+        "error": "on_llm_error",
+    },
+    "chat_model": {
+        "start": "on_chat_model_start",
+        "stream": "on_chat_model_stream",
+        "end": "on_chat_model_end",
+    },
+    "tool": {
+        "start": "on_tool_start",
+        "stream": "on_tool_stream",
+        "end": "on_tool_end",
+        "error": "on_tool_error",
+    },
+    "chain": {
+        "start": "on_chain_start",
+        "stream": "on_chain_stream",
+        "end": "on_chain_end",
+        "error": "on_chain_error",
+    },
+    "retriever": {
+        "start": "on_retriever_start",
+        "stream": "on_retriever_stream",
+        "end": "on_retriever_end",
+        "error": "on_retriever_error",
+    },
+    "prompt": {
+        "start": "on_prompt_start",
+        "end": "on_prompt_end",
+    },
+    "parser": {
+        "start": "on_parser_start",
+        "stream": "on_parser_stream",
+        "end": "on_parser_end",
+        "error": "on_parser_error",
+    },
+}
+
+
+def get_event_name(run_type: str, phase: StreamEventPhase) -> StreamEventName:
+    """Get the event name for a given run_type and phase.
+
+    Args:
+        run_type: The type of run (e.g., "llm", "chat_model", "tool", "chain").
+        phase: The event phase ("start", "stream", "end", "error").
+
+    Returns:
+        The corresponding StreamEventName.
+
+    Raises:
+        ValueError: If the run_type/phase combination is not valid.
+    """
+    if run_type not in _RUN_TYPE_EVENTS:
+        msg = (
+            f"Unknown run_type: {run_type!r}. "
+            f"Valid run_types: {list(_RUN_TYPE_EVENTS.keys())}"
+        )
+        raise ValueError(msg)
+
+    phases = _RUN_TYPE_EVENTS[run_type]
+    if phase not in phases:
+        msg = (
+            f"Phase {phase!r} is not valid for run_type {run_type!r}. "
+            f"Valid phases: {list(phases.keys())}"
+        )
+        raise ValueError(msg)
+
+    return phases[phase]
+
 
 class EventData(TypedDict, total=False):
     """Data associated with a streaming event."""
@@ -93,7 +214,7 @@ class BaseStreamEvent(TypedDict):
         ```
     """
 
-    event: str
+    event: StreamEventName
     """Event names are of the format: `on_[runnable_type]_(start|stream|end)`.
 
     Runnable types are one of:
