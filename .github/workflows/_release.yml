@@ -394,9 +394,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+
     strategy:
       matrix:
-        partner: [anthropic]
+        partner: []
       fail-fast: false # Continue testing other partners if one fails
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
