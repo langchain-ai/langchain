@@ -404,6 +404,7 @@ def test_summarization_middleware_missing_profile() -> None:
         def _llm_type(self) -> str:
             return "mock"
 
+        # NOTE: Using __getattribute__ because @property cannot override Pydantic fields.
         def __getattribute__(self, name: str) -> Any:
             if name == "profile":
                 msg = "Profile not available"
@@ -674,6 +675,7 @@ def test_summarization_middleware_profile_edge_cases() -> None:
         def _llm_type(self) -> str:
             return "mock"
 
+        # NOTE: Using __getattribute__ because @property cannot override Pydantic fields.
         def __getattribute__(self, name: str) -> Any:
             if name == "profile":
                 return "invalid_profile_type"
