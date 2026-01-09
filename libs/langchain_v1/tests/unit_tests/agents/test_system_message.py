@@ -932,7 +932,6 @@ class TestSystemMessageMiddlewareIntegration:
             "key1": "value1",
             "key2": "value2",
         }
-        assert new_request.system_message is not None
         assert new_request.system_message.response_metadata == {"model": "gpt-4"}
 
     def test_backward_compatibility_with_string_system_prompt(self) -> None:
