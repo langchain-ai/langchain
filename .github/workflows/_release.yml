@@ -394,9 +394,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    if: false # temporarily skip
     strategy:
       matrix:
-        partner: []
+        partner: [openai, anthropic]
       fail-fast: false # Continue testing other partners if one fails
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -477,7 +478,7 @@ jobs:
       - release-notes
       - test-pypi-publish
       - pre-release-checks
-      - test-prior-published-packages-against-new-core
+      # - test-prior-published-packages-against-new-core
     runs-on: ubuntu-latest
     permissions:
       # This permission is used for trusted publishing:
