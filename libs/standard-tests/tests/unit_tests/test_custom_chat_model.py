@@ -9,7 +9,7 @@ import pytest
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 from langchain_tests.unit_tests import ChatModelUnitTests
 
-from .custom_chat_model import ChatParrotLink
+from tests.unit_tests.custom_chat_model import ChatParrotLink
 
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel

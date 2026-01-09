@@ -18,7 +18,7 @@ from langchain.agents.middleware.types import AgentMiddleware, AgentState
 # are inspected at runtime.
 from langchain.tools import ToolRuntime  # noqa: TC001
 
-from .model import FakeToolCallingModel
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 @tool

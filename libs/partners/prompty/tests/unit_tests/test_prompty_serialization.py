@@ -12,9 +12,9 @@ from pydantic import BaseModel, Field
 
 import langchain_prompty
 
-from .fake_callback_handler import FakeCallbackHandler
-from .fake_chat_model import FakeEchoPromptChatModel
-from .fake_output_parser import FakeOutputParser
+from tests.unit_tests.fake_callback_handler import FakeCallbackHandler
+from tests.unit_tests.fake_chat_model import FakeEchoPromptChatModel
+from tests.unit_tests.fake_output_parser import FakeOutputParser
 
 prompty_folder_relative = "./prompts/"
 # Get the directory of the current script

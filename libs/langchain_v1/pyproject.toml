@@ -127,6 +127,9 @@ unfixable = [
 flake8-annotations.allow-star-arg-any = true
 allowed-confusables = ["–"]
 
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters

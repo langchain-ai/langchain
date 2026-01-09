@@ -27,7 +27,7 @@ from langchain.agents import create_agent
 from langchain.agents.middleware.types import AgentMiddleware, AgentState
 from langchain.tools import InjectedState, ToolRuntime
 
-from .model import FakeToolCallingModel
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 def test_tool_runtime_basic_injection() -> None:
