@@ -369,7 +369,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
     def get_input_schema(
         self,
-        config: RunnableConfig | None = None,  # noqa: ARG002
+        config: RunnableConfig | None = None,
     ) -> type[BaseModel]:
         """Get a Pydantic model that can be used to validate input to the `Runnable`.
 
@@ -385,6 +385,7 @@ class Runnable(ABC, Generic[Input, Output]):
         Returns:
             A Pydantic model that can be used to validate input.
         """
+        _ = config
         root_type = self.InputType
 
         if (
@@ -447,7 +448,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
     def get_output_schema(
         self,
-        config: RunnableConfig | None = None,  # noqa: ARG002
+        config: RunnableConfig | None = None,
     ) -> type[BaseModel]:
         """Get a Pydantic model that can be used to validate output to the `Runnable`.
 
@@ -463,6 +464,7 @@ class Runnable(ABC, Generic[Input, Output]):
         Returns:
             A Pydantic model that can be used to validate output.
         """
+        _ = config
         root_type = self.OutputType
 
         if (
