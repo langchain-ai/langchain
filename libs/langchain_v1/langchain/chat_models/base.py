@@ -502,7 +502,7 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
         return "cohere"
 
     # Fireworks models
-    if model_name.startswith("accounts/fireworks"):
+    if model_lower.startswith("accounts/fireworks"):
         return "fireworks"
 
     # Google models
@@ -510,7 +510,7 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
         return "google_vertexai"
 
     # AWS Bedrock models
-    if model_name.startswith("amazon.") or model_lower.startswith(("anthropic.", "meta.")):
+    if model_lower.startswith(("amazon.", "anthropic.", "meta.")):
         return "bedrock"
 
     # Mistral models
