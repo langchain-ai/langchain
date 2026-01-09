@@ -3,6 +3,7 @@
 from typing import Any
 from unittest.mock import Mock
 
+import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -85,7 +86,7 @@ class TestModelRequestOverride:
 
         original_request = ModelRequest(
             model=model,
-            system_prompt=None,
+            system_message=None,
             messages=original_messages,
             tool_choice=None,
             tools=[],
@@ -106,7 +107,7 @@ class TestModelRequestOverride:
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
         original_request = ModelRequest(
             model=model,
-            system_prompt=None,
+            system_message=None,
             messages=[HumanMessage("Hi")],
             tool_choice=None,
             tools=[],
@@ -181,7 +182,7 @@ class TestModelRequestOverride:
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
         original_request = ModelRequest(
             model=model,
-            system_prompt="Prompt 1",
+            system_message=SystemMessage("Prompt 1"),
             messages=[HumanMessage("Hi")],
             tool_choice=None,
             tools=[],
@@ -203,6 +204,53 @@ class TestModelRequestOverride:
         assert original_request.system_prompt == "Prompt 1"
         assert original_request.state == CustomState(messages=[], count=1)
         assert original_request.tool_choice is None
+
+    def test_override_raises_on_both_system_prompt_and_system_message(self) -> None:
+        """Test that `ValueError` is raised when both prompt params are provided."""
+        model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
+        request = ModelRequest(
+            model=model,
+            system_message=None,
+            messages=[HumanMessage("Hi")],
+            tool_choice=None,
+            tools=[],
+            response_format=None,
+            state=AgentState(messages=[]),
+            runtime=None,
+        )
+
+        with pytest.raises(
+            ValueError, match="Cannot specify both system_prompt and system_message"
+        ):
+            request.override(
+                system_prompt="prompt",  # type: ignore[call-arg]
+                system_message=SystemMessage("message"),
+            )
+
+    def test_override_system_prompt_backward_compatibility(self) -> None:
+        """Test that `system_prompt` kwarg in `override()` converts to `SystemMessage`."""
+        model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
+        original_request = ModelRequest(
+            model=model,
+            system_message=None,
+            messages=[HumanMessage("Hi")],
+            tool_choice=None,
+            tools=[],
+            response_format=None,
+            state=AgentState(messages=[]),
+            runtime=None,
+        )
+
+        # Use deprecated system_prompt parameter
+        new_request = original_request.override(
+            system_prompt="New prompt via deprecated param"  # type: ignore[call-arg]
+        )
+
+        assert new_request.system_prompt == "New prompt via deprecated param"
+        assert isinstance(new_request.system_message, SystemMessage)
+        assert new_request.system_message.content == "New prompt via deprecated param"
+        # Original unchanged
+        assert original_request.system_message is None
 
 
 class TestToolCallRequestOverride:
