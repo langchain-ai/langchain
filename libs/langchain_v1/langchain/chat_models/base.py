@@ -104,7 +104,10 @@ def _import_module(module: str, class_name: str) -> ModuleType:
         # Extract package name from module path (e.g., "langchain_azure_ai.chat_models"
         # becomes "langchain-azure-ai")
         pkg = module.split(".", maxsplit=1)[0].replace("_", "-")
-        msg = f"Initializing {class_name} requires the {pkg} package. Please install it with `pip install {pkg}`"
+        msg = (
+            f"Initializing {class_name} requires the {pkg} package. Please install it "
+            f"with `pip install {pkg}`"
+        )
         raise ImportError(msg) from e
 
 
