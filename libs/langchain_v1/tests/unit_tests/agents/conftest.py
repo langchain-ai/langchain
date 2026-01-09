@@ -7,7 +7,7 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.store.base import BaseStore
 from pytest_mock import MockerFixture
 
-from .conftest_checkpointer import (
+from tests.unit_tests.agents.conftest_checkpointer import (
     _checkpointer_memory,
     _checkpointer_postgres,
     _checkpointer_postgres_aio,
@@ -18,7 +18,7 @@ from .conftest_checkpointer import (
     _checkpointer_sqlite,
     _checkpointer_sqlite_aio,
 )
-from .conftest_store import (
+from tests.unit_tests.agents.conftest_store import (
     _store_memory,
     _store_postgres,
     _store_postgres_aio,
