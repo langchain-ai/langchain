@@ -4,7 +4,6 @@ from langchain_core.tools import tool
 from syrupy.assertion import SnapshotAssertion
 
 from langchain.agents.factory import create_agent
-
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 

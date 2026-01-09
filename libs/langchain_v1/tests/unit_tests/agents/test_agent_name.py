@@ -10,7 +10,6 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import tool
 
 from langchain.agents import create_agent
-
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 

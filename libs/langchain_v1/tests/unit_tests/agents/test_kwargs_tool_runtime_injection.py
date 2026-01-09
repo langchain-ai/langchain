@@ -9,7 +9,6 @@ from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
 
 from langchain.agents import create_agent
-
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 

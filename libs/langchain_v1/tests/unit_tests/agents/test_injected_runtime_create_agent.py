@@ -26,7 +26,6 @@ from langgraph.store.memory import InMemoryStore
 from langchain.agents import create_agent
 from langchain.agents.middleware.types import AgentMiddleware, AgentState
 from langchain.tools import InjectedState, ToolRuntime
-
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 

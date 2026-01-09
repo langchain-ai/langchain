@@ -11,7 +11,6 @@ from langchain_core.utils.function_calling import convert_to_openai_function
 from pydantic import BaseModel, Field
 
 import langchain_prompty
-
 from tests.unit_tests.fake_callback_handler import FakeCallbackHandler
 from tests.unit_tests.fake_chat_model import FakeEchoPromptChatModel
 from tests.unit_tests.fake_output_parser import FakeOutputParser
