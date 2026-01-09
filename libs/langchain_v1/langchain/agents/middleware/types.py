@@ -81,6 +81,7 @@ class _ModelRequestOverrides(TypedDict, total=False):
     tools: list[BaseTool | dict]
     response_format: ResponseFormat | None
     model_settings: dict[str, Any]
+    state: AgentState
 
 
 @dataclass(init=False)
@@ -213,6 +214,7 @@ class ModelRequest:
                 - `tools`: `list` of available tools
                 - `response_format`: Response format specification
                 - `model_settings`: Additional model settings
+                - `state`: Agent state dictionary
 
         Returns:
             New `ModelRequest` instance with specified overrides applied.
