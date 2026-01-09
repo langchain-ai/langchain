@@ -368,10 +368,10 @@ class HTMLSectionSplitter:
         """Split documents.
 
         Args:
-            documents: Iterable of Document objects to be split.
+            documents: Iterable of `Document` objects to be split.
 
         Returns:
-            A list of split Document objects.
+            A list of split `Document` objects.
         """
         texts, metadatas = [], []
         for doc in documents:
@@ -390,7 +390,7 @@ class HTMLSectionSplitter:
             text: HTML text
 
         Returns:
-            A list of split Document objects.
+            A list of split `Document` objects.
         """
         return self.split_text_from_file(StringIO(text))
 

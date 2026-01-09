@@ -32,11 +32,12 @@ class NLTKTextSplitter(TextSplitter):
         Args:
             separator: The separator to use when combining splits.
             language: The language to use.
-            use_span_tokenize: Whether to use span_tokenize instead of sent_tokenize.
+            use_span_tokenize: Whether to use `span_tokenize` instead of
+                `sent_tokenize`.
 
         Raises:
             ImportError: If NLTK is not installed.
-            ValueError: If use_span_tokenize is True and separator is not ''.
+            ValueError: If `use_span_tokenize` is `True` and separator is not `''`.
         """
         super().__init__(**kwargs)
         self._separator = separator

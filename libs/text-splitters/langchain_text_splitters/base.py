@@ -66,9 +66,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 every document
 
         Raises:
-            ValueError: If chunk_size is less than or equal to 0
-            ValueError: If chunk_overlap is less than 0
-            ValueError: If chunk_overlap is greater than chunk_size
+            ValueError: If `chunk_size` is less than or equal to 0
+            ValueError: If `chunk_overlap` is less than 0
+            ValueError: If `chunk_overlap` is greater than chunk_size
         """
         if chunk_size <= 0:
             msg = f"chunk_size must be > 0, got {chunk_size}"
@@ -203,7 +203,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             tokenizer: The Hugging Face tokenizer to use.
 
         Returns:
-            An instance of TextSplitter using the Hugging Face tokenizer for length
+            An instance of `TextSplitter` using the Hugging Face tokenizer for length
             calculation.
         """
         if not _HAS_TRANSFORMERS:
@@ -236,12 +236,12 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         Args:
             encoding_name: The name of the tiktoken encoding to use.
             model_name: The name of the model to use. If provided, this will
-                override the encoding_name.
+                override the `encoding_name`.
             allowed_special: Special tokens that are allowed during encoding.
             disallowed_special: Special tokens that are disallowed during encoding.
 
         Returns:
-            An instance of TextSplitter using tiktoken for length calculation.
+            An instance of `TextSplitter` using tiktoken for length calculation.
 
         Raises:
             ImportError: If the tiktoken package is not installed.
@@ -305,12 +305,12 @@ class TokenTextSplitter(TextSplitter):
         disallowed_special: Literal["all"] | Collection[str] = "all",
         **kwargs: Any,
     ) -> None:
-        """Create a new TextSplitter.
+        """Create a new `TextSplitter`.
 
         Args:
             encoding_name: The name of the tiktoken encoding to use.
             model_name: The name of the model to use. If provided, this will
-                override the encoding_name.
+                override the `encoding_name`.
             allowed_special: Special tokens that are allowed during encoding.
             disallowed_special: Special tokens that are disallowed during encoding.
 

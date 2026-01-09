@@ -32,7 +32,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         Args:
             chunk_overlap: The number of tokens to overlap between chunks.
             model_name: The name of the sentence transformer model to use.
-            tokens_per_chunk: The number of tokens per chunk. If None, uses the
+            tokens_per_chunk: The number of tokens per chunk. If `None`, uses the
                 maximum tokens allowed by the model.
 
         Raises:

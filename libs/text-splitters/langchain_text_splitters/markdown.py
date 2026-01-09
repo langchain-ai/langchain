@@ -136,7 +136,7 @@ class MarkdownHeaderTextSplitter:
             text: Markdown file
 
         Returns:
-            List of Documents.
+            List of `Document` objects.
         """
         # Split the input text by newline character ("\n").
         lines = text.split("\n")
