@@ -398,6 +398,7 @@ class Language(str, Enum):
     ELIXIR = "elixir"
     POWERSHELL = "powershell"
     VISUALBASIC6 = "visualbasic6"
+    MYSQL = "mysql"
 
 
 @dataclass(frozen=True)
