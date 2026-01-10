@@ -105,6 +105,43 @@ def test_character_text_splitter_longer_words() -> None:
     assert output == expected_output
 
 
+# edge cases
+def test_character_text_splitter_no_separator_in_text() -> None:
+    """Text splitting where there is no seperator but a single word."""
+    text = "singleword"
+    splitter = CharacterTextSplitter(separator=" ", chunk_size=10, chunk_overlap=0)
+    output = splitter.split_text(text)
+    expected_output = ["singleword"]
+    assert output == expected_output
+
+
+def test_character_text_splitter_handle_chunksize_equal_to_chunkoverlap() -> None:
+    """Text splitting safe guards when chunk size is equal chunk overlap."""
+    text = "hello"
+    splitter = CharacterTextSplitter(separator=" ", chunk_size=5, chunk_overlap=5)
+    output = splitter.split_text(text)
+    expected_output = ["hello"]
+    assert output == expected_output
+
+
+def test_character_text_splitter_empty_input() -> None:
+    """Test splitting safely where there is no input to process."""
+    text = ""
+    splitter = CharacterTextSplitter(separator=" ", chunk_size=5, chunk_overlap=0)
+    output = splitter.split_text(text)
+    expected_output: list[str] = []
+    assert output == expected_output
+
+
+def test_character_text_splitter_whitespace_only() -> None:
+    """Test splitting safely where there is white space."""
+    text = " "
+    splitter = CharacterTextSplitter(separator=" ", chunk_size=5, chunk_overlap=0)
+    output = splitter.split_text(text)
+    expected_output: list[str] = []
+    assert output == expected_output
+
+
 @pytest.mark.parametrize(
     ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
@@ -473,8 +510,10 @@ def test_jsx_text_splitter() -> None:
     splits = splitter.split_text(FAKE_JSX_TEXT)
 
     expected_splits = [
-        "\nimport React from 'react';\n"
-        "import OtherComponent from './OtherComponent';\n",
+        (
+            "\nimport React from 'react';\n"
+            "import OtherComponent from './OtherComponent';\n"
+        ),
         "\nfunction MyComponent() {\n  const [count, setCount] = React.useState(0);",
         "\n\n  const handleClick = () => {\n    setCount(count + 1);\n  };",
         "return (",
@@ -529,13 +568,17 @@ def test_vue_text_splitter() -> None:
         "<template>",
         "<div>",
         "<h1>{{ title }}</h1>",
-        '<button @click="increment">\n      Count is: {{ count }}\n'
-        "    </button>\n  </div>\n</template>",
+        (
+            '<button @click="increment">\n      Count is: {{ count }}\n'
+            "    </button>\n  </div>\n</template>"
+        ),
         "<script>",
         "export",
-        " default {\n  data() {\n    return {\n      title: 'Counter App',\n      "
-        "count: 0\n    }\n  },\n  methods: {\n    increment() {\n      "
-        "this.count++\n    }\n  }\n}\n</script>",
+        (
+            " default {\n  data() {\n    return {\n      title: 'Counter App',\n      "
+            "count: 0\n    }\n  },\n  methods: {\n    increment() {\n      "
+            "this.count++\n    }\n  }\n}\n</script>"
+        ),
         "<style>\nbutton {\n  color: blue;\n}\n</style>",
     ]
     assert [s.strip() for s in splits] == [s.strip() for s in expected_splits]
@@ -2405,6 +2448,10 @@ def html_header_splitter_splitter_factory() -> Callable[
     """Fixture to create an `HTMLHeaderTextSplitter` instance with given headers.
 
     This factory allows dynamic creation of splitters with different headers.
+
+    Returns:
+        Factory function that takes a list of headers to split on and returns an
+        `HTMLHeaderTextSplitter` instance.
     """
 
     def _create_splitter(

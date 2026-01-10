@@ -134,7 +134,11 @@ class ShellSession:
         self._terminated = False
 
     def start(self) -> None:
-        """Start the shell subprocess and reader threads."""
+        """Start the shell subprocess and reader threads.
+
+        Raises:
+            RuntimeError: If the shell session pipes cannot be initialized.
+        """
         if self._process and self._process.poll() is None:
             return
 
@@ -611,12 +615,28 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
 
     @override
     def before_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:
-        """Start the shell session and run startup commands."""
+        """Start the shell session and run startup commands.
+
+        Args:
+            state: The current agent state.
+            runtime: The runtime context.
+
+        Returns:
+            Shell session resources to be stored in the agent state.
+        """
         resources = self._get_or_create_resources(state)
         return {"shell_session_resources": resources}
 
     async def abefore_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:
-        """Async start the shell session and run startup commands."""
+        """Async start the shell session and run startup commands.
+
+        Args:
+            state: The current agent state.
+            runtime: The runtime context.
+
+        Returns:
+            Shell session resources to be stored in the agent state.
+        """
         return self.before_agent(state, runtime)
 
     @override
