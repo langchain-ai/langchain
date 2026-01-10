@@ -6288,19 +6288,26 @@ def chain(
     Sets the name of the `Runnable` to the name of the function.
     Any runnables called by the function will be traced as dependencies.
 
-    The decorated function can optionally accept additional parameters:
+    The decorated function can optionally accept additional parameters.
 
-    - `RunnableConfig`: Access runtime configuration (e.g., `configurable`).
-    - `CallbackManagerForChainRun` / `AsyncCallbackManagerForChainRun`:
-        Access the callback manager for tracing and instrumentation.
+    These parameters must use the exact names specified below:
+
+    - `config` (typed as `RunnableConfig`): Access runtime configuration
+        (e.g., `config['configurable']`).
+    - `run_manager` (typed as `CallbackManagerForChainRun` or
+        `AsyncCallbackManagerForChainRun`): Access the callback manager for tracing and
+        instrumentation.
 
     The function can also return a `Runnable`, which will be automatically
     invoked with the original input.
 
     Args:
-        func: A callable that takes an input and optionally `RunnableConfig`
-            and/or a callback manager. Can be sync or async, and may return
-            a value, an iterator/async iterator, or a `Runnable`.
+        func: A callable that takes an input and optionally a `config` parameter (typed
+            as `RunnableConfig`) and/or a `run_manager` parameter (typed as a callback
+            manager).
+
+            Can be sync or async, and may return a value, an iterator/async iterator, or
+            a `Runnable`.
 
     Returns:
         A `Runnable` that wraps the function.
@@ -6318,7 +6325,7 @@ def chain(
         def my_func(fields):
             prompt = PromptTemplate("Hello, {name}!")
             model = OpenAI()
-            formatted = prompt.invoke(**fields)
+            formatted = prompt.invoke(fields)
 
             for chunk in model.stream(formatted):
                 yield chunk

@@ -26,7 +26,9 @@ from typing_extensions import TypedDict, override
 
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
     AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForChainRun,
     CallbackManagerForRetrieverRun,
     atrace_as_chain_group,
     trace_as_chain_group,
@@ -5371,6 +5373,75 @@ def test_chain_propagates_errors() -> None:
 
     with pytest.raises(ValueError, match="Intentional test error"):
         failing_chain.invoke("test")
+
+
+def test_chain_with_run_manager() -> None:
+    """Test that @chain works with functions accepting run_manager parameter."""
+    received_run_managers: list[CallbackManagerForChainRun] = []
+
+    @chain
+    def traced_func(data: str, run_manager: CallbackManagerForChainRun) -> str:
+        received_run_managers.append(run_manager)
+        return data.upper()
+
+    tracer = FakeTracer()
+    result = traced_func.invoke("hello", {"callbacks": [tracer]})
+
+    assert result == "HELLO"
+    assert len(received_run_managers) == 1
+    assert isinstance(received_run_managers[0], CallbackManagerForChainRun)
+    # Verify tracing worked
+    assert len(tracer.runs) >= 1
+
+
+async def test_chain_async_with_run_manager() -> None:
+    """Test that @chain works with async functions accepting run_manager."""
+    received_run_managers: list[AsyncCallbackManagerForChainRun] = []
+
+    @chain
+    async def async_traced_func(
+        data: str, run_manager: AsyncCallbackManagerForChainRun
+    ) -> str:
+        received_run_managers.append(run_manager)
+        return data.lower()
+
+    tracer = FakeTracer()
+    result = await async_traced_func.ainvoke("HELLO", {"callbacks": [tracer]})
+
+    assert result == "hello"
+    assert len(received_run_managers) == 1
+    assert isinstance(received_run_managers[0], AsyncCallbackManagerForChainRun)
+    # Verify tracing worked
+    assert len(tracer.runs) >= 1
+
+
+def test_chain_with_run_manager_and_config() -> None:
+    """Test @chain with both run_manager and config parameters."""
+    received_run_managers: list[CallbackManagerForChainRun] = []
+    received_configs: list[RunnableConfig] = []
+
+    @chain
+    def full_traced_func(
+        data: str,
+        run_manager: CallbackManagerForChainRun,
+        config: RunnableConfig,
+    ) -> str:
+        received_run_managers.append(run_manager)
+        received_configs.append(config)
+        prefix = config["configurable"].get("prefix", "")
+        return f"{prefix}{data.upper()}"
+
+    tracer = FakeTracer()
+    result = full_traced_func.invoke(
+        "hello",
+        {"callbacks": [tracer], "configurable": {"prefix": "result: "}},
+    )
+
+    assert result == "result: HELLO"
+    assert len(received_run_managers) == 1
+    assert isinstance(received_run_managers[0], CallbackManagerForChainRun)
+    assert len(received_configs) == 1
+    assert received_configs[0]["configurable"]["prefix"] == "result: "
 
 
 async def test_runnable_gen_transform() -> None:
