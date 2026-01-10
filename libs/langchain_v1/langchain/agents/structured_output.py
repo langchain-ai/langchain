@@ -75,7 +75,7 @@ class StructuredOutputValidationError(StructuredOutputError):
 
 
 def _parse_with_schema(
-    schema: type[SchemaT] | dict, schema_kind: SchemaKind, data: dict[str, Any]
+    schema: type[SchemaT] | dict[str, Any], schema_kind: SchemaKind, data: dict[str, Any]
 ) -> Any:
     """Parse data using for any supported schema type.
 

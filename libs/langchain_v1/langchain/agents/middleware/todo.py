@@ -35,7 +35,7 @@ class Todo(TypedDict):
     """The current status of the todo item."""
 
 
-class PlanningState(AgentState):
+class PlanningState(AgentState[Any]):
     """State schema for the todo middleware."""
 
     todos: Annotated[NotRequired[list[Todo]], OmitFromInput]
@@ -118,7 +118,9 @@ Writing todos takes time and tokens, use it when it is helpful for managing comp
 
 
 @tool(description=WRITE_TODOS_TOOL_DESCRIPTION)
-def write_todos(todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
+def write_todos(
+    todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCallId]
+) -> Command[Any]:
     """Create and manage a structured task list for your current work session."""
     return Command(
         update={
@@ -178,7 +180,7 @@ class TodoListMiddleware(AgentMiddleware):
         @tool(description=self.tool_description)
         def write_todos(
             todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCallId]
-        ) -> Command:
+        ) -> Command[Any]:
             """Create and manage a structured task list for your current work session."""
             return Command(
                 update={
@@ -246,11 +248,7 @@ class TodoListMiddleware(AgentMiddleware):
         return await handler(request.override(system_message=new_system_message))
 
     @override
-    def after_model(
-        self,
-        state: AgentState,
-        runtime: Runtime,
-    ) -> dict[str, Any] | None:
+    def after_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any] | None:
         """Check for parallel write_todos tool calls and return errors if detected.
 
         The todo list is designed to be updated at most once per model turn. Since
@@ -299,11 +297,8 @@ class TodoListMiddleware(AgentMiddleware):
 
         return None
 
-    async def aafter_model(
-        self,
-        state: AgentState,
-        runtime: Runtime,
-    ) -> dict[str, Any] | None:
+    @override
+    async def aafter_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any] | None:
         """Check for parallel write_todos tool calls and return errors if detected.
 
         Async version of `after_model`. The todo list is designed to be updated at
