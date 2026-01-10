@@ -144,7 +144,6 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 ]
 "tests/unit_tests/agents/test_responses_spec.py" = ["F821"]
 "tests/unit_tests/agents/test_return_direct_spec.py" = ["F821"]
-"tests/unit_tests/agents/test_responses_spec.py" = ["F821"]
 "tests/unit_tests/agents/test_react_agent.py" = ["ALL"]
 
 "tests/*" = [
