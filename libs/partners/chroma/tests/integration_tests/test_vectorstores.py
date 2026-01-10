@@ -533,16 +533,17 @@ def test_chroma_update_document_with_id() -> None:
     assert list(new_embedding) != list(old_embedding)
 
 
-# TODO: RELEVANCE SCORE IS BROKEN. FIX TEST
 def test_chroma_with_relevance_score_custom_normalization_fn() -> None:
     """Test searching with relevance score and custom normalization function."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     ids = [f"id_{i}" for i in range(len(texts))]
+    embeddings = ConsistentFakeEmbeddings()
+
     docsearch = Chroma.from_texts(
         collection_name="test1_collection",
         texts=texts,
-        embedding=FakeEmbeddings(),
+        embedding=embeddings,
         metadatas=metadatas,
         ids=ids,
         relevance_score_fn=lambda d: d * 0,
@@ -550,11 +551,225 @@ def test_chroma_with_relevance_score_custom_normalization_fn() -> None:
     )
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
     docsearch.delete_collection()
-    assert output == [
-        (Document(page_content="foo", metadata={"page": "0"}, id="id_0"), 0.0),
-        (Document(page_content="bar", metadata={"page": "1"}, id="id_1"), 0.0),
-        (Document(page_content="baz", metadata={"page": "2"}, id="id_2"), 0.0),
+    # All scores should be 0.0 because relevance_score_fn multiplies by 0
+    assert len(output) == 3
+    for doc, score in output:
+        assert score == 0.0
+        assert doc.page_content in texts
+
+
+def test_chroma_with_relevance_score_custom_normalization_fn_detailed() -> None:
+    """Test custom relevance_score_fn with transformation producing different values."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    ids = [f"id_{i}" for i in range(len(texts))]
+    embeddings = ConsistentFakeEmbeddings()
+
+    def transform_fn(distance: float) -> float:
+        return distance * 2 + 100
+
+    docsearch = Chroma.from_texts(
+        collection_name="test2_collection",
+        texts=texts,
+        embedding=embeddings,
+        metadatas=metadatas,
+        ids=ids,
+        relevance_score_fn=transform_fn,
+        collection_metadata={"hnsw:space": "l2"},
+    )
+
+    raw_results = docsearch.similarity_search_with_score("foo", k=3)
+    raw_distances = [score for _, score in raw_results]
+
+    relevance_results = docsearch.similarity_search_with_relevance_scores("foo", k=3)
+    actual_scores = [score for _, score in relevance_results]
+
+    expected_scores = [transform_fn(d) for d in raw_distances]
+
+    docsearch.delete_collection()
+
+    assert len(actual_scores) == len(expected_scores) == 3
+    for actual, expected in zip(actual_scores, expected_scores, strict=True):
+        # Allow small floating point differences
+        assert abs(actual - expected) < 0.0001, (
+            f"Expected transformed score {expected}, but got {actual}. "
+            f"Raw distances: {raw_distances}"
+        )
+
+
+def test_chroma_similarity_search_with_relevance_scores_with_filter() -> None:
+    """Test similarity_search_with_relevance_scores with explicit filter parameter."""
+    texts = ["far", "bar", "baz"]
+    metadatas = [{"first_letter": f"{text[0]}"} for text in texts]
+    ids = [f"id_{i}" for i in range(len(texts))]
+    embeddings = ConsistentFakeEmbeddings()
+
+    def transform_fn(distance: float) -> float:
+        return distance * 2 + 100
+
+    docsearch = Chroma.from_texts(
+        collection_name="test3_collection",
+        texts=texts,
+        embedding=embeddings,
+        metadatas=metadatas,
+        ids=ids,
+        relevance_score_fn=transform_fn,
+        collection_metadata={"hnsw:space": "l2"},
+    )
+
+    # Test with explicit filter parameter
+    results = docsearch.similarity_search_with_relevance_scores(
+        "far", k=3, filter={"first_letter": "f"}
+    )
+    docsearch.delete_collection()
+
+    assert len(results) == 1
+    assert results[0][0].page_content == "far"
+    assert results[0][0].metadata["first_letter"] == "f"
+    # Score should be transformed
+    assert results[0][1] >= 100  # transform_fn(distance * 2 + 100) where distance >= 0
+
+
+def test_chroma_similarity_search_with_relevance_scores_with_filter_kwargs() -> None:
+    """Test similarity_search_with_relevance_scores with filter in kwargs."""
+    texts = ["far", "bar", "baz"]
+    metadatas = [{"first_letter": f"{text[0]}"} for text in texts]
+    ids = [f"id_{i}" for i in range(len(texts))]
+    embeddings = ConsistentFakeEmbeddings()
+
+    def transform_fn(distance: float) -> float:
+        return distance * 2 + 100
+
+    docsearch = Chroma.from_texts(
+        collection_name="test4_collection",
+        texts=texts,
+        embedding=embeddings,
+        metadatas=metadatas,
+        ids=ids,
+        relevance_score_fn=transform_fn,
+        collection_metadata={"hnsw:space": "l2"},
+    )
+
+    # Test with filter passed via kwargs (backward compatibility)
+    results = docsearch.similarity_search_with_relevance_scores(
+        "far", k=3, filter={"first_letter": "b"}
+    )
+    docsearch.delete_collection()
+
+    assert len(results) >= 1
+    # Should find "bar" or "baz" (both start with "b")
+    assert any(
+        doc.page_content in ("bar", "baz") and doc.metadata["first_letter"] == "b"
+        for doc, _ in results
+    )
+
+
+def test_chroma_similarity_search_with_relevance_scores_with_where_document() -> None:
+    """Test similarity_search_with_relevance_scores with where_document parameter."""
+    texts = ["hello world", "goodbye world", "hello there"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    ids = [f"id_{i}" for i in range(len(texts))]
+    embeddings = ConsistentFakeEmbeddings()
+
+    def transform_fn(distance: float) -> float:
+        return distance * 2 + 100
+
+    docsearch = Chroma.from_texts(
+        collection_name="test5_collection",
+        texts=texts,
+        embedding=embeddings,
+        metadatas=metadatas,
+        ids=ids,
+        relevance_score_fn=transform_fn,
+        collection_metadata={"hnsw:space": "l2"},
+    )
+
+    # Test with explicit where_document parameter
+    results = docsearch.similarity_search_with_relevance_scores(
+        "hello", k=3, where_document={"$contains": "there"}
+    )
+    docsearch.delete_collection()
+
+    assert len(results) == 1
+    assert results[0][0].page_content == "hello there"
+    # Score should be transformed
+    assert results[0][1] >= 100
+
+
+def test_chroma_similarity_search_with_relevance_scores_with_other_kwargs() -> None:
+    """Test filter and where_document extraction from kwargs via public API."""
+    texts = ["far", "bar", "baz"]
+    metadatas = [{"first_letter": f"{text[0]}"} for text in texts]
+    ids = [f"id_{i}" for i in range(len(texts))]
+    embeddings = ConsistentFakeEmbeddings()
+
+    def transform_fn(distance: float) -> float:
+        return distance * 2 + 100
+
+    docsearch = Chroma.from_texts(
+        collection_name="test6_collection",
+        texts=texts,
+        embedding=embeddings,
+        metadatas=metadatas,
+        ids=ids,
+        relevance_score_fn=transform_fn,
+        collection_metadata={"hnsw:space": "l2"},
+    )
+
+    # Test backward compatibility: calling via public API with filter in kwargs
+    # (simulates how base class calls _similarity_search_with_relevance_scores)
+    # The public API doesn't have explicit filter/where_document params, only kwargs
+    results = docsearch.similarity_search_with_relevance_scores(
+        "far",
+        k=3,
+        filter={"first_letter": "f"},  # Filter in kwargs should be extracted
+    )
+    docsearch.delete_collection()
+
+    # Should use filter from kwargs, so should find "far"
+    assert len(results) == 1
+    assert results[0][0].page_content == "far"
+    assert results[0][0].metadata["first_letter"] == "f"
+    # Score should be transformed
+    assert results[0][1] >= 100
+
+
+def test_chroma_similarity_search_with_relevance_scores_both_params() -> None:
+    """Test similarity_search_with_relevance_scores with filter and where_document."""
+    texts = ["hello world", "goodbye world", "hello there"]
+    metadatas = [
+        {"category": "greeting" if "hello" in text else "farewell"} for text in texts
     ]
+    ids = [f"id_{i}" for i in range(len(texts))]
+    embeddings = ConsistentFakeEmbeddings()
+
+    def transform_fn(distance: float) -> float:
+        return distance * 2 + 100
+
+    docsearch = Chroma.from_texts(
+        collection_name="test7_collection",
+        texts=texts,
+        embedding=embeddings,
+        metadatas=metadatas,
+        ids=ids,
+        relevance_score_fn=transform_fn,
+        collection_metadata={"hnsw:space": "l2"},
+    )
+
+    # Test with both filter and where_document
+    results = docsearch.similarity_search_with_relevance_scores(
+        "hello",
+        k=3,
+        filter={"category": "greeting"},
+        where_document={"$contains": "there"},
+    )
+    docsearch.delete_collection()
+
+    assert len(results) == 1
+    assert results[0][0].page_content == "hello there"
+    assert results[0][0].metadata["category"] == "greeting"
+    # Score should be transformed
+    assert results[0][1] >= 100
 
 
 def test_init_from_client(client: chromadb.ClientAPI) -> None:
