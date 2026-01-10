@@ -165,6 +165,7 @@ def test_summarization_middleware_helper_methods() -> None:
     assert isinstance(new_messages[0], HumanMessage)
     assert "Here is a summary of the conversation to date:" in new_messages[0].content
     assert summary in new_messages[0].content
+    assert new_messages[0].additional_kwargs.get("lc_source") == "summarization"
 
 
 def test_summarization_middleware_summary_creation() -> None:
