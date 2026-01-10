@@ -527,6 +527,12 @@ def test_chat_ollama_supports_response_format_json_object() -> None:
         call_kwargs = mock_client.chat.call_args[1]
         assert "response_format" not in call_kwargs
         assert call_kwargs.get("format") == "json"
+
+
+def test_chat_ollama_prioritizes_explicit_format() -> None:
+    """Test explicit 'format' arg takes precedence over 'response_format'."""
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = [
             {
@@ -542,19 +548,22 @@ def test_chat_ollama_supports_response_format_json_object() -> None:
         response_format = {"type": "json_object"}
 
         # User passes BOTH format param and response_format
-        llm.invoke(
-            [HumanMessage("Hello")],
-            format="some_custom_format",
-            response_format=response_format,
-        )
+        # Should warn about ignored response_format
+        with pytest.warns(UserWarning, match="Both 'format' and 'response_format'"):
+            llm.invoke(
+                [HumanMessage("Hello")],
+                format="some_custom_format",
+                response_format=response_format,
+            )
 
         call_kwargs = mock_client.chat.call_args[1]
         assert "response_format" not in call_kwargs
+        # Should keep the explicit format
         assert call_kwargs.get("format") == "some_custom_format"
 
 
-def test_chat_ollama_ignores_invalid_response_format_type() -> None:
-    """Test that ChatOllama ignores non-dict response_format without crashing."""
+def test_chat_ollama_warns_invalid_response_format_type() -> None:
+    """Test ChatOllama warns on non-dict response_format."""
     with patch("langchain_ollama.chat_models.Client") as mock_client_class:
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
@@ -572,11 +581,35 @@ def test_chat_ollama_ignores_invalid_response_format_type() -> None:
         # Pass a list (invalid type) instead of a dict
         response_format = ["invalid_type"]
 
-        # This should not raise AttributeError
-        llm.invoke([HumanMessage("Hello")], response_format=response_format)
+        with pytest.warns(UserWarning, match="Ignored invalid 'response_format' type"):
+            llm.invoke([HumanMessage("Hello")], response_format=response_format)
 
         call_kwargs = mock_client.chat.call_args[1]
-        # response_format should be removed even if invalid type
         assert "response_format" not in call_kwargs
-        # Format should remain None since we couldn't parse it
+        assert call_kwargs.get("format") is None
+
+
+def test_chat_ollama_warns_unrecognized_response_format_type() -> None:
+    """Test ChatOllama warns on unrecognized response_format type (e.g. 'text')."""
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = [
+            {
+                "model": "gpt-oss:20b",
+                "created_at": "2025-01-01T00:00:00.000000000Z",
+                "done": True,
+                "done_reason": "stop",
+                "message": {"role": "assistant", "content": "{}"},
+            }
+        ]
+
+        llm = ChatOllama(model="gpt-oss:20b")
+        response_format = {"type": "text"}  # Not json_object or json_schema
+
+        with pytest.warns(UserWarning, match="Ignored unrecognized 'response_format'"):
+            llm.invoke([HumanMessage("Hello")], response_format=response_format)
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert "response_format" not in call_kwargs
         assert call_kwargs.get("format") is None

@@ -44,6 +44,7 @@ from __future__ import annotations
 import ast
 import json
 import logging
+import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import Any, Literal, cast
@@ -766,18 +767,10 @@ class ChatOllama(BaseChatModel):
                 if v is not None
             }
 
-        format_param = kwargs.pop("format", self.format)
-        if "response_format" in kwargs:
-            response_format = kwargs.pop("response_format")
-            if (
-                format_param is None
-                and response_format
-                and isinstance(response_format, dict)
-            ):
-                if response_format.get("type") == "json_object":
-                    format_param = "json"
-                elif response_format.get("type") == "json_schema":
-                    format_param = response_format.get("json_schema", {}).get("schema")
+        format_param = self._resolve_format_param(
+            kwargs.pop("format", self.format),
+            kwargs.pop("response_format", None),
+        )
 
         params = {
             "messages": ollama_messages,
@@ -799,6 +792,55 @@ class ChatOllama(BaseChatModel):
             params["tools"] = tools
 
         return params
+
+    def _resolve_format_param(
+        self,
+        format_param: str | dict[str, Any] | None,
+        response_format: Any | None,
+    ) -> str | dict[str, Any] | None:
+        """Resolve the format parameter.
+
+        This method handles the conversion of the 'response_format' parameter
+        (used by OpenAI-compatible agents) to the 'format' parameter expected by Ollama.
+
+        Args:
+            format_param: The explicit format parameter provided.
+            response_format: The response_format parameter provided.
+
+        Returns:
+            The resolved format parameter to be passed to Ollama.
+        """
+        if format_param is not None:
+            if response_format is not None:
+                warnings.warn(
+                    "Both 'format' and 'response_format' were provided. "
+                    "'response_format' will be ignored in favor of 'format'.",
+                    stacklevel=2,
+                )
+            return format_param
+
+        if response_format is None:
+            return None
+
+        if not isinstance(response_format, dict):
+            warnings.warn(
+                f"Ignored invalid 'response_format' type: {type(response_format)}. "
+                "Expected a dictionary.",
+                stacklevel=2,
+            )
+            return None
+
+        if response_format.get("type") == "json_object":
+            return "json"
+        if response_format.get("type") == "json_schema":
+            return response_format.get("json_schema", {}).get("schema")
+        warnings.warn(
+            f"Ignored unrecognized 'response_format' type: "
+            f"{response_format.get('type')}. "
+            "Expected 'json_object' or 'json_schema'.",
+            stacklevel=2,
+        )
+        return None
 
     @model_validator(mode="after")
     def _set_clients(self) -> Self:
