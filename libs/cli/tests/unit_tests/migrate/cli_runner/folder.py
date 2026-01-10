@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
-from .file import File
+from tests.unit_tests.migrate.cli_runner.file import File
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class Folder:
@@ -52,8 +55,11 @@ class Folder:
         if len(self.files) != len(__value.files):
             return False
 
-        for self_file, other_file in zip(self.files, __value.files):
+        for self_file, other_file in zip(self.files, __value.files, strict=False):
             if self_file != other_file:
                 return False
 
         return True
+
+    def __hash__(self) -> int:
+        return hash((self.name, tuple(self.files)))

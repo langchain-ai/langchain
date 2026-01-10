@@ -1,7 +1,9 @@
+"""Character text splitters."""
+
 from __future__ import annotations
 
 import re
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 from langchain_text_splitters.base import Language, TextSplitter
 
@@ -21,7 +23,14 @@ class CharacterTextSplitter(TextSplitter):
         self._is_separator_regex = is_separator_regex
 
     def split_text(self, text: str) -> list[str]:
-        """Split into chunks without re-inserting lookaround separators."""
+        """Split into chunks without re-inserting lookaround separators.
+
+        Args:
+            text: The text to split.
+
+        Returns:
+            A list of text chunks.
+        """
         # 1. Determine split pattern: raw regex or escaped literal
         sep_pattern = (
             self._separator if self._is_separator_regex else re.escape(self._separator)
@@ -39,8 +48,8 @@ class CharacterTextSplitter(TextSplitter):
         )
 
         # 4. Decide merge separator:
-        #    - if keep_separator or lookaround → don’t re-insert
-        #    - else → re-insert literal separator
+        #    - if keep_separator or lookaround -> don't re-insert
+        #    - else -> re-insert literal separator
         merge_sep = ""
         if not (self._keep_separator or is_lookaround):
             merge_sep = self._separator
@@ -50,30 +59,30 @@ class CharacterTextSplitter(TextSplitter):
 
 
 def _split_text_with_regex(
-    text: str, separator: str, *, keep_separator: Union[bool, Literal["start", "end"]]
+    text: str, separator: str, *, keep_separator: bool | Literal["start", "end"]
 ) -> list[str]:
     # Now that we have the separator, split the text
     if separator:
         if keep_separator:
             # The parentheses in the pattern keep the delimiters in the result.
-            _splits = re.split(f"({separator})", text)
+            splits_ = re.split(f"({separator})", text)
             splits = (
-                ([_splits[i] + _splits[i + 1] for i in range(0, len(_splits) - 1, 2)])
+                ([splits_[i] + splits_[i + 1] for i in range(0, len(splits_) - 1, 2)])
                 if keep_separator == "end"
-                else ([_splits[i] + _splits[i + 1] for i in range(1, len(_splits), 2)])
+                else ([splits_[i] + splits_[i + 1] for i in range(1, len(splits_), 2)])
             )
-            if len(_splits) % 2 == 0:
-                splits += _splits[-1:]
+            if len(splits_) % 2 == 0:
+                splits += splits_[-1:]
             splits = (
-                ([*splits, _splits[-1]])
+                ([*splits, splits_[-1]])
                 if keep_separator == "end"
-                else ([_splits[0], *splits])
+                else ([splits_[0], *splits])
             )
         else:
             splits = re.split(separator, text)
     else:
         splits = list(text)
-    return [s for s in splits if s != ""]
+    return [s for s in splits if s]
 
 
 class RecursiveCharacterTextSplitter(TextSplitter):
@@ -85,8 +94,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
 
     def __init__(
         self,
-        separators: Optional[list[str]] = None,
-        keep_separator: Union[bool, Literal["start", "end"]] = True,  # noqa: FBT001,FBT002
+        separators: list[str] | None = None,
+        keep_separator: bool | Literal["start", "end"] = True,  # noqa: FBT001,FBT002
         is_separator_regex: bool = False,  # noqa: FBT001,FBT002
         **kwargs: Any,
     ) -> None:
@@ -101,39 +110,39 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         # Get appropriate separator to use
         separator = separators[-1]
         new_separators = []
-        for i, _s in enumerate(separators):
-            _separator = _s if self._is_separator_regex else re.escape(_s)
-            if _s == "":
-                separator = _s
+        for i, s_ in enumerate(separators):
+            separator_ = s_ if self._is_separator_regex else re.escape(s_)
+            if not s_:
+                separator = s_
                 break
-            if re.search(_separator, text):
-                separator = _s
+            if re.search(separator_, text):
+                separator = s_
                 new_separators = separators[i + 1 :]
                 break
 
-        _separator = separator if self._is_separator_regex else re.escape(separator)
+        separator_ = separator if self._is_separator_regex else re.escape(separator)
         splits = _split_text_with_regex(
-            text, _separator, keep_separator=self._keep_separator
+            text, separator_, keep_separator=self._keep_separator
         )
 
         # Now go merging things, recursively splitting longer texts.
-        _good_splits = []
-        _separator = "" if self._keep_separator else separator
+        good_splits = []
+        separator_ = "" if self._keep_separator else separator
         for s in splits:
             if self._length_function(s) < self._chunk_size:
-                _good_splits.append(s)
+                good_splits.append(s)
             else:
-                if _good_splits:
-                    merged_text = self._merge_splits(_good_splits, _separator)
+                if good_splits:
+                    merged_text = self._merge_splits(good_splits, separator_)
                     final_chunks.extend(merged_text)
-                    _good_splits = []
+                    good_splits = []
                 if not new_separators:
                     final_chunks.append(s)
                 else:
                     other_info = self._split_text(s, new_separators)
                     final_chunks.extend(other_info)
-        if _good_splits:
-            merged_text = self._merge_splits(_good_splits, _separator)
+        if good_splits:
+            merged_text = self._merge_splits(good_splits, separator_)
             final_chunks.extend(merged_text)
         return final_chunks
 
@@ -141,10 +150,10 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         """Split the input text into smaller chunks based on predefined separators.
 
         Args:
-            text (str): The input text to be split.
+            text: The input text to be split.
 
         Returns:
-            List[str]: A list of text chunks obtained after splitting.
+            A list of text chunks obtained after splitting.
         """
         return self._split_text(text, self._separators)
 
@@ -157,12 +166,11 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         This method initializes the text splitter with language-specific separators.
 
         Args:
-            language (Language): The language to configure the text splitter for.
-            **kwargs (Any): Additional keyword arguments to customize the splitter.
+            language: The language to configure the text splitter for.
+            **kwargs: Additional keyword arguments to customize the splitter.
 
         Returns:
-            RecursiveCharacterTextSplitter: An instance of the text splitter configured
-            for the specified language.
+            An instance of the text splitter configured for the specified language.
         """
         separators = cls.get_separators_for_language(language)
         return cls(separators=separators, is_separator_regex=True, **kwargs)
@@ -172,12 +180,15 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         """Retrieve a list of separators specific to the given language.
 
         Args:
-            language (Language): The language for which to get the separators.
+            language: The language for which to get the separators.
 
         Returns:
-            List[str]: A list of separators appropriate for the specified language.
+            A list of separators appropriate for the specified language.
+
+        Raises:
+            ValueError: If the language is not implemented or supported.
         """
-        if language in (Language.C, Language.CPP):
+        if language in {Language.C, Language.CPP}:
             return [
                 # Split along class definitions
                 "\nclass ",
@@ -356,6 +367,29 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\ndef ",
                 "\n\tdef ",
                 # Now split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        if language == Language.R:
+            return [
+                # Split along function definitions
+                "\nfunction ",
+                # Split along S4 class and method definitions
+                "\nsetClass\\(",
+                "\nsetMethod\\(",
+                "\nsetGeneric\\(",
+                # Split along control flow statements
+                "\nif ",
+                "\nelse ",
+                "\nfor ",
+                "\nwhile ",
+                "\nrepeat ",
+                # Split along package loading
+                "\nlibrary\\(",
+                "\nrequire\\(",
+                # Split by the normal type of lines
                 "\n\n",
                 "\n",
                 " ",

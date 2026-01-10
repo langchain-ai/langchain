@@ -1,6 +1,6 @@
 """Module tests interaction of chat model with caching abstraction.."""
 
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from typing_extensions import override
@@ -12,7 +12,8 @@ from langchain_core.language_models.fake_chat_models import (
     FakeListChatModel,
     GenericFakeChatModel,
 )
-from langchain_core.messages import AIMessage
+from langchain_core.load import dumps
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.outputs.chat_result import ChatResult
 
@@ -24,12 +25,12 @@ class InMemoryCache(BaseCache):
         """Initialize with empty cache."""
         self._cache: dict[tuple[str, str], RETURN_VAL_TYPE] = {}
 
-    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        """Look up based on prompt and llm_string."""
+    def lookup(self, prompt: str, llm_string: str) -> RETURN_VAL_TYPE | None:
+        """Look up based on `prompt` and `llm_string`."""
         return self._cache.get((prompt, llm_string), None)
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
-        """Update cache based on prompt and llm_string."""
+        """Update cache based on `prompt` and `llm_string`."""
         self._cache[prompt, llm_string] = return_val
 
     @override
@@ -318,8 +319,6 @@ def test_cache_with_generation_objects() -> None:
     cache = InMemoryCache()
 
     # Create a simple fake chat model that we can control
-    from langchain_core.messages import AIMessage
-
     class SimpleFakeChat:
         """Simple fake chat model for testing."""
 
@@ -332,8 +331,6 @@ def test_cache_with_generation_objects() -> None:
 
         def generate_response(self, prompt: str) -> ChatResult:
             """Simulate the cache lookup and generation logic."""
-            from langchain_core.load import dumps
-
             llm_string = self._get_llm_string()
             prompt_str = dumps([prompt])
 
@@ -458,3 +455,81 @@ def test_cleanup_serialized() -> None:
         "name": "CustomChat",
         "type": "constructor",
     }
+
+
+def test_token_costs_are_zeroed_out() -> None:
+    # We zero-out token costs for cache hits
+    local_cache = InMemoryCache()
+    messages = [
+        AIMessage(
+            content="Hello, how are you?",
+            usage_metadata={"input_tokens": 5, "output_tokens": 10, "total_tokens": 15},
+        ),
+    ]
+    model = GenericFakeChatModel(messages=iter(messages), cache=local_cache)
+    first_response = model.invoke("Hello")
+    assert isinstance(first_response, AIMessage)
+    assert first_response.usage_metadata
+
+    second_response = model.invoke("Hello")
+    assert isinstance(second_response, AIMessage)
+    assert second_response.usage_metadata
+    assert second_response.usage_metadata["total_cost"] == 0  # type: ignore[typeddict-item]
+
+
+def test_cache_key_ignores_message_id_sync() -> None:
+    """Test that message IDs are stripped from cache keys (sync).
+
+    Functionally identical messages with different IDs should produce
+    the same cache key and result in cache hits.
+    """
+    local_cache = InMemoryCache()
+    model = FakeListChatModel(cache=local_cache, responses=["hello", "goodbye"])
+
+    # First call with a message that has an ID
+    msg_with_id_1 = HumanMessage(content="How are you?", id="unique-id-1")
+    result_1 = model.invoke([msg_with_id_1])
+    assert result_1.content == "hello"
+
+    # Second call with the same content but different ID should hit cache
+    msg_with_id_2 = HumanMessage(content="How are you?", id="unique-id-2")
+    result_2 = model.invoke([msg_with_id_2])
+    # Should get cached response, not "goodbye"
+    assert result_2.content == "hello"
+
+    # Third call with no ID should also hit cache
+    msg_no_id = HumanMessage(content="How are you?")
+    result_3 = model.invoke([msg_no_id])
+    assert result_3.content == "hello"
+
+    # Verify only one cache entry exists
+    assert len(local_cache._cache) == 1
+
+
+async def test_cache_key_ignores_message_id_async() -> None:
+    """Test that message IDs are stripped from cache keys (async).
+
+    Functionally identical messages with different IDs should produce
+    the same cache key and result in cache hits.
+    """
+    local_cache = InMemoryCache()
+    model = FakeListChatModel(cache=local_cache, responses=["hello", "goodbye"])
+
+    # First call with a message that has an ID
+    msg_with_id_1 = HumanMessage(content="How are you?", id="unique-id-1")
+    result_1 = await model.ainvoke([msg_with_id_1])
+    assert result_1.content == "hello"
+
+    # Second call with the same content but different ID should hit cache
+    msg_with_id_2 = HumanMessage(content="How are you?", id="unique-id-2")
+    result_2 = await model.ainvoke([msg_with_id_2])
+    # Should get cached response, not "goodbye"
+    assert result_2.content == "hello"
+
+    # Third call with no ID should also hit cache
+    msg_no_id = HumanMessage(content="How are you?")
+    result_3 = await model.ainvoke([msg_no_id])
+    assert result_3.content == "hello"
+
+    # Verify only one cache entry exists
+    assert len(local_cache._cache) == 1

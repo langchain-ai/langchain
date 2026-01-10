@@ -4,12 +4,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for your interest in LangChain! 🚀
-
-        If you are not a LangChain maintainer or were not asked directly by a maintainer to create an issue, then please start the conversation on the [LangChain Forum](https://forum.langchain.com/) instead.
-
-        You are a LangChain maintainer if you maintain any of the packages inside of the LangChain repository 
-        or are a regular contributor to LangChain with previous merged pull requests.
+        If you are not a LangChain maintainer, employee, or were not asked directly by a maintainer to create an issue, then please start the conversation on the [LangChain Forum](https://forum.langchain.com/) instead.
   - type: checkboxes
     id: privileged
     attributes:
@@ -23,3 +18,33 @@ body:
     attributes:
       label: Issue Content
       description: Add the content of the issue here.
+  - type: checkboxes
+    id: package
+    attributes:
+      label: Package (Required)
+      description: |
+        Please select package(s) that this issue is related to.
+      options:
+        - label: langchain
+        - label: langchain-openai
+        - label: langchain-anthropic
+        - label: langchain-classic
+        - label: langchain-core
+        - label: langchain-cli
+        - label: langchain-model-profiles
+        - label: langchain-tests
+        - label: langchain-text-splitters
+        - label: langchain-chroma
+        - label: langchain-deepseek
+        - label: langchain-exa
+        - label: langchain-fireworks
+        - label: langchain-groq
+        - label: langchain-huggingface
+        - label: langchain-mistralai
+        - label: langchain-nomic
+        - label: langchain-ollama
+        - label: langchain-perplexity
+        - label: langchain-prompty
+        - label: langchain-qdrant
+        - label: langchain-xai
+        - label: Other / not sure / general

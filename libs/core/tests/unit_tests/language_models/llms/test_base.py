@@ -1,5 +1,5 @@
 from collections.abc import AsyncIterator, Iterator
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from typing_extensions import override
@@ -111,8 +111,8 @@ async def test_error_callback() -> None:
         def _call(
             self,
             prompt: str,
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> str:
             raise FailingLLMError
@@ -142,8 +142,8 @@ async def test_astream_fallback_to_ainvoke() -> None:
         def _generate(
             self,
             prompts: list[str],
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> LLMResult:
             generations = [Generation(text="hello")]
@@ -168,8 +168,8 @@ async def test_astream_implementation_fallback_to_stream() -> None:
         def _generate(
             self,
             prompts: list[str],
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> LLMResult:
             """Top Level call."""
@@ -179,8 +179,8 @@ async def test_astream_implementation_fallback_to_stream() -> None:
         def _stream(
             self,
             prompt: str,
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> Iterator[GenerationChunk]:
             """Stream the output of the model."""
@@ -206,8 +206,8 @@ async def test_astream_implementation_uses_astream() -> None:
         def _generate(
             self,
             prompts: list[str],
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> LLMResult:
             """Top Level call."""
@@ -217,8 +217,8 @@ async def test_astream_implementation_uses_astream() -> None:
         async def _astream(
             self,
             prompt: str,
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: AsyncCallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> AsyncIterator[GenerationChunk]:
             """Stream the output of the model."""
@@ -232,3 +232,48 @@ async def test_astream_implementation_uses_astream() -> None:
     model = ModelWithAsyncStream()
     chunks = [chunk async for chunk in model.astream("anything")]
     assert chunks == ["a", "b"]
+
+
+def test_get_ls_params() -> None:
+    class LSParamsModel(BaseLLM):
+        model: str = "foo"
+        temperature: float = 0.1
+        max_tokens: int = 1024
+
+        @override
+        def _generate(
+            self,
+            prompts: list[str],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> LLMResult:
+            raise NotImplementedError
+
+        @property
+        def _llm_type(self) -> str:
+            return "fake-model"
+
+    llm = LSParamsModel()
+
+    # Test standard tracing params
+    ls_params = llm._get_ls_params()
+    assert ls_params == {
+        "ls_provider": "lsparamsmodel",
+        "ls_model_type": "llm",
+        "ls_model_name": "foo",
+        "ls_temperature": 0.1,
+        "ls_max_tokens": 1024,
+    }
+
+    ls_params = llm._get_ls_params(model="bar")
+    assert ls_params["ls_model_name"] == "bar"
+
+    ls_params = llm._get_ls_params(temperature=0.2)
+    assert ls_params["ls_temperature"] == 0.2
+
+    ls_params = llm._get_ls_params(max_tokens=2048)
+    assert ls_params["ls_max_tokens"] == 2048
+
+    ls_params = llm._get_ls_params(stop=["stop"])
+    assert ls_params["ls_stop"] == ["stop"]

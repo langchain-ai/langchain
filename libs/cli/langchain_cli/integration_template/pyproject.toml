@@ -1,29 +1,46 @@
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
-[tool.poetry]
+[project]
 name = "__package_name__"
 version = "0.1.0"
 description = "An integration package connecting __ModuleName__ and LangChain"
 authors = []
 readme = "README.md"
-repository = "https://github.com/langchain-ai/langchain"
 license = "MIT"
+requires-python = ">=3.10.0,<4.0.0"
+dependencies = [
+    "langchain-core>=0.3.15",
+]
+
+[project.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/__package_name_short__"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22__package_name_short__%3D%3D0%22&expanded=true"
+"Repository" = "https://github.com/langchain-ai/langchain"
 
 [tool.mypy]
 disallow_untyped_defs = "True"
 
-[tool.poetry.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/__package_name_short__"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22__package_name_short__%3D%3D0%22&expanded=true"
-
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-langchain-core = "^0.3.15"
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.4.3",
+    "pytest-asyncio>=0.23.2",
+    "pytest-socket>=0.7.0",
+    "pytest-watcher>=0.3.4",
+    "langchain-tests>=0.3.5",
+    "ruff>=0.5",
+    "mypy>=1.10",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.per-file-ignores]
+"docs/**" = [ "ALL",]
 
 [tool.coverage.run]
 omit = ["tests/*"]
@@ -34,38 +51,3 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
-
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.codespell]
-optional = true
-
-[tool.poetry.group.test_integration]
-optional = true
-
-[tool.poetry.group.lint]
-optional = true
-
-[tool.poetry.group.dev]
-optional = true
-
-[tool.poetry.group.dev.dependencies]
-
-[tool.poetry.group.test.dependencies]
-pytest = "^7.4.3"
-pytest-asyncio = "^0.23.2"
-pytest-socket = "^0.7.0"
-pytest-watcher = "^0.3.4"
-langchain-tests = "^0.3.5"
-
-[tool.poetry.group.codespell.dependencies]
-codespell = "^2.2.6"
-
-[tool.poetry.group.test_integration.dependencies]
-
-[tool.poetry.group.lint.dependencies]
-ruff = "^0.5"
-
-[tool.poetry.group.typing.dependencies]
-mypy = "^1.10"

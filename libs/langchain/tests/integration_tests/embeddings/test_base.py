@@ -5,7 +5,7 @@ import importlib
 import pytest
 from langchain_core.embeddings import Embeddings
 
-from langchain.embeddings.base import _SUPPORTED_PROVIDERS, init_embeddings
+from langchain_classic.embeddings.base import _SUPPORTED_PROVIDERS, init_embeddings
 
 
 @pytest.mark.parametrize(

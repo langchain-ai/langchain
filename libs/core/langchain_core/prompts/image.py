@@ -1,6 +1,6 @@
 """Image prompt template for a multimodal model."""
 
-from typing import Any
+from typing import Any, Literal, cast
 
 from pydantic import Field
 
@@ -23,7 +23,12 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
     Options are: 'f-string', 'mustache', 'jinja2'."""
 
     def __init__(self, **kwargs: Any) -> None:
-        """Create an image prompt template."""
+        """Create an image prompt template.
+
+        Raises:
+            ValueError: If the input variables contain `'url'`, `'path'`, or
+                `'detail'`.
+        """
         if "input_variables" not in kwargs:
             kwargs["input_variables"] = []
 
@@ -44,14 +49,18 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the LangChain object.
+
+        Returns:
+            `["langchain", "prompts", "image"]`
+        """
         return ["langchain", "prompts", "image"]
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
@@ -62,7 +71,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         """Async format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
@@ -76,7 +85,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         """Format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
@@ -84,13 +93,12 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         Raises:
             ValueError: If the url is not provided.
             ValueError: If the url is not a string.
+            ValueError: If `'path'` is provided in the template or kwargs.
 
         Example:
-
-            .. code-block:: python
-
-                prompt.format(variable1="foo")
-
+            ```python
+            prompt.format(variable1="foo")
+            ```
         """
         formatted = {}
         for k, v in self.template.items():
@@ -117,20 +125,17 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         output: ImageURL = {"url": url}
         if detail:
             # Don't check literal values here: let the API check them
-            output["detail"] = detail
+            output["detail"] = cast("Literal['auto', 'low', 'high']", detail)
         return output
 
     async def aformat(self, **kwargs: Any) -> ImageURL:
         """Async format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
-
-        Raises:
-            ValueError: If the path or url is not a string.
         """
         return await run_in_executor(None, self.format, **kwargs)
 

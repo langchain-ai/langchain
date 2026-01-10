@@ -23,13 +23,18 @@ def test_initialization() -> None:
     ChatXAI(model=MODEL_NAME)
 
 
+def test_profile() -> None:
+    model = ChatXAI(model="grok-4")
+    assert model.profile
+
+
 def test_xai_model_param() -> None:
     llm = ChatXAI(model="foo")
     assert llm.model_name == "foo"
     llm = ChatXAI(model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
     ls_params = llm._get_ls_params()
-    assert ls_params["ls_provider"] == "xai"
+    assert ls_params.get("ls_provider") == "xai"
 
 
 def test_chat_xai_invalid_streaming_params() -> None:
@@ -129,3 +134,11 @@ def test_convert_dict_to_message_tool() -> None:
     expected_output = ToolMessage(content="foo", tool_call_id="bar")
     assert result == expected_output
     assert _convert_message_to_dict(expected_output) == message
+
+
+def test_stream_usage_metadata() -> None:
+    model = ChatXAI(model=MODEL_NAME)
+    assert model.stream_usage is True
+
+    model = ChatXAI(model=MODEL_NAME, stream_usage=False)
+    assert model.stream_usage is False

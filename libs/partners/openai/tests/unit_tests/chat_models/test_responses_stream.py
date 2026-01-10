@@ -1,6 +1,9 @@
-from typing import Any, Optional
+from __future__ import annotations
+
+from typing import Any
 from unittest.mock import MagicMock, patch
 
+import pytest
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
 from openai.types.responses import (
     ResponseCompletedEvent,
@@ -20,7 +23,7 @@ from openai.types.responses import (
     ResponseTextDeltaEvent,
     ResponseTextDoneEvent,
 )
-from openai.types.responses.response import Response, ResponseUsage
+from openai.types.responses.response import Response
 from openai.types.responses.response_output_text import ResponseOutputText
 from openai.types.responses.response_reasoning_item import Summary
 from openai.types.responses.response_reasoning_summary_part_added_event import (
@@ -32,6 +35,7 @@ from openai.types.responses.response_reasoning_summary_part_done_event import (
 from openai.types.responses.response_usage import (
     InputTokensDetails,
     OutputTokensDetails,
+    ResponseUsage,
 )
 from openai.types.shared.reasoning import Reasoning
 from openai.types.shared.response_format_text import ResponseFormatText
@@ -337,7 +341,7 @@ responses_stream = [
             id="rs_234",
             summary=[],
             type="reasoning",
-            encrypted_content=None,
+            encrypted_content="encrypted-content",
             status=None,
         ),
         output_index=2,
@@ -416,7 +420,7 @@ responses_stream = [
                 Summary(text="still more reasoning", type="summary_text"),
             ],
             type="reasoning",
-            encrypted_content=None,
+            encrypted_content="encrypted-content",
             status=None,
         ),
         output_index=2,
@@ -562,7 +566,7 @@ responses_stream = [
                         Summary(text="still more reasoning", type="summary_text"),
                     ],
                     type="reasoning",
-                    encrypted_content=None,
+                    encrypted_content="encrypted-content",
                     status=None,
                 ),
                 ResponseOutputMessage(
@@ -614,14 +618,109 @@ def _strip_none(obj: Any) -> Any:
     """Recursively strip None values from dictionaries and lists."""
     if isinstance(obj, dict):
         return {k: _strip_none(v) for k, v in obj.items() if v is not None}
-    elif isinstance(obj, list):
+    if isinstance(obj, list):
         return [_strip_none(v) for v in obj]
-    else:
-        return obj
+    return obj
 
 
-def test_responses_stream() -> None:
-    llm = ChatOpenAI(model="o4-mini", output_version="responses/v1")
+@pytest.mark.parametrize(
+    ("output_version", "expected_content"),
+    [
+        (
+            "responses/v1",
+            [
+                {
+                    "id": "rs_123",
+                    "summary": [
+                        {
+                            "index": 0,
+                            "type": "summary_text",
+                            "text": "reasoning block one",
+                        },
+                        {
+                            "index": 1,
+                            "type": "summary_text",
+                            "text": "another reasoning block",
+                        },
+                    ],
+                    "type": "reasoning",
+                    "index": 0,
+                },
+                {"type": "text", "text": "text block one", "index": 1, "id": "msg_123"},
+                {
+                    "type": "text",
+                    "text": "another text block",
+                    "index": 2,
+                    "id": "msg_123",
+                },
+                {
+                    "id": "rs_234",
+                    "summary": [
+                        {"index": 0, "type": "summary_text", "text": "more reasoning"},
+                        {
+                            "index": 1,
+                            "type": "summary_text",
+                            "text": "still more reasoning",
+                        },
+                    ],
+                    "encrypted_content": "encrypted-content",
+                    "type": "reasoning",
+                    "index": 3,
+                },
+                {"type": "text", "text": "more", "index": 4, "id": "msg_234"},
+                {"type": "text", "text": "text", "index": 5, "id": "msg_234"},
+            ],
+        ),
+        (
+            "v1",
+            [
+                {
+                    "type": "reasoning",
+                    "reasoning": "reasoning block one",
+                    "id": "rs_123",
+                    "index": "lc_rs_305f30",
+                },
+                {
+                    "type": "reasoning",
+                    "reasoning": "another reasoning block",
+                    "id": "rs_123",
+                    "index": "lc_rs_305f31",
+                },
+                {
+                    "type": "text",
+                    "text": "text block one",
+                    "index": "lc_txt_1",
+                    "id": "msg_123",
+                },
+                {
+                    "type": "text",
+                    "text": "another text block",
+                    "index": "lc_txt_2",
+                    "id": "msg_123",
+                },
+                {
+                    "type": "reasoning",
+                    "reasoning": "more reasoning",
+                    "id": "rs_234",
+                    "extras": {"encrypted_content": "encrypted-content"},
+                    "index": "lc_rs_335f30",
+                },
+                {
+                    "type": "reasoning",
+                    "reasoning": "still more reasoning",
+                    "id": "rs_234",
+                    "index": "lc_rs_335f31",
+                },
+                {"type": "text", "text": "more", "index": "lc_txt_4", "id": "msg_234"},
+                {"type": "text", "text": "text", "index": "lc_txt_5", "id": "msg_234"},
+            ],
+        ),
+    ],
+)
+def test_responses_stream(output_version: str, expected_content: list[dict]) -> None:
+    llm = ChatOpenAI(
+        model="o4-mini", use_responses_api=True, output_version=output_version
+    )
     mock_client = MagicMock()
 
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
@@ -629,37 +728,15 @@ def test_responses_stream() -> None:
 
     mock_client.responses.create = mock_create
 
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
+    chunks = []
     with patch.object(llm, "root_client", mock_client):
         for chunk in llm.stream("test"):
             assert isinstance(chunk, AIMessageChunk)
             full = chunk if full is None else full + chunk
+            chunks.append(chunk)
     assert isinstance(full, AIMessageChunk)
 
-    expected_content = [
-        {
-            "id": "rs_123",
-            "summary": [
-                {"index": 0, "type": "summary_text", "text": "reasoning block one"},
-                {"index": 1, "type": "summary_text", "text": "another reasoning block"},
-            ],
-            "type": "reasoning",
-            "index": 0,
-        },
-        {"type": "text", "text": "text block one", "index": 1, "id": "msg_123"},
-        {"type": "text", "text": "another text block", "index": 2, "id": "msg_123"},
-        {
-            "id": "rs_234",
-            "summary": [
-                {"index": 0, "type": "summary_text", "text": "more reasoning"},
-                {"index": 1, "type": "summary_text", "text": "still more reasoning"},
-            ],
-            "type": "reasoning",
-            "index": 3,
-        },
-        {"type": "text", "text": "more", "index": 4, "id": "msg_234"},
-        {"type": "text", "text": "text", "index": 5, "id": "msg_234"},
-    ]
     assert full.content == expected_content
     assert full.additional_kwargs == {}
     assert full.id == "resp_123"
@@ -679,3 +756,38 @@ def test_responses_stream() -> None:
         dumped = _strip_none(item.model_dump())
         _ = dumped.pop("status", None)
         assert dumped == payload["input"][idx]
+
+
+def test_responses_stream_with_image_generation_multiple_calls() -> None:
+    """Test that streaming with image_generation tool works across multiple calls.
+
+    Regression test: image_generation tool should not be mutated between calls,
+    which would cause NotImplementedError on subsequent invocations.
+    """
+    tools: list[dict[str, Any]] = [
+        {"type": "image_generation"},
+        {"type": "function", "name": "my_tool", "parameters": {}},
+    ]
+    llm = ChatOpenAI(
+        model="gpt-4o",
+        use_responses_api=True,
+        streaming=True,
+    )
+    llm_with_tools = llm.bind_tools(tools)
+
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(responses_stream)
+
+    mock_client.responses.create = mock_create
+
+    # First call should work
+    with patch.object(llm, "root_client", mock_client):
+        chunks = list(llm_with_tools.stream("test"))
+        assert len(chunks) > 0
+
+    # Second call should also work (would fail before fix due to tool mutation)
+    with patch.object(llm, "root_client", mock_client):
+        chunks = list(llm_with_tools.stream("test again"))
+        assert len(chunks) > 0

@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Any
 
 import pytest
 
@@ -19,14 +19,14 @@ from langchain_core.outputs import ChatGeneration
         ],
     ],
 )
-def test_msg_with_text(content: Union[str, list]) -> None:
+def test_msg_with_text(content: str | list[str | dict[str, Any]]) -> None:
     expected = "foo"
     actual = ChatGeneration(message=AIMessage(content=content)).text
     assert actual == expected
 
 
 @pytest.mark.parametrize("content", [[], [{"tool_use": {}, "type": "tool_use"}]])
-def test_msg_no_text(content: Union[str, list]) -> None:
+def test_msg_no_text(content: str | list[str | dict[str, Any]]) -> None:
     expected = ""
     actual = ChatGeneration(message=AIMessage(content=content)).text
     assert actual == expected

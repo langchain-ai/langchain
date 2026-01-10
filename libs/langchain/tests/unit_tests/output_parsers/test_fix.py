@@ -1,6 +1,6 @@
 from datetime import datetime as dt
 from datetime import timezone
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, TypeVar
 
 import pytest
 from langchain_core.exceptions import OutputParserException
@@ -10,10 +10,10 @@ from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
 from typing_extensions import override
 
-from langchain.output_parsers.boolean import BooleanOutputParser
-from langchain.output_parsers.datetime import DatetimeOutputParser
-from langchain.output_parsers.fix import OutputFixingParser
-from langchain.output_parsers.prompts import NAIVE_FIX_PROMPT
+from langchain_classic.output_parsers.boolean import BooleanOutputParser
+from langchain_classic.output_parsers.datetime import DatetimeOutputParser
+from langchain_classic.output_parsers.fix import OutputFixingParser
+from langchain_classic.output_parsers.prompts import NAIVE_FIX_PROMPT
 
 T = TypeVar("T")
 
@@ -220,15 +220,3 @@ async def test_output_fixing_parser_aparse_with_retry_chain(
         legacy=False,
     )
     assert (await parser.aparse(completion)) == expected
-
-
-def _extract_exception(
-    func: Callable[..., Any],
-    *args: Any,
-    **kwargs: Any,
-) -> Optional[Exception]:
-    try:
-        func(*args, **kwargs)
-    except Exception as e:
-        return e
-    return None

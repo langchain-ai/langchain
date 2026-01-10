@@ -1,4 +1,4 @@
-from langchain import document_loaders
+from langchain_classic import document_loaders
 
 EXPECTED_ALL = [
     "AcreomLoader",

@@ -3,7 +3,7 @@
 import operator
 import uuid
 from collections.abc import Sequence
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from pydantic import Field
 from typing_extensions import override
@@ -23,8 +23,6 @@ class InMemoryDocumentIndex(DocumentIndex):
 
     It provides a simple search API that returns documents by the number of
     counts the given query appears in the document.
-
-    .. versionadded:: 0.2.29
     """
 
     store: dict[str, Document] = Field(default_factory=dict)
@@ -32,7 +30,17 @@ class InMemoryDocumentIndex(DocumentIndex):
 
     @override
     def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
-        """Upsert items into the index."""
+        """Upsert documents into the index.
+
+        Args:
+            items: Sequence of documents to add to the index.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            A response object that contains the list of IDs that were
+            successfully added or updated in the index and the list of IDs that
+            failed to be added or updated.
+        """
         ok_ids = []
 
         for item in items:
@@ -50,8 +58,19 @@ class InMemoryDocumentIndex(DocumentIndex):
         return UpsertResponse(succeeded=ok_ids, failed=[])
 
     @override
-    def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> DeleteResponse:
-        """Delete by ID."""
+    def delete(self, ids: list[str] | None = None, **kwargs: Any) -> DeleteResponse:
+        """Delete by IDs.
+
+        Args:
+            ids: List of IDs to delete.
+
+        Raises:
+            ValueError: If IDs is None.
+
+        Returns:
+            A response object that contains the list of IDs that were successfully
+            deleted and the list of IDs that failed to be deleted.
+        """
         if ids is None:
             msg = "IDs must be provided for deletion"
             raise ValueError(msg)
@@ -69,7 +88,6 @@ class InMemoryDocumentIndex(DocumentIndex):
 
     @override
     def get(self, ids: Sequence[str], /, **kwargs: Any) -> list[Document]:
-        """Get by ids."""
         return [self.store[id_] for id_ in ids if id_ in self.store]
 
     @override

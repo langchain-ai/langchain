@@ -1,36 +1,32 @@
 """Helper class to draw a state graph into a PNG file."""
 
-from typing import Any, Optional
+from itertools import groupby
+from typing import Any, cast
 
 from langchain_core.runnables.graph import Graph, LabelsDict
+
+try:
+    import pygraphviz as pgv  # type: ignore[import-not-found]
+
+    _HAS_PYGRAPHVIZ = True
+except ImportError:
+    _HAS_PYGRAPHVIZ = False
 
 
 class PngDrawer:
     """Helper class to draw a state graph into a PNG file.
 
     It requires `graphviz` and `pygraphviz` to be installed.
-    :param fontname: The font to use for the labels
-    :param labels: A dictionary of label overrides. The dictionary
-        should have the following format:
-        {
-            "nodes": {
-                "node1": "CustomLabel1",
-                "node2": "CustomLabel2",
-                "__end__": "End Node"
-            },
-            "edges": {
-                "continue": "ContinueLabel",
-                "end": "EndLabel"
-            }
-        }
-        The keys are the original labels, and the values are the new labels.
-    Usage:
+
+    Example:
+        ```python
         drawer = PngDrawer()
-        drawer.draw(state_graph, 'graph.png')
+        drawer.draw(state_graph, "graph.png")
+        ```
     """
 
     def __init__(
-        self, fontname: Optional[str] = None, labels: Optional[LabelsDict] = None
+        self, fontname: str | None = None, labels: LabelsDict | None = None
     ) -> None:
         """Initializes the PNG drawer.
 
@@ -50,7 +46,7 @@ class PngDrawer:
                     }
                 }
                 The keys are the original labels, and the values are the new labels.
-                Defaults to None.
+
         """
         self.fontname = fontname or "arial"
         self.labels = labels or LabelsDict(nodes={}, edges={})
@@ -85,9 +81,6 @@ class PngDrawer:
         Args:
             viz: The graphviz object.
             node: The node to add.
-
-        Returns:
-            None
         """
         viz.add_node(
             node,
@@ -103,7 +96,7 @@ class PngDrawer:
         viz: Any,
         source: str,
         target: str,
-        label: Optional[str] = None,
+        label: str | None = None,
         conditional: bool = False,  # noqa: FBT001,FBT002
     ) -> None:
         """Adds an edge to the graph.
@@ -112,11 +105,8 @@ class PngDrawer:
             viz: The graphviz object.
             source: The source node.
             target: The target node.
-            label: The label for the edge. Defaults to None.
-            conditional: Whether the edge is conditional. Defaults to False.
-
-        Returns:
-            None
+            label: The label for the edge.
+            conditional: Whether the edge is conditional.
         """
         viz.add_edge(
             source,
@@ -127,18 +117,24 @@ class PngDrawer:
             style="dotted" if conditional else "solid",
         )
 
-    def draw(self, graph: Graph, output_path: Optional[str] = None) -> Optional[bytes]:
+    def draw(self, graph: Graph, output_path: str | None = None) -> bytes | None:
         """Draw the given state graph into a PNG file.
 
         Requires `graphviz` and `pygraphviz` to be installed.
-        :param graph: The graph to draw
-        :param output_path: The path to save the PNG. If None, PNG bytes are returned.
+
+        Args:
+            graph: The graph to draw
+            output_path: The path to save the PNG. If `None`, PNG bytes are returned.
+
+        Raises:
+            ImportError: If `pygraphviz` is not installed.
+
+        Returns:
+            The PNG bytes if `output_path` is None, else None.
         """
-        try:
-            import pygraphviz as pgv  # type: ignore[import-not-found]
-        except ImportError as exc:
+        if not _HAS_PYGRAPHVIZ:
             msg = "Install pygraphviz to draw graphs: `pip install pygraphviz`."
-            raise ImportError(msg) from exc
+            raise ImportError(msg)
 
         # Create a directed graph
         viz = pgv.AGraph(directed=True, nodesep=0.9, ranksep=1.0)
@@ -146,13 +142,14 @@ class PngDrawer:
         # Add nodes, conditional edges, and edges to the graph
         self.add_nodes(viz, graph)
         self.add_edges(viz, graph)
+        self.add_subgraph(viz, [node.split(":") for node in graph.nodes])
 
         # Update entrypoint and END styles
         self.update_styles(viz, graph)
 
         # Save the graph as PNG
         try:
-            return viz.draw(output_path, format="png", prog="dot")
+            return cast("bytes | None", viz.draw(output_path, format="png", prog="dot"))
         finally:
             viz.close()
 
@@ -166,6 +163,32 @@ class PngDrawer:
         for node in graph.nodes:
             self.add_node(viz, node)
 
+    def add_subgraph(
+        self,
+        viz: Any,
+        nodes: list[list[str]],
+        parent_prefix: list[str] | None = None,
+    ) -> None:
+        """Add subgraphs to the graph.
+
+        Args:
+            viz: The graphviz object.
+            nodes: The nodes to add.
+            parent_prefix: The prefix of the parent subgraph.
+        """
+        for prefix, grouped in groupby(
+            [node[:] for node in sorted(nodes)],
+            key=lambda x: x.pop(0),
+        ):
+            current_prefix = (parent_prefix or []) + [prefix]
+            grouped_nodes = list(grouped)
+            if len(grouped_nodes) > 1:
+                subgraph = viz.add_subgraph(
+                    [":".join(current_prefix + node) for node in grouped_nodes],
+                    name="cluster_" + ":".join(current_prefix),
+                )
+                self.add_subgraph(subgraph, grouped_nodes, current_prefix)
+
     def add_edges(self, viz: Any, graph: Graph) -> None:
         """Add edges to the graph.
 
@@ -178,7 +201,8 @@ class PngDrawer:
                 viz, start, end, str(data) if data is not None else None, cond
             )
 
-    def update_styles(self, viz: Any, graph: Graph) -> None:
+    @staticmethod
+    def update_styles(viz: Any, graph: Graph) -> None:
         """Update the styles of the entrypoint and END nodes.
 
         Args:

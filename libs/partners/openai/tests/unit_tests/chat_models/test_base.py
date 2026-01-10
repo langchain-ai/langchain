@@ -1,9 +1,12 @@
 """Test OpenAI Chat API wrapper."""
 
+from __future__ import annotations
+
 import json
+import warnings
 from functools import partial
 from types import TracebackType
-from typing import Any, Literal, Optional, Union, cast
+from typing import Any, Literal, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -20,13 +23,18 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.messages import content as types
 from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.block_translators.openai import (
+    _convert_from_v03_ai_message,
+)
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
+from langchain_core.runnables.base import RunnableBinding, RunnableSequence
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
-from openai.types.responses.response import IncompleteDetails, Response, ResponseUsage
+from openai.types.responses.response import IncompleteDetails, Response
 from openai.types.responses.response_error import ResponseError
 from openai.types.responses.response_file_search_tool_call import (
     ResponseFileSearchToolCall,
@@ -43,17 +51,20 @@ from openai.types.responses.response_reasoning_item import Summary
 from openai.types.responses.response_usage import (
     InputTokensDetails,
     OutputTokensDetails,
+    ResponseUsage,
 )
 from pydantic import BaseModel, Field, SecretStr
-from typing_extensions import TypedDict
+from typing_extensions import Self, TypedDict
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models._compat import (
     _FUNCTION_CALL_IDS_MAP_KEY,
-    _convert_from_v03_ai_message,
+    _convert_from_v1_to_chat_completions,
+    _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
 )
 from langchain_openai.chat_models.base import (
+    OpenAIRefusalError,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
     _convert_dict_to_message,
@@ -64,7 +75,9 @@ from langchain_openai.chat_models.base import (
     _format_message_content,
     _get_last_messages,
     _make_computer_call_output_from_message,
+    _model_prefers_responses_api,
     _oai_structured_outputs_parser,
+    _resize,
 )
 
 
@@ -78,6 +91,12 @@ def test_openai_model_param() -> None:
     assert llm.max_tokens == 10
     llm = ChatOpenAI(max_completion_tokens=10)
     assert llm.max_tokens == 10
+
+
+@pytest.mark.parametrize("async_api", [True, False])
+def test_streaming_attribute_should_stream(async_api: bool) -> None:
+    llm = ChatOpenAI(model="foo", streaming=True)
+    assert llm._should_stream(async_api=async_api)
 
 
 def test_openai_client_caching() -> None:
@@ -102,6 +121,34 @@ def test_openai_client_caching() -> None:
 
     llm7 = ChatOpenAI(model="gpt-4.1-mini", timeout=(5, 1))
     assert llm1.root_client._client is not llm7.root_client._client
+
+
+def test_profile() -> None:
+    model = ChatOpenAI(model="gpt-4")
+    assert model.profile
+    assert not model.profile["structured_output"]
+
+    model = ChatOpenAI(model="gpt-5")
+    assert model.profile
+    assert model.profile["structured_output"]
+    assert model.profile["tool_calling"]
+
+    # Test overwriting a field
+    model.profile["tool_calling"] = False
+    assert not model.profile["tool_calling"]
+
+    # Test we didn't mutate
+    model = ChatOpenAI(model="gpt-5")
+    assert model.profile
+    assert model.profile["tool_calling"]
+
+    # Test passing in profile
+    model = ChatOpenAI(model="gpt-5", profile={"tool_calling": False})
+    assert model.profile == {"tool_calling": False}
+
+    # Test overrides for gpt-5 input tokens
+    model = ChatOpenAI(model="gpt-5")
+    assert model.profile["max_input_tokens"] == 272_000
 
 
 def test_openai_o1_temperature() -> None:
@@ -201,7 +248,6 @@ def test__convert_dict_to_message_tool_call() -> None:
     result = _convert_dict_to_message(message)
     expected_output = AIMessage(
         content="",
-        additional_kwargs={"tool_calls": [raw_tool_call]},
         tool_calls=[
             ToolCall(
                 name="GenerateUsername",
@@ -230,12 +276,11 @@ def test__convert_dict_to_message_tool_call() -> None:
             "type": "function",
         },
     ]
-    raw_tool_calls = list(sorted(raw_tool_calls, key=lambda x: x["id"]))
+    raw_tool_calls = sorted(raw_tool_calls, key=lambda x: x["id"])
     message = {"role": "assistant", "content": None, "tool_calls": raw_tool_calls}
     result = _convert_dict_to_message(message)
     expected_output = AIMessage(
         content="",
-        additional_kwargs={"tool_calls": raw_tool_calls},
         invalid_tool_calls=[
             InvalidToolCall(
                 name="GenerateUsername",
@@ -244,8 +289,8 @@ def test__convert_dict_to_message_tool_call() -> None:
                 error=(
                     "Function GenerateUsername arguments:\n\noops\n\nare not "
                     "valid JSON. Received JSONDecodeError Expecting value: line 1 "
-                    "column 1 (char 0)\nFor troubleshooting, visit: https://python"
-                    ".langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE "
+                    "column 1 (char 0)\nFor troubleshooting, visit: https://docs"
+                    ".langchain.com/oss/python/langchain/errors/OUTPUT_PARSING_FAILURE "
                 ),
                 type="invalid_tool_call",
             )
@@ -261,30 +306,30 @@ def test__convert_dict_to_message_tool_call() -> None:
     )
     assert result == expected_output
     reverted_message_dict = _convert_message_to_dict(expected_output)
-    reverted_message_dict["tool_calls"] = list(
-        sorted(reverted_message_dict["tool_calls"], key=lambda x: x["id"])
+    reverted_message_dict["tool_calls"] = sorted(
+        reverted_message_dict["tool_calls"], key=lambda x: x["id"]
     )
     assert reverted_message_dict == message
 
 
 class MockAsyncContextManager:
-    def __init__(self, chunk_list: list):
+    def __init__(self, chunk_list: list) -> None:
         self.current_chunk = 0
         self.chunk_list = chunk_list
         self.chunk_num = len(chunk_list)
 
-    async def __aenter__(self) -> "MockAsyncContextManager":
+    async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc: Optional[BaseException],
-        tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
         pass
 
-    def __aiter__(self) -> "MockAsyncContextManager":
+    def __aiter__(self) -> MockAsyncContextManager:
         return self
 
     async def __anext__(self) -> dict:
@@ -292,28 +337,27 @@ class MockAsyncContextManager:
             chunk = self.chunk_list[self.current_chunk]
             self.current_chunk += 1
             return chunk
-        else:
-            raise StopAsyncIteration
+        raise StopAsyncIteration
 
 
 class MockSyncContextManager:
-    def __init__(self, chunk_list: list):
+    def __init__(self, chunk_list: list) -> None:
         self.current_chunk = 0
         self.chunk_list = chunk_list
         self.chunk_num = len(chunk_list)
 
-    def __enter__(self) -> "MockSyncContextManager":
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc: Optional[BaseException],
-        tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
         pass
 
-    def __iter__(self) -> "MockSyncContextManager":
+    def __iter__(self) -> MockSyncContextManager:
         return self
 
     def __next__(self) -> dict:
@@ -321,8 +365,7 @@ class MockSyncContextManager:
             chunk = self.chunk_list[self.current_chunk]
             self.current_chunk += 1
             return chunk
-        else:
-            raise StopIteration
+        raise StopIteration
 
 
 GLM4_STREAM_META = """{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u4eba\u5de5\u667a\u80fd"}}]}
@@ -359,7 +402,7 @@ async def test_glm4_astream(mock_glm4_completion: list) -> None:
     mock_client.create = mock_create
     usage_chunk = mock_glm4_completion[-1]
 
-    usage_metadata: Optional[UsageMetadata] = None
+    usage_metadata: UsageMetadata | None = None
     with patch.object(llm, "async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
@@ -384,7 +427,7 @@ def test_glm4_stream(mock_glm4_completion: list) -> None:
     mock_client.create = mock_create
     usage_chunk = mock_glm4_completion[-1]
 
-    usage_metadata: Optional[UsageMetadata] = None
+    usage_metadata: UsageMetadata | None = None
     with patch.object(llm, "client", mock_client):
         for chunk in llm.stream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
@@ -439,7 +482,7 @@ async def test_deepseek_astream(mock_deepseek_completion: list) -> None:
 
     mock_client.create = mock_create
     usage_chunk = mock_deepseek_completion[-1]
-    usage_metadata: Optional[UsageMetadata] = None
+    usage_metadata: UsageMetadata | None = None
     with patch.object(llm, "async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
@@ -463,7 +506,7 @@ def test_deepseek_stream(mock_deepseek_completion: list) -> None:
 
     mock_client.create = mock_create
     usage_chunk = mock_deepseek_completion[-1]
-    usage_metadata: Optional[UsageMetadata] = None
+    usage_metadata: UsageMetadata | None = None
     with patch.object(llm, "client", mock_client):
         for chunk in llm.stream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
@@ -499,7 +542,8 @@ def mock_openai_completion() -> list[dict]:
 
 async def test_openai_astream(mock_openai_completion: list) -> None:
     llm_name = "gpt-4o"
-    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    llm = ChatOpenAI(model=llm_name)
+    assert llm.stream_usage
     mock_client = AsyncMock()
 
     async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
@@ -507,7 +551,7 @@ async def test_openai_astream(mock_openai_completion: list) -> None:
 
     mock_client.create = mock_create
     usage_chunk = mock_openai_completion[-1]
-    usage_metadata: Optional[UsageMetadata] = None
+    usage_metadata: UsageMetadata | None = None
     with patch.object(llm, "async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
@@ -523,26 +567,49 @@ async def test_openai_astream(mock_openai_completion: list) -> None:
 
 def test_openai_stream(mock_openai_completion: list) -> None:
     llm_name = "gpt-4o"
-    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    llm = ChatOpenAI(model=llm_name)
+    assert llm.stream_usage
     mock_client = MagicMock()
 
+    call_kwargs = []
+
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        call_kwargs.append(kwargs)
         return MockSyncContextManager(mock_openai_completion)
 
     mock_client.create = mock_create
     usage_chunk = mock_openai_completion[-1]
-    usage_metadata: Optional[UsageMetadata] = None
+    usage_metadata: UsageMetadata | None = None
     with patch.object(llm, "client", mock_client):
         for chunk in llm.stream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
 
+    assert call_kwargs[-1]["stream_options"] == {"include_usage": True}
     assert usage_metadata is not None
-
     assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
     assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
     assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
+
+    # Verify no streaming outside of default base URL or clients
+    for param, value in {
+        "stream_usage": False,
+        "openai_proxy": "http://localhost:7890",
+        "openai_api_base": "https://example.com/v1",
+        "base_url": "https://example.com/v1",
+        "client": mock_client,
+        "root_client": mock_client,
+        "async_client": mock_client,
+        "root_async_client": mock_client,
+        "http_client": httpx.Client(),
+        "http_async_client": httpx.AsyncClient(),
+    }.items():
+        llm = ChatOpenAI(model=llm_name, **{param: value})  # type: ignore[arg-type]
+        assert not llm.stream_usage
+        with patch.object(llm, "client", mock_client):
+            _ = list(llm.stream("..."))
+        assert "stream_options" not in call_kwargs[-1]
 
 
 @pytest.fixture
@@ -601,7 +668,7 @@ def test_openai_invoke(mock_client: MagicMock) -> None:
 
         # headers are not in response_metadata if include_response_headers not set
         assert "headers" not in res.response_metadata
-    assert mock_client.create.called
+    assert mock_client.with_raw_response.create.called
 
 
 async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
@@ -613,7 +680,7 @@ async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
 
         # headers are not in response_metadata if include_response_headers not set
         assert "headers" not in res.response_metadata
-    assert mock_async_client.create.called
+    assert mock_async_client.with_raw_response.create.called
 
 
 @pytest.mark.parametrize(
@@ -629,7 +696,6 @@ async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
 )
 def test__get_encoding_model(model: str) -> None:
     ChatOpenAI(model=model)._get_encoding_model()
-    return
 
 
 def test_openai_invoke_name(mock_client: MagicMock) -> None:
@@ -638,7 +704,7 @@ def test_openai_invoke_name(mock_client: MagicMock) -> None:
     with patch.object(llm, "client", mock_client):
         messages = [HumanMessage(content="Foo", name="Katie")]
         res = llm.invoke(messages)
-        call_args, call_kwargs = mock_client.create.call_args
+        call_args, call_kwargs = mock_client.with_raw_response.create.call_args
         assert len(call_args) == 0  # no positional args
         call_messages = call_kwargs["messages"]
         assert len(call_messages) == 1
@@ -678,7 +744,7 @@ def test_function_calls_with_tool_calls(mock_client: MagicMock) -> None:
     ]
     with patch.object(llm, "client", mock_client):
         _ = llm.invoke(messages)
-        _, call_kwargs = mock_client.create.call_args
+        _, call_kwargs = mock_client.with_raw_response.create.call_args
         call_messages = call_kwargs["messages"]
         tool_call_message_payload = call_messages[1]
         assert "tool_calls" in tool_call_message_payload
@@ -688,7 +754,7 @@ def test_function_calls_with_tool_calls(mock_client: MagicMock) -> None:
     cast(AIMessage, messages[1]).tool_calls = []
     with patch.object(llm, "client", mock_client):
         _ = llm.invoke(messages)
-        _, call_kwargs = mock_client.create.call_args
+        _, call_kwargs = mock_client.with_raw_response.create.call_args
         call_messages = call_kwargs["messages"]
         tool_call_message_payload = call_messages[1]
         assert "function_call" in tool_call_message_payload
@@ -728,20 +794,25 @@ def test_format_message_content() -> None:
             "input": {"location": "San Francisco, CA", "unit": "celsius"},
         },
     ]
-    assert [{"type": "text", "text": "hello"}] == _format_message_content(content)
+    assert _format_message_content(content) == [{"type": "text", "text": "hello"}]
 
     # Standard multi-modal inputs
-    content = [{"type": "image", "source_type": "url", "url": "https://..."}]
+    contents = [
+        {"type": "image", "source_type": "url", "url": "https://..."},  # v0
+        {"type": "image", "url": "https://..."},  # v1
+    ]
     expected = [{"type": "image_url", "image_url": {"url": "https://..."}}]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
-    content = [
+    contents = [
         {
             "type": "image",
             "source_type": "base64",
             "data": "<base64 data>",
             "mime_type": "image/png",
-        }
+        },
+        {"type": "image", "base64": "<base64 data>", "mime_type": "image/png"},
     ]
     expected = [
         {
@@ -749,16 +820,23 @@ def test_format_message_content() -> None:
             "image_url": {"url": "data:image/png;base64,<base64 data>"},
         }
     ]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
-    content = [
+    contents = [
         {
             "type": "file",
             "source_type": "base64",
             "data": "<base64 data>",
             "mime_type": "application/pdf",
             "filename": "my_file",
-        }
+        },
+        {
+            "type": "file",
+            "base64": "<base64 data>",
+            "mime_type": "application/pdf",
+            "filename": "my_file",
+        },
     ]
     expected = [
         {
@@ -769,11 +847,32 @@ def test_format_message_content() -> None:
             },
         }
     ]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
-    content = [{"type": "file", "source_type": "id", "id": "file-abc123"}]
+    # Test warn if PDF is missing a filename
+    pdf_block = {
+        "type": "file",
+        "base64": "<base64 data>",
+        "mime_type": "application/pdf",
+    }
+    expected = [
+        # N.B. this format is invalid for OpenAI
+        {
+            "type": "file",
+            "file": {"file_data": "data:application/pdf;base64,<base64 data>"},
+        }
+    ]
+    with pytest.warns(match="filename"):
+        assert expected == _format_message_content([pdf_block])
+
+    contents = [
+        {"type": "file", "source_type": "id", "id": "file-abc123"},
+        {"type": "file", "file_id": "file-abc123"},
+    ]
     expected = [{"type": "file", "file": {"file_id": "file-abc123"}}]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
 
 class GenerateUsername(BaseModel):
@@ -806,7 +905,7 @@ class MakeASandwich(BaseModel):
     ],
 )
 @pytest.mark.parametrize("strict", [True, False, None])
-def test_bind_tools_tool_choice(tool_choice: Any, strict: Optional[bool]) -> None:
+def test_bind_tools_tool_choice(tool_choice: Any, strict: bool | None) -> None:
     """Test passing in manually construct tool call message."""
     llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
     llm.bind_tools(
@@ -821,10 +920,10 @@ def test_bind_tools_tool_choice(tool_choice: Any, strict: Optional[bool]) -> Non
 @pytest.mark.parametrize("include_raw", [True, False])
 @pytest.mark.parametrize("strict", [True, False, None])
 def test_with_structured_output(
-    schema: Union[type, dict[str, Any], None],
+    schema: type | dict[str, Any] | None,
     method: Literal["function_calling", "json_mode", "json_schema"],
     include_raw: bool,
-    strict: Optional[bool],
+    strict: bool | None,
 ) -> None:
     """Test passing in manually construct tool call message."""
     if method == "json_mode":
@@ -874,8 +973,13 @@ def test_get_num_tokens_from_messages() -> None:
         ),
         ToolMessage("foobar", tool_call_id="foo"),
     ]
-    expected = 176
-    actual = llm.get_num_tokens_from_messages(messages)
+    expected = 431  # Updated to match token count with mocked 100x100 image
+
+    # Mock _url_to_size to avoid PIL dependency in unit tests
+    with patch("langchain_openai.chat_models.base._url_to_size") as mock_url_to_size:
+        mock_url_to_size.return_value = (100, 100)  # 100x100 pixel image
+        actual = llm.get_num_tokens_from_messages(messages)
+
     assert expected == actual
 
     # Test file inputs
@@ -893,9 +997,36 @@ def test_get_num_tokens_from_messages() -> None:
             ]
         )
     ]
+    actual = 0
     with pytest.warns(match="file inputs are not supported"):
         actual = llm.get_num_tokens_from_messages(messages)
-        assert actual == 13
+    assert actual == 13
+
+    # Test Responses
+    messages = [
+        AIMessage(
+            [
+                {
+                    "type": "function_call",
+                    "name": "multiply",
+                    "arguments": '{"x":5,"y":4}',
+                    "call_id": "call_abc123",
+                    "id": "fc_abc123",
+                    "status": "completed",
+                },
+            ],
+            tool_calls=[
+                {
+                    "type": "tool_call",
+                    "name": "multiply",
+                    "args": {"x": 5, "y": 4},
+                    "id": "call_abc123",
+                }
+            ],
+        )
+    ]
+    actual = llm.get_num_tokens_from_messages(messages)
+    assert actual
 
 
 class Foo(BaseModel):
@@ -969,6 +1100,12 @@ def test__create_usage_metadata_responses() -> None:
     )
 
 
+def test__resize_caps_dimensions_preserving_ratio() -> None:
+    """Larger side capped at 2048 then smaller at 768 keeping aspect ratio."""
+    assert _resize(2048, 4096) == (768, 1536)
+    assert _resize(4096, 2048) == (1536, 768)
+
+
 def test__convert_to_openai_response_format() -> None:
     # Test response formats that aren't tool-like.
     response_format: dict = {
@@ -1015,7 +1152,7 @@ def test__convert_to_openai_response_format() -> None:
 @pytest.mark.parametrize("method", ["function_calling", "json_schema"])
 @pytest.mark.parametrize("strict", [True, None])
 def test_structured_output_strict(
-    method: Literal["function_calling", "json_schema"], strict: Optional[bool]
+    method: Literal["function_calling", "json_schema"], strict: bool | None
 ) -> None:
     """Test to verify structured output with strict=True."""
 
@@ -1126,9 +1263,77 @@ def test__get_request_payload() -> None:
 
 
 def test_init_o1() -> None:
-    with pytest.warns(None) as record:  # type: ignore[call-overload]
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("error")  # Treat warnings as errors
         ChatOpenAI(model="o1", reasoning_effort="medium")
+
     assert len(record) == 0
+
+
+def test_init_minimal_reasoning_effort() -> None:
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("error")
+        ChatOpenAI(model="gpt-5", reasoning_effort="minimal")
+
+    assert len(record) == 0
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+@pytest.mark.parametrize("use_max_completion_tokens", [True, False])
+def test_minimal_reasoning_effort_payload(
+    use_max_completion_tokens: bool, use_responses_api: bool
+) -> None:
+    """Test that minimal reasoning effort is included in request payload."""
+    if use_max_completion_tokens:
+        kwargs = {"max_completion_tokens": 100}
+    else:
+        kwargs = {"max_tokens": 100}
+
+    init_kwargs: dict[str, Any] = {
+        "model": "gpt-5",
+        "reasoning_effort": "minimal",
+        "use_responses_api": use_responses_api,
+        **kwargs,
+    }
+
+    llm = ChatOpenAI(**init_kwargs)
+
+    messages = [
+        {"role": "developer", "content": "respond with just 'test'"},
+        {"role": "user", "content": "hello"},
+    ]
+
+    payload = llm._get_request_payload(messages, stop=None)
+
+    # When using responses API, reasoning_effort becomes reasoning.effort
+    if use_responses_api:
+        assert "reasoning" in payload
+        assert payload["reasoning"]["effort"] == "minimal"
+        # For responses API, tokens param becomes max_output_tokens
+        assert payload["max_output_tokens"] == 100
+    else:
+        # For non-responses API, reasoning_effort remains as is
+        assert payload["reasoning_effort"] == "minimal"
+        if use_max_completion_tokens:
+            assert payload["max_completion_tokens"] == 100
+        else:
+            # max_tokens gets converted to max_completion_tokens in non-responses API
+            assert payload["max_completion_tokens"] == 100
+
+
+def test_output_version_compat() -> None:
+    llm = ChatOpenAI(model="gpt-5", output_version="responses/v1")
+    assert llm._use_responses_api({}) is True
+
+
+def test_verbosity_parameter_payload() -> None:
+    """Test verbosity parameter is included in request payload for Responses API."""
+    llm = ChatOpenAI(model="gpt-5", verbosity="high", use_responses_api=True)
+
+    messages = [{"role": "user", "content": "hello"}]
+    payload = llm._get_request_payload(messages, stop=None)
+
+    assert payload["text"]["verbosity"] == "high"
 
 
 def test_structured_output_old_model() -> None:
@@ -1156,9 +1361,9 @@ def test_structured_outputs_parser() -> None:
         partial(_oai_structured_outputs_parser, schema=GenerateUsername)
     )
     serialized = dumps(llm_output)
-    deserialized = loads(serialized)
+    deserialized = loads(serialized, allowed_objects=[ChatGeneration, AIMessage])
     assert isinstance(deserialized, ChatGeneration)
-    result = output_parser.invoke(deserialized.message)
+    result = output_parser.invoke(cast(AIMessage, deserialized.message))
     assert result == parsed_response
 
 
@@ -1215,7 +1420,7 @@ def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     assert isinstance(result, ChatResult)
     assert len(result.generations) == 1
@@ -1233,9 +1438,7 @@ def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
     assert result.generations[0].message.response_metadata["model_name"] == "gpt-4o"
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     assert result.generations[0].message.content == [
         {"type": "text", "text": "Hello, world!", "annotations": [], "id": "msg_123"}
     ]
@@ -1271,7 +1474,7 @@ def test__construct_lc_result_from_responses_api_multiple_text_blocks() -> None:
         ],
     )
 
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     assert len(result.generations[0].message.content) == 2
     assert result.generations[0].message.content == [
@@ -1318,7 +1521,7 @@ def test__construct_lc_result_from_responses_api_multiple_messages() -> None:
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     assert result.generations[0].message.content == [
         {"type": "text", "text": "foo", "annotations": []},
@@ -1334,9 +1537,7 @@ def test__construct_lc_result_from_responses_api_multiple_messages() -> None:
     assert result.generations[0].message.id == "msg_234"
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
 
     assert result.generations[0].message.content == [
         {"type": "text", "text": "foo", "annotations": [], "id": "msg_123"},
@@ -1376,16 +1577,14 @@ def test__construct_lc_result_from_responses_api_refusal_response() -> None:
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     assert result.generations[0].message.additional_kwargs["refusal"] == (
         "I cannot assist with that request."
     )
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     assert result.generations[0].message.content == [
         {
             "type": "refusal",
@@ -1417,7 +1616,7 @@ def test__construct_lc_result_from_responses_api_function_call_valid_json() -> N
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     msg: AIMessage = cast(AIMessage, result.generations[0].message)
     assert len(msg.tool_calls) == 1
@@ -1434,9 +1633,7 @@ def test__construct_lc_result_from_responses_api_function_call_valid_json() -> N
     )
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     msg = cast(AIMessage, result.generations[0].message)
     assert msg.tool_calls
     assert msg.content == [
@@ -1472,7 +1669,7 @@ def test__construct_lc_result_from_responses_api_function_call_invalid_json() ->
         ],
     )
 
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     msg: AIMessage = cast(AIMessage, result.generations[0].message)
     assert len(msg.invalid_tool_calls) == 1
@@ -1519,14 +1716,14 @@ def test__construct_lc_result_from_responses_api_complex_response() -> None:
                 arguments='{"location": "New York"}',
             ),
         ],
-        metadata=dict(key1="value1", key2="value2"),
+        metadata={"key1": "value1", "key2": "value2"},
         incomplete_details=IncompleteDetails(reason="max_output_tokens"),
         status="completed",
         user="user_123",
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     # Check message content
     assert result.generations[0].message.content == [
@@ -1555,9 +1752,7 @@ def test__construct_lc_result_from_responses_api_complex_response() -> None:
     assert result.generations[0].message.response_metadata["user"] == "user_123"
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     msg = cast(AIMessage, result.generations[0].message)
     assert msg.response_metadata["metadata"] == {"key1": "value1", "key2": "value2"}
     assert msg.content == [
@@ -1633,7 +1828,7 @@ def test__construct_lc_result_from_responses_api_web_search_response() -> None:
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     assert "tool_outputs" in result.generations[0].message.additional_kwargs
     assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 1
@@ -1651,9 +1846,7 @@ def test__construct_lc_result_from_responses_api_web_search_response() -> None:
     )
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     assert result.generations[0].message.content == [
         {
             "type": "web_search_call",
@@ -1694,7 +1887,7 @@ def test__construct_lc_result_from_responses_api_file_search_response() -> None:
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     assert "tool_outputs" in result.generations[0].message.additional_kwargs
     assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 1
@@ -1735,9 +1928,7 @@ def test__construct_lc_result_from_responses_api_file_search_response() -> None:
     )
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     assert result.generations[0].message.content == [
         {
             "type": "file_search_call",
@@ -1804,7 +1995,7 @@ def test__construct_lc_result_from_responses_api_mixed_search_responses() -> Non
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     # Check message content
     assert result.generations[0].message.content == [
@@ -1835,9 +2026,7 @@ def test__construct_lc_result_from_responses_api_mixed_search_responses() -> Non
     assert file_search["results"][0]["filename"] == "example.py"
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     assert result.generations[0].message.content == [
         {
             "type": "text",
@@ -1939,6 +2128,38 @@ def test__construct_responses_api_input_multiple_message_components() -> None:
             "id": "msg_234",
         },
     ]
+
+
+def test__construct_responses_api_input_skips_blocks_without_text() -> None:
+    """Test that blocks without 'text' key are skipped."""
+    # Test case: block with type "text" but missing "text" key
+    messages = [
+        AIMessage(
+            content=[
+                {"type": "text", "text": "valid text", "id": "msg_123"},
+                {"type": "text", "id": "msg_123"},  # Missing "text" key
+                {"type": "output_text", "text": "valid output", "id": "msg_123"},
+                {"type": "output_text", "id": "msg_123"},  # Missing "text" key
+            ]
+        )
+    ]
+    result = _construct_responses_api_input(messages)
+
+    # Should only include blocks with valid text content
+    assert len(result) == 1
+    assert result[0]["type"] == "message"
+    assert result[0]["role"] == "assistant"
+    assert len(result[0]["content"]) == 2
+    assert result[0]["content"][0] == {
+        "type": "output_text",
+        "text": "valid text",
+        "annotations": [],
+    }
+    assert result[0]["content"][1] == {
+        "type": "output_text",
+        "text": "valid output",
+        "annotations": [],
+    }
 
 
 def test__construct_responses_api_input_human_message_with_image_url_conversion() -> (
@@ -2080,7 +2301,11 @@ def test__construct_responses_api_input_ai_message_with_tool_calls_and_content()
 
     assert result[0]["role"] == "assistant"
     assert result[0]["content"] == [
-        {"type": "output_text", "text": "I'll check the weather for you."}
+        {
+            "type": "output_text",
+            "text": "I'll check the weather for you.",
+            "annotations": [],
+        }
     ]
 
     assert result[1]["type"] == "function_call"
@@ -2182,6 +2407,7 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
         {
             "type": "output_text",
             "text": "The weather in San Francisco is 72°F and sunny.",
+            "annotations": [],
         }
     ]
 
@@ -2230,7 +2456,6 @@ class FakeTracer(BaseTracer):
 
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
-        pass
 
     def on_chat_model_start(self, *args: Any, **kwargs: Any) -> Run:
         self.chat_model_start_inputs.append({"args": args, "kwargs": kwargs})
@@ -2239,13 +2464,16 @@ class FakeTracer(BaseTracer):
 
 def test_mcp_tracing() -> None:
     # Test we exclude sensitive information from traces
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    llm = ChatOpenAI(
+        model="o4-mini", use_responses_api=True, output_version="responses/v1"
+    )
 
     tracer = FakeTracer()
     mock_client = MagicMock()
 
-    def mock_create(*args: Any, **kwargs: Any) -> Response:
-        return Response(
+    def mock_create(*args: Any, **kwargs: Any) -> MagicMock:
+        mock_raw_response = MagicMock()
+        mock_raw_response.parse.return_value = Response(
             id="resp_123",
             created_at=1234567890,
             model="o4-mini",
@@ -2267,8 +2495,9 @@ def test_mcp_tracing() -> None:
                 )
             ],
         )
+        return mock_raw_response
 
-    mock_client.responses.create = mock_create
+    mock_client.responses.with_raw_response.create = mock_create
     input_message = HumanMessage("Test query")
     tools = [
         {
@@ -2297,7 +2526,7 @@ def test_mcp_tracing() -> None:
     assert payload["tools"][0]["headers"]["Authorization"] == "Bearer PLACEHOLDER"
 
 
-def test_compat() -> None:
+def test_compat_responses_v03() -> None:
     # Check compatibility with v0.3 message format
     message_v03 = AIMessage(
         content=[
@@ -2356,6 +2585,178 @@ def test_compat() -> None:
     message_v03_output = _convert_to_v03_ai_message(message)
     assert message_v03_output == message_v03
     assert message_v03_output is not message_v03
+
+
+@pytest.mark.parametrize(
+    ("message_v1", "expected"),
+    [
+        (
+            AIMessage(
+                [
+                    {"type": "reasoning", "reasoning": "Reasoning text"},
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    },
+                    {
+                        "type": "text",
+                        "text": "Hello, world!",
+                        "annotations": [
+                            {"type": "citation", "url": "https://example.com"}
+                        ],
+                    },
+                ],
+                id="chatcmpl-123",
+                response_metadata={"model_provider": "openai", "model_name": "gpt-4.1"},
+            ),
+            AIMessage(
+                [{"type": "text", "text": "Hello, world!"}],
+                id="chatcmpl-123",
+                response_metadata={"model_provider": "openai", "model_name": "gpt-4.1"},
+            ),
+        )
+    ],
+)
+def test_convert_from_v1_to_chat_completions(
+    message_v1: AIMessage, expected: AIMessage
+) -> None:
+    result = _convert_from_v1_to_chat_completions(message_v1)
+    assert result == expected
+    assert result.tool_calls == message_v1.tool_calls  # tool calls remain cached
+
+    # Check no mutation
+    assert message_v1 != result
+
+
+@pytest.mark.parametrize(
+    ("message_v1", "expected"),
+    [
+        (
+            AIMessage(
+                content_blocks=[
+                    {"type": "reasoning", "id": "abc123"},
+                    {"type": "reasoning", "id": "abc234", "reasoning": "foo "},
+                    {"type": "reasoning", "id": "abc234", "reasoning": "bar"},
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    },
+                    {
+                        "type": "tool_call",
+                        "id": "call_234",
+                        "name": "get_weather_2",
+                        "args": {"location": "New York"},
+                        "extras": {"item_id": "fc_123"},
+                    },
+                    {"type": "text", "text": "Hello "},
+                    {
+                        "type": "text",
+                        "text": "world",
+                        "annotations": [
+                            {"type": "citation", "url": "https://example.com"},
+                            {
+                                "type": "citation",
+                                "title": "my doc",
+                                "extras": {"file_id": "file_123", "index": 1},
+                            },
+                            {
+                                "type": "non_standard_annotation",
+                                "value": {"bar": "baz"},
+                            },
+                        ],
+                    },
+                    {"type": "image", "base64": "...", "id": "ig_123"},
+                    {
+                        "type": "server_tool_call",
+                        "name": "file_search",
+                        "id": "fs_123",
+                        "args": {"queries": ["query for file search"]},
+                    },
+                    {
+                        "type": "server_tool_result",
+                        "tool_call_id": "fs_123",
+                        "output": [{"file_id": "file-123"}],
+                        "status": "success",
+                    },
+                    {
+                        "type": "non_standard",
+                        "value": {"type": "something_else", "foo": "bar"},
+                    },
+                ],
+                id="resp123",
+            ),
+            [
+                {"type": "reasoning", "id": "abc123", "summary": []},
+                {
+                    "type": "reasoning",
+                    "id": "abc234",
+                    "summary": [
+                        {"type": "summary_text", "text": "foo "},
+                        {"type": "summary_text", "text": "bar"},
+                    ],
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "call_123",
+                    "name": "get_weather",
+                    "arguments": '{"location": "San Francisco"}',
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "call_234",
+                    "name": "get_weather_2",
+                    "arguments": '{"location": "New York"}',
+                    "id": "fc_123",
+                },
+                {"type": "text", "text": "Hello "},
+                {
+                    "type": "text",
+                    "text": "world",
+                    "annotations": [
+                        {"type": "url_citation", "url": "https://example.com"},
+                        {
+                            "type": "file_citation",
+                            "filename": "my doc",
+                            "index": 1,
+                            "file_id": "file_123",
+                        },
+                        {"bar": "baz"},
+                    ],
+                },
+                {"type": "image_generation_call", "id": "ig_123", "result": "..."},
+                {
+                    "type": "file_search_call",
+                    "id": "fs_123",
+                    "queries": ["query for file search"],
+                    "results": [{"file_id": "file-123"}],
+                    "status": "completed",
+                },
+                {"type": "something_else", "foo": "bar"},
+            ],
+        )
+    ],
+)
+def test_convert_from_v1_to_responses(
+    message_v1: AIMessage, expected: list[dict[str, Any]]
+) -> None:
+    tcs: list[types.ToolCall] = [
+        {
+            "type": "tool_call",
+            "name": tool_call["name"],
+            "args": tool_call["args"],
+            "id": tool_call.get("id"),
+        }
+        for tool_call in message_v1.tool_calls
+    ]
+    result = _convert_from_v1_to_responses(message_v1.content_blocks, tcs)
+    assert result == expected
+
+    # Check no mutation
+    assert message_v1 != result
 
 
 def test_get_last_messages() -> None:
@@ -2428,9 +2829,47 @@ def test_get_last_messages() -> None:
     assert response_id == "resp_123"
 
 
+def test_get_last_messages_with_mixed_response_metadata() -> None:
+    """Test that _get_last_messages correctly skips AIMessages without response_id."""
+    # Test case where the most recent AIMessage has no response_id,
+    # but an earlier AIMessage does have one
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+        HumanMessage("How are you?"),
+        AIMessage("I'm good"),  # No response_metadata
+        HumanMessage("What's up?"),
+    ]
+    last_messages, previous_response_id = _get_last_messages(messages)
+    # Should return messages after the AIMessage
+    # with response_id (not the most recent one)
+
+    assert last_messages == [
+        HumanMessage("How are you?"),
+        AIMessage("I'm good"),
+        HumanMessage("What's up?"),
+    ]
+    assert previous_response_id == "resp_123"
+
+    # Test case where no AIMessage has response_id
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!"),  # No response_metadata
+        HumanMessage("How are you?"),
+        AIMessage("I'm good"),  # No response_metadata
+        HumanMessage("What's up?"),
+    ]
+    last_messages, previous_response_id = _get_last_messages(messages)
+    # Should return all messages when no AIMessage has response_id
+    assert last_messages == messages
+    assert previous_response_id is None
+
+
 def test_get_request_payload_use_previous_response_id() -> None:
     # Default - don't use previous_response ID
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    llm = ChatOpenAI(
+        model="o4-mini", use_responses_api=True, output_version="responses/v1"
+    )
     messages = [
         HumanMessage("Hello"),
         AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
@@ -2594,3 +3033,196 @@ def test_extra_body_with_model_kwargs() -> None:
     assert payload["extra_body"]["ttl"] == 600
     assert payload["custom_non_openai_param"] == "test_value"
     assert payload["temperature"] == 0.5
+
+
+@pytest.mark.parametrize("verbosity_format", ["model_kwargs", "top_level"])
+@pytest.mark.parametrize("streaming", [False, True])
+@pytest.mark.parametrize("schema_format", ["pydantic", "dict"])
+def test_structured_output_verbosity(
+    verbosity_format: str, streaming: bool, schema_format: str
+) -> None:
+    class MySchema(BaseModel):
+        foo: str
+
+    if verbosity_format == "model_kwargs":
+        init_params: dict[str, Any] = {"model_kwargs": {"text": {"verbosity": "high"}}}
+    else:
+        init_params = {"verbosity": "high"}
+
+    if streaming:
+        init_params["streaming"] = True
+
+    llm = ChatOpenAI(model="gpt-5", use_responses_api=True, **init_params)
+
+    if schema_format == "pydantic":
+        schema: Any = MySchema
+    else:
+        schema = MySchema.model_json_schema()
+
+    structured_llm = llm.with_structured_output(schema)
+    sequence = cast(RunnableSequence, structured_llm)
+    binding = cast(RunnableBinding, sequence.first)
+    bound_llm = cast(ChatOpenAI, binding.bound)
+    bound_kwargs = binding.kwargs
+
+    messages = [HumanMessage(content="Hello")]
+    payload = bound_llm._get_request_payload(messages, **bound_kwargs)
+
+    # Verify that verbosity is present in `text` param
+    assert "text" in payload
+    assert "verbosity" in payload["text"]
+    assert payload["text"]["verbosity"] == "high"
+
+    # Verify that schema is passed correctly
+    if schema_format == "pydantic" and not streaming:
+        assert payload["text_format"] == schema
+    else:
+        assert "format" in payload["text"]
+        assert payload["text"]["format"]["type"] == "json_schema"
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_gpt_5_temperature(use_responses_api: bool) -> None:
+    llm = ChatOpenAI(
+        model="gpt-5-nano", temperature=0.5, use_responses_api=use_responses_api
+    )
+
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload  # not supported for gpt-5 family models
+
+    llm = ChatOpenAI(
+        model="gpt-5-chat", temperature=0.5, use_responses_api=use_responses_api
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert payload["temperature"] == 0.5  # gpt-5-chat is exception
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+@pytest.mark.parametrize(
+    "model_name",
+    [
+        "GPT-5-NANO",
+        "GPT-5-2025-01-01",
+        "Gpt-5-Turbo",
+        "gPt-5-mini",
+    ],
+)
+def test_gpt_5_temperature_case_insensitive(
+    use_responses_api: bool, model_name: str
+) -> None:
+    llm = ChatOpenAI(
+        model=model_name, temperature=0.5, use_responses_api=use_responses_api
+    )
+
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+    for chat_model in ["GPT-5-CHAT", "Gpt-5-Chat", "gpt-5-chat"]:
+        llm = ChatOpenAI(
+            model=chat_model, temperature=0.7, use_responses_api=use_responses_api
+        )
+        messages = [HumanMessage(content="Hello")]
+        payload = llm._get_request_payload(messages)
+        assert payload["temperature"] == 0.7
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_gpt_5_1_temperature_with_reasoning_effort_none(
+    use_responses_api: bool,
+) -> None:
+    """Test that temperature is preserved when reasoning_effort is explicitly 'none'."""
+    # Test with reasoning_effort='none' explicitly set
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning_effort="none",
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert payload["temperature"] == 0.5
+
+    # Test with reasoning={'effort': 'none'}
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning={"effort": "none"},
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert payload["temperature"] == 0.5
+
+    # Test that temperature is restricted by default (no reasoning_effort)
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+    # Test that temperature is still restricted when reasoning_effort is something else
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning_effort="low",
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+    # Test with reasoning={'effort': 'low'}
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning={"effort": "low"},
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+
+def test_model_prefers_responses_api() -> None:
+    assert _model_prefers_responses_api("gpt-5.2-pro")
+    assert not _model_prefers_responses_api("gpt-5.1")
+
+
+def test_openai_structured_output_refusal_handling_responses_api() -> None:
+    """
+    Test that _oai_structured_outputs_parser raises OpenAIRefusalError
+    when the AIMessage contains a refusal block from OpenAI's Responses API.
+    """
+    ai_msg = AIMessage(
+        content=[
+            {
+                "id": "rs_fake_id",
+                "summary": [],
+                "type": "reasoning",
+                "encrypted_content": "fake_encrypted_content",
+            },
+            {
+                "type": "refusal",
+                "refusal": "refused content in string",
+                "id": "msg_fake_id",
+            },
+        ],
+    )
+
+    # schema does not matter in this issue
+    class MySchema(BaseModel):
+        foo: int
+
+    try:
+        _oai_structured_outputs_parser(ai_msg, MySchema)
+    except OpenAIRefusalError:
+        # OpenAIRefusalError was raised. This is the proper behavior.
+        pass
+    except ValueError as e:
+        pytest.fail(f"This is a wrong behavior. Error details: {e}")

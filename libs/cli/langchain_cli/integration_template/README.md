@@ -19,8 +19,8 @@ And you should configure credentials by setting the following environment variab
 ```python
 from __module_name__ import Chat__ModuleName__
 
-llm = Chat__ModuleName__()
-llm.invoke("Sing a ballad of LangChain.")
+model = Chat__ModuleName__()
+model.invoke("Sing a ballad of LangChain.")
 ```
 
 ## Embeddings
@@ -35,11 +35,12 @@ embeddings.embed_query("What is the meaning of life?")
 ```
 
 ## LLMs
+
 `__ModuleName__LLM` class exposes LLMs from __ModuleName__.
 
 ```python
 from __module_name__ import __ModuleName__LLM
 
-llm = __ModuleName__LLM()
-llm.invoke("The meaning of life is")
+model = __ModuleName__LLM()
+model.invoke("The meaning of life is")
 ```

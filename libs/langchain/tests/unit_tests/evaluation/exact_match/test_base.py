@@ -1,6 +1,6 @@
 import pytest
 
-from langchain.evaluation import ExactMatchStringEvaluator
+from langchain_classic.evaluation import ExactMatchStringEvaluator
 
 
 @pytest.fixture

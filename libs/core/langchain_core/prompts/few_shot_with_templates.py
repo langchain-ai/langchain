@@ -1,11 +1,12 @@
 """Prompt template that contains few shot examples."""
 
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 from pydantic import ConfigDict, model_validator
 from typing_extensions import Self
 
+from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
@@ -17,11 +18,11 @@ from langchain_core.prompts.string import (
 class FewShotPromptWithTemplates(StringPromptTemplate):
     """Prompt template that contains few shot examples."""
 
-    examples: Optional[list[dict]] = None
+    examples: list[dict] | None = None
     """Examples to format into the prompt.
     Either this or example_selector should be provided."""
 
-    example_selector: Any = None
+    example_selector: BaseExampleSelector | None = None
     """ExampleSelector to choose the examples to format into the prompt.
     Either this or examples should be provided."""
 
@@ -34,7 +35,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
     example_separator: str = "\n\n"
     """String separator used to join the prefix, the examples, and suffix."""
 
-    prefix: Optional[StringPromptTemplate] = None
+    prefix: StringPromptTemplate | None = None
     """A PromptTemplate to put before the examples."""
 
     template_format: PromptTemplateFormat = "f-string"
@@ -46,7 +47,11 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the LangChain object.
+
+        Returns:
+            `["langchain", "prompts", "few_shot_with_templates"]`
+        """
         return ["langchain", "prompts", "few_shot_with_templates"]
 
     @model_validator(mode="before")
@@ -112,17 +117,15 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         """Format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
 
         Example:
-
-        .. code-block:: python
-
-            prompt.format(variable1="foo")
-
+        ```python
+        prompt.format(variable1="foo")
+        ```
         """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         # Get the examples to use.
@@ -161,7 +164,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         """Async format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
@@ -206,7 +209,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         """Return the prompt type key."""
         return "few_shot_with_templates"
 
-    def save(self, file_path: Union[Path, str]) -> None:
+    def save(self, file_path: Path | str) -> None:
         """Save the prompt to a file.
 
         Args:

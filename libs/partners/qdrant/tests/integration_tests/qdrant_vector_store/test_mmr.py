@@ -31,7 +31,7 @@ def test_qdrant_mmr_search(
     vector_name: str,
 ) -> None:
     """Test end to end construction and MRR search."""
-    filter = models.Filter(
+    filter_ = models.Filter(
         must=[
             models.FieldCondition(
                 key=f"{metadata_payload_key}.page",
@@ -63,12 +63,12 @@ def test_qdrant_mmr_search(
         output,
         [
             Document(page_content="foo", metadata={"page": 0}),
-            Document(page_content="baz", metadata={"page": 2}),
+            Document(page_content="bar", metadata={"page": 1}),
         ],
     )
 
     output = docsearch.max_marginal_relevance_search(
-        "foo", k=2, fetch_k=3, lambda_mult=0.0, filter=filter
+        "foo", k=2, fetch_k=3, lambda_mult=0.0, filter=filter_
     )
     assert_documents_equals(
         output,

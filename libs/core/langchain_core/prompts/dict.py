@@ -2,7 +2,7 @@
 
 import warnings
 from functools import cached_property
-from typing import Any, Literal, Optional
+from typing import Any, Literal, cast
 
 from typing_extensions import override
 
@@ -31,18 +31,25 @@ class DictPromptTemplate(RunnableSerializable[dict, dict]):
         return _get_input_variables(self.template, self.template_format)
 
     def format(self, **kwargs: Any) -> dict[str, Any]:
-        """Format the prompt with the inputs."""
+        """Format the prompt with the inputs.
+
+        Returns:
+            A formatted dict.
+        """
         return _insert_input_variables(self.template, kwargs, self.template_format)
 
     async def aformat(self, **kwargs: Any) -> dict[str, Any]:
-        """Format the prompt with the inputs."""
+        """Format the prompt with the inputs.
+
+        Returns:
+            A formatted dict.
+        """
         return self.format(**kwargs)
 
     @override
     def invoke(
-        self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: dict, config: RunnableConfig | None = None, **kwargs: Any
     ) -> dict:
-        """Invoke the prompt."""
         return self._call_with_config(
             lambda x: self.format(**x),
             input,
@@ -58,26 +65,30 @@ class DictPromptTemplate(RunnableSerializable[dict, dict]):
 
     @cached_property
     def _serialized(self) -> dict[str, Any]:
-        return dumpd(self)
+        # self is always a Serializable object in this case, thus the result is
+        # guaranteed to be a dict since dumpd uses the default callback, which uses
+        # obj.to_json which always returns TypedDict subclasses
+        return cast("dict[str, Any]", dumpd(self))
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether or not the class is serializable.
-
-        Returns: True.
-        """
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Serialization namespace."""
+        """Get the namespace of the LangChain object.
+
+        Returns:
+            `["langchain_core", "prompts", "dict"]`
+        """
         return ["langchain_core", "prompts", "dict"]
 
     def pretty_repr(self, *, html: bool = False) -> str:
         """Human-readable representation.
 
         Args:
-            html: Whether to format as HTML. Defaults to False.
+            html: Whether to format as HTML.
 
         Returns:
             Human-readable representation.
@@ -108,7 +119,7 @@ def _insert_input_variables(
     inputs: dict[str, Any],
     template_format: Literal["f-string", "mustache"],
 ) -> dict[str, Any]:
-    formatted = {}
+    formatted: dict[str, Any] = {}
     formatter = DEFAULT_FORMATTER_MAPPING[template_format]
     for k, v in template.items():
         if isinstance(v, str):
@@ -124,7 +135,7 @@ def _insert_input_variables(
                 warnings.warn(msg, stacklevel=2)
             formatted[k] = _insert_input_variables(v, inputs, template_format)
         elif isinstance(v, (list, tuple)):
-            formatted_v = []
+            formatted_v: list[str | dict[str, Any]] = []
             for x in v:
                 if isinstance(x, str):
                     formatted_v.append(formatter(x, **inputs))

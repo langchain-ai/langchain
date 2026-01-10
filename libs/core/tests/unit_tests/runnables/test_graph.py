@@ -1,4 +1,5 @@
-from typing import Any, Optional
+from typing import Any
+from unittest.mock import MagicMock, patch
 
 from packaging import version
 from pydantic import BaseModel
@@ -6,17 +7,20 @@ from syrupy.assertion import SnapshotAssertion
 from typing_extensions import override
 
 from langchain_core.language_models import FakeListLLM
+from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.list import CommaSeparatedListOutputParser
 from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.output_parsers.xml import XMLOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.runnables import RunnableConfig
 from langchain_core.runnables.base import Runnable
-from langchain_core.runnables.graph import Edge, Graph, Node
-from langchain_core.runnables.graph_mermaid import _escape_node_label
-from langchain_core.utils.pydantic import (
-    PYDANTIC_VERSION,
+from langchain_core.runnables.graph import Edge, Graph, MermaidDrawMethod, Node
+from langchain_core.runnables.graph_mermaid import (
+    _render_mermaid_using_api,
+    _to_safe_id,
+    draw_mermaid_png,
 )
+from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
 
@@ -222,7 +226,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
     str_parser = StrOutputParser()
     xml_parser = XMLOutputParser()
 
-    def conditional_str_parser(value: str) -> Runnable:
+    def conditional_str_parser(value: str) -> Runnable[BaseMessage | str, str]:
         if value == "a":
             return str_parser
         return xml_parser
@@ -481,7 +485,7 @@ def test_runnable_get_graph_with_invalid_input_type() -> None:
         def invoke(
             self,
             input: int,
-            config: Optional[RunnableConfig] = None,
+            config: RunnableConfig | None = None,
             **kwargs: Any,
         ) -> int:
             return input
@@ -506,7 +510,7 @@ def test_runnable_get_graph_with_invalid_output_type() -> None:
         def invoke(
             self,
             input: int,
-            config: Optional[RunnableConfig] = None,
+            config: RunnableConfig | None = None,
             **kwargs: Any,
         ) -> int:
             return input
@@ -518,17 +522,17 @@ def test_runnable_get_graph_with_invalid_output_type() -> None:
     runnable.get_graph()
 
 
-def test_graph_mermaid_escape_node_label() -> None:
+def test_graph_mermaid_to_safe_id() -> None:
     """Test that node labels are correctly preprocessed for draw_mermaid."""
-    assert _escape_node_label("foo") == "foo"
-    assert _escape_node_label("foo-bar") == "foo-bar"
-    assert _escape_node_label("foo_1") == "foo_1"
-    assert _escape_node_label("#foo*&!") == "_foo___"
+    assert _to_safe_id("foo") == "foo"
+    assert _to_safe_id("foo-bar") == "foo-bar"
+    assert _to_safe_id("foo_1") == "foo_1"
+    assert _to_safe_id("#foo*&!") == "\\23foo\\2a\\26\\21"
 
 
 def test_graph_mermaid_duplicate_nodes(snapshot: SnapshotAssertion) -> None:
     fake_llm = FakeListLLM(responses=["foo", "bar"])
-    sequence: Runnable = (
+    sequence = (
         PromptTemplate.from_template("Hello, {input}")
         | {
             "llm1": fake_llm,
@@ -563,3 +567,153 @@ def test_graph_mermaid_frontmatter_config(snapshot: SnapshotAssertion) -> None:
             }
         }
     ) == snapshot(name="mermaid")
+
+
+def test_mermaid_base_url_default() -> None:
+    """Test that _render_mermaid_using_api defaults to mermaid.ink when None."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.content = b"fake image data"
+
+    with patch("requests.get", return_value=mock_response) as mock_get:
+        # Call the function with base_url=None (default)
+        _render_mermaid_using_api(
+            "graph TD;\n    A --> B;",
+            base_url=None,
+        )
+
+        # Verify that the URL was constructed with the default base URL
+        assert mock_get.called
+        args = mock_get.call_args[0]
+        url = args[0]  # First argument to request.get is the URL
+        assert url.startswith("https://mermaid.ink")
+
+
+def test_mermaid_base_url_custom() -> None:
+    """Test that _render_mermaid_using_api uses custom base_url when provided."""
+    custom_url = "https://custom.mermaid.com"
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.content = b"fake image data"
+
+    with patch("requests.get", return_value=mock_response) as mock_get:
+        # Call the function with custom base_url.
+        _render_mermaid_using_api(
+            "graph TD;\n    A --> B;",
+            base_url=custom_url,
+        )
+
+        # Verify that the URL was constructed with our custom base URL
+        assert mock_get.called
+        args = mock_get.call_args[0]
+        url = args[0]  # First argument to request.get is the URL
+        assert url.startswith(custom_url)
+
+
+def test_draw_mermaid_png_function_base_url() -> None:
+    """Test that draw_mermaid_png function passes base_url to API renderer."""
+    custom_url = "https://custom.mermaid.com"
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.content = b"fake image data"
+
+    with patch("requests.get", return_value=mock_response) as mock_get:
+        # Call draw_mermaid_png with custom base_url
+        draw_mermaid_png(
+            "graph TD;\n    A --> B;",
+            draw_method=MermaidDrawMethod.API,
+            base_url=custom_url,
+        )
+
+        # Verify that the URL was constructed with our custom base URL
+        assert mock_get.called
+        args = mock_get.call_args[0]
+        url = args[0]  # First argument to request.get is the URL
+        assert url.startswith(custom_url)
+
+
+def test_graph_draw_mermaid_png_base_url() -> None:
+    """Test that Graph.draw_mermaid_png method passes base_url to renderer."""
+    custom_url = "https://custom.mermaid.com"
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.content = b"fake image data"
+
+    with patch("requests.get", return_value=mock_response) as mock_get:
+        # Create a simple graph
+        graph = Graph()
+        start_node = graph.add_node(BaseModel, id="start")
+        end_node = graph.add_node(BaseModel, id="end")
+        graph.add_edge(start_node, end_node)
+
+        # Call draw_mermaid_png with custom base_url
+        graph.draw_mermaid_png(draw_method=MermaidDrawMethod.API, base_url=custom_url)
+
+        # Verify that the URL was constructed with our custom base URL
+        assert mock_get.called
+        args = mock_get.call_args[0]
+        url = args[0]  # First argument to request.get is the URL
+        assert url.startswith(custom_url)
+
+
+def test_mermaid_bgcolor_url_encoding() -> None:
+    """Test that background_color with special chars is properly URL-encoded.
+
+    Regression test for issue #34444: Named colors like 'white' get prefixed
+    with '!' which must be URL-encoded to avoid HTTP 400 errors from mermaid.ink.
+    """
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.content = b"fake image data"
+
+    with patch("requests.get", return_value=mock_response) as mock_get:
+        _render_mermaid_using_api(
+            "graph TD;\n    A --> B;",
+            background_color="white",
+        )
+
+        assert mock_get.called
+        url = mock_get.call_args[0][0]
+        # The '!' character should be URL-encoded as '%21'
+        assert "%21white" in url or "!white" not in url
+        # Verify the URL doesn't contain unencoded '!'
+        assert "bgColor=!white" not in url
+
+
+def test_mermaid_bgcolor_hex_not_encoded() -> None:
+    """Test that hex color codes are not prefixed with '!' and work correctly."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.content = b"fake image data"
+
+    with patch("requests.get", return_value=mock_response) as mock_get:
+        _render_mermaid_using_api(
+            "graph TD;\n    A --> B;",
+            background_color="#ffffff",
+        )
+
+        assert mock_get.called
+        url = mock_get.call_args[0][0]
+        # Hex colors should be URL-encoded but not prefixed with '!'
+        assert "%23ffffff" in url  # '#' encoded as '%23'
+
+
+def test_graph_mermaid_special_chars(snapshot: SnapshotAssertion) -> None:
+    graph = Graph(
+        nodes={
+            "__start__": Node(
+                id="__start__", name="__start__", data=BaseModel, metadata=None
+            ),
+            "开始": Node(id="开始", name="开始", data=BaseModel, metadata=None),
+            "结束": Node(id="结束", name="结束", data=BaseModel, metadata=None),
+            "__end__": Node(
+                id="__end__", name="__end__", data=BaseModel, metadata=None
+            ),
+        },
+        edges=[
+            Edge(source="__start__", target="开始", data=None, conditional=False),
+            Edge(source="开始", target="结束", data=None, conditional=False),
+            Edge(source="结束", target="__end__", data=None, conditional=False),
+        ],
+    )
+    assert graph.draw_mermaid() == snapshot(name="mermaid")
