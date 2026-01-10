@@ -64,7 +64,7 @@ def test_host_policy_validations() -> None:
 
 
 def test_host_policy_requires_resource_for_limits(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(_execution, "resource", None, raising=False)
+    monkeypatch.setattr(_execution, "_HAS_RESOURCE", False, raising=False)
     with pytest.raises(RuntimeError):
         HostExecutionPolicy(cpu_time_seconds=1)
 
