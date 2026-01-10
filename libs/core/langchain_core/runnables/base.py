@@ -6290,20 +6290,20 @@ def chain(
 
     The decorated function can optionally accept additional parameters:
 
-    - ``RunnableConfig``: Access runtime configuration (e.g., ``configurable``).
-    - ``CallbackManagerForChainRun`` / ``AsyncCallbackManagerForChainRun``:
-      Access the callback manager for tracing and instrumentation.
+    - `RunnableConfig`: Access runtime configuration (e.g., `configurable`).
+    - `CallbackManagerForChainRun` / `AsyncCallbackManagerForChainRun`:
+        Access the callback manager for tracing and instrumentation.
 
-    The function can also return a ``Runnable``, which will be automatically
+    The function can also return a `Runnable`, which will be automatically
     invoked with the original input.
 
     Args:
-        func: A callable that takes an input and optionally ``RunnableConfig``
+        func: A callable that takes an input and optionally `RunnableConfig`
             and/or a callback manager. Can be sync or async, and may return
-            a value, an iterator/async iterator, or a ``Runnable``.
+            a value, an iterator/async iterator, or a `Runnable`.
 
     Returns:
-        A ``Runnable`` that wraps the function.
+        A `Runnable` that wraps the function.
 
     Example:
         Basic usage:
@@ -6324,7 +6324,7 @@ def chain(
                 yield chunk
         ```
 
-        With ``RunnableConfig``:
+        With `RunnableConfig`:
 
         ```python
         from langchain_core.runnables import RunnableConfig, chain
