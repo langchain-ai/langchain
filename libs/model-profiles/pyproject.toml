@@ -93,6 +93,9 @@ flake8-annotations.allow-star-arg-any = true
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
 [tool.coverage.run]
 omit = ["tests/*"]
 

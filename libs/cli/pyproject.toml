@@ -38,14 +38,16 @@ dev = [
     "pytest-watcher>=0.3.4,<1.0.0"
 ]
 lint = [
-    "ruff>=0.13.1,<0.14",
-    "mypy>=1.18.1,<1.19"
+    "ruff>=0.14.11,<0.15.0"
 ]
 test = [
     "langchain-core",
     "langchain-classic"
 ]
-typing = ["langchain-classic"]
+typing = [
+    "mypy>=1.19.1,<1.20",
+    "langchain-classic"
+]
 test_integration = []
 
 [tool.uv.sources]
@@ -72,7 +74,6 @@ ignore = [
 ]
 unfixable = [
     "B028",    # People should intentionally tune the stacklevel
-    "PLW1510", # People should intentionally set the check argument
 ]
 
 flake8-annotations.allow-star-arg-any = true
@@ -84,6 +85,9 @@ pyupgrade.keep-runtime-typing = true
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = [ "D1", "S", "SLF",]
