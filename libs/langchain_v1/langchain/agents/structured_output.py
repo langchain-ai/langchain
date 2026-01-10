@@ -113,14 +113,14 @@ class _SchemaSpec(Generic[SchemaT]):
     name: str
     """Name of the schema, used for tool calling.
 
-    If not provided, the name will be the model name or `"response_format"` if it's a
-    JSON schema.
+    If not provided, the name will be the class name for models/dataclasses/TypedDicts,
+    or the `title` field for JSON schemas. Falls back to a generated name if unavailable.
     """
 
     description: str
     """Custom description of the schema.
 
-    If not provided, provided will use the model's docstring.
+    If not provided, will use the model's docstring.
     """
 
     schema_kind: SchemaKind
@@ -192,10 +192,10 @@ class _SchemaSpec(Generic[SchemaT]):
 class ToolStrategy(Generic[SchemaT]):
     """Use a tool calling strategy for model responses."""
 
-    schema: type[SchemaT] | dict[str, Any]
+    schema: type[SchemaT] | UnionType | dict[str, Any]
     """Schema for the tool calls."""
 
-    schema_specs: list[_SchemaSpec[SchemaT]]
+    schema_specs: list[_SchemaSpec[Any]]
     """Schema specs for the tool calls."""
 
     tool_message_content: str | None
@@ -218,7 +218,7 @@ class ToolStrategy(Generic[SchemaT]):
 
     def __init__(
         self,
-        schema: type[SchemaT] | dict[str, Any],
+        schema: type[SchemaT] | UnionType | dict[str, Any],
         *,
         tool_message_content: str | None = None,
         handle_errors: bool
