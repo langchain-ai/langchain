@@ -4440,6 +4440,138 @@ class RunnableLambda(Runnable[Input, Output]):
         ```
     """
 
+    @overload
+    def __init__(
+        self,
+        func: Callable[[Input, RunnableConfig], Awaitable[Output]],
+        afunc: None = None,
+        name: str | None = None,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        func: Callable[[Input], Awaitable[Output]],
+        afunc: None = None,
+        name: str | None = None,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        func: Callable[[Input], AsyncIterator[Output]],
+        afunc: None = None,
+        name: str | None = None,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        func: Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]],
+        afunc: None = None,
+        name: str | None = None,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        func: Callable[
+            [Input, AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]
+        ],
+        afunc: None = None,
+        name: str | None = None,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        func: Callable[[Input, RunnableConfig], Output],
+        afunc: Callable[[Input], Awaitable[Output]]
+        | Callable[[Input], AsyncIterator[Output]]
+        | Callable[[Input, RunnableConfig], Awaitable[Output]]
+        | Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]]
+        | Callable[
+            [Input, AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]
+        ]
+        | None = None,
+        name: str | None = None,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        func: Callable[[Input], Iterator[Output]],
+        afunc: Callable[[Input], Awaitable[Output]]
+        | Callable[[Input], AsyncIterator[Output]]
+        | Callable[[Input, RunnableConfig], Awaitable[Output]]
+        | Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]]
+        | Callable[
+            [Input, AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]
+        ]
+        | None = None,
+        name: str | None = None,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        func: Callable[[Input], Runnable[Input, Output]],
+        afunc: Callable[[Input], Awaitable[Output]]
+        | Callable[[Input], AsyncIterator[Output]]
+        | Callable[[Input, RunnableConfig], Awaitable[Output]]
+        | Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]]
+        | Callable[
+            [Input, AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]
+        ]
+        | None = None,
+        name: str | None = None,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        func: Callable[[Input, CallbackManagerForChainRun], Output],
+        afunc: Callable[[Input], Awaitable[Output]]
+        | Callable[[Input], AsyncIterator[Output]]
+        | Callable[[Input, RunnableConfig], Awaitable[Output]]
+        | Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]]
+        | Callable[
+            [Input, AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]
+        ]
+        | None = None,
+        name: str | None = None,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        func: Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
+        afunc: Callable[[Input], Awaitable[Output]]
+        | Callable[[Input], AsyncIterator[Output]]
+        | Callable[[Input, RunnableConfig], Awaitable[Output]]
+        | Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]]
+        | Callable[
+            [Input, AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]
+        ]
+        | None = None,
+        name: str | None = None,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        func: Callable[[Input], Output],
+        afunc: Callable[[Input], Awaitable[Output]]
+        | Callable[[Input], AsyncIterator[Output]]
+        | Callable[[Input, RunnableConfig], Awaitable[Output]]
+        | Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]]
+        | Callable[
+            [Input, AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]
+        ]
+        | None = None,
+        name: str | None = None,
+    ) -> None: ...
+
     def __init__(
         self,
         func: Callable[[Input], Iterator[Output]]
