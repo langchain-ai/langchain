@@ -92,6 +92,7 @@ line-length = 100
 strict = true
 ignore_missing_imports = true
 enable_error_code = "deprecated"
+warn_unreachable = true
 exclude = ["tests/unit_tests/agents/*"]
 
 # TODO: activate for 'strict' checking
