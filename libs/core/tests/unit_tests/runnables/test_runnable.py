@@ -296,7 +296,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     async def typed_async_lambda_impl(x: str) -> int:
         return len(x)
 
-    typed_async_lambda: Runnable = RunnableLambda(typed_async_lambda_impl)  # str -> int
+    typed_async_lambda = RunnableLambda(typed_async_lambda_impl)  # str -> int
 
     assert typed_async_lambda.get_input_jsonschema() == {
         "title": "typed_async_lambda_impl_input",
@@ -616,9 +616,7 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
         }
 
     assert _normalize_schema(
-        RunnableLambda(
-            aget_values_typed  # type: ignore[arg-type]
-        ).get_input_jsonschema()
+        RunnableLambda(aget_values_typed).get_input_jsonschema()
     ) == _normalize_schema(
         {
             "$defs": {
@@ -642,7 +640,7 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
 
     if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(
-            RunnableLambda(aget_values_typed).get_output_jsonschema()  # type: ignore[arg-type]
+            RunnableLambda(aget_values_typed).get_output_jsonschema()
         ) == snapshot(name="schema8")
 
 
@@ -666,7 +664,7 @@ def test_with_types_with_type_generics() -> None:
 
 def test_schema_with_itemgetter() -> None:
     """Test runnable with itemgetter."""
-    foo: Runnable = RunnableLambda(itemgetter("hello"))
+    foo = RunnableLambda(itemgetter("hello"))
     assert _schema(foo.input_schema) == {
         "properties": {"hello": {"title": "Hello"}},
         "required": ["hello"],
@@ -2685,11 +2683,11 @@ def test_combining_sequences(
     )
     chat2 = FakeListChatModel(responses=["baz, qux"])
     parser2 = CommaSeparatedListOutputParser()
-    input_formatter: RunnableLambda[list[str], dict[str, Any]] = RunnableLambda(
+    input_formatter = RunnableLambda[list[str], dict[str, Any]](
         lambda x: {"question": x[0] + x[1]}
     )
 
-    chain2 = cast("RunnableSequence", input_formatter | prompt2 | chat2 | parser2)
+    chain2 = input_formatter | prompt2 | chat2 | parser2
 
     assert isinstance(chain2, RunnableSequence)
     assert chain2.first == input_formatter
@@ -2697,7 +2695,7 @@ def test_combining_sequences(
     assert chain2.last == parser2
     assert dumps(chain2, pretty=True) == snapshot
 
-    combined_chain = cast("RunnableSequence", chain | chain2)
+    combined_chain = chain | chain2
 
     assert isinstance(combined_chain, RunnableSequence)
     assert combined_chain.first == prompt
@@ -4460,8 +4458,8 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
 
 def test_runnable_branch_init() -> None:
     """Verify that runnable branch gets initialized properly."""
-    add = RunnableLambda(lambda x: x + 1)
-    condition = RunnableLambda(lambda x: x > 0)
+    add = RunnableLambda[int, int](lambda x: x + 1)
+    condition = RunnableLambda[int, bool](lambda x: x > 0)
 
     # Test failure with less than 2 branches
     with pytest.raises(
@@ -4513,9 +4511,9 @@ def test_runnable_branch_init_coercion(branches: Sequence[Any]) -> None:
 def test_runnable_branch_invoke_call_counts(mocker: MockerFixture) -> None:
     """Verify that runnables are invoked only when necessary."""
     # Test with single branch
-    add = RunnableLambda(lambda x: x + 1)
-    sub = RunnableLambda(lambda x: x - 1)
-    condition = RunnableLambda(lambda x: x > 0)
+    add = RunnableLambda[int, int](lambda x: x + 1)
+    sub = RunnableLambda[int, int](lambda x: x - 1)
+    condition = RunnableLambda[int, bool](lambda x: x > 0)
     spy = mocker.spy(condition, "invoke")
     add_spy = mocker.spy(add, "invoke")
 
@@ -4802,7 +4800,7 @@ async def test_runnable_branch_astream_with_callbacks() -> None:
 
 def test_representation_of_runnables() -> None:
     """Test representation of runnables."""
-    runnable = RunnableLambda(lambda x: x * 2)
+    runnable = RunnableLambda[int, int](lambda x: x * 2)
     assert repr(runnable) == "RunnableLambda(lambda x: x * 2)"
 
     def f(_: int) -> int:
@@ -5361,18 +5359,18 @@ async def test_ainvoke_on_returned_runnable() -> None:
     be runthroughaasync path (issue #13407).
     """
 
-    def idchain_sync(_input: dict, /) -> bool:
+    def idchain_sync(_input: dict[str, Any], /) -> bool:
         return False
 
-    async def idchain_async(_input: dict, /) -> bool:
+    async def idchain_async(_input: dict[str, Any], /) -> bool:
         return True
 
     idchain = RunnableLambda(func=idchain_sync, afunc=idchain_async)
 
-    def func(_input: dict, /) -> Runnable:
+    def func(_input: dict[str, Any], /) -> Runnable[dict[str, Any], bool]:
         return idchain
 
-    assert await RunnableLambda[dict, bool](func).ainvoke({})
+    assert await RunnableLambda(func).ainvoke({})
 
 
 def test_invoke_stream_passthrough_assign_trace() -> None:
@@ -5490,7 +5488,7 @@ async def test_atransform_of_runnable_lambda_with_dicts() -> None:
         """Return x."""
         return x
 
-    runnable = RunnableLambda[dict[str, str], dict[str, str]](identity)
+    runnable = RunnableLambda(identity)
 
     async def chunk_iterator() -> AsyncIterator[dict[str, str]]:
         yield {"foo": "a"}
@@ -5735,22 +5733,24 @@ def test_runnable_assign() -> None:
     assert result == {"input": 5, "add_step": {"added": 15}}
 
 
+class _Foo(TypedDict):
+    foo: str
+
+
+class _InputData(_Foo):
+    bar: str
+
+
 def test_runnable_typed_dict_schema() -> None:
     """Testing that the schema is generated properly(not empty) when using TypedDict.
 
     subclasses to annotate the arguments of a RunnableParallel children.
     """
 
-    class Foo(TypedDict):
-        foo: str
-
-    class InputData(Foo):
-        bar: str
-
-    def forward_foo(input_data: InputData) -> str:
+    def forward_foo(input_data: _InputData) -> str:
         return input_data["foo"]
 
-    def transform_input(input_data: InputData) -> dict[str, str]:
+    def transform_input(input_data: _InputData) -> dict[str, str]:
         foo = input_data["foo"]
         bar = input_data["bar"]
 
