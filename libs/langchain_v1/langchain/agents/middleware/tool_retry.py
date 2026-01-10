@@ -233,7 +233,8 @@ class ToolRetryMiddleware(AgentMiddleware):
             return True
         return tool_name in self._tool_filter
 
-    def _format_failure_message(self, tool_name: str, exc: Exception, attempts_made: int) -> str:
+    @staticmethod
+    def _format_failure_message(tool_name: str, exc: Exception, attempts_made: int) -> str:
         """Format the failure message when retries are exhausted.
 
         Args:
@@ -297,6 +298,9 @@ class ToolRetryMiddleware(AgentMiddleware):
 
         Returns:
             `ToolMessage` or `Command` (the final result).
+
+        Raises:
+            RuntimeError: If the retry loop completes without returning. This should not happen.
         """
         tool_name = request.tool.name if request.tool else request.tool_call["name"]
 
@@ -353,6 +357,9 @@ class ToolRetryMiddleware(AgentMiddleware):
 
         Returns:
             `ToolMessage` or `Command` (the final result).
+
+        Raises:
+            RuntimeError: If the retry loop completes without returning. This should not happen.
         """
         tool_name = request.tool.name if request.tool else request.tool_call["name"]
 
