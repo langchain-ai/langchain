@@ -30,7 +30,7 @@ def create_test_request(**kwargs: Any) -> ModelRequest:
 def create_mock_base_handler(content: str = "test") -> Callable[[ModelRequest], ModelResponse]:
     """Helper to create a base handler that returns `ModelResponse`."""
 
-    def mock_base_handler(req: ModelRequest) -> ModelResponse:
+    def mock_base_handler(_: ModelRequest) -> ModelResponse:
         return ModelResponse(result=[AIMessage(content=content)], structured_response=None)
 
     return mock_base_handler
@@ -163,7 +163,7 @@ class TestChainModelCallHandlers:
 
         call_count = {"value": 0}
 
-        def mock_base_handler(req: ModelRequest) -> ModelResponse:
+        def mock_base_handler(_: ModelRequest) -> ModelResponse:
             call_count["value"] += 1
             if call_count["value"] < 3:
                 msg = "fail"
@@ -196,7 +196,7 @@ class TestChainModelCallHandlers:
         composed = _chain_model_call_handlers([outer_error_handler, inner_passthrough])
         assert composed is not None
 
-        def mock_base_handler(req: ModelRequest) -> ModelResponse:
+        def mock_base_handler(_: ModelRequest) -> ModelResponse:
             msg = "Model failed"
             raise ValueError(msg)
 
@@ -300,7 +300,7 @@ class TestChainModelCallHandlers:
 
         attempt = {"value": 0}
 
-        def mock_base_handler(req: ModelRequest) -> ModelResponse:
+        def mock_base_handler(_: ModelRequest) -> ModelResponse:
             attempt["value"] += 1
             if attempt["value"] == 1:
                 msg = "fail"
