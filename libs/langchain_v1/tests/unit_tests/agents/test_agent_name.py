@@ -14,8 +14,7 @@ from langchain_core.messages import (
 from langchain_core.tools import tool
 
 from langchain.agents import create_agent
-
-from .model import FakeToolCallingModel
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 @tool

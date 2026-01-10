@@ -140,7 +140,17 @@ class _SchemaSpec(Generic[SchemaT]):
         description: str | None = None,
         strict: bool | None = None,
     ) -> None:
-        """Initialize SchemaSpec with schema and optional parameters."""
+        """Initialize `SchemaSpec` with schema and optional parameters.
+
+        Args:
+            schema: Schema to describe.
+            name: Optional name for the schema.
+            description: Optional description for the schema.
+            strict: Whether to enforce strict validation of the schema.
+
+        Raises:
+            ValueError: If the schema type is unsupported.
+        """
         self.schema = schema
 
         if name:
@@ -182,7 +192,7 @@ class _SchemaSpec(Generic[SchemaT]):
 class ToolStrategy(Generic[SchemaT]):
     """Use a tool calling strategy for model responses."""
 
-    schema: type[SchemaT]
+    schema: type[SchemaT] | dict[str, Any]
     """Schema for the tool calls."""
 
     schema_specs: list[_SchemaSpec[SchemaT]]
@@ -208,7 +218,7 @@ class ToolStrategy(Generic[SchemaT]):
 
     def __init__(
         self,
-        schema: type[SchemaT],
+        schema: type[SchemaT] | dict[str, Any],
         *,
         tool_message_content: str | None = None,
         handle_errors: bool
@@ -269,7 +279,11 @@ class ProviderStrategy(Generic[SchemaT]):
         self.schema_spec = _SchemaSpec(schema, strict=strict)
 
     def to_model_kwargs(self) -> dict[str, Any]:
-        """Convert to kwargs to bind to a model to force structured output."""
+        """Convert to kwargs to bind to a model to force structured output.
+
+        Returns:
+            The kwargs to bind to a model.
+        """
         # OpenAI:
         # - see https://platform.openai.com/docs/guides/structured-outputs
         json_schema: dict[str, Any] = {
@@ -399,7 +413,8 @@ class ProviderStrategyBinding(Generic[SchemaT]):
         # Parse according to schema
         return _parse_with_schema(self.schema, self.schema_kind, data)
 
-    def _extract_text_content_from_message(self, message: AIMessage) -> str:
+    @staticmethod
+    def _extract_text_content_from_message(message: AIMessage) -> str:
         """Extract text content from an AIMessage.
 
         Args:
