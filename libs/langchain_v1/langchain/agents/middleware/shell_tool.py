@@ -78,7 +78,7 @@ class _SessionResources:
     session: ShellSession
     tempdir: tempfile.TemporaryDirectory[str] | None
     policy: BaseExecutionPolicy
-    finalizer: weakref.finalize[..., Any] = field(init=False, repr=False)
+    finalizer: weakref.finalize = field(init=False, repr=False)  # type: ignore[type-arg]
 
     def __post_init__(self) -> None:
         self.finalizer = weakref.finalize(
