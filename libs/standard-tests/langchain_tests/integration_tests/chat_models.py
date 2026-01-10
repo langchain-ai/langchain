@@ -2336,11 +2336,13 @@ class ChatModelIntegrationTests(ChatModelTests):
             punchline: str = FieldV1(description="answer to resolve the joke")
 
         # Pydantic class
+        # Note: with_structured_output return type is dict | pydantic.BaseModel (v2),
+        # but this test validates pydantic.v1.BaseModel support at runtime.
         chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
         result = chat.invoke("Tell me a joke about cats.")
-        assert isinstance(result, Joke)
+        assert isinstance(result, Joke)  # type: ignore[unreachable]
 
-        chunk = None
+        chunk = None  # type: ignore[unreachable]
         for chunk in chat.stream("Tell me a joke about cats."):
             assert isinstance(chunk, Joke)
         assert chunk is not None, "Stream returned no chunks - possible API issue"
