@@ -2,19 +2,14 @@
 
 from __future__ import annotations
 
+import builtins  # noqa: TC003
 import contextlib
 import json
-import typing
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
+from collections.abc import Mapping  # noqa: TC003
 from functools import cached_property
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generic,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -22,7 +17,7 @@ from typing_extensions import Self, override
 
 from langchain_core.exceptions import ErrorCode, create_message
 from langchain_core.load import dumpd
-from langchain_core.output_parsers.base import BaseOutputParser
+from langchain_core.output_parsers.base import BaseOutputParser  # noqa: TC001
 from langchain_core.prompt_values import (
     ChatPromptValueConcrete,
     PromptValue,
@@ -56,7 +51,7 @@ class BasePromptTemplate(
 
     These variables are auto inferred from the prompt and user need not provide them.
     """
-    input_types: typing.Dict[str, Any] = Field(default_factory=dict, exclude=True)  # noqa: UP006
+    input_types: builtins.dict[str, Any] = Field(default_factory=dict, exclude=True)
     """A dictionary of the types of the variables the prompt template expects.
 
     If not provided, all variables are assumed to be strings.
@@ -69,7 +64,7 @@ class BasePromptTemplate(
     Partial variables populate the template so that you don't need to pass them in every
     time you call the prompt.
     """
-    metadata: typing.Dict[str, Any] | None = None  # noqa: UP006
+    metadata: builtins.dict[str, Any] | None = None
     """Metadata to be used for tracing."""
     tags: list[str] | None = None
     """Tags to be used for tracing."""
@@ -122,7 +117,10 @@ class BasePromptTemplate(
 
     @cached_property
     def _serialized(self) -> dict[str, Any]:
-        return dumpd(self)
+        # self is always a Serializable object in this case, thus the result is
+        # guaranteed to be a dict since dumpd uses the default callback, which uses
+        # obj.to_json which always returns TypedDict subclasses
+        return cast("dict[str, Any]", dumpd(self))
 
     @property
     @override
@@ -156,7 +154,7 @@ class BasePromptTemplate(
         if not isinstance(inner_input, dict):
             if len(self.input_variables) == 1:
                 var_name = self.input_variables[0]
-                inner_input = {var_name: inner_input}
+                inner_input_ = {var_name: inner_input}
 
             else:
                 msg = (
@@ -168,12 +166,14 @@ class BasePromptTemplate(
                         message=msg, error_code=ErrorCode.INVALID_PROMPT_INPUT
                     )
                 )
-        missing = set(self.input_variables).difference(inner_input)
+        else:
+            inner_input_ = inner_input
+        missing = set(self.input_variables).difference(inner_input_)
         if missing:
             msg = (
                 f"Input to {self.__class__.__name__} is missing variables {missing}. "
                 f" Expected: {self.input_variables}"
-                f" Received: {list(inner_input.keys())}"
+                f" Received: {list(inner_input_.keys())}"
             )
             example_key = missing.pop()
             msg += (
@@ -184,7 +184,7 @@ class BasePromptTemplate(
             raise KeyError(
                 create_message(message=msg, error_code=ErrorCode.INVALID_PROMPT_INPUT)
             )
-        return inner_input
+        return inner_input_
 
     def _format_prompt_with_error_handling(self, inner_input: dict) -> PromptValue:
         inner_input_ = self._validate_input(inner_input)

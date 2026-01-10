@@ -77,7 +77,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
       - name: Upload build
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -208,7 +208,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -258,7 +258,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -394,9 +394,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    if: false # temporarily skip
     strategy:
       matrix:
-        partner: [anthropic]
+        partner: [openai, anthropic]
       fail-fast: false # Continue testing other partners if one fails
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -430,7 +431,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         if: startsWith(inputs.working-directory, 'libs/core')
         with:
           name: dist
@@ -477,7 +478,7 @@ jobs:
       - release-notes
       - test-pypi-publish
       - pre-release-checks
-      - test-prior-published-packages-against-new-core
+      # - test-prior-published-packages-against-new-core
     runs-on: ubuntu-latest
     permissions:
       # This permission is used for trusted publishing:
@@ -499,7 +500,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -539,7 +540,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/

@@ -7,8 +7,8 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
     r"""Merge dictionaries.
 
     Merge many dicts, handling specific scenarios where a key exists in both
-    dictionaries but has a value of None in 'left'. In such cases, the method uses the
-    value from 'right' for that key in the merged dictionary.
+    dictionaries but has a value of `None` in `'left'`. In such cases, the method uses
+    the value from `'right'` for that key in the merged dictionary.
 
     Args:
         left: The first dictionary to merge.
@@ -24,11 +24,10 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
             'type'.
 
     Example:
-        If left = {"function_call": {"arguments": None}} and
-        right = {"function_call": {"arguments": "{\n"}}
-        then, after merging, for the key "function_call",
-        the value from 'right' is used,
-        resulting in merged = {"function_call": {"arguments": "{\n"}}.
+        If `left = {"function_call": {"arguments": None}}` and
+        `right = {"function_call": {"arguments": "{\n"}}`, then, after merging, for the
+        key `'function_call'`, the value from `'right'` is used, resulting in
+        `merged = {"function_call": {"arguments": "{\n"}}`.
     """
     merged = left.copy()
     for right in others:
@@ -57,7 +56,7 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                     )
                     raise ValueError(msg)
                 if (right_k == "index" and merged[right_k].startswith("lc_")) or (
-                    right_k in ("id", "output_version", "model_provider")
+                    right_k in {"id", "output_version", "model_provider"}
                     and merged[right_k] == right_v
                 ):
                     continue
@@ -80,7 +79,7 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
 
 
 def merge_lists(left: list | None, *others: list | None) -> list | None:
-    """Add many lists, handling None.
+    """Add many lists, handling `None`.
 
     Args:
         left: The first list to merge.
@@ -137,9 +136,9 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
 def merge_obj(left: Any, right: Any) -> Any:
     """Merge two objects.
 
-    It handles specific scenarios where a key exists in both
-    dictionaries but has a value of None in 'left'. In such cases, the method uses the
-    value from 'right' for that key in the merged dictionary.
+    It handles specific scenarios where a key exists in both dictionaries but has a
+    value of `None` in `'left'`. In such cases, the method uses the value from `'right'`
+    for that key in the merged dictionary.
 
     Args:
         left: The first object to merge.

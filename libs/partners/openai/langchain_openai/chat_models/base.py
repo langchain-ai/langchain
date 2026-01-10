@@ -237,7 +237,13 @@ def _format_message_content(
             if (
                 isinstance(block, dict)
                 and "type" in block
-                and block["type"] in ("tool_use", "thinking", "reasoning_content")
+                and (
+                    block["type"] in ("tool_use", "thinking", "reasoning_content")
+                    or (
+                        block["type"] in ("function_call", "code_interpreter_call")
+                        and api == "chat/completions"
+                    )
+                )
             ):
                 continue
             if (
@@ -466,6 +472,12 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
         warnings.warn(message)
         raise e
     raise
+
+
+def _model_prefers_responses_api(model_name: str | None) -> bool:
+    if not model_name:
+        return False
+    return "gpt-5.2-pro" in model_name
 
 
 _BM = TypeVar("_BM", bound=BaseModel)
@@ -1101,8 +1113,6 @@ class BaseChatOpenAI(BaseChatModel):
                 generation_info["system_fingerprint"] = system_fingerprint
             if service_tier := chunk.get("service_tier"):
                 generation_info["service_tier"] = service_tier
-            if isinstance(message_chunk, AIMessageChunk):
-                message_chunk.chunk_position = "last"
 
         logprobs = choice.get("logprobs")
         if logprobs:
@@ -1391,6 +1401,7 @@ class BaseChatOpenAI(BaseChatModel):
             or self.reasoning is not None
             or self.truncation is not None
             or self.use_previous_response_id
+            or _model_prefers_responses_api(self.model_name)
         ):
             return True
         return _use_responses_api(payload)
@@ -3051,16 +3062,16 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
                 - `'json_schema'`:
                     Uses OpenAI's [Structured Output API](https://platform.openai.com/docs/guides/structured-outputs).
-                    See the docs for a list of supported models.
+                    See the docs for [supported models](https://platform.openai.com/docs/guides/structured-outputs#supported-models).
                 - `'function_calling'`:
                     Uses OpenAI's [tool-calling API](https://platform.openai.com/docs/guides/function-calling)
                     (formerly called function calling).
                 - `'json_mode'`:
-                    Uses OpenAI's [JSON mode](https://platform.openai.com/docs/guides/structured-outputs/json-mode).
+                    Uses OpenAI's [JSON mode](https://platform.openai.com/docs/guides/structured-outputs#json-mode).
                     Note that if using JSON mode then you must include instructions for
                     formatting the output into the desired schema into the model call.
 
-                Learn more about the [differences between methods](https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format).
+                Learn more about the [differences between methods](https://platform.openai.com/docs/guides/structured-outputs#function-calling-vs-response-format).
 
             include_raw:
                 If `False` then only the parsed structured output is returned.
@@ -3080,7 +3091,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 - `True`:
                     Model output is guaranteed to exactly match the schema.
                     The input schema will also be validated according to the
-                    [supported schemas](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas).
+                    [supported schemas](https://platform.openai.com/docs/guides/structured-outputs#supported-schemas).
                 - `False`:
                     Input schema will not be validated and model output will not be
                     validated.
@@ -3172,7 +3183,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             specify any Field metadata (like min/max constraints) and fields cannot
             have default values.
 
-            See [all constraints](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas).
+            See [all constraints](https://platform.openai.com/docs/guides/structured-outputs#supported-schemas).
 
             ```python
             from langchain_openai import ChatOpenAI
@@ -3522,7 +3533,7 @@ def _resize(width: int, height: int) -> tuple[int, int]:
             width = (width * 768) // height
             height = 768
         else:
-            height = (width * 768) // height
+            height = (height * 768) // width
             width = 768
     return width, height
 
@@ -3579,12 +3590,12 @@ def _oai_structured_outputs_parser(
     if any(
         isinstance(block, dict)
         and block.get("type") == "non_standard"
-        and "refusal" in block["value"]
-        for block in ai_msg.content
+        and "refusal" in block["value"]  # type: ignore[typeddict-item]
+        for block in ai_msg.content_blocks
     ):
         refusal = next(
             block["value"]["refusal"]
-            for block in ai_msg.content
+            for block in ai_msg.content_blocks
             if isinstance(block, dict)
             and block["type"] == "non_standard"
             and "refusal" in block["value"]
@@ -4048,9 +4059,14 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         if block_type in ("text", "output_text", "refusal"):
                             msg_id = block.get("id")
                             if block_type in ("text", "output_text"):
+                                # Defensive check: block may not have "text" key
+                                text = block.get("text")
+                                if text is None:
+                                    # Skip blocks without text content
+                                    continue
                                 new_block = {
                                     "type": "output_text",
-                                    "text": block["text"],
+                                    "text": text,
                                     "annotations": [
                                         _format_annotation_from_lc(annotation)
                                         for annotation in block.get("annotations") or []
@@ -4430,7 +4446,15 @@ def _convert_responses_chunk_to_generation_chunk(
             }
         )
     elif chunk.type == "response.output_text.done":
-        content.append({"type": "text", "id": chunk.item_id, "index": current_index})
+        _advance(chunk.output_index, chunk.content_index)
+        content.append(
+            {
+                "type": "text",
+                "text": "",
+                "id": chunk.item_id,
+                "index": current_index,
+            }
+        )
     elif chunk.type == "response.created":
         id = chunk.response.id
         response_metadata["id"] = chunk.response.id  # Backwards compatibility

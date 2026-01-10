@@ -373,6 +373,14 @@ class TestGetBufferString:
 
         assert get_buffer_string(msgs) == expected_output
 
+    def test_custom_message_separator(self) -> None:
+        msgs = [
+            self._HUMAN_MSG,
+            self._AI_MSG,
+        ]
+        expected_output = "Human: human\n\nAI: ai"
+        assert get_buffer_string(msgs, message_separator="\n\n") == expected_output
+
 
 def test_multiple_msg() -> None:
     human_msg = HumanMessage(content="human", additional_kwargs={"key": "value"})
@@ -928,7 +936,7 @@ def test_tool_message_serdes() -> None:
         },
     }
     assert dumpd(message) == ser_message
-    assert load(dumpd(message)) == message
+    assert load(dumpd(message), allowed_objects=[ToolMessage]) == message
 
 
 class BadObject:
@@ -957,7 +965,7 @@ def test_tool_message_ser_non_serializable() -> None:
     }
     assert dumpd(message) == ser_message
     with pytest.raises(NotImplementedError):
-        load(dumpd(ser_message))
+        load(dumpd(message), allowed_objects=[ToolMessage])
 
 
 def test_tool_message_to_dict() -> None:
@@ -1108,20 +1116,32 @@ def test_is_data_content_block() -> None:
     # Image blocks
     assert is_data_content_block({"type": "image", "url": "https://..."})
     assert is_data_content_block(
-        {"type": "image", "base64": "<base64 data>", "mime_type": "image/jpeg"}
+        {
+            "type": "image",
+            "base64": "<base64 data>",
+            "mime_type": "image/jpeg",
+        }
     )
 
     # Video blocks
     assert is_data_content_block({"type": "video", "url": "https://video.mp4"})
     assert is_data_content_block(
-        {"type": "video", "base64": "<base64 video>", "mime_type": "video/mp4"}
+        {
+            "type": "video",
+            "base64": "<base64 video>",
+            "mime_type": "video/mp4",
+        }
     )
     assert is_data_content_block({"type": "video", "file_id": "vid_123"})
 
     # Audio blocks
     assert is_data_content_block({"type": "audio", "url": "https://audio.mp3"})
     assert is_data_content_block(
-        {"type": "audio", "base64": "<base64 audio>", "mime_type": "audio/mp3"}
+        {
+            "type": "audio",
+            "base64": "<base64 audio>",
+            "mime_type": "audio/mp3",
+        }
     )
     assert is_data_content_block({"type": "audio", "file_id": "aud_123"})
 
@@ -1133,7 +1153,11 @@ def test_is_data_content_block() -> None:
     # File blocks
     assert is_data_content_block({"type": "file", "url": "https://file.pdf"})
     assert is_data_content_block(
-        {"type": "file", "base64": "<base64 file>", "mime_type": "application/pdf"}
+        {
+            "type": "file",
+            "base64": "<base64 file>",
+            "mime_type": "application/pdf",
+        }
     )
     assert is_data_content_block({"type": "file", "file_id": "file_123"})
 

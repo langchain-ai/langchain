@@ -1,14 +1,16 @@
 import sys
-import pytest
-from typing import Annotated
+from typing import Annotated, Any
 
-from langchain.agents import AgentState, create_agent
-from langchain.tools import InjectedState, tool as dec_tool
-from .model import FakeToolCallingModel
+import pytest
 from langchain_core.messages import HumanMessage
 from langgraph.prebuilt import InjectedStore, ToolRuntime
 from langgraph.store.base import BaseStore
 from langgraph.store.memory import InMemoryStore
+
+from langchain.agents import AgentState, create_agent
+from langchain.tools import InjectedState
+from langchain.tools import tool as dec_tool
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 @pytest.mark.skipif(
@@ -16,6 +18,7 @@ from langgraph.store.memory import InMemoryStore
 )
 def test_tool_invocation_error_excludes_injected_state() -> None:
     """Test that tool invocation errors only include LLM-controllable arguments.
+
     When a tool has InjectedState parameters and the LLM makes an incorrect
     invocation (e.g., missing required arguments), the error message should only
     contain the arguments from the tool call that the LLM controls. This ensures
@@ -25,7 +28,7 @@ def test_tool_invocation_error_excludes_injected_state() -> None:
     """
 
     # Define a custom state schema with injected data
-    class TestState(AgentState):
+    class TestState(AgentState[Any]):
         secret_data: str  # Example of state data not controlled by LLM
 
     @dec_tool
@@ -84,13 +87,14 @@ def test_tool_invocation_error_excludes_injected_state() -> None:
 )
 async def test_tool_invocation_error_excludes_injected_state_async() -> None:
     """Test that async tool invocation errors only include LLM-controllable arguments.
+
     This test verifies that the async execution path (_execute_tool_async and _arun_one)
     properly filters validation errors to exclude system-injected arguments, ensuring
     the LLM receives only relevant context for correction.
     """
 
     # Define a custom state schema
-    class TestState(AgentState):
+    class TestState(AgentState[Any]):
         internal_data: str
 
     @dec_tool
@@ -169,7 +173,7 @@ async def test_tool_invocation_error_excludes_injected_state_async() -> None:
         and len(line.split()) <= 2
     ]
     # Verify system-injected 'state' is not in the field error list
-    assert not any("state" == field.lower() for field in field_errors), (
+    assert not any(field.lower() == "state" for field in field_errors), (
         "The field 'state' (system-injected) should not appear in validation errors"
     )
 
@@ -177,8 +181,9 @@ async def test_tool_invocation_error_excludes_injected_state_async() -> None:
 @pytest.mark.skipif(
     sys.version_info >= (3, 14), reason="Pydantic model rebuild issue in Python 3.14"
 )
-async def test_create_agent_error_content_with_multiple_params() -> None:
+def test_create_agent_error_content_with_multiple_params() -> None:
     """Test that error messages only include LLM-controlled parameter errors.
+
     Uses create_agent to verify that when a tool with both LLM-controlled
     and system-injected parameters receives invalid arguments, the error message:
     1. Contains details about LLM-controlled parameter errors (query, limit)
@@ -188,10 +193,10 @@ async def test_create_agent_error_content_with_multiple_params() -> None:
     This ensures the LLM receives focused, actionable feedback.
     """
 
-    class TestState(AgentState):
+    class TestState(AgentState[Any]):
         user_id: str
         api_key: str
-        session_data: dict
+        session_data: dict[str, Any]
 
     @dec_tool
     def complex_tool(
@@ -202,6 +207,7 @@ async def test_create_agent_error_content_with_multiple_params() -> None:
         runtime: ToolRuntime,
     ) -> str:
         """A complex tool with multiple injected and non-injected parameters.
+
         Args:
             query: The search query string.
             limit: Maximum number of results to return.
@@ -295,14 +301,15 @@ async def test_create_agent_error_content_with_multiple_params() -> None:
 @pytest.mark.skipif(
     sys.version_info >= (3, 14), reason="Pydantic model rebuild issue in Python 3.14"
 )
-async def test_create_agent_error_only_model_controllable_params() -> None:
+def test_create_agent_error_only_model_controllable_params() -> None:
     """Test that errors only include LLM-controllable parameter issues.
+
     Focused test ensuring that validation errors for LLM-controlled parameters
     are clearly reported, while system-injected parameters remain completely
     absent from error messages. This provides focused feedback to the LLM.
     """
 
-    class StateWithSecrets(AgentState):
+    class StateWithSecrets(AgentState[Any]):
         password: str  # Example of data not controlled by LLM
 
     @dec_tool
@@ -312,6 +319,7 @@ async def test_create_agent_error_only_model_controllable_params() -> None:
         state: Annotated[StateWithSecrets, InjectedState],
     ) -> str:
         """Tool that validates user credentials.
+
         Args:
             username: The username (3-20 chars).
             email: The email address.

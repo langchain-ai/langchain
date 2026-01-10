@@ -170,6 +170,30 @@ class ChatGroq(BaseChatModel):
         'logprobs': None}, id='run-ecc71d70-e10c-4b69-8b8c-b8027d95d4b8-0')
         ```
 
+    Vision:
+        ```python
+        from langchain_groq import ChatGroq
+        from langchain_core.messages import HumanMessage
+
+        model = ChatGroq(model="meta-llama/llama-4-scout-17b-16e-instruct")
+
+        message = HumanMessage(
+            content=[
+                {"type": "text", "text": "Describe this image in detail"},
+                {"type": "image_url", "image_url": {"url": "example_url.jpg"}},
+            ]
+        )
+
+        response = model.invoke([message])
+        print(response.content)
+        ```
+
+        Vision-capable models:
+        - meta-llama/llama-4-scout-17b-16e-instruct
+        - meta-llama/llama-4-maverick-17b-128e-instruct
+
+        Maximum image size: 20MB per request.
+
     Stream:
         ```python
         # Streaming `text` for each content chunk received
@@ -840,6 +864,9 @@ class ChatGroq(BaseChatModel):
             **kwargs: Any additional parameters to pass to the
                 `langchain.runnable.Runnable` constructor.
         """  # noqa: E501
+        # strict tool-calling not supported by Groq
+        _ = kwargs.pop("strict", None)
+
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None and tool_choice:
             if tool_choice == "any":
@@ -1138,9 +1165,6 @@ class ChatGroq(BaseChatModel):
 
         """  # noqa: E501
         _ = kwargs.pop("strict", None)
-        if kwargs:
-            msg = f"Received unsupported arguments {kwargs}"
-            raise ValueError(msg)
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
             if schema is None:
@@ -1158,6 +1182,7 @@ class ChatGroq(BaseChatModel):
                     "kwargs": {"method": "function_calling"},
                     "schema": formatted_tool,
                 },
+                **kwargs,
             )
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
@@ -1190,6 +1215,7 @@ class ChatGroq(BaseChatModel):
             llm = self.bind(
                 response_format=response_format,
                 ls_structured_output_format=ls_format_info,
+                **kwargs,
             )
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
@@ -1204,6 +1230,7 @@ class ChatGroq(BaseChatModel):
                     "kwargs": {"method": "json_mode"},
                     "schema": schema,
                 },
+                **kwargs,
             )
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]

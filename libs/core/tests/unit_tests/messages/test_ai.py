@@ -47,7 +47,7 @@ def test_serdes_message() -> None:
     }
     actual = dumpd(msg)
     assert actual == expected
-    assert load(actual) == msg
+    assert load(actual, allowed_objects=[AIMessage]) == msg
 
 
 def test_serdes_message_chunk() -> None:
@@ -102,7 +102,7 @@ def test_serdes_message_chunk() -> None:
     }
     actual = dumpd(chunk)
     assert actual == expected
-    assert load(actual) == chunk
+    assert load(actual, allowed_objects=[AIMessageChunk]) == chunk
 
 
 def test_add_usage_both_none() -> None:

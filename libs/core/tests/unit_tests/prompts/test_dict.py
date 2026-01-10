@@ -31,4 +31,4 @@ def test_deserialize_legacy() -> None:
     expected = DictPromptTemplate(
         template={"type": "audio", "audio": "{audio_data}"}, template_format="f-string"
     )
-    assert load(ser) == expected
+    assert load(ser, allowed_objects=[DictPromptTemplate]) == expected

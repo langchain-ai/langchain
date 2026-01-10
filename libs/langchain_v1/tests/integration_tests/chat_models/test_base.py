@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Any, cast
 
 import pytest
 from langchain_core.language_models import BaseChatModel
@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from langchain.chat_models import init_chat_model
 
 
-class multiply(BaseModel):
+class Multiply(BaseModel):
     """Product of two ints."""
 
     x: int
@@ -21,7 +21,7 @@ class multiply(BaseModel):
 @pytest.mark.requires("langchain_openai", "langchain_anthropic")
 async def test_init_chat_model_chain() -> None:
     model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
-    model_with_tools = model.bind_tools([multiply])
+    model_with_tools = model.bind_tools([Multiply])
 
     model_with_config = model_with_tools.with_config(
         RunnableConfig(tags=["foo"]),
@@ -41,7 +41,7 @@ class TestStandard(ChatModelIntegrationTests):
         return cast("type[BaseChatModel]", init_chat_model)
 
     @property
-    def chat_model_params(self) -> dict:
+    def chat_model_params(self) -> dict[str, Any]:
         return {"model": "gpt-4o", "configurable_fields": "any"}
 
     @property

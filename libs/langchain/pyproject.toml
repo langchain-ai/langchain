@@ -9,11 +9,11 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.0.0"
+version = "1.0.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0,<2.0.0",
-    "langchain-text-splitters>=1.0.0,<2.0.0",
+    "langchain-core>=1.2.5,<2.0.0",
+    "langchain-text-splitters>=1.1.0,<2.0.0",
     "langsmith>=0.1.17,<1.0.0",
     "pydantic>=2.7.4,<3.0.0",
     "SQLAlchemy>=1.4.0,<3.0.0",
@@ -88,12 +88,12 @@ test_integration = [
     "langchain-text-splitters",
 ]
 lint = [
-    "ruff>=0.13.1,<0.14.0",
+    "ruff>=0.14.11,<0.15.0",
     "cffi<1.17.1; python_version < \"3.10\"",
     "cffi; python_version >= \"3.10\"",
 ]
 typing = [
-    "mypy>=1.18.2,<1.19.0",
+    "mypy>=1.19.1,<1.20.0",
     "mypy-protobuf>=3.0.0,<4.0.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
     "types-requests>=2.28.11.5,<3.0.0.0",
@@ -163,7 +163,6 @@ ignore = [
 ]
 unfixable = [
     "B028",    # People should intentionally tune the stacklevel
-    "PLW1510", # People should intentionally set the check argument
 ]
 
 flake8-annotations.allow-star-arg-any = true
@@ -175,6 +174,9 @@ pyupgrade.keep-runtime-typing = true
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [

@@ -9,11 +9,11 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.2.0"
+version = "1.3.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "anthropic>=0.75.0,<1.0.0",
-    "langchain-core>=1.1.0,<2.0.0",
+    "langchain-core>=1.2.6,<2.0.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
 
@@ -115,6 +115,9 @@ asyncio_mode = "auto"
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [
