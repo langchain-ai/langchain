@@ -189,14 +189,14 @@ class ToolRetryMiddleware(AgentMiddleware):
 
         # Handle backwards compatibility for deprecated on_failure values
         if on_failure == "raise":  # type: ignore[comparison-overlap]
-            msg = (
+            msg = (  # type: ignore[unreachable]
                 "on_failure='raise' is deprecated and will be removed in a future version. "
                 "Use on_failure='error' instead."
             )
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
             on_failure = "error"
         elif on_failure == "return_message":  # type: ignore[comparison-overlap]
-            msg = (
+            msg = (  # type: ignore[unreachable]
                 "on_failure='return_message' is deprecated and will be removed "
                 "in a future version. Use on_failure='continue' instead."
             )

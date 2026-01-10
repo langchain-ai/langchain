@@ -254,7 +254,7 @@ class ModelRequest:
             raise ValueError(msg)
 
         if "system_prompt" in overrides:
-            system_prompt = cast("str", overrides.pop("system_prompt"))  # type: ignore[typeddict-item]
+            system_prompt = cast("str | None", overrides.pop("system_prompt"))  # type: ignore[typeddict-item]
             if system_prompt is None:
                 overrides["system_message"] = None
             else:
