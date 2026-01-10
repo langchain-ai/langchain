@@ -99,7 +99,10 @@ AnyMessage = Annotated[
 
 
 def get_buffer_string(
-    messages: Sequence[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
+    messages: Sequence[BaseMessage],
+    human_prefix: str = "Human",
+    ai_prefix: str = "AI",
+    message_separator: str = "\n",
 ) -> str:
     r"""Convert a sequence of messages to strings and concatenate them into one string.
 
@@ -107,6 +110,7 @@ def get_buffer_string(
         messages: Messages to be converted to strings.
         human_prefix: The prefix to prepend to contents of `HumanMessage`s.
         ai_prefix: The prefix to prepend to contents of `AIMessage`.
+        message_separator: The separator to use between messages.
 
     Returns:
         A single string concatenation of all input messages.
@@ -148,16 +152,19 @@ def get_buffer_string(
         else:
             msg = f"Got unsupported message type: {m}"
             raise ValueError(msg)  # noqa: TRY004
+
         message = f"{role}: {m.text}"
+
         if isinstance(m, AIMessage):
             if m.tool_calls:
                 message += f"{m.tool_calls}"
             elif "function_call" in m.additional_kwargs:
                 # Legacy behavior assumes only one function call per message
                 message += f"{m.additional_kwargs['function_call']}"
+
         string_messages.append(message)
 
-    return "\n".join(string_messages)
+    return message_separator.join(string_messages)
 
 
 def _message_from_dict(message: dict) -> BaseMessage:
@@ -246,13 +253,13 @@ def _create_message_from_message_type(
     """Create a message from a `Message` type and content string.
 
     Args:
-        message_type: (str) the type of the message (e.g., `'human'`, `'ai'`, etc.).
-        content: (str) the content string.
-        name: (str) the name of the message.
-        tool_call_id: (str) the tool call id.
-        tool_calls: (list[dict[str, Any]]) the tool calls.
-        id: (str) the id of the message.
-        additional_kwargs: (dict[str, Any]) additional keyword arguments.
+        message_type: the type of the message (e.g., `'human'`, `'ai'`, etc.).
+        content: the content string.
+        name: the name of the message.
+        tool_call_id: the tool call id.
+        tool_calls: the tool calls.
+        id: the id of the message.
+        additional_kwargs: additional keyword arguments.
 
     Returns:
         a message of the appropriate type.
@@ -556,6 +563,7 @@ def filter_messages(
         ):
             continue
 
+        new_msg = msg
         if isinstance(exclude_tool_calls, (list, tuple, set)):
             if isinstance(msg, AIMessage) and msg.tool_calls:
                 tool_calls = [
@@ -579,7 +587,7 @@ def filter_messages(
                         )
                     ]
 
-                msg = msg.model_copy(  # noqa: PLW2901
+                new_msg = msg.model_copy(
                     update={"tool_calls": tool_calls, "content": content}
                 )
             elif (
@@ -590,11 +598,11 @@ def filter_messages(
         # default to inclusion when no inclusion criteria given.
         if (
             not (include_types or include_ids or include_names)
-            or (include_names and msg.name in include_names)
-            or (include_types and _is_message_type(msg, include_types))
-            or (include_ids and msg.id in include_ids)
+            or (include_names and new_msg.name in include_names)
+            or (include_types and _is_message_type(new_msg, include_types))
+            or (include_ids and new_msg.id in include_ids)
         ):
-            filtered.append(msg)
+            filtered.append(new_msg)
 
     return filtered
 
@@ -1845,26 +1853,29 @@ def count_tokens_approximately(
     """Approximate the total number of tokens in messages.
 
     The token count includes stringified message content, role, and (optionally) name.
+
     - For AI messages, the token count also includes stringified tool calls.
     - For tool messages, the token count also includes the tool call ID.
 
     Args:
         messages: List of messages to count tokens for.
         chars_per_token: Number of characters per token to use for the approximation.
+
             One token corresponds to ~4 chars for common English text.
+
             You can also specify `float` values for more fine-grained control.
             [See more here](https://platform.openai.com/tokenizer).
         extra_tokens_per_message: Number of extra tokens to add per message, e.g.
             special tokens, including beginning/end of message.
+
             You can also specify `float` values for more fine-grained control.
             [See more here](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb).
         count_name: Whether to include message names in the count.
-            Enabled by default.
 
     Returns:
         Approximate number of tokens in the messages.
 
-    !!! note
+    Note:
         This is a simple approximation that may not match the exact token count used by
         specific models. For accurate counts, use model-specific tokenizers.
 
@@ -1872,7 +1883,6 @@ def count_tokens_approximately(
         This function does not currently support counting image tokens.
 
     !!! version-added "Added in `langchain-core` 0.3.46"
-
     """
     token_count = 0.0
     for message in convert_to_messages(messages):

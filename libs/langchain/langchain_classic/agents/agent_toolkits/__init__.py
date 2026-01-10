@@ -122,7 +122,7 @@ def __getattr__(name: str) -> Any:
         old_path = "langchain_classic." + relative_path
         new_path = "langchain_experimental." + relative_path
         msg = (
-            f"{name} has been moved to langchain experimental. "
+            f"{name} has been moved to langchain_experimental. "
             "See https://github.com/langchain-ai/langchain/discussions/11680"
             "for more information.\n"
             f"Please update your import statement from: `{old_path}` to `{new_path}`."
