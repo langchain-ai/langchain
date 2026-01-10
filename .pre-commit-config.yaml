@@ -1,4 +1,23 @@
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.3.0
+    hooks:
+      - id: no-commit-to-branch # prevent direct commits to protected branches
+        args: ["--branch", "master"]
+      - id: check-yaml # validate YAML syntax
+        args: ["--unsafe"] # allow custom tags
+      - id: check-toml # validate TOML syntax
+      - id: end-of-file-fixer # ensure files end with a newline
+      - id: trailing-whitespace # remove trailing whitespace from lines
+
+  # Text normalization hooks for consistent formatting
+  - repo: https://github.com/sirosen/texthooks
+    rev: 0.6.8
+    hooks:
+      - id: fix-smartquotes # replace curly quotes with straight quotes
+      - id: fix-spaces # replace non-standard spaces (e.g., non-breaking) with regular spaces
+
+  # Per-package format and lint hooks for the monorepo
   - repo: local
     hooks:
       - id: core

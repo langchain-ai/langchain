@@ -88,6 +88,9 @@ class MarkdownHeaderTextSplitter:
 
         Args:
             lines: Line of text / associated header metadata
+
+        Returns:
+            List of Documents with common metadata aggregated.
         """
         aggregated_chunks: list[LineType] = []
 
@@ -131,6 +134,9 @@ class MarkdownHeaderTextSplitter:
 
         Args:
             text: Markdown file
+
+        Returns:
+            List of `Document` objects.
         """
         # Split the input text by newline character ("\n").
         lines = text.split("\n")
@@ -455,11 +461,13 @@ class ExperimentalMarkdownSyntaxTextSplitter:
             return match
         return None
 
-    def _match_code(self, line: str) -> re.Match[str] | None:
+    @staticmethod
+    def _match_code(line: str) -> re.Match[str] | None:
         matches = [re.match(rule, line) for rule in [r"^```(.*)", r"^~~~(.*)"]]
         return next((match for match in matches if match), None)
 
-    def _match_horz(self, line: str) -> re.Match[str] | None:
+    @staticmethod
+    def _match_horz(line: str) -> re.Match[str] | None:
         matches = [
             re.match(rule, line) for rule in [r"^\*\*\*+\n", r"^---+\n", r"^___+\n"]
         ]

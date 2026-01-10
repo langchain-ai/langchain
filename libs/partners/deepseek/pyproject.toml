@@ -81,6 +81,9 @@ asyncio_mode = "auto"
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [
     "S101",   # Tests need assertions

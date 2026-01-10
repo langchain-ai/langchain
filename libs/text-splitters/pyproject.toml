@@ -26,11 +26,11 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 lint = [
-    "ruff>=0.13.1,<0.14.0",
+    "ruff>=0.14.11,<0.15.0",
     "langchain-core"
 ]
 typing = [
-    "mypy>=1.18.1,<1.19.0",
+    "mypy>=1.19.1,<1.20.0",
     "lxml-stubs>=0.5.1,<1.0.0",
     "types-requests>=2.31.0.20240218,<3.0.0.0",
     "tiktoken>=0.8.0,<1.0.0",
@@ -55,7 +55,7 @@ test_integration = [
     "thinc>=8.3.6,<9.0.0",
     "nltk>=3.9.1,<4.0.0",
     "transformers>=4.51.3,<5.0.0",
-    "sentence-transformers>=3.0.1,<4.0.0; python_version < \"3.14\"",
+    "sentence-transformers>=3.0.1,<4.0.0",
     "scipy>=1.7.0,<2.0.0; python_version >= \"3.12\" and python_version < \"3.13\"",
     "scipy>=1.14.1,<2.0.0; python_version >= \"3.13\"",
     "tiktoken>=0.8.0,<1.0.0",
@@ -93,7 +93,6 @@ ignore = [
 ]
 unfixable = [
     "B028",    # People should intentionally tune the stacklevel
-    "PLW1510", # People should intentionally set the check argument
 ]
 
 flake8-annotations.allow-star-arg-any = true
@@ -105,6 +104,8 @@ pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pyda
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.ruff.lint.per-file-ignores]
 "scripts/**" = [
