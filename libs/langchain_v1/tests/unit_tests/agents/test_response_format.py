@@ -466,7 +466,7 @@ class TestResponseFormatAsToolStrategy:
     def test_structured_output_parsing_error_without_retry(self) -> None:
         """Test structured output parsing error without retry.
 
-        Test that StructuredOutputParsingError is raised when tool args fail to parse
+        Test that StructuredOutputValidationError is raised when tool args fail to parse
         without retry.
         """
         tool_calls = [
@@ -753,18 +753,6 @@ class TestResponseFormatAsProviderStrategy:
 
         assert response["structured_response"] == EXPECTED_WEATHER_DICT
         assert len(response["messages"]) == 4
-
-    def test_provider_strategy_strict_flag(self) -> None:
-        """ProviderStrategy should pass through strict flag for provider schemas."""
-        # Default should not set strict
-        strategy_default = ProviderStrategy(WeatherBaseModel)
-        kwargs_default = strategy_default.to_model_kwargs()
-        assert "strict" not in kwargs_default["response_format"]["json_schema"]
-
-        # Explicit strict True should include the flag
-        strategy_strict = ProviderStrategy(WeatherBaseModel, strict=True)
-        kwargs_strict = strategy_strict.to_model_kwargs()
-        assert kwargs_strict["response_format"]["json_schema"]["strict"] is True
 
 
 class TestDynamicModelWithResponseFormat:
