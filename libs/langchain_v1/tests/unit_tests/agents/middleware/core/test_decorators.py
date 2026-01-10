@@ -702,7 +702,7 @@ def test_dynamic_prompt_integration() -> None:
     assert result["messages"][-1].content == "you are a helpful assistant.-Hello"
 
 
-async def test_async_dynamic_prompt_decorator() -> None:
+def test_async_dynamic_prompt_decorator() -> None:
     """Test dynamic_prompt decorator with async function."""
 
     @dynamic_prompt

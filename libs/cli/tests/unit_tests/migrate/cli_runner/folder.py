@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .file import File
+from tests.unit_tests.migrate.cli_runner.file import File
 
 if TYPE_CHECKING:
     from pathlib import Path

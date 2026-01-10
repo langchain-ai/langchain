@@ -44,9 +44,9 @@
 #     _infer_handled_types,
 # )
 
-# from .any_str import AnyStr
-# from .messages import _AnyIdHumanMessage, _AnyIdToolMessage
-# from .model import FakeToolCallingModel
+# from tests.unit_tests.agents.any_str import AnyStr
+# from tests.unit_tests.agents.messages import _AnyIdHumanMessage, _AnyIdToolMessage
+# from tests.unit_tests.agents.model import FakeToolCallingModel
 
 # pytestmark = pytest.mark.anyio
 
@@ -362,7 +362,7 @@
 #         return "The weather is sunny and 75°F."
 
 #     expected_structured_response = WeatherResponse(temperature=75)
-#     model = FakeToolCallingModel[WeatherResponse](
+#     model = FakeToolCallingModel(
 #         tool_calls=tool_calls, structured_response=expected_structured_response
 #     )
 #     agent = create_agent(

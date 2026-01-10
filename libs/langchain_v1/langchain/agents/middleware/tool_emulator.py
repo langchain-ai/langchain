@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage, ToolMessage
@@ -106,8 +106,8 @@ class LLMToolEmulator(AgentMiddleware):
     def wrap_tool_call(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], ToolMessage | Command],
-    ) -> ToolMessage | Command:
+        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+    ) -> ToolMessage | Command[Any]:
         """Emulate tool execution using LLM if tool should be emulated.
 
         Args:
@@ -156,8 +156,8 @@ class LLMToolEmulator(AgentMiddleware):
     async def awrap_tool_call(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
-    ) -> ToolMessage | Command:
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+    ) -> ToolMessage | Command[Any]:
         """Async version of `wrap_tool_call`.
 
         Emulate tool execution using LLM if tool should be emulated.
