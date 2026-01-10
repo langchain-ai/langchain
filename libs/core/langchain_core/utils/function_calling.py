@@ -428,11 +428,20 @@ def convert_to_openai_function(
             "dict", _convert_python_function_to_openai_function(function)
         )
     else:
+        if isinstance(function, dict) and (
+            "type" in function or "properties" in function
+        ):
+            msg = (
+                f"Unsupported function\n\n{function}\n\nTo use a JSON schema as a "
+                "function, it must have a top-level 'title' key to be used as the "
+                "function name."
+            )
+            raise ValueError(msg)
         msg = (
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
             " as Dict, pydantic.BaseModel, or Callable. If they're a dict they must"
             " either be in OpenAI function format or valid JSON schema with top-level"
-            " 'title' and 'description' keys."
+            " 'title' key."
         )
         raise ValueError(msg)
 
