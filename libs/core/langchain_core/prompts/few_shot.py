@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 class _FewShotPromptTemplateMixin(BaseModel):
     """Prompt template that contains few shot examples."""
 
-    examples: list[dict] | None = None
+    examples: list[dict[str, Any]] | None = None
     """Examples to format into the prompt.
     Either this or example_selector should be provided."""
 
@@ -48,7 +48,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def check_examples_and_selector(cls, values: dict) -> Any:
+    def check_examples_and_selector(cls, values: dict[str, Any]) -> Any:
         """Check that one and only one of examples/example_selector are provided.
 
         Args:
@@ -73,7 +73,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
 
         return values
 
-    def _get_examples(self, **kwargs: Any) -> list[dict]:
+    def _get_examples(self, **kwargs: Any) -> list[dict[str, Any]]:
         """Get the examples to use for formatting the prompt.
 
         Args:
@@ -92,7 +92,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
         msg = "One of 'examples' and 'example_selector' should be provided"
         raise ValueError(msg)
 
-    async def _aget_examples(self, **kwargs: Any) -> list[dict]:
+    async def _aget_examples(self, **kwargs: Any) -> list[dict[str, Any]]:
         """Async get the examples to use for formatting the prompt.
 
         Args:

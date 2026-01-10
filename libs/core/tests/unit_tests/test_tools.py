@@ -111,7 +111,7 @@ class _MockSchema(BaseModel):
 
     arg1: int
     arg2: bool
-    arg3: dict | None = None
+    arg3: dict[str, Any] | None = None
 
 
 class _MockStructuredTool(BaseTool):
@@ -120,10 +120,12 @@ class _MockStructuredTool(BaseTool):
     description: str = "A Structured Tool"
 
     @override
-    def _run(self, *, arg1: int, arg2: bool, arg3: dict | None = None) -> str:
+    def _run(self, *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None) -> str:
         return f"{arg1} {arg2} {arg3}"
 
-    async def _arun(self, *, arg1: int, arg2: bool, arg3: dict | None = None) -> str:
+    async def _arun(
+        self, *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None
+    ) -> str:
         raise NotImplementedError
 
 
@@ -148,11 +150,13 @@ def test_misannotated_base_tool_raises_error() -> None:
             description: str = "A Structured Tool"
 
             @override
-            def _run(self, *, arg1: int, arg2: bool, arg3: dict | None = None) -> str:
+            def _run(
+                self, *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None
+            ) -> str:
                 return f"{arg1} {arg2} {arg3}"
 
             async def _arun(
-                self, *, arg1: int, arg2: bool, arg3: dict | None = None
+                self, *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None
             ) -> str:
                 raise NotImplementedError
 
@@ -166,11 +170,13 @@ def test_forward_ref_annotated_base_tool_accepted() -> None:
         description: str = "A Structured Tool"
 
         @override
-        def _run(self, *, arg1: int, arg2: bool, arg3: dict | None = None) -> str:
+        def _run(
+            self, *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None
+        ) -> str:
             return f"{arg1} {arg2} {arg3}"
 
         async def _arun(
-            self, *, arg1: int, arg2: bool, arg3: dict | None = None
+            self, *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None
         ) -> str:
             raise NotImplementedError
 
@@ -184,11 +190,13 @@ def test_subclass_annotated_base_tool_accepted() -> None:
         description: str = "A Structured Tool"
 
         @override
-        def _run(self, *, arg1: int, arg2: bool, arg3: dict | None = None) -> str:
+        def _run(
+            self, *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None
+        ) -> str:
             return f"{arg1} {arg2} {arg3}"
 
         async def _arun(
-            self, *, arg1: int, arg2: bool, arg3: dict | None = None
+            self, *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None
         ) -> str:
             raise NotImplementedError
 
@@ -201,7 +209,7 @@ def test_decorator_with_specified_schema() -> None:
     """Test that manually specified schemata are passed through to the tool."""
 
     @tool(args_schema=_MockSchema)
-    def tool_func(*, arg1: int, arg2: bool, arg3: dict | None = None) -> str:
+    def tool_func(*, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None) -> str:
         return f"{arg1} {arg2} {arg3}"
 
     assert isinstance(tool_func, BaseTool)
@@ -220,10 +228,12 @@ def test_decorator_with_specified_schema_pydantic_v1() -> None:
 
         arg1: int
         arg2: bool
-        arg3: dict | None = None
+        arg3: dict[str, Any] | None = None
 
     @tool(args_schema=cast("ArgsSchema", _MockSchemaV1))
-    def tool_func_v1(*, arg1: int, arg2: bool, arg3: dict | None = None) -> str:
+    def tool_func_v1(
+        *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None
+    ) -> str:
         return f"{arg1} {arg2} {arg3}"
 
     assert isinstance(tool_func_v1, BaseTool)
@@ -235,7 +245,7 @@ def test_decorated_function_schema_equivalent() -> None:
 
     @tool
     def structured_tool_input(
-        *, arg1: int, arg2: bool, arg3: dict | None = None
+        *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None
     ) -> str:
         """Return the arguments directly."""
         return f"{arg1} {arg2} {arg3}"
@@ -304,7 +314,7 @@ def test_structured_args_decorator_no_infer_schema() -> None:
 
     @tool(infer_schema=False)
     def structured_tool_input(
-        arg1: int, arg2: float | datetime, opt_arg: dict | None = None
+        arg1: int, arg2: float | datetime, opt_arg: dict[str, Any] | None = None
     ) -> str:
         """Return the arguments directly."""
         return f"{arg1}, {arg2}, {opt_arg}"
@@ -344,7 +354,7 @@ def test_structured_tool_types_parsed() -> None:
     def structured_tool(
         some_enum: SomeEnum,
         some_base_model: SomeBaseModel,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Return the arguments directly."""
         return {
             "some_enum": some_enum,
@@ -927,7 +937,7 @@ def test_validation_error_handling_non_validation_error(
 
         def _parse_input(
             self,
-            tool_input: str | dict,
+            tool_input: str | dict[str, Any],
             tool_call_id: str | None,
         ) -> str | dict[str, Any]:
             raise NotImplementedError
@@ -993,7 +1003,7 @@ async def test_async_validation_error_handling_non_validation_error(
 
         def _parse_input(
             self,
-            tool_input: str | dict,
+            tool_input: str | dict[str, Any],
             tool_call_id: str | None,
         ) -> str | dict[str, Any]:
             raise NotImplementedError
@@ -1040,9 +1050,11 @@ def test_optional_subset_model_rewrite() -> None:
         ({"bar": "bar", "baz": None}, {"bar": "bar", "baz": None, "buzz": "buzz"}),
     ],
 )
-def test_tool_invoke_optional_args(inputs: dict, expected: dict | None) -> None:
+def test_tool_invoke_optional_args(
+    inputs: dict[str, Any], expected: dict[str, Any] | None
+) -> None:
     @tool
-    def foo(bar: str, baz: int | None = 3, buzz: str | None = "buzz") -> dict:
+    def foo(bar: str, baz: int | None = 3, buzz: str | None = "buzz") -> dict[str, Any]:
         """The foo."""
         return {
             "bar": bar,
@@ -2152,9 +2164,13 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
             return "foo"
 
     class ModelC(Mixin, ModelB):
-        c: dict
+        c: dict[str, Any]
 
-    expected = {"a": str, "b": Annotated[ModelA[dict[str, Any]], "foo"], "c": dict}
+    expected = {
+        "a": str,
+        "b": Annotated[ModelA[dict[str, Any]], "foo"],
+        "c": dict[str, Any],
+    }
     actual = get_all_basemodel_annotations(ModelC)
     assert actual == expected
 
@@ -2178,7 +2194,7 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
     expected = {
         "a": str,
         "b": Annotated[ModelA[dict[str, Any]], "foo"],
-        "c": dict,
+        "c": dict[str, Any],
         "d": str | int | None,
     }
     actual = get_all_basemodel_annotations(ModelD)
@@ -2187,7 +2203,7 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
     expected = {
         "a": str,
         "b": Annotated[ModelA[dict[str, Any]], "foo"],
-        "c": dict,
+        "c": dict[str, Any],
         "d": int | None,
     }
     actual = get_all_basemodel_annotations(ModelD[int])
@@ -2207,7 +2223,7 @@ def test_tool_annotations_preserved() -> None:
     """Test that annotations are preserved when creating a tool."""
 
     @tool
-    def my_tool(val: int, other_val: Annotated[dict, "my annotation"]) -> str:
+    def my_tool(val: int, other_val: Annotated[dict[str, Any], "my annotation"]) -> str:
         """Tool docstring."""
         return "foo"
 
@@ -2942,7 +2958,7 @@ def test_tool_args_schema_with_annotated_type() -> None:
 class CallbackHandlerWithInputCapture(FakeCallbackHandler):
     """Callback handler that captures inputs passed to on_tool_start."""
 
-    captured_inputs: list[dict | None] = Field(default_factory=list)
+    captured_inputs: list[dict[str, Any] | None] = Field(default_factory=list)
 
     def on_tool_start(
         self,
@@ -2976,7 +2992,7 @@ def test_filter_injected_args_from_callbacks() -> None:
     @tool
     def search_tool(
         query: str,
-        state: Annotated[dict, InjectedToolArg()],
+        state: Annotated[dict[str, Any], InjectedToolArg()],
     ) -> str:
         """Search with injected state.
 
@@ -3044,7 +3060,7 @@ def test_filter_multiple_injected_args() -> None:
     def complex_tool(
         query: str,
         limit: int,
-        state: Annotated[dict, InjectedToolArg()],
+        state: Annotated[dict[str, Any], InjectedToolArg()],
         context: Annotated[str, InjectedToolArg()],
         run_manager: CallbackManagerForToolRun | None = None,
     ) -> str:
@@ -3112,7 +3128,7 @@ async def test_filter_injected_args_async() -> None:
     @tool
     async def async_search_tool(
         query: str,
-        state: Annotated[dict, InjectedToolArg()],
+        state: Annotated[dict[str, Any], InjectedToolArg()],
     ) -> str:
         """Async search with injected state.
 

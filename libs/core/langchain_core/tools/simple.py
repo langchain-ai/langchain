@@ -42,7 +42,7 @@ class Tool(BaseTool):
     @override
     async def ainvoke(
         self,
-        input: str | dict | ToolCall,
+        input: str | dict[str, Any] | ToolCall,
         config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> Any:
@@ -55,7 +55,7 @@ class Tool(BaseTool):
     # --- Tool ---
 
     @property
-    def args(self) -> dict:
+    def args(self) -> dict[str, Any]:
         """The tool's input arguments.
 
         Returns:
@@ -68,8 +68,8 @@ class Tool(BaseTool):
         return {"tool_input": {"type": "string"}}
 
     def _to_args_and_kwargs(
-        self, tool_input: str | dict, tool_call_id: str | None
-    ) -> tuple[tuple, dict]:
+        self, tool_input: str | dict[str, Any], tool_call_id: str | None
+    ) -> tuple[tuple[str, ...], dict[str, Any]]:
         """Convert tool input to Pydantic model.
 
         Args:
@@ -154,7 +154,11 @@ class Tool(BaseTool):
 
     # TODO: this is for backwards compatibility, remove in future
     def __init__(
-        self, name: str, func: Callable | None, description: str, **kwargs: Any
+        self,
+        name: str,
+        func: Callable[..., Any] | None,
+        description: str,
+        **kwargs: Any,
     ) -> None:
         """Initialize tool."""
         super().__init__(name=name, func=func, description=description, **kwargs)
@@ -162,7 +166,7 @@ class Tool(BaseTool):
     @classmethod
     def from_function(
         cls,
-        func: Callable | None,
+        func: Callable[..., Any] | None,
         name: str,  # We keep these required to support backwards compatibility
         description: str,
         return_direct: bool = False,  # noqa: FBT001,FBT002
