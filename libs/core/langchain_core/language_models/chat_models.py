@@ -69,7 +69,7 @@ from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
 )
-from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
+from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 
 if TYPE_CHECKING:
@@ -1702,7 +1702,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         )
         if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
-                tools=[cast("TypeBaseModel", schema)], first_tool_only=True
+                tools=[schema], first_tool_only=True
             )
         else:
             key_name = convert_to_openai_tool(schema)["function"]["name"]
