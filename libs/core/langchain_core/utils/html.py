@@ -21,6 +21,12 @@ SUFFIXES_TO_IGNORE = (
     ".bz2",
     ".zip",
     ".epub",
+    ".webp",
+    ".pdf",
+    ".docx",
+    ".xlsx",
+    ".pptx",
+    ".pptm",
 )
 SUFFIXES_TO_IGNORE_REGEX = (
     "(?!" + "|".join([re.escape(s) + r"[\#'\"]" for s in SUFFIXES_TO_IGNORE]) + ")"

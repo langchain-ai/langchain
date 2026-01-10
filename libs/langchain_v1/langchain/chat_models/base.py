@@ -84,11 +84,12 @@ Each entry maps a provider key to a tuple of:
 """
 
 
-def _import_module(module: str) -> ModuleType:
+def _import_module(module: str, class_name: str) -> ModuleType:
     """Import a module by name.
 
     Args:
         module: The fully qualified module name to import (e.g., `'langchain_openai'`).
+        class_name: The name of the class being imported, used for error messages.
 
     Returns:
         The imported module.
@@ -103,7 +104,10 @@ def _import_module(module: str) -> ModuleType:
         # Extract package name from module path (e.g., "langchain_azure_ai.chat_models"
         # becomes "langchain-azure-ai")
         pkg = module.split(".", maxsplit=1)[0].replace("_", "-")
-        msg = f"Could not import {pkg} python package. Please install it with `pip install {pkg}`"
+        msg = (
+            f"Initializing {class_name} requires the {pkg} package. Please install it "
+            f"with `pip install {pkg}`"
+        )
         raise ImportError(msg) from e
 
 
@@ -135,13 +139,13 @@ def _get_chat_model_creator(
 
     pkg, class_name, creator_func = _SUPPORTED_PROVIDERS[provider]
     try:
-        module = _import_module(pkg)
+        module = _import_module(pkg, class_name)
     except ImportError as e:
         if provider != "ollama":
             raise
         # For backwards compatibility
         try:
-            module = _import_module("langchain_community.chat_models")
+            module = _import_module("langchain_community.chat_models", class_name)
         except ImportError:
             # If both langchain-ollama and langchain-community aren't available,
             # raise an error related to langchain-ollama
@@ -501,7 +505,7 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
         return "cohere"
 
     # Fireworks models
-    if model_name.startswith("accounts/fireworks"):
+    if model_lower.startswith("accounts/fireworks"):
         return "fireworks"
 
     # Google models
@@ -509,7 +513,7 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
         return "google_vertexai"
 
     # AWS Bedrock models
-    if model_name.startswith("amazon.") or model_lower.startswith(("anthropic.", "meta.")):
+    if model_lower.startswith(("amazon.", "anthropic.", "meta.")):
         return "bedrock"
 
     # Mistral models
@@ -577,12 +581,12 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     def __init__(
         self,
         *,
-        default_config: dict | None = None,
+        default_config: dict[str, Any] | None = None,
         configurable_fields: Literal["any"] | list[str] | tuple[str, ...] = "any",
         config_prefix: str = "",
-        queued_declarative_operations: Sequence[tuple[str, tuple, dict]] = (),
+        queued_declarative_operations: Sequence[tuple[str, tuple[Any, ...], dict[str, Any]]] = (),
     ) -> None:
-        self._default_config: dict = default_config or {}
+        self._default_config: dict[str, Any] = default_config or {}
         self._configurable_fields: Literal["any"] | list[str] = (
             "any" if configurable_fields == "any" else list(configurable_fields)
         )
@@ -591,8 +595,10 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             if config_prefix and not config_prefix.endswith("_")
             else config_prefix
         )
-        self._queued_declarative_operations: list[tuple[str, tuple, dict]] = list(
-            queued_declarative_operations,
+        self._queued_declarative_operations: list[tuple[str, tuple[Any, ...], dict[str, Any]]] = (
+            list(
+                queued_declarative_operations,
+            )
         )
 
     def __getattr__(self, name: str) -> Any:
@@ -625,14 +631,14 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         msg += "."
         raise AttributeError(msg)
 
-    def _model(self, config: RunnableConfig | None = None) -> Runnable:
+    def _model(self, config: RunnableConfig | None = None) -> Runnable[Any, Any]:
         params = {**self._default_config, **self._model_params(config)}
         model = _init_chat_model_helper(**params)
         for name, args, kwargs in self._queued_declarative_operations:
             model = getattr(model, name)(*args, **kwargs)
         return model
 
-    def _model_params(self, config: RunnableConfig | None) -> dict:
+    def _model_params(self, config: RunnableConfig | None) -> dict[str, Any]:
         config = ensure_config(config)
         model_params = {
             _remove_prefix(k, self._config_prefix): v
@@ -648,7 +654,6 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> _ConfigurableModel:
-        """Bind config to a `Runnable`, returning a new `Runnable`."""
         config = RunnableConfig(**(config or {}), **cast("RunnableConfig", kwargs))
         # Ensure config is not None after creation
         config = ensure_config(config)
@@ -959,7 +964,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     # Explicitly added to satisfy downstream linters.
     def bind_tools(
         self,
-        tools: Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
+        tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         return self.__getattr__("bind_tools")(tools, **kwargs)
@@ -967,7 +972,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     # Explicitly added to satisfy downstream linters.
     def with_structured_output(
         self,
-        schema: dict | type[BaseModel],
+        schema: dict[str, Any] | type[BaseModel],
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, dict | BaseModel]:
+    ) -> Runnable[LanguageModelInput, dict[str, Any] | BaseModel]:
         return self.__getattr__("with_structured_output")(schema, **kwargs)
