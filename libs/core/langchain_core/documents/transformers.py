@@ -16,8 +16,8 @@ if TYPE_CHECKING:
 class BaseDocumentTransformer(ABC):
     """Abstract base class for document transformation.
 
-    A document transformation takes a sequence of Documents and returns a
-    sequence of transformed Documents.
+    A document transformation takes a sequence of `Document` objects and returns a
+    sequence of transformed `Document` objects.
 
     Example:
         ```python

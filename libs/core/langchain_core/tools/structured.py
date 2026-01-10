@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import textwrap
 from collections.abc import Awaitable, Callable
 from inspect import signature
@@ -15,16 +16,19 @@ from typing import (
 from pydantic import Field, SkipValidation
 from typing_extensions import override
 
+# Cannot move to TYPE_CHECKING as _run/_arun parameter annotations are needed at runtime
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
+    AsyncCallbackManagerForToolRun,  # noqa: TC001
+    CallbackManagerForToolRun,  # noqa: TC001
 )
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
+    _EMPTY_SET,
     FILTERED_ARGS,
     ArgsSchema,
     BaseTool,
     _get_runnable_config_param,
+    _is_injected_arg_type,
     create_schema_from_function,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
@@ -151,11 +155,13 @@ class StructuredTool(BaseTool):
             return_direct: Whether to return the result directly or as a callback.
             args_schema: The schema of the tool's input arguments.
             infer_schema: Whether to infer the schema from the function's signature.
-            response_format: The tool response format. If `"content"` then the output of
-                the tool is interpreted as the contents of a `ToolMessage`. If
-                `"content_and_artifact"` then the output is expected to be a two-tuple
-                corresponding to the `(content, artifact)` of a `ToolMessage`.
-            parse_docstring: if `infer_schema` and `parse_docstring`, will attempt
+            response_format: The tool response format.
+
+                If `"content"` then the output of the tool is interpreted as the
+                contents of a `ToolMessage`. If `"content_and_artifact"` then the output
+                is expected to be a two-tuple corresponding to the `(content, artifact)`
+                of a `ToolMessage`.
+            parse_docstring: If `infer_schema` and `parse_docstring`, will attempt
                 to parse parameter descriptions from Google Style function docstrings.
             error_on_invalid_docstring: if `parse_docstring` is provided, configure
                 whether to raise `ValueError` on invalid Google Style docstrings.
@@ -237,6 +243,17 @@ class StructuredTool(BaseTool):
             return_direct=return_direct,
             response_format=response_format,
             **kwargs,
+        )
+
+    @functools.cached_property
+    def _injected_args_keys(self) -> frozenset[str]:
+        fn = self.func or self.coroutine
+        if fn is None:
+            return _EMPTY_SET
+        return frozenset(
+            k
+            for k, v in signature(fn).parameters.items()
+            if _is_injected_arg_type(v.annotation)
         )
 
 

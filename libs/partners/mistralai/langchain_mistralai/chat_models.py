@@ -23,7 +23,11 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models import (
+    LanguageModelInput,
+    ModelProfile,
+    ModelProfileRegistry,
+)
 from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import (
@@ -70,6 +74,7 @@ from pydantic import (
 from typing_extensions import Self
 
 from langchain_mistralai._compat import _convert_from_v1_to_mistral
+from langchain_mistralai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
@@ -84,6 +89,14 @@ TOOL_CALL_ID_PATTERN = re.compile(r"^[a-zA-Z0-9]{9}$")
 # This SSL context is equivalent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
+
+
+_MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 def _create_retry_decorator(
@@ -135,7 +148,8 @@ def _convert_mistral_chat_message_to_message(
     if role != "assistant":
         msg = f"Expected role to be 'assistant', got {role}"
         raise ValueError(msg)
-    content = cast("str", _message["content"])
+    # Mistral returns None for tool invocations
+    content = _message.get("content", "") or ""
 
     additional_kwargs: dict = {}
     tool_calls = []
@@ -452,27 +466,41 @@ class ChatMistralAI(BaseChatModel):
     client: httpx.Client = Field(  # type: ignore[assignment] # : meta private:
         default=None, exclude=True
     )
+
     async_client: httpx.AsyncClient = Field(  # type: ignore[assignment] # : meta private:
         default=None, exclude=True
-    )  #: :meta private:
+    )
+
     mistral_api_key: SecretStr | None = Field(
         alias="api_key",
         default_factory=secret_from_env("MISTRAL_API_KEY", default=None),
     )
+
     endpoint: str | None = Field(default=None, alias="base_url")
+
     max_retries: int = 5
+
     timeout: int = 120
+
     max_concurrent_requests: int = 64
+
     model: str = Field(default="mistral-small", alias="model_name")
+
     temperature: float = 0.7
+
     max_tokens: int | None = None
+
     top_p: float = 1
     """Decode using nucleus sampling: consider the smallest set of tokens whose
     probability sum is at least `top_p`. Must be in the closed interval
     `[0.0, 1.0]`."""
+
     random_seed: int | None = None
+
     safe_mode: bool | None = None
+
     streaming: bool = False
+
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any invocation parameters not explicitly specified."""
 
@@ -618,6 +646,13 @@ class ChatMistralAI(BaseChatModel):
 
         return self
 
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model)
+        return self
+
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -758,8 +793,8 @@ class ChatMistralAI(BaseChatModel):
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
-                Supports any tool definition handled by
-                `langchain_core.utils.function_calling.convert_to_openai_tool`.
+
+                Supports any tool definition handled by [`convert_to_openai_tool`][langchain_core.utils.function_calling.convert_to_openai_tool].
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function or
                 `'auto'` to automatically determine which function to call
@@ -767,8 +802,7 @@ class ChatMistralAI(BaseChatModel):
                 {"type": "function", "function": {"name": <<tool_name>>}}.
             kwargs: Any additional parameters are passed directly to
                 `self.bind(**kwargs)`.
-
-        """
+        """  # noqa: E501
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice:
             tool_names = []
@@ -803,10 +837,10 @@ class ChatMistralAI(BaseChatModel):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - an OpenAI function/tool schema,
-                - a JSON Schema,
-                - a `TypedDict` class,
-                - or a Pydantic class.
+                - An OpenAI function/tool schema,
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - Or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
@@ -832,15 +866,20 @@ class ChatMistralAI(BaseChatModel):
                     must include instructions for formatting the output into the
                     desired schema into the model call.
 
-                !!! warning "Behavior changed in 0.2.5"
+                !!! warning "Behavior changed in `langchain-mistralai` 0.2.5"
+
                     Added method="json_schema"
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a `BaseMessage`) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
@@ -1138,7 +1177,11 @@ class ChatMistralAI(BaseChatModel):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the LangChain object."""
+        """Get the namespace of the LangChain object.
+
+        Returns:
+            `["langchain", "chat_models", "mistralai"]`
+        """
         return ["langchain", "chat_models", "mistralai"]
 
 

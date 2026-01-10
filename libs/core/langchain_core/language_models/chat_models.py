@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
-import typing
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from functools import cached_property
@@ -33,6 +32,7 @@ from langchain_core.language_models.base import (
     LangSmithParams,
     LanguageModelInput,
 )
+from langchain_core.language_models.model_profile import ModelProfile
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
     AIMessage,
@@ -73,6 +73,7 @@ from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 
 if TYPE_CHECKING:
+    import builtins
     import uuid
 
     from langchain_core.output_parsers.base import OutputParserLike
@@ -88,7 +89,10 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
             try:
                 metadata["body"] = response.json()
             except Exception:
-                metadata["body"] = getattr(response, "text", None)
+                try:
+                    metadata["body"] = getattr(response, "text", None)
+                except Exception:
+                    metadata["body"] = None
         if hasattr(response, "headers"):
             try:
                 metadata["headers"] = dict(response.headers)
@@ -329,8 +333,24 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     [`langchain-openai`](https://pypi.org/project/langchain-openai)) can also use this
     field to roll out new content formats in a backward-compatible way.
 
-    !!! version-added "Added in version 1.0"
+    !!! version-added "Added in `langchain-core` 1.0.0"
 
+    """
+
+    profile: ModelProfile | None = Field(default=None, exclude=True)
+    """Profile detailing model capabilities.
+
+    !!! warning "Beta feature"
+
+        This is a beta feature. The format of model profiles is subject to change.
+
+    If not specified, automatically loaded from the provider package on initialization
+    if data is available.
+
+    Example profile data includes context window sizes, supported modalities, or support
+    for tool calling, structured output, and other features.
+
+    !!! version-added "Added in `langchain-core` 1.1.0"
     """
 
     model_config = ConfigDict(
@@ -339,7 +359,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     @cached_property
     def _serialized(self) -> dict[str, Any]:
-        return dumpd(self)
+        # self is always a Serializable object in this case, thus the result is
+        # guaranteed to be a dict since dumps uses the default callback, which uses
+        # obj.to_json which always returns TypedDict subclasses
+        return cast("dict[str, Any]", dumpd(self))
 
     # --- Runnable methods ---
 
@@ -442,7 +465,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         # Check if a runtime streaming flag has been passed in.
         if "stream" in kwargs:
-            return kwargs["stream"]
+            return bool(kwargs["stream"])
 
         if "streaming" in self.model_fields_set:
             streaming_value = getattr(self, "streaming", None)
@@ -528,7 +551,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                         ):
                             if block["type"] != index_type:
                                 index_type = block["type"]
-                                index = index + 1
+                                index += 1
                             if "index" not in block:
                                 block["index"] = index
                     run_manager.on_llm_new_token(
@@ -660,7 +683,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     ):
                         if block["type"] != index_type:
                             index_type = block["type"]
-                            index = index + 1
+                            index += 1
                         if "index" not in block:
                             block["index"] = index
                 await run_manager.on_llm_new_token(
@@ -711,7 +734,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     # --- Custom methods ---
 
-    def _combine_llm_outputs(self, llm_outputs: list[dict | None]) -> dict:  # noqa: ARG002
+    def _combine_llm_outputs(self, _llm_outputs: list[dict | None], /) -> dict:
         return {}
 
     def _convert_cached_generations(self, cache_val: list) -> list[ChatGeneration]:
@@ -842,16 +865,21 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         Args:
             messages: List of list of messages.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: `Callbacks` to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
             tags: The tags to apply.
             metadata: The metadata to apply.
             run_name: The name of the run.
             run_id: The ID of the run.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
             An `LLMResult`, which contains a list of candidate `Generations` for each
@@ -960,16 +988,21 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         Args:
             messages: List of list of messages.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: `Callbacks` to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
             tags: The tags to apply.
             metadata: The metadata to apply.
             run_name: The name of the run.
             run_id: The ID of the run.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
             An `LLMResult`, which contains a list of candidate `Generations` for each
@@ -1115,7 +1148,15 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if check_cache:
             if llm_cache:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
-                prompt = dumps(messages)
+                normalized_messages = [
+                    (
+                        msg.model_copy(update={"id": None})
+                        if getattr(msg, "id", None) is not None
+                        else msg
+                    )
+                    for msg in messages
+                ]
+                prompt = dumps(normalized_messages)
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     converted_generations = self._convert_cached_generations(cache_val)
@@ -1158,7 +1199,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     ):
                         if block["type"] != index_type:
                             index_type = block["type"]
-                            index = index + 1
+                            index += 1
                         if "index" not in block:
                             block["index"] = index
                 if run_manager:
@@ -1233,7 +1274,15 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if check_cache:
             if llm_cache:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
-                prompt = dumps(messages)
+                normalized_messages = [
+                    (
+                        msg.model_copy(update={"id": None})
+                        if getattr(msg, "id", None) is not None
+                        else msg
+                    )
+                    for msg in messages
+                ]
+                prompt = dumps(normalized_messages)
                 cache_val = await llm_cache.alookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     converted_generations = self._convert_cached_generations(cache_val)
@@ -1276,7 +1325,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     ):
                         if block["type"] != index_type:
                             index_type = block["type"]
-                            index = index + 1
+                            index += 1
                         if "index" not in block:
                             block["index"] = index
                 if run_manager:
@@ -1471,9 +1520,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     def bind_tools(
         self,
-        tools: Sequence[
-            typing.Dict[str, Any] | type | Callable | BaseTool  # noqa: UP006
-        ],
+        tools: Sequence[builtins.dict[str, Any] | type | Callable | BaseTool],
         *,
         tool_choice: str | None = None,
         **kwargs: Any,
@@ -1492,20 +1539,20 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     def with_structured_output(
         self,
-        schema: typing.Dict | type,  # noqa: UP006
+        schema: builtins.dict[str, Any] | type,
         *,
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, typing.Dict | BaseModel]:  # noqa: UP006
+    ) -> Runnable[LanguageModelInput, builtins.dict[str, Any] | BaseModel]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
             schema: The output schema. Can be passed in as:
 
-                - an OpenAI function/tool schema,
-                - a JSON Schema,
-                - a `TypedDict` class,
-                - or a Pydantic class.
+                - An OpenAI function/tool schema,
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - Or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
@@ -1517,11 +1564,15 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 when specifying a Pydantic or `TypedDict` class.
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a `BaseMessage`) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
@@ -1545,89 +1596,90 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     depends on the `schema` as described above.
                 - `'parsing_error'`: `BaseException | None`
 
-        Example: Pydantic schema (`include_raw=False`):
+        ???+ example "Pydantic schema (`include_raw=False`)"
 
-        ```python
-        from pydantic import BaseModel
-
-
-        class AnswerWithJustification(BaseModel):
-            '''An answer to the user question along with justification for the answer.'''
-
-            answer: str
-            justification: str
+            ```python
+            from pydantic import BaseModel
 
 
-        model = ChatModel(model="model-name", temperature=0)
-        structured_model = model.with_structured_output(AnswerWithJustification)
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
 
-        structured_model.invoke(
-            "What weighs more a pound of bricks or a pound of feathers"
-        )
-
-        # -> AnswerWithJustification(
-        #     answer='They weigh the same',
-        #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
-        # )
-        ```
-
-        Example: Pydantic schema (`include_raw=True`):
-
-        ```python
-        from pydantic import BaseModel
+                answer: str
+                justification: str
 
 
-        class AnswerWithJustification(BaseModel):
-            '''An answer to the user question along with justification for the answer.'''
+            model = ChatModel(model="model-name", temperature=0)
+            structured_model = model.with_structured_output(AnswerWithJustification)
 
-            answer: str
-            justification: str
+            structured_model.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
 
+            # -> AnswerWithJustification(
+            #     answer='They weigh the same',
+            #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+            # )
+            ```
 
-        model = ChatModel(model="model-name", temperature=0)
-        structured_model = model.with_structured_output(
-            AnswerWithJustification, include_raw=True
-        )
+        ??? example "Pydantic schema (`include_raw=True`)"
 
-        structured_model.invoke(
-            "What weighs more a pound of bricks or a pound of feathers"
-        )
-        # -> {
-        #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
-        #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
-        #     'parsing_error': None
-        # }
-        ```
-
-        Example: `dict` schema (`include_raw=False`):
-
-        ```python
-        from pydantic import BaseModel
-        from langchain_core.utils.function_calling import convert_to_openai_tool
+            ```python
+            from pydantic import BaseModel
 
 
-        class AnswerWithJustification(BaseModel):
-            '''An answer to the user question along with justification for the answer.'''
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
 
-            answer: str
-            justification: str
+                answer: str
+                justification: str
 
 
-        dict_schema = convert_to_openai_tool(AnswerWithJustification)
-        model = ChatModel(model="model-name", temperature=0)
-        structured_model = model.with_structured_output(dict_schema)
+            model = ChatModel(model="model-name", temperature=0)
+            structured_model = model.with_structured_output(
+                AnswerWithJustification, include_raw=True
+            )
 
-        structured_model.invoke(
-            "What weighs more a pound of bricks or a pound of feathers"
-        )
-        # -> {
-        #     'answer': 'They weigh the same',
-        #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
-        # }
-        ```
+            structured_model.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+            # -> {
+            #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
+            #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
+            #     'parsing_error': None
+            # }
+            ```
 
-        !!! warning "Behavior changed in 0.2.26"
-            Added support for TypedDict class.
+        ??? example "Dictionary schema (`include_raw=False`)"
+
+            ```python
+            from pydantic import BaseModel
+            from langchain_core.utils.function_calling import convert_to_openai_tool
+
+
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
+
+                answer: str
+                justification: str
+
+
+            dict_schema = convert_to_openai_tool(AnswerWithJustification)
+            model = ChatModel(model="model-name", temperature=0)
+            structured_model = model.with_structured_output(dict_schema)
+
+            structured_model.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+            # -> {
+            #     'answer': 'They weigh the same',
+            #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+            # }
+            ```
+
+        !!! warning "Behavior changed in `langchain-core` 0.2.26"
+
+            Added support for `TypedDict` class.
 
         """  # noqa: E501
         _ = kwargs.pop("method", None)
@@ -1726,9 +1778,12 @@ def _gen_info_and_msg_metadata(
     }
 
 
+_MAX_CLEANUP_DEPTH = 100
+
+
 def _cleanup_llm_representation(serialized: Any, depth: int) -> None:
     """Remove non-serializable objects from a serialized object."""
-    if depth > 100:  # Don't cooperate for pathological cases
+    if depth > _MAX_CLEANUP_DEPTH:  # Don't cooperate for pathological cases
         return
 
     if not isinstance(serialized, dict):

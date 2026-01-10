@@ -8,9 +8,10 @@ import random
 import re
 import string
 import time
+import urllib.parse
 from dataclasses import asdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import yaml
 
@@ -39,6 +40,8 @@ except ImportError:
     _HAS_PYPPETEER = False
 
 MARKDOWN_SPECIAL_CHARS = "*_`"
+
+_HEX_COLOR_PATTERN = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
 
 
 def draw_mermaid(
@@ -81,6 +84,7 @@ def draw_mermaid(
                 }
             }
             ```
+
     Returns:
         Mermaid graph syntax.
 
@@ -281,6 +285,7 @@ def draw_mermaid_png(
     max_retries: int = 1,
     retry_delay: float = 1.0,
     base_url: str | None = None,
+    proxies: dict[str, str] | None = None,
 ) -> bytes:
     """Draws a Mermaid graph as PNG using provided syntax.
 
@@ -293,6 +298,7 @@ def draw_mermaid_png(
         max_retries: Maximum number of retries (MermaidDrawMethod.API).
         retry_delay: Delay between retries (MermaidDrawMethod.API).
         base_url: Base URL for the Mermaid.ink API.
+        proxies: HTTP/HTTPS proxies for requests (e.g. `{"http": "http://127.0.0.1:7890"}`).
 
     Returns:
         PNG image bytes.
@@ -314,6 +320,7 @@ def draw_mermaid_png(
             max_retries=max_retries,
             retry_delay=retry_delay,
             base_url=base_url,
+            proxies=proxies,
         )
     else:
         supported_methods = ", ".join([m.value for m in MermaidDrawMethod])
@@ -386,7 +393,7 @@ async def _render_mermaid_using_pyppeteer(
         }
     )
 
-    img_bytes = await page.screenshot({"fullPage": False})
+    img_bytes = cast("bytes", await page.screenshot({"fullPage": False}))
     await browser.close()
 
     if output_file_path is not None:
@@ -405,6 +412,7 @@ def _render_mermaid_using_api(
     file_type: Literal["jpeg", "png", "webp"] | None = "png",
     max_retries: int = 1,
     retry_delay: float = 1.0,
+    proxies: dict[str, str] | None = None,
     base_url: str | None = None,
 ) -> bytes:
     """Renders Mermaid graph using the Mermaid.INK API."""
@@ -424,14 +432,14 @@ def _render_mermaid_using_api(
     )
 
     # Check if the background color is a hexadecimal color code using regex
-    if background_color is not None:
-        hex_color_pattern = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
-        if not hex_color_pattern.match(background_color):
-            background_color = f"!{background_color}"
+    if background_color is not None and not _HEX_COLOR_PATTERN.match(background_color):
+        background_color = f"!{background_color}"
 
+    # URL-encode the background_color to handle special characters like '!'
+    encoded_bg_color = urllib.parse.quote(str(background_color), safe="")
     image_url = (
         f"{base_url}/img/{mermaid_syntax_encoded}"
-        f"?type={file_type}&bgColor={background_color}"
+        f"?type={file_type}&bgColor={encoded_bg_color}"
     )
 
     error_msg_suffix = (
@@ -445,7 +453,7 @@ def _render_mermaid_using_api(
 
     for attempt in range(max_retries + 1):
         try:
-            response = requests.get(image_url, timeout=10)
+            response = requests.get(image_url, timeout=10, proxies=proxies)
             if response.status_code == requests.codes.ok:
                 img_bytes = response.content
                 if output_file_path is not None:
@@ -454,7 +462,10 @@ def _render_mermaid_using_api(
                 return img_bytes
 
             # If we get a server error (5xx), retry
-            if 500 <= response.status_code < 600 and attempt < max_retries:
+            if (
+                requests.codes.internal_server_error <= response.status_code
+                and attempt < max_retries
+            ):
                 # Exponential backoff with jitter
                 sleep_time = retry_delay * (2**attempt) * (0.5 + 0.5 * random.random())  # noqa: S311 not used for crypto
                 time.sleep(sleep_time)

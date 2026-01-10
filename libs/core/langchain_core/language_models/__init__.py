@@ -1,23 +1,26 @@
-"""Language models.
+"""Core language model abstractions.
 
 LangChain has two main classes to work with language models: chat models and
-"old-fashioned" LLMs.
+"old-fashioned" LLMs (string-in, string-out).
 
 **Chat models**
 
 Language models that use a sequence of messages as inputs and return chat messages
-as outputs (as opposed to using plain text). Chat models support the assignment of
-distinct roles to conversation messages, helping to distinguish messages from the AI,
-users, and instructions such as system messages.
+as outputs (as opposed to using plain text).
 
-The key abstraction for chat models is `BaseChatModel`. Implementations
-should inherit from this class.
+Chat models support the assignment of distinct roles to conversation messages, helping
+to distinguish messages from the AI, users, and instructions such as system messages.
+
+The key abstraction for chat models is
+[`BaseChatModel`][langchain_core.language_models.BaseChatModel]. Implementations should
+inherit from this class.
 
 See existing [chat model integrations](https://docs.langchain.com/oss/python/integrations/chat).
 
-**LLMs**
+**LLMs (legacy)**
 
 Language models that takes a string as input and returns a string.
+
 These are traditionally older models (newer models generally are chat models).
 
 Although the underlying models are string in, string out, the LangChain wrappers also
@@ -52,6 +55,10 @@ if TYPE_CHECKING:
         ParrotFakeChatModel,
     )
     from langchain_core.language_models.llms import LLM, BaseLLM
+    from langchain_core.language_models.model_profile import (
+        ModelProfile,
+        ModelProfileRegistry,
+    )
 
 __all__ = (
     "LLM",
@@ -67,6 +74,8 @@ __all__ = (
     "LanguageModelInput",
     "LanguageModelLike",
     "LanguageModelOutput",
+    "ModelProfile",
+    "ModelProfileRegistry",
     "ParrotFakeChatModel",
     "SimpleChatModel",
     "get_tokenizer",
@@ -89,6 +98,8 @@ _dynamic_imports = {
     "GenericFakeChatModel": "fake_chat_models",
     "ParrotFakeChatModel": "fake_chat_models",
     "LLM": "llms",
+    "ModelProfile": "model_profile",
+    "ModelProfileRegistry": "model_profile",
     "BaseLLM": "llms",
     "is_openai_data_block": "_utils",
 }

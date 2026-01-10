@@ -33,7 +33,7 @@ from langchain_core.runnables.utils import (
     AddableDict,
     ConfigurableFieldSpec,
 )
-from langchain_core.utils.aiter import atee, py_anext
+from langchain_core.utils.aiter import atee
 from langchain_core.utils.iter import safetee
 from langchain_core.utils.pydantic import create_model_v2
 
@@ -51,10 +51,10 @@ def identity(x: Other) -> Other:
     """Identity function.
 
     Args:
-        x: input.
+        x: Input.
 
     Returns:
-        output.
+        Output.
     """
     return x
 
@@ -63,10 +63,10 @@ async def aidentity(x: Other) -> Other:
     """Async identity function.
 
     Args:
-        x: input.
+        x: Input.
 
     Returns:
-        output.
+        Output.
     """
     return x
 
@@ -74,11 +74,11 @@ async def aidentity(x: Other) -> Other:
 class RunnablePassthrough(RunnableSerializable[Other, Other]):
     """Runnable to passthrough inputs unchanged or with additional keys.
 
-    This Runnable behaves almost like the identity function, except that it
+    This `Runnable` behaves almost like the identity function, except that it
     can be configured to add additional keys to the output, if the input is a
     dict.
 
-    The examples below demonstrate this Runnable works using a few simple
+    The examples below demonstrate this `Runnable` works using a few simple
     chains. The chains rely on simple lambdas to make the examples easy to execute
     and experiment with.
 
@@ -164,7 +164,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         input_type: type[Other] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Create e RunnablePassthrough.
+        """Create a `RunnablePassthrough`.
 
         Args:
             func: Function to be called with the input.
@@ -180,7 +180,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -213,11 +213,11 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         """Merge the Dict input with the output produced by the mapping argument.
 
         Args:
-            **kwargs: Runnable, Callable or a Mapping from keys to Runnables
-                or Callables.
+            **kwargs: `Runnable`, `Callable` or a `Mapping` from keys to `Runnable`
+                objects or `Callable`s.
 
         Returns:
-            A Runnable that merges the Dict input with the output produced by the
+            A `Runnable` that merges the `dict` input with the output produced by the
             mapping argument.
         """
         return RunnableAssign(RunnableParallel[dict[str, Any]](kwargs))
@@ -350,7 +350,7 @@ _graph_passthrough: RunnablePassthrough = RunnablePassthrough()
 
 
 class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
-    """Runnable that assigns key-value pairs to dict[str, Any] inputs.
+    """Runnable that assigns key-value pairs to `dict[str, Any]` inputs.
 
     The `RunnableAssign` class takes input dictionaries and, through a
     `RunnableParallel` instance, applies transformations, then combines
@@ -392,7 +392,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     mapper: RunnableParallel
 
     def __init__(self, mapper: RunnableParallel[dict[str, Any]], **kwargs: Any) -> None:
-        """Create a RunnableAssign.
+        """Create a `RunnableAssign`.
 
         Args:
             mapper: A `RunnableParallel` instance that will be used to transform the
@@ -403,7 +403,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -614,7 +614,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         )
         # start map output stream
         first_map_chunk_task: asyncio.Task = asyncio.create_task(
-            py_anext(map_output, None),  # type: ignore[arg-type]
+            anext(map_output, None),
         )
         # consume passthrough stream
         async for chunk in for_passthrough:
@@ -668,13 +668,19 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             yield chunk
 
 
-class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
-    """Runnable that picks keys from dict[str, Any] inputs.
+class RunnablePick(RunnableSerializable[dict[str, Any], Any]):
+    """`Runnable` that picks keys from `dict[str, Any]` inputs.
 
-    RunnablePick class represents a Runnable that selectively picks keys from a
+    `RunnablePick` class represents a `Runnable` that selectively picks keys from a
     dictionary input. It allows you to specify one or more keys to extract
-    from the input dictionary. It returns a new dictionary containing only
-    the selected keys.
+    from the input dictionary.
+
+    !!! note "Return Type Behavior"
+        The return type depends on the `keys` parameter:
+
+        - When `keys` is a `str`: Returns the single value associated with that key
+        - When `keys` is a `list`: Returns a dictionary containing only the selected
+            keys
 
     Example:
         ```python
@@ -687,18 +693,22 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             "country": "USA",
         }
 
-        runnable = RunnablePick(keys=["name", "age"])
+        # Single key - returns the value directly
+        runnable_single = RunnablePick(keys="name")
+        result_single = runnable_single.invoke(input_data)
+        print(result_single)  # Output: "John"
 
-        output_data = runnable.invoke(input_data)
-
-        print(output_data)  # Output: {'name': 'John', 'age': 30}
+        # Multiple keys - returns a dictionary
+        runnable_multiple = RunnablePick(keys=["name", "age"])
+        result_multiple = runnable_multiple.invoke(input_data)
+        print(result_multiple)  # Output: {'name': 'John', 'age': 30}
         ```
     """
 
     keys: str | list[str]
 
     def __init__(self, keys: str | list[str], **kwargs: Any) -> None:
-        """Create a RunnablePick.
+        """Create a `RunnablePick`.
 
         Args:
             keys: A single key or a list of keys to pick from the input dictionary.
@@ -708,7 +718,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -743,25 +753,19 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             return AddableDict(picked)
         return None
 
-    def _invoke(
-        self,
-        value: dict[str, Any],
-    ) -> dict[str, Any]:
-        return self._pick(value)
-
     @override
     def invoke(
         self,
         input: dict[str, Any],
         config: RunnableConfig | None = None,
         **kwargs: Any,
-    ) -> dict[str, Any]:
-        return self._call_with_config(self._invoke, input, config, **kwargs)
+    ) -> Any:
+        return self._call_with_config(self._pick, input, config, **kwargs)
 
     async def _ainvoke(
         self,
         value: dict[str, Any],
-    ) -> dict[str, Any]:
+    ) -> Any:
         return self._pick(value)
 
     @override
@@ -770,13 +774,13 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         input: dict[str, Any],
         config: RunnableConfig | None = None,
         **kwargs: Any,
-    ) -> dict[str, Any]:
+    ) -> Any:
         return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
 
     def _transform(
         self,
         chunks: Iterator[dict[str, Any]],
-    ) -> Iterator[dict[str, Any]]:
+    ) -> Iterator[Any]:
         for chunk in chunks:
             picked = self._pick(chunk)
             if picked is not None:
@@ -788,7 +792,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         input: Iterator[dict[str, Any]],
         config: RunnableConfig | None = None,
         **kwargs: Any,
-    ) -> Iterator[dict[str, Any]]:
+    ) -> Iterator[Any]:
         yield from self._transform_stream_with_config(
             input, self._transform, config, **kwargs
         )
@@ -796,7 +800,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     async def _atransform(
         self,
         chunks: AsyncIterator[dict[str, Any]],
-    ) -> AsyncIterator[dict[str, Any]]:
+    ) -> AsyncIterator[Any]:
         async for chunk in chunks:
             picked = self._pick(chunk)
             if picked is not None:
@@ -808,7 +812,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         input: AsyncIterator[dict[str, Any]],
         config: RunnableConfig | None = None,
         **kwargs: Any,
-    ) -> AsyncIterator[dict[str, Any]]:
+    ) -> AsyncIterator[Any]:
         async for chunk in self._atransform_stream_with_config(
             input, self._atransform, config, **kwargs
         ):
@@ -820,7 +824,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         input: dict[str, Any],
         config: RunnableConfig | None = None,
         **kwargs: Any,
-    ) -> Iterator[dict[str, Any]]:
+    ) -> Iterator[Any]:
         return self.transform(iter([input]), config, **kwargs)
 
     @override
@@ -829,7 +833,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         input: dict[str, Any],
         config: RunnableConfig | None = None,
         **kwargs: Any,
-    ) -> AsyncIterator[dict[str, Any]]:
+    ) -> AsyncIterator[Any]:
         async def input_aiter() -> AsyncIterator[dict[str, Any]]:
             yield input
 

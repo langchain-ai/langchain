@@ -1,4 +1,4 @@
-.PHONY: all start_services stop_services coverage test test_fast extended_tests test_watch test_watch_extended integration_tests check_imports lint format lint_diff format_diff lint_package lint_tests help
+.PHONY: all start_services stop_services coverage coverage_agents test test_fast extended_tests test_watch test_watch_extended integration_tests check_imports lint format lint_diff format_diff lint_package lint_tests help
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -27,8 +27,17 @@ coverage:
 		--cov-report term-missing:skip-covered \
 		$(TEST_FILE)
 
+# Run middleware and agent tests with coverage report.
+coverage_agents:
+	uv run --group test pytest \
+		tests/unit_tests/agents/middleware/ \
+		tests/unit_tests/agents/test_*.py \
+		--cov=langchain.agents \
+		--cov-report=term-missing \
+		--cov-report=html:htmlcov \
+
 test:
-	make start_services && LANGGRAPH_TEST_FAST=0 uv run --group test pytest -n auto --disable-socket --allow-unix-socket $(TEST_FILE) --cov-report term-missing:skip-covered; \
+	make start_services && LANGGRAPH_TEST_FAST=0 uv run --no-sync --active --group test pytest -n auto --disable-socket --allow-unix-socket $(TEST_FILE) --cov-report term-missing:skip-covered --snapshot-update; \
 	EXIT_CODE=$$?; \
 	make stop_services; \
 	exit $$EXIT_CODE
@@ -93,6 +102,7 @@ help:
 	@echo 'lint                         - run linters'
 	@echo '-- TESTS --'
 	@echo 'coverage                     - run unit tests and generate coverage report'
+	@echo 'coverage_agents              - run middleware and agent tests with coverage report'
 	@echo 'test                         - run unit tests with all services'
 	@echo 'test_fast                    - run unit tests with in-memory services only'
 	@echo 'tests                        - run unit tests (alias for "make test")'

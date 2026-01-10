@@ -2,38 +2,40 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from langchain_core.messages import HumanMessage
+from langchain_core.tools import tool
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.shell_tool import ShellToolMiddleware
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from langgraph.graph.state import CompiledStateGraph
+
+    from langchain.agents.middleware.types import _InputAgentState
 
 
 def _get_model(provider: str) -> Any:
     """Get chat model for the specified provider."""
     if provider == "anthropic":
-        from langchain_anthropic import ChatAnthropic
-
-        return ChatAnthropic(model="claude-3-5-sonnet-20241022")
-    elif provider == "openai":
-        from langchain_openai import ChatOpenAI
-
-        return ChatOpenAI(model="gpt-4o-mini")
-    else:
-        msg = f"Unknown provider: {provider}"
-        raise ValueError(msg)
+        return pytest.importorskip("langchain_anthropic").ChatAnthropic(
+            model="claude-sonnet-4-5-20250929"
+        )
+    if provider == "openai":
+        return pytest.importorskip("langchain_openai").ChatOpenAI(model="gpt-4o-mini")
+    msg = f"Unknown provider: {provider}"
+    raise ValueError(msg)
 
 
 @pytest.mark.parametrize("provider", ["anthropic", "openai"])
 def test_shell_tool_basic_execution(tmp_path: Path, provider: str) -> None:
     """Test basic shell command execution across different models."""
-    pytest.importorskip(f"langchain_{provider}")
-
     workspace = tmp_path / "workspace"
-    agent = create_agent(
+    agent: CompiledStateGraph[Any, Any, _InputAgentState, Any] = create_agent(
         model=_get_model(provider),
         middleware=[ShellToolMiddleware(workspace_root=workspace)],
     )
@@ -55,7 +57,7 @@ def test_shell_tool_basic_execution(tmp_path: Path, provider: str) -> None:
 def test_shell_session_persistence(tmp_path: Path) -> None:
     """Test shell session state persists across multiple tool calls."""
     workspace = tmp_path / "workspace"
-    agent = create_agent(
+    agent: CompiledStateGraph[Any, Any, _InputAgentState, Any] = create_agent(
         model=_get_model("anthropic"),
         middleware=[ShellToolMiddleware(workspace_root=workspace)],
     )
@@ -82,7 +84,7 @@ def test_shell_session_persistence(tmp_path: Path) -> None:
 def test_shell_tool_error_handling(tmp_path: Path) -> None:
     """Test shell tool captures command errors."""
     workspace = tmp_path / "workspace"
-    agent = create_agent(
+    agent: CompiledStateGraph[Any, Any, _InputAgentState, Any] = create_agent(
         model=_get_model("anthropic"),
         middleware=[ShellToolMiddleware(workspace_root=workspace)],
     )
@@ -112,8 +114,6 @@ def test_shell_tool_error_handling(tmp_path: Path) -> None:
 @pytest.mark.requires("langchain_anthropic")
 def test_shell_tool_with_custom_tools(tmp_path: Path) -> None:
     """Test shell tool works alongside custom tools."""
-    from langchain_core.tools import tool
-
     workspace = tmp_path / "workspace"
 
     @tool
@@ -121,7 +121,7 @@ def test_shell_tool_with_custom_tools(tmp_path: Path) -> None:
         """Greet someone by name."""
         return f"Hello, {name}!"
 
-    agent = create_agent(
+    agent: CompiledStateGraph[Any, Any, _InputAgentState, Any] = create_agent(
         model=_get_model("anthropic"),
         tools=[custom_greeting],
         middleware=[ShellToolMiddleware(workspace_root=workspace)],

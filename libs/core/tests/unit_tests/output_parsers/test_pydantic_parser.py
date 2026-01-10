@@ -14,7 +14,7 @@ from langchain_core.language_models import ParrotFakeChatModel
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.output_parsers.json import JsonOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.utils.pydantic import PydanticBaseModel, TBaseModel
+from langchain_core.utils.pydantic import PydanticBaseModel, TypeBaseModel
 
 
 class ForecastV2(pydantic.BaseModel):
@@ -23,7 +23,10 @@ class ForecastV2(pydantic.BaseModel):
     forecast: str
 
 
-if sys.version_info < (3, 14):
+if sys.version_info >= (3, 14):
+    _FORECAST_MODELS_TYPES = type[ForecastV2]
+    _FORECAST_MODELS = [ForecastV2]
+else:
 
     class ForecastV1(V1BaseModel):
         temperature: int
@@ -32,9 +35,6 @@ if sys.version_info < (3, 14):
 
     _FORECAST_MODELS_TYPES = type[ForecastV2] | type[ForecastV1]
     _FORECAST_MODELS = [ForecastV2, ForecastV1]
-else:
-    _FORECAST_MODELS_TYPES = type[ForecastV2]
-    _FORECAST_MODELS = [ForecastV2]
 
 
 @pytest.mark.parametrize("pydantic_object", _FORECAST_MODELS)
@@ -63,7 +63,7 @@ def test_pydantic_parser_chaining(
 
 
 @pytest.mark.parametrize("pydantic_object", _FORECAST_MODELS)
-def test_pydantic_parser_validation(pydantic_object: TBaseModel) -> None:
+def test_pydantic_parser_validation(pydantic_object: TypeBaseModel) -> None:
     bad_prompt = PromptTemplate(
         template="""{{
         "temperature": "oof",
@@ -75,9 +75,7 @@ def test_pydantic_parser_validation(pydantic_object: TBaseModel) -> None:
 
     model = ParrotFakeChatModel()
 
-    parser: PydanticOutputParser[PydanticBaseModel] = PydanticOutputParser(
-        pydantic_object=pydantic_object
-    )
+    parser = PydanticOutputParser[PydanticBaseModel](pydantic_object=pydantic_object)
     chain = bad_prompt | model | parser
     with pytest.raises(OutputParserException):
         chain.invoke({})
@@ -86,7 +84,7 @@ def test_pydantic_parser_validation(pydantic_object: TBaseModel) -> None:
 # JSON output parser tests
 @pytest.mark.parametrize("pydantic_object", _FORECAST_MODELS)
 def test_json_parser_chaining(
-    pydantic_object: TBaseModel,
+    pydantic_object: TypeBaseModel,
 ) -> None:
     prompt = PromptTemplate(
         template="""{{
@@ -150,9 +148,7 @@ DEF_EXPECTED_RESULT = TestModel(
 
 def test_pydantic_output_parser() -> None:
     """Test PydanticOutputParser."""
-    pydantic_parser: PydanticOutputParser = PydanticOutputParser(
-        pydantic_object=TestModel
-    )
+    pydantic_parser = PydanticOutputParser[TestModel](pydantic_object=TestModel)
 
     result = pydantic_parser.parse(DEF_RESULT)
     assert result == DEF_EXPECTED_RESULT
@@ -161,9 +157,7 @@ def test_pydantic_output_parser() -> None:
 
 def test_pydantic_output_parser_fail() -> None:
     """Test PydanticOutputParser where completion result fails schema validation."""
-    pydantic_parser: PydanticOutputParser = PydanticOutputParser(
-        pydantic_object=TestModel
-    )
+    pydantic_parser = PydanticOutputParser[TestModel](pydantic_object=TestModel)
 
     with pytest.raises(
         OutputParserException, match="Failed to parse TestModel from completion"
@@ -192,6 +186,14 @@ def test_pydantic_output_parser_type_inference() -> None:
         "title": "SampleModel",
         "type": "object",
     }
+
+
+@pytest.mark.parametrize("pydantic_object", _FORECAST_MODELS)
+def test_format_instructions(pydantic_object: TypeBaseModel) -> None:
+    """Test format instructions."""
+    parser = PydanticOutputParser[PydanticBaseModel](pydantic_object=pydantic_object)
+    instructions = parser.get_format_instructions()
+    assert "temperature" in instructions
 
 
 def test_format_instructions_preserves_language() -> None:

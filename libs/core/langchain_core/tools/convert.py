@@ -2,7 +2,7 @@
 
 import inspect
 from collections.abc import Callable
-from typing import Any, Literal, get_type_hints, overload
+from typing import Any, Literal, cast, get_type_hints, overload
 
 from pydantic import BaseModel, Field, create_model
 
@@ -23,6 +23,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    extras: dict[str, Any] | None = None,
 ) -> Callable[[Callable | Runnable], BaseTool]: ...
 
 
@@ -38,6 +39,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    extras: dict[str, Any] | None = None,
 ) -> BaseTool: ...
 
 
@@ -52,6 +54,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    extras: dict[str, Any] | None = None,
 ) -> BaseTool: ...
 
 
@@ -66,6 +69,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    extras: dict[str, Any] | None = None,
 ) -> Callable[[Callable | Runnable], BaseTool]: ...
 
 
@@ -80,57 +84,82 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    extras: dict[str, Any] | None = None,
 ) -> BaseTool | Callable[[Callable | Runnable], BaseTool]:
-    """Make tools out of Python functions, can be used with or without arguments.
+    """Convert Python functions and `Runnables` to LangChain tools.
+
+    Can be used as a decorator with or without arguments to create tools from functions.
+
+    Functions can have any signature - the tool will automatically infer input schemas
+    unless disabled.
+
+    !!! note "Requirements"
+        - Functions must have type hints for proper schema inference
+        - When `infer_schema=False`, functions must be `(str) -> str` and have
+            docstrings
+        - When using with `Runnable`, a string name must be provided
 
     Args:
-        name_or_callable: Optional name of the tool or the callable to be
-            converted to a tool. Must be provided as a positional argument.
-        runnable: Optional runnable to convert to a tool. Must be provided as a
-            positional argument.
+        name_or_callable: Optional name of the tool or the `Callable` to be
+            converted to a tool. Overrides the function's name.
+
+            Must be provided as a positional argument.
+        runnable: Optional `Runnable` to convert to a tool.
+
+            Must be provided as a positional argument.
         description: Optional description for the tool.
+
             Precedence for the tool description value is as follows:
 
-            - `description` argument
+            - This `description` argument
                 (used even if docstring and/or `args_schema` are provided)
             - Tool function docstring
                 (used even if `args_schema` is provided)
             - `args_schema` description
-                (used only if `description` / docstring are not provided)
+                (used only if `description` and docstring are not provided)
         *args: Extra positional arguments. Must be empty.
-        return_direct: Whether to return directly from the tool rather
-            than continuing the agent loop.
+        return_direct: Whether to return directly from the tool rather than continuing
+            the agent loop.
         args_schema: Optional argument schema for user to specify.
+        infer_schema: Whether to infer the schema of the arguments from the function's
+            signature. This also makes the resultant tool accept a dictionary input to
+            its `run()` function.
+        response_format: The tool response format.
 
-        infer_schema: Whether to infer the schema of the arguments from
-            the function's signature. This also makes the resultant tool
-            accept a dictionary input to its `run()` function.
-        response_format: The tool response format. If `"content"` then the output of
-            the tool is interpreted as the contents of a `ToolMessage`. If
-            `"content_and_artifact"` then the output is expected to be a two-tuple
+            If `'content'`, then the output of the tool is interpreted as the contents
+            of a `ToolMessage`.
+
+            If `'content_and_artifact'`, then the output is expected to be a two-tuple
             corresponding to the `(content, artifact)` of a `ToolMessage`.
-        parse_docstring: if `infer_schema` and `parse_docstring`, will attempt to
+        parse_docstring: If `infer_schema` and `parse_docstring`, will attempt to
             parse parameter descriptions from Google Style function docstrings.
-        error_on_invalid_docstring: if `parse_docstring` is provided, configure
+        error_on_invalid_docstring: If `parse_docstring` is provided, configure
             whether to raise `ValueError` on invalid Google Style docstrings.
+        extras: Optional provider-specific extra fields for the tool.
+
+            Used to pass configuration that doesn't fit into standard tool fields.
+            Chat models should process known extras when constructing model payloads.
+
+            !!! example
+
+                For example, Anthropic-specific fields like `cache_control`,
+                `defer_loading`, or `input_examples`.
 
     Raises:
-        ValueError: If too many positional arguments are provided.
-        ValueError: If a runnable is provided without a string name.
+        ValueError: If too many positional arguments are provided (e.g. violating the
+            `*args` constraint).
+        ValueError: If a `Runnable` is provided without a string name. When using `tool`
+            with a `Runnable`, a `str` name must be provided as the `name_or_callable`.
         ValueError: If the first argument is not a string or callable with
             a `__name__` attribute.
         ValueError: If the function does not have a docstring and description
             is not provided and `infer_schema` is `False`.
         ValueError: If `parse_docstring` is `True` and the function has an invalid
             Google-style docstring and `error_on_invalid_docstring` is True.
-        ValueError: If a Runnable is provided that does not have an object schema.
+        ValueError: If a `Runnable` is provided that does not have an object schema.
 
     Returns:
         The tool.
-
-    Requires:
-        - Function must be of type `(str) -> str`
-        - Function must have a docstring
 
     Examples:
         ```python
@@ -277,6 +306,7 @@ def tool(
                     response_format=response_format,
                     parse_docstring=parse_docstring,
                     error_on_invalid_docstring=error_on_invalid_docstring,
+                    extras=extras,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
@@ -293,6 +323,7 @@ def tool(
                 return_direct=return_direct,
                 coroutine=coroutine,
                 response_format=response_format,
+                extras=extras,
             )
 
         return _tool_factory
@@ -376,7 +407,7 @@ def _get_schema_from_runnable_and_arg_types(
             )
             raise TypeError(msg) from e
     fields = {key: (key_type, Field(...)) for key, key_type in arg_types.items()}
-    return create_model(name, **fields)  # type: ignore[call-overload]
+    return cast("type[BaseModel]", create_model(name, **fields))  # type: ignore[call-overload]
 
 
 def convert_runnable_to_tool(

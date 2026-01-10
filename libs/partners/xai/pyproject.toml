@@ -3,19 +3,20 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-authors = []
+name = "langchain-xai"
+description = "An integration package connecting xAI and LangChain"
 license = { text = "MIT" }
+readme = "README.md"
+authors = []
+
+version = "1.2.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-openai>=1.0.0,<2.0.0",
-    "langchain-core>=1.0.0,<2.0.0",
+    "langchain-openai>=1.1.6,<2.0.0",
+    "langchain-core>=1.2.6,<2.0.0",
     "requests>=2.0.0,<3.0.0",
     "aiohttp>=3.9.1,<4.0.0",
 ]
-name = "langchain-xai"
-version = "1.0.0"
-description = "An integration package connecting xAI and LangChain"
-readme = "README.md"
 
 [project.urls]
 Homepage = "https://docs.langchain.com/oss/python/integrations/providers/xai"
@@ -78,6 +79,9 @@ unfixable = ["B028"] # People should intentionally tune the stacklevel
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"]

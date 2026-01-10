@@ -4,13 +4,23 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.exceptions import OutputParserException
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 
 def _replace_new_line(match: re.Match[str]) -> str:
+    """Replace newline characters in a regex match with escaped sequences.
+
+    Args:
+        match: Regex match object containing the string to process.
+
+    Returns:
+        String with newlines, carriage returns, tabs, and quotes properly escaped.
+    """
     value = match.group(2)
     value = re.sub(r"\n", r"\\n", value)
     value = re.sub(r"\r", r"\\r", value)
@@ -132,7 +142,7 @@ _json_markdown_re = re.compile(r"```(json)?(.*)", re.DOTALL)
 
 def parse_json_markdown(
     json_string: str, *, parser: Callable[[str], Any] = parse_partial_json
-) -> dict:
+) -> Any:
     """Parse a JSON string from a Markdown string.
 
     Args:
@@ -159,7 +169,21 @@ _json_strip_chars = " \n\r\t`"
 
 def _parse_json(
     json_str: str, *, parser: Callable[[str], Any] = parse_partial_json
-) -> dict:
+) -> Any:
+    """Parse a JSON string, handling special characters and whitespace.
+
+    Strips whitespace, newlines, and backticks from the start and end of the string,
+    then processes special characters before parsing.
+
+    Args:
+        json_str: The JSON string to parse.
+        parser: Optional custom parser function.
+
+            Defaults to `parse_partial_json`.
+
+    Returns:
+        Parsed JSON object.
+    """
     # Strip whitespace,newlines,backtick from the start and end
     json_str = json_str.strip(_json_strip_chars)
 

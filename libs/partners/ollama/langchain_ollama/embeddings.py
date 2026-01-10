@@ -9,7 +9,11 @@ from ollama import AsyncClient, Client
 from pydantic import BaseModel, ConfigDict, PrivateAttr, model_validator
 from typing_extensions import Self
 
-from ._utils import merge_auth_headers, parse_url_with_auth, validate_model
+from langchain_ollama._utils import (
+    merge_auth_headers,
+    parse_url_with_auth,
+    validate_model,
+)
 
 
 class OllamaEmbeddings(BaseModel, Embeddings):
@@ -123,7 +127,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     validate_model_on_init: bool = False
     """Whether to validate the model exists in ollama locally on initialization.
 
-    !!! version-added "Added in version 0.3.4"
+    !!! version-added "Added in `langchain-ollama` 0.3.4"
 
     """
 

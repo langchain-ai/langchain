@@ -108,8 +108,8 @@ class LLMStringRunMapper(StringRunMapper):
             The serialized output text from the first generation.
 
         Raises:
-            ValueError: If no generations are found in the outputs,
-            or if the generations are empty.
+            ValueError: If no generations are found in the outputs or if the generations
+                are empty.
         """
         if not outputs.get("generations"):
             msg = "Cannot evaluate LLM Run without generations."
@@ -436,8 +436,8 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             The instantiated evaluation chain.
 
         Raises:
-            If the run type is not supported, or if the evaluator requires a
-            reference from the dataset but the reference key is not provided.
+            ValueError: If the run type is not supported, or if the evaluator requires a
+                reference from the dataset but the reference key is not provided.
 
         """
         # Configure how run inputs/predictions are passed to the evaluator

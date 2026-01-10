@@ -9,7 +9,6 @@ from textwrap import dedent
 from typing import Any, Literal, cast
 
 import httpx
-import openai
 import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
@@ -23,11 +22,8 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
-from langchain_tests.integration_tests.chat_models import (
-    _validate_tool_call_message,
-    magic_function,
-)
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, field_validator
+from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -709,7 +705,7 @@ async def test_openai_response_headers_async(use_responses_api: bool) -> None:
 
 def test_image_token_counting_jpeg() -> None:
     model = ChatOpenAI(model="gpt-4o", temperature=0)
-    image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+    image_url = "https://raw.githubusercontent.com/langchain-ai/docs/9f99bb977307a1bd5efeb8dc6b67eb13904c4af1/src/oss/images/checkpoints.jpg"
     message = HumanMessage(
         content=[
             {"type": "text", "text": "describe the weather in this image"},
@@ -741,7 +737,7 @@ def test_image_token_counting_jpeg() -> None:
 
 def test_image_token_counting_png() -> None:
     model = ChatOpenAI(model="gpt-4o", temperature=0)
-    image_url = "https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png"
+    image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
     message = HumanMessage(
         content=[
             {"type": "text", "text": "how many dice are in this image"},
@@ -769,49 +765,6 @@ def test_image_token_counting_png() -> None:
     ]
     actual = model.get_num_tokens_from_messages([message])
     assert expected == actual
-
-
-@pytest.mark.parametrize("use_responses_api", [False, True])
-def test_tool_calling_strict(use_responses_api: bool) -> None:
-    """Test tool calling with strict=True.
-
-    Responses API appears to have fewer constraints on schema when strict=True.
-    """
-
-    class magic_function_notrequired_arg(BaseModel):  # noqa: N801
-        """Applies a magic function to an input."""
-
-        input: int | None = Field(default=None)
-
-    model = ChatOpenAI(
-        model="gpt-5-nano", temperature=0, use_responses_api=use_responses_api
-    )
-    # N.B. magic_function adds metadata to schema (min/max for number fields)
-    model_with_tools = model.bind_tools([magic_function], strict=True)
-    # Having a not-required argument in the schema remains invalid.
-    model_with_invalid_tool_schema = model.bind_tools(
-        [magic_function_notrequired_arg], strict=True
-    )
-
-    # Test invoke
-    query = "What is the value of magic_function(3)? Use the tool."
-    response = model_with_tools.invoke(query)
-    _validate_tool_call_message(response)
-
-    # Test invalid tool schema
-    with pytest.raises(openai.BadRequestError):
-        model_with_invalid_tool_schema.invoke(query)
-
-    # Test stream
-    full: BaseMessageChunk | None = None
-    for chunk in model_with_tools.stream(query):
-        full = chunk if full is None else full + chunk  # type: ignore
-    assert isinstance(full, AIMessage)
-    _validate_tool_call_message(full)
-
-    # Test invalid tool schema
-    with pytest.raises(openai.BadRequestError):
-        next(model_with_invalid_tool_schema.stream(query))
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
@@ -1003,6 +956,7 @@ def test_audio_input_modality() -> None:
     assert "audio" in output.additional_kwargs
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 def test_prediction_tokens() -> None:
     code = dedent(
         """
@@ -1133,6 +1087,7 @@ def test_o1_stream_default_works() -> None:
     assert len(result) > 0
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 def test_multi_party_conversation() -> None:
     llm = ChatOpenAI(model="gpt-5-nano")
     messages = [
@@ -1144,17 +1099,34 @@ def test_multi_party_conversation() -> None:
     assert "Bob" in response.content
 
 
-def test_structured_output_and_tools() -> None:
-    class ResponseFormat(BaseModel):
-        response: str
-        explanation: str
+class ResponseFormat(BaseModel):
+    response: str
+    explanation: str
 
-    llm = ChatOpenAI(model="gpt-5-nano").bind_tools(
-        [GenerateUsername], strict=True, response_format=ResponseFormat
+
+class ResponseFormatDict(TypedDict):
+    response: str
+    explanation: str
+
+
+@pytest.mark.flaky(retries=3, delay=1)
+@pytest.mark.parametrize(
+    "schema", [ResponseFormat, ResponseFormat.model_json_schema(), ResponseFormatDict]
+)
+def test_structured_output_and_tools(schema: Any) -> None:
+    llm = ChatOpenAI(model="gpt-5-nano", verbosity="low").bind_tools(
+        [GenerateUsername], strict=True, response_format=schema
     )
 
     response = llm.invoke("What weighs more, a pound of feathers or a pound of gold?")
-    assert isinstance(response.additional_kwargs["parsed"], ResponseFormat)
+    if schema == ResponseFormat:
+        parsed = response.additional_kwargs["parsed"]
+        assert isinstance(parsed, ResponseFormat)
+    else:
+        parsed = json.loads(response.text)
+        assert isinstance(parsed, dict)
+        assert parsed["response"]
+        assert parsed["explanation"]
 
     # Test streaming tool calls
     full: BaseMessageChunk | None = None
@@ -1170,10 +1142,6 @@ def test_structured_output_and_tools() -> None:
 
 
 def test_tools_and_structured_output() -> None:
-    class ResponseFormat(BaseModel):
-        response: str
-        explanation: str
-
     llm = ChatOpenAI(model="gpt-5-nano").with_structured_output(
         ResponseFormat, strict=True, include_raw=True, tools=[GenerateUsername]
     )

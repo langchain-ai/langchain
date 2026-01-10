@@ -2,7 +2,7 @@
 
 import asyncio
 import sys
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import AsyncIterator, Mapping, Sequence
 from itertools import cycle
 from typing import Any, cast
 
@@ -36,18 +36,12 @@ from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
 
 
 def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
-    """Removes the run ids from events."""
+    """Removes the run IDs from events."""
     for event in events:
-        assert "parent_ids" in event, "Parent ids should be present in the event."
-        assert event["parent_ids"] == [], "Parent ids should be empty."
+        assert "parent_ids" in event, "Parent IDs should be present in the event."
+        assert event["parent_ids"] == [], "Parent IDs should be empty."
 
     return cast("list[StreamEvent]", [{**event, "run_id": ""} for event in events])
-
-
-async def _as_async_iterator(iterable: list) -> AsyncIterator:
-    """Converts an iterable into an async iterator."""
-    for item in iterable:
-        yield item
 
 
 async def _collect_events(events: AsyncIterator[StreamEvent]) -> list[StreamEvent]:
@@ -59,7 +53,9 @@ async def _collect_events(events: AsyncIterator[StreamEvent]) -> list[StreamEven
     return events_
 
 
-def _assert_events_equal_allow_superset_metadata(events: list, expected: list) -> None:
+def _assert_events_equal_allow_superset_metadata(
+    events: Sequence[Mapping[str, Any]], expected: Sequence[Mapping[str, Any]]
+) -> None:
     """Assert that the events are equal."""
     assert len(events) == len(expected)
     for i, (event, expected_event) in enumerate(zip(events, expected, strict=False)):
@@ -87,8 +83,9 @@ async def test_event_stream_with_simple_function_tool() -> None:
         return {"x": 5}
 
     @tool
-    def get_docs(x: int) -> list[Document]:  # noqa: ARG001
+    def get_docs(x: int) -> list[Document]:
         """Hello Doc."""
+        _ = x
         return [Document(page_content="hello")]
 
     chain = RunnableLambda(foo) | get_docs
@@ -434,9 +431,9 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
 
 
 async def test_event_stream_with_lambdas_from_lambda() -> None:
-    as_lambdas = RunnableLambda(lambda _: {"answer": "goodbye"}).with_config(
-        {"run_name": "my_lambda"}
-    )
+    as_lambdas = RunnableLambda[Any, dict[str, str]](
+        lambda _: {"answer": "goodbye"}
+    ).with_config({"run_name": "my_lambda"})
     events = await _collect_events(
         as_lambdas.astream_events({"question": "hello"}, version="v1")
     )
@@ -1073,8 +1070,9 @@ async def test_event_streaming_with_tools() -> None:
         return "hello"
 
     @tool
-    def with_callbacks(callbacks: Callbacks) -> str:  # noqa: ARG001
+    def with_callbacks(callbacks: Callbacks) -> str:
         """A tool that does nothing."""
+        _ = callbacks
         return "world"
 
     @tool
@@ -1083,8 +1081,9 @@ async def test_event_streaming_with_tools() -> None:
         return {"x": x, "y": y}
 
     @tool
-    def with_parameters_and_callbacks(x: int, y: str, callbacks: Callbacks) -> dict:  # noqa: ARG001
+    def with_parameters_and_callbacks(x: int, y: str, callbacks: Callbacks) -> dict:
         """A tool that does nothing."""
+        _ = callbacks
         return {"x": x, "y": y}
 
     # type ignores below because the tools don't appear to be runnables to type checkers
@@ -1542,7 +1541,7 @@ async def test_chain_ordering() -> None:
 
     try:
         for _ in range(10):
-            next_chunk = await iterable.__anext__()
+            next_chunk = await anext(iterable)
             events.append(next_chunk)
     except Exception:
         pass
@@ -1659,7 +1658,7 @@ async def test_event_stream_with_retry() -> None:
 
     try:
         for _ in range(10):
-            next_chunk = await iterable.__anext__()
+            next_chunk = await anext(iterable)
             events.append(next_chunk)
     except Exception:
         pass
@@ -1867,7 +1866,7 @@ async def test_runnable_each() -> None:
     async def add_one(x: int) -> int:
         return x + 1
 
-    add_one_map = RunnableLambda(add_one).map()  # type: ignore[arg-type,var-annotated]
+    add_one_map = RunnableLambda(add_one).map()
     assert await add_one_map.ainvoke([1, 2, 3]) == [2, 3, 4]
 
     with pytest.raises(NotImplementedError):
@@ -1975,7 +1974,7 @@ async def test_runnable_with_message_history() -> None:
 
     # Here we use a global variable to store the chat message history.
     # This will make it easier to inspect it to see the underlying results.
-    store: dict = {}
+    store: dict[str, list[BaseMessage]] = {}
 
     def get_by_session_id(session_id: str) -> BaseChatMessageHistory:
         """Get a chat message history."""
@@ -2109,7 +2108,7 @@ async def test_sync_in_async_stream_lambdas() -> None:
         results = list(streaming)
         return results[0]
 
-    add_one_proxy = RunnableLambda(add_one_proxy_)  # type: ignore[arg-type,var-annotated]
+    add_one_proxy = RunnableLambda(add_one_proxy_)
 
     events = await _collect_events(add_one_proxy.astream_events(1, version="v1"))
     _assert_events_equal_allow_superset_metadata(events, EXPECTED_EVENTS)
@@ -2121,7 +2120,7 @@ async def test_async_in_async_stream_lambdas() -> None:
     async def add_one(x: int) -> int:
         return x + 1
 
-    add_one_ = RunnableLambda(add_one)  # type: ignore[arg-type,var-annotated]
+    add_one_ = RunnableLambda(add_one)
 
     async def add_one_proxy(x: int, config: RunnableConfig) -> int:
         # Use sync streaming
@@ -2129,7 +2128,7 @@ async def test_async_in_async_stream_lambdas() -> None:
         results = [result async for result in streaming]
         return results[0]
 
-    add_one_proxy_ = RunnableLambda(add_one_proxy)  # type: ignore[arg-type,var-annotated]
+    add_one_proxy_ = RunnableLambda[int, int](add_one_proxy)
 
     events = await _collect_events(add_one_proxy_.astream_events(1, version="v1"))
     _assert_events_equal_allow_superset_metadata(events, EXPECTED_EVENTS)

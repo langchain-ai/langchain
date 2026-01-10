@@ -11,7 +11,7 @@ When developing an application, developers should inspect the capabilities and
 permissions of the tools that underlie the given agent toolkit, and determine
 whether permissions of the given toolkit are appropriate for the application.
 
-See [Security](https://python.langchain.com/docs/security) for more information.
+See https://docs.langchain.com/oss/python/security-policy for more information.
 """
 
 from pathlib import Path
@@ -122,7 +122,7 @@ def __getattr__(name: str) -> Any:
         old_path = "langchain_classic." + relative_path
         new_path = "langchain_experimental." + relative_path
         msg = (
-            f"{name} has been moved to langchain experimental. "
+            f"{name} has been moved to langchain_experimental. "
             "See https://github.com/langchain-ai/langchain/discussions/11680"
             "for more information.\n"
             f"Please update your import statement from: `{old_path}` to `{new_path}`."

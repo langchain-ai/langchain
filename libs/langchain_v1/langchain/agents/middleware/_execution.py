@@ -15,8 +15,10 @@ from pathlib import Path
 
 try:  # pragma: no cover - optional dependency on POSIX platforms
     import resource
+
+    _HAS_RESOURCE = True
 except ImportError:  # pragma: no cover - non-POSIX systems
-    resource = None  # type: ignore[assignment]
+    _HAS_RESOURCE = False
 
 
 SHELL_TEMP_PREFIX = "langchain-shell-"
@@ -56,11 +58,12 @@ class BaseExecutionPolicy(abc.ABC):
     """Configuration contract for persistent shell sessions.
 
     Concrete subclasses encapsulate how a shell process is launched and constrained.
+
     Each policy documents its security guarantees and the operating environments in
-    which it is appropriate. Use :class:`HostExecutionPolicy` for trusted, same-host
-    execution; :class:`CodexSandboxExecutionPolicy` when the Codex CLI sandbox is
-    available and you want additional syscall restrictions; and
-    :class:`DockerExecutionPolicy` for container-level isolation using Docker.
+    which it is appropriate. Use `HostExecutionPolicy` for trusted, same-host execution;
+    `CodexSandboxExecutionPolicy` when the Codex CLI sandbox is available and you want
+    additional syscall restrictions; and `DockerExecutionPolicy` for container-level
+    isolation using Docker.
     """
 
     command_timeout: float = 30.0
@@ -91,13 +94,13 @@ class HostExecutionPolicy(BaseExecutionPolicy):
 
     This policy is best suited for trusted or single-tenant environments (CI jobs,
     developer workstations, pre-sandboxed containers) where the agent must access the
-    host filesystem and tooling without additional isolation. It enforces optional CPU
-    and memory limits to prevent runaway commands but offers **no** filesystem or network
+    host filesystem and tooling without additional isolation. Enforces optional CPU and
+    memory limits to prevent runaway commands but offers **no** filesystem or network
     sandboxing; commands can modify anything the process user can reach.
 
-    On Linux platforms resource limits are applied with ``resource.prlimit`` after the
-    shell starts. On macOS, where ``prlimit`` is unavailable, limits are set in a
-    ``preexec_fn`` before ``exec``. In both cases the shell runs in its own process group
+    On Linux platforms resource limits are applied with `resource.prlimit` after the
+    shell starts. On macOS, where `prlimit` is unavailable, limits are set in a
+    `preexec_fn` before `exec`. In both cases the shell runs in its own process group
     so timeouts can terminate the full subtree.
     """
 
@@ -118,7 +121,7 @@ class HostExecutionPolicy(BaseExecutionPolicy):
         self._limits_requested = any(
             value is not None for value in (self.cpu_time_seconds, self.memory_bytes)
         )
-        if self._limits_requested and resource is None:
+        if self._limits_requested and not _HAS_RESOURCE:
             msg = (
                 "HostExecutionPolicy cpu/memory limits require the Python 'resource' module. "
                 "Either remove the limits or run on a POSIX platform."
@@ -162,11 +165,9 @@ class HostExecutionPolicy(BaseExecutionPolicy):
     def _apply_post_spawn_limits(self, process: subprocess.Popen[str]) -> None:
         if not self._limits_requested or not self._can_use_prlimit():
             return
-        if resource is None:  # pragma: no cover - defensive
+        if not _HAS_RESOURCE:  # pragma: no cover - defensive
             return
         pid = process.pid
-        if pid is None:
-            return
         try:
             prlimit = typing.cast("typing.Any", resource).prlimit
             if self.cpu_time_seconds is not None:
@@ -183,11 +184,7 @@ class HostExecutionPolicy(BaseExecutionPolicy):
 
     @staticmethod
     def _can_use_prlimit() -> bool:
-        return (
-            resource is not None
-            and hasattr(resource, "prlimit")
-            and sys.platform.startswith("linux")
-        )
+        return _HAS_RESOURCE and hasattr(resource, "prlimit") and sys.platform.startswith("linux")
 
 
 @dataclass
@@ -199,9 +196,9 @@ class CodexSandboxExecutionPolicy(BaseExecutionPolicy):
     (Linux) profiles. Commands still run on the host, but within the sandbox requested by
     the CLI. If the Codex binary is unavailable or the runtime lacks the required
     kernel features (e.g., Landlock inside some containers), process startup fails with a
-    :class:`RuntimeError`.
+    `RuntimeError`.
 
-    Configure sandbox behaviour via ``config_overrides`` to align with your Codex CLI
+    Configure sandbox behavior via `config_overrides` to align with your Codex CLI
     profile. This policy does not add its own resource limits; combine it with
     host-level guards (cgroups, container resource limits) as needed.
     """
@@ -250,9 +247,9 @@ class CodexSandboxExecutionPolicy(BaseExecutionPolicy):
             return self.platform
         if sys.platform.startswith("linux"):
             return "linux"
-        if sys.platform == "darwin":
+        if sys.platform == "darwin":  # type: ignore[unreachable, unused-ignore]
             return "macos"
-        msg = (
+        msg = (  # type: ignore[unreachable, unused-ignore]
             "Codex sandbox policy could not determine a supported platform; "
             "set 'platform' explicitly."
         )
@@ -271,17 +268,17 @@ class DockerExecutionPolicy(BaseExecutionPolicy):
     """Run the shell inside a dedicated Docker container.
 
     Choose this policy when commands originate from untrusted users or you require
-    strong isolation between sessions. By default the workspace is bind-mounted only when
-    it refers to an existing non-temporary directory; ephemeral sessions run without a
-    mount to minimise host exposure. The container's network namespace is disabled by
-    default (``--network none``) and you can enable further hardening via
-    ``read_only_rootfs`` and ``user``.
+    strong isolation between sessions. By default the workspace is bind-mounted only
+    when it refers to an existing non-temporary directory; ephemeral sessions run
+    without a mount to minimise host exposure. The container's network namespace is
+    disabled by default (`--network none`) and you can enable further hardening via
+    `read_only_rootfs` and `user`.
 
     The security guarantees depend on your Docker daemon configuration. Run the agent on
-    a host where Docker is locked down (rootless mode, AppArmor/SELinux, etc.) and review
-    any additional volumes or capabilities passed through ``extra_run_args``. The default
-    image is ``python:3.12-alpine3.19``; supply a custom image if you need preinstalled
-    tooling.
+    a host where Docker is locked down (rootless mode, AppArmor/SELinux, etc.) and
+    review any additional volumes or capabilities passed through ``extra_run_args``. The
+    default image is `python:3.12-alpine3.19`; supply a custom image if you need
+    preinstalled tooling.
     """
 
     binary: str = "docker"

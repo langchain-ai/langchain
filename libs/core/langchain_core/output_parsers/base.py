@@ -9,6 +9,7 @@ from typing import (
     Any,
     Generic,
     TypeVar,
+    cast,
 )
 
 from typing_extensions import override
@@ -46,7 +47,7 @@ class BaseLLMOutputParser(ABC, Generic[T]):
     async def aparse_result(
         self, result: list[Generation], *, partial: bool = False
     ) -> T:
-        """Async parse a list of candidate model `Generation` objects into a specific format.
+        """Parse a list of candidate model `Generation` objects into a specific format.
 
         Args:
             result: A list of `Generation` to be parsed. The Generations are assumed
@@ -56,7 +57,7 @@ class BaseLLMOutputParser(ABC, Generic[T]):
 
         Returns:
             Structured output.
-        """  # noqa: E501
+        """
         return await run_in_executor(None, self.parse_result, result, partial=partial)
 
 
@@ -77,7 +78,7 @@ class BaseGenerationOutputParser(
         """Return the output type for the parser."""
         # even though mypy complains this isn't valid,
         # it is good enough for pydantic to build the schema from
-        return T  # type: ignore[misc]
+        return cast("type[T]", T)  # type: ignore[misc]
 
     @override
     def invoke(
@@ -135,6 +136,9 @@ class BaseOutputParser(
 
     Example:
         ```python
+        # Implement a simple boolean output parser
+
+
         class BooleanOutputParser(BaseOutputParser[bool]):
             true_val: str = "YES"
             false_val: str = "NO"
@@ -178,7 +182,7 @@ class BaseOutputParser(
             if hasattr(base, "__pydantic_generic_metadata__"):
                 metadata = base.__pydantic_generic_metadata__
                 if "args" in metadata and len(metadata["args"]) > 0:
-                    return metadata["args"][0]
+                    return cast("type[T]", metadata["args"][0])
 
         msg = (
             f"Runnable {self.__class__.__name__} doesn't have an inferable OutputType. "
@@ -264,7 +268,7 @@ class BaseOutputParser(
     async def aparse_result(
         self, result: list[Generation], *, partial: bool = False
     ) -> T:
-        """Async parse a list of candidate model `Generation` objects into a specific format.
+        """Parse a list of candidate model `Generation` objects into a specific format.
 
         The return value is parsed from only the first `Generation` in the result, which
             is assumed to be the highest-likelihood `Generation`.
@@ -277,7 +281,7 @@ class BaseOutputParser(
 
         Returns:
             Structured output.
-        """  # noqa: E501
+        """
         return await run_in_executor(None, self.parse_result, result, partial=partial)
 
     async def aparse(self, text: str) -> T:

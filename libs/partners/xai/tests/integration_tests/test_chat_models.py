@@ -16,8 +16,9 @@ MODEL_NAME = "grok-4-fast-reasoning"
 def test_reasoning(output_version: Literal["", "v1"]) -> None:
     """Test reasoning features.
 
-    Note: `grok-4` does not return `reasoning_content`, but may optionally return
-    encrypted reasoning content if `use_encrypted_content` is set to True.
+    !!! note
+        `grok-4` does not return `reasoning_content`, but may optionally return
+        encrypted reasoning content if `use_encrypted_content` is set to `True`.
     """
     # Test reasoning effort
     if output_version:
@@ -36,12 +37,30 @@ def test_reasoning(output_version: Literal["", "v1"]) -> None:
     assert response.content
     assert response.additional_kwargs["reasoning_content"]
 
+    ## Check output tokens
+    usage_metadata = response.usage_metadata
+    assert usage_metadata
+    reasoning_tokens = usage_metadata.get("output_token_details", {}).get("reasoning")
+    total_tokens = usage_metadata.get("output_tokens")
+    assert total_tokens
+    assert reasoning_tokens
+    assert total_tokens > reasoning_tokens
+
     # Test streaming
     full: BaseMessageChunk | None = None
     for chunk in chat_model.stream(input_message):
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.additional_kwargs["reasoning_content"]
+
+    ## Check output tokens
+    usage_metadata = full.usage_metadata
+    assert usage_metadata
+    reasoning_tokens = usage_metadata.get("output_token_details", {}).get("reasoning")
+    total_tokens = usage_metadata.get("output_tokens")
+    assert total_tokens
+    assert reasoning_tokens
+    assert total_tokens > reasoning_tokens
 
     # Check that we can access reasoning content blocks
     assert response.content_blocks

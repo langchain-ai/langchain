@@ -12,7 +12,11 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models import (
+    LanguageModelInput,
+    ModelProfile,
+    ModelProfileRegistry,
+)
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     LangSmithParams,
@@ -37,6 +41,11 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
+from langchain_core.messages.ai import (
+    InputTokenDetails,
+    OutputTokenDetails,
+    UsageMetadata,
+)
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
@@ -58,7 +67,15 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 from langchain_groq._compat import _convert_from_v1_to_groq
+from langchain_groq.data._profiles import _PROFILES
 from langchain_groq.version import __version__
+
+_MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 class ChatGroq(BaseChatModel):
@@ -96,7 +113,7 @@ class ChatGroq(BaseChatModel):
             - `'raw'`: Includes reasoning within think tags (e.g.
                 `<think>{reasoning_content}</think>`).
             - `'hidden'`: Returns only the final answer content. Note: this only
-                supresses reasoning content in the response; the model will still perform
+                suppresses reasoning content in the response; the model will still perform
                 reasoning unless overridden in `reasoning_effort`.
 
             See the [Groq documentation](https://console.groq.com/docs/reasoning#reasoning)
@@ -152,6 +169,30 @@ class ChatGroq(BaseChatModel):
         'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
         'logprobs': None}, id='run-ecc71d70-e10c-4b69-8b8c-b8027d95d4b8-0')
         ```
+
+    Vision:
+        ```python
+        from langchain_groq import ChatGroq
+        from langchain_core.messages import HumanMessage
+
+        model = ChatGroq(model="meta-llama/llama-4-scout-17b-16e-instruct")
+
+        message = HumanMessage(
+            content=[
+                {"type": "text", "text": "Describe this image in detail"},
+                {"type": "image_url", "image_url": {"url": "example_url.jpg"}},
+            ]
+        )
+
+        response = model.invoke([message])
+        print(response.content)
+        ```
+
+        Vision-capable models:
+        - meta-llama/llama-4-scout-17b-16e-instruct
+        - meta-llama/llama-4-maverick-17b-128e-instruct
+
+        Maximum image size: 20MB per request.
 
     Stream:
         ```python
@@ -300,14 +341,19 @@ class ChatGroq(BaseChatModel):
         ```
     """  # noqa: E501
 
-    client: Any = Field(default=None, exclude=True)  #: :meta private:
-    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
+    client: Any = Field(default=None, exclude=True)
+
+    async_client: Any = Field(default=None, exclude=True)
+
     model_name: str = Field(alias="model")
     """Model name to use."""
+
     temperature: float = 0.7
     """What sampling temperature to use."""
+
     stop: list[str] | str | None = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
+
     reasoning_format: Literal["parsed", "raw", "hidden"] | None = Field(default=None)
     """The format for reasoning output. Groq will default to raw if left undefined.
 
@@ -316,13 +362,14 @@ class ChatGroq(BaseChatModel):
         `additional_kwargs.reasoning_content` field of the response.
     - `'raw'`: Includes reasoning within think tags (e.g.
         `<think>{reasoning_content}</think>`).
-    - `'hidden'`: Returns only the final answer content. Note: this only supresses
+    - `'hidden'`: Returns only the final answer content. Note: this only suppresses
         reasoning content in the response; the model will still perform reasoning unless
         overridden in `reasoning_effort`.
 
     See the [Groq documentation](https://console.groq.com/docs/reasoning#reasoning)
     for more details and a list of supported models.
     """
+
     reasoning_effort: str | None = Field(default=None)
     """The level of effort the model will put into reasoning. Groq will default to
     enabling reasoning if left undefined.
@@ -331,32 +378,44 @@ class ChatGroq(BaseChatModel):
     for more details and a list of options and models that support setting a reasoning
     effort.
     """
+
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
+
     groq_api_key: SecretStr | None = Field(
         alias="api_key", default_factory=secret_from_env("GROQ_API_KEY", default=None)
     )
     """Automatically inferred from env var `GROQ_API_KEY` if not provided."""
+
     groq_api_base: str | None = Field(
         alias="base_url", default_factory=from_env("GROQ_API_BASE", default=None)
     )
     """Base URL path for API requests. Leave blank if not using a proxy or service
-        emulator."""
+    emulator.
+    """
+
     # to support explicit proxy for Groq
     groq_proxy: str | None = Field(default_factory=from_env("GROQ_PROXY", default=None))
+
     request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
     """Timeout for requests to Groq completion API. Can be float, `httpx.Timeout` or
-        None."""
+    `None`.
+    """
+
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
+
     streaming: bool = False
     """Whether to stream the results or not."""
+
     n: int = 1
     """Number of chat completions to generate for each prompt."""
+
     max_tokens: int | None = None
     """Maximum number of tokens to generate."""
+
     service_tier: Literal["on_demand", "flex", "auto"] = Field(default="on_demand")
     """Optional parameter that you can include to specify the service tier you'd like to
     use for requests.
@@ -371,15 +430,22 @@ class ChatGroq(BaseChatModel):
     See the [Groq documentation](https://console.groq.com/docs/flex-processing) for more
     details and a list of service tiers and descriptions.
     """
+
     default_headers: Mapping[str, str] | None = None
+
     default_query: Mapping[str, object] | None = None
+
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Any | None = None
     """Optional `httpx.Client`."""
+
     http_async_client: Any | None = None
-    """Optional `httpx.AsyncClient`. Only used for async invocations. Must specify
-        `http_client` as well if you'd like a custom client for sync invocations."""
+    """Optional `httpx.AsyncClient`.
+
+    Only used for async invocations. Must specify `http_client` as well if you'd like a
+    custom client for sync invocations.
+    """
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -461,6 +527,13 @@ class ChatGroq(BaseChatModel):
                 "Please install it with `pip install groq`."
             )
             raise ImportError(msg) from exc
+        return self
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model_name)
         return self
 
     #
@@ -704,15 +777,7 @@ class ChatGroq(BaseChatModel):
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
-                input_tokens = token_usage.get("prompt_tokens", 0)
-                output_tokens = token_usage.get("completion_tokens", 0)
-                message.usage_metadata = {
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "total_tokens": token_usage.get(
-                        "total_tokens", input_tokens + output_tokens
-                    ),
-                }
+                message.usage_metadata = _create_usage_metadata(token_usage)
             generation_info = {"finish_reason": res.get("finish_reason")}
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
@@ -752,7 +817,20 @@ class ChatGroq(BaseChatModel):
             if token_usage is not None:
                 for k, v in token_usage.items():
                     if k in overall_token_usage and v is not None:
-                        overall_token_usage[k] += v
+                        # Handle nested dictionaries
+                        if isinstance(v, dict):
+                            if k not in overall_token_usage:
+                                overall_token_usage[k] = {}
+                            for nested_k, nested_v in v.items():
+                                if (
+                                    nested_k in overall_token_usage[k]
+                                    and nested_v is not None
+                                ):
+                                    overall_token_usage[k][nested_k] += nested_v
+                                else:
+                                    overall_token_usage[k][nested_k] = nested_v
+                        else:
+                            overall_token_usage[k] += v
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:
@@ -775,8 +853,8 @@ class ChatGroq(BaseChatModel):
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
-                Supports any tool definition handled by
-                `langchain_core.utils.function_calling.convert_to_openai_tool`.
+
+                Supports any tool definition handled by [`convert_to_openai_tool`][langchain_core.utils.function_calling.convert_to_openai_tool].
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function,
                 `'auto'` to automatically determine which function to call
@@ -785,8 +863,10 @@ class ChatGroq(BaseChatModel):
                 `{"type": "function", "function": {"name": <<tool_name>>}}`.
             **kwargs: Any additional parameters to pass to the
                 `langchain.runnable.Runnable` constructor.
+        """  # noqa: E501
+        # strict tool-calling not supported by Groq
+        _ = kwargs.pop("strict", None)
 
-        """
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None and tool_choice:
             if tool_choice == "any":
@@ -826,10 +906,10 @@ class ChatGroq(BaseChatModel):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - an OpenAI function/tool schema,
-                - a JSON Schema,
-                - a `TypedDict` class,
-                - or a Pydantic class.
+                - An OpenAI function/tool schema,
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - Or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
@@ -840,7 +920,8 @@ class ChatGroq(BaseChatModel):
                 more on how to properly specify types and descriptions of schema fields
                 when specifying a Pydantic or `TypedDict` class.
 
-                !!! warning "Behavior changed in 0.3.8"
+                !!! warning "Behavior changed in `langchain-groq` 0.3.8"
+
                     Added support for Groq's dedicated structured output feature via
                     `method="json_schema"`.
 
@@ -877,11 +958,15 @@ class ChatGroq(BaseChatModel):
                     `'json_mode'` does not support streaming responses stop sequences.
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a `BaseMessage`) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
@@ -1080,9 +1165,6 @@ class ChatGroq(BaseChatModel):
 
         """  # noqa: E501
         _ = kwargs.pop("strict", None)
-        if kwargs:
-            msg = f"Received unsupported arguments {kwargs}"
-            raise ValueError(msg)
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
             if schema is None:
@@ -1100,6 +1182,7 @@ class ChatGroq(BaseChatModel):
                     "kwargs": {"method": "function_calling"},
                     "schema": formatted_tool,
                 },
+                **kwargs,
             )
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
@@ -1132,6 +1215,7 @@ class ChatGroq(BaseChatModel):
             llm = self.bind(
                 response_format=response_format,
                 ls_structured_output_format=ls_format_info,
+                **kwargs,
             )
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
@@ -1146,6 +1230,7 @@ class ChatGroq(BaseChatModel):
                     "kwargs": {"method": "json_mode"},
                     "schema": schema,
                 },
+                **kwargs,
             )
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
@@ -1279,7 +1364,16 @@ def _convert_chunk_to_message_chunk(
             function_call["name"] = ""
         additional_kwargs["function_call"] = function_call
     if _dict.get("tool_calls"):
-        additional_kwargs["tool_calls"] = _dict["tool_calls"]
+        # Groq sends 'null' (JSON null) for tools with no arguments, but we
+        # expect '{}' (empty JSON object) to represent empty arguments
+        tool_calls = _dict["tool_calls"]
+        for tool_call in tool_calls:
+            if (
+                tool_call.get("function")
+                and tool_call["function"].get("arguments") == "null"
+            ):
+                tool_call["function"]["arguments"] = "{}"
+        additional_kwargs["tool_calls"] = tool_calls
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
@@ -1303,13 +1397,7 @@ def _convert_chunk_to_message_chunk(
                         {k: executed_tool[k] for k in executed_tool if k != "output"}
                     )
         if usage := (chunk.get("x_groq") or {}).get("usage"):
-            input_tokens = usage.get("prompt_tokens", 0)
-            output_tokens = usage.get("completion_tokens", 0)
-            usage_metadata = {
-                "input_tokens": input_tokens,
-                "output_tokens": output_tokens,
-                "total_tokens": usage.get("total_tokens", input_tokens + output_tokens),
-            }
+            usage_metadata = _create_usage_metadata(usage)
         else:
             usage_metadata = None
         return AIMessageChunk(
@@ -1355,6 +1443,14 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         tool_calls = []
         invalid_tool_calls = []
         if raw_tool_calls := _dict.get("tool_calls"):
+            # Groq sends 'null' (JSON null) for tools with no arguments, but we
+            # expect '{}' (empty JSON object) to represent empty arguments
+            for raw_tool_call in raw_tool_calls:
+                if (
+                    raw_tool_call.get("function")
+                    and raw_tool_call["function"].get("arguments") == "null"
+                ):
+                    raw_tool_call["function"]["arguments"] = "{}"
             additional_kwargs["tool_calls"] = raw_tool_calls
             for raw_tool_call in raw_tool_calls:
                 try:
@@ -1409,3 +1505,59 @@ def _lc_invalid_tool_call_to_groq_tool_call(
             "arguments": invalid_tool_call["args"],
         },
     }
+
+
+def _create_usage_metadata(groq_token_usage: dict) -> UsageMetadata:
+    """Create usage metadata from Groq token usage response.
+
+    Args:
+        groq_token_usage: Token usage dict from Groq API response.
+
+    Returns:
+        Usage metadata dict with input/output token details.
+    """
+    # Support both formats: new Responses API uses "input_tokens",
+    # Chat Completions API uses "prompt_tokens"
+    input_tokens = (
+        groq_token_usage.get("input_tokens")
+        or groq_token_usage.get("prompt_tokens")
+        or 0
+    )
+    output_tokens = (
+        groq_token_usage.get("output_tokens")
+        or groq_token_usage.get("completion_tokens")
+        or 0
+    )
+    total_tokens = groq_token_usage.get("total_tokens") or input_tokens + output_tokens
+
+    # Support both formats for token details:
+    # Responses API uses "*_tokens_details", Chat Completions API might use
+    # "prompt_token_details"
+    input_details_dict = (
+        groq_token_usage.get("input_tokens_details")
+        or groq_token_usage.get("prompt_tokens_details")
+        or {}
+    )
+    output_details_dict = (
+        groq_token_usage.get("output_tokens_details")
+        or groq_token_usage.get("completion_tokens_details")
+        or {}
+    )
+
+    input_token_details: dict = {
+        "cache_read": input_details_dict.get("cached_tokens"),
+    }
+    output_token_details: dict = {
+        "reasoning": output_details_dict.get("reasoning_tokens"),
+    }
+    usage_metadata: UsageMetadata = {
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": total_tokens,
+    }
+
+    if filtered_input := {k: v for k, v in input_token_details.items() if v}:
+        usage_metadata["input_token_details"] = InputTokenDetails(**filtered_input)  # type: ignore[typeddict-item]
+    if filtered_output := {k: v for k, v in output_token_details.items() if v}:
+        usage_metadata["output_token_details"] = OutputTokenDetails(**filtered_output)  # type: ignore[typeddict-item]
+    return usage_metadata

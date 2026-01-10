@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any
+
 import pytest
-from langchain_core.language_models.chat_models import BaseChatModel
 
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 from langchain_tests.unit_tests import ChatModelUnitTests
+from tests.unit_tests.custom_chat_model import ChatParrotLink
 
-from .custom_chat_model import ChatParrotLink
+if TYPE_CHECKING:
+    from langchain_core.language_models.chat_models import BaseChatModel
 
 
 class TestChatParrotLinkUnit(ChatModelUnitTests):
@@ -17,7 +20,7 @@ class TestChatParrotLinkUnit(ChatModelUnitTests):
         return ChatParrotLink
 
     @property
-    def chat_model_params(self) -> dict:
+    def chat_model_params(self) -> dict[str, Any]:
         return {"model": "bird-brain-001", "temperature": 0, "parrot_buffer_length": 50}
 
 
@@ -27,7 +30,7 @@ class TestChatParrotLinkIntegration(ChatModelIntegrationTests):
         return ChatParrotLink
 
     @property
-    def chat_model_params(self) -> dict:
+    def chat_model_params(self) -> dict[str, Any]:
         return {"model": "bird-brain-001", "temperature": 0, "parrot_buffer_length": 50}
 
     @pytest.mark.xfail(reason="ChatParrotLink doesn't implement bind_tools method")

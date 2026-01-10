@@ -3,20 +3,21 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-authors = []
+name = "langchain-mistralai"
+description = "An integration package connecting Mistral and LangChain"
 license = { text = "MIT" }
+readme = "README.md"
+authors = []
+
+version = "1.1.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0,<2.0.0",
+    "langchain-core>=1.1.0,<2.0.0",
     "tokenizers>=0.15.1,<1.0.0",
     "httpx>=0.25.2,<1.0.0",
     "httpx-sse>=0.3.1,<1.0.0",
     "pydantic>=2.0.0,<3.0.0",
 ]
-name = "langchain-mistralai"
-version = "1.0.1"
-description = "An integration package connecting Mistral and LangChain"
-readme = "README.md"
 
 [project.urls]
 Homepage = "https://docs.langchain.com/oss/python/integrations/providers/mistralai"
@@ -85,6 +86,9 @@ unfixable = ["B028"] # People should intentionally tune the stacklevel
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.coverage.run]
 omit = ["tests/*"]

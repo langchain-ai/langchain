@@ -71,14 +71,14 @@ jobs:
         working-directory: ${{ fromJSON(needs.compute-matrix.outputs.matrix).working-directory }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           path: langchain
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           repository: langchain-ai/langchain-google
           path: langchain-google
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           repository: langchain-ai/langchain-aws
           path: langchain-aws
@@ -155,6 +155,7 @@ jobs:
           WATSONX_APIKEY: ${{ secrets.WATSONX_APIKEY }}
           WATSONX_PROJECT_ID: ${{ secrets.WATSONX_PROJECT_ID }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          LANGCHAIN_TESTS_USER_AGENT: ${{ secrets.LANGCHAIN_TESTS_USER_AGENT }}
         run: |
           cd langchain/${{ matrix.working-directory }}
           make integration_tests

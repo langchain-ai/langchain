@@ -1,6 +1,7 @@
 """Integration tests for retrievers."""
 
 from abc import abstractmethod
+from typing import Any
 
 import pytest
 from langchain_core.documents import Document
@@ -19,7 +20,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
         ...
 
     @property
-    def retriever_constructor_params(self) -> dict:
+    def retriever_constructor_params(self) -> dict[str, Any]:
         """Returns a dictionary of parameters to pass to the retriever constructor."""
         return {}
 
@@ -72,13 +73,13 @@ class RetrieversIntegrationTests(BaseStandardTests):
             of documents ( of the one set in `num_results_arg_name`) when it is
             set.
 
-            For example, a retriever like
+            For example, a retriever like...
 
             ```python
             MyRetriever(k=3).invoke("query")
             ```
 
-            should return 3 documents when invoked with a query.
+            ...should return 3 documents when invoked with a query.
 
         """
         params = {
@@ -128,13 +129,13 @@ class RetrieversIntegrationTests(BaseStandardTests):
             of documents (`k` of the one set in `num_results_arg_name`) when it is
             set.
 
-            For example, a retriever like
+            For example, a retriever like...
 
             ```python
             MyRetriever().invoke("query", k=3)
             ```
 
-            should return 3 documents when invoked with a query.
+            ...should return 3 documents when invoked with a query.
 
         """
         result_1 = retriever.invoke(
@@ -169,8 +170,8 @@ class RetrieversIntegrationTests(BaseStandardTests):
     async def test_ainvoke_returns_documents(self, retriever: BaseRetriever) -> None:
         """Test ainvoke returns documents.
 
-        If ainvoked with the example params, the retriever should return a list of
-        Documents.
+        If `ainvoke`'d with the example params, the retriever should return a list of
+        `Document` objects.
 
         See `test_invoke_returns_documents` for more information on
         troubleshooting.

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import inspect
 from collections import defaultdict
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import (
@@ -22,7 +21,7 @@ from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.utils.pydantic import _IgnoreUnserializable, is_basemodel_subclass
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     from pydantic import BaseModel
 
@@ -132,7 +131,7 @@ class Branch(NamedTuple):
     condition: Callable[..., str]
     """A callable that returns a string representation of the condition."""
     ends: dict[str, str] | None
-    """Optional dictionary of end node ids for the branches. """
+    """Optional dictionary of end node IDs for the branches. """
 
 
 class CurveStyle(Enum):
@@ -642,6 +641,7 @@ class Graph:
         retry_delay: float = 1.0,
         frontmatter_config: dict[str, Any] | None = None,
         base_url: str | None = None,
+        proxies: dict[str, str] | None = None,
     ) -> bytes:
         """Draw the graph as a PNG image using Mermaid.
 
@@ -674,11 +674,10 @@ class Graph:
                 }
                 ```
             base_url: The base URL of the Mermaid server for rendering via API.
-
+            proxies: HTTP/HTTPS proxies for requests (e.g. `{"http": "http://127.0.0.1:7890"}`).
 
         Returns:
             The PNG image as bytes.
-
         """
         # Import locally to prevent circular import
         from langchain_core.runnables.graph_mermaid import (  # noqa: PLC0415
@@ -699,6 +698,7 @@ class Graph:
             padding=padding,
             max_retries=max_retries,
             retry_delay=retry_delay,
+            proxies=proxies,
             base_url=base_url,
         )
 
@@ -706,8 +706,10 @@ class Graph:
 def _first_node(graph: Graph, exclude: Sequence[str] = ()) -> Node | None:
     """Find the single node that is not a target of any edge.
 
-    Exclude nodes/sources with ids in the exclude list.
+    Exclude nodes/sources with IDs in the exclude list.
+
     If there is no such node, or there are multiple, return `None`.
+
     When drawing the graph, this node would be the origin.
     """
     targets = {edge.target for edge in graph.edges if edge.source not in exclude}
@@ -722,8 +724,10 @@ def _first_node(graph: Graph, exclude: Sequence[str] = ()) -> Node | None:
 def _last_node(graph: Graph, exclude: Sequence[str] = ()) -> Node | None:
     """Find the single node that is not a source of any edge.
 
-    Exclude nodes/targets with ids in the exclude list.
+    Exclude nodes/targets with IDs in the exclude list.
+
     If there is no such node, or there are multiple, return `None`.
+
     When drawing the graph, this node would be the destination.
     """
     sources = {edge.source for edge in graph.edges if edge.target not in exclude}

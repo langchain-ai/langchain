@@ -18,3 +18,33 @@ body:
     attributes:
       label: Issue Content
       description: Add the content of the issue here.
+  - type: checkboxes
+    id: package
+    attributes:
+      label: Package (Required)
+      description: |
+        Please select package(s) that this issue is related to.
+      options:
+        - label: langchain
+        - label: langchain-openai
+        - label: langchain-anthropic
+        - label: langchain-classic
+        - label: langchain-core
+        - label: langchain-cli
+        - label: langchain-model-profiles
+        - label: langchain-tests
+        - label: langchain-text-splitters
+        - label: langchain-chroma
+        - label: langchain-deepseek
+        - label: langchain-exa
+        - label: langchain-fireworks
+        - label: langchain-groq
+        - label: langchain-huggingface
+        - label: langchain-mistralai
+        - label: langchain-nomic
+        - label: langchain-ollama
+        - label: langchain-perplexity
+        - label: langchain-prompty
+        - label: langchain-qdrant
+        - label: langchain-xai
+        - label: Other / not sure / general

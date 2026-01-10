@@ -22,7 +22,7 @@ class ModelFallbackMiddleware(AgentMiddleware):
     """Automatic fallback to alternative models on errors.
 
     Retries failed model calls with alternative models in sequence until
-    success or all models exhausted. Primary model specified in create_agent().
+    success or all models exhausted. Primary model specified in `create_agent`.
 
     Example:
         ```python
@@ -31,7 +31,7 @@ class ModelFallbackMiddleware(AgentMiddleware):
 
         fallback = ModelFallbackMiddleware(
             "openai:gpt-4o-mini",  # Try first on error
-            "anthropic:claude-3-5-sonnet-20241022",  # Then this
+            "anthropic:claude-sonnet-4-5-20250929",  # Then this
         )
 
         agent = create_agent(
@@ -39,7 +39,7 @@ class ModelFallbackMiddleware(AgentMiddleware):
             middleware=[fallback],
         )
 
-        # If primary fails: tries gpt-4o-mini, then claude-3-5-sonnet
+        # If primary fails: tries gpt-4o-mini, then claude-sonnet-4-5-20250929
         result = await agent.invoke({"messages": [HumanMessage("Hello")]})
         ```
     """
@@ -87,15 +87,14 @@ class ModelFallbackMiddleware(AgentMiddleware):
         last_exception: Exception
         try:
             return handler(request)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             last_exception = e
 
         # Try fallback models
         for fallback_model in self.models:
-            request.model = fallback_model
             try:
-                return handler(request)
-            except Exception as e:  # noqa: BLE001
+                return handler(request.override(model=fallback_model))
+            except Exception as e:
                 last_exception = e
                 continue
 
@@ -122,15 +121,14 @@ class ModelFallbackMiddleware(AgentMiddleware):
         last_exception: Exception
         try:
             return await handler(request)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             last_exception = e
 
         # Try fallback models
         for fallback_model in self.models:
-            request.model = fallback_model
             try:
-                return await handler(request)
-            except Exception as e:  # noqa: BLE001
+                return await handler(request.override(model=fallback_model))
+            except Exception as e:
                 last_exception = e
                 continue
 

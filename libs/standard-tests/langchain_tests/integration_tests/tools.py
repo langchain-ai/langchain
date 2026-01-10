@@ -15,13 +15,13 @@ class ToolsIntegrationTests(ToolsTests):
         If invoked with a `ToolCall`, the tool should return a valid `ToolMessage`
         content.
 
-        If you have followed the [custom tool guide](https://python.langchain.com/docs/how_to/custom_tools/),
-        this test should always pass because ToolCall inputs are handled by the
+        If you have followed the [custom tool guide](https://docs.langchain.com/oss/python/contributing/implement-langchain#tools),
+        this test should always pass because `ToolCall` inputs are handled by the
         `langchain_core.tools.BaseTool` class.
 
         If you have not followed this guide, you should ensure that your tool's
         `invoke` method returns a valid ToolMessage content when it receives
-        a dict representing a ToolCall as input (as opposed to distinct args).
+        a `dict` representing a `ToolCall` as input (as opposed to distinct args).
         """
         tool_call = ToolCall(
             name=tool.name,
@@ -79,7 +79,7 @@ class ToolsIntegrationTests(ToolsTests):
         in `tool_invoke_params_example` correctly, and it's throwing an error.
 
         This test doesn't have any checks. It's just to ensure that the tool
-        doesn't throw an error when invoked with a dictionary of kwargs.
+        doesn't throw an error when invoked with a `dict` of `**kwargs`.
         """
         tool.invoke(self.tool_invoke_params_example)
 

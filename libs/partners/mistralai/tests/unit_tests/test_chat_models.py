@@ -219,7 +219,7 @@ def test__convert_dict_to_message_tool_call() -> None:
             InvalidToolCall(
                 name="GenerateUsername",
                 args="oops",
-                error="Function GenerateUsername arguments:\n\noops\n\nare not valid JSON. Received JSONDecodeError Expecting value: line 1 column 1 (char 0)\nFor troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE ",  # noqa: E501
+                error="Function GenerateUsername arguments:\n\noops\n\nare not valid JSON. Received JSONDecodeError Expecting value: line 1 column 1 (char 0)\nFor troubleshooting, visit: https://docs.langchain.com/oss/python/langchain/errors/OUTPUT_PARSING_FAILURE ",  # noqa: E501
                 id="ssAbar4Dr",
                 type="invalid_tool_call",
             ),
@@ -236,6 +236,58 @@ def test__convert_dict_to_message_tool_call() -> None:
     )
     assert result == expected_output
     assert _convert_message_to_mistral_chat_message(expected_output) == message
+
+
+def test__convert_dict_to_message_tool_call_with_null_content() -> None:
+    raw_tool_call = {
+        "id": "ssAbar4Dr",
+        "function": {
+            "arguments": '{"name": "Sally", "hair_color": "green"}',
+            "name": "GenerateUsername",
+        },
+    }
+    message = {"role": "assistant", "content": None, "tool_calls": [raw_tool_call]}
+    result = _convert_mistral_chat_message_to_message(message)
+    expected_output = AIMessage(
+        content="",
+        additional_kwargs={"tool_calls": [raw_tool_call]},
+        tool_calls=[
+            ToolCall(
+                name="GenerateUsername",
+                args={"name": "Sally", "hair_color": "green"},
+                id="ssAbar4Dr",
+                type="tool_call",
+            )
+        ],
+        response_metadata={"model_provider": "mistralai"},
+    )
+    assert result == expected_output
+
+
+def test__convert_dict_to_message_with_missing_content() -> None:
+    raw_tool_call = {
+        "id": "ssAbar4Dr",
+        "function": {
+            "arguments": '{"query": "test search"}',
+            "name": "search",
+        },
+    }
+    message = {"role": "assistant", "tool_calls": [raw_tool_call]}
+    result = _convert_mistral_chat_message_to_message(message)
+    expected_output = AIMessage(
+        content="",
+        additional_kwargs={"tool_calls": [raw_tool_call]},
+        tool_calls=[
+            ToolCall(
+                name="search",
+                args={"query": "test search"},
+                id="ssAbar4Dr",
+                type="tool_call",
+            )
+        ],
+        response_metadata={"model_provider": "mistralai"},
+    )
+    assert result == expected_output
 
 
 def test_custom_token_counting() -> None:
@@ -321,7 +373,7 @@ def test_retry_with_failure_then_success() -> None:
 
 def test_no_duplicate_tool_calls_when_multiple_tools() -> None:
     """
-    Tests wether the conversion of an AIMessage with more than one tool call
+    Tests whether the conversion of an AIMessage with more than one tool call
     to a Mistral assistant message correctly returns each tool call exactly
     once in the final payload.
 
@@ -349,4 +401,9 @@ def test_no_duplicate_tool_calls_when_multiple_tools() -> None:
     # Ensure there are no duplicate ids
     ids = [tc.get("id") for tc in tool_calls if isinstance(tc, dict)]
     assert len(ids) == 2
-    assert len(set(ids)) == 2, f"Duplicate tool call ids found: {ids}"
+    assert len(set(ids)) == 2, f"Duplicate tool call IDs found: {ids}"
+
+
+def test_profile() -> None:
+    model = ChatMistralAI(model="mistral-large-latest")  # type: ignore[call-arg]
+    assert model.profile

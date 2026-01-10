@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+from typing_extensions import override
 
 from langchain_text_splitters.base import TextSplitter
 
@@ -10,7 +12,11 @@ try:
     # Type ignores needed as long as spacy doesn't support Python 3.14.
     import spacy  # type: ignore[import-not-found, unused-ignore]
     from spacy.lang.en import English  # type: ignore[import-not-found, unused-ignore]
-    from spacy.language import Language  # type: ignore[import-not-found, unused-ignore]
+
+    if TYPE_CHECKING:
+        from spacy.language import (  # type: ignore[import-not-found, unused-ignore]
+            Language,
+        )
 
     _HAS_SPACY = True
 except ImportError:
@@ -43,8 +49,8 @@ class SpacyTextSplitter(TextSplitter):
         self._separator = separator
         self._strip_whitespace = strip_whitespace
 
+    @override
     def split_text(self, text: str) -> list[str]:
-        """Split incoming text and return chunks."""
         splits = (
             s.text if self._strip_whitespace else s.text_with_ws
             for s in self._tokenizer(text).sents

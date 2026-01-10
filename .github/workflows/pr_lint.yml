@@ -26,11 +26,13 @@
 #   * revert     — reverts a previous commit
 #   * release    — prepare a new release
 #
-# Allowed Scopes (optional):
-#   core, cli, langchain, langchain_v1, langchain-classic, standard-tests,
-#   text-splitters, docs, anthropic, chroma, deepseek, exa, fireworks, groq,
-#   huggingface, mistralai, nomic, ollama, openai, perplexity, prompty, qdrant,
-#   xai, infra
+# Allowed Scope(s) (optional):
+#   core, cli, langchain, langchain-classic, model-profiles,
+#   standard-tests, text-splitters, docs, anthropic, chroma, deepseek, exa,
+#   fireworks, groq, huggingface, mistralai, nomic, ollama, openai,
+#   perplexity, prompty, qdrant, xai, infra, deps
+#
+# Multiple scopes can be used by separating them with a comma.
 #
 # Rules:
 #   1. The 'Type' must start with a lowercase letter.
@@ -79,8 +81,8 @@ jobs:
             core
             cli
             langchain
-            langchain_v1
             langchain-classic
+            model-profiles
             standard-tests
             text-splitters
             docs
@@ -100,6 +102,7 @@ jobs:
             qdrant
             xai
             infra
+            deps
           requireScope: false
           disallowScopes: |
             release

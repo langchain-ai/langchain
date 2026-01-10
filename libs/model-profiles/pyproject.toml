@@ -1,0 +1,114 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "langchain-model-profiles"
+description = "CLI tool for updating model profile data in LangChain integration packages."
+readme = "README.md"
+license = { text = "MIT" }
+authors = []
+
+version = "0.0.5"
+requires-python = ">=3.10.0,<4.0.0"
+dependencies = [
+    "httpx>=0.23.0,<1",
+    "tomli>=2.0.0,<3.0.0; python_version < '3.11'",
+    "typing-extensions>=4.7.0,<5.0.0",
+]
+
+[project.scripts]
+langchain-profiles = "langchain_model_profiles.cli:main"
+
+[project.urls]
+Homepage = "https://docs.langchain.com/"
+Documentation = "https://reference.langchain.com/python/langchain_model_profiles/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/model-profiles"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
+
+[dependency-groups]
+dev = []
+
+test = [
+    "pytest>=8.0.0,<9.0.0",
+    "pytest-cov>=4.0.0,<8.0.0",
+    "pytest-watcher>=0.2.6,<1.0.0",
+    "pytest-asyncio>=0.23.2,<2.0.0",
+    "pytest-socket>=0.6.0,<1.0.0",
+    "pytest-xdist<4.0.0,>=3.6.1",
+    "pytest-mock",
+    "syrupy>=4.0.2,<5.0.0",
+    "toml>=0.10.2,<1.0.0",
+    "langchain[openai]>=1.0.2,<2.0.0",
+    "langchain-core",
+]
+
+test_integration = ["langchain-core"]
+
+lint = [
+    "ruff>=0.12.2,<0.13.0",
+    "langchain",
+]
+typing = [
+    "mypy>=1.18.1,<1.19.0",
+    "types-toml>=0.10.8.20240310,<1.0.0.0",
+]
+
+[tool.uv.sources]
+langchain-core = { path = "../core", editable = true }
+langchain = { path = "../langchain_v1", editable = true }
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = [
+    "ALL"
+]
+ignore = [
+    "COM812",  # Messes with the formatter
+    "ISC001",  # Messes with the formatter
+    "PERF203", # Rarely useful
+    "SLF001",  # Private member access
+    "PLC0415", # Imports should be at the top. Not always desirable
+    "PLR0913", # Too many arguments in function definition
+    "PLC0414", # Inconsistent with how type checkers expect to be notified of intentional re-exports
+    "S101", # Tests need assertions
+    "PLR2004",  # Magic numbers
+    "ARG001",
+    "D104",
+    "FIX002",
+    "TD002",
+    "TD003",
+    "T201",  # Allow print statements (CLI tool)
+]
+unfixable = ["B028"] # People should intentionally tune the stacklevel
+
+pyupgrade.keep-runtime-typing = true
+flake8-annotations.allow-star-arg-any = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.coverage.run]
+omit = ["tests/*"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused -vv"
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "scheduled: mark tests to run in scheduled testing",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
+    "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:tests",
+    "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning:tests",
+]

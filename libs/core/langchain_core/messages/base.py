@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, cast, overload
 
 from pydantic import ConfigDict, Field
-from typing_extensions import Self
 
 from langchain_core._api.deprecation import warn_deprecated
 from langchain_core.load.serializable import Serializable
@@ -16,6 +15,8 @@ from langchain_core.utils.interactive_env import is_interactive_env
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from typing_extensions import Self
 
     from langchain_core.prompts.chat import ChatPromptTemplate
 
@@ -93,6 +94,10 @@ class BaseMessage(Serializable):
     """Base abstract message class.
 
     Messages are the inputs and outputs of a chat model.
+
+    Examples include [`HumanMessage`][langchain.messages.HumanMessage],
+    [`AIMessage`][langchain.messages.AIMessage], and
+    [`SystemMessage`][langchain.messages.SystemMessage].
     """
 
     content: str | list[str | dict]
@@ -195,11 +200,10 @@ class BaseMessage(Serializable):
     def content_blocks(self) -> list[types.ContentBlock]:
         r"""Load content blocks from the message content.
 
-        !!! version-added "Added in version 1.0.0"
+        !!! version-added "Added in `langchain-core` 1.0.0"
 
         """
         # Needed here to avoid circular import, as these classes import BaseMessages
-        from langchain_core.messages import content as types  # noqa: PLC0415
         from langchain_core.messages.block_translators.anthropic import (  # noqa: PLC0415
             _convert_to_v1_from_anthropic_input,
         )
@@ -261,6 +265,9 @@ class BaseMessage(Serializable):
 
         Can be used as both property (`message.text`) and method (`message.text()`).
 
+        Handles both string and list content types (e.g. for content blocks). Only
+        extracts blocks with `type: 'text'`; other block types are ignored.
+
         !!! deprecated
             As of `langchain-core` 1.0.0, calling `.text()` as a method is deprecated.
             Use `.text` as a property instead. This method will be removed in 2.0.0.
@@ -272,7 +279,7 @@ class BaseMessage(Serializable):
         if isinstance(self.content, str):
             text_value = self.content
         else:
-            # must be a list
+            # Must be a list
             blocks = [
                 block
                 for block in self.content
@@ -297,7 +304,7 @@ class BaseMessage(Serializable):
         from langchain_core.prompts.chat import ChatPromptTemplate  # noqa: PLC0415
 
         prompt = ChatPromptTemplate(messages=[self])
-        return prompt + other
+        return prompt.__add__(other)
 
     def pretty_repr(
         self,
@@ -386,12 +393,12 @@ class BaseMessageChunk(BaseMessage):
         Raises:
             TypeError: If the other object is not a message chunk.
 
-        For example,
-
-        `AIMessageChunk(content="Hello") + AIMessageChunk(content=" World")`
-
-        will give `AIMessageChunk(content="Hello World")`
-
+        Example:
+            ```txt
+              AIMessageChunk(content="Hello", ...)
+            + AIMessageChunk(content=" World", ...)
+            = AIMessageChunk(content="Hello World", ...)
+            ```
         """
         if isinstance(other, BaseMessageChunk):
             # If both are (subclasses of) BaseMessageChunk,

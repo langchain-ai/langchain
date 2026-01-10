@@ -1,7 +1,7 @@
 """Output parsers using Pydantic."""
 
 import json
-from typing import Annotated, Generic
+from typing import Annotated, Generic, Literal, overload
 
 import pydantic
 from pydantic import SkipValidation
@@ -37,10 +37,20 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     def _parser_exception(
         self, e: Exception, json_object: dict
     ) -> OutputParserException:
-        json_string = json.dumps(json_object)
+        json_string = json.dumps(json_object, ensure_ascii=False)
         name = self.pydantic_object.__name__
         msg = f"Failed to parse {name} from completion {json_string}. Got: {e}"
         return OutputParserException(msg, llm_output=json_string)
+
+    @overload
+    def parse_result(
+        self, result: list[Generation], *, partial: Literal[False] = False
+    ) -> TBaseModel: ...
+
+    @overload
+    def parse_result(
+        self, result: list[Generation], *, partial: bool = False
+    ) -> TBaseModel | None: ...
 
     def parse_result(
         self, result: list[Generation], *, partial: bool = False
@@ -54,7 +64,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
                 all the keys that have been returned so far.
 
         Raises:
-            `OutputParserException`: If the result is not valid JSON
+            OutputParserException: If the result is not valid JSON
                 or does not conform to the Pydantic model.
 
         Returns:
@@ -77,7 +87,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         Returns:
             The parsed Pydantic object.
         """
-        return super().parse(text)
+        return self.parse_result([Generation(text=text)])
 
     def get_format_instructions(self) -> str:
         """Return the format instructions for the JSON output.
@@ -86,7 +96,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
             The format instructions for the JSON output.
         """
         # Copy schema to avoid altering original Pydantic schema.
-        schema = dict(self.pydantic_object.model_json_schema().items())
+        schema = dict(self._get_schema(self.pydantic_object).items())
 
         # Remove extraneous fields.
         reduced_schema = schema

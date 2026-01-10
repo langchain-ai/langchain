@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -31,7 +31,7 @@ from langchain_core.runnables.utils import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterator
+    from collections.abc import AsyncIterator, Callable, Iterator
 
 
 class RouterInput(TypedDict):
@@ -40,11 +40,11 @@ class RouterInput(TypedDict):
     key: str
     """The key to route on."""
     input: Any
-    """The input to pass to the selected Runnable."""
+    """The input to pass to the selected `Runnable`."""
 
 
 class RouterRunnable(RunnableSerializable[RouterInput, Output]):
-    """Runnable that routes to a set of Runnables based on Input['key'].
+    """`Runnable` that routes to a set of `Runnable` based on `Input['key']`.
 
     Returns the output of the selected Runnable.
 
@@ -74,10 +74,10 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         self,
         runnables: Mapping[str, Runnable[Any, Output] | Callable[[Any], Output]],
     ) -> None:
-        """Create a RouterRunnable.
+        """Create a `RouterRunnable`.
 
         Args:
-            runnables: A mapping of keys to Runnables.
+            runnables: A mapping of keys to `Runnable` objects.
         """
         super().__init__(
             runnables={key: coerce_to_runnable(r) for key, r in runnables.items()}
@@ -90,7 +90,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -151,7 +151,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
             raise ValueError(msg)
 
         def invoke(
-            runnable: Runnable, input_: Input, config: RunnableConfig
+            runnable: Runnable[Input, Output], input_: Input, config: RunnableConfig
         ) -> Output | Exception:
             if return_exceptions:
                 try:
@@ -188,7 +188,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
             raise ValueError(msg)
 
         async def ainvoke(
-            runnable: Runnable, input_: Input, config: RunnableConfig
+            runnable: Runnable[Input, Output], input_: Input, config: RunnableConfig
         ) -> Output | Exception:
             if return_exceptions:
                 try:

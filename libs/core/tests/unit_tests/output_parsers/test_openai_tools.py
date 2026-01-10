@@ -1,3 +1,4 @@
+import sys
 from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
@@ -15,10 +16,11 @@ from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     JsonOutputToolsParser,
     PydanticToolsParser,
+    parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration
 
-STREAMED_MESSAGES: list = [
+STREAMED_MESSAGES = [
     AIMessageChunk(content=""),
     AIMessageChunk(
         content="",
@@ -332,7 +334,7 @@ for message in STREAMED_MESSAGES:
         STREAMED_MESSAGES_WITH_TOOL_CALLS.append(message)
 
 
-EXPECTED_STREAMED_JSON = [
+EXPECTED_STREAMED_JSON: list[dict[str, Any]] = [
     {},
     {"names": ["suz"]},
     {"names": ["suzy"]},
@@ -393,7 +395,7 @@ def test_partial_json_output_parser(*, use_tool_calls: bool) -> None:
     chain = input_iter | JsonOutputToolsParser()
 
     actual = list(chain.stream(None))
-    expected: list = [[]] + [
+    expected: list[list[dict[str, Any]]] = [[]] + [
         [{"type": "NameCollector", "args": chunk}] for chunk in EXPECTED_STREAMED_JSON
     ]
     assert actual == expected
@@ -405,7 +407,7 @@ async def test_partial_json_output_parser_async(*, use_tool_calls: bool) -> None
     chain = input_iter | JsonOutputToolsParser()
 
     actual = [p async for p in chain.astream(None)]
-    expected: list = [[]] + [
+    expected: list[list[dict[str, Any]]] = [[]] + [
         [{"type": "NameCollector", "args": chunk}] for chunk in EXPECTED_STREAMED_JSON
     ]
     assert actual == expected
@@ -417,7 +419,7 @@ def test_partial_json_output_parser_return_id(*, use_tool_calls: bool) -> None:
     chain = input_iter | JsonOutputToolsParser(return_id=True)
 
     actual = list(chain.stream(None))
-    expected: list = [[]] + [
+    expected: list[list[dict[str, Any]]] = [[]] + [
         [
             {
                 "type": "NameCollector",
@@ -436,7 +438,9 @@ def test_partial_json_output_key_parser(*, use_tool_calls: bool) -> None:
     chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
 
     actual = list(chain.stream(None))
-    expected: list = [[]] + [[chunk] for chunk in EXPECTED_STREAMED_JSON]
+    expected: list[list[dict[str, Any]]] = [[]] + [
+        [chunk] for chunk in EXPECTED_STREAMED_JSON
+    ]
     assert actual == expected
 
 
@@ -447,7 +451,9 @@ async def test_partial_json_output_parser_key_async(*, use_tool_calls: bool) -> 
     chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
 
     actual = [p async for p in chain.astream(None)]
-    expected: list = [[]] + [[chunk] for chunk in EXPECTED_STREAMED_JSON]
+    expected: list[list[dict[str, Any]]] = [[]] + [
+        [chunk] for chunk in EXPECTED_STREAMED_JSON
+    ]
     assert actual == expected
 
 
@@ -886,3 +892,534 @@ def test_max_tokens_error(caplog: Any) -> None:
         "`max_tokens` stop reason" in msg and record.levelname == "ERROR"
         for record, msg in zip(caplog.records, caplog.messages, strict=False)
     )
+
+
+def test_pydantic_tools_parser_with_mixed_pydantic_versions() -> None:
+    """Test PydanticToolsParser with both Pydantic v1 and v2 models."""
+    # For Python 3.14+ compatibility, use create_model for Pydantic v1
+    if sys.version_info >= (3, 14):
+        WeatherV1 = pydantic.v1.create_model(  # noqa: N806
+            "WeatherV1",
+            __doc__="Weather information using Pydantic v1.",
+            temperature=(int, ...),
+            conditions=(str, ...),
+        )
+    else:
+
+        class WeatherV1(pydantic.v1.BaseModel):
+            """Weather information using Pydantic v1."""
+
+            temperature: int
+            conditions: str
+
+    class LocationV2(BaseModel):
+        """Location information using Pydantic v2."""
+
+        city: str
+        country: str
+
+    # Test with Pydantic v1 model
+    parser_v1 = PydanticToolsParser(tools=[WeatherV1])
+    message_v1 = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_weather",
+                "name": "WeatherV1",
+                "args": {"temperature": 25, "conditions": "sunny"},
+            }
+        ],
+    )
+    generation_v1 = ChatGeneration(message=message_v1)
+    result_v1 = parser_v1.parse_result([generation_v1])
+
+    assert len(result_v1) == 1
+    assert isinstance(result_v1[0], WeatherV1)
+    assert result_v1[0].temperature == 25  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1[0].conditions == "sunny"  # type: ignore[attr-defined,unused-ignore]
+
+    # Test with Pydantic v2 model
+    parser_v2 = PydanticToolsParser(tools=[LocationV2])
+    message_v2 = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_location",
+                "name": "LocationV2",
+                "args": {"city": "Paris", "country": "France"},
+            }
+        ],
+    )
+    generation_v2 = ChatGeneration(message=message_v2)
+    result_v2 = parser_v2.parse_result([generation_v2])
+
+    assert len(result_v2) == 1
+    assert isinstance(result_v2[0], LocationV2)
+    assert result_v2[0].city == "Paris"
+    assert result_v2[0].country == "France"
+
+    # Test with both v1 and v2 models
+    parser_mixed = PydanticToolsParser(tools=[WeatherV1, LocationV2])
+    message_mixed = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_weather",
+                "name": "WeatherV1",
+                "args": {"temperature": 20, "conditions": "cloudy"},
+            },
+            {
+                "id": "call_location",
+                "name": "LocationV2",
+                "args": {"city": "London", "country": "UK"},
+            },
+        ],
+    )
+    generation_mixed = ChatGeneration(message=message_mixed)
+    result_mixed = parser_mixed.parse_result([generation_mixed])
+
+    assert len(result_mixed) == 2
+    assert isinstance(result_mixed[0], WeatherV1)
+    assert result_mixed[0].temperature == 20  # type: ignore[attr-defined,unused-ignore]
+    assert isinstance(result_mixed[1], LocationV2)
+    assert result_mixed[1].city == "London"
+
+
+def test_pydantic_tools_parser_with_custom_title() -> None:
+    """Test PydanticToolsParser with Pydantic v2 model using custom title."""
+
+    class CustomTitleTool(BaseModel):
+        """Tool with custom title in model config."""
+
+        model_config = {"title": "MyCustomToolName"}
+
+        value: int
+        description: str
+
+    # Test with custom title - tool should be callable by custom name
+    parser = PydanticToolsParser(tools=[CustomTitleTool])
+    message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_custom",
+                "name": "MyCustomToolName",
+                "args": {"value": 42, "description": "test"},
+            }
+        ],
+    )
+    generation = ChatGeneration(message=message)
+    result = parser.parse_result([generation])
+
+    assert len(result) == 1
+    assert isinstance(result[0], CustomTitleTool)
+    assert result[0].value == 42
+    assert result[0].description == "test"
+
+
+def test_pydantic_tools_parser_name_dict_fallback() -> None:
+    """Test that name_dict properly falls back to __name__ when title is None."""
+
+    class ToolWithoutTitle(BaseModel):
+        """Tool without explicit title."""
+
+        data: str
+
+    # Ensure model_config doesn't have a title or it's None
+    # (This is the default behavior)
+    parser = PydanticToolsParser(tools=[ToolWithoutTitle])
+    message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_no_title",
+                "name": "ToolWithoutTitle",
+                "args": {"data": "test_data"},
+            }
+        ],
+    )
+    generation = ChatGeneration(message=message)
+    result = parser.parse_result([generation])
+
+    assert len(result) == 1
+    assert isinstance(result[0], ToolWithoutTitle)
+    assert result[0].data == "test_data"
+
+
+def test_pydantic_tools_parser_with_nested_models() -> None:
+    """Test PydanticToolsParser with nested Pydantic v1 and v2 models."""
+    # Nested v1 models
+    if sys.version_info >= (3, 14):
+        AddressV1 = pydantic.v1.create_model(  # noqa: N806
+            "AddressV1",
+            __doc__="Address using Pydantic v1.",
+            street=(str, ...),
+            city=(str, ...),
+            zip_code=(str, ...),
+        )
+        PersonV1 = pydantic.v1.create_model(  # noqa: N806
+            "PersonV1",
+            __doc__="Person with nested address using Pydantic v1.",
+            name=(str, ...),
+            age=(int, ...),
+            address=(AddressV1, ...),
+        )
+    else:
+
+        class AddressV1(pydantic.v1.BaseModel):
+            """Address using Pydantic v1."""
+
+            street: str
+            city: str
+            zip_code: str
+
+        class PersonV1(pydantic.v1.BaseModel):
+            """Person with nested address using Pydantic v1."""
+
+            name: str
+            age: int
+            address: AddressV1
+
+    # Nested v2 models
+    class CoordinatesV2(BaseModel):
+        """Coordinates using Pydantic v2."""
+
+        latitude: float
+        longitude: float
+
+    class LocationV2(BaseModel):
+        """Location with nested coordinates using Pydantic v2."""
+
+        name: str
+        coordinates: CoordinatesV2
+
+    # Test with nested Pydantic v1 model
+    parser_v1 = PydanticToolsParser(tools=[PersonV1])
+    message_v1 = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_person",
+                "name": "PersonV1",
+                "args": {
+                    "name": "Alice",
+                    "age": 30,
+                    "address": {
+                        "street": "123 Main St",
+                        "city": "Springfield",
+                        "zip_code": "12345",
+                    },
+                },
+            }
+        ],
+    )
+    generation_v1 = ChatGeneration(message=message_v1)
+    result_v1 = parser_v1.parse_result([generation_v1])
+
+    assert len(result_v1) == 1
+    assert isinstance(result_v1[0], PersonV1)
+    assert result_v1[0].name == "Alice"  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1[0].age == 30  # type: ignore[attr-defined,unused-ignore]
+    assert isinstance(result_v1[0].address, AddressV1)  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1[0].address.street == "123 Main St"  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1[0].address.city == "Springfield"  # type: ignore[attr-defined,unused-ignore]
+
+    # Test with nested Pydantic v2 model
+    parser_v2 = PydanticToolsParser(tools=[LocationV2])
+    message_v2 = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_location",
+                "name": "LocationV2",
+                "args": {
+                    "name": "Eiffel Tower",
+                    "coordinates": {"latitude": 48.8584, "longitude": 2.2945},
+                },
+            }
+        ],
+    )
+    generation_v2 = ChatGeneration(message=message_v2)
+    result_v2 = parser_v2.parse_result([generation_v2])
+
+    assert len(result_v2) == 1
+    assert isinstance(result_v2[0], LocationV2)
+    assert result_v2[0].name == "Eiffel Tower"
+    assert isinstance(result_v2[0].coordinates, CoordinatesV2)
+    assert result_v2[0].coordinates.latitude == 48.8584
+    assert result_v2[0].coordinates.longitude == 2.2945
+
+    # Test with both nested models in one message
+    parser_mixed = PydanticToolsParser(tools=[PersonV1, LocationV2])
+    message_mixed = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_person",
+                "name": "PersonV1",
+                "args": {
+                    "name": "Bob",
+                    "age": 25,
+                    "address": {
+                        "street": "456 Oak Ave",
+                        "city": "Portland",
+                        "zip_code": "97201",
+                    },
+                },
+            },
+            {
+                "id": "call_location",
+                "name": "LocationV2",
+                "args": {
+                    "name": "Golden Gate Bridge",
+                    "coordinates": {"latitude": 37.8199, "longitude": -122.4783},
+                },
+            },
+        ],
+    )
+    generation_mixed = ChatGeneration(message=message_mixed)
+    result_mixed = parser_mixed.parse_result([generation_mixed])
+
+    assert len(result_mixed) == 2
+    assert isinstance(result_mixed[0], PersonV1)
+    assert result_mixed[0].name == "Bob"  # type: ignore[attr-defined,unused-ignore]
+    assert result_mixed[0].address.city == "Portland"  # type: ignore[attr-defined,unused-ignore]
+    assert isinstance(result_mixed[1], LocationV2)
+    assert result_mixed[1].name == "Golden Gate Bridge"
+    assert result_mixed[1].coordinates.latitude == 37.8199
+
+
+def test_pydantic_tools_parser_with_optional_fields() -> None:
+    """Test PydanticToolsParser with optional fields in v1 and v2 models."""
+    if sys.version_info >= (3, 14):
+        ProductV1 = pydantic.v1.create_model(  # noqa: N806
+            "ProductV1",
+            __doc__="Product with optional fields using Pydantic v1.",
+            name=(str, ...),
+            price=(float, ...),
+            description=(str | None, None),
+            stock=(int, 0),
+        )
+    else:
+
+        class ProductV1(pydantic.v1.BaseModel):
+            """Product with optional fields using Pydantic v1."""
+
+            name: str
+            price: float
+            description: str | None = None
+            stock: int = 0
+
+    # v2 model with optional fields
+    class UserV2(BaseModel):
+        """User with optional fields using Pydantic v2."""
+
+        username: str
+        email: str
+        bio: str | None = None
+        age: int | None = None
+
+    # Test v1 with all fields provided
+    parser_v1_full = PydanticToolsParser(tools=[ProductV1])
+    message_v1_full = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_product_full",
+                "name": "ProductV1",
+                "args": {
+                    "name": "Laptop",
+                    "price": 999.99,
+                    "description": "High-end laptop",
+                    "stock": 50,
+                },
+            }
+        ],
+    )
+    generation_v1_full = ChatGeneration(message=message_v1_full)
+    result_v1_full = parser_v1_full.parse_result([generation_v1_full])
+
+    assert len(result_v1_full) == 1
+    assert isinstance(result_v1_full[0], ProductV1)
+    assert result_v1_full[0].name == "Laptop"  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1_full[0].price == 999.99  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1_full[0].description == "High-end laptop"  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1_full[0].stock == 50  # type: ignore[attr-defined,unused-ignore]
+
+    # Test v1 with only required fields
+    parser_v1_minimal = PydanticToolsParser(tools=[ProductV1])
+    message_v1_minimal = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_product_minimal",
+                "name": "ProductV1",
+                "args": {"name": "Mouse", "price": 29.99},
+            }
+        ],
+    )
+    generation_v1_minimal = ChatGeneration(message=message_v1_minimal)
+    result_v1_minimal = parser_v1_minimal.parse_result([generation_v1_minimal])
+
+    assert len(result_v1_minimal) == 1
+    assert isinstance(result_v1_minimal[0], ProductV1)
+    assert result_v1_minimal[0].name == "Mouse"  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1_minimal[0].price == 29.99  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1_minimal[0].description is None  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1_minimal[0].stock == 0  # type: ignore[attr-defined,unused-ignore]
+
+    # Test v2 with all fields provided
+    parser_v2_full = PydanticToolsParser(tools=[UserV2])
+    message_v2_full = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_user_full",
+                "name": "UserV2",
+                "args": {
+                    "username": "john_doe",
+                    "email": "john@example.com",
+                    "bio": "Software developer",
+                    "age": 28,
+                },
+            }
+        ],
+    )
+    generation_v2_full = ChatGeneration(message=message_v2_full)
+    result_v2_full = parser_v2_full.parse_result([generation_v2_full])
+
+    assert len(result_v2_full) == 1
+    assert isinstance(result_v2_full[0], UserV2)
+    assert result_v2_full[0].username == "john_doe"
+    assert result_v2_full[0].email == "john@example.com"
+    assert result_v2_full[0].bio == "Software developer"
+    assert result_v2_full[0].age == 28
+
+    # Test v2 with only required fields
+    parser_v2_minimal = PydanticToolsParser(tools=[UserV2])
+    message_v2_minimal = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_user_minimal",
+                "name": "UserV2",
+                "args": {"username": "jane_smith", "email": "jane@example.com"},
+            }
+        ],
+    )
+    generation_v2_minimal = ChatGeneration(message=message_v2_minimal)
+    result_v2_minimal = parser_v2_minimal.parse_result([generation_v2_minimal])
+
+    assert len(result_v2_minimal) == 1
+    assert isinstance(result_v2_minimal[0], UserV2)
+    assert result_v2_minimal[0].username == "jane_smith"
+    assert result_v2_minimal[0].email == "jane@example.com"
+    assert result_v2_minimal[0].bio is None
+    assert result_v2_minimal[0].age is None
+
+    # Test mixed v1 and v2 with partial optional fields
+    parser_mixed = PydanticToolsParser(tools=[ProductV1, UserV2])
+    message_mixed = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_product",
+                "name": "ProductV1",
+                "args": {"name": "Keyboard", "price": 79.99, "stock": 100},
+            },
+            {
+                "id": "call_user",
+                "name": "UserV2",
+                "args": {
+                    "username": "alice",
+                    "email": "alice@example.com",
+                    "age": 35,
+                },
+            },
+        ],
+    )
+    generation_mixed = ChatGeneration(message=message_mixed)
+    result_mixed = parser_mixed.parse_result([generation_mixed])
+
+    assert len(result_mixed) == 2
+    assert isinstance(result_mixed[0], ProductV1)
+    assert result_mixed[0].name == "Keyboard"  # type: ignore[attr-defined,unused-ignore]
+    assert result_mixed[0].description is None  # type: ignore[attr-defined,unused-ignore]
+    assert result_mixed[0].stock == 100  # type: ignore[attr-defined,unused-ignore]
+    assert isinstance(result_mixed[1], UserV2)
+    assert result_mixed[1].username == "alice"
+    assert result_mixed[1].bio is None
+    assert result_mixed[1].age == 35
+
+
+def test_parse_tool_call_with_none_arguments() -> None:
+    """Test parse_tool_call handles None arguments for parameter-less tools.
+
+    When an LLM calls a tool that has no parameters, some providers return
+    None for the arguments field instead of an empty string or "{}".
+    This should not raise an error.
+
+    See: https://github.com/langchain-ai/langchain/issues/34123
+    """
+    # Test case from issue #34123: arguments is None
+    raw_tool_call = {
+        "function": {"arguments": None, "name": "orderStatus"},
+        "id": "chatcmpl-tool-8b1f759d874b412e931e64cf6f57bdcc",
+        "type": "function",
+    }
+
+    # This should not raise an error - should return parsed tool call with empty args
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["name"] == "orderStatus"
+    assert result["args"] == {}
+    assert result["id"] == "chatcmpl-tool-8b1f759d874b412e931e64cf6f57bdcc"
+
+
+def test_parse_tool_call_with_empty_string_arguments() -> None:
+    """Test parse_tool_call handles empty string arguments."""
+    raw_tool_call = {
+        "function": {"arguments": "", "name": "getStatus"},
+        "id": "call_123",
+        "type": "function",
+    }
+
+    # Empty string should be treated as empty args
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["name"] == "getStatus"
+    assert result["args"] == {}
+    assert result["id"] == "call_123"
+
+
+def test_parse_tool_call_with_valid_arguments() -> None:
+    """Test parse_tool_call works normally with valid JSON arguments."""
+    raw_tool_call = {
+        "function": {"arguments": '{"param": "value"}', "name": "myTool"},
+        "id": "call_456",
+        "type": "function",
+    }
+
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["name"] == "myTool"
+    assert result["args"] == {"param": "value"}
+    assert result["id"] == "call_456"
+
+
+def test_parse_tool_call_partial_mode_with_none_arguments() -> None:
+    """Test parse_tool_call in partial mode handles None arguments."""
+    raw_tool_call = {
+        "function": {"arguments": None, "name": "streamingTool"},
+        "id": "call_789",
+        "type": "function",
+    }
+
+    # Partial mode should return None for None arguments (existing behavior)
+    result = parse_tool_call(raw_tool_call, partial=True, return_id=True)
+
+    # In partial mode, None arguments returns None (incomplete tool call)
+    assert result is None

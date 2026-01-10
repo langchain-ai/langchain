@@ -1,3 +1,5 @@
+from typing import Any
+
 from langchain_core.tools import BaseTool, tool
 
 from langchain_tests.integration_tests import ToolsIntegrationTests
@@ -16,7 +18,7 @@ class TestParrotMultiplyToolUnit(ToolsUnitTests):
         return parrot_multiply_tool
 
     @property
-    def tool_invoke_params_example(self) -> dict:
+    def tool_invoke_params_example(self) -> dict[str, Any]:
         """Returns a dictionary representing the "args" of an example tool call.
 
         This should NOT be a ToolCall dict - i.e. it should not
@@ -31,7 +33,7 @@ class TestParrotMultiplyToolIntegration(ToolsIntegrationTests):
         return parrot_multiply_tool
 
     @property
-    def tool_invoke_params_example(self) -> dict:
+    def tool_invoke_params_example(self) -> dict[str, Any]:
         """Returns a dictionary representing the "args" of an example tool call.
 
         This should NOT be a ToolCall dict - i.e. it should not

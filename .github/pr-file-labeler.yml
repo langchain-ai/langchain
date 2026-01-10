@@ -7,13 +7,12 @@ core:
       - any-glob-to-any-file:
           - "libs/core/**/*"
 
-langchain:
+langchain-classic:
   - changed-files:
       - any-glob-to-any-file:
           - "libs/langchain/**/*"
-          - "libs/langchain_v1/**/*"
 
-v1:
+langchain:
   - changed-files:
       - any-glob-to-any-file:
           - "libs/langchain_v1/**/*"
@@ -28,6 +27,11 @@ standard-tests:
       - any-glob-to-any-file:
           - "libs/standard-tests/**/*"
 
+model-profiles:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/model-profiles/**/*"
+
 text-splitters:
   - changed-files:
       - any-glob-to-any-file:
@@ -38,6 +42,81 @@ integration:
   - changed-files:
       - any-glob-to-any-file:
           - "libs/partners/**/*"
+
+anthropic:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/anthropic/**/*"
+
+chroma:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/chroma/**/*"
+
+deepseek:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/deepseek/**/*"
+
+exa:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/exa/**/*"
+
+fireworks:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/fireworks/**/*"
+
+groq:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/groq/**/*"
+
+huggingface:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/huggingface/**/*"
+
+mistralai:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/mistralai/**/*"
+
+nomic:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/nomic/**/*"
+
+ollama:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/ollama/**/*"
+
+openai:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/openai/**/*"
+
+perplexity:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/perplexity/**/*"
+
+prompty:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/prompty/**/*"
+
+qdrant:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/qdrant/**/*"
+
+xai:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/xai/**/*"
 
 # Infrastructure and DevOps
 infra:
@@ -69,16 +148,5 @@ documentation:
   - changed-files:
       - any-glob-to-any-file:
           - "**/*.md"
-          - "**/*.rst"
           - "**/README*"
 
-# Security related changes
-security:
-  - changed-files:
-      - any-glob-to-any-file:
-          - "**/*security*"
-          - "**/*auth*"
-          - "**/*credential*"
-          - "**/*secret*"
-          - "**/*token*"
-          - ".github/workflows/security*"

@@ -3,10 +3,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import asdict, is_dataclass
 from typing import (
     Any,
-    Generic,
     Literal,
-    TypeVar,
-    Union,
 )
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -20,13 +17,12 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel
+from typing_extensions import override
 
-StructuredResponseT = TypeVar("StructuredResponseT")
 
-
-class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
-    tool_calls: Union[list[list[ToolCall]], list[list[dict]]] | None = None
-    structured_response: StructuredResponseT | None = None
+class FakeToolCallingModel(BaseChatModel):
+    tool_calls: list[list[ToolCall]] | list[list[dict[str, Any]]] | None = None
+    structured_response: Any | None = None
     index: int = 0
     tool_style: Literal["openai", "anthropic"] = "openai"
 
@@ -37,9 +33,8 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call"""
-        rf = kwargs.get("response_format")
-        is_native = isinstance(rf, dict) and rf.get("type") == "json_schema"
+        """Top Level call."""
+        is_native = kwargs.get("response_format")
 
         if self.tool_calls:
             if is_native:
@@ -54,13 +49,15 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
         if is_native and not tool_calls:
             if isinstance(self.structured_response, BaseModel):
                 content_obj = self.structured_response.model_dump()
-            elif is_dataclass(self.structured_response):
+            elif is_dataclass(self.structured_response) and not isinstance(
+                self.structured_response, type
+            ):
                 content_obj = asdict(self.structured_response)
             elif isinstance(self.structured_response, dict):
                 content_obj = self.structured_response
             message = AIMessage(content=json.dumps(content_obj), id=str(self.index))
         else:
-            messages_string = "-".join([m.content for m in messages])
+            messages_string = "-".join([m.text for m in messages])
             message = AIMessage(
                 content=messages_string,
                 id=str(self.index),
@@ -73,11 +70,14 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
     def _llm_type(self) -> str:
         return "fake-tool-call-model"
 
+    @override
     def bind_tools(
         self,
-        tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[dict[str, Any] | type | Callable[..., Any] | BaseTool],
+        *,
+        tool_choice: str | None = None,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         if len(tools) == 0:
             msg = "Must provide at least one tool"
             raise ValueError(msg)

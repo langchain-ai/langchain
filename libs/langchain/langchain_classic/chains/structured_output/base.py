@@ -34,7 +34,7 @@ from pydantic import BaseModel
         "LangChain has introduced a method called `with_structured_output` that "
         "is available on ChatModels capable of tool calling. "
         "You can read more about the method here: "
-        "<https://python.langchain.com/docs/modules/model_io/chat/structured_output/>. "
+        "<https://docs.langchain.com/oss/python/langchain/models#structured-outputs>. "
         "Please follow our extraction use case documentation for more guidelines "
         "on how to do information extraction with LLMs. "
         "<https://python.langchain.com/docs/use_cases/extraction/>. "
@@ -56,7 +56,7 @@ from pydantic import BaseModel
             # Please reference to the documentation of structured_output
             # to see an up to date list of which models support
             # with_structured_output.
-            model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+            model = ChatAnthropic(model="claude-opus-4-1-20250805", temperature=0)
             structured_model = model.with_structured_output(Joke)
             structured_model.invoke("Tell me a joke about cats.
                 Make sure to call the Joke function.")
@@ -153,7 +153,7 @@ def create_openai_fn_runnable(
         "LangChain has introduced a method called `with_structured_output` that "
         "is available on ChatModels capable of tool calling. "
         "You can read more about the method here: "
-        "<https://python.langchain.com/docs/modules/model_io/chat/structured_output/>."
+        "<https://docs.langchain.com/oss/python/langchain/models#structured-outputs>."
         "Please follow our extraction use case documentation for more guidelines "
         "on how to do information extraction with LLMs. "
         "<https://python.langchain.com/docs/use_cases/extraction/>. "
@@ -175,7 +175,7 @@ def create_openai_fn_runnable(
             # Please reference to the documentation of structured_output
             # to see an up to date list of which models support
             # with_structured_output.
-            model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+            model = ChatAnthropic(model="claude-opus-4-1-20250805", temperature=0)
             structured_model = model.with_structured_output(Joke)
             structured_model.invoke("Tell me a joke about cats.
                 Make sure to call the Joke function.")

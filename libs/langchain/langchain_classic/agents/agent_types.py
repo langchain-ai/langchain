@@ -13,10 +13,7 @@ from langchain_classic._api.deprecation import AGENT_DEPRECATION_WARNING
     removal="1.0",
 )
 class AgentType(str, Enum):
-    """An enum for agent types.
-
-    See documentation: https://python.langchain.com/api_reference/langchain/agents/langchain.agents.agent_types.AgentType.html
-    """
+    """An enum for agent types."""
 
     ZERO_SHOT_REACT_DESCRIPTION = "zero-shot-react-description"
     """A zero shot agent that does a reasoning step before acting."""

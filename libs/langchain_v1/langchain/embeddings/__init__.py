@@ -1,9 +1,4 @@
-"""Embeddings.
-
-!!! warning "Reference docs"
-    This page contains **reference documentation** for Embeddings. See
-    [the docs](https://docs.langchain.com/oss/python/langchain/retrieval#embedding-models)
-    for conceptual guides, tutorials, and examples on using Embeddings.
+"""Embeddings models.
 
 !!! warning "Modules moved"
     With the release of `langchain 1.0.0`, several embeddings modules were moved to

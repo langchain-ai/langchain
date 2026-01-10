@@ -22,10 +22,16 @@ def get_color_mapping(
 
     Returns:
         The mapping of items to colors.
+
+    Raises:
+        ValueError: If no colors are available after applying exclusions.
     """
     colors = list(_TEXT_COLOR_MAPPING.keys())
     if excluded_colors is not None:
         colors = [c for c in colors if c not in excluded_colors]
+    if not colors:
+        msg = "No colors available after applying exclusions."
+        raise ValueError(msg)
     return {item: colors[i % len(colors)] for i, item in enumerate(items)}
 
 

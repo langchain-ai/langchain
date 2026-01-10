@@ -1,36 +1,29 @@
-"""Entrypoint to using [Middleware](https://docs.langchain.com/oss/python/langchain/middleware) plugins with [Agents](https://docs.langchain.com/oss/python/langchain/agents).
+"""Entrypoint to using [middleware](https://docs.langchain.com/oss/python/langchain/middleware) plugins with [Agents](https://docs.langchain.com/oss/python/langchain/agents)."""  # noqa: E501
 
-!!! warning "Reference docs"
-    This page contains **reference documentation** for Middleware. See
-    [the docs](https://docs.langchain.com/oss/python/langchain/middleware) for conceptual
-    guides, tutorials, and examples on using Middleware.
-"""  # noqa: E501
-
-from .context_editing import (
-    ClearToolUsesEdit,
-    ContextEditingMiddleware,
-)
-from .human_in_the_loop import (
+from langchain.agents.middleware.context_editing import ClearToolUsesEdit, ContextEditingMiddleware
+from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
+from langchain.agents.middleware.human_in_the_loop import (
     HumanInTheLoopMiddleware,
     InterruptOnConfig,
 )
-from .model_call_limit import ModelCallLimitMiddleware
-from .model_fallback import ModelFallbackMiddleware
-from .pii import PIIDetectionError, PIIMiddleware
-from .shell_tool import (
+from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddleware
+from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
+from langchain.agents.middleware.model_retry import ModelRetryMiddleware
+from langchain.agents.middleware.pii import PIIDetectionError, PIIMiddleware
+from langchain.agents.middleware.shell_tool import (
     CodexSandboxExecutionPolicy,
     DockerExecutionPolicy,
     HostExecutionPolicy,
     RedactionRule,
     ShellToolMiddleware,
 )
-from .summarization import SummarizationMiddleware
-from .todo import TodoListMiddleware
-from .tool_call_limit import ToolCallLimitMiddleware
-from .tool_emulator import LLMToolEmulator
-from .tool_retry import ToolRetryMiddleware
-from .tool_selection import LLMToolSelectorMiddleware
-from .types import (
+from langchain.agents.middleware.summarization import SummarizationMiddleware
+from langchain.agents.middleware.todo import TodoListMiddleware
+from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
+from langchain.agents.middleware.tool_emulator import LLMToolEmulator
+from langchain.agents.middleware.tool_retry import ToolRetryMiddleware
+from langchain.agents.middleware.tool_selection import LLMToolSelectorMiddleware
+from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ModelRequest,
@@ -52,6 +45,7 @@ __all__ = [
     "CodexSandboxExecutionPolicy",
     "ContextEditingMiddleware",
     "DockerExecutionPolicy",
+    "FilesystemFileSearchMiddleware",
     "HostExecutionPolicy",
     "HumanInTheLoopMiddleware",
     "InterruptOnConfig",
@@ -61,6 +55,7 @@ __all__ = [
     "ModelFallbackMiddleware",
     "ModelRequest",
     "ModelResponse",
+    "ModelRetryMiddleware",
     "PIIDetectionError",
     "PIIMiddleware",
     "RedactionRule",

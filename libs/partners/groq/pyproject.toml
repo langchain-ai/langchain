@@ -3,17 +3,18 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-authors = []
+name = "langchain-groq"
+description = "An integration package connecting Groq and LangChain"
 license = { text = "MIT" }
+readme = "README.md"
+authors = []
+
+version = "1.1.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0,<2.0.0",
+    "langchain-core>=1.1.0,<2.0.0",
     "groq>=0.30.0,<1.0.0"
 ]
-name = "langchain-groq"
-version = "1.0.0"
-description = "An integration package connecting Groq and LangChain"
-readme = "README.md"
 
 [project.urls]
 Homepage = "https://docs.langchain.com/oss/python/integrations/providers/groq"
@@ -79,6 +80,9 @@ unfixable = ["B028"] # People should intentionally tune the stacklevel
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
 [tool.coverage.run]
 omit = ["tests/*"]
 
@@ -87,6 +91,7 @@ addopts = "--strict-markers --strict-config --durations=5"
 markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
     "scheduled: mark tests to run in scheduled testing",
+    "retry: retry test if it fails",
 ]
 asyncio_mode = "auto"
 
