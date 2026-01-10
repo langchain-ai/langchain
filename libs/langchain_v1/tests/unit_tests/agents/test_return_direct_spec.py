@@ -21,7 +21,7 @@ try:
 except ImportError:
     skip_openai_integration_tests = True
 else:
-    skip_openai_integration_tests = "OPEN_API_KEY" not in os.environ
+    skip_openai_integration_tests = "OPENAI_API_KEY" not in os.environ
 
 AGENT_PROMPT = """
 You are a strict polling bot.
