@@ -51,6 +51,9 @@ def _create_tool_selection_response(tools: list[BaseTool]) -> TypeAdapter[Any]:
     Returns:
         `TypeAdapter` for a schema where each tool name is a `Literal` with its
             description.
+
+    Raises:
+        AssertionError: If `tools` is empty.
     """
     if not tools:
         msg = "Invalid usage: tools must be non-empty"
@@ -153,9 +156,16 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
     def _prepare_selection_request(self, request: ModelRequest) -> _SelectionRequest | None:
         """Prepare inputs for tool selection.
 
+        Args:
+            request: the model request.
+
         Returns:
             `SelectionRequest` with prepared inputs, or `None` if no selection is
-                needed.
+            needed.
+
+        Raises:
+            ValueError: If tools in `always_include` are not found in the request.
+            AssertionError: If no user message is found in the request messages.
         """
         # If no tools available, return None
         if not request.tools or len(request.tools) == 0:
@@ -262,7 +272,19 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         request: ModelRequest,
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
-        """Filter tools based on LLM selection before invoking the model via handler."""
+        """Filter tools based on LLM selection before invoking the model via handler.
+
+        Args:
+            request: Model request to execute (includes state and runtime).
+            handler: Async callback that executes the model request and returns
+                `ModelResponse`.
+
+        Returns:
+            The model call result.
+
+        Raises:
+            AssertionError: If the selection model response is not a dict.
+        """
         selection_request = self._prepare_selection_request(request)
         if selection_request is None:
             return handler(request)
@@ -293,7 +315,19 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
-        """Filter tools based on LLM selection before invoking the model via handler."""
+        """Filter tools based on LLM selection before invoking the model via handler.
+
+        Args:
+            request: Model request to execute (includes state and runtime).
+            handler: Async callback that executes the model request and returns
+                `ModelResponse`.
+
+        Returns:
+            The model call result.
+
+        Raises:
+            AssertionError: If the selection model response is not a dict.
+        """
         selection_request = self._prepare_selection_request(request)
         if selection_request is None:
             return await handler(request)

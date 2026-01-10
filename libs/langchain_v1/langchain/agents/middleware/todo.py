@@ -24,9 +24,6 @@ from langchain.agents.middleware.types import (
 )
 from langchain.tools import InjectedToolCallId
 
-if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
-
 
 class Todo(TypedDict):
     """A single todo item with content and status."""
@@ -201,7 +198,16 @@ class TodoListMiddleware(AgentMiddleware):
         request: ModelRequest,
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
-        """Update the system message to include the todo system prompt."""
+        """Update the system message to include the todo system prompt.
+
+        Args:
+            request: Model request to execute (includes state and runtime).
+            handler: Async callback that executes the model request and returns
+                `ModelResponse`.
+
+        Returns:
+            The model call result.
+        """
         if request.system_message is not None:
             new_system_content = [
                 *request.system_message.content_blocks,
@@ -219,7 +225,16 @@ class TodoListMiddleware(AgentMiddleware):
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
-        """Update the system message to include the todo system prompt (async version)."""
+        """Update the system message to include the todo system prompt.
+
+        Args:
+            request: Model request to execute (includes state and runtime).
+            handler: Async callback that executes the model request and returns
+                `ModelResponse`.
+
+        Returns:
+            The model call result.
+        """
         if request.system_message is not None:
             new_system_content = [
                 *request.system_message.content_blocks,

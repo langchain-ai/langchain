@@ -1047,8 +1047,9 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
 
 def test_convert_union_type() -> None:
     @tool
-    def magic_function(value: int | str) -> str:  # noqa: ARG001
+    def magic_function(value: int | str) -> str:
         """Compute a magic function."""
+        _ = value
         return ""
 
     result = convert_to_openai_function(magic_function)

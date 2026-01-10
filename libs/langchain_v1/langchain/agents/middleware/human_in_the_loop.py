@@ -237,8 +237,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT]):
 
         return action_request, review_config
 
+    @staticmethod
     def _process_decision(
-        self,
         decision: Decision,
         tool_call: ToolCall,
         config: InterruptOnConfig,
@@ -282,7 +282,19 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT]):
     def after_model(
         self, state: AgentState[Any], runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
-        """Trigger interrupt flows for relevant tool calls after an `AIMessage`."""
+        """Trigger interrupt flows for relevant tool calls after an `AIMessage`.
+
+        Args:
+            state: The current agent state.
+            runtime: The runtime context.
+
+        Returns:
+            Updated message with the revised tool calls.
+
+        Raises:
+            ValueError: If the number of human decisions does not match the number of
+                interrupted tool calls.
+        """
         messages = state["messages"]
         if not messages:
             return None
@@ -357,5 +369,13 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT]):
     async def aafter_model(
         self, state: AgentState[Any], runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
-        """Async trigger interrupt flows for relevant tool calls after an `AIMessage`."""
+        """Async trigger interrupt flows for relevant tool calls after an `AIMessage`.
+
+        Args:
+            state: The current agent state.
+            runtime: The runtime context.
+
+        Returns:
+            Updated message with the revised tool calls.
+        """
         return self.after_model(state, runtime)
