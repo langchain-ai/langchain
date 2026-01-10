@@ -113,14 +113,14 @@ class _SchemaSpec(Generic[SchemaT]):
     name: str
     """Name of the schema, used for tool calling.
 
-    If not provided, the name will be the model name or `"response_format"` if it's a
-    JSON schema.
+    If not provided, the name will be the class name for models/dataclasses/TypedDicts,
+    or the `title` field for JSON schemas. Falls back to a generated name if unavailable.
     """
 
     description: str
     """Custom description of the schema.
 
-    If not provided, provided will use the model's docstring.
+    If not provided, will use the model's docstring.
     """
 
     schema_kind: SchemaKind

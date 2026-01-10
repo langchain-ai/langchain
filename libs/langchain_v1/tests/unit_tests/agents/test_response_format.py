@@ -466,7 +466,7 @@ class TestResponseFormatAsToolStrategy:
     def test_structured_output_parsing_error_without_retry(self) -> None:
         """Test structured output parsing error without retry.
 
-        Test that StructuredOutputParsingError is raised when tool args fail to parse
+        Test that StructuredOutputValidationError is raised when tool args fail to parse
         without retry.
         """
         tool_calls = [

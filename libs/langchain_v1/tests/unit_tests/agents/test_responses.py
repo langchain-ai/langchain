@@ -71,7 +71,7 @@ class TestProviderStrategy:
         assert strategy.schema_spec.strict is None
 
     def test_strict(self) -> None:
-        """Test basic ProviderStrategy creation."""
+        """Test ProviderStrategy creation with strict=True."""
         strategy = ProviderStrategy(schema=_TestModel, strict=True)
         assert strategy.schema == _TestModel
         assert strategy.schema_spec.schema == _TestModel
@@ -270,13 +270,13 @@ class TestProviderStrategyBinding:
 class TestEdgeCases:
     """Test edge cases and error conditions."""
 
-    def test_empty_schemas_list(self) -> None:
-        """Test UsingToolStrategy with empty schemas list."""
+    def test_single_schema(self) -> None:
+        """Test ToolStrategy with a single schema creates one schema spec."""
         strategy = ToolStrategy(EmptyDocModel)
         assert len(strategy.schema_specs) == 1
 
-    def test_base_model_doc_constant(self) -> None:
-        """Test that BASE_MODEL_DOC constant is set correctly."""
+    def test_empty_docstring_model(self) -> None:
+        """Test that models without explicit docstrings have empty tool descriptions."""
         binding = OutputToolBinding.from_schema_spec(_SchemaSpec(EmptyDocModel))
         assert binding.tool.name == "EmptyDocModel"
-        assert not binding.tool.description[:5]  # Should be empty for default docstring
+        assert not binding.tool.description
