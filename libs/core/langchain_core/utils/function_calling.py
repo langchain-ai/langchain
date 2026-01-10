@@ -428,10 +428,13 @@ def convert_to_openai_function(
             "dict", _convert_python_function_to_openai_function(function)
         )
     else:
-        if isinstance(function, dict) and ("type" in function or "properties" in function):
+        if isinstance(function, dict) and (
+            "type" in function or "properties" in function
+        ):
             msg = (
-                "Unsupported function\n\nTo use a JSON schema as a function, "
-                "it must have a top-level 'title' key to be used as the function name."
+                f"Unsupported function\n\n{function}\n\nTo use a JSON schema as a "
+                "function, it must have a top-level 'title' key to be used as the "
+                "function name."
             )
             raise ValueError(msg)
         msg = (
