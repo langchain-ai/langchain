@@ -6,7 +6,11 @@ This module tests that the name parameter correctly sets .name on AIMessage outp
 from __future__ import annotations
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import (
+    AIMessage,
+    HumanMessage,
+    ToolCall,
+)
 from langchain_core.tools import tool
 
 from langchain.agents import create_agent
@@ -21,8 +25,9 @@ def simple_tool(x: int) -> str:
 
 def test_agent_name_set_on_ai_message() -> None:
     """Test that agent name is set on AIMessage when name is provided."""
+    tool_calls: list[list[ToolCall]] = [[]]
     agent = create_agent(
-        model=FakeToolCallingModel(tool_calls=[[]]),
+        model=FakeToolCallingModel(tool_calls=tool_calls),
         name="test_agent",
     )
 
@@ -35,8 +40,9 @@ def test_agent_name_set_on_ai_message() -> None:
 
 def test_agent_name_not_set_when_none() -> None:
     """Test that AIMessage.name is not set when name is not provided."""
+    tool_calls: list[list[ToolCall]] = [[]]
     agent = create_agent(
-        model=FakeToolCallingModel(tool_calls=[[]]),
+        model=FakeToolCallingModel(tool_calls=tool_calls),
     )
 
     result = agent.invoke({"messages": [HumanMessage("Hello")]})
@@ -67,8 +73,9 @@ def test_agent_name_on_multiple_iterations() -> None:
 @pytest.mark.asyncio
 async def test_agent_name_async() -> None:
     """Test that agent name is set on AIMessage in async execution."""
+    tool_calls: list[list[ToolCall]] = [[]]
     agent = create_agent(
-        model=FakeToolCallingModel(tool_calls=[[]]),
+        model=FakeToolCallingModel(tool_calls=tool_calls),
         name="async_agent",
     )
 

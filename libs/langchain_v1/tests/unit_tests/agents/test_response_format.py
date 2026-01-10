@@ -8,15 +8,20 @@ from unittest.mock import patch
 
 import pytest
 from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage as CoreAIMessage
-from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.messages import HumanMessage
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 from langchain.agents import create_agent
-from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    ModelCallResult,
+    ModelRequest,
+    ModelResponse,
+)
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
     ProviderStrategy,
@@ -96,14 +101,14 @@ def get_location() -> str:
 
 
 # Standardized test data
-WEATHER_DATA = {"temperature": 75.0, "condition": "sunny"}
-LOCATION_DATA = {"city": "New York", "country": "USA"}
+WEATHER_DATA: dict[str, float | str] = {"temperature": 75.0, "condition": "sunny"}
+LOCATION_DATA: dict[str, str] = {"city": "New York", "country": "USA"}
 
 # Standardized expected responses
-EXPECTED_WEATHER_PYDANTIC = WeatherBaseModel(**WEATHER_DATA)
-EXPECTED_WEATHER_DATACLASS = WeatherDataclass(**WEATHER_DATA)
+EXPECTED_WEATHER_PYDANTIC = WeatherBaseModel(temperature=75.0, condition="sunny")
+EXPECTED_WEATHER_DATACLASS = WeatherDataclass(temperature=75.0, condition="sunny")
 EXPECTED_WEATHER_DICT: WeatherTypedDict = {"temperature": 75.0, "condition": "sunny"}
-EXPECTED_LOCATION = LocationResponse(**LOCATION_DATA)
+EXPECTED_LOCATION = LocationResponse(city="New York", country="USA")
 EXPECTED_LOCATION_DICT: LocationTypedDict = {"city": "New York", "country": "USA"}
 
 
@@ -343,7 +348,7 @@ class TestResponseFormatAsToolStrategy:
             ],
         ]
 
-        model = FakeToolCallingModel[WeatherBaseModel | LocationResponse](tool_calls=tool_calls)
+        model = FakeToolCallingModel(tool_calls=tool_calls)
 
         agent = create_agent(
             model,
@@ -655,7 +660,7 @@ class TestResponseFormatAsProviderStrategy:
             [{"args": {}, "id": "1", "name": "get_weather"}],
         ]
 
-        model = FakeToolCallingModel[WeatherBaseModel](
+        model = FakeToolCallingModel(
             tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_PYDANTIC
         )
 
@@ -678,7 +683,7 @@ class TestResponseFormatAsProviderStrategy:
         ]
 
         # But we're using WeatherBaseModel which has different field requirements
-        model = FakeToolCallingModel[dict](
+        model = FakeToolCallingModel(
             tool_calls=tool_calls,
             structured_response={"invalid": "data"},  # Wrong structure
         )
@@ -699,7 +704,7 @@ class TestResponseFormatAsProviderStrategy:
             [{"args": {}, "id": "1", "name": "get_weather"}],
         ]
 
-        model = FakeToolCallingModel[WeatherDataclass](
+        model = FakeToolCallingModel(
             tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DATACLASS
         )
 
@@ -719,7 +724,7 @@ class TestResponseFormatAsProviderStrategy:
             [{"args": {}, "id": "1", "name": "get_weather"}],
         ]
 
-        model = FakeToolCallingModel[WeatherTypedDict](
+        model = FakeToolCallingModel(
             tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DICT
         )
 
@@ -737,7 +742,7 @@ class TestResponseFormatAsProviderStrategy:
             [{"args": {}, "id": "1", "name": "get_weather"}],
         ]
 
-        model = FakeToolCallingModel[dict](
+        model = FakeToolCallingModel(
             tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DICT
         )
 
@@ -780,9 +785,9 @@ class TestDynamicModelWithResponseFormat:
 
             def bind_tools(
                 self,
-                tools: Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
+                tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
                 **kwargs: Any,
-            ) -> Runnable[LanguageModelInput, BaseMessage]:
+            ) -> Runnable[LanguageModelInput, AIMessage]:
                 # Record every tool binding event.
                 self.tool_bindings.append(tools)
                 return self
@@ -802,15 +807,17 @@ class TestDynamicModelWithResponseFormat:
             def wrap_model_call(
                 self,
                 request: ModelRequest,
-                handler: Callable[[ModelRequest], CoreAIMessage],
-            ) -> CoreAIMessage:
+                handler: Callable[[ModelRequest], ModelResponse],
+            ) -> ModelCallResult:
                 # Replace the model with our custom test model
                 return handler(request.override(model=model))
 
         # Track which model is checked for provider strategy support
         calls = []
 
-        def mock_supports_provider_strategy(model, tools) -> bool:
+        def mock_supports_provider_strategy(
+            model: str | BaseChatModel, tools: list[Any] | None = None
+        ) -> bool:
             """Track which model is checked and return True for ProviderStrategy."""
             calls.append(model)
             return True
@@ -858,7 +865,7 @@ def test_union_of_types() -> None:
         ],
     ]
 
-    model = FakeToolCallingModel[WeatherBaseModel | LocationResponse](
+    model = FakeToolCallingModel(
         tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_PYDANTIC
     )
 
