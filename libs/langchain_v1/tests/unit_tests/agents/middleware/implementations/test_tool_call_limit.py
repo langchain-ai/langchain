@@ -126,6 +126,7 @@ def test_middleware_unit_functionality() -> None:
     # Check the final AI message (displayed to user - includes thread/run details)
     final_ai_msg = result["messages"][-1]
     assert isinstance(final_ai_msg, AIMessage)
+    assert isinstance(final_ai_msg.content, str)
     assert "limit" in final_ai_msg.content.lower()
     assert "thread limit exceeded" in final_ai_msg.content.lower()
     # Thread count stays at 3 (blocked call not counted)
@@ -147,6 +148,7 @@ def test_middleware_unit_functionality() -> None:
     assert result["jump_to"] == "end"
     # Check the final AI message includes run limit details
     final_ai_msg = result["messages"][-1]
+    assert isinstance(final_ai_msg.content, str)
     assert "run limit exceeded" in final_ai_msg.content
     assert "3/2 calls" in final_ai_msg.content
     # Check the tool message (sent to model) - should always include "Do not" instruction
@@ -211,7 +213,9 @@ def test_middleware_with_specific_tool() -> None:
     result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
     assert result is not None
     assert result["jump_to"] == "end"
-    assert "search" in result["messages"][0].content.lower()
+    first_msg_content = result["messages"][0].content
+    assert isinstance(first_msg_content, str)
+    assert "search" in first_msg_content.lower()
 
     # Test calculator tool - should be ignored by search-specific middleware
     state = {
@@ -304,11 +308,13 @@ def test_multiple_middleware_instances() -> None:
 
     # The agent should stop after the second iteration
     # because search will hit its limit (3 calls > 2 limit)
-    ai_limit_messages = [
-        msg
-        for msg in result["messages"]
-        if isinstance(msg, AIMessage) and "limit" in msg.content.lower()
-    ]
+    ai_limit_messages = []
+    for msg in result["messages"]:
+        if not isinstance(msg, AIMessage):
+            continue
+        assert isinstance(msg.content, str)
+        if "limit" in msg.content.lower():
+            ai_limit_messages.append(msg)
     assert len(ai_limit_messages) > 0, "Should have AI message explaining limit was exceeded"
 
 
@@ -345,11 +351,13 @@ def test_run_limit_with_multiple_human_messages() -> None:
     tool_messages = [msg for msg in result1["messages"] if isinstance(msg, ToolMessage)]
     successful_tool_msgs = [msg for msg in tool_messages if msg.status != "error"]
     error_tool_msgs = [msg for msg in tool_messages if msg.status == "error"]
-    ai_limit_msgs = [
-        msg
-        for msg in result1["messages"]
-        if isinstance(msg, AIMessage) and "limit" in msg.content.lower() and not msg.tool_calls
-    ]
+    ai_limit_msgs = []
+    for msg in result1["messages"]:
+        if not isinstance(msg, AIMessage):
+            continue
+        assert isinstance(msg.content, str)
+        if "limit" in msg.content.lower() and not msg.tool_calls:
+            ai_limit_msgs.append(msg)
 
     assert len(successful_tool_msgs) == 1, "Should have 1 successful tool execution (test1)"
     assert len(error_tool_msgs) == 1, "Should have 1 artificial error ToolMessage (test2)"
@@ -469,15 +477,17 @@ def test_exit_behavior_continue() -> None:
     tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
 
     # Verify search has 2 successful + 1 blocked, calculator has all 3 successful
-    successful_search_msgs = [msg for msg in tool_messages if "Search:" in msg.content]
-    blocked_search_msgs = [
-        msg
-        for msg in tool_messages
-        if isinstance(msg.content, str)
-        and "limit" in msg.content.lower()
-        and "search" in msg.content.lower()
-    ]
-    successful_calc_msgs = [msg for msg in tool_messages if "Calc:" in msg.content]
+    successful_search_msgs = []
+    blocked_search_msgs = []
+    successful_calc_msgs = []
+    for msg in tool_messages:
+        assert isinstance(msg.content, str)
+        if "Search:" in msg.content:
+            successful_search_msgs.append(msg)
+        if "limit" in msg.content.lower() and "search" in msg.content.lower():
+            blocked_search_msgs.append(msg)
+        if "Calc:" in msg.content:
+            successful_calc_msgs.append(msg)
 
     assert len(successful_search_msgs) == 2, "Should have 2 successful search calls"
     assert len(blocked_search_msgs) == 1, "Should have 1 blocked search call with limit error"
@@ -590,14 +600,13 @@ def test_end_behavior_creates_artificial_messages() -> None:
     )
 
     # Verify AI message explaining the limit (displayed to user - includes thread/run details)
-    ai_limit_messages = [
-        msg
-        for msg in result["messages"]
-        if isinstance(msg, AIMessage)
-        and isinstance(msg.content, str)
-        and "limit" in msg.content.lower()
-        and not msg.tool_calls
-    ]
+    ai_limit_messages = []
+    for msg in result["messages"]:
+        if not isinstance(msg, AIMessage):
+            continue
+        assert isinstance(msg.content, str)
+        if "limit" in msg.content.lower() and not msg.tool_calls:
+            ai_limit_messages.append(msg)
     assert len(ai_limit_messages) == 1, "Should have exactly one AI message explaining the limit"
 
     assert isinstance(ai_limit_messages[0].content, str)
@@ -729,19 +738,19 @@ def test_parallel_tool_calls_with_limit_end_mode() -> None:
 
     # Verify error tool messages (sent to model - include "Do not" instruction)
     for error_msg in error_tool_messages:
+        assert isinstance(error_msg.content, str)
         assert "Tool call limit exceeded" in error_msg.content
         assert "Do not" in error_msg.content
 
     # Verify AI message explaining why execution stopped
     # (displayed to user - includes thread/run details)
-    ai_limit_messages = [
-        msg
-        for msg in messages
-        if isinstance(msg, AIMessage)
-        and isinstance(msg.content, str)
-        and "limit" in msg.content.lower()
-        and not msg.tool_calls
-    ]
+    ai_limit_messages = []
+    for msg in messages:
+        if not isinstance(msg, AIMessage):
+            continue
+        assert isinstance(msg.content, str)
+        if "limit" in msg.content.lower() and not msg.tool_calls:
+            ai_limit_messages.append(msg)
     assert len(ai_limit_messages) == 1, "Should have exactly one AI message explaining the limit"
 
     assert isinstance(ai_limit_messages[0].content, str)
