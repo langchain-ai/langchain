@@ -133,12 +133,13 @@ class Serializable(BaseModel, ABC):
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the LangChain object.
 
-        For example, if the class is [`langchain.llms.openai.OpenAI`][langchain_openai.OpenAI],
-        then the namespace is `["langchain", "llms", "openai"]`
+        For example, if the class is
+        [`langchain.llms.openai.OpenAI`][langchain_openai.OpenAI], then the namespace is
+        `["langchain", "llms", "openai"]`
 
         Returns:
             The namespace.
-        """  # noqa: E501
+        """
         return cls.__module__.split(".")
 
     @property

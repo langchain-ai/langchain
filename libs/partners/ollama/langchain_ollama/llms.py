@@ -15,7 +15,11 @@ from ollama import AsyncClient, Client, Options
 from pydantic import PrivateAttr, model_validator
 from typing_extensions import Self
 
-from ._utils import merge_auth_headers, parse_url_with_auth, validate_model
+from langchain_ollama._utils import (
+    merge_auth_headers,
+    parse_url_with_auth,
+    validate_model,
+)
 
 
 class OllamaLLM(BaseLLM):

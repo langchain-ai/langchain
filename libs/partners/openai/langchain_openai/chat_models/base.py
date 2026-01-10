@@ -3590,12 +3590,12 @@ def _oai_structured_outputs_parser(
     if any(
         isinstance(block, dict)
         and block.get("type") == "non_standard"
-        and "refusal" in block["value"]
-        for block in ai_msg.content
+        and "refusal" in block["value"]  # type: ignore[typeddict-item]
+        for block in ai_msg.content_blocks
     ):
         refusal = next(
             block["value"]["refusal"]
-            for block in ai_msg.content
+            for block in ai_msg.content_blocks
             if isinstance(block, dict)
             and block["type"] == "non_standard"
             and "refusal" in block["value"]
@@ -4446,7 +4446,15 @@ def _convert_responses_chunk_to_generation_chunk(
             }
         )
     elif chunk.type == "response.output_text.done":
-        content.append({"type": "text", "id": chunk.item_id, "index": current_index})
+        _advance(chunk.output_index, chunk.content_index)
+        content.append(
+            {
+                "type": "text",
+                "text": "",
+                "id": chunk.item_id,
+                "index": current_index,
+            }
+        )
     elif chunk.type == "response.created":
         id = chunk.response.id
         response_metadata["id"] = chunk.response.id  # Backwards compatibility

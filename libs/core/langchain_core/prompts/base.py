@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import builtins  # noqa: TC003
 import contextlib
 import json
-import typing
 from abc import ABC, abstractmethod
 from collections.abc import Mapping  # noqa: TC003
 from functools import cached_property
@@ -51,7 +51,7 @@ class BasePromptTemplate(
 
     These variables are auto inferred from the prompt and user need not provide them.
     """
-    input_types: typing.Dict[str, Any] = Field(default_factory=dict, exclude=True)  # noqa: UP006
+    input_types: builtins.dict[str, Any] = Field(default_factory=dict, exclude=True)
     """A dictionary of the types of the variables the prompt template expects.
 
     If not provided, all variables are assumed to be strings.
@@ -64,7 +64,7 @@ class BasePromptTemplate(
     Partial variables populate the template so that you don't need to pass them in every
     time you call the prompt.
     """
-    metadata: typing.Dict[str, Any] | None = None  # noqa: UP006
+    metadata: builtins.dict[str, Any] | None = None
     """Metadata to be used for tracing."""
     tags: list[str] | None = None
     """Tags to be used for tracing."""

@@ -80,6 +80,9 @@ unfixable = ["B028"] # People should intentionally tune the stacklevel
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"]
 

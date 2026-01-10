@@ -46,7 +46,7 @@ from langchain_core.runnables.config import (
 )
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.schema import StreamEvent
-from langchain_core.runnables.utils import Input, Output
+from langchain_core.runnables.utils import Addable
 from langchain_core.tools import tool
 from langchain_core.utils.aiter import aclosing
 from tests.unit_tests.runnables.test_runnable_events_v1 import (
@@ -91,13 +91,15 @@ async def _collect_events(
 async def test_event_stream_with_simple_function_tool() -> None:
     """Test the event stream with a function and tool."""
 
-    def foo(x: int) -> dict:  # noqa: ARG001
+    def foo(x: int) -> dict:
         """Foo."""
+        _ = x
         return {"x": 5}
 
     @tool
-    def get_docs(x: int) -> list[Document]:  # noqa: ARG001
+    def get_docs(x: int) -> list[Document]:
         """Hello Doc."""
+        _ = x
         return [Document(page_content="hello")]
 
     chain = RunnableLambda(foo) | get_docs
@@ -1087,8 +1089,9 @@ async def test_event_streaming_with_tools() -> None:
         return "hello"
 
     @tool
-    def with_callbacks(callbacks: Callbacks) -> str:  # noqa: ARG001
+    def with_callbacks(callbacks: Callbacks) -> str:
         """A tool that does nothing."""
+        _ = callbacks
         return "world"
 
     @tool
@@ -1097,8 +1100,9 @@ async def test_event_streaming_with_tools() -> None:
         return {"x": x, "y": y}
 
     @tool
-    def with_parameters_and_callbacks(x: int, y: str, callbacks: Callbacks) -> dict:  # noqa: ARG001
+    def with_parameters_and_callbacks(x: int, y: str, callbacks: Callbacks) -> dict:
         """A tool that does nothing."""
+        _ = callbacks
         return {"x": x, "y": y}
 
     # type ignores below because the tools don't appear to be runnables to type checkers
@@ -2116,19 +2120,19 @@ async def test_sync_in_sync_lambdas() -> None:
     _assert_events_equal_allow_superset_metadata(events, EXPECTED_EVENTS)
 
 
-class StreamingRunnable(Runnable[Input, Output]):
+class StreamingRunnable(Runnable[Any, Addable]):
     """A custom runnable used for testing purposes."""
 
-    iterable: Iterable[Any]
+    iterable: Iterable[Addable]
 
-    def __init__(self, iterable: Iterable[Any]) -> None:
+    def __init__(self, iterable: Iterable[Addable]) -> None:
         """Initialize the runnable."""
         self.iterable = iterable
 
     @override
     def invoke(
-        self, input: Input, config: RunnableConfig | None = None, **kwargs: Any
-    ) -> Output:
+        self, input: Any, config: RunnableConfig | None = None, **kwargs: Any
+    ) -> Addable:
         """Invoke the runnable."""
         msg = "Server side error"
         raise ValueError(msg)
@@ -2136,19 +2140,19 @@ class StreamingRunnable(Runnable[Input, Output]):
     @override
     def stream(
         self,
-        input: Input,
+        input: Any,
         config: RunnableConfig | None = None,
         **kwargs: Any | None,
-    ) -> Iterator[Output]:
+    ) -> Iterator[Addable]:
         raise NotImplementedError
 
     @override
     async def astream(
         self,
-        input: Input,
+        input: Any,
         config: RunnableConfig | None = None,
         **kwargs: Any | None,
-    ) -> AsyncIterator[Output]:
+    ) -> AsyncIterator[Addable]:
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
@@ -2183,7 +2187,7 @@ class StreamingRunnable(Runnable[Input, Output]):
 async def test_astream_events_from_custom_runnable() -> None:
     """Test astream events from a custom runnable."""
     iterator = ["1", "2", "3"]
-    runnable: Runnable[int, str] = StreamingRunnable(iterator)
+    runnable = StreamingRunnable(iterator)
     chunks = [chunk async for chunk in runnable.astream(1, version="v2")]
     assert chunks == ["1", "2", "3"]
     events = await _collect_events(runnable.astream_events(1, version="v2"))
@@ -2386,7 +2390,7 @@ async def test_runnable_generator() -> None:
         yield "1"
         yield "2"
 
-    runnable: Runnable[str, str] = RunnableGenerator(transform=generator)
+    runnable = RunnableGenerator(transform=generator)
     events = await _collect_events(runnable.astream_events("hello", version="v2"))
     _assert_events_equal_allow_superset_metadata(
         events,

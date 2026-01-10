@@ -36,6 +36,9 @@ dev-dependencies = [
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201"]
 
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
 [tool.ruff.lint.per-file-ignores]
 "docs/**" = [ "ALL",]
 

@@ -9,7 +9,7 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.2.1"
+version = "1.2.3"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.2.1,<2.0.0",
@@ -60,7 +60,7 @@ test = [
     "langchain-openai",
 ]
 lint = [
-    "ruff>=0.14.10,<0.15.0",
+    "ruff>=0.14.11,<0.15.0",
 ]
 typing = [
     "mypy>=1.19.1,<1.20.0",
@@ -121,11 +121,13 @@ ignore = [
 ]
 unfixable = [
     "B028",    # People should intentionally tune the stacklevel
-    "PLW1510", # People should intentionally set the check argument
 ]
 
 flake8-annotations.allow-star-arg-any = true
 allowed-confusables = ["–"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -137,7 +139,6 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
     "ARG", # Arguments, needs to fix
 ]
 "tests/unit_tests/agents/test_return_direct_spec.py" = ["F821"]
-"tests/unit_tests/agents/test_responses_spec.py" = ["F821"]
 "tests/unit_tests/agents/test_responses.py" = ["F821"]
 "tests/unit_tests/agents/test_react_agent.py" = ["ALL"]
 

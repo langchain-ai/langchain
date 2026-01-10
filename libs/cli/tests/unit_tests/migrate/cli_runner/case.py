@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .file import File
-    from .folder import Folder
+    from tests.unit_tests.migrate.cli_runner.file import File
+    from tests.unit_tests.migrate.cli_runner.folder import Folder
 
 
 @dataclass

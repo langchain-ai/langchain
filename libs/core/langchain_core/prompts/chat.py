@@ -845,9 +845,9 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
     !!! note "Single-variable template"
 
-        If your prompt has only a single input variable (i.e., 1 instance of "{variable_nams}"),
-        and you invoke the template with a non-dict object, the prompt template will
-        inject the provided argument into that variable location.
+        If your prompt has only a single input variable (i.e., 1 instance of
+        "{variable_nams}"), and you invoke the template with a non-dict object, the
+        prompt template will inject the provided argument into that variable location.
 
         ```python
         from langchain_core.prompts import ChatPromptTemplate
@@ -871,7 +871,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         #     ]
         # )
         ```
-    """  # noqa: E501
+    """
 
     messages: Annotated[list[MessageLike], SkipValidation()]
     """List of messages consisting of either message prompt templates or messages."""

@@ -99,7 +99,10 @@ AnyMessage = Annotated[
 
 
 def get_buffer_string(
-    messages: Sequence[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
+    messages: Sequence[BaseMessage],
+    human_prefix: str = "Human",
+    ai_prefix: str = "AI",
+    message_separator: str = "\n",
 ) -> str:
     r"""Convert a sequence of messages to strings and concatenate them into one string.
 
@@ -107,6 +110,7 @@ def get_buffer_string(
         messages: Messages to be converted to strings.
         human_prefix: The prefix to prepend to contents of `HumanMessage`s.
         ai_prefix: The prefix to prepend to contents of `AIMessage`.
+        message_separator: The separator to use between messages.
 
     Returns:
         A single string concatenation of all input messages.
@@ -160,7 +164,7 @@ def get_buffer_string(
 
         string_messages.append(message)
 
-    return "\n".join(string_messages)
+    return message_separator.join(string_messages)
 
 
 def _message_from_dict(message: dict) -> BaseMessage:
@@ -559,6 +563,7 @@ def filter_messages(
         ):
             continue
 
+        new_msg = msg
         if isinstance(exclude_tool_calls, (list, tuple, set)):
             if isinstance(msg, AIMessage) and msg.tool_calls:
                 tool_calls = [
@@ -582,7 +587,7 @@ def filter_messages(
                         )
                     ]
 
-                msg = msg.model_copy(  # noqa: PLW2901
+                new_msg = msg.model_copy(
                     update={"tool_calls": tool_calls, "content": content}
                 )
             elif (
@@ -593,11 +598,11 @@ def filter_messages(
         # default to inclusion when no inclusion criteria given.
         if (
             not (include_types or include_ids or include_names)
-            or (include_names and msg.name in include_names)
-            or (include_types and _is_message_type(msg, include_types))
-            or (include_ids and msg.id in include_ids)
+            or (include_names and new_msg.name in include_names)
+            or (include_types and _is_message_type(new_msg, include_types))
+            or (include_ids and new_msg.id in include_ids)
         ):
-            filtered.append(msg)
+            filtered.append(new_msg)
 
     return filtered
 

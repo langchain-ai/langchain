@@ -11,7 +11,7 @@ from typing import Any
 
 from langchain_core.messages import HumanMessage, ToolMessage
 
-from .any_str import AnyStr
+from tests.unit_tests.agents.any_str import AnyStr
 
 
 def _AnyIdHumanMessage(**kwargs: Any) -> HumanMessage:  # noqa: N802

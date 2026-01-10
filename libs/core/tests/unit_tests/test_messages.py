@@ -370,6 +370,14 @@ class TestGetBufferString:
 
         assert get_buffer_string(msgs) == expected_output
 
+    def test_custom_message_separator(self) -> None:
+        msgs = [
+            self._HUMAN_MSG,
+            self._AI_MSG,
+        ]
+        expected_output = "Human: human\n\nAI: ai"
+        assert get_buffer_string(msgs, message_separator="\n\n") == expected_output
+
 
 def test_multiple_msg() -> None:
     human_msg = HumanMessage(content="human", additional_kwargs={"key": "value"})
