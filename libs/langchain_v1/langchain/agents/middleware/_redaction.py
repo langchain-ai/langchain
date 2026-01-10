@@ -332,7 +332,7 @@ def apply_strategy(
         return _apply_hash_strategy(content, matches)
     if strategy == "block":
         raise PIIDetectionError(matches[0]["type"], matches)
-    msg = f"Unknown redaction strategy: {strategy}"
+    msg = f"Unknown redaction strategy: {strategy}"  # type: ignore[unreachable]
     raise ValueError(msg)
 
 

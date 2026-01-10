@@ -106,7 +106,7 @@ def _parse_with_schema(
 class _SchemaSpec(Generic[SchemaT]):
     """Describes a structured output schema."""
 
-    schema: type[SchemaT]
+    schema: type[SchemaT] | dict[str, Any]
     """The schema for the response, can be a Pydantic model, `dataclass`, `TypedDict`,
     or JSON schema dict."""
 
@@ -134,7 +134,7 @@ class _SchemaSpec(Generic[SchemaT]):
 
     def __init__(
         self,
-        schema: type[SchemaT],
+        schema: type[SchemaT] | dict[str, Any],
         *,
         name: str | None = None,
         description: str | None = None,
@@ -257,7 +257,7 @@ class ToolStrategy(Generic[SchemaT]):
 class ProviderStrategy(Generic[SchemaT]):
     """Use the model provider's native structured output method."""
 
-    schema: type[SchemaT]
+    schema: type[SchemaT] | dict[str, Any]
     """Schema for native mode."""
 
     schema_spec: _SchemaSpec[SchemaT]
@@ -265,7 +265,7 @@ class ProviderStrategy(Generic[SchemaT]):
 
     def __init__(
         self,
-        schema: type[SchemaT],
+        schema: type[SchemaT] | dict[str, Any],
         *,
         strict: bool | None = None,
     ) -> None:
@@ -309,7 +309,7 @@ class OutputToolBinding(Generic[SchemaT]):
     and the corresponding tool implementation used by the tools strategy.
     """
 
-    schema: type[SchemaT]
+    schema: type[SchemaT] | dict[str, Any]
     """The original schema provided for structured output
     (Pydantic model, dataclass, TypedDict, or JSON schema dict)."""
 
@@ -363,7 +363,7 @@ class ProviderStrategyBinding(Generic[SchemaT]):
     its type classification, and parsing logic for provider-enforced JSON.
     """
 
-    schema: type[SchemaT]
+    schema: type[SchemaT] | dict[str, Any]
     """The original schema provided for structured output
     (Pydantic model, `dataclass`, `TypedDict`, or JSON schema dict)."""
 
@@ -426,29 +426,27 @@ class ProviderStrategyBinding(Generic[SchemaT]):
         content = message.content
         if isinstance(content, str):
             return content
-        if isinstance(content, list):
-            parts: list[str] = []
-            for c in content:
-                if isinstance(c, dict):
-                    if c.get("type") == "text" and "text" in c:
-                        parts.append(str(c["text"]))
-                    elif "content" in c and isinstance(c["content"], str):
-                        parts.append(c["content"])
-                else:
-                    parts.append(str(c))
-            return "".join(parts)
-        return str(content)
+        parts: list[str] = []
+        for c in content:
+            if isinstance(c, dict):
+                if c.get("type") == "text" and "text" in c:
+                    parts.append(str(c["text"]))
+                elif "content" in c and isinstance(c["content"], str):
+                    parts.append(c["content"])
+            else:
+                parts.append(str(c))
+        return "".join(parts)
 
 
 class AutoStrategy(Generic[SchemaT]):
     """Automatically select the best strategy for structured output."""
 
-    schema: type[SchemaT]
+    schema: type[SchemaT] | dict[str, Any]
     """Schema for automatic mode."""
 
     def __init__(
         self,
-        schema: type[SchemaT],
+        schema: type[SchemaT] | dict[str, Any],
     ) -> None:
         """Initialize AutoStrategy with schema."""
         self.schema = schema
