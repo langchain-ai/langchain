@@ -352,8 +352,8 @@ class FilesystemFileSearchMiddleware(AgentMiddleware):
 
         return results
 
+    @staticmethod
     def _format_grep_results(
-        self,
         results: dict[str, list[tuple[int, str]]],
         output_mode: str,
     ) -> str:

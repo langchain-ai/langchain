@@ -170,6 +170,30 @@ class ChatGroq(BaseChatModel):
         'logprobs': None}, id='run-ecc71d70-e10c-4b69-8b8c-b8027d95d4b8-0')
         ```
 
+    Vision:
+        ```python
+        from langchain_groq import ChatGroq
+        from langchain_core.messages import HumanMessage
+
+        model = ChatGroq(model="meta-llama/llama-4-scout-17b-16e-instruct")
+
+        message = HumanMessage(
+            content=[
+                {"type": "text", "text": "Describe this image in detail"},
+                {"type": "image_url", "image_url": {"url": "example_url.jpg"}},
+            ]
+        )
+
+        response = model.invoke([message])
+        print(response.content)
+        ```
+
+        Vision-capable models:
+        - meta-llama/llama-4-scout-17b-16e-instruct
+        - meta-llama/llama-4-maverick-17b-128e-instruct
+
+        Maximum image size: 20MB per request.
+
     Stream:
         ```python
         # Streaming `text` for each content chunk received

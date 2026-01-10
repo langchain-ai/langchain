@@ -170,13 +170,13 @@ async def test_config_traceable_async_handoff() -> None:
     def my_great_grandchild_function(a: int) -> int:
         return my_great_great_grandchild_function(a)
 
-    @RunnableLambda  # type: ignore[arg-type]
+    @RunnableLambda
     async def my_grandchild_function(a: int) -> int:
         return my_great_grandchild_function.invoke(a)
 
     @traceable
     async def my_child_function(a: int) -> int:
-        return await my_grandchild_function.ainvoke(a) * 3  # type: ignore[arg-type]
+        return await my_grandchild_function.ainvoke(a) * 3
 
     @traceable()
     async def my_function(a: int) -> int:
@@ -185,7 +185,7 @@ async def test_config_traceable_async_handoff() -> None:
     async def my_parent_function(a: int) -> int:
         return await my_function(a)
 
-    my_parent_runnable = RunnableLambda(my_parent_function)  # type: ignore[arg-type,var-annotated]
+    my_parent_runnable = RunnableLambda(my_parent_function)
     result = await my_parent_runnable.ainvoke(1, {"callbacks": [tracer]})
     assert result == 6
     posts = _get_posts(tracer.client)
@@ -288,7 +288,7 @@ class TestRunnableSequenceParallelTraceNesting:
         sequence = before | parallel | after
         if isasyncgenfunction(other_thing):
 
-            @RunnableLambda  # type: ignore[arg-type]
+            @RunnableLambda
             async def parent(a: int) -> int:
                 return await sequence.ainvoke(a)
 

@@ -30,9 +30,9 @@ from typing import TYPE_CHECKING
 from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
-    from .base import Document
-    from .compressor import BaseDocumentCompressor
-    from .transformers import BaseDocumentTransformer
+    from langchain_core.documents.base import Document
+    from langchain_core.documents.compressor import BaseDocumentCompressor
+    from langchain_core.documents.transformers import BaseDocumentTransformer
 
 __all__ = ("BaseDocumentCompressor", "BaseDocumentTransformer", "Document")
 

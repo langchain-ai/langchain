@@ -221,9 +221,10 @@ class _TracerCore(ABC):
         token: str,
         run_id: UUID,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
-        parent_run_id: UUID | None = None,  # noqa: ARG002
+        parent_run_id: UUID | None = None,
     ) -> Run:
         """Append token event to LLM run and return the run."""
+        _ = parent_run_id
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
         event_kwargs: dict[str, Any] = {"token": token}
         if chunk:
@@ -538,43 +539,47 @@ class _TracerCore(ABC):
         """Return self copied."""
         return self
 
-    def _end_trace(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _end_trace(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """End a trace for a run.
 
         Args:
             run: The run.
         """
+        _ = run
         return None
 
-    def _on_run_create(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_run_create(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process a run upon creation.
 
         Args:
             run: The created run.
         """
+        _ = run
         return None
 
-    def _on_run_update(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_run_update(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process a run upon update.
 
         Args:
             run: The updated run.
         """
+        _ = run
         return None
 
-    def _on_llm_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_llm_start(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the LLM Run upon start.
 
         Args:
             run: The LLM run.
         """
+        _ = run
         return None
 
     def _on_llm_new_token(
         self,
-        run: Run,  # noqa: ARG002
-        token: str,  # noqa: ARG002
-        chunk: GenerationChunk | ChatGenerationChunk | None,  # noqa: ARG002
+        run: Run,
+        token: str,
+        chunk: GenerationChunk | ChatGenerationChunk | None,
     ) -> Coroutine[Any, Any, None] | None:
         """Process new LLM token.
 
@@ -583,100 +588,113 @@ class _TracerCore(ABC):
             token: The new token.
             chunk: Optional chunk.
         """
+        _ = (run, token, chunk)
         return None
 
-    def _on_llm_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_llm_end(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the LLM Run.
 
         Args:
             run: The LLM run.
         """
+        _ = run
         return None
 
-    def _on_llm_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_llm_error(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the LLM Run upon error.
 
         Args:
             run: The LLM run.
         """
+        _ = run
         return None
 
-    def _on_chain_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_chain_start(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Chain Run upon start.
 
         Args:
             run: The chain run.
         """
+        _ = run
         return None
 
-    def _on_chain_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_chain_end(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Chain Run.
 
         Args:
             run: The chain run.
         """
+        _ = run
         return None
 
-    def _on_chain_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_chain_error(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Chain Run upon error.
 
         Args:
             run: The chain run.
         """
+        _ = run
         return None
 
-    def _on_tool_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_tool_start(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Tool Run upon start.
 
         Args:
             run: The tool run.
         """
+        _ = run
         return None
 
-    def _on_tool_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_tool_end(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Tool Run.
 
         Args:
             run: The tool run.
         """
+        _ = run
         return None
 
-    def _on_tool_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_tool_error(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Tool Run upon error.
 
         Args:
             run: The tool run.
         """
+        _ = run
         return None
 
-    def _on_chat_model_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_chat_model_start(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Chat Model Run upon start.
 
         Args:
             run: The chat model run.
         """
+        _ = run
         return None
 
-    def _on_retriever_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_retriever_start(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Retriever Run upon start.
 
         Args:
             run: The retriever run.
         """
+        _ = run
         return None
 
-    def _on_retriever_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_retriever_end(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Retriever Run.
 
         Args:
             run: The retriever run.
         """
+        _ = run
         return None
 
-    def _on_retriever_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_retriever_error(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Retriever Run upon error.
 
         Args:
             run: The retriever run.
         """
+        _ = run
         return None

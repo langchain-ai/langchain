@@ -13,7 +13,7 @@ def _call(cls: type[Embeddings], **kwargs: Any) -> Embeddings:
 
 
 _SUPPORTED_PROVIDERS: dict[str, tuple[str, str, Callable[..., Embeddings]]] = {
-    "azure_openai": ("langchain_openai", "OpenAIEmbeddings", _call),
+    "azure_openai": ("langchain_openai", "AzureOpenAIEmbeddings", _call),
     "bedrock": (
         "langchain_aws",
         "BedrockEmbeddings",
