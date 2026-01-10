@@ -68,6 +68,7 @@ class LLMToolEmulator(AgentMiddleware):
         *,
         tools: list[str | BaseTool] | None = None,
         model: str | BaseChatModel | None = None,
+        depends_on: tuple[type[AgentMiddleware] | AgentMiddleware, ...] = (),
     ) -> None:
         """Initialize the tool emulator.
 
@@ -82,6 +83,8 @@ class LLMToolEmulator(AgentMiddleware):
                 Defaults to `'anthropic:claude-sonnet-4-5-20250929'`.
 
                 Can be a model identifier string or `BaseChatModel` instance.
+            depends_on: Optional tuple of middleware classes or instances that must be
+                executed before this middleware.
         """
         super().__init__()
 
@@ -97,6 +100,8 @@ class LLMToolEmulator(AgentMiddleware):
                 else:
                     # Assume BaseTool with .name attribute
                     self.tools_to_emulate.add(tool.name)
+
+        self.depends_on = depends_on
 
         # Initialize emulator model
         if model is None:
