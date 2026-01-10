@@ -76,7 +76,8 @@ def test_tracing_context() -> None:
 
 
 def test_config_traceable_handoff() -> None:
-    get_env_var.cache_clear()
+    if hasattr(get_env_var, "cache_clear"):
+        get_env_var.cache_clear()  # type: ignore[attr-defined]
     tracer = _create_tracer_with_mocked_client(
         project_name="another-flippin-project", tags=["such-a-tag"]
     )
@@ -169,13 +170,13 @@ async def test_config_traceable_async_handoff() -> None:
     def my_great_grandchild_function(a: int) -> int:
         return my_great_great_grandchild_function(a)
 
-    @RunnableLambda  # type: ignore[arg-type]
+    @RunnableLambda
     async def my_grandchild_function(a: int) -> int:
         return my_great_grandchild_function.invoke(a)
 
     @traceable
     async def my_child_function(a: int) -> int:
-        return await my_grandchild_function.ainvoke(a) * 3  # type: ignore[arg-type]
+        return await my_grandchild_function.ainvoke(a) * 3
 
     @traceable()
     async def my_function(a: int) -> int:
@@ -184,7 +185,7 @@ async def test_config_traceable_async_handoff() -> None:
     async def my_parent_function(a: int) -> int:
         return await my_function(a)
 
-    my_parent_runnable = RunnableLambda(my_parent_function)  # type: ignore[arg-type,var-annotated]
+    my_parent_runnable = RunnableLambda(my_parent_function)
     result = await my_parent_runnable.ainvoke(1, {"callbacks": [tracer]})
     assert result == 6
     posts = _get_posts(tracer.client)
@@ -238,7 +239,8 @@ def test_tracing_enable_disable(
     def my_func(a: int) -> int:
         return a + 1
 
-    get_env_var.cache_clear()
+    if hasattr(get_env_var, "cache_clear"):
+        get_env_var.cache_clear()  # type: ignore[attr-defined]
     env_on = env == "true"
     with (
         patch.dict("os.environ", {"LANGSMITH_TRACING": env}),
@@ -286,7 +288,7 @@ class TestRunnableSequenceParallelTraceNesting:
         sequence = before | parallel | after
         if isasyncgenfunction(other_thing):
 
-            @RunnableLambda  # type: ignore[arg-type]
+            @RunnableLambda
             async def parent(a: int) -> int:
                 return await sequence.ainvoke(a)
 

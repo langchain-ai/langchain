@@ -288,6 +288,9 @@ def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None 
         schema_name: Name for the generated `TypedDict`
         omit_flag: If specified, omit fields with this flag set (`'input'` or
             `'output'`)
+
+    Returns:
+        Merged schema as `TypedDict`
     """
     all_annotations = {}
 
@@ -414,18 +417,15 @@ def _handle_structured_output_error(
         return True, STRUCTURED_OUTPUT_ERROR_TEMPLATE.format(error=str(exception))
     if isinstance(handle_errors, str):
         return True, handle_errors
-    if isinstance(handle_errors, type) and issubclass(handle_errors, Exception):
-        if isinstance(exception, handle_errors):
+    if isinstance(handle_errors, type):
+        if issubclass(handle_errors, Exception) and isinstance(exception, handle_errors):
             return True, STRUCTURED_OUTPUT_ERROR_TEMPLATE.format(error=str(exception))
         return False, ""
     if isinstance(handle_errors, tuple):
         if any(isinstance(exception, exc_type) for exc_type in handle_errors):
             return True, STRUCTURED_OUTPUT_ERROR_TEMPLATE.format(error=str(exception))
         return False, ""
-    if callable(handle_errors):
-        # type narrowing not working appropriately w/ callable check, can fix later
-        return True, handle_errors(exception)  # type: ignore[return-value,call-arg]
-    return False, ""
+    return True, handle_errors(exception)
 
 
 def _chain_tool_call_wrappers(
@@ -544,7 +544,7 @@ def create_agent(
     *,
     system_prompt: str | SystemMessage | None = None,
     middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
-    response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
+    response_format: ResponseFormat[ResponseT] | type[ResponseT] | dict[str, Any] | None = None,
     state_schema: type[AgentState[ResponseT]] | None = None,
     context_schema: type[ContextT] | None = None,
     checkpointer: Checkpointer | None = None,
@@ -652,6 +652,9 @@ def create_agent(
 
     Returns:
         A compiled `StateGraph` that can be used for chat interactions.
+
+    Raises:
+        AssertionError: If duplicate middleware instances are provided.
 
     The agent node calls the language model with the messages list (after applying
     the system prompt). If the resulting [`AIMessage`][langchain.messages.AIMessage]
@@ -984,6 +987,10 @@ def create_agent(
             Tuple of `(bound_model, effective_response_format)` where
             `effective_response_format` is the actual strategy used (may differ from
             initial if auto-detected).
+
+        Raises:
+            ValueError: If middleware returned unknown client-side tool names.
+            ValueError: If `ToolStrategy` specifies tools not declared upfront.
         """
         # Validate ONLY client-side tools that need to exist in tool_node
         # Build map of available client-side tools from the ToolNode
