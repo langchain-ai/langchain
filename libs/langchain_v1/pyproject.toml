@@ -90,7 +90,6 @@ line-length = 100
 
 [tool.mypy]
 strict = true
-ignore_missing_imports = true
 enable_error_code = "deprecated"
 warn_unreachable = true
 exclude = ["tests/unit_tests/agents/*"]
@@ -98,6 +97,10 @@ exclude = ["tests/unit_tests/agents/*"]
 # TODO: activate for 'strict' checking
 disallow_any_generics = false
 warn_return_any = false
+
+[[tool.mypy.overrides]]
+module = ["pytest_socket.*", "vcr.*"]
+ignore_missing_imports = true
 
 [tool.ruff.format]
 docstring-code-format = true
