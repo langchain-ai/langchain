@@ -48,11 +48,8 @@ class EventData(TypedDict, total=False):
     tool_call_id: NotRequired[str | None]
     """The tool call ID associated with the tool execution.
 
-    This field is only available for tool-related events (e.g., `on_tool_error`)
-    and can be used to link errors to specific tool calls in stateless agent
-    implementations.
-
-    !!! version-added "Added in version 1.0.0"
+    This field is available for the `on_tool_error` event and can be used to
+    link errors to specific tool calls in stateless agent implementations.
     """
 
 

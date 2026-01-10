@@ -698,10 +698,10 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         **kwargs: Any,
     ) -> None:
         """Run when tool errors."""
-        # Extract tool_call_id from kwargs first, fallback to run_info if available
+        # Extract tool_call_id from kwargs if passed directly, or from run_info
+        # (which was stored during on_tool_start) as a fallback
         tool_call_id = kwargs.get("tool_call_id")
         run_info, inputs = self._get_tool_run_info_with_inputs(run_id)
-        # If not in kwargs, check run_info (fallback for backward compatibility)
         if tool_call_id is None:
             tool_call_id = run_info.get("tool_call_id")
 
