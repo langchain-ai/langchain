@@ -1325,7 +1325,6 @@ class BaseChatOpenAI(BaseChatModel):
                         )
                     is_first_chunk = False
                     yield generation_chunk
-                    await asyncio.sleep(0)
         except openai.BadRequestError as e:
             _handle_openai_bad_request(e)
         if hasattr(response, "get_final_completion") and "response_format" in payload:
@@ -1338,7 +1337,6 @@ class BaseChatOpenAI(BaseChatModel):
                     generation_chunk.text, chunk=generation_chunk
                 )
             yield generation_chunk
-            await asyncio.sleep(0)
 
     def _generate(
         self,
