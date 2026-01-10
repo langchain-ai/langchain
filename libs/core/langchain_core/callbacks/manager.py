@@ -1617,6 +1617,8 @@ class CallbackManager(BaseCallbackManager):
         local_tags: list[str] | None = None,
         inheritable_metadata: dict[str, Any] | None = None,
         local_metadata: dict[str, Any] | None = None,
+        *,
+        tracing: bool = False,
     ) -> CallbackManager:
         """Configure the callback manager.
 
@@ -1628,6 +1630,7 @@ class CallbackManager(BaseCallbackManager):
             local_tags: The local tags.
             inheritable_metadata: The inheritable metadata.
             local_metadata: The local metadata.
+            tracing: Whether to enable Langsmith tracing.
 
         Returns:
             The configured callback manager.
@@ -1641,6 +1644,7 @@ class CallbackManager(BaseCallbackManager):
             inheritable_metadata,
             local_metadata,
             verbose=verbose,
+            tracing=tracing,
         )
 
 
@@ -2138,6 +2142,8 @@ class AsyncCallbackManager(BaseCallbackManager):
         local_tags: list[str] | None = None,
         inheritable_metadata: dict[str, Any] | None = None,
         local_metadata: dict[str, Any] | None = None,
+        *,
+        tracing: bool = False,
     ) -> AsyncCallbackManager:
         """Configure the async callback manager.
 
@@ -2149,6 +2155,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             local_tags: The local tags.
             inheritable_metadata: The inheritable metadata.
             local_metadata: The local metadata.
+            tracing: Whether to enable Langsmith tracing.
 
         Returns:
             The configured async callback manager.
@@ -2162,6 +2169,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             inheritable_metadata,
             local_metadata,
             verbose=verbose,
+            tracing=tracing,
         )
 
 
@@ -2309,6 +2317,7 @@ def _configure(
     local_metadata: dict[str, Any] | None = None,
     *,
     verbose: bool = False,
+    tracing: bool = False,
 ) -> T:
     """Configure the callback manager.
 
@@ -2321,6 +2330,7 @@ def _configure(
         inheritable_metadata: The inheritable metadata.
         local_metadata: The local metadata.
         verbose: Whether to enable verbose mode.
+        tracing: Whether to enable Langsmith tracing.
 
     Raises:
         RuntimeError: If `LANGCHAIN_TRACING` is set but `LANGCHAIN_TRACING_V2` is not.
@@ -2403,7 +2413,7 @@ def _configure(
 
     tracer_project = _get_tracer_project()
     debug = _get_debug()
-    if verbose or debug or tracing_v2_enabled_:
+    if verbose or debug or tracing_v2_enabled_ or tracing:
         if verbose and not any(
             isinstance(handler, StdOutCallbackHandler)
             for handler in callback_manager.handlers
@@ -2417,7 +2427,7 @@ def _configure(
             for handler in callback_manager.handlers
         ):
             callback_manager.add_handler(ConsoleCallbackHandler())
-        if tracing_v2_enabled_ and not any(
+        if (tracing_v2_enabled_ or tracing) and not any(
             isinstance(handler, LangChainTracer)
             for handler in callback_manager.handlers
         ):
