@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 import openai
 from langchain_core.messages import AIMessageChunk
@@ -11,7 +11,13 @@ from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_xai.data._profiles import _PROFILES
+
 if TYPE_CHECKING:
+    from langchain_core.language_models import (
+        ModelProfile,
+        ModelProfileRegistry,
+    )
     from langchain_core.language_models.chat_models import (
         LangSmithParams,
         LanguageModelInput,
@@ -21,6 +27,14 @@ if TYPE_CHECKING:
 
 _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[BaseModel] | type
 _DictOrPydantic: TypeAlias = dict | BaseModel
+
+
+_MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+
+
+def _get_default_model_profile(model_name: str) -> ModelProfile:
+    default = _MODEL_PROFILES.get(model_name) or {}
+    return default.copy()
 
 
 class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
@@ -512,6 +526,18 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 **client_params,
                 **async_specific,
             )
+
+        # Enable streaming usage metadata by default
+        if self.stream_usage is not False:
+            self.stream_usage = True
+
+        return self
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model_name)
         return self
 
     @property
@@ -549,6 +575,21 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 response.citations
             )
 
+        # Unlike OpenAI, xAI reports reasoning tokens < completion tokens. So we assume
+        # they are not counted in output tokens, and we add them here.
+        if (
+            (not self._use_responses_api({}))
+            and (usage_metadata := rtn.generations[0].message.usage_metadata)  # type: ignore[attr-defined]
+            and (
+                reasoning_tokens := usage_metadata.get("output_token_details", {}).get(
+                    "reasoning"
+                )
+            )
+        ):
+            rtn.generations[0].message.usage_metadata["output_tokens"] += (  # type: ignore[attr-defined]
+                reasoning_tokens
+            )
+
         return rtn
 
     def _convert_chunk_to_generation_chunk(
@@ -579,9 +620,23 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             (citations := chunk.get("citations"))
             and generation_chunk
             and isinstance(generation_chunk.message, AIMessageChunk)
+            and not chunk.get("usage")  # citations are repeated in final usage chunk
         ):
             generation_chunk.message.additional_kwargs["citations"] = citations
 
+        # Unlike OpenAI, xAI reports reasoning tokens < completion tokens. So we assume
+        # they are not counted in output tokens, and we add them here.
+        if (
+            generation_chunk
+            and (not self._use_responses_api({}))
+            and (usage_metadata := generation_chunk.message.usage_metadata)  # type: ignore[attr-defined]
+            and (
+                reasoning_tokens := usage_metadata.get("output_token_details", {}).get(
+                    "reasoning"
+                )
+            )
+        ):
+            generation_chunk.message.usage_metadata["output_tokens"] += reasoning_tokens  # type: ignore[attr-defined]
         return generation_chunk
 
     def with_structured_output(

@@ -6,18 +6,21 @@ AgentState without needing to create custom middleware.
 
 from __future__ import annotations
 
-from typing import Any
-
-import pytest
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.types import AgentMiddleware, AgentState
-from langchain.tools import ToolRuntime
 
-from .model import FakeToolCallingModel
+# Cannot move ToolRuntime to TYPE_CHECKING as parameters of @tool annotated functions
+# are inspected at runtime.
+from langchain.tools import ToolRuntime  # noqa: TC001
+from tests.unit_tests.agents.model import FakeToolCallingModel
+
+if TYPE_CHECKING:
+    from langgraph.runtime import Runtime
 
 
 @tool
@@ -29,7 +32,7 @@ def simple_tool(x: int) -> str:
 def test_state_schema_single_custom_field() -> None:
     """Test that a single custom state field is preserved through agent execution."""
 
-    class CustomState(AgentState):
+    class CustomState(AgentState[Any]):
         custom_field: str
 
     agent = create_agent(
@@ -49,7 +52,7 @@ def test_state_schema_single_custom_field() -> None:
 def test_state_schema_multiple_custom_fields() -> None:
     """Test that multiple custom state fields are preserved through agent execution."""
 
-    class CustomState(AgentState):
+    class CustomState(AgentState[Any]):
         user_id: str
         session_id: str
         context: str
@@ -80,7 +83,7 @@ def test_state_schema_multiple_custom_fields() -> None:
 def test_state_schema_with_tool_runtime() -> None:
     """Test that custom state fields are accessible via ToolRuntime."""
 
-    class ExtendedState(AgentState):
+    class ExtendedState(AgentState[Any]):
         counter: int
 
     runtime_data = {}
@@ -108,19 +111,19 @@ def test_state_schema_with_tool_runtime() -> None:
 def test_state_schema_with_middleware() -> None:
     """Test that state_schema merges with middleware state schemas."""
 
-    class UserState(AgentState):
+    class UserState(AgentState[Any]):
         user_name: str
 
-    class MiddlewareState(AgentState):
+    class MiddlewareState(AgentState[Any]):
         middleware_data: str
 
     middleware_calls = []
 
-    class TestMiddleware(AgentMiddleware):
+    class TestMiddleware(AgentMiddleware[MiddlewareState, None]):
         state_schema = MiddlewareState
 
-        def before_model(self, state, runtime) -> dict[str, Any]:
-            middleware_calls.append(state.get("middleware_data", ""))
+        def before_model(self, state: MiddlewareState, runtime: Runtime) -> dict[str, Any]:
+            middleware_calls.append(state["middleware_data"])
             return {}
 
     agent = create_agent(
@@ -164,7 +167,7 @@ def test_state_schema_none_uses_default() -> None:
 async def test_state_schema_async() -> None:
     """Test that state_schema works with async agents."""
 
-    class AsyncState(AgentState):
+    class AsyncState(AgentState[Any]):
         async_field: str
 
     @tool
@@ -181,7 +184,10 @@ async def test_state_schema_async() -> None:
     )
 
     result = await agent.ainvoke(
-        {"messages": [HumanMessage("Test async")], "async_field": "async_value"}
+        {
+            "messages": [HumanMessage("Test async")],
+            "async_field": "async_value",
+        }
     )
 
     assert result["async_field"] == "async_value"

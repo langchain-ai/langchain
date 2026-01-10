@@ -9,10 +9,10 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.0.1"
+version = "1.1.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0,<2.0.0",
+    "langchain-core>=1.1.0,<2.0.0",
     "tokenizers>=0.15.1,<1.0.0",
     "httpx>=0.25.2,<1.0.0",
     "httpx-sse>=0.3.1,<1.0.0",
@@ -86,6 +86,9 @@ unfixable = ["B028"] # People should intentionally tune the stacklevel
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.coverage.run]
 omit = ["tests/*"]

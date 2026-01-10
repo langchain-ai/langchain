@@ -9,11 +9,11 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.0.0"
+version = "1.1.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0,<2.0.0",
-    "openai>=2.0.0,<3.0.0",
+    "langchain-core>=1.1.0,<2.0.0",
+    "perplexityai>=0.22.0",
 ]
 
 [project.urls]
@@ -72,6 +72,9 @@ select = ["E", "F", "I", "T201", "UP", "S"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.coverage.run]
 omit = ["tests/*"]

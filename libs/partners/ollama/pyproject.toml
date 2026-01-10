@@ -9,7 +9,7 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.0.0"
+version = "1.0.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "ollama>=0.6.0,<1.0.0",
@@ -82,6 +82,9 @@ unfixable = ["B028"] # People should intentionally tune the stacklevel
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"] # ignore docstring checks for tests

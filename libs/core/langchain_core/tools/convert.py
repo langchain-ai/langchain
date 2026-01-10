@@ -2,7 +2,7 @@
 
 import inspect
 from collections.abc import Callable
-from typing import Any, Literal, get_type_hints, overload
+from typing import Any, Literal, cast, get_type_hints, overload
 
 from pydantic import BaseModel, Field, create_model
 
@@ -23,6 +23,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    extras: dict[str, Any] | None = None,
 ) -> Callable[[Callable | Runnable], BaseTool]: ...
 
 
@@ -38,6 +39,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    extras: dict[str, Any] | None = None,
 ) -> BaseTool: ...
 
 
@@ -52,6 +54,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    extras: dict[str, Any] | None = None,
 ) -> BaseTool: ...
 
 
@@ -66,6 +69,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    extras: dict[str, Any] | None = None,
 ) -> Callable[[Callable | Runnable], BaseTool]: ...
 
 
@@ -80,6 +84,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    extras: dict[str, Any] | None = None,
 ) -> BaseTool | Callable[[Callable | Runnable], BaseTool]:
     """Convert Python functions and `Runnables` to LangChain tools.
 
@@ -130,6 +135,15 @@ def tool(
             parse parameter descriptions from Google Style function docstrings.
         error_on_invalid_docstring: If `parse_docstring` is provided, configure
             whether to raise `ValueError` on invalid Google Style docstrings.
+        extras: Optional provider-specific extra fields for the tool.
+
+            Used to pass configuration that doesn't fit into standard tool fields.
+            Chat models should process known extras when constructing model payloads.
+
+            !!! example
+
+                For example, Anthropic-specific fields like `cache_control`,
+                `defer_loading`, or `input_examples`.
 
     Raises:
         ValueError: If too many positional arguments are provided (e.g. violating the
@@ -292,6 +306,7 @@ def tool(
                     response_format=response_format,
                     parse_docstring=parse_docstring,
                     error_on_invalid_docstring=error_on_invalid_docstring,
+                    extras=extras,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
@@ -308,6 +323,7 @@ def tool(
                 return_direct=return_direct,
                 coroutine=coroutine,
                 response_format=response_format,
+                extras=extras,
             )
 
         return _tool_factory
@@ -391,7 +407,7 @@ def _get_schema_from_runnable_and_arg_types(
             )
             raise TypeError(msg) from e
     fields = {key: (key_type, Field(...)) for key, key_type in arg_types.items()}
-    return create_model(name, **fields)  # type: ignore[call-overload]
+    return cast("type[BaseModel]", create_model(name, **fields))  # type: ignore[call-overload]
 
 
 def convert_runnable_to_tool(

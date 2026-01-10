@@ -89,8 +89,11 @@ from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
 
 from langchain_ollama._compat import _convert_from_v1_to_ollama
-
-from ._utils import merge_auth_headers, parse_url_with_auth, validate_model
+from langchain_ollama._utils import (
+    merge_auth_headers,
+    parse_url_with_auth,
+    validate_model,
+)
 
 log = logging.getLogger(__name__)
 
@@ -774,6 +777,11 @@ class ChatOllama(BaseChatModel):
             **kwargs,
         }
 
+        # Filter out 'strict' argument if present, as it is not supported by Ollama
+        # but may be passed by upstream libraries (e.g. LangChain ProviderStrategy)
+        if "strict" in params:
+            params.pop("strict")
+
         if tools := kwargs.get("tools"):
             params["tools"] = tools
 
@@ -1235,13 +1243,13 @@ class ChatOllama(BaseChatModel):
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
-                Supports any tool definition handled by
-                `langchain_core.utils.function_calling.convert_to_openai_tool`.
+
+                Supports any tool definition handled by [`convert_to_openai_tool`][langchain_core.utils.function_calling.convert_to_openai_tool].
             tool_choice: If provided, which tool for model to call. **This parameter
                 is currently ignored as it is not supported by Ollama.**
             kwargs: Any additional parameters are passed directly to
                 `self.bind(**kwargs)`.
-        """
+        """  # noqa: E501
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         return super().bind(tools=formatted_tools, **kwargs)
 
@@ -1314,9 +1322,11 @@ class ChatOllama(BaseChatModel):
                 - `'parsing_error'`: `BaseException | None`
 
         !!! warning "Behavior changed in `langchain-ollama` 0.2.2"
+
             Added support for structured output API via `format` parameter.
 
         !!! warning "Behavior changed in `langchain-ollama` 0.3.0"
+
             Updated default `method` to `'json_schema'`.
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`"

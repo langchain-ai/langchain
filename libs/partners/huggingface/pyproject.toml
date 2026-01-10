@@ -9,10 +9,10 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.0.1"
+version = "1.2.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.3,<2.0.0",
+    "langchain-core>=1.2.0,<2.0.0",
     "tokenizers>=0.19.1,<1.0.0",
     "huggingface-hub>=0.33.4,<1.0.0",
 ]
@@ -46,6 +46,7 @@ test = [
     "langchain-core",
     "langchain-tests",
     "langchain-community",
+    "langchain",
 ]
 lint = ["ruff>=0.13.1,<0.14.0"]
 dev = [
@@ -61,6 +62,7 @@ typing = [
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
+langchain = { path = "../../langchain_v1", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"
@@ -126,6 +128,9 @@ unfixable = ["B028"] # People should intentionally tune the stacklevel
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.coverage.run]
 omit = ["tests/*"]

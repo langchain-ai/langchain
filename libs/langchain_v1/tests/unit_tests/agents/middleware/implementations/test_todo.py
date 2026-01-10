@@ -2,28 +2,29 @@
 
 from __future__ import annotations
 
-from typing import cast
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, HumanMessage
-from langgraph.runtime import Runtime
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.todo import (
-    PlanningState,
-    TodoListMiddleware,
     WRITE_TODOS_SYSTEM_PROMPT,
     WRITE_TODOS_TOOL_DESCRIPTION,
+    PlanningState,
+    TodoListMiddleware,
     write_todos,
 )
-from langchain.agents.middleware.types import ModelRequest, ModelResponse
+from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
-from ...model import FakeToolCallingModel
+if TYPE_CHECKING:
+    from langgraph.runtime import Runtime
 
 
 def _fake_runtime() -> Runtime:
-    return cast(Runtime, object())
+    return cast("Runtime", object())
 
 
 def _make_request(system_prompt: str | None = None) -> ModelRequest:
@@ -36,7 +37,7 @@ def _make_request(system_prompt: str | None = None) -> ModelRequest:
         tool_choice=None,
         tools=[],
         response_format=None,
-        state=cast("AgentState", {}),  # type: ignore[name-defined]
+        state=AgentState(messages=[]),
         runtime=_fake_runtime(),
         model_settings={},
     )
@@ -83,14 +84,21 @@ def test_adds_system_prompt_when_none_exists() -> None:
     middleware = TodoListMiddleware()
     request = _make_request(system_prompt=None)
 
+    captured_request = None
+
     def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
         return ModelResponse(result=[AIMessage(content="response")])
 
     middleware.wrap_model_call(request, mock_handler)
 
-    # System prompt should be set
-    assert request.system_prompt is not None
-    assert "write_todos" in request.system_prompt
+    # System prompt should be set in the modified request passed to handler
+    assert captured_request is not None
+    assert captured_request.system_prompt is not None
+    assert "write_todos" in captured_request.system_prompt
+    # Original request should be unchanged
+    assert request.system_prompt is None
 
 
 def test_appends_to_existing_system_prompt() -> None:
@@ -99,26 +107,35 @@ def test_appends_to_existing_system_prompt() -> None:
     middleware = TodoListMiddleware()
     request = _make_request(system_prompt=existing_prompt)
 
+    captured_request = None
+
     def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
         return ModelResponse(result=[AIMessage(content="response")])
 
     middleware.wrap_model_call(request, mock_handler)
 
-    # System prompt should contain both
-    assert request.system_prompt is not None
-    assert existing_prompt in request.system_prompt
-    assert "write_todos" in request.system_prompt
-    assert request.system_prompt.startswith(existing_prompt)
+    # System prompt should contain both in the modified request passed to handler
+    assert captured_request is not None
+    assert captured_request.system_prompt is not None
+    assert existing_prompt in captured_request.system_prompt
+    assert "write_todos" in captured_request.system_prompt
+    assert captured_request.system_prompt.startswith(existing_prompt)
+    # Original request should be unchanged
+    assert request.system_prompt == existing_prompt
 
 
 @pytest.mark.parametrize(
-    "original_prompt,expected_prompt_prefix",
+    ("original_prompt", "expected_prompt_prefix"),
     [
         ("Original prompt", "Original prompt\n\n## `write_todos`"),
         (None, "## `write_todos`"),
     ],
 )
-def test_todo_middleware_on_model_call(original_prompt, expected_prompt_prefix) -> None:
+def test_todo_middleware_on_model_call(
+    original_prompt: str | None, expected_prompt_prefix: str
+) -> None:
     """Test that wrap_model_call handles system prompts correctly."""
     middleware = TodoListMiddleware()
     model = FakeToolCallingModel()
@@ -133,17 +150,25 @@ def test_todo_middleware_on_model_call(original_prompt, expected_prompt_prefix) 
         tools=[],
         response_format=None,
         state=state,
-        runtime=cast(Runtime, object()),
+        runtime=cast("Runtime", object()),
         model_settings={},
     )
 
-    def mock_handler(req: ModelRequest) -> AIMessage:
-        return AIMessage(content="mock response")
+    captured_request = None
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="mock response")])
 
     # Call wrap_model_call to trigger the middleware logic
     middleware.wrap_model_call(request, mock_handler)
-    # Check that the request was modified in place
-    assert request.system_prompt.startswith(expected_prompt_prefix)
+    # Check that the modified request passed to handler has the expected prompt
+    assert captured_request is not None
+    assert captured_request.system_prompt is not None
+    assert captured_request.system_prompt.startswith(expected_prompt_prefix)
+    # Original request should be unchanged
+    assert request.system_prompt == original_prompt
 
 
 def test_custom_system_prompt() -> None:
@@ -152,13 +177,20 @@ def test_custom_system_prompt() -> None:
     middleware = TodoListMiddleware(system_prompt=custom_prompt)
     request = _make_request(system_prompt=None)
 
+    captured_request = None
+
     def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
         return ModelResponse(result=[AIMessage(content="response")])
 
     middleware.wrap_model_call(request, mock_handler)
 
-    # Should use custom prompt
-    assert request.system_prompt == custom_prompt
+    # Should use custom prompt in the modified request passed to handler
+    assert captured_request is not None
+    assert captured_request.system_prompt == custom_prompt
+    # Original request should be unchanged
+    assert request.system_prompt is None
 
 
 def test_todo_middleware_custom_system_prompt() -> None:
@@ -178,16 +210,23 @@ def test_todo_middleware_custom_system_prompt() -> None:
         response_format=None,
         model_settings={},
         state=state,
-        runtime=cast(Runtime, object()),
+        runtime=cast("Runtime", object()),
     )
 
-    def mock_handler(req: ModelRequest) -> AIMessage:
-        return AIMessage(content="mock response")
+    captured_request = None
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="mock response")])
 
     # Call wrap_model_call to trigger the middleware logic
     middleware.wrap_model_call(request, mock_handler)
-    # Check that the request was modified in place
-    assert request.system_prompt == f"Original prompt\n\n{custom_system_prompt}"
+    # Check that the modified request passed to handler has the expected prompt
+    assert captured_request is not None
+    assert captured_request.system_prompt == f"Original prompt\n\n{custom_system_prompt}"
+    # Original request should be unchanged
+    assert request.system_prompt == "Original prompt"
 
 
 def test_custom_tool_description() -> None:
@@ -231,17 +270,24 @@ def test_todo_middleware_custom_system_prompt_and_tool_description() -> None:
         tools=[],
         response_format=None,
         state=state,
-        runtime=cast(Runtime, object()),
+        runtime=cast("Runtime", object()),
         model_settings={},
     )
 
-    def mock_handler(req: ModelRequest) -> AIMessage:
-        return AIMessage(content="mock response")
+    captured_request = None
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="mock response")])
 
     # Call wrap_model_call to trigger the middleware logic
     middleware.wrap_model_call(request, mock_handler)
-    # Check that the request was modified in place
-    assert request.system_prompt == custom_system_prompt
+    # Check that the modified request passed to handler has the expected prompt
+    assert captured_request is not None
+    assert captured_request.system_prompt == custom_system_prompt
+    # Original request should be unchanged
+    assert request.system_prompt is None
 
     # Verify tool description
     assert len(middleware.tools) == 1
@@ -250,7 +296,7 @@ def test_todo_middleware_custom_system_prompt_and_tool_description() -> None:
 
 
 @pytest.mark.parametrize(
-    "todos,expected_message",
+    ("todos", "expected_message"),
     [
         ([], "Updated todo list to []"),
         (
@@ -262,7 +308,11 @@ def test_todo_middleware_custom_system_prompt_and_tool_description() -> None:
                 {"content": "Task 1", "status": "pending"},
                 {"content": "Task 2", "status": "in_progress"},
             ],
-            "Updated todo list to [{'content': 'Task 1', 'status': 'pending'}, {'content': 'Task 2', 'status': 'in_progress'}]",
+            (
+                "Updated todo list to ["
+                "{'content': 'Task 1', 'status': 'pending'}, "
+                "{'content': 'Task 2', 'status': 'in_progress'}]"
+            ),
         ),
         (
             [
@@ -270,11 +320,18 @@ def test_todo_middleware_custom_system_prompt_and_tool_description() -> None:
                 {"content": "Task 2", "status": "in_progress"},
                 {"content": "Task 3", "status": "completed"},
             ],
-            "Updated todo list to [{'content': 'Task 1', 'status': 'pending'}, {'content': 'Task 2', 'status': 'in_progress'}, {'content': 'Task 3', 'status': 'completed'}]",
+            (
+                "Updated todo list to ["
+                "{'content': 'Task 1', 'status': 'pending'}, "
+                "{'content': 'Task 2', 'status': 'in_progress'}, "
+                "{'content': 'Task 3', 'status': 'completed'}]"
+            ),
         ),
     ],
 )
-def test_todo_middleware_write_todos_tool_execution(todos, expected_message) -> None:
+def test_todo_middleware_write_todos_tool_execution(
+    todos: list[dict[str, Any]], expected_message: str
+) -> None:
     """Test that the write_todos tool executes correctly."""
     tool_call = {
         "args": {"todos": todos},
@@ -294,7 +351,9 @@ def test_todo_middleware_write_todos_tool_execution(todos, expected_message) -> 
         [{"status": "pending"}],
     ],
 )
-def test_todo_middleware_write_todos_tool_validation_errors(invalid_todos) -> None:
+def test_todo_middleware_write_todos_tool_validation_errors(
+    invalid_todos: list[dict[str, Any]],
+) -> None:
     """Test that the write_todos tool rejects invalid input."""
     tool_call = {
         "args": {"todos": invalid_todos},
@@ -302,7 +361,7 @@ def test_todo_middleware_write_todos_tool_validation_errors(invalid_todos) -> No
         "type": "tool_call",
         "id": "test_call",
     }
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError, match="1 validation error for write_todos"):
         write_todos.invoke(tool_call)
 
 
@@ -390,14 +449,21 @@ async def test_adds_system_prompt_when_none_exists_async() -> None:
     middleware = TodoListMiddleware()
     request = _make_request(system_prompt=None)
 
+    captured_request = None
+
     async def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
         return ModelResponse(result=[AIMessage(content="response")])
 
     await middleware.awrap_model_call(request, mock_handler)
 
-    # System prompt should be set
-    assert request.system_prompt is not None
-    assert "write_todos" in request.system_prompt
+    # System prompt should be set in the modified request passed to handler
+    assert captured_request is not None
+    assert captured_request.system_prompt is not None
+    assert "write_todos" in captured_request.system_prompt
+    # Original request should be unchanged
+    assert request.system_prompt is None
 
 
 async def test_appends_to_existing_system_prompt_async() -> None:
@@ -406,16 +472,23 @@ async def test_appends_to_existing_system_prompt_async() -> None:
     middleware = TodoListMiddleware()
     request = _make_request(system_prompt=existing_prompt)
 
+    captured_request = None
+
     async def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
         return ModelResponse(result=[AIMessage(content="response")])
 
     await middleware.awrap_model_call(request, mock_handler)
 
-    # System prompt should contain both
-    assert request.system_prompt is not None
-    assert existing_prompt in request.system_prompt
-    assert "write_todos" in request.system_prompt
-    assert request.system_prompt.startswith(existing_prompt)
+    # System prompt should contain both in the modified request passed to handler
+    assert captured_request is not None
+    assert captured_request.system_prompt is not None
+    assert existing_prompt in captured_request.system_prompt
+    assert "write_todos" in captured_request.system_prompt
+    assert captured_request.system_prompt.startswith(existing_prompt)
+    # Original request should be unchanged
+    assert request.system_prompt == existing_prompt
 
 
 async def test_custom_system_prompt_async() -> None:
@@ -424,21 +497,302 @@ async def test_custom_system_prompt_async() -> None:
     middleware = TodoListMiddleware(system_prompt=custom_prompt)
     request = _make_request(system_prompt=None)
 
+    captured_request = None
+
     async def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
         return ModelResponse(result=[AIMessage(content="response")])
 
     await middleware.awrap_model_call(request, mock_handler)
 
-    # Should use custom prompt
-    assert request.system_prompt == custom_prompt
+    # Should use custom prompt in the modified request passed to handler
+    assert captured_request is not None
+    assert captured_request.system_prompt == custom_prompt
+
+
+def test_parallel_write_todos_calls_rejected() -> None:
+    """Test that parallel write_todos calls are rejected with error messages."""
+    middleware = TodoListMiddleware()
+
+    # Create an AI message with two write_todos tool calls
+    ai_message = AIMessage(
+        content="I'll update the todos",
+        tool_calls=[
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                "id": "call_1",
+                "type": "tool_call",
+            },
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 2", "status": "pending"}]},
+                "id": "call_2",
+                "type": "tool_call",
+            },
+        ],
+    )
+
+    state: PlanningState = {"messages": [HumanMessage(content="Hello"), ai_message]}
+
+    # Call after_model hook
+    result = middleware.after_model(state, _fake_runtime())
+
+    # Should return error messages
+    assert result == {
+        "messages": [
+            ToolMessage(
+                content=(
+                    "Error: The `write_todos` tool should never be called multiple times "
+                    "in parallel. Please call it only once per model invocation to update "
+                    "the todo list."
+                ),
+                tool_call_id="call_1",
+                status="error",
+            ),
+            ToolMessage(
+                content=(
+                    "Error: The `write_todos` tool should never be called multiple times "
+                    "in parallel. Please call it only once per model invocation to update "
+                    "the todo list."
+                ),
+                tool_call_id="call_2",
+                status="error",
+            ),
+        ]
+    }
+
+
+def test_parallel_write_todos_with_other_tools() -> None:
+    """Test that parallel write_todos calls are rejected but other tool calls remain."""
+    middleware = TodoListMiddleware()
+
+    # Create an AI message with two write_todos calls and one other tool call
+    ai_message = AIMessage(
+        content="I'll do multiple things",
+        tool_calls=[
+            {
+                "name": "some_other_tool",
+                "args": {"param": "value"},
+                "id": "call_other",
+                "type": "tool_call",
+            },
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                "id": "call_1",
+                "type": "tool_call",
+            },
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 2", "status": "pending"}]},
+                "id": "call_2",
+                "type": "tool_call",
+            },
+        ],
+    )
+
+    state: PlanningState = {"messages": [HumanMessage(content="Hello"), ai_message]}
+
+    # Call after_model hook
+    result = middleware.after_model(state, _fake_runtime())
+
+    # Should return error messages for write_todos calls only
+    assert result == {
+        "messages": [
+            ToolMessage(
+                content=(
+                    "Error: The `write_todos` tool should never be called multiple times "
+                    "in parallel. Please call it only once per model invocation to update "
+                    "the todo list."
+                ),
+                tool_call_id="call_1",
+                status="error",
+            ),
+            ToolMessage(
+                content=(
+                    "Error: The `write_todos` tool should never be called multiple times "
+                    "in parallel. Please call it only once per model invocation to update "
+                    "the todo list."
+                ),
+                tool_call_id="call_2",
+                status="error",
+            ),
+        ]
+    }
+
+
+def test_single_write_todos_call_allowed() -> None:
+    """Test that a single write_todos call is allowed."""
+    middleware = TodoListMiddleware()
+
+    # Create an AI message with one write_todos tool call
+    ai_message = AIMessage(
+        content="I'll update the todos",
+        tool_calls=[
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                "id": "call_1",
+                "type": "tool_call",
+            },
+        ],
+    )
+
+    state: PlanningState = {"messages": [HumanMessage(content="Hello"), ai_message]}
+
+    # Call after_model hook
+    result = middleware.after_model(state, _fake_runtime())
+
+    # Should return None (no intervention needed)
+    assert result is None
+
+
+async def test_parallel_write_todos_calls_rejected_async() -> None:
+    """Test async version - parallel write_todos calls are rejected with error messages."""
+    middleware = TodoListMiddleware()
+
+    # Create an AI message with two write_todos tool calls
+    ai_message = AIMessage(
+        content="I'll update the todos",
+        tool_calls=[
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                "id": "call_1",
+                "type": "tool_call",
+            },
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 2", "status": "pending"}]},
+                "id": "call_2",
+                "type": "tool_call",
+            },
+        ],
+    )
+
+    state: PlanningState = {"messages": [HumanMessage(content="Hello"), ai_message]}
+
+    # Call aafter_model hook
+    result = await middleware.aafter_model(state, _fake_runtime())
+
+    # Should return error messages
+    assert result == {
+        "messages": [
+            ToolMessage(
+                content=(
+                    "Error: The `write_todos` tool should never be called multiple times "
+                    "in parallel. Please call it only once per model invocation to update "
+                    "the todo list."
+                ),
+                tool_call_id="call_1",
+                status="error",
+            ),
+            ToolMessage(
+                content=(
+                    "Error: The `write_todos` tool should never be called multiple times "
+                    "in parallel. Please call it only once per model invocation to update "
+                    "the todo list."
+                ),
+                tool_call_id="call_2",
+                status="error",
+            ),
+        ]
+    }
+
+
+async def test_parallel_write_todos_with_other_tools_async() -> None:
+    """Test async version - parallel write_todos calls are rejected but other tool calls remain."""
+    middleware = TodoListMiddleware()
+
+    # Create an AI message with two write_todos calls and one other tool call
+    ai_message = AIMessage(
+        content="I'll do multiple things",
+        tool_calls=[
+            {
+                "name": "some_other_tool",
+                "args": {"param": "value"},
+                "id": "call_other",
+                "type": "tool_call",
+            },
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                "id": "call_1",
+                "type": "tool_call",
+            },
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 2", "status": "pending"}]},
+                "id": "call_2",
+                "type": "tool_call",
+            },
+        ],
+    )
+
+    state: PlanningState = {"messages": [HumanMessage(content="Hello"), ai_message]}
+
+    # Call aafter_model hook
+    result = await middleware.aafter_model(state, _fake_runtime())
+
+    # Should return error messages for write_todos calls only
+    assert result == {
+        "messages": [
+            ToolMessage(
+                content=(
+                    "Error: The `write_todos` tool should never be called multiple times "
+                    "in parallel. Please call it only once per model invocation to update "
+                    "the todo list."
+                ),
+                tool_call_id="call_1",
+                status="error",
+            ),
+            ToolMessage(
+                content=(
+                    "Error: The `write_todos` tool should never be called multiple times "
+                    "in parallel. Please call it only once per model invocation to update "
+                    "the todo list."
+                ),
+                tool_call_id="call_2",
+                status="error",
+            ),
+        ]
+    }
+
+
+async def test_single_write_todos_call_allowed_async() -> None:
+    """Test async version - a single write_todos call is allowed."""
+    middleware = TodoListMiddleware()
+
+    # Create an AI message with one write_todos tool call
+    ai_message = AIMessage(
+        content="I'll update the todos",
+        tool_calls=[
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                "id": "call_1",
+                "type": "tool_call",
+            },
+        ],
+    )
+
+    state: PlanningState = {"messages": [HumanMessage(content="Hello"), ai_message]}
+
+    # Call aafter_model hook
+    result = await middleware.aafter_model(state, _fake_runtime())
+
+    # Should return None (no intervention needed)
+    assert result is None
 
 
 async def test_handler_called_with_modified_request_async() -> None:
     """Test async version - handler receives the modified request."""
     middleware = TodoListMiddleware()
     request = _make_request(system_prompt="Original")
-    handler_called = {"value": False}
-    received_prompt = {"value": None}
+    handler_called: dict[str, bool] = {"value": False}
+    received_prompt: dict[str, str | None] = {"value": None}
 
     async def mock_handler(req: ModelRequest) -> ModelResponse:
         handler_called["value"] = True

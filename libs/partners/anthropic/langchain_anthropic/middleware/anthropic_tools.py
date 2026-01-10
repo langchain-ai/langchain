@@ -20,7 +20,7 @@ from langchain.agents.middleware.types import (
     _ModelRequestOverrides,
 )
 from langchain.tools import ToolRuntime, tool
-from langchain_core.messages import ToolMessage
+from langchain_core.messages import SystemMessage, ToolMessage
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
 
@@ -64,10 +64,10 @@ def files_reducer(
 
     Args:
         left: Existing files dict.
-        right: New files dict to merge (None values delete files).
+        right: New files dict to merge (`None` values delete files).
 
     Returns:
-        Merged dict where right overwrites left for matching keys.
+        Merged `dict` where right overwrites left for matching keys.
     """
     if left is None:
         # Filter out None values when initializing
@@ -135,7 +135,7 @@ def _list_directory(files: dict[str, FileData], path: str) -> list[str]:
     """List files in a directory.
 
     Args:
-        files: Files dict.
+        files: Files `dict`.
         path: Normalized directory path.
 
     Returns:
@@ -209,7 +209,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
                 new_str: Replacement string for str_replace command.
                 insert_line: Line number for insert command.
                 new_path: New path for rename command.
-                view_range: Line range [start, end] for view command.
+                view_range: Line range `[start, end]` for view command.
 
             Returns:
                 Command for state update or string result.
@@ -275,11 +275,17 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            overrides["system_prompt"] = (
-                request.system_prompt + "\n\n" + self.system_prompt
-                if request.system_prompt
-                else self.system_prompt
+            if request.system_message is not None:
+                new_system_content = [
+                    *request.system_message.content_blocks,
+                    {"type": "text", "text": f"\n\n{self.system_prompt}"},
+                ]
+            else:
+                new_system_content = [{"type": "text", "text": self.system_prompt}]
+            new_system_message = SystemMessage(
+                content=cast("list[str | dict[str, str]]", new_system_content)
             )
+            overrides["system_message"] = new_system_message
 
         return handler(request.override(**overrides))
 
@@ -299,11 +305,17 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            overrides["system_prompt"] = (
-                request.system_prompt + "\n\n" + self.system_prompt
-                if request.system_prompt
-                else self.system_prompt
+            if request.system_message is not None:
+                new_system_content = [
+                    *request.system_message.content_blocks,
+                    {"type": "text", "text": f"\n\n{self.system_prompt}"},
+                ]
+            else:
+                new_system_content = [{"type": "text", "text": self.system_prompt}]
+            new_system_message = SystemMessage(
+                content=cast("list[str | dict[str, str]]", new_system_content)
             )
+            overrides["system_message"] = new_system_message
 
         return await handler(request.override(**overrides))
 
@@ -560,7 +572,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
 class StateClaudeTextEditorMiddleware(_StateClaudeFileToolMiddleware):
     """State-based text editor tool middleware.
 
-    Provides Anthropic's text_editor tool using LangGraph state for storage.
+    Provides Anthropic's `text_editor` tool using LangGraph state for storage.
     Files persist for the conversation thread.
 
     Example:
@@ -585,6 +597,7 @@ class StateClaudeTextEditorMiddleware(_StateClaudeFileToolMiddleware):
 
         Args:
             allowed_path_prefixes: Optional list of allowed path prefixes.
+
                 If specified, only paths starting with these prefixes are allowed.
         """
         super().__init__(
@@ -599,8 +612,9 @@ class StateClaudeMemoryMiddleware(_StateClaudeFileToolMiddleware):
     """State-based memory tool middleware.
 
     Provides Anthropic's memory tool using LangGraph state for storage.
-    Files persist for the conversation thread. Enforces /memories prefix
-    and injects Anthropic's recommended system prompt.
+    Files persist for the conversation thread.
+
+    Enforces `/memories` prefix and injects Anthropic's recommended system prompt.
 
     Example:
         ```python
@@ -625,9 +639,11 @@ class StateClaudeMemoryMiddleware(_StateClaudeFileToolMiddleware):
 
         Args:
             allowed_path_prefixes: Optional list of allowed path prefixes.
-                Defaults to ["/memories"].
-            system_prompt: System prompt to inject. Defaults to Anthropic's
-                recommended memory prompt.
+
+                Defaults to `['/memories']`.
+            system_prompt: System prompt to inject.
+
+                Defaults to Anthropic's recommended memory prompt.
         """
         super().__init__(
             tool_type=MEMORY_TOOL_TYPE,
@@ -687,15 +703,15 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
             """Execute file operations on filesystem.
 
             Args:
-                runtime: Tool runtime providing tool_call_id.
+                runtime: Tool runtime providing `tool_call_id`.
                 command: Operation to perform.
                 path: File path to operate on.
                 file_text: Full file content for create command.
-                old_str: String to replace for str_replace command.
-                new_str: Replacement string for str_replace command.
+                old_str: String to replace for `str_replace` command.
+                new_str: Replacement string for `str_replace` command.
                 insert_line: Line number for insert command.
                 new_path: New path for rename command.
-                view_range: Line range [start, end] for view command.
+                view_range: Line range `[start, end]` for view command.
 
             Returns:
                 Command for message update or string result.
@@ -751,11 +767,17 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            overrides["system_prompt"] = (
-                request.system_prompt + "\n\n" + self.system_prompt
-                if request.system_prompt
-                else self.system_prompt
+            if request.system_message is not None:
+                new_system_content = [
+                    *request.system_message.content_blocks,
+                    {"type": "text", "text": f"\n\n{self.system_prompt}"},
+                ]
+            else:
+                new_system_content = [{"type": "text", "text": self.system_prompt}]
+            new_system_message = SystemMessage(
+                content=cast("list[str | dict[str, str]]", new_system_content)
             )
+            overrides["system_message"] = new_system_message
 
         return handler(request.override(**overrides))
 
@@ -775,11 +797,17 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         # Inject system prompt if provided
         overrides: _ModelRequestOverrides = {"tools": tools}
         if self.system_prompt:
-            overrides["system_prompt"] = (
-                request.system_prompt + "\n\n" + self.system_prompt
-                if request.system_prompt
-                else self.system_prompt
+            if request.system_message is not None:
+                new_system_content = [
+                    *request.system_message.content_blocks,
+                    {"type": "text", "text": f"\n\n{self.system_prompt}"},
+                ]
+            else:
+                new_system_content = [{"type": "text", "text": self.system_prompt}]
+            new_system_message = SystemMessage(
+                content=cast("list[str | dict[str, str]]", new_system_content)
             )
+            overrides["system_message"] = new_system_message
 
         return await handler(request.override(**overrides))
 
@@ -787,14 +815,14 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         """Validate and resolve a virtual path to filesystem path.
 
         Args:
-            path: Virtual path (e.g., /file.txt or /src/main.py).
+            path: Virtual path (e.g., `/file.txt` or `/src/main.py`).
 
         Returns:
-            Resolved absolute filesystem path within root_path.
+            Resolved absolute filesystem path within `root_path`.
 
         Raises:
             ValueError: If path contains traversal attempts, escapes root directory,
-                or violates allowed_prefixes restrictions.
+                or violates `allowed_prefixes` restrictions.
         """
         # Normalize path
         if not path.startswith("/"):
@@ -898,7 +926,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         )
 
     def _handle_str_replace(self, args: dict, tool_call_id: str | None) -> Command:
-        """Handle str_replace command."""
+        """Handle `str_replace` command."""
         path = args["path"]
         old_str = args["old_str"]
         new_str = args.get("new_str", "")
@@ -1036,7 +1064,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
 class FilesystemClaudeTextEditorMiddleware(_FilesystemClaudeFileToolMiddleware):
     """Filesystem-based text editor tool middleware.
 
-    Provides Anthropic's text_editor tool using local filesystem for storage.
+    Provides Anthropic's `text_editor` tool using local filesystem for storage.
     User handles persistence via volumes, git, or other mechanisms.
 
     Example:
@@ -1063,9 +1091,12 @@ class FilesystemClaudeTextEditorMiddleware(_FilesystemClaudeFileToolMiddleware):
 
         Args:
             root_path: Root directory for file operations.
-            allowed_prefixes: Optional list of allowed virtual path prefixes
-                (default: ["/"]).
-            max_file_size_mb: Maximum file size in MB (default: 10).
+            allowed_prefixes: Optional list of allowed virtual path prefixes.
+
+                Defaults to `['/']`.
+            max_file_size_mb: Maximum file size in MB
+
+                Defaults to `10`.
         """
         super().__init__(
             tool_type=TEXT_EDITOR_TOOL_TYPE,
@@ -1081,7 +1112,9 @@ class FilesystemClaudeMemoryMiddleware(_FilesystemClaudeFileToolMiddleware):
 
     Provides Anthropic's memory tool using local filesystem for storage.
     User handles persistence via volumes, git, or other mechanisms.
-    Enforces /memories prefix and injects Anthropic's recommended system prompt.
+
+    Enforces `/memories` prefix and injects Anthropic's recommended system
+    prompt.
 
     Example:
         ```python
@@ -1109,10 +1142,14 @@ class FilesystemClaudeMemoryMiddleware(_FilesystemClaudeFileToolMiddleware):
         Args:
             root_path: Root directory for file operations.
             allowed_prefixes: Optional list of allowed virtual path prefixes.
-                Defaults to ["/memories"].
-            max_file_size_mb: Maximum file size in MB (default: 10).
-            system_prompt: System prompt to inject. Defaults to Anthropic's
-                recommended memory prompt.
+
+                Defaults to `['/memories']`.
+            max_file_size_mb: Maximum file size in MB
+
+                Defaults to `10`.
+            system_prompt: System prompt to inject.
+
+                Defaults to Anthropic's recommended memory prompt.
         """
         super().__init__(
             tool_type=MEMORY_TOOL_TYPE,
