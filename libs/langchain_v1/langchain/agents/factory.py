@@ -23,21 +23,21 @@ from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
 from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
 from langgraph.types import Command, Send
-from typing_extensions import NotRequired, Required, TypedDict
+from typing_extensions import NotRequired, Required, TypedDict, overload
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ContextT,
     ExtendedModelResponse,
+    InputAgentState,
     JumpTo,
     ModelRequest,
     ModelResponse,
     OmitFromSchema,
+    OutputAgentState,
     ResponseT,
     StateT_co,
-    _InputAgentState,
-    _OutputAgentState,
 )
 from langchain.agents.structured_output import (
     AutoStrategy,
@@ -650,6 +650,70 @@ def _chain_async_tool_call_wrappers(
     return result
 
 
+@overload
+def create_agent(
+    model: str | BaseChatModel,
+    tools: Sequence[BaseTool | Callable[..., Any] | dict[str, Any]] | None = None,
+    *,
+    system_prompt: str | SystemMessage | None = None,
+    middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
+    response_format: None = None,
+    state_schema: None = None,
+    context_schema: type[ContextT] | None = None,
+    checkpointer: Checkpointer | None = None,
+    store: BaseStore | None = None,
+    interrupt_before: list[str] | None = None,
+    interrupt_after: list[str] | None = None,
+    debug: bool = False,
+    name: str | None = None,
+    cache: BaseCache[Sequence[tuple[str, Any]]] | None = None,
+) -> CompiledStateGraph[AgentState[Any], ContextT, InputAgentState, OutputAgentState[Any]]: ...
+
+
+@overload
+def create_agent(
+    model: str | BaseChatModel,
+    tools: Sequence[BaseTool | Callable[..., Any] | dict[str, Any]] | None = None,
+    *,
+    system_prompt: str | SystemMessage | None = None,
+    middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
+    response_format: ResponseFormat[dict[str, Any]] | dict[str, Any] | None = None,
+    state_schema: type[AgentState[dict[str, Any]]] | None = None,
+    context_schema: type[ContextT] | None = None,
+    checkpointer: Checkpointer | None = None,
+    store: BaseStore | None = None,
+    interrupt_before: list[str] | None = None,
+    interrupt_after: list[str] | None = None,
+    debug: bool = False,
+    name: str | None = None,
+    cache: BaseCache[Sequence[tuple[str, Any]]] | None = None,
+) -> CompiledStateGraph[
+    AgentState[dict[str, Any]], ContextT, InputAgentState, OutputAgentState[dict[str, Any]]
+]: ...
+
+
+@overload
+def create_agent(
+    model: str | BaseChatModel,
+    tools: Sequence[BaseTool | Callable[..., Any] | dict[str, Any]] | None = None,
+    *,
+    system_prompt: str | SystemMessage | None = None,
+    middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
+    response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
+    state_schema: type[AgentState[ResponseT]] | None = None,
+    context_schema: type[ContextT] | None = None,
+    checkpointer: Checkpointer | None = None,
+    store: BaseStore | None = None,
+    interrupt_before: list[str] | None = None,
+    interrupt_after: list[str] | None = None,
+    debug: bool = False,
+    name: str | None = None,
+    cache: BaseCache[Sequence[tuple[str, Any]]] | None = None,
+) -> CompiledStateGraph[
+    AgentState[ResponseT], ContextT, InputAgentState, OutputAgentState[ResponseT]
+]: ...
+
+
 def create_agent(
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable[..., Any] | dict[str, Any]] | None = None,
@@ -665,9 +729,9 @@ def create_agent(
     interrupt_after: list[str] | None = None,
     debug: bool = False,
     name: str | None = None,
-    cache: BaseCache[Any] | None = None,
+    cache: BaseCache[Sequence[tuple[str, Any]]] | None = None,
 ) -> CompiledStateGraph[
-    AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
+    AgentState[ResponseT], ContextT, InputAgentState, OutputAgentState[ResponseT]
 ]:
     """Creates an agent graph that calls tools in a loop until a stopping condition is met.
 
@@ -976,7 +1040,7 @@ def create_agent(
 
     # create graph, add nodes
     graph: StateGraph[
-        AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
+        AgentState[ResponseT], ContextT, InputAgentState, OutputAgentState[ResponseT]
     ] = StateGraph(
         state_schema=resolved_state_schema,
         input_schema=input_schema,
@@ -1766,7 +1830,7 @@ def _make_tools_to_model_edge(
 
 def _add_middleware_edge(
     graph: StateGraph[
-        AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
+        AgentState[ResponseT], ContextT, InputAgentState, OutputAgentState[ResponseT]
     ],
     *,
     name: str,
