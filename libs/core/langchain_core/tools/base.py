@@ -5,6 +5,7 @@ from __future__ import annotations
 import functools
 import inspect
 import json
+import logging
 import typing
 import warnings
 from abc import ABC, abstractmethod
@@ -81,6 +82,8 @@ TOOL_MESSAGE_BLOCK_TYPES = (
     "document",
     "file",
 )
+
+_logger = logging.getLogger(__name__)
 
 
 class SchemaAnnotationError(TypeError):
@@ -566,8 +569,11 @@ class ChildTool(BaseTool):
         elif self.args_schema and issubclass(self.args_schema, BaseModelV1):
             json_schema = self.args_schema.schema()
         else:
-            input_schema = self.get_input_schema()
-            json_schema = input_schema.model_json_schema()
+            input_schema = self.tool_call_schema
+            if isinstance(input_schema, dict):
+                json_schema = input_schema
+            else:
+                json_schema = input_schema.model_json_schema()
         return cast("dict", json_schema["properties"])
 
     @property
@@ -802,6 +808,9 @@ class ChildTool(BaseTool):
         # Start with filtered args from the constant
         filtered_keys = set[str](FILTERED_ARGS)
 
+        # Add injected args from function signature (e.g., ToolRuntime parameters)
+        filtered_keys.update(self._injected_args_keys)
+
         # If we have an args_schema, use it to identify injected args
         if self.args_schema is not None:
             try:
@@ -809,9 +818,12 @@ class ChildTool(BaseTool):
                 for field_name, field_type in annotations.items():
                     if _is_injected_arg_type(field_type):
                         filtered_keys.add(field_name)
-            except Exception:  # noqa: S110
+            except Exception:
                 # If we can't get annotations, just use FILTERED_ARGS
-                pass
+                _logger.debug(
+                    "Failed to get args_schema annotations for filtering.",
+                    exc_info=True,
+                )
 
         # Filter out the injected keys from tool_input
         return {k: v for k, v in tool_input.items() if k not in filtered_keys}
