@@ -22,6 +22,7 @@ from typing_extensions import override
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
 from langchain_core.messages.ai import UsageMetadata, add_usage
+from langchain_core.tracers._compat import run_construct, run_to_dict
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
@@ -183,7 +184,7 @@ class LangChainTracer(BaseTracer):
             start_time=start_time,
             run_type="llm",
             tags=tags,
-            name=name,  # type: ignore[arg-type]
+            name=name,
         )
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
@@ -192,8 +193,9 @@ class LangChainTracer(BaseTracer):
     def _persist_run(self, run: Run) -> None:
         # We want to free up more memory by avoiding keeping a reference to the
         # whole nested run tree.
-        self.latest_run = Run.construct(
-            **run.dict(exclude={"child_runs", "inputs", "outputs"}),
+        run_data = run_to_dict(run, exclude={"child_runs", "inputs", "outputs"})
+        self.latest_run = run_construct(
+            **run_data,
             inputs=run.inputs,
             outputs=run.outputs,
         )

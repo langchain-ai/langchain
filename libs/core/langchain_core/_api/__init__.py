@@ -13,20 +13,20 @@ from typing import TYPE_CHECKING
 from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
-    from .beta_decorator import (
+    from langchain_core._api.beta_decorator import (
         LangChainBetaWarning,
         beta,
         suppress_langchain_beta_warning,
         surface_langchain_beta_warnings,
     )
-    from .deprecation import (
+    from langchain_core._api.deprecation import (
         LangChainDeprecationWarning,
         deprecated,
         suppress_langchain_deprecation_warning,
         surface_langchain_deprecation_warnings,
         warn_deprecated,
     )
-    from .path import as_import_path, get_relative_path
+    from langchain_core._api.path import as_import_path, get_relative_path
 
 __all__ = (
     "LangChainBetaWarning",
@@ -58,6 +58,20 @@ _dynamic_imports = {
 
 
 def __getattr__(attr_name: str) -> object:
+    """Dynamically import and return an attribute from a submodule.
+
+    This function enables lazy loading of API functions from submodules, reducing
+    initial import time and circular dependency issues.
+
+    Args:
+        attr_name: Name of the attribute to import.
+
+    Returns:
+        The imported attribute object.
+
+    Raises:
+        AttributeError: If the attribute is not a valid dynamic import.
+    """
     module_name = _dynamic_imports.get(attr_name)
     result = import_attr(attr_name, module_name, __spec__.parent)
     globals()[attr_name] = result
@@ -65,4 +79,9 @@ def __getattr__(attr_name: str) -> object:
 
 
 def __dir__() -> list[str]:
+    """Return a list of available attributes for this module.
+
+    Returns:
+        List of attribute names that can be imported from this module.
+    """
     return list(__all__)

@@ -134,3 +134,11 @@ def test_convert_dict_to_message_tool() -> None:
     expected_output = ToolMessage(content="foo", tool_call_id="bar")
     assert result == expected_output
     assert _convert_message_to_dict(expected_output) == message
+
+
+def test_stream_usage_metadata() -> None:
+    model = ChatXAI(model=MODEL_NAME)
+    assert model.stream_usage is True
+
+    model = ChatXAI(model=MODEL_NAME, stream_usage=False)
+    assert model.stream_usage is False

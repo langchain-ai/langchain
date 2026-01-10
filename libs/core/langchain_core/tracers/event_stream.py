@@ -73,6 +73,8 @@ class RunInfo(TypedDict):
     """The inputs to the run."""
     parent_run_id: UUID | None
     """The ID of the parent run."""
+    tool_call_id: NotRequired[str | None]
+    """The tool call ID associated with the run."""
 
 
 def _assign_name(name: str | None, serialized: dict[str, Any] | None) -> str:
@@ -300,6 +302,10 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             # optionally provided and distinguish between missing value
             # vs. None value.
             info["inputs"] = kwargs["inputs"]
+
+        if "tool_call_id" in kwargs:
+            # Store tool_call_id in run info for linking errors to tool calls
+            info["tool_call_id"] = kwargs["tool_call_id"]
 
         self.run_map[run_id] = info
         self.parent_map[run_id] = parent_run_id
@@ -663,6 +669,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             name_=name_,
             run_type="tool",
             inputs=inputs,
+            tool_call_id=kwargs.get("tool_call_id"),
         )
 
         self._send(
@@ -691,23 +698,27 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         **kwargs: Any,
     ) -> None:
         """Run when tool errors."""
+        # Extract tool_call_id from kwargs if passed directly, or from run_info
+        # (which was stored during on_tool_start) as a fallback
+        tool_call_id = kwargs.get("tool_call_id")
         run_info, inputs = self._get_tool_run_info_with_inputs(run_id)
+        if tool_call_id is None:
+            tool_call_id = run_info.get("tool_call_id")
 
-        self._send(
-            {
-                "event": "on_tool_error",
-                "data": {
-                    "error": error,
-                    "input": inputs,
-                },
-                "run_id": str(run_id),
-                "name": run_info["name"],
-                "tags": run_info["tags"],
-                "metadata": run_info["metadata"],
-                "parent_ids": self._get_parent_ids(run_id),
+        event: StandardStreamEvent = {
+            "event": "on_tool_error",
+            "data": {
+                "error": error,
+                "input": inputs,
+                "tool_call_id": tool_call_id,
             },
-            "tool",
-        )
+            "run_id": str(run_id),
+            "name": run_info["name"],
+            "tags": run_info["tags"],
+            "metadata": run_info["metadata"],
+            "parent_ids": self._get_parent_ids(run_id),
+        }
+        self._send(event, "tool")
 
     @override
     async def on_tool_end(self, output: Any, *, run_id: UUID, **kwargs: Any) -> None:

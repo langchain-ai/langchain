@@ -11,6 +11,7 @@ from typing_extensions import override
 
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
+from langchain_core.tracers._compat import pydantic_to_dict
 
 
 class LangSmithLoader(BaseLoader):
@@ -118,7 +119,7 @@ class LangSmithLoader(BaseLoader):
             for key in self.content_key:
                 content = content[key]
             content_str = self.format_content(content)
-            metadata = example.dict()
+            metadata = pydantic_to_dict(example)
             # Stringify datetime and UUID types.
             for k in ("dataset_id", "created_at", "modified_at", "source_run_id", "id"):
                 metadata[k] = str(metadata[k]) if metadata[k] else metadata[k]

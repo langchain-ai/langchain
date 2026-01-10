@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from langgraph.runtime import Runtime
 
 
-class ModelCallLimitState(AgentState):
+class ModelCallLimitState(AgentState[Any]):
     """State schema for `ModelCallLimitMiddleware`.
 
     Extends `AgentState` with model call tracking fields.

@@ -27,7 +27,7 @@
 #   * release    — prepare a new release
 #
 # Allowed Scope(s) (optional):
-#   core, cli, langchain, langchain_v1, langchain-classic, model-profiles,
+#   core, cli, langchain, langchain-classic, model-profiles,
 #   standard-tests, text-splitters, docs, anthropic, chroma, deepseek, exa,
 #   fireworks, groq, huggingface, mistralai, nomic, ollama, openai,
 #   perplexity, prompty, qdrant, xai, infra, deps
