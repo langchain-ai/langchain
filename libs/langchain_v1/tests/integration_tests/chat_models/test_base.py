@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Any, cast
 
 import pytest
 from langchain_core.language_models import BaseChatModel
@@ -41,7 +41,7 @@ class TestStandard(ChatModelIntegrationTests):
         return cast("type[BaseChatModel]", init_chat_model)
 
     @property
-    def chat_model_params(self) -> dict:
+    def chat_model_params(self) -> dict[str, Any]:
         return {"model": "gpt-4o", "configurable_fields": "any"}
 
     @property

@@ -78,10 +78,10 @@ class _ModelRequestOverrides(TypedDict, total=False):
     system_message: SystemMessage | None
     messages: list[AnyMessage]
     tool_choice: Any | None
-    tools: list[BaseTool | dict]
-    response_format: ResponseFormat | None
+    tools: list[BaseTool | dict[str, Any]]
+    response_format: ResponseFormat[Any] | None
     model_settings: dict[str, Any]
-    state: AgentState
+    state: AgentState[Any]
 
 
 @dataclass(init=False)
@@ -92,9 +92,9 @@ class ModelRequest:
     messages: list[AnyMessage]  # excluding system message
     system_message: SystemMessage | None
     tool_choice: Any | None
-    tools: list[BaseTool | dict]
-    response_format: ResponseFormat | None
-    state: AgentState
+    tools: list[BaseTool | dict[str, Any]]
+    response_format: ResponseFormat[Any] | None
+    state: AgentState[Any]
     runtime: Runtime[ContextT]  # type: ignore[valid-type]
     model_settings: dict[str, Any] = field(default_factory=dict)
 
@@ -106,9 +106,9 @@ class ModelRequest:
         system_message: SystemMessage | None = None,
         system_prompt: str | None = None,
         tool_choice: Any | None = None,
-        tools: list[BaseTool | dict] | None = None,
-        response_format: ResponseFormat | None = None,
-        state: AgentState | None = None,
+        tools: list[BaseTool | dict[str, Any]] | None = None,
+        response_format: ResponseFormat[Any] | None = None,
+        state: AgentState[Any] | None = None,
         runtime: Runtime[ContextT] | None = None,
         model_settings: dict[str, Any] | None = None,
     ) -> None:
@@ -321,7 +321,7 @@ class AgentState(TypedDict, Generic[ResponseT]):
 class _InputAgentState(TypedDict):  # noqa: PYI049
     """Input state schema for the agent."""
 
-    messages: Required[Annotated[list[AnyMessage | dict], add_messages]]
+    messages: Required[Annotated[list[AnyMessage | dict[str, Any]], add_messages]]
 
 
 class _OutputAgentState(TypedDict, Generic[ResponseT]):  # noqa: PYI049
@@ -331,9 +331,13 @@ class _OutputAgentState(TypedDict, Generic[ResponseT]):  # noqa: PYI049
     structured_response: NotRequired[ResponseT]
 
 
-StateT = TypeVar("StateT", bound=AgentState, default=AgentState)
-StateT_co = TypeVar("StateT_co", bound=AgentState, default=AgentState, covariant=True)
-StateT_contra = TypeVar("StateT_contra", bound=AgentState, contravariant=True)
+StateT = TypeVar("StateT", bound=AgentState[Any], default=AgentState[Any])
+StateT_co = TypeVar("StateT_co", bound=AgentState[Any], default=AgentState[Any], covariant=True)
+StateT_contra = TypeVar("StateT_contra", bound=AgentState[Any], contravariant=True)
+
+
+class _DefaultAgentState(AgentState[Any]):
+    """AgentMiddleware default state."""
 
 
 class AgentMiddleware(Generic[StateT, ContextT]):
@@ -343,7 +347,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     between steps in the main agent loop.
     """
 
-    state_schema: type[StateT] = cast("type[StateT]", AgentState)
+    state_schema: type[StateT] = cast("type[StateT]", _DefaultAgentState)
     """The schema for state passed to the middleware nodes."""
 
     tools: Sequence[BaseTool]
@@ -603,8 +607,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     def wrap_tool_call(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], ToolMessage | Command],
-    ) -> ToolMessage | Command:
+        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+    ) -> ToolMessage | Command[Any]:
         """Intercept tool execution for retries, monitoring, or modification.
 
         Async version is `awrap_tool_call`
@@ -685,8 +689,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     async def awrap_tool_call(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
-    ) -> ToolMessage | Command:
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+    ) -> ToolMessage | Command[Any]:
         """Intercept and control async tool execution via handler callback.
 
         The handler callback executes the tool call and returns a `ToolMessage` or
@@ -757,7 +761,7 @@ class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
 
     def __call__(
         self, state: StateT_contra, runtime: Runtime[ContextT]
-    ) -> dict[str, Any] | Command | None | Awaitable[dict[str, Any] | Command | None]:
+    ) -> dict[str, Any] | Command[Any] | None | Awaitable[dict[str, Any] | Command[Any] | None]:
         """Perform some logic with the state and runtime."""
         ...
 
@@ -798,8 +802,8 @@ class _CallableReturningToolResponse(Protocol):
     def __call__(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], ToolMessage | Command],
-    ) -> ToolMessage | Command:
+        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+    ) -> ToolMessage | Command[Any]:
         """Intercept tool execution via handler callback."""
         ...
 
@@ -981,7 +985,7 @@ def before_model(
                 _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
-            ) -> dict[str, Any] | Command | None:
+            ) -> dict[str, Any] | Command[Any] | None:
                 return await func(state, runtime)  # type: ignore[misc]
 
             # Preserve can_jump_to metadata on the wrapped function
@@ -1006,7 +1010,7 @@ def before_model(
             _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
-        ) -> dict[str, Any] | Command | None:
+        ) -> dict[str, Any] | Command[Any] | None:
             return func(state, runtime)  # type: ignore[return-value]
 
         # Preserve can_jump_to metadata on the wrapped function
@@ -1141,7 +1145,7 @@ def after_model(
                 _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
-            ) -> dict[str, Any] | Command | None:
+            ) -> dict[str, Any] | Command[Any] | None:
                 return await func(state, runtime)  # type: ignore[misc]
 
             # Preserve can_jump_to metadata on the wrapped function
@@ -1164,7 +1168,7 @@ def after_model(
             _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
-        ) -> dict[str, Any] | Command | None:
+        ) -> dict[str, Any] | Command[Any] | None:
             return func(state, runtime)  # type: ignore[return-value]
 
         # Preserve can_jump_to metadata on the wrapped function
@@ -1332,7 +1336,7 @@ def before_agent(
                 _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
-            ) -> dict[str, Any] | Command | None:
+            ) -> dict[str, Any] | Command[Any] | None:
                 return await func(state, runtime)  # type: ignore[misc]
 
             # Preserve can_jump_to metadata on the wrapped function
@@ -1357,7 +1361,7 @@ def before_agent(
             _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
-        ) -> dict[str, Any] | Command | None:
+        ) -> dict[str, Any] | Command[Any] | None:
             return func(state, runtime)  # type: ignore[return-value]
 
         # Preserve can_jump_to metadata on the wrapped function
@@ -1493,7 +1497,7 @@ def after_agent(
                 _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
-            ) -> dict[str, Any] | Command | None:
+            ) -> dict[str, Any] | Command[Any] | None:
                 return await func(state, runtime)  # type: ignore[misc]
 
             # Preserve can_jump_to metadata on the wrapped function
@@ -1516,7 +1520,7 @@ def after_agent(
             _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
-        ) -> dict[str, Any] | Command | None:
+        ) -> dict[str, Any] | Command[Any] | None:
             return func(state, runtime)  # type: ignore[return-value]
 
         # Preserve can_jump_to metadata on the wrapped function
@@ -1964,8 +1968,8 @@ def wrap_tool_call(
             async def async_wrapped(
                 _self: AgentMiddleware,
                 request: ToolCallRequest,
-                handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
-            ) -> ToolMessage | Command:
+                handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+            ) -> ToolMessage | Command[Any]:
                 return await func(request, handler)  # type: ignore[arg-type,misc]
 
             middleware_name = name or cast(
@@ -1985,8 +1989,8 @@ def wrap_tool_call(
         def wrapped(
             _self: AgentMiddleware,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
-        ) -> ToolMessage | Command:
+            handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+        ) -> ToolMessage | Command[Any]:
             return func(request, handler)
 
         middleware_name = name or cast("str", getattr(func, "__name__", "WrapToolCallMiddleware"))

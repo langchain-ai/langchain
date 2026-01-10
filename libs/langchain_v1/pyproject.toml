@@ -95,7 +95,6 @@ warn_unreachable = true
 exclude = ["tests/unit_tests/agents/*"]
 
 # TODO: activate for 'strict' checking
-disallow_any_generics = false
 warn_return_any = false
 
 [[tool.mypy.overrides]]
