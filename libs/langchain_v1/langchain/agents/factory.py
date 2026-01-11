@@ -794,11 +794,16 @@ def create_agent(
         default_tools = list(tool_node.tools_by_name.values()) + built_in_tools
     else:
         default_tools = list(built_in_tools)
+        
 
     # validate middleware
-    if len({m.name for m in middleware}) != len(middleware):
-        msg = "Please remove duplicate middleware instances."
-        raise AssertionError(msg)
+    # Deduplicate middleware by name (last one wins)
+    deduped_middleware = {}
+    for m in middleware:
+        deduped_middleware[m.name] = m
+
+    middleware = list(deduped_middleware.values())
+
     middleware_w_before_agent = [
         m
         for m in middleware
