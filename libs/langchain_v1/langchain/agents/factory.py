@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import itertools
+import logging
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -74,6 +75,8 @@ FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
     "o3-pro",
     "o3-mini",
 ]
+
+logger = logging.getLogger(__name__)
 
 
 def _normalize_to_model_response(result: ModelResponse | AIMessage) -> ModelResponse:
@@ -796,9 +799,21 @@ def create_agent(
         default_tools = list(built_in_tools)
 
     # validate middleware
-    if len({m.name for m in middleware}) != len(middleware):
-        msg = "Please remove duplicate middleware instances."
-        raise AssertionError(msg)
+    # Deduplicate middleware by name, keeping the last instance
+    # This allows overriding default middleware
+    unique_middleware: dict[str, Any] = {}
+    for m in middleware:
+        unique_middleware[m.name] = m
+
+    # Check for duplicates for warning purposes
+    if len(middleware) != len(unique_middleware):
+        logger.warning(
+            "Duplicate middleware names found. The last instance with a given name will be used "
+            "to resolve the conflict. This allows overriding default middleware."
+        )
+
+    middleware = list(unique_middleware.values())
+
     middleware_w_before_agent = [
         m
         for m in middleware
