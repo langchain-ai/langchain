@@ -1,9 +1,8 @@
 """Tests for agent middleware behavior."""
 
-from langchain_core.language_models.fake import FakeListLLM
-
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware import TodoListMiddleware
+from langchain_core.language_models.fake import FakeListLLM
 
 
 
