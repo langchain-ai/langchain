@@ -182,6 +182,16 @@ class AIMessage(BaseMessage):
     type: Literal["ai"] = "ai"
     """The type of the message (used for deserialization)."""
 
+    @property
+    def text(self) -> str:
+        if isinstance(self.content, list):
+            return "".join(
+                block["text"]
+                for block in self.content_blocks
+                if isinstance(block, dict) and block.get("type") == "text" and "text" in block
+            )
+        return super().text
+
     @overload
     def __init__(
         self,
@@ -404,6 +414,11 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     If a chunk with `chunk_position="last"` is aggregated into a stream,
     `tool_call_chunks` in message content will be parsed into `tool_calls`.
     """
+
+    @property
+    @override
+    def text(self) -> str:
+        return super().text
 
     @property
     @override
