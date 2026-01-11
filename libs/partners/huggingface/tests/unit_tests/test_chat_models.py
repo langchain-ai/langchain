@@ -390,6 +390,8 @@ def test_function_calling_pydantic_still_not_supported() -> None:
 
     with pytest.raises(NotImplementedError, match="Pydantic schema is not supported"):
         chat.with_structured_output(schema=SimpleTestModel, method="function_calling")
+
+
 def test_profile() -> None:
     empty_llm = Mock(spec=HuggingFaceEndpoint)
     empty_llm.repo_id = "test/model"
