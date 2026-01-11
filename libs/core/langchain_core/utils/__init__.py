@@ -21,6 +21,7 @@ if TYPE_CHECKING:
         print_text,
     )
     from langchain_core.utils.iter import batch_iterate
+    from langchain_core.utils.math import beta_binomial_posterior_mean
     from langchain_core.utils.pydantic import pre_init
     from langchain_core.utils.strings import (
         comma_list,
@@ -45,6 +46,7 @@ __all__ = (
     "StrictFormatter",
     "abatch_iterate",
     "batch_iterate",
+    "beta_binomial_posterior_mean",
     "build_extra_kwargs",
     "check_package_version",
     "comma_list",
@@ -82,6 +84,7 @@ _dynamic_imports = {
     "get_colored_text": "input",
     "print_text": "input",
     "batch_iterate": "iter",
+    "beta_binomial_posterior_mean": "math",
     "pre_init": "pydantic",
     "comma_list": "strings",
     "sanitize_for_postgres": "strings",
