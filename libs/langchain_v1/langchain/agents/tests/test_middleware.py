@@ -5,6 +5,10 @@ from langchain.agents.middleware import TodoListMiddleware
 from langchain_core.language_models.fake import FakeListLLM
 
 
+_EXPECT_SINGLE_MIDDLEWARE = "Expected exactly one TodoListMiddleware instance"
+_EXPECT_OVERRIDE = "Expected user middleware to override default"
+
+
 def test_duplicate_middleware_name_last_wins() -> None:
     """User-provided middleware should override auto-injected middleware."""
     llm = FakeListLLM(responses=["ok"])
@@ -21,7 +25,7 @@ def test_duplicate_middleware_name_last_wins() -> None:
     todos = [m for m in agent.middleware if m.name == default_middleware.name]
 
     if len(todos) != 1:
-        raise AssertionError("Expected exactly one TodoListMiddleware instance")
+        raise AssertionError(_EXPECT_SINGLE_MIDDLEWARE)
 
     if todos[0].system_prompt != "custom":
-        raise AssertionError("Expected user middleware to override default")
+        raise AssertionError(_EXPECT_OVERRIDE)
