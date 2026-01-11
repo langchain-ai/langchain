@@ -161,7 +161,8 @@ def _get_schema_from_model(
             # Only process if field is a direct model reference (not List[Model], etc.)
             # In Pydantic v1, outer_type_ == type_ for direct references.
             if (
-                field.type_.__name__ in schema["definitions"]
+                hasattr(field.type_, "__name__")
+                and field.type_.__name__ in schema["definitions"]
                 and field.outer_type_ == field.type_
                 and is_basemodel_subclass(field.type_)
             ):
@@ -170,7 +171,11 @@ def _get_schema_from_model(
                     field.type_, field_description=field.field_info.description
                 )
                 # Only update description, preserve existing property schema.
-                if nested_schema.get("description"):
+                if (
+                    nested_schema.get("description")
+                    and "properties" in schema
+                    and field_name in schema["properties"]
+                ):
                     schema["properties"][field_name]["description"] = nested_schema[
                         "description"
                     ]
@@ -196,7 +201,11 @@ def _get_schema_from_model(
                     field_info.annotation, field_description=field_info.description
                 )
                 # Only update description, preserve existing property schema.
-                if nested_schema.get("description"):
+                if (
+                    nested_schema.get("description")
+                    and "properties" in schema
+                    and field_name in schema["properties"]
+                ):
                     schema["properties"][field_name]["description"] = nested_schema[
                         "description"
                     ]
