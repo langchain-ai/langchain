@@ -794,8 +794,6 @@ def create_agent(
         default_tools = list(tool_node.tools_by_name.values()) + built_in_tools
     else:
         default_tools = list(built_in_tools)
-        
-
     # validate middleware
     # Deduplicate middleware by name (last one wins)
     deduped_middleware = {}
