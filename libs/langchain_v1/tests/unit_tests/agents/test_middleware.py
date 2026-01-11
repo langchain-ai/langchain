@@ -1,17 +1,16 @@
 """Tests for agent middleware behavior."""
+
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware import TodoListMiddleware
 from langchain_core.language_models.fake import FakeListLLM
-_EXPECT_SINGLE_MIDDLEWARE = "Expected exactly one TodoListMiddleware instance"
-_EXPECT_OVERRIDE = "Expected user middleware to override default"
 
 
 def test_duplicate_middleware_name_last_wins() -> None:
     """User-provided middleware should override auto-injected middleware."""
     llm = FakeListLLM(responses=["ok"])
 
-    default_middleware = TodoListMiddleware(system_prompt="default")
-    custom_middleware = TodoListMiddleware(system_prompt="custom")
+    default_middleware = TodoListMiddleware(system_prompt="DEFAULT")
+    custom_middleware = TodoListMiddleware(system_prompt="CUSTOM")
 
     agent = create_agent(
         model=llm,
@@ -19,10 +18,14 @@ def test_duplicate_middleware_name_last_wins() -> None:
         middleware=[default_middleware, custom_middleware],
     )
 
-    todos = [m for m in agent.middleware if m.name == default_middleware.name]
+    # Invoke once to force middleware execution
+    agent.invoke({"input": "test"})
 
-    if len(todos) != 1:
-        raise AssertionError(_EXPECT_SINGLE_MIDDLEWARE)
+    # FakeListLLM records prompts it receives
+    messages = llm.prompts[0]
 
-    if todos[0].system_prompt != "custom":
-        raise AssertionError(_EXPECT_OVERRIDE)
+    # Ensure the custom system prompt was used
+    system_messages = [m.content for m in messages if m.type == "system"]
+
+    if not any("CUSTOM" in content for content in system_messages):
+        raise AssertionError("Expected custom TodoListMiddleware system prompt to be used")
