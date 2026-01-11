@@ -2837,3 +2837,74 @@ def test_default_is_v2() -> None:
     """Test that we default to version="v2"."""
     signature = inspect.signature(Runnable.astream_events)
     assert signature.parameters["version"].default == "v2"
+
+
+async def test_tool_error_event_includes_tool_call_id() -> None:
+    """Test that on_tool_error event includes tool_call_id when provided."""
+
+    @tool
+    def failing_tool(x: int) -> str:  # noqa: ARG001
+        """A tool that always fails."""
+        msg = "Tool execution failed"
+        raise ValueError(msg)
+
+    tool_call_id = "test-tool-call-id-123"
+
+    # Invoke the tool with a tool call dict that includes the tool_call_id
+    tool_call = {
+        "name": "failing_tool",
+        "args": {"x": 42},
+        "id": tool_call_id,
+        "type": "tool_call",
+    }
+
+    events: list[StreamEvent] = []
+
+    # Need to use async for loop to collect events before exception is raised.
+    # List comprehension would fail entirely when exception occurs.
+    async def collect_events() -> None:
+        async for event in failing_tool.astream_events(tool_call, version="v2"):
+            events.append(event)  # noqa: PERF401
+
+    with pytest.raises(ValueError, match="Tool execution failed"):
+        await collect_events()
+
+    # Find the on_tool_error event
+    error_events = [e for e in events if e["event"] == "on_tool_error"]
+    assert len(error_events) == 1
+
+    error_event = error_events[0]
+    assert error_event["name"] == "failing_tool"
+    assert "tool_call_id" in error_event["data"]
+    assert error_event["data"]["tool_call_id"] == tool_call_id
+
+
+async def test_tool_error_event_tool_call_id_is_none_when_not_provided() -> None:
+    """Test that on_tool_error event has tool_call_id=None when not provided."""
+
+    @tool
+    def failing_tool_no_id(x: int) -> str:  # noqa: ARG001
+        """A tool that always fails."""
+        msg = "Tool execution failed"
+        raise ValueError(msg)
+
+    events: list[StreamEvent] = []
+
+    # Need to use async for loop to collect events before exception is raised.
+    # List comprehension would fail entirely when exception occurs.
+    async def collect_events() -> None:
+        async for event in failing_tool_no_id.astream_events({"x": 42}, version="v2"):
+            events.append(event)  # noqa: PERF401
+
+    # Invoke the tool without a tool_call_id (regular dict input)
+    with pytest.raises(ValueError, match="Tool execution failed"):
+        await collect_events()
+
+    # Find the on_tool_error event
+    error_events = [e for e in events if e["event"] == "on_tool_error"]
+    assert len(error_events) == 1
+
+    error_event = error_events[0]
+    assert error_event["name"] == "failing_tool_no_id"
+    assert "tool_call_id" in error_event["data"]
+    assert error_event["data"]["tool_call_id"] is None
