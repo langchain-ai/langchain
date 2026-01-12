@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import time
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import ToolMessage
 
@@ -192,14 +192,14 @@ class ToolRetryMiddleware(AgentMiddleware):
 
         # Handle backwards compatibility for deprecated on_failure values
         if on_failure == "raise":  # type: ignore[comparison-overlap]
-            msg = (
+            msg = (  # type: ignore[unreachable]
                 "on_failure='raise' is deprecated and will be removed in a future version. "
                 "Use on_failure='error' instead."
             )
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
             on_failure = "error"
         elif on_failure == "return_message":  # type: ignore[comparison-overlap]
-            msg = (
+            msg = (  # type: ignore[unreachable]
                 "on_failure='return_message' is deprecated and will be removed "
                 "in a future version. Use on_failure='continue' instead."
             )
@@ -237,7 +237,8 @@ class ToolRetryMiddleware(AgentMiddleware):
             return True
         return tool_name in self._tool_filter
 
-    def _format_failure_message(self, tool_name: str, exc: Exception, attempts_made: int) -> str:
+    @staticmethod
+    def _format_failure_message(tool_name: str, exc: Exception, attempts_made: int) -> str:
         """Format the failure message when retries are exhausted.
 
         Args:
@@ -291,8 +292,8 @@ class ToolRetryMiddleware(AgentMiddleware):
     def wrap_tool_call(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], ToolMessage | Command],
-    ) -> ToolMessage | Command:
+        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+    ) -> ToolMessage | Command[Any]:
         """Intercept tool execution and retry on failure.
 
         Args:
@@ -301,6 +302,9 @@ class ToolRetryMiddleware(AgentMiddleware):
 
         Returns:
             `ToolMessage` or `Command` (the final result).
+
+        Raises:
+            RuntimeError: If the retry loop completes without returning. This should not happen.
         """
         tool_name = request.tool.name if request.tool else request.tool_call["name"]
 
@@ -346,8 +350,8 @@ class ToolRetryMiddleware(AgentMiddleware):
     async def awrap_tool_call(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
-    ) -> ToolMessage | Command:
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+    ) -> ToolMessage | Command[Any]:
         """Intercept and control async tool execution with retry logic.
 
         Args:
@@ -357,6 +361,9 @@ class ToolRetryMiddleware(AgentMiddleware):
 
         Returns:
             `ToolMessage` or `Command` (the final result).
+
+        Raises:
+            RuntimeError: If the retry loop completes without returning. This should not happen.
         """
         tool_name = request.tool.name if request.tool else request.tool_call["name"]
 

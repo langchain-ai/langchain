@@ -168,7 +168,7 @@ class PIIMiddleware(AgentMiddleware):
     @override
     def before_model(
         self,
-        state: AgentState,
+        state: AgentState[Any],
         runtime: Runtime,
     ) -> dict[str, Any] | None:
         """Check user messages and tool results for PII before model invocation.
@@ -263,7 +263,7 @@ class PIIMiddleware(AgentMiddleware):
     @hook_config(can_jump_to=["end"])
     async def abefore_model(
         self,
-        state: AgentState,
+        state: AgentState[Any],
         runtime: Runtime,
     ) -> dict[str, Any] | None:
         """Async check user messages and tool results for PII before model invocation.
@@ -284,7 +284,7 @@ class PIIMiddleware(AgentMiddleware):
     @override
     def after_model(
         self,
-        state: AgentState,
+        state: AgentState[Any],
         runtime: Runtime,
     ) -> dict[str, Any] | None:
         """Check AI messages for PII after model invocation.
@@ -343,7 +343,7 @@ class PIIMiddleware(AgentMiddleware):
 
     async def aafter_model(
         self,
-        state: AgentState,
+        state: AgentState[Any],
         runtime: Runtime,
     ) -> dict[str, Any] | None:
         """Async check AI messages for PII after model invocation.

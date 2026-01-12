@@ -4,12 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Literal, Union
-
-if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
-
-    from langchain.tools import BaseTool
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Union
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
@@ -23,6 +18,11 @@ from langchain.agents.middleware.types import (
     ModelResponse,
 )
 from langchain.chat_models.base import init_chat_model
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
+    from langchain.tools import BaseTool
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class _SelectionRequest:
     valid_tool_names: list[str]
 
 
-def _create_tool_selection_response(tools: list[BaseTool]) -> TypeAdapter:
+def _create_tool_selection_response(tools: list[BaseTool]) -> TypeAdapter[Any]:
     """Create a structured output schema for tool selection.
 
     Args:
@@ -51,6 +51,9 @@ def _create_tool_selection_response(tools: list[BaseTool]) -> TypeAdapter:
     Returns:
         `TypeAdapter` for a schema where each tool name is a `Literal` with its
             description.
+
+    Raises:
+        AssertionError: If `tools` is empty.
     """
     if not tools:
         msg = "Invalid usage: tools must be non-empty"
@@ -157,9 +160,16 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
     def _prepare_selection_request(self, request: ModelRequest) -> _SelectionRequest | None:
         """Prepare inputs for tool selection.
 
+        Args:
+            request: the model request.
+
         Returns:
             `SelectionRequest` with prepared inputs, or `None` if no selection is
-                needed.
+            needed.
+
+        Raises:
+            ValueError: If tools in `always_include` are not found in the request.
+            AssertionError: If no user message is found in the request messages.
         """
         # If no tools available, return None
         if not request.tools or len(request.tools) == 0:
@@ -221,7 +231,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
 
     def _process_selection_response(
         self,
-        response: dict,
+        response: dict[str, Any],
         available_tools: list[BaseTool],
         valid_tool_names: list[str],
         request: ModelRequest,
@@ -266,7 +276,19 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         request: ModelRequest,
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
-        """Filter tools based on LLM selection before invoking the model via handler."""
+        """Filter tools based on LLM selection before invoking the model via handler.
+
+        Args:
+            request: Model request to execute (includes state and runtime).
+            handler: Async callback that executes the model request and returns
+                `ModelResponse`.
+
+        Returns:
+            The model call result.
+
+        Raises:
+            AssertionError: If the selection model response is not a dict.
+        """
         selection_request = self._prepare_selection_request(request)
         if selection_request is None:
             return handler(request)
@@ -297,7 +319,19 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
-        """Filter tools based on LLM selection before invoking the model via handler."""
+        """Filter tools based on LLM selection before invoking the model via handler.
+
+        Args:
+            request: Model request to execute (includes state and runtime).
+            handler: Async callback that executes the model request and returns
+                `ModelResponse`.
+
+        Returns:
+            The model call result.
+
+        Raises:
+            AssertionError: If the selection model response is not a dict.
+        """
         selection_request = self._prepare_selection_request(request)
         if selection_request is None:
             return await handler(request)
