@@ -13,17 +13,21 @@ from __future__ import annotations
 
 import logging
 import warnings
-from importlib import util
-from typing import TYPE_CHECKING, Any, Literal
+from collections.abc import Callable
+from importlib import import_module, util
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
+    from collections.abc import Awaitable
 
     from langchain.agents.middleware.types import ModelCallResult, ModelResponse
 
 logger = logging.getLogger(__name__)
+
+# Converter callable type
+Converter = Callable[[dict[str, Any]], dict[str, Any] | None]
 
 # Literal type for all supported builtin tool names
 BuiltinToolName = Literal[
@@ -37,6 +41,46 @@ BuiltinToolName = Literal[
     "text_editor",
     "bash",
 ]
+
+
+def _load_converter(
+    *,
+    package: str,
+    converter_module: str,
+    converter_name: str,
+    tool_name: str,
+    package_display: str,
+) -> Converter | None:
+    """Load a converter function from an optional dependency."""
+    if not util.find_spec(package):
+        logger.debug(
+            "%s package not installed, cannot convert tool: %s",
+            package_display,
+            tool_name,
+        )
+        return None
+
+    try:
+        module = import_module(converter_module)
+    except ImportError:
+        logger.debug(
+            "%s package not installed, cannot convert tool: %s",
+            package_display,
+            tool_name,
+        )
+        return None
+
+    converter = getattr(module, converter_name, None)
+    if converter is None:
+        logger.debug(
+            "%s.%s not found, cannot convert tool: %s",
+            converter_module,
+            converter_name,
+            tool_name,
+        )
+        return None
+
+    return cast("Converter", converter)
 
 
 def _detect_provider(model: Any) -> str:
@@ -165,64 +209,43 @@ class BuiltinToolsMiddleware(AgentMiddleware):
 
         # Convert to provider-specific format using conversion utilities
         if provider == "openai":
-            try:
-                if not util.find_spec("langchain_openai"):
-                    logger.debug(
-                        "langchain-openai package not installed, cannot convert tool: %s",
-                        tool_name,
-                    )
-                    return None
-                from langchain_openai.utils.builtin_tools import (  # noqa: PLC0415
-                    convert_standard_to_openai,
-                )
-
-                return convert_standard_to_openai(standard_tool)
-            except ImportError:
-                logger.debug(
-                    "langchain-openai package not installed, cannot convert tool: %s",
-                    tool_name,
-                )
+            converter = _load_converter(
+                package="langchain_openai",
+                converter_module="langchain_openai.utils.builtin_tools",
+                converter_name="convert_standard_to_openai",
+                tool_name=tool_name,
+                package_display="langchain-openai",
+            )
+            if converter is None:
                 return None
+
+            return converter(standard_tool)
 
         if provider == "anthropic":
-            try:
-                if not util.find_spec("langchain_anthropic"):
-                    logger.debug(
-                        "langchain-anthropic package not installed, cannot convert tool: %s",
-                        tool_name,
-                    )
-                    return None
-                from langchain_anthropic.utils.builtin_tools import (  # noqa: PLC0415
-                    convert_standard_to_anthropic,
-                )
-
-                return convert_standard_to_anthropic(standard_tool)
-            except ImportError:
-                logger.debug(
-                    "langchain-anthropic package not installed, cannot convert tool: %s",
-                    tool_name,
-                )
+            converter = _load_converter(
+                package="langchain_anthropic",
+                converter_module="langchain_anthropic.utils.builtin_tools",
+                converter_name="convert_standard_to_anthropic",
+                tool_name=tool_name,
+                package_display="langchain-anthropic",
+            )
+            if converter is None:
                 return None
+
+            return converter(standard_tool)
 
         if provider == "xai":
-            try:
-                if not util.find_spec("langchain_xai"):
-                    logger.debug(
-                        "langchain-xai package not installed, cannot convert tool: %s",
-                        tool_name,
-                    )
-                    return None
-                from langchain_xai.utils.builtin_tools import (  # noqa: PLC0415
-                    convert_standard_to_xai,
-                )
-
-                return convert_standard_to_xai(standard_tool)
-            except ImportError:
-                logger.debug(
-                    "langchain-xai package not installed, cannot convert tool: %s",
-                    tool_name,
-                )
+            converter = _load_converter(
+                package="langchain_xai",
+                converter_module="langchain_xai.utils.builtin_tools",
+                converter_name="convert_standard_to_xai",
+                tool_name=tool_name,
+                package_display="langchain-xai",
+            )
+            if converter is None:
                 return None
+
+            return converter(standard_tool)
 
         if provider == "google_genai":
             # Google GenAI uses a different format that doesn't fit the standard pattern
