@@ -874,7 +874,6 @@ class TestSupportsProviderStrategy:
 
     @staticmethod
     def _make_structured_model(model_name: str):
-
         class GeminiTestChatModel(GenericFakeChatModel):
             model_name: str
 
