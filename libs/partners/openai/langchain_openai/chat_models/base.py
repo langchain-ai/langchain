@@ -190,6 +190,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                     )
         if audio := _dict.get("audio"):
             additional_kwargs["audio"] = audio
+        if reasoning_content := _dict.get("reasoning_content"):
+            additional_kwargs["reasoning_content"] = reasoning_content
         return AIMessage(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -1503,6 +1505,15 @@ class BaseChatOpenAI(BaseChatModel):
                 generations[0].message.additional_kwargs["parsed"] = message.parsed
             if hasattr(message, "refusal"):
                 generations[0].message.additional_kwargs["refusal"] = message.refusal
+            # Preserve reasoning_content from reasoning models (e.g., o1, grok)
+            # The field may be directly on message or in model_extra (pydantic v2)
+            reasoning_content = getattr(message, "reasoning_content", None)
+            if not reasoning_content and hasattr(message, "model_extra"):
+                reasoning_content = message.model_extra.get("reasoning_content")
+            if reasoning_content:
+                generations[0].message.additional_kwargs["reasoning_content"] = (
+                    reasoning_content
+                )
 
         return ChatResult(generations=generations, llm_output=llm_output)
 
