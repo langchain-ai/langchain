@@ -3250,7 +3250,6 @@ def test_openai_structured_output_refusal_handling_responses_api() -> None:
         pytest.fail(f"This is a wrong behavior. Error details: {e}")
 
 
-
 def test_create_chat_result_preserves_reasoning_content() -> None:
     """Test that _create_chat_result preserves reasoning_content from reasoning models.
 
@@ -3306,4 +3305,3 @@ def test_create_chat_result_preserves_reasoning_content() -> None:
         "First, I need to multiply 15 by 23. "
         "Breaking it down: 15 * 20 = 300, 15 * 3 = 45, so 300 + 45 = 345."
     )
-
