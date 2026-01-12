@@ -184,11 +184,17 @@ class AIMessage(BaseMessage):
 
     @property
     def text(self) -> str:
+        """Return the concatenated text from all text content blocks."""
         if isinstance(self.content, list):
             return "".join(
                 block["text"]
                 for block in self.content_blocks
-                if isinstance(block, dict) and block.get("type") == "text" and "text" in block
+                if (
+                    isinstance(block, dict)
+                    and block.get("type") == "text"
+                    and "text" in block
+                )
+
             )
         return super().text
 

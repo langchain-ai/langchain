@@ -165,7 +165,7 @@ def _convert_to_v1_from_genai_input(
                         "mime_type": "application/pdf",
                     }
                     extras = {
-                        k: v for k, v in document.items() if k not in {"format", "source"}
+                      k: v for k, v in document.items() if k not in {"format", "source"}
                     }
                     if extras:
                         file_block["extras"] = extras
@@ -178,7 +178,7 @@ def _convert_to_v1_from_genai_input(
                         "mime_type": "text/plain",
                     }
                     extras = {
-                        k: v for k, v in document.items() if k not in {"format", "source"}
+                      k: v for k, v in document.items() if k not in {"format", "source"}
                     }
                     if extras:
                         plain_text_block["extras"] = extras
@@ -307,56 +307,81 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
     for item in message.content:
         if isinstance(item, str):
             converted_blocks.append({"type": "text", "text": item})
-        elif isinstance(item, dict):
-            item_type = item.get("type")
-            if item_type == "image_url":
-                image_url = item.get("image_url", {})
-                url = image_url.get("url", "")
-                if url:
-                    match = re.match(r"data:([^;]+);base64,(.+)", url)
-                    if match:
-                        mime_type, base64_data = match.groups()
-                        converted_blocks.append({
+            continue
+
+        if not isinstance(item, dict):
+            converted_blocks.append({"type": "non_standard", "value": item})
+            continue
+
+        # CRITICAL FIX:
+        # If this is already a LangChain v1 block, preserve it exactly
+        if item.get("type") in types.KNOWN_BLOCK_TYPES:
+            converted_blocks.append(cast("types.ContentBlock", item))
+            continue
+
+        item_type = item.get("type")
+
+        if item_type == "image_url":
+            image_url = item.get("image_url", {})
+            url = image_url.get("url", "")
+            if url:
+                match = re.match(r"data:([^;]+);base64,(.+)", url)
+                if match:
+                    mime_type, base64_data = match.groups()
+                    converted_blocks.append(
+                        {
                             "type": "image",
                             "base64": base64_data,
                             "mime_type": mime_type,
-                        })
-                    else:
-                        try:
-                            decoded_bytes = base64.b64decode(url, validate=True)
-                            image_url_b64_block = {"type": "image", "base64": url}
-                            if _HAS_FILETYPE:
-                                kind = filetype.guess(decoded_bytes)
-                                if kind:
-                                    image_url_b64_block["mime_type"] = kind.mime
-                            converted_blocks.append(cast("types.ImageContentBlock", image_url_b64_block))
-                        except Exception:
-                            converted_blocks.append({"type": "non_standard", "value": item})
+                        }
+                    )
                 else:
-                    converted_blocks.append({"type": "non_standard", "value": item})
+                    try:
+                        decoded_bytes = base64.b64decode(url, validate=True)
+                        image_url_b64_block = {"type": "image", "base64": url}
+                        if _HAS_FILETYPE:
+                            kind = filetype.guess(decoded_bytes)
+                            if kind:
+                                image_url_b64_block["mime_type"] = kind.mime
+                        converted_blocks.append(
+                            cast("types.ImageContentBlock", image_url_b64_block)
+                        )
+                    except Exception:
+                        converted_blocks.append({"type": "non_standard", "value": item})
+            else:
+                converted_blocks.append({"type": "non_standard", "value": item})
 
-            elif item_type == "function_call":
-                converted_blocks.append({
+        elif item_type == "function_call":
+            converted_blocks.append(
+                {
                     "type": "tool_call",
                     "name": item.get("name", ""),
                     "args": item.get("args", {}),
                     "id": item.get("id", ""),
-                })
-            elif item_type == "file_data":
-                file_block: types.FileContentBlock = {"type": "file", "url": item.get("file_uri", "")}
-                if mime_type := item.get("mime_type"):
-                    file_block["mime_type"] = mime_type
-                converted_blocks.append(file_block)
-            elif item_type == "thinking":
-                reasoning_block: types.ReasoningContentBlock = {
-                    "type": "reasoning",
-                    "reasoning": item.get("thinking", ""),
                 }
-                if signature := item.get("signature"):
-                    reasoning_block["extras"] = {"signature": signature}
-                converted_blocks.append(reasoning_block)
-            elif item_type == "executable_code":
-                converted_blocks.append({
+            )
+
+        elif item_type == "file_data":
+            file_block: types.FileContentBlock = {
+                "type": "file",
+                "url": item.get("file_uri", ""),
+            }
+            if mime_type := item.get("mime_type"):
+                file_block["mime_type"] = mime_type
+            converted_blocks.append(file_block)
+
+        elif item_type == "thinking":
+            reasoning_block: types.ReasoningContentBlock = {
+                "type": "reasoning",
+                "reasoning": item.get("thinking", ""),
+            }
+            if signature := item.get("signature"):
+                reasoning_block["extras"] = {"signature": signature}
+            converted_blocks.append(reasoning_block)
+
+        elif item_type == "executable_code":
+            converted_blocks.append(
+                {
                     "type": "server_tool_call",
                     "name": "code_interpreter",
                     "args": {
@@ -364,64 +389,38 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                         "language": item.get("language", "python"),
                     },
                     "id": item.get("id", ""),
-                })
-            elif item_type == "code_execution_result":
-                outcome = item.get("outcome", 1)
-                status = "success" if outcome == 1 else "error"
-                server_tool_result: types.ServerToolResult = {
-                    "type": "server_tool_result",
-                    "tool_call_id": item.get("tool_call_id", ""),
-                    "status": status,  # type: ignore[typeddict-item]
-                    "output": item.get("code_execution_result", ""),
                 }
-                server_tool_result["extras"] = {"block_type": item_type}
-                if outcome is not None:
-                    server_tool_result["extras"]["outcome"] = outcome
-                converted_blocks.append(server_tool_result)
-            elif item_type == "text" or "text" in item:
-                # Ensure blocks with 'text' and metadata are treated as text
-                converted_blocks.append({
+            )
+
+        elif item_type == "code_execution_result":
+            outcome = item.get("outcome", 1)
+            status = "success" if outcome == 1 else "error"
+            server_tool_result: types.ServerToolResult = {
+                "type": "server_tool_result",
+                "tool_call_id": item.get("tool_call_id", ""),
+                "status": status,
+                "output": item.get("code_execution_result", ""),
+            }
+            if outcome is not None:
+                server_tool_result["extras"] = {"outcome": outcome}
+            converted_blocks.append(server_tool_result)
+
+        elif "text" in item:
+            converted_blocks.append(
+                {
                     "type": "text",
                     "text": item.get("text", ""),
-                    **{k: v for k, v in item.items() if k not in {"type", "text"}}
-                })
-            else:
-                converted_blocks.append({"type": "non_standard", "value": item})
+                    **{
+                        k: v
+                        for k, v in item.items()
+                        if k not in {"type", "text"}
+                    },
+                }
+            )
+
         else:
             converted_blocks.append({"type": "non_standard", "value": item})
 
-    grounding_metadata = message.response_metadata.get("grounding_metadata")
-    if grounding_metadata:
-        citations = translate_grounding_metadata_to_citations(grounding_metadata)
-        for block in converted_blocks:
-            if block["type"] == "text" and citations:
-                block["annotations"] = cast("list[types.Annotation]", citations)
-                break
-
-    audio_data = message.additional_kwargs.get("audio")
-    if audio_data and isinstance(audio_data, bytes):
-        converted_blocks.append({
-            "type": "audio",
-            "base64": _bytes_to_b64_str(audio_data),
-            "mime_type": "audio/wav",
-        })
-
-    content_tool_call_ids = {
-        block.get("id")
-        for block in converted_blocks
-        if isinstance(block, dict) and block.get("type") == "tool_call"
-    }
-    for tool_call in message.tool_calls:
-        id_ = tool_call.get("id")
-        if id_ and id_ not in content_tool_call_ids:
-            converted_blocks.append({
-                "type": "tool_call",
-                "id": id_,
-                "name": tool_call["name"],
-                "args": tool_call["args"],
-            })
-
-    return converted_blocks
 
 
 def translate_content(message: AIMessage) -> list[types.ContentBlock]:
