@@ -1,12 +1,6 @@
 """Entrypoint to using [middleware](https://docs.langchain.com/oss/python/langchain/middleware) plugins with [Agents](https://docs.langchain.com/oss/python/langchain/agents)."""  # noqa: E501
 
-from .builtin_tools import BuiltinToolsMiddleware
-from .context_editing import (
-    ClearToolUsesEdit,
-    ContextEditingMiddleware,
-)
-from .file_search import FilesystemFileSearchMiddleware
-from .human_in_the_loop import (
+from langchain.agents.middleware.builtin_tools import BuiltinToolsMiddleware
 from langchain.agents.middleware.context_editing import ClearToolUsesEdit, ContextEditingMiddleware
 from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
 from langchain.agents.middleware.human_in_the_loop import (
