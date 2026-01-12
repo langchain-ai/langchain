@@ -272,6 +272,17 @@ class ChatModelTests(BaseStandardTests):
         """
         return None
 
+    @property
+    def has_tool_call_streaming(self) -> bool:
+        """Whether the model supports streaming tool calls.
+
+        If `True`, tool call chunks should contain either `tool_call_chunk`
+        (incremental) or `tool_call` (atomic) blocks with proper structure.
+
+        Defaults to the value of `has_tool_calling`.
+        """
+        return self.has_tool_calling
+
 
 class ChatModelUnitTests(ChatModelTests):
     '''Base class for chat model unit tests.

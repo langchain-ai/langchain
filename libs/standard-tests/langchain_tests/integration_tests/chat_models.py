@@ -3422,3 +3422,247 @@ class ChatModelIntegrationTests(ChatModelTests):
                 or "こ" in customer_name_jp
                 or "ん" in customer_name_jp
             ), f"Japanese Unicode characters not found in: {customer_name_jp}"
+
+    def test_stream_completion_signal(self, model: BaseChatModel) -> None:
+        """Test that the final chunk in a stream signals completion.
+
+        This test verifies that models properly signal when streaming is complete by
+        setting `chunk.chunk_position == "last"` on the final chunk. This signal is
+        important for downstream consumers that need to know when a stream has finished.
+
+        The `BaseChatModel.stream()` implementation automatically adds this signal if
+        the underlying `_stream` implementation doesn't set it, so all models should
+        pass this test. This test can help catch cases where the model overrides
+        `stream` directly and forgets to set the final chunk position.
+
+        ??? question "Troubleshooting"
+
+            If this test fails, the base class should normally handle this
+            automatically. If you've overridden the `stream` method directly
+            (not `_stream`), ensure that the final chunk has `chunk_position="last"`:
+
+            ```python
+            # Final chunk should have:
+            AIMessageChunk(content="final text", chunk_position="last")
+            ```
+
+        """
+        chunks: list[AIMessageChunk] = []
+        for chunk in model.stream("Hello"):
+            assert isinstance(chunk, AIMessageChunk)
+            chunks.append(chunk)
+
+        assert len(chunks) > 0, "Expected at least one chunk"
+
+        last_chunk = chunks[-1]
+        assert last_chunk.chunk_position == "last", (
+            f"Expected final chunk to have chunk_position='last', "
+            f"got chunk_position={last_chunk.chunk_position!r}"
+        )
+
+    async def test_astream_completion_signal(self, model: BaseChatModel) -> None:
+        """Test that the final chunk in an async stream signals completion.
+
+        This is the async variant of `test_stream_completion_signal`.
+
+        ??? question "Troubleshooting"
+
+            See troubleshooting for `test_stream_completion_signal`.
+
+        """
+        chunks: list[AIMessageChunk] = []
+        async for chunk in model.astream("Hello"):
+            assert isinstance(chunk, AIMessageChunk)
+            chunks.append(chunk)
+
+        assert len(chunks) > 0, "Expected at least one chunk"
+
+        last_chunk = chunks[-1]
+        assert last_chunk.chunk_position == "last", (
+            f"Expected final chunk to have chunk_position='last', "
+            f"got chunk_position={last_chunk.chunk_position!r}"
+        )
+
+    def test_tool_call_streaming_format(self, model: BaseChatModel) -> None:
+        """Test that tool calls stream with proper block structure.
+
+        This test verifies that individual streaming chunks contain properly
+        structured tool call information. Models may use one of two patterns:
+
+        - **Incremental (Pattern A)**: Chunks contain `tool_call_chunk` blocks
+            with fields `name`, `args`, `id`, and `index`. Arguments are streamed
+            incrementally as partial JSON strings.
+
+        - **Atomic (Pattern B)**: Chunks contain complete `tool_call` blocks
+            with fields `name`, `args`, and `id`. The entire tool call arrives
+            in a single chunk.
+
+        This test is skipped if `has_tool_call_streaming` is `False`.
+
+        ??? note "Configuration"
+
+            By default, this test runs if `has_tool_calling` is `True`.
+
+            To disable this test, set `has_tool_call_streaming` to `False`:
+
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def has_tool_call_streaming(self) -> bool:
+                    return False
+            ```
+
+        ??? question "Troubleshooting"
+
+            If this test fails, ensure your streaming implementation includes
+            tool call information in chunks. The chunks should contain either:
+
+            **Pattern A - Incremental chunks:**
+            ```python
+            AIMessageChunk(
+                content="",
+                tool_call_chunks=[
+                    {
+                        "name": "magic_function",
+                        "args": '{"in',  # partial JSON
+                        "id": "call_123",
+                        "index": 0,
+                    }
+                ],
+            )
+            ```
+
+            **Pattern B - Atomic chunks:**
+            ```python
+            AIMessageChunk(
+                content="",
+                tool_calls=[
+                    {
+                        "name": "magic_function",
+                        "args": {"input": 3},  # complete args
+                        "id": "call_123",
+                    }
+                ],
+            )
+            ```
+
+        """
+        if not self.has_tool_call_streaming:
+            pytest.skip("Model does not support tool call streaming.")
+
+        tool_choice_value = None if not self.has_tool_choice else "any"
+        model_with_tools = model.bind_tools(
+            [magic_function], tool_choice=tool_choice_value
+        )
+
+        query = "What is the value of magic_function(3)? Use the tool."
+        chunks: list[AIMessageChunk] = []
+        found_tool_call_chunk = False
+        found_tool_call = False
+
+        for chunk in model_with_tools.stream(query):
+            assert isinstance(chunk, AIMessageChunk)
+            chunks.append(chunk)
+
+            # Check for incremental tool_call_chunks (Pattern A)
+            if hasattr(chunk, "tool_call_chunks") and chunk.tool_call_chunks:
+                found_tool_call_chunk = True
+                for tc_chunk in chunk.tool_call_chunks:
+                    # Verify required fields exist (may be empty strings for partial)
+                    assert "name" in tc_chunk, "tool_call_chunk missing 'name' field"
+                    assert "args" in tc_chunk, "tool_call_chunk missing 'args' field"
+                    assert "id" in tc_chunk, "tool_call_chunk missing 'id' field"
+                    assert "index" in tc_chunk, "tool_call_chunk missing 'index' field"
+
+            # Check for atomic tool_calls (Pattern B)
+            if hasattr(chunk, "tool_calls") and chunk.tool_calls:
+                found_tool_call = True
+                for tc in chunk.tool_calls:
+                    assert "name" in tc, "tool_call missing 'name' field"
+                    assert "args" in tc, "tool_call missing 'args' field"
+                    assert "id" in tc, "tool_call missing 'id' field"
+
+        assert found_tool_call_chunk or found_tool_call, (
+            "Expected to find tool_call_chunks (incremental) or tool_calls (atomic) "
+            "in at least one chunk during streaming"
+        )
+
+        # Also verify the aggregated result has complete tool call info
+        full: AIMessageChunk | None = None
+        for chunk in chunks:
+            full = chunk if full is None else full + chunk
+        assert full is not None
+        assert isinstance(full, AIMessageChunk)
+        _validate_tool_call_message(full)
+
+    async def test_tool_call_streaming_format_async(self, model: BaseChatModel) -> None:
+        """Test that tool calls stream with proper block structure (async).
+
+        This is the async variant of `test_tool_call_streaming_format`.
+
+        This test is skipped if `has_tool_call_streaming` is `False`.
+
+        ??? note "Configuration"
+
+            By default, this test runs if `has_tool_calling` is `True`.
+            To disable this test, set `has_tool_call_streaming` to `False`:
+
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def has_tool_call_streaming(self) -> bool:
+                    return False
+            ```
+
+        ??? question "Troubleshooting"
+
+            See troubleshooting for `test_tool_call_streaming_format`.
+
+        """
+        if not self.has_tool_call_streaming:
+            pytest.skip("Model does not support tool call streaming.")
+
+        tool_choice_value = None if not self.has_tool_choice else "any"
+        model_with_tools = model.bind_tools(
+            [magic_function], tool_choice=tool_choice_value
+        )
+
+        query = "What is the value of magic_function(3)? Use the tool."
+        chunks: list[AIMessageChunk] = []
+        found_tool_call_chunk = False
+        found_tool_call = False
+
+        async for chunk in model_with_tools.astream(query):
+            assert isinstance(chunk, AIMessageChunk)
+            chunks.append(chunk)
+
+            # Check for incremental tool_call_chunks (Pattern A)
+            if hasattr(chunk, "tool_call_chunks") and chunk.tool_call_chunks:
+                found_tool_call_chunk = True
+                for tc_chunk in chunk.tool_call_chunks:
+                    # Verify required fields exist (may be empty strings for partial)
+                    assert "name" in tc_chunk, "tool_call_chunk missing 'name' field"
+                    assert "args" in tc_chunk, "tool_call_chunk missing 'args' field"
+                    assert "id" in tc_chunk, "tool_call_chunk missing 'id' field"
+                    assert "index" in tc_chunk, "tool_call_chunk missing 'index' field"
+
+            # Check for atomic tool_calls (Pattern B)
+            if hasattr(chunk, "tool_calls") and chunk.tool_calls:
+                found_tool_call = True
+                for tc in chunk.tool_calls:
+                    assert "name" in tc, "tool_call missing 'name' field"
+                    assert "args" in tc, "tool_call missing 'args' field"
+                    assert "id" in tc, "tool_call missing 'id' field"
+
+        assert found_tool_call_chunk or found_tool_call, (
+            "Expected to find tool_call_chunks (incremental) or tool_calls (atomic) "
+            "in at least one chunk during streaming"
+        )
+
+        # Also verify the aggregated result has complete tool call info
+        full: AIMessageChunk | None = None
+        for chunk in chunks:
+            full = chunk if full is None else full + chunk
+        assert full is not None
+        assert isinstance(full, AIMessageChunk)
+        _validate_tool_call_message(full)
