@@ -3294,7 +3294,7 @@ def test_create_chat_result_preserves_reasoning_content() -> None:
         "model": "grok-3",
     }
 
-    llm = ChatOpenAI(model="grok-3", api_key="fake-key")
+    llm = ChatOpenAI(model="grok-3", api_key=SecretStr("fake-key"))
     result = llm._create_chat_result(mock_response)
 
     assert len(result.generations) == 1
