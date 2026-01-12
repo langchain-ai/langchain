@@ -874,7 +874,6 @@ class TestSupportsProviderStrategy:
 
     @staticmethod
     def _make_structured_model(model_name: str):
-        from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 
         class GeminiTestChatModel(GenericFakeChatModel):
             model_name: str
@@ -882,7 +881,7 @@ class TestSupportsProviderStrategy:
         return GeminiTestChatModel(
             messages=iter(
                 [
-                    CoreAIMessage(content="test-response"),
+                    AIMessage(content="test-response"),
                 ]
             ),
             profile={"structured_output": True},
