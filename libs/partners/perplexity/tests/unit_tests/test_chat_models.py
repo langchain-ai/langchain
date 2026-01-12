@@ -1,7 +1,7 @@
-from typing import Any, cast
+from collections.abc import AsyncIterator
+from typing import Any
 from unittest.mock import MagicMock
 
-from langchain_core.messages import AIMessageChunk, BaseMessage
 from pytest_mock import MockerFixture
 
 from langchain_perplexity import ChatPerplexity, MediaResponse, WebSearchOptions
@@ -68,7 +68,14 @@ def test_perplexity_new_params() -> None:
 
 
 def test_perplexity_stream_includes_citations(mocker: MockerFixture) -> None:
-    """Test that the stream method includes citations in the additional_kwargs."""
+    """Test that citations appear in first and final chunks.
+
+    Citations are accumulated from all chunks and included in:
+    - The first chunk (if present in first chunk - for backward compatibility)
+    - The final chunk (accumulated citations from all chunks)
+
+    Intermediate chunks do not contain citations.
+    """
     llm = ChatPerplexity(model="test", timeout=30, verbose=True)
     mock_chunk_0 = {
         "choices": [{"delta": {"content": "Hello "}, "finish_reason": None}],
@@ -88,28 +95,27 @@ def test_perplexity_stream_includes_citations(mocker: MockerFixture) -> None:
         llm.client.chat.completions, "create", return_value=mock_stream
     )
     stream = llm.stream("Hello langchain")
-    full: BaseMessage | None = None
     chunks_list = list(stream)
     # BaseChatModel.stream() adds an extra chunk after the final chunk from _stream
     assert len(chunks_list) == 4
-    for i, chunk in enumerate(
-        chunks_list[:3]
-    ):  # Only check first 3 chunks against mock
-        full = chunk if full is None else cast(BaseMessage, full + chunk)
-        assert chunk.content == mock_chunks[i]["choices"][0]["delta"].get("content", "")
-        if i == 0:
-            assert chunk.additional_kwargs["citations"] == [
-                "example.com",
-                "example2.com",
-            ]
-        else:
-            assert "citations" not in chunk.additional_kwargs
-    # Process the 4th chunk
-    assert full is not None
-    full = cast(BaseMessage, full + chunks_list[3])
-    assert isinstance(full, AIMessageChunk)
-    assert full.content == "Hello Perplexity"
-    assert full.additional_kwargs == {"citations": ["example.com", "example2.com"]}
+
+    # First chunk has citations from first chunk
+    assert chunks_list[0].content == "Hello "
+    assert chunks_list[0].additional_kwargs["citations"] == [
+        "example.com",
+        "example2.com",
+    ]
+
+    # Second chunk doesn't have citations (not first, not last)
+    assert chunks_list[1].content == "Perplexity"
+    assert "citations" not in chunks_list[1].additional_kwargs
+
+    # Third chunk (final with finish_reason) has accumulated citations
+    assert chunks_list[2].content == ""
+    assert chunks_list[2].additional_kwargs["citations"] == [
+        "example.com",
+        "example2.com",
+    ]
 
     patcher.assert_called_once()
 
@@ -211,3 +217,114 @@ def test_perplexity_invoke_includes_num_search_queries(mocker: MockerFixture) ->
 def test_profile() -> None:
     model = ChatPerplexity(model="sonar")
     assert model.profile
+
+
+def test_perplexity_stream_related_questions_in_last_chunk(
+    mocker: MockerFixture,
+) -> None:
+    """Test that related_questions are extracted even when sent in the last chunk.
+
+    Perplexity API sends some metadata like related_questions etc.
+    in the final chunk. This test verifies that these are properly accumulated
+    and added to the final chunk (with finish_reason).
+    """
+    llm = ChatPerplexity(model="test", timeout=30, verbose=True)
+
+    # Simulate Perplexity's actual behavior: metadata comes in the last chunk
+    mock_chunk_0 = {
+        "choices": [{"delta": {"content": "Hello "}, "finish_reason": None}],
+    }
+    mock_chunk_1 = {
+        "choices": [{"delta": {"content": "world"}, "finish_reason": None}],
+    }
+    mock_chunk_2 = {
+        "choices": [{"delta": {}, "finish_reason": "stop"}],
+        "citations": ["example.com"],
+        "related_questions": [
+            "What is AI?",
+            "How does machine learning work?",
+        ],
+        "search_results": [{"url": "example.com", "title": "Example"}],
+    }
+
+    mock_chunks: list[dict[str, Any]] = [mock_chunk_0, mock_chunk_1, mock_chunk_2]
+    mock_stream = MagicMock()
+    mock_stream.__iter__.return_value = mock_chunks
+    mocker.patch.object(llm.client.chat.completions, "create", return_value=mock_stream)
+
+    stream = list(llm.stream("test query"))
+
+    # First two chunks should not have metadata (it arrives in last chunk)
+    assert "related_questions" not in stream[0].additional_kwargs
+    assert "related_questions" not in stream[1].additional_kwargs
+
+    # Third chunk (final with finish_reason) should have all metadata
+    final_chunk = stream[2]
+    assert "related_questions" in final_chunk.additional_kwargs
+    assert final_chunk.additional_kwargs["related_questions"] == [
+        "What is AI?",
+        "How does machine learning work?",
+    ]
+    assert final_chunk.additional_kwargs["citations"] == ["example.com"]
+    assert "search_results" in final_chunk.additional_kwargs
+
+
+async def test_perplexity_astream_related_questions_in_last_chunk(
+    mocker: MockerFixture,
+) -> None:
+    """Test async streaming with related_questions in the last chunk.
+
+    Verifies that the async version (_astream) also properly accumulates
+    metadata and adds them to the final chunk (with finish_reason).
+    """
+    llm = ChatPerplexity(model="test", timeout=30, verbose=True)
+
+    # Simulate Perplexity's actual behavior: metadata comes in the last chunk
+    mock_chunk_0 = {
+        "choices": [{"delta": {"content": "Async "}, "finish_reason": None}],
+    }
+    mock_chunk_1 = {
+        "choices": [{"delta": {"content": "test"}, "finish_reason": None}],
+    }
+    mock_chunk_2 = {
+        "choices": [{"delta": {}, "finish_reason": "stop"}],
+        "citations": ["async-example.com"],
+        "related_questions": [
+            "What is async?",
+            "How does astream work?",
+        ],
+        "images": [{"url": "image.jpg", "alt": "test"}],
+    }
+
+    mock_chunks: list[dict[str, Any]] = [mock_chunk_0, mock_chunk_1, mock_chunk_2]
+
+    # Create an async mock that returns the async generator
+    async def async_generator() -> AsyncIterator[dict[str, Any]]:
+        for chunk in mock_chunks:
+            yield chunk
+
+    # Create an async mock for the create method
+    async def mock_create(*args: Any, **kwargs: Any) -> AsyncIterator[dict[str, Any]]:
+        return async_generator()
+
+    mocker.patch.object(
+        llm.async_client.chat.completions,
+        "create",
+        side_effect=mock_create,
+    )
+
+    stream = [chunk async for chunk in llm.astream("test query")]
+
+    # First two chunks should not have metadata (it arrives in last chunk)
+    assert "related_questions" not in stream[0].additional_kwargs
+    assert "related_questions" not in stream[1].additional_kwargs
+
+    # Third chunk (final with finish_reason) should have all metadata
+    final_chunk = stream[2]
+    assert "related_questions" in final_chunk.additional_kwargs
+    assert final_chunk.additional_kwargs["related_questions"] == [
+        "What is async?",
+        "How does astream work?",
+    ]
+    assert final_chunk.additional_kwargs["citations"] == ["async-example.com"]
+    assert "images" in final_chunk.additional_kwargs
