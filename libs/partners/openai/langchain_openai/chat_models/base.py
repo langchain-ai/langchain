@@ -1506,7 +1506,9 @@ class BaseChatOpenAI(BaseChatModel):
             if hasattr(message, "refusal"):
                 generations[0].message.additional_kwargs["refusal"] = message.refusal
             if hasattr(message, "reasoning_content"):
-                generations[0].message.additional_kwargs["reasoning_content"] = message.reasoning_content
+                generations[0].message.additional_kwargs["reasoning_content"] = (
+                    message.reasoning_content
+                )
 
         return ChatResult(generations=generations, llm_output=llm_output)
 
@@ -2640,12 +2642,13 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             response items into the message's `content` field, rather than
             `additional_kwargs`. We recommend this format for new applications.
 
-        ??? info "Reasoning content (chain-of-thought)"
+    ??? info "Reasoning content (chain-of-thought)"
 
         Some reasoning models (OpenAI o1/o3, xAI Grok, DeepSeek-R1, Qwen) expose
         their chain-of-thought reasoning in the `reasoning_content` field. This is
         automatically preserved in `AIMessage.additional_kwargs`.
-```python
+
+        ```python
         from langchain_openai import ChatOpenAI
 
         # Using a reasoning model
@@ -2660,8 +2663,8 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         reasoning = response.additional_kwargs.get("reasoning_content")
         if reasoning:
             print(f"Reasoning: {reasoning}")
-            # Output: "Reasoning: First, I recognize that 100 = 10 × 10..."
-```
+            # Output: "Reasoning: First, I recognize that 100 = 10 * 10..."
+        ```
 
         The `reasoning_content` field is available for:
         - OpenAI: o1-preview, o1-mini, o3-mini
