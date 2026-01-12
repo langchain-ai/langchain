@@ -554,9 +554,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                                 index += 1
                             if "index" not in block:
                                 block["index"] = index
-                    run_manager.on_llm_new_token(
-                        cast("str", chunk.message.content), chunk=chunk
-                    )
+                    run_manager.on_llm_new_token(chunk.text, chunk=chunk)
                     chunks.append(chunk)
                     yield cast("AIMessageChunk", chunk.message)
                     yielded = True
@@ -686,9 +684,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                             index += 1
                         if "index" not in block:
                             block["index"] = index
-                await run_manager.on_llm_new_token(
-                    cast("str", chunk.message.content), chunk=chunk
-                )
+                await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
                 chunks.append(chunk)
                 yield cast("AIMessageChunk", chunk.message)
                 yielded = True
@@ -1205,9 +1201,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 if run_manager:
                     if chunk.message.id is None:
                         chunk.message.id = run_id
-                    run_manager.on_llm_new_token(
-                        cast("str", chunk.message.content), chunk=chunk
-                    )
+                    run_manager.on_llm_new_token(chunk.text, chunk=chunk)
                 chunks.append(chunk)
                 yielded = True
 
@@ -1331,9 +1325,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 if run_manager:
                     if chunk.message.id is None:
                         chunk.message.id = run_id
-                    await run_manager.on_llm_new_token(
-                        cast("str", chunk.message.content), chunk=chunk
-                    )
+                    await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
                 chunks.append(chunk)
                 yielded = True
 
