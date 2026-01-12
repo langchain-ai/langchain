@@ -2,7 +2,7 @@ from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest  # type: ignore[import-not-found]
-from langchain_classic.chat_models import init_chat_model
+from langchain.chat_models.base import init_chat_model
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
