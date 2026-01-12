@@ -201,6 +201,28 @@ def test__convert_dict_to_message_ai_with_name() -> None:
     assert _convert_message_to_dict(expected_output) == message
 
 
+def test__convert_dict_to_message_ai_with_reasoning_content() -> None:
+    """Test that reasoning_content from reasoning models is preserved.
+
+    Reasoning models (e.g., o1, grok) return a reasoning_content field
+    containing the model's chain-of-thought reasoning. This should be
+    preserved in additional_kwargs for downstream access.
+    """
+    message = {
+        "role": "assistant",
+        "content": "The answer is 345.",
+        "reasoning_content": "First, I need to multiply 15 by 23. Breaking it down: "
+        "15 * 20 = 300, 15 * 3 = 45, so 300 + 45 = 345.",
+    }
+    result = _convert_dict_to_message(message)
+    assert isinstance(result, AIMessage)
+    assert result.content == "The answer is 345."
+    assert result.additional_kwargs.get("reasoning_content") == (
+        "First, I need to multiply 15 by 23. Breaking it down: "
+        "15 * 20 = 300, 15 * 3 = 45, so 300 + 45 = 345."
+    )
+
+
 def test__convert_dict_to_message_system() -> None:
     message = {"role": "system", "content": "foo"}
     result = _convert_dict_to_message(message)
@@ -3226,3 +3248,62 @@ def test_openai_structured_output_refusal_handling_responses_api() -> None:
         pass
     except ValueError as e:
         pytest.fail(f"This is a wrong behavior. Error details: {e}")
+
+
+
+def test_create_chat_result_preserves_reasoning_content() -> None:
+    """Test that _create_chat_result preserves reasoning_content from reasoning models.
+
+    Reasoning models (e.g., o1, grok) return a reasoning_content field in the
+    response message containing the model's chain-of-thought reasoning.
+    This should be preserved in the AIMessage's additional_kwargs.
+    """
+    from unittest.mock import MagicMock
+
+    # Create a mock OpenAI ChatCompletion response with reasoning_content
+    mock_message = MagicMock()
+    mock_message.content = "The answer is 345."
+    mock_message.reasoning_content = (
+        "First, I need to multiply 15 by 23. "
+        "Breaking it down: 15 * 20 = 300, 15 * 3 = 45, so 300 + 45 = 345."
+    )
+    mock_message.tool_calls = None
+    mock_message.function_call = None
+    mock_message.audio = None
+    mock_message.refusal = None
+    # Simulate pydantic model_extra for extra fields
+    mock_message.model_extra = {"reasoning_content": mock_message.reasoning_content}
+
+    mock_choice = MagicMock()
+    mock_choice.message = mock_message
+    mock_choice.finish_reason = "stop"
+
+    mock_response = MagicMock()
+    mock_response.choices = [mock_choice]
+    mock_response.model_dump.return_value = {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": "The answer is 345.",
+                    "reasoning_content": mock_message.reasoning_content,
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30},
+        "model": "grok-3",
+    }
+
+    llm = ChatOpenAI(model="grok-3", api_key="fake-key")
+    result = llm._create_chat_result(mock_response)
+
+    assert len(result.generations) == 1
+    ai_message = result.generations[0].message
+    assert isinstance(ai_message, AIMessage)
+    assert ai_message.content == "The answer is 345."
+    assert ai_message.additional_kwargs.get("reasoning_content") == (
+        "First, I need to multiply 15 by 23. "
+        "Breaking it down: 15 * 20 = 300, 15 * 3 = 45, so 300 + 45 = 345."
+    )
+
