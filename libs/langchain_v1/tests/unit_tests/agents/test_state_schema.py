@@ -6,13 +6,17 @@ AgentState without needing to create custom middleware.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
 
 from langchain.agents import create_agent
-from langchain.agents.middleware.types import AgentMiddleware, AgentState
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    PrivateStateAttr,
+)
 
 # Cannot move ToolRuntime to TYPE_CHECKING as parameters of @tool annotated functions
 # are inspected at runtime.
@@ -192,3 +196,60 @@ async def test_state_schema_async() -> None:
 
     assert result["async_field"] == "async_value"
     assert "Async: 99" in result["messages"][2].content
+
+
+def test_state_schema_with_private_state_field() -> None:
+    """Test that private state fields (PrivateStateAttr) are filtered from input and output.
+
+    Private state fields are marked with PrivateStateAttr annotation, which means:
+    - They are omitted from the input schema (filtered out when invoking)
+    - They are omitted from the output schema (filtered out from results)
+    - Even if provided during invoke, they won't appear in state or results
+    """
+
+    class StateWithPrivateField(AgentState[Any]):
+        public_field: str
+        private_field: Annotated[str, PrivateStateAttr]
+
+    captured_state = {}
+
+    @tool
+    def capture_state_tool(x: int, runtime: ToolRuntime) -> str:
+        """Tool that captures the current state for inspection."""
+        captured_state["state"] = dict(runtime.state)
+        return f"Captured state with x={x}"
+
+    agent = create_agent(
+        model=FakeToolCallingModel(
+            tool_calls=[
+                [{"args": {"x": 42}, "id": "call_1", "name": "capture_state_tool"}],
+                [],
+            ]
+        ),
+        tools=[capture_state_tool],
+        state_schema=StateWithPrivateField,
+    )
+
+    # Invoke the agent with BOTH public and private fields
+    result = agent.invoke(
+        {
+            "messages": [HumanMessage("Test private state")],
+            "public_field": "public_value",
+            "private_field": "private_value",  # This should be filtered out
+        }
+    )
+
+    # Assert that public_field is preserved in the result
+    assert result["public_field"] == "public_value"
+
+    # Assert that private_field is NOT in the result (filtered out from output)
+    assert "private_field" not in result
+
+    # Assert that private_field was NOT in the state during tool execution
+    assert "private_field" not in captured_state["state"]
+
+    # Assert that public_field WAS in the state during tool execution
+    assert captured_state["state"]["public_field"] == "public_value"
+
+    # Verify the agent executed normally
+    assert len(result["messages"]) == 4  # Human, AI (tool call), Tool result, AI (final)
