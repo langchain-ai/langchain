@@ -1171,11 +1171,11 @@ class ChatHuggingFace(BaseChatModel):
                 },
             )
             if is_pydantic_schema:
-                output_parser: PydanticToolsParser | JsonOutputKeyToolsParser | JsonOutputParser = (
-                    PydanticToolsParser(
-                        tools=[schema],  # type: ignore[list-item]
-                        first_tool_only=True,
-                    )
+                output_parser: (
+                    PydanticToolsParser | JsonOutputKeyToolsParser | JsonOutputParser
+                ) = PydanticToolsParser(
+                    tools=[schema],  # type: ignore[list-item]
+                    first_tool_only=True,
                 )
 
             else:
