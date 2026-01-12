@@ -156,7 +156,9 @@ class _SchemaSpec(Generic[SchemaT]):
         if name:
             self.name = name
         elif isinstance(schema, dict):
-            self.name = str(schema.get("title", f"response_format_{str(uuid.uuid4())[:4]}"))
+            if "title" not in schema:
+                schema["title"] = f"response_format_{str(uuid.uuid4())[:4]}"
+            self.name = schema["title"]
         else:
             self.name = str(getattr(schema, "__name__", f"response_format_{str(uuid.uuid4())[:4]}"))
 
