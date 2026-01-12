@@ -381,6 +381,30 @@ def convert_to_openai_function(
 
         `description` and `parameters` keys are now optional. Only `name` is
         required and guaranteed to be part of the output.
+
+    !!! note "JSON Schema dict requirements"
+
+        When passing a JSON schema dict directly, it **must** include a top-level
+        ``title`` key which will be used as the function/tool name. Example::
+
+            # Correct - includes required 'title' key
+            schema = {
+                "title": "GetWeather",  # Required: becomes the function name
+                "type": "object",
+                "description": "Get weather for a location",
+                "properties": {
+                    "location": {"type": "string", "description": "City name"}
+                },
+                "required": ["location"]
+            }
+
+            # This will raise ValueError - missing 'title'
+            bad_schema = {
+                "type": "object",
+                "properties": {"location": {"type": "string"}}
+            }
+
+        Alternatively, use Pydantic models which handle this automatically.
     """
     # an Anthropic format tool
     if isinstance(function, dict) and all(
