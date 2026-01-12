@@ -487,7 +487,10 @@ class SummarizationMiddleware(AgentMiddleware):
     @staticmethod
     def _build_new_messages(summary: str) -> list[HumanMessage]:
         return [
-            HumanMessage(content=f"Here is a summary of the conversation to date:\n\n{summary}")
+            HumanMessage(
+                content=f"Here is a summary of the conversation to date:\n\n{summary}",
+                additional_kwargs={"lc_source": "summarization"},
+            )
         ]
 
     @staticmethod
