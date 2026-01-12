@@ -393,15 +393,15 @@ def convert_to_openai_function(
                 "type": "object",
                 "description": "Get weather for a location",
                 "properties": {
-                    "location": {"type": "string", "description": "City name"}
+                    "location": {"type": "string", "description": "City name"},
                 },
-                "required": ["location"]
+                "required": ["location"],
             }
 
             # This will raise ValueError - missing 'title'
             bad_schema = {
                 "type": "object",
-                "properties": {"location": {"type": "string"}}
+                "properties": {"location": {"type": "string"}},
             }
 
         Alternatively, use Pydantic models which handle this automatically.
