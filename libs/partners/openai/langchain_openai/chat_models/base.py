@@ -2640,6 +2640,38 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             response items into the message's `content` field, rather than
             `additional_kwargs`. We recommend this format for new applications.
 
+        ??? info "Reasoning content (chain-of-thought)"
+
+        Some reasoning models (OpenAI o1/o3, xAI Grok, DeepSeek-R1, Qwen) expose
+        their chain-of-thought reasoning in the `reasoning_content` field. This is
+        automatically preserved in `AIMessage.additional_kwargs`.
+```python
+        from langchain_openai import ChatOpenAI
+
+        # Using a reasoning model
+        llm = ChatOpenAI(model="o1-preview")  # or grok-3-mini, deepseek-reasoner
+        response = llm.invoke("What is 10^2")
+
+        # Get the answer
+        print(response.content)
+        # Output: "The square of 10 is 100."
+
+        # Get the model's reasoning process
+        reasoning = response.additional_kwargs.get("reasoning_content")
+        if reasoning:
+            print(f"Reasoning: {reasoning}")
+            # Output: "Reasoning: First, I recognize that 100 = 10 × 10..."
+```
+
+        The `reasoning_content` field is available for:
+        - OpenAI: o1-preview, o1-mini, o3-mini
+        - xAI: grok-3-mini, grok-beta
+        - DeepSeek: deepseek-reasoner
+        - Qwen: qwen reasoning variants
+
+        This works in both streaming and non-streaming modes.
+
+
     ??? info "Structured output"
 
         ```python
