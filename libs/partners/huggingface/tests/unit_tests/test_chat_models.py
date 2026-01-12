@@ -2,6 +2,7 @@ from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest  # type: ignore[import-not-found]
+from langchain_classic.chat_models import init_chat_model
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -9,7 +10,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.outputs import ChatResult
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel
@@ -380,6 +381,39 @@ def test_pydantic_output_returns_pydantic_instance_not_dict() -> None:
     )
 
 
+def test_dict_schema_backward_compatibility() -> None:
+    """Verify dict schemas still work (backward compatibility)."""
+    mock_llm = Mock(spec=HuggingFaceEndpoint)
+    mock_llm.repo_id = "test-model"
+    mock_llm.model = "test-model"
+    chat = ChatHuggingFace(llm=mock_llm)
+
+    dict_schema = {"name": {"type": "string"}, "age": {"type": "integer"}}
+
+    # Verify JsonOutputParser is used
+    with (
+        patch(
+            "langchain_huggingface.chat_models.huggingface.JsonOutputParser"
+        ) as mock_json,
+        patch(
+            "langchain_huggingface.chat_models.huggingface.PydanticOutputParser"
+        ) as mock_pydantic,
+    ):
+        mock_json.return_value = Mock(spec=JsonOutputParser)
+
+        chat.with_structured_output(schema=dict_schema, method="json_schema")
+
+        mock_json.assert_called_once()
+        mock_pydantic.assert_not_called()
+
+    # Verify JsonOutputParser returns dict
+    parser = JsonOutputParser()
+    result = parser.parse('{"name": "Alice", "age": 30}')
+
+    assert isinstance(result, dict)
+    assert not isinstance(result, BaseModel)
+
+
 def test_function_calling_pydantic_still_not_supported() -> None:
     """Test that function_calling with Pydantic still raises NotImplementedError."""
     mock_llm = Mock(spec=HuggingFaceEndpoint)
@@ -412,8 +446,6 @@ def test_init_chat_model_huggingface() -> None:
     model initialization, particularly the required 'task' parameter and
     parameter separation between HuggingFacePipeline and ChatHuggingFace.
     """
-    from langchain.chat_models.base import init_chat_model
-
     # Test basic initialization with default task
     # Note: This test may skip in CI if model download fails, but it verifies
     # that the initialization code path works correctly
