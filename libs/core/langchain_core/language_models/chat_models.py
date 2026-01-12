@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
-import typing
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from functools import cached_property
@@ -74,6 +73,7 @@ from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 
 if TYPE_CHECKING:
+    import builtins
     import uuid
 
     from langchain_core.output_parsers.base import OutputParserLike
@@ -1527,9 +1527,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     def bind_tools(
         self,
-        tools: Sequence[
-            typing.Dict[str, Any] | type | Callable | BaseTool  # noqa: UP006
-        ],
+        tools: Sequence[builtins.dict[str, Any] | type | Callable | BaseTool],
         *,
         tool_choice: str | None = None,
         **kwargs: Any,
@@ -1548,11 +1546,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     def with_structured_output(
         self,
-        schema: typing.Dict | type,  # noqa: UP006
+        schema: builtins.dict[str, Any] | type,
         *,
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, typing.Dict | BaseModel]:  # noqa: UP006
+    ) -> Runnable[LanguageModelInput, builtins.dict[str, Any] | BaseModel]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:

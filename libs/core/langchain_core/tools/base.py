@@ -5,6 +5,7 @@ from __future__ import annotations
 import functools
 import inspect
 import json
+import logging
 import typing
 import warnings
 from abc import ABC, abstractmethod
@@ -81,6 +82,8 @@ TOOL_MESSAGE_BLOCK_TYPES = (
     "document",
     "file",
 )
+
+_logger = logging.getLogger(__name__)
 
 
 class SchemaAnnotationError(TypeError):
@@ -805,6 +808,9 @@ class ChildTool(BaseTool):
         # Start with filtered args from the constant
         filtered_keys = set[str](FILTERED_ARGS)
 
+        # Add injected args from function signature (e.g., ToolRuntime parameters)
+        filtered_keys.update(self._injected_args_keys)
+
         # If we have an args_schema, use it to identify injected args
         if self.args_schema is not None:
             try:
@@ -812,9 +818,12 @@ class ChildTool(BaseTool):
                 for field_name, field_type in annotations.items():
                     if _is_injected_arg_type(field_type):
                         filtered_keys.add(field_name)
-            except Exception:  # noqa: S110
+            except Exception:
                 # If we can't get annotations, just use FILTERED_ARGS
-                pass
+                _logger.debug(
+                    "Failed to get args_schema annotations for filtering.",
+                    exc_info=True,
+                )
 
         # Filter out the injected keys from tool_input
         return {k: v for k, v in tool_input.items() if k not in filtered_keys}
@@ -980,7 +989,7 @@ class ChildTool(BaseTool):
             error_to_raise = e
 
         if error_to_raise:
-            run_manager.on_tool_error(error_to_raise)
+            run_manager.on_tool_error(error_to_raise, tool_call_id=tool_call_id)
             raise error_to_raise
         output = _format_output(content, artifact, tool_call_id, self.name, status)
         run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
@@ -1110,7 +1119,7 @@ class ChildTool(BaseTool):
             error_to_raise = e
 
         if error_to_raise:
-            await run_manager.on_tool_error(error_to_raise)
+            await run_manager.on_tool_error(error_to_raise, tool_call_id=tool_call_id)
             raise error_to_raise
 
         output = _format_output(content, artifact, tool_call_id, self.name, status)
