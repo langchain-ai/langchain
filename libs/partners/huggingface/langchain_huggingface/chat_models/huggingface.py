@@ -54,8 +54,6 @@ from langchain_core.output_parsers.openai_tools import (
     make_invalid_tool_call,
     parse_tool_call,
 )
-
-
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -1173,12 +1171,13 @@ class ChatHuggingFace(BaseChatModel):
                 },
             )
             if is_pydantic_schema:
-                output_parser: PydanticToolsParser | JsonOutputKeyToolsParser = (
+                output_parser: PydanticToolsParser | JsonOutputKeyToolsParser | JsonOutputParser = (
                     PydanticToolsParser(
                         tools=[schema],  # type: ignore[list-item]
                         first_tool_only=True,
                     )
                 )
+
             else:
                 output_parser = JsonOutputKeyToolsParser(
                     key_name=tool_name, first_tool_only=True
@@ -1199,7 +1198,8 @@ class ChatHuggingFace(BaseChatModel):
                     "schema": schema,
                 },
             )
-            output_parser = JsonOutputParser()  # type: ignore[arg-type]
+            output_parser = JsonOutputParser()
+
         elif method == "json_mode":
             llm = self.bind(
                 response_format={"type": "json_object"},
@@ -1208,7 +1208,8 @@ class ChatHuggingFace(BaseChatModel):
                     "schema": schema,
                 },
             )
-            output_parser = JsonOutputParser()  # type: ignore[arg-type]
+            output_parser = JsonOutputParser()
+
         else:
             msg = (
                 f"Unrecognized method argument. Expected one of 'function_calling' or "

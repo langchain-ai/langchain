@@ -10,7 +10,6 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatResult
-from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel
 
@@ -349,13 +348,13 @@ def test_with_structured_output_pydantic(chat_hugging_face: Any) -> None:
         "langchain_huggingface.chat_models.huggingface.convert_to_openai_tool",
         side_effect=lambda x: {"type": "function", "function": {"name": "TestModel"}},
     ):
-        # We also need to patch bind_tools to return a runnable, 
+        # We also need to patch bind_tools to return a runnable,
         # or rely on the real bind_tools which calls super().bind
         # super().bind returns a RunnableBinding
-        
-        # We need to mock bind mechanism if we don't want real runnables overhead? 
+
+        # We need to mock bind mechanism if we don't want real runnables overhead?
         # But ChatHuggingFace is real.
-        
+
         runnable = chat_hugging_face.with_structured_output(TestModel)
         # It usually returns a RunnableBinding or RunnableSequence
         assert runnable is not None
