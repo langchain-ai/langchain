@@ -685,6 +685,22 @@ def create_agent(
         for chunk in graph.stream(inputs, stream_mode="updates"):
             print(chunk)
         ```
+
+    !!! note "Streaming behavior"
+
+        When using ``stream()`` or ``astream()`` with ``stream_mode="messages"``,
+        the agent yields **complete messages** (not individual tokens). This is
+        because the agent internally uses ``model.invoke()`` / ``model.ainvoke()``
+        rather than streaming methods.
+
+        For token-level streaming, use the model directly::
+
+            # Token-level streaming (outside agent)
+            async for token in model.astream(messages):
+                print(token.content, end="")
+
+        The agent's streaming is designed for observing state updates between
+        tool calls, not for real-time token output.
     """
     # init chat model
     if isinstance(model, str):
