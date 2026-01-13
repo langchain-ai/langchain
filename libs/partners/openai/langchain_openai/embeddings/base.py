@@ -13,9 +13,10 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
-from langchain_openai.chat_models._client_utils import _resolve_sync_and_async_api_keys
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
+
+from langchain_openai.chat_models._client_utils import _resolve_sync_and_async_api_keys
 
 logger = logging.getLogger(__name__)
 
@@ -296,17 +297,19 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         longer than embedding_ctx_length."""
 
     rate_limiter: BaseRateLimiter | None = None
-    """Optional rate limiter. If provided, will be used to throttle requests to the OpenAI API.
+    """Optional rate limiter. If provided, will be used to throttle requests
+    to the OpenAI API.
 
-    Supports objects like `InMemoryRateLimiter` with `wait()` and `wait_async()` methods
-    for synchronous and asynchronous embedding calls, respectively.
+    Supports objects like `InMemoryRateLimiter` with `acquire()` and
+    `aacquire()` methods for synchronous and asynchronous embedding calls,
+    respectively.
     """
 
     model_config = ConfigDict(
         extra="forbid",
         populate_by_name=True,
         protected_namespaces=(),
-        arbitrary_types_allowed=True  # ⚡ 允许 BaseRateLimiter 这种自定义类型
+        arbitrary_types_allowed=True,  # ⚡ 允许 BaseRateLimiter 这种自定义类型
     )
 
     @model_validator(mode="before")
