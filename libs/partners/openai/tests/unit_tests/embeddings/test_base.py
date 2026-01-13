@@ -118,9 +118,9 @@ def test_embeddings_respects_token_limit() -> None:
             )
             call_counts.append(total_tokens)
             # Verify this call doesn't exceed limit
-            assert (
-                total_tokens <= 300000
-            ), f"Batch exceeded token limit: {total_tokens} tokens"
+            assert total_tokens <= 300000, (
+                f"Batch exceeded token limit: {total_tokens} tokens"
+            )
 
         # Return mock response
         mock_response = Mock()
