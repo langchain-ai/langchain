@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
     from langgraph.runtime import Runtime
 
-from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict, override
@@ -164,6 +164,7 @@ class TodoListMiddleware(AgentMiddleware):
         *,
         system_prompt: str = WRITE_TODOS_SYSTEM_PROMPT,
         tool_description: str = WRITE_TODOS_TOOL_DESCRIPTION,
+        keep_only_last_todo_message: bool = False,
     ) -> None:
         """Initialize the `TodoListMiddleware` with optional custom prompts.
 
@@ -171,10 +172,14 @@ class TodoListMiddleware(AgentMiddleware):
             system_prompt: Custom system prompt to guide the agent on using the todo
                 tool.
             tool_description: Custom description for the `write_todos` tool.
+            keep_only_last_todo_message: If True, keep only the most recent
+                `write_todos` AI/ToolMessage pair in the request history to reduce
+                repetition when sending context to the model.
         """
         super().__init__()
         self.system_prompt = system_prompt
         self.tool_description = tool_description
+        self.keep_only_last_todo_message = keep_only_last_todo_message
 
         # Dynamically create the write_todos tool with the custom description
         @tool(description=self.tool_description)
@@ -198,34 +203,24 @@ class TodoListMiddleware(AgentMiddleware):
         request: ModelRequest,
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
-        """Update the system message to include the todo system prompt.
+        """Update the system message and optionally prune duplicate todo history.
 
         Args:
             request: Model request to execute (includes state and runtime).
-            handler: Async callback that executes the model request and returns
-                `ModelResponse`.
+            handler: Callback that executes the model request and returns `ModelResponse`.
 
         Returns:
             The model call result.
         """
-        if request.system_message is not None:
-            new_system_content = [
-                *request.system_message.content_blocks,
-                {"type": "text", "text": f"\n\n{self.system_prompt}"},
-            ]
-        else:
-            new_system_content = [{"type": "text", "text": self.system_prompt}]
-        new_system_message = SystemMessage(
-            content=cast("list[str | dict[str, str]]", new_system_content)
-        )
-        return handler(request.override(system_message=new_system_message))
+        prepared_request = self._prepare_request(request)
+        return handler(prepared_request)
 
     async def awrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
-        """Update the system message to include the todo system prompt.
+        """Update the system message and optionally prune duplicate todo history.
 
         Args:
             request: Model request to execute (includes state and runtime).
@@ -235,6 +230,11 @@ class TodoListMiddleware(AgentMiddleware):
         Returns:
             The model call result.
         """
+        prepared_request = self._prepare_request(request)
+        return await handler(prepared_request)
+
+    def _prepare_request(self, request: ModelRequest) -> ModelRequest:
+        """Construct the request with system prompt and optional todo filtering."""
         if request.system_message is not None:
             new_system_content = [
                 *request.system_message.content_blocks,
@@ -245,7 +245,59 @@ class TodoListMiddleware(AgentMiddleware):
         new_system_message = SystemMessage(
             content=cast("list[str | dict[str, str]]", new_system_content)
         )
-        return await handler(request.override(system_message=new_system_message))
+        messages = (
+            self._filter_todo_messages(request.messages)
+            if self.keep_only_last_todo_message
+            else request.messages
+        )
+        return request.override(system_message=new_system_message, messages=messages)
+
+    def _filter_todo_messages(self, messages: list[AnyMessage]) -> list[AnyMessage]:
+        """Keep only the latest todo tool interaction to limit repeated updates."""
+        last_todo_ai_index: int | None = None
+        last_todo_tool_index: int | None = None
+        last_todo_call_id: str | None = None
+        filtered_messages: list[AnyMessage] = []
+        for index in range(len(messages) - 1, -1, -1):
+            message = messages[index]
+            if (
+                isinstance(message, ToolMessage)
+                and "Updated todo list to" in message.content
+                and not last_todo_call_id
+            ):
+                last_todo_tool_index = index
+                last_todo_call_id = message.tool_call_id
+
+            if isinstance(message, AIMessage):
+                current_call_ids = {
+                    tool_call["id"]
+                    for tool_call in message.tool_calls or []
+                    if tool_call.get("name") == "write_todos"
+                }
+                if current_call_ids and last_todo_call_id in current_call_ids:
+                    last_todo_ai_index = index
+                    break
+        for index, message in enumerate(messages):
+            if isinstance(message, AIMessage):
+                todo_calls = [
+                    tc for tc in message.tool_calls or [] if tc.get("name") == "write_todos"
+                ]
+                if todo_calls and index == last_todo_ai_index:
+                    filtered_messages.append(message)
+                    continue
+                if todo_calls:
+                    continue
+            if (
+                isinstance(message, ToolMessage)
+                and "Updated todo list to" in message.content
+                and index == last_todo_tool_index
+            ):
+                filtered_messages.append(message)
+                continue
+            if isinstance(message, ToolMessage) and "Updated todo list to" in message.content:
+                continue
+            filtered_messages.append(message)
+        return filtered_messages
 
     @override
     def after_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any] | None:
