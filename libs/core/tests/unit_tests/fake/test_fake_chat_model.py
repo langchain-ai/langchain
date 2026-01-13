@@ -182,7 +182,7 @@ async def test_callback_handlers() -> None:
         @override
         async def on_llm_new_token(
             self,
-            token: str,
+            token: str | list[str | dict],
             *,
             chunk: GenerationChunk | ChatGenerationChunk | None = None,
             run_id: UUID,
@@ -190,7 +190,8 @@ async def test_callback_handlers() -> None:
             tags: list[str] | None = None,
             **kwargs: Any,
         ) -> None:
-            self.store.append(token)
+            if isinstance(token, str):
+                self.store.append(token)
 
     infinite_cycle = cycle(
         [

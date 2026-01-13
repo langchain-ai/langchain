@@ -514,7 +514,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
     def _on_llm_new_token(
         self,
         run: Run,
-        token: str,
+        token: str | list[str | dict],
         chunk: GenerationChunk | ChatGenerationChunk | None,
     ) -> None:
         """Process new LLM token."""

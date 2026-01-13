@@ -270,7 +270,7 @@ class LangChainTracer(BaseTracer):
     @override
     def _llm_run_with_token_event(
         self,
-        token: str,
+        token: str | list[str | dict],
         run_id: UUID,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         parent_run_id: UUID | None = None,

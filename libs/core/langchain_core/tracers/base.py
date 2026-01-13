@@ -134,7 +134,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
     @override
     def on_llm_new_token(
         self,
-        token: str,
+        token: str | list[str | dict],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
@@ -144,7 +144,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         """Run on new LLM token. Only available when streaming is enabled.
 
         Args:
-            token: The token.
+            token: The token, or a list of content blocks for structured output.
             chunk: The chunk.
             run_id: The run ID.
             parent_run_id: The parent run ID.
@@ -613,7 +613,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
     @override
     async def on_llm_new_token(
         self,
-        token: str,
+        token: str | list[str | dict],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
@@ -879,7 +879,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
     async def _on_llm_new_token(
         self,
         run: Run,
-        token: str,
+        token: str | list[str | dict],
         chunk: GenerationChunk | ChatGenerationChunk | None,
     ) -> None:
         """Process new LLM token."""
