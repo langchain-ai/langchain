@@ -22,7 +22,7 @@ Homepage = "https://docs.langchain.com/oss/python/integrations/providers/chroma"
 Documentation = "https://reference.langchain.com/python/integrations/langchain_chroma/"
 Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/chroma"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-chroma%22"
-Twitter = "https://x.com/LangChainAI"
+Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
