@@ -4,7 +4,7 @@ from typing import Any, Optional, Union
 from uuid import UUID
 
 import pytest
-from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
+from pytest_benchmark.fixture import BenchmarkFixture
 from typing_extensions import override
 
 from langchain_core.callbacks.base import AsyncCallbackHandler
