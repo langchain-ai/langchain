@@ -9,11 +9,11 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.2.0"
+version = "1.2.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-openai>=1.1.6,<2.0.0",
-    "langchain-core>=1.2.5,<2.0.0",
+    "langchain-core>=1.2.6,<2.0.0",
     "requests>=2.0.0,<3.0.0",
     "aiohttp>=3.9.1,<4.0.0",
 ]
@@ -23,7 +23,7 @@ Homepage = "https://docs.langchain.com/oss/python/integrations/providers/xai"
 Documentation = "https://reference.langchain.com/python/integrations/langchain_xai/"
 Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/xai"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-xai%22"
-Twitter = "https://x.com/LangChainAI"
+Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
@@ -79,6 +79,9 @@ unfixable = ["B028"] # People should intentionally tune the stacklevel
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"]

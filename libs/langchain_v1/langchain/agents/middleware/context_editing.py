@@ -154,8 +154,8 @@ class ClearToolUsesEdit(ContextEdit):
 
         return
 
+    @staticmethod
     def _build_cleared_tool_input_message(
-        self,
         message: AIMessage,
         tool_call_id: str,
     ) -> AIMessage:
@@ -222,7 +222,16 @@ class ContextEditingMiddleware(AgentMiddleware[StateT, ContextT]):
         request: ModelRequest,
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
-        """Apply context edits before invoking the model via handler."""
+        """Apply context edits before invoking the model via handler.
+
+        Args:
+            request: Model request to execute (includes state and runtime).
+            handler: Async callback that executes the model request and returns
+                `ModelResponse`.
+
+        Returns:
+            The result of invoking the handler with potentially edited messages.
+        """
         if not request.messages:
             return handler(request)
 
@@ -250,7 +259,16 @@ class ContextEditingMiddleware(AgentMiddleware[StateT, ContextT]):
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
-        """Apply context edits before invoking the model via handler (async version)."""
+        """Apply context edits before invoking the model via handler.
+
+        Args:
+            request: Model request to execute (includes state and runtime).
+            handler: Async callback that executes the model request and returns
+                `ModelResponse`.
+
+        Returns:
+            The result of invoking the handler with potentially edited messages.
+        """
         if not request.messages:
             return await handler(request)
 

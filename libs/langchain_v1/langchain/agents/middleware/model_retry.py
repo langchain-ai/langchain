@@ -163,7 +163,8 @@ class ModelRetryMiddleware(AgentMiddleware[StateT, ContextT]):
         self.max_delay = max_delay
         self.jitter = jitter
 
-    def _format_failure_message(self, exc: Exception, attempts_made: int) -> AIMessage:
+    @staticmethod
+    def _format_failure_message(exc: Exception, attempts_made: int) -> AIMessage:
         """Format the failure message when retries are exhausted.
 
         Args:
@@ -218,6 +219,9 @@ class ModelRetryMiddleware(AgentMiddleware[StateT, ContextT]):
 
         Returns:
             `ModelResponse` or `AIMessage` (the final result).
+
+        Raises:
+            RuntimeError: If the retry loop completes without returning. (This should not happen.)
         """
         # Initial attempt + retries
         for attempt in range(self.max_retries + 1):
@@ -265,6 +269,9 @@ class ModelRetryMiddleware(AgentMiddleware[StateT, ContextT]):
 
         Returns:
             `ModelResponse` or `AIMessage` (the final result).
+
+        Raises:
+            RuntimeError: If the retry loop completes without returning. (This should not happen.)
         """
         # Initial attempt + retries
         for attempt in range(self.max_retries + 1):

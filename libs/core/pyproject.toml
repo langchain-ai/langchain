@@ -9,7 +9,7 @@ license = {text = "MIT"}
 readme = "README.md"
 authors = []
 
-version = "1.2.5"
+version = "1.2.7"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langsmith>=0.3.45,<1.0.0",
@@ -27,12 +27,12 @@ Homepage = "https://docs.langchain.com/"
 Documentation = "https://reference.langchain.com/python/langchain_core/"
 Source = "https://github.com/langchain-ai/langchain/tree/master/libs/core"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-core%3D%3D1%22"
-Twitter = "https://x.com/LangChainAI"
+Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
-lint = ["ruff>=0.14.10,<0.15.0"]
+lint = ["ruff>=0.14.11,<0.15.0"]
 typing = [
     "mypy>=1.19.1,<1.20.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
@@ -100,7 +100,6 @@ ignore = [
 ]
 unfixable = [
     "B028",    # People should intentionally tune the stacklevel
-    "PLW1510", # People should intentionally set the check argument
 ]
 
 flake8-annotations.allow-star-arg-any = true
@@ -108,6 +107,9 @@ flake8-annotations.mypy-init-return = true
 flake8-builtins.ignorelist = ["id", "input", "type"]
 flake8-type-checking.runtime-evaluated-base-classes = [ "pydantic.BaseModel", "langchain_core.load.serializable.Serializable", "langchain_core.runnables.base.RunnableSerializable", "langchain_core.language_models.base.BaseLanguageModel", "langchain_core.outputs.generation.Generation", "langchain_core.tools.base.BaseTool",]
 pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
