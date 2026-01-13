@@ -6,6 +6,7 @@ pdf_inputs = true
 pdf_tool_message = true
 image_tool_message = true
 structured_output = false
+tool_call_streaming = true
 
 [overrides."claude-sonnet-4-5"]
 structured_output = true
