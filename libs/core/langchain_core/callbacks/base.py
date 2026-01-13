@@ -21,7 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class RetrieverManagerMixin:
-    """Mixin for Retriever callbacks."""
+    """Mixin for `Retriever` callbacks."""
 
     def on_retriever_error(
         self,
@@ -31,7 +31,7 @@ class RetrieverManagerMixin:
         parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
-        """Run when Retriever errors.
+        """Run when `Retriever` errors.
 
         Args:
             error: The error that occurred.
@@ -48,7 +48,7 @@ class RetrieverManagerMixin:
         parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
-        """Run when Retriever ends running.
+        """Run when `Retriever` ends running.
 
         Args:
             documents: The documents retrieved.
@@ -306,10 +306,10 @@ class CallbackManagerMixin:
         metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Any:
-        """Run when the Retriever starts running.
+        """Run when the `Retriever` starts running.
 
         Args:
-            serialized: The serialized Retriever.
+            serialized: The serialized `Retriever`.
             query: The query.
             run_id: The ID of the current run.
             parent_run_id: The ID of the parent run.
@@ -418,13 +418,12 @@ class RunManagerMixin:
 
         Args:
             name: The name of the custom event.
-            data: The data for the custom event. Format will match
-                the format specified by the user.
+            data: The data for the custom event. Format will match the format specified
+                by the user.
             run_id: The ID of the run.
-            tags: The tags associated with the custom event
-                (includes inherited tags).
-            metadata: The metadata associated with the custom event
-                (includes inherited metadata).
+            tags: The tags associated with the custom event (includes inherited tags).
+            metadata: The metadata associated with the custom event (includes inherited
+                metadata).
         """
 
 
@@ -436,7 +435,7 @@ class BaseCallbackHandler(
     CallbackManagerMixin,
     RunManagerMixin,
 ):
-    """Base callback handler for LangChain."""
+    """Base callback handler."""
 
     raise_error: bool = False
     """Whether to raise an error if an exception occurs."""
@@ -481,7 +480,7 @@ class BaseCallbackHandler(
 
 
 class AsyncCallbackHandler(BaseCallbackHandler):
-    """Async callback handler for LangChain."""
+    """Base async callback handler."""
 
     async def on_llm_start(
         self,
@@ -601,6 +600,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             parent_run_id: The ID of the parent run.
             tags: The tags.
             **kwargs: Additional keyword arguments.
+
                 - response (LLMResult): The response which was generated before
                     the error occurred.
         """
@@ -889,7 +889,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
 
 class BaseCallbackManager(CallbackManagerMixin):
-    """Base callback manager for LangChain."""
+    """Base callback manager."""
 
     def __init__(
         self,
@@ -938,8 +938,9 @@ class BaseCallbackManager(CallbackManagerMixin):
     def merge(self, other: BaseCallbackManager) -> Self:
         """Merge the callback manager with another callback manager.
 
-        May be overwritten in subclasses. Primarily used internally
-        within merge_configs.
+        May be overwritten in subclasses.
+
+        Primarily used internally within `merge_configs`.
 
         Returns:
             The merged callback manager of the same type as the current object.
