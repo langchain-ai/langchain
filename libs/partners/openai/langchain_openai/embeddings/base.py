@@ -10,12 +10,12 @@ from typing import Any, Literal, cast
 import openai
 import tiktoken
 from langchain_core.embeddings import Embeddings
+from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
+from langchain_openai.chat_models._client_utils import _resolve_sync_and_async_api_keys
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
-
-from langchain_core.rate_limiters import BaseRateLimiter
 
 logger = logging.getLogger(__name__)
 
@@ -303,7 +303,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """
 
     model_config = ConfigDict(
-        extra="forbid", populate_by_name=True, protected_namespaces=()
+        extra="forbid",
+        populate_by_name=True,
+        protected_namespaces=(),
+        arbitrary_types_allowed=True  # ⚡ 允许 BaseRateLimiter 这种自定义类型
     )
 
     @model_validator(mode="before")
