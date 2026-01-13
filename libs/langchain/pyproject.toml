@@ -46,7 +46,7 @@ Homepage = "https://docs.langchain.com/"
 Documentation = "https://reference.langchain.com/python/langchain_classic/"
 Source = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-classic%3D%3D1%22"
-Twitter = "https://x.com/LangChainAI"
+Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
@@ -88,7 +88,7 @@ test_integration = [
     "langchain-text-splitters",
 ]
 lint = [
-    "ruff>=0.14.10,<0.15.0",
+    "ruff>=0.14.11,<0.15.0",
     "cffi<1.17.1; python_version < \"3.10\"",
     "cffi; python_version >= \"3.10\"",
 ]
@@ -163,7 +163,6 @@ ignore = [
 ]
 unfixable = [
     "B028",    # People should intentionally tune the stacklevel
-    "PLW1510", # People should intentionally set the check argument
 ]
 
 flake8-annotations.allow-star-arg-any = true
@@ -175,6 +174,9 @@ pyupgrade.keep-runtime-typing = true
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [
