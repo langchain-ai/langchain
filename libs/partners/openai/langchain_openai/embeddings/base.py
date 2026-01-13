@@ -15,7 +15,7 @@ from langchain_core.utils import from_env, get_pydantic_field_names, secret_from
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
-from langchain_openai.chat_models._client_utils import _resolve_sync_and_async_api_keys
+from langchain_core.rate_limiters import BaseRateLimiter
 
 logger = logging.getLogger(__name__)
 
@@ -295,6 +295,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Whether to check the token length of inputs and automatically split inputs
         longer than embedding_ctx_length."""
 
+    rate_limiter: BaseRateLimiter | None = None
+    """Optional rate limiter. If provided, will be used to throttle requests to the OpenAI API.
+
+    Supports objects like `InMemoryRateLimiter` with `wait()` and `wait_async()` methods
+    for synchronous and asynchronous embedding calls, respectively.
+    """
+
     model_config = ConfigDict(
         extra="forbid", populate_by_name=True, protected_namespaces=()
     )
@@ -573,6 +580,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
             # Make API call with this batch
             batch_tokens = tokens[i:batch_end]
+
+            if self.rate_limiter:
+                self.rate_limiter.acquire()
             response = self.client.create(input=batch_tokens, **client_kwargs)
             if not isinstance(response, dict):
                 response = response.model_dump()
@@ -647,6 +657,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
             # Make API call with this batch
             batch_tokens = tokens[i:batch_end]
+
+            if self.rate_limiter:
+                await self.rate_limiter.aacquire()
             response = await self.async_client.create(
                 input=batch_tokens, **client_kwargs
             )

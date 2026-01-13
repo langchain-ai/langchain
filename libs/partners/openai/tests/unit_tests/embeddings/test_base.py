@@ -6,6 +6,8 @@ import pytest
 from pydantic import SecretStr
 
 from langchain_openai import OpenAIEmbeddings
+from langchain_core.rate_limiters import InMemoryRateLimiter
+
 
 os.environ["OPENAI_API_KEY"] = "foo"
 
@@ -148,3 +150,14 @@ def test_embeddings_respects_token_limit() -> None:
     # Verify each call respected the limit
     for count in call_counts:
         assert count <= 300000, f"Batch exceeded limit: {count}"
+
+
+def test_sync_embed_with_rate_limiter():
+    rate_limiter = InMemoryRateLimiter(
+        requests_per_second=0.1,  # <-- Super slow! We can only make a request once every 10 seconds!!
+        check_every_n_seconds=0.1,  # Wake up every 100 ms to check whether allowed to make a request,
+        max_bucket_size=10,  # Controls the maximum burst size.
+    )
+    embed = OpenAIEmbeddings(rate_limiter=rate_limiter)
+    vector = embed.embed_query("hello world")
+    assert isinstance(vector, list)
