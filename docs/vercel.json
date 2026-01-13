@@ -2,7 +2,7 @@
   "buildCommand": "yarn build",
   "outputDirectory": "build",
   "ignoreCommand": "bash ignore-step.sh",
-  "trailingSlash": true,
+  "trailingSlash": false,
   "rewrites": [
     {
       "source": "/docs/integrations(/?)",
