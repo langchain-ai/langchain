@@ -249,7 +249,9 @@ class TodoListMiddleware(AgentMiddleware[PlanningState, ContextT]):
         return await handler(request.override(system_message=new_system_message))
 
     @override
-    def after_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any] | None:
+    def after_model(
+        self, state: AgentState[Any], runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
         """Check for parallel write_todos tool calls and return errors if detected.
 
         The todo list is designed to be updated at most once per model turn. Since
@@ -299,7 +301,9 @@ class TodoListMiddleware(AgentMiddleware[PlanningState, ContextT]):
         return None
 
     @override
-    async def aafter_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any] | None:
+    async def aafter_model(
+        self, state: AgentState[Any], runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
         """Check for parallel write_todos tool calls and return errors if detected.
 
         Async version of `after_model`. The todo list is designed to be updated at

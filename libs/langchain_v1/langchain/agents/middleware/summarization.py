@@ -269,7 +269,9 @@ class SummarizationMiddleware(AgentMiddleware[StateT, ContextT]):
             raise ValueError(msg)
 
     @override
-    def before_model(self, state: AgentState[Any], runtime: Runtime[ContextT]) -> dict[str, Any] | None:
+    def before_model(
+        self, state: AgentState[Any], runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
         """Process messages before model invocation, potentially triggering summarization.
 
         Args:
