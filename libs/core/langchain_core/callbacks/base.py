@@ -68,6 +68,7 @@ class LLMManagerMixin:
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
         parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run on new output token. Only available when streaming is enabled.
@@ -79,6 +80,7 @@ class LLMManagerMixin:
             chunk: The new generated chunk, containing content and other information.
             run_id: The run ID. This is the ID of the current run.
             parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
             **kwargs: Additional keyword arguments.
         """
 
@@ -88,6 +90,7 @@ class LLMManagerMixin:
         *,
         run_id: UUID,
         parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run when LLM ends running.
@@ -96,6 +99,7 @@ class LLMManagerMixin:
             response: The response which was generated.
             run_id: The run ID. This is the ID of the current run.
             parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
             **kwargs: Additional keyword arguments.
         """
 
@@ -105,6 +109,7 @@ class LLMManagerMixin:
         *,
         run_id: UUID,
         parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run when LLM errors.
@@ -113,6 +118,7 @@ class LLMManagerMixin:
             error: The error that occurred.
             run_id: The run ID. This is the ID of the current run.
             parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
             **kwargs: Additional keyword arguments.
         """
 

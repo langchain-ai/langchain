@@ -6,19 +6,25 @@ AgentState without needing to create custom middleware.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Annotated, Any
 
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
 
 from langchain.agents import create_agent
-from langchain.agents.middleware.types import AgentMiddleware, AgentState
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    PrivateStateAttr,
+)
 
 # Cannot move ToolRuntime to TYPE_CHECKING as parameters of @tool annotated functions
 # are inspected at runtime.
 from langchain.tools import ToolRuntime  # noqa: TC001
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
-from .model import FakeToolCallingModel
+if TYPE_CHECKING:
+    from langgraph.runtime import Runtime
 
 
 @tool
@@ -30,7 +36,7 @@ def simple_tool(x: int) -> str:
 def test_state_schema_single_custom_field() -> None:
     """Test that a single custom state field is preserved through agent execution."""
 
-    class CustomState(AgentState):
+    class CustomState(AgentState[Any]):
         custom_field: str
 
     agent = create_agent(
@@ -50,7 +56,7 @@ def test_state_schema_single_custom_field() -> None:
 def test_state_schema_multiple_custom_fields() -> None:
     """Test that multiple custom state fields are preserved through agent execution."""
 
-    class CustomState(AgentState):
+    class CustomState(AgentState[Any]):
         user_id: str
         session_id: str
         context: str
@@ -81,7 +87,7 @@ def test_state_schema_multiple_custom_fields() -> None:
 def test_state_schema_with_tool_runtime() -> None:
     """Test that custom state fields are accessible via ToolRuntime."""
 
-    class ExtendedState(AgentState):
+    class ExtendedState(AgentState[Any]):
         counter: int
 
     runtime_data = {}
@@ -109,19 +115,19 @@ def test_state_schema_with_tool_runtime() -> None:
 def test_state_schema_with_middleware() -> None:
     """Test that state_schema merges with middleware state schemas."""
 
-    class UserState(AgentState):
+    class UserState(AgentState[Any]):
         user_name: str
 
-    class MiddlewareState(AgentState):
+    class MiddlewareState(AgentState[Any]):
         middleware_data: str
 
     middleware_calls = []
 
-    class TestMiddleware(AgentMiddleware):
+    class TestMiddleware(AgentMiddleware[MiddlewareState, None]):
         state_schema = MiddlewareState
 
-        def before_model(self, state, runtime) -> dict[str, Any]:
-            middleware_calls.append(state.get("middleware_data", ""))
+        def before_model(self, state: MiddlewareState, runtime: Runtime) -> dict[str, Any]:
+            middleware_calls.append(state["middleware_data"])
             return {}
 
     agent = create_agent(
@@ -165,7 +171,7 @@ def test_state_schema_none_uses_default() -> None:
 async def test_state_schema_async() -> None:
     """Test that state_schema works with async agents."""
 
-    class AsyncState(AgentState):
+    class AsyncState(AgentState[Any]):
         async_field: str
 
     @tool
@@ -190,3 +196,60 @@ async def test_state_schema_async() -> None:
 
     assert result["async_field"] == "async_value"
     assert "Async: 99" in result["messages"][2].content
+
+
+def test_state_schema_with_private_state_field() -> None:
+    """Test that private state fields (PrivateStateAttr) are filtered from input and output.
+
+    Private state fields are marked with PrivateStateAttr annotation, which means:
+    - They are omitted from the input schema (filtered out when invoking)
+    - They are omitted from the output schema (filtered out from results)
+    - Even if provided during invoke, they won't appear in state or results
+    """
+
+    class StateWithPrivateField(AgentState[Any]):
+        public_field: str
+        private_field: Annotated[str, PrivateStateAttr]
+
+    captured_state = {}
+
+    @tool
+    def capture_state_tool(x: int, runtime: ToolRuntime) -> str:
+        """Tool that captures the current state for inspection."""
+        captured_state["state"] = dict(runtime.state)
+        return f"Captured state with x={x}"
+
+    agent = create_agent(
+        model=FakeToolCallingModel(
+            tool_calls=[
+                [{"args": {"x": 42}, "id": "call_1", "name": "capture_state_tool"}],
+                [],
+            ]
+        ),
+        tools=[capture_state_tool],
+        state_schema=StateWithPrivateField,
+    )
+
+    # Invoke the agent with BOTH public and private fields
+    result = agent.invoke(
+        {
+            "messages": [HumanMessage("Test private state")],
+            "public_field": "public_value",
+            "private_field": "private_value",  # This should be filtered out
+        }
+    )
+
+    # Assert that public_field is preserved in the result
+    assert result["public_field"] == "public_value"
+
+    # Assert that private_field is NOT in the result (filtered out from output)
+    assert "private_field" not in result
+
+    # Assert that private_field was NOT in the state during tool execution
+    assert "private_field" not in captured_state["state"]
+
+    # Assert that public_field WAS in the state during tool execution
+    assert captured_state["state"]["public_field"] == "public_value"
+
+    # Verify the agent executed normally
+    assert len(result["messages"]) == 4  # Human, AI (tool call), Tool result, AI (final)

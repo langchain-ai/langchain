@@ -7,13 +7,18 @@ from functools import partial
 from typing import Any, Literal, cast
 
 from langchain_core.messages import (
+    AIMessage,
     AnyMessage,
     MessageLikeRepresentation,
     RemoveMessage,
     ToolMessage,
 )
 from langchain_core.messages.human import HumanMessage
-from langchain_core.messages.utils import count_tokens_approximately, trim_messages
+from langchain_core.messages.utils import (
+    count_tokens_approximately,
+    get_buffer_string,
+    trim_messages,
+)
 from langgraph.graph.message import (
     REMOVE_ALL_MESSAGES,
 )
@@ -264,8 +269,16 @@ class SummarizationMiddleware(AgentMiddleware):
             raise ValueError(msg)
 
     @override
-    def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-        """Process messages before model invocation, potentially triggering summarization."""
+    def before_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any] | None:
+        """Process messages before model invocation, potentially triggering summarization.
+
+        Args:
+            state: The agent state.
+            runtime: The runtime environment.
+
+        Returns:
+            An updated state with summarized messages if summarization was performed.
+        """
         messages = state["messages"]
         self._ensure_message_ids(messages)
 
@@ -292,8 +305,18 @@ class SummarizationMiddleware(AgentMiddleware):
         }
 
     @override
-    async def abefore_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-        """Process messages before model invocation, potentially triggering summarization."""
+    async def abefore_model(
+        self, state: AgentState[Any], runtime: Runtime
+    ) -> dict[str, Any] | None:
+        """Process messages before model invocation, potentially triggering summarization.
+
+        Args:
+            state: The agent state.
+            runtime: The runtime environment.
+
+        Returns:
+            An updated state with summarized messages if summarization was performed.
+        """
         messages = state["messages"]
         self._ensure_message_ids(messages)
 
@@ -319,6 +342,25 @@ class SummarizationMiddleware(AgentMiddleware):
             ]
         }
 
+    def _should_summarize_based_on_reported_tokens(
+        self, messages: list[AnyMessage], threshold: float
+    ) -> bool:
+        """Check if reported token usage from last AIMessage exceeds threshold."""
+        last_ai_message = next(
+            (msg for msg in reversed(messages) if isinstance(msg, AIMessage)),
+            None,
+        )
+        if (  # noqa: SIM103
+            isinstance(last_ai_message, AIMessage)
+            and last_ai_message.usage_metadata is not None
+            and (reported_tokens := last_ai_message.usage_metadata.get("total_tokens", -1))
+            and reported_tokens >= threshold
+            and (message_provider := last_ai_message.response_metadata.get("model_provider"))
+            and message_provider == self.model._get_ls_params().get("ls_provider")  # noqa: SLF001
+        ):
+            return True
+        return False
+
     def _should_summarize(self, messages: list[AnyMessage], total_tokens: int) -> bool:
         """Determine whether summarization should run for the current token usage."""
         if not self._trigger_conditions:
@@ -329,6 +371,10 @@ class SummarizationMiddleware(AgentMiddleware):
                 return True
             if kind == "tokens" and total_tokens >= value:
                 return True
+            if kind == "tokens" and self._should_summarize_based_on_reported_tokens(
+                messages, value
+            ):
+                return True
             if kind == "fraction":
                 max_input_tokens = self._get_profile_limits()
                 if max_input_tokens is None:
@@ -337,6 +383,9 @@ class SummarizationMiddleware(AgentMiddleware):
                 if threshold <= 0:
                     threshold = 1
                 if total_tokens >= threshold:
+                    return True
+
+                if self._should_summarize_based_on_reported_tokens(messages, threshold):
                     return True
         return False
 
@@ -418,7 +467,8 @@ class SummarizationMiddleware(AgentMiddleware):
 
         return max_input_tokens
 
-    def _validate_context_size(self, context: ContextSize, parameter_name: str) -> ContextSize:
+    @staticmethod
+    def _validate_context_size(context: ContextSize, parameter_name: str) -> ContextSize:
         """Validate context configuration tuples."""
         kind, value = context
         if kind == "fraction":
@@ -434,19 +484,24 @@ class SummarizationMiddleware(AgentMiddleware):
             raise ValueError(msg)
         return context
 
-    def _build_new_messages(self, summary: str) -> list[HumanMessage]:
+    @staticmethod
+    def _build_new_messages(summary: str) -> list[HumanMessage]:
         return [
-            HumanMessage(content=f"Here is a summary of the conversation to date:\n\n{summary}")
+            HumanMessage(
+                content=f"Here is a summary of the conversation to date:\n\n{summary}",
+                additional_kwargs={"lc_source": "summarization"},
+            )
         ]
 
-    def _ensure_message_ids(self, messages: list[AnyMessage]) -> None:
+    @staticmethod
+    def _ensure_message_ids(messages: list[AnyMessage]) -> None:
         """Ensure all messages have unique IDs for the add_messages reducer."""
         for msg in messages:
             if msg.id is None:
                 msg.id = str(uuid.uuid4())
 
+    @staticmethod
     def _partition_messages(
-        self,
         conversation_messages: list[AnyMessage],
         cutoff_index: int,
     ) -> tuple[list[AnyMessage], list[AnyMessage]]:
@@ -471,16 +526,41 @@ class SummarizationMiddleware(AgentMiddleware):
         target_cutoff = len(messages) - messages_to_keep
         return self._find_safe_cutoff_point(messages, target_cutoff)
 
-    def _find_safe_cutoff_point(self, messages: list[AnyMessage], cutoff_index: int) -> int:
+    @staticmethod
+    def _find_safe_cutoff_point(messages: list[AnyMessage], cutoff_index: int) -> int:
         """Find a safe cutoff point that doesn't split AI/Tool message pairs.
 
-        If the message at cutoff_index is a ToolMessage, advance until we find
-        a non-ToolMessage. This ensures we never cut in the middle of parallel
-        tool call responses.
+        If the message at `cutoff_index` is a `ToolMessage`, search backward for the
+        `AIMessage` containing the corresponding `tool_calls` and adjust the cutoff to
+        include it. This ensures tool call requests and responses stay together.
+
+        Falls back to advancing forward past `ToolMessage` objects only if no matching
+        `AIMessage` is found (edge case).
         """
-        while cutoff_index < len(messages) and isinstance(messages[cutoff_index], ToolMessage):
-            cutoff_index += 1
-        return cutoff_index
+        if cutoff_index >= len(messages) or not isinstance(messages[cutoff_index], ToolMessage):
+            return cutoff_index
+
+        # Collect tool_call_ids from consecutive ToolMessages at/after cutoff
+        tool_call_ids: set[str] = set()
+        idx = cutoff_index
+        while idx < len(messages) and isinstance(messages[idx], ToolMessage):
+            tool_msg = cast("ToolMessage", messages[idx])
+            if tool_msg.tool_call_id:
+                tool_call_ids.add(tool_msg.tool_call_id)
+            idx += 1
+
+        # Search backward for AIMessage with matching tool_calls
+        for i in range(cutoff_index - 1, -1, -1):
+            msg = messages[i]
+            if isinstance(msg, AIMessage) and msg.tool_calls:
+                ai_tool_call_ids = {tc.get("id") for tc in msg.tool_calls if tc.get("id")}
+                if tool_call_ids & ai_tool_call_ids:
+                    # Found the AIMessage - move cutoff to include it
+                    return i
+
+        # Fallback: no matching AIMessage found, advance past ToolMessages to avoid
+        # orphaned tool responses
+        return idx
 
     def _create_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
         """Generate summary for the given messages."""
@@ -491,8 +571,12 @@ class SummarizationMiddleware(AgentMiddleware):
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
+        # Format messages to avoid token inflation from metadata when str() is called on
+        # message objects
+        formatted_messages = get_buffer_string(trimmed_messages)
+
         try:
-            response = self.model.invoke(self.summary_prompt.format(messages=trimmed_messages))
+            response = self.model.invoke(self.summary_prompt.format(messages=formatted_messages))
             return response.text.strip()
         except Exception as e:
             return f"Error generating summary: {e!s}"
@@ -506,9 +590,13 @@ class SummarizationMiddleware(AgentMiddleware):
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
+        # Format messages to avoid token inflation from metadata when str() is called on
+        # message objects
+        formatted_messages = get_buffer_string(trimmed_messages)
+
         try:
             response = await self.model.ainvoke(
-                self.summary_prompt.format(messages=trimmed_messages)
+                self.summary_prompt.format(messages=formatted_messages)
             )
             return response.text.strip()
         except Exception as e:
