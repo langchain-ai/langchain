@@ -1507,7 +1507,7 @@ class BaseChatOpenAI(BaseChatModel):
                 generations[0].message.additional_kwargs[
                     "reasoning_content"
                 ] = message.reasoning_content
-        
+
         return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _astream(
