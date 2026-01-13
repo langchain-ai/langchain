@@ -1484,7 +1484,11 @@ def create_agent(
 
     config: RunnableConfig = {
         "recursion_limit": 10_000,
-        "tags": [f"agent_name:{name}"] if name else [],
+        "metadata": {
+            "lc_agent_name": name,
+        }
+        if name
+        else {},
     }
 
     return graph.compile(
