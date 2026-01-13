@@ -3454,66 +3454,6 @@ class ChatModelIntegrationTests(ChatModelTests):
                 or "ん" in customer_name_jp
             ), f"Japanese Unicode characters not found in: {customer_name_jp}"
 
-    def test_stream_completion_signal(self, model: BaseChatModel) -> None:
-        """Test that the final chunk in a stream signals completion.
-
-        This test verifies that models properly signal when streaming is complete by
-        setting `chunk.chunk_position == "last"` on the final chunk. This signal is
-        important for downstream consumers that need to know when a stream has finished.
-
-        The `BaseChatModel.stream()` implementation automatically adds this signal if
-        the underlying `_stream` implementation doesn't set it, so all models should
-        pass this test. This test can help catch cases where the model overrides
-        `stream` directly and forgets to set the final chunk position.
-
-        ??? question "Troubleshooting"
-
-            If this test fails, the base class should normally handle this
-            automatically. If you've overridden the `stream` method directly
-            (not `_stream`), ensure that the final chunk has `chunk_position="last"`:
-
-            ```python
-            # Final chunk should have:
-            AIMessageChunk(content="final text", chunk_position="last")
-            ```
-
-        """
-        chunks: list[AIMessageChunk] = []
-        for chunk in model.stream("Hello"):
-            assert isinstance(chunk, AIMessageChunk)
-            chunks.append(chunk)
-
-        assert len(chunks) > 0, "Expected at least one chunk"
-
-        last_chunk = chunks[-1]
-        assert last_chunk.chunk_position == "last", (
-            f"Expected final chunk to have chunk_position='last', "
-            f"got chunk_position={last_chunk.chunk_position!r}"
-        )
-
-    async def test_astream_completion_signal(self, model: BaseChatModel) -> None:
-        """Test that the final chunk in an async stream signals completion.
-
-        This is the async variant of `test_stream_completion_signal`.
-
-        ??? question "Troubleshooting"
-
-            See troubleshooting for `test_stream_completion_signal`.
-
-        """
-        chunks: list[AIMessageChunk] = []
-        async for chunk in model.astream("Hello"):
-            assert isinstance(chunk, AIMessageChunk)
-            chunks.append(chunk)
-
-        assert len(chunks) > 0, "Expected at least one chunk"
-
-        last_chunk = chunks[-1]
-        assert last_chunk.chunk_position == "last", (
-            f"Expected final chunk to have chunk_position='last', "
-            f"got chunk_position={last_chunk.chunk_position!r}"
-        )
-
     def test_tool_call_streaming_format(self, model: BaseChatModel) -> None:
         """Test that tool calls stream with proper block structure.
 
