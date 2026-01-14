@@ -4033,7 +4033,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
         # "name" parameter unsupported
         if "name" in msg:
             msg.pop("name")
-        if msg["role"] == "tool":
+        if msg.get("role") == "tool":
             tool_output = msg["content"]
             computer_call_output = _make_computer_call_output_from_message(
                 cast(ToolMessage, lc_msg)
@@ -4051,7 +4051,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                     "call_id": msg["tool_call_id"],
                 }
                 input_.append(function_call_output)
-        elif msg["role"] == "assistant":
+        elif msg.get("role") == "assistant":
             if isinstance(msg.get("content"), list):
                 for block in msg["content"]:
                     if isinstance(block, dict) and (block_type := block.get("type")):
@@ -4147,7 +4147,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         }
                         input_.append(function_call)
 
-        elif msg["role"] in ("user", "system", "developer"):
+        elif msg.get("role") in ("user", "system", "developer"):
             if isinstance(msg["content"], list):
                 new_blocks = []
                 non_message_item_types = ("mcp_approval_response",)
