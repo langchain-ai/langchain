@@ -51,7 +51,7 @@ from langchain.chat_models import init_chat_model
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
 
-    from langchain_core.runnables import Runnable
+    from langchain_core.runnables import Runnable, RunnableConfig
     from langgraph.cache.base import BaseCache
     from langgraph.graph.state import CompiledStateGraph
     from langgraph.runtime import Runtime
@@ -1482,6 +1482,10 @@ def create_agent(
             can_jump_to=_get_can_jump_to(middleware_w_after_agent[0], "after_agent"),
         )
 
+    config: RunnableConfig = {"recursion_limit": 10_000}
+    if name:
+        config["metadata"] = {"lc_agent_name": name}
+
     return graph.compile(
         checkpointer=checkpointer,
         store=store,
@@ -1490,7 +1494,7 @@ def create_agent(
         debug=debug,
         name=name,
         cache=cache,
-    ).with_config({"recursion_limit": 10_000})
+    ).with_config(config)
 
 
 def _resolve_jump(
