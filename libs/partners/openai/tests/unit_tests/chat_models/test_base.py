@@ -3268,6 +3268,8 @@ def test_explicit_http_client_overrides_env_variable() -> None:
         mock_async_openai.assert_called_once()
         async_call_kwargs = mock_async_openai.call_args[1]
         assert async_call_kwargs["http_client"] == explicit_client
+
+
 @pytest.mark.parametrize("use_responses_api", [False, True])
 @pytest.mark.parametrize(
     "model_name",
