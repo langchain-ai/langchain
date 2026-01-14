@@ -11,7 +11,7 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.runnables import Runnable, RunnableSerializable
+from langchain_core.runnables import Runnable, RunnableSerializable  # noqa: TC001
 
 T = TypeVar("T")
 
@@ -58,7 +58,10 @@ class OutputFixingParser(BaseOutputParser[T]):
     Example:
         .. code-block:: python
 
-            from langchain_core.output_parsers import JsonOutputParser, OutputFixingParser
+            from langchain_core.output_parsers import (
+                JsonOutputParser,
+                OutputFixingParser,
+            )
             from langchain_openai import ChatOpenAI
 
             llm = ChatOpenAI()
@@ -66,13 +69,13 @@ class OutputFixingParser(BaseOutputParser[T]):
 
             # Wrap the parser with retry capability
             fixing_parser = OutputFixingParser.from_llm(
-                llm=llm,
-                parser=json_parser,
-                max_retries=3
+                llm=llm, parser=json_parser, max_retries=3
             )
 
             # Now parsing errors will trigger automatic retry
-            result = fixing_parser.parse('{"key": value}')  # Missing quotes around value
+            result = fixing_parser.parse(
+                '{"key": value}'
+            )  # Missing quotes around value
     """
 
     parser: Annotated[BaseOutputParser[T], SkipValidation()]
@@ -122,16 +125,16 @@ class OutputFixingParser(BaseOutputParser[T]):
                 from langchain_openai import ChatOpenAI
                 from pydantic import BaseModel
 
+
                 class Person(BaseModel):
                     name: str
                     age: int
 
+
                 llm = ChatOpenAI()
                 parser = PydanticOutputParser(pydantic_object=Person)
                 fixing_parser = OutputFixingParser.from_llm(
-                    llm=llm,
-                    parser=parser,
-                    max_retries=3
+                    llm=llm, parser=parser, max_retries=3
                 )
         """
         chain = prompt | llm | StrOutputParser()

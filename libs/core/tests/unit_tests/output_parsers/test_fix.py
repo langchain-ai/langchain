@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -19,13 +19,14 @@ class MockParser(BaseOutputParser[dict[str, Any]]):
     """Number of times to fail before succeeding."""
     current_failures: int = 0
     """Current number of failures."""
-    expected_output: dict[str, Any] = {"result": "success"}
+    expected_output: ClassVar[dict[str, Any]] = {"result": "success"}
     """Output to return on success."""
 
-    def parse(self, text: str) -> dict[str, Any]:
+    def parse(self, text: str) -> dict[str, Any]:  # noqa: ARG002
         if self.current_failures < self.fail_count:
             self.current_failures += 1
-            raise OutputParserException(f"Parse failed (attempt {self.current_failures})")
+            msg = f"Parse failed (attempt {self.current_failures})"
+            raise OutputParserException(msg)
         return self.expected_output
 
     async def aparse(self, text: str) -> dict[str, Any]:
@@ -42,14 +43,16 @@ class MockParser(BaseOutputParser[dict[str, Any]]):
 class MockParserNoInstructions(BaseOutputParser[str]):
     """A mock parser without get_format_instructions."""
 
-    def parse(self, text: str) -> str:
-        raise OutputParserException("Always fails")
+    def parse(self, text: str) -> str:  # noqa: ARG002
+        msg = "Always fails"
+        raise OutputParserException(msg)
 
     async def aparse(self, text: str) -> str:
         return self.parse(text)
 
     def get_format_instructions(self) -> str:
-        raise NotImplementedError("No format instructions")
+        msg = "No format instructions"
+        raise NotImplementedError(msg)
 
     @property
     def _type(self) -> str:
@@ -61,7 +64,7 @@ def test_output_fixing_parser_success_first_try() -> None:
     mock_parser = MockParser(fail_count=0)
     mock_llm = MagicMock()
 
-    fixing_parser = OutputFixingParser.from_llm(
+    fixing_parser: OutputFixingParser[dict[str, Any]] = OutputFixingParser.from_llm(
         llm=mock_llm,
         parser=mock_parser,
         max_retries=3,
@@ -83,7 +86,7 @@ def test_output_fixing_parser_success_after_retry() -> None:
     mock_chain = MagicMock()
     mock_chain.invoke.return_value = "fixed output"
 
-    fixing_parser = OutputFixingParser(
+    fixing_parser: OutputFixingParser[dict[str, Any]] = OutputFixingParser(
         parser=mock_parser,
         retry_chain=mock_chain,
         max_retries=3,
@@ -101,7 +104,7 @@ def test_output_fixing_parser_fails_after_max_retries() -> None:
     mock_chain = MagicMock()
     mock_chain.invoke.return_value = "still invalid"
 
-    fixing_parser = OutputFixingParser(
+    fixing_parser: OutputFixingParser[dict[str, Any]] = OutputFixingParser(
         parser=mock_parser,
         retry_chain=mock_chain,
         max_retries=2,
@@ -120,7 +123,7 @@ def test_output_fixing_parser_without_format_instructions() -> None:
     mock_chain = MagicMock()
     mock_chain.invoke.return_value = "fixed output"
 
-    fixing_parser = OutputFixingParser(
+    fixing_parser: OutputFixingParser[str] = OutputFixingParser(
         parser=mock_parser,
         retry_chain=mock_chain,
         max_retries=1,
@@ -141,7 +144,7 @@ def test_output_fixing_parser_get_format_instructions() -> None:
     mock_parser = MockParser()
     mock_chain = MagicMock()
 
-    fixing_parser = OutputFixingParser(
+    fixing_parser: OutputFixingParser[dict[str, Any]] = OutputFixingParser(
         parser=mock_parser,
         retry_chain=mock_chain,
         max_retries=1,
@@ -155,7 +158,7 @@ def test_output_fixing_parser_output_type() -> None:
     mock_parser = MockParser()
     mock_chain = MagicMock()
 
-    fixing_parser = OutputFixingParser(
+    fixing_parser: OutputFixingParser[dict[str, Any]] = OutputFixingParser(
         parser=mock_parser,
         retry_chain=mock_chain,
         max_retries=1,
@@ -170,7 +173,7 @@ async def test_output_fixing_parser_aparse_success() -> None:
     mock_parser = MockParser(fail_count=0)
     mock_chain = MagicMock()
 
-    fixing_parser = OutputFixingParser(
+    fixing_parser: OutputFixingParser[dict[str, Any]] = OutputFixingParser(
         parser=mock_parser,
         retry_chain=mock_chain,
         max_retries=1,
@@ -188,7 +191,7 @@ async def test_output_fixing_parser_aparse_with_retry() -> None:
     mock_chain = AsyncMock()
     mock_chain.ainvoke.return_value = "fixed output"
 
-    fixing_parser = OutputFixingParser(
+    fixing_parser: OutputFixingParser[dict[str, Any]] = OutputFixingParser(
         parser=mock_parser,
         retry_chain=mock_chain,
         max_retries=3,
@@ -210,7 +213,7 @@ def test_output_fixing_parser_type() -> None:
     mock_parser = MockParser()
     mock_chain = MagicMock()
 
-    fixing_parser = OutputFixingParser(
+    fixing_parser: OutputFixingParser[dict[str, Any]] = OutputFixingParser(
         parser=mock_parser,
         retry_chain=mock_chain,
         max_retries=1,
