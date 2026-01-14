@@ -14,7 +14,7 @@ import os
 import warnings
 from collections.abc import Awaitable, Callable
 from functools import lru_cache
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import openai
 from pydantic import SecretStr
@@ -113,7 +113,7 @@ def _get_default_async_httpx_client(
         return _cached_async_httpx_client(base_url, timeout)
 
 
-def _get_aiohttp_client() -> Optional[Any]:
+def _get_aiohttp_client() -> Any | None:
     """Get OpenAI DefaultAioHttpClient if available.
 
     Returns:
@@ -137,11 +137,11 @@ def _should_use_aiohttp() -> bool:
 
 
 def _get_http_client_for_aiohttp_env(
-    provided_client: Optional[Any],
-    base_url: Optional[str],
+    provided_client: Any | None,
+    base_url: str | None,
     timeout: Any,
     is_async: bool = False,
-) -> Optional[Any]:
+) -> Any | None:
     """Get appropriate HTTP client considering aiohttp environment variable.
 
     Args:
@@ -162,20 +162,18 @@ def _get_http_client_for_aiohttp_env(
         aiohttp_client = _get_aiohttp_client()
         if aiohttp_client is not None:
             return aiohttp_client
-        else:
-            warnings.warn(
-                "LC_OPENAI_USE_AIOHTTP is set but openai[aiohttp] is not installed. "
-                "Install with 'pip install \"openai[aiohttp]\"' to use the aiohttp "
-                "backend. Falling back to default httpx client.",
-                UserWarning,
-                stacklevel=3,
-            )
+        warnings.warn(
+            "LC_OPENAI_USE_AIOHTTP is set but openai[aiohttp] is not installed. "
+            "Install with 'pip install \"openai[aiohttp]\"' to use the aiohttp "
+            "backend. Falling back to default httpx client.",
+            UserWarning,
+            stacklevel=3,
+        )
 
     # Fall back to existing httpx client logic
     if is_async:
         return _get_default_async_httpx_client(base_url, timeout)
-    else:
-        return _get_default_httpx_client(base_url, timeout)
+    return _get_default_httpx_client(base_url, timeout)
 
 
 def _resolve_sync_and_async_api_keys(
