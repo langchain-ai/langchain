@@ -261,21 +261,65 @@ class ChatDeepSeek(BaseChatOpenAI):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> dict:
+        """
+        Construct the request payload with explicit handling for DeepSeek R1.
+        Crucial for preventing 400 errors during tool calls.
+        """
+        # 1. Get standard OpenAI-compatible payload
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
-        for message in payload["messages"]:
-            if message["role"] == "tool" and isinstance(message["content"], list):
-                message["content"] = json.dumps(message["content"])
-            elif message["role"] == "assistant" and isinstance(
-                message["content"], list
-            ):
-                # DeepSeek API expects assistant content to be a string, not a list.
-                # Extract text blocks and join them, or use empty string if none exist.
-                text_parts = [
-                    block.get("text", "")
-                    for block in message["content"]
-                    if isinstance(block, dict) and block.get("type") == "text"
-                ]
-                message["content"] = "".join(text_parts) if text_parts else ""
+
+        # 2. Get original messages to access 'additional_kwargs' where reasoning resides
+        #    (super() drops additional_kwargs that aren't standard OpenAI fields)
+        original_messages = self._convert_input(input_).to_messages()
+
+        # 3. Iterate and patch the payload
+        for i, msg_payload in enumerate(payload.get("messages", [])):
+
+            # Match payload message to original message
+            original_msg = original_messages[i] if i < len(original_messages) else None
+
+            if msg_payload["role"] == "assistant":
+                # --- Step A: RESTORE reasoning_content ---
+                # Attempt to retrieve reasoning_content from original message storage
+                if "reasoning_content" not in msg_payload and original_msg:
+                    reasoning = original_msg.additional_kwargs.get("reasoning_content")
+                    if reasoning:
+                        msg_payload["reasoning_content"] = reasoning
+
+                # --- Step B: APPLY DeepSeek R1 Rules ---
+                # Check if this message involves tool calls
+                has_tool_calls = bool(msg_payload.get("tool_calls")) or bool(msg_payload.get("function_call"))
+
+                if has_tool_calls:
+                    # RULE 1: Tool Calls MUST have reasoning_content.
+                    # If we stripped it, the API will throw 400 (Missing reasoning_content).
+                    # We successfully restored it in Step A, so we just KEEP it here.
+                    pass
+                else:
+                    # RULE 2: Standard Chat should NOT have reasoning_content in history.
+                    # This saves tokens and avoids potential context confusion for fresh turns.
+                    if "reasoning_content" in msg_payload:
+                        del msg_payload["reasoning_content"]
+
+                # --- Step C: Fix Content Formatting ---
+                # DeepSeek API requires 'content' to be a string for assistants (no lists)
+                if isinstance(msg_payload.get("content"), list):
+                    text_parts = [
+                        block.get("text", "")
+                        for block in msg_payload["content"]
+                        if isinstance(block, dict) and block.get("type") == "text"
+                    ]
+                    msg_payload["content"] = "".join(text_parts) if text_parts else ""
+
+            # Fix: Ensure tool message content is a JSON string (not a list of artifacts)
+            elif msg_payload["role"] == "tool" and isinstance(msg_payload.get("content"), list):
+                # LangChain often puts artifacts in content list; DeepSeek needs a string
+                try:
+                    msg_payload["content"] = json.dumps(msg_payload["content"])
+                except Exception:
+                    # Fallback to string representation if json dump fails
+                    msg_payload["content"] = str(msg_payload["content"])
+
         return payload
 
     def _create_chat_result(
@@ -283,6 +327,9 @@ class ChatDeepSeek(BaseChatOpenAI):
         response: dict | openai.BaseModel,
         generation_info: dict | None = None,
     ) -> ChatResult:
+        """
+        Extract reasoning_content from API response and store in additional_kwargs.
+        """
         rtn = super()._create_chat_result(response, generation_info)
 
         if not isinstance(response, openai.BaseModel):
@@ -316,6 +363,9 @@ class ChatDeepSeek(BaseChatOpenAI):
         default_chunk_class: type,
         base_generation_info: dict | None,
     ) -> ChatGenerationChunk | None:
+        """
+        Stream reasoning_content chunks.
+        """
         generation_chunk = super()._convert_chunk_to_generation_chunk(
             chunk,
             default_chunk_class,
