@@ -1,10 +1,9 @@
-"""langgraph.prebuilt exposes a higher-level API for creating and executing agents and tools."""
+"""Entrypoint to building [Agents](https://docs.langchain.com/oss/python/langchain/agents) with LangChain."""  # noqa: E501
 
-from langchain.agents.react_agent import AgentState, create_agent
-from langchain.agents.tool_node import ToolNode
+from langchain.agents.factory import create_agent
+from langchain.agents.middleware.types import AgentState
 
 __all__ = [
     "AgentState",
-    "ToolNode",
     "create_agent",
 ]

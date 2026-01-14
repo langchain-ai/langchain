@@ -1,7 +1,7 @@
 """Output parsers using Pydantic."""
 
 import json
-from typing import Annotated, Generic, Optional
+from typing import Annotated, Generic, Literal, overload
 
 import pydantic
 from pydantic import SkipValidation
@@ -17,10 +17,10 @@ from langchain_core.utils.pydantic import (
 
 
 class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
-    """Parse an output using a pydantic model."""
+    """Parse an output using a Pydantic model."""
 
     pydantic_object: Annotated[type[TBaseModel], SkipValidation()]
-    """The pydantic model to parse."""
+    """The Pydantic model to parse."""
 
     def _parse_obj(self, obj: dict) -> TBaseModel:
         try:
@@ -37,29 +37,38 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     def _parser_exception(
         self, e: Exception, json_object: dict
     ) -> OutputParserException:
-        json_string = json.dumps(json_object)
+        json_string = json.dumps(json_object, ensure_ascii=False)
         name = self.pydantic_object.__name__
         msg = f"Failed to parse {name} from completion {json_string}. Got: {e}"
         return OutputParserException(msg, llm_output=json_string)
 
+    @overload
+    def parse_result(
+        self, result: list[Generation], *, partial: Literal[False] = False
+    ) -> TBaseModel: ...
+
+    @overload
     def parse_result(
         self, result: list[Generation], *, partial: bool = False
-    ) -> Optional[TBaseModel]:
-        """Parse the result of an LLM call to a pydantic object.
+    ) -> TBaseModel | None: ...
+
+    def parse_result(
+        self, result: list[Generation], *, partial: bool = False
+    ) -> TBaseModel | None:
+        """Parse the result of an LLM call to a Pydantic object.
 
         Args:
             result: The result of the LLM call.
             partial: Whether to parse partial JSON objects.
-                If True, the output will be a JSON object containing
+                If `True`, the output will be a JSON object containing
                 all the keys that have been returned so far.
-                Defaults to False.
 
         Raises:
             OutputParserException: If the result is not valid JSON
-                or does not conform to the pydantic model.
+                or does not conform to the Pydantic model.
 
         Returns:
-            The parsed pydantic object.
+            The parsed Pydantic object.
         """
         try:
             json_object = super().parse_result(result)
@@ -70,15 +79,15 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
             raise
 
     def parse(self, text: str) -> TBaseModel:
-        """Parse the output of an LLM call to a pydantic object.
+        """Parse the output of an LLM call to a Pydantic object.
 
         Args:
             text: The output of the LLM call.
 
         Returns:
-            The parsed pydantic object.
+            The parsed Pydantic object.
         """
-        return super().parse(text)
+        return self.parse_result([Generation(text=text)])
 
     def get_format_instructions(self) -> str:
         """Return the format instructions for the JSON output.
@@ -87,7 +96,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
             The format instructions for the JSON output.
         """
         # Copy schema to avoid altering original Pydantic schema.
-        schema = dict(self.pydantic_object.model_json_schema().items())
+        schema = dict(self._get_schema(self.pydantic_object).items())
 
         # Remove extraneous fields.
         reduced_schema = schema
@@ -107,7 +116,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     @property
     @override
     def OutputType(self) -> type[TBaseModel]:
-        """Return the pydantic model."""
+        """Return the Pydantic model."""
         return self.pydantic_object
 
 

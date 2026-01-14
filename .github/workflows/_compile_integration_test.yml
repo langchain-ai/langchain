@@ -6,7 +6,7 @@
 #
 # Runs pytest with compile marker to check syntax/imports.
 
-name: '🔗 Compile Integration Tests'
+name: "🔗 Compile Integration Tests"
 
 on:
   workflow_call:
@@ -33,26 +33,26 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    name: 'Python ${{ inputs.python-version }}'
+    name: "Python ${{ inputs.python-version }}"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
-      - name: '🐍 Set up Python ${{ inputs.python-version }} + UV'
+      - name: "🐍 Set up Python ${{ inputs.python-version }} + UV"
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
           cache-suffix: compile-integration-tests-${{ inputs.working-directory }}
           working-directory: ${{ inputs.working-directory }}
 
-      - name: '📦 Install Integration Dependencies'
+      - name: "📦 Install Integration Dependencies"
         shell: bash
         run: uv sync --group test --group test_integration
 
-      - name: '🔗 Check Integration Tests Compile'
+      - name: "🔗 Check Integration Tests Compile"
         shell: bash
         run: uv run pytest -m compile tests/integration_tests
 
-      - name: '🧹 Verify Clean Working Directory'
+      - name: "🧹 Verify Clean Working Directory"
         shell: bash
         run: |
           set -eu

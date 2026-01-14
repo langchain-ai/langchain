@@ -1,4 +1,4 @@
-from langchain.prompts.loading import __all__
+from langchain_classic.prompts.loading import __all__
 
 EXPECTED_ALL = [
     "_load_examples",
@@ -9,7 +9,6 @@ EXPECTED_ALL = [
     "_load_template",
     "load_prompt",
     "load_prompt_from_config",
-    "try_load_from_hub",
 ]
 
 

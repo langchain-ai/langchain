@@ -27,7 +27,6 @@ EXAMPLE_PROMPT = PromptTemplate(
 
 
 @pytest.fixture
-@pytest.mark.requires("jinja2")
 def example_jinja2_prompt() -> tuple[PromptTemplate, list[dict[str, str]]]:
     example_template = "{{ word }}: {{ antonym }}"
 
@@ -358,11 +357,11 @@ async def test_few_shot_chat_message_prompt_template() -> None:
 
     expected = [
         SystemMessage(content="You are a helpful AI Assistant", additional_kwargs={}),
-        HumanMessage(content="2+2", additional_kwargs={}, example=False),
-        AIMessage(content="4", additional_kwargs={}, example=False),
-        HumanMessage(content="2+3", additional_kwargs={}, example=False),
-        AIMessage(content="5", additional_kwargs={}, example=False),
-        HumanMessage(content="100 + 1", additional_kwargs={}, example=False),
+        HumanMessage(content="2+2", additional_kwargs={}),
+        AIMessage(content="4", additional_kwargs={}),
+        HumanMessage(content="2+3", additional_kwargs={}),
+        AIMessage(content="5", additional_kwargs={}),
+        HumanMessage(content="100 + 1", additional_kwargs={}),
     ]
 
     messages = final_prompt.format_messages(input="100 + 1")
@@ -385,7 +384,7 @@ class AsIsSelector(BaseExampleSelector):
         raise NotImplementedError
 
     @override
-    def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
+    def select_examples(self, input_variables: dict[str, str]) -> list[dict[str, str]]:
         return list(self.examples)
 
 
@@ -433,11 +432,11 @@ def test_few_shot_chat_message_prompt_template_with_selector() -> None:
     )
     expected = [
         SystemMessage(content="You are a helpful AI Assistant", additional_kwargs={}),
-        HumanMessage(content="2+2", additional_kwargs={}, example=False),
-        AIMessage(content="4", additional_kwargs={}, example=False),
-        HumanMessage(content="2+3", additional_kwargs={}, example=False),
-        AIMessage(content="5", additional_kwargs={}, example=False),
-        HumanMessage(content="100 + 1", additional_kwargs={}, example=False),
+        HumanMessage(content="2+2", additional_kwargs={}),
+        AIMessage(content="4", additional_kwargs={}),
+        HumanMessage(content="2+3", additional_kwargs={}),
+        AIMessage(content="5", additional_kwargs={}),
+        HumanMessage(content="100 + 1", additional_kwargs={}),
     ]
     messages = final_prompt.format_messages(input="100 + 1")
     assert messages == expected
@@ -480,11 +479,13 @@ class AsyncAsIsSelector(BaseExampleSelector):
     def add_example(self, example: dict[str, str]) -> Any:
         raise NotImplementedError
 
-    def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
+    def select_examples(self, input_variables: dict[str, str]) -> list[dict[str, str]]:
         raise NotImplementedError
 
     @override
-    async def aselect_examples(self, input_variables: dict[str, str]) -> list[dict]:
+    async def aselect_examples(
+        self, input_variables: dict[str, str]
+    ) -> list[dict[str, str]]:
         return list(self.examples)
 
 
@@ -532,11 +533,11 @@ async def test_few_shot_chat_message_prompt_template_with_selector_async() -> No
     )
     expected = [
         SystemMessage(content="You are a helpful AI Assistant", additional_kwargs={}),
-        HumanMessage(content="2+2", additional_kwargs={}, example=False),
-        AIMessage(content="4", additional_kwargs={}, example=False),
-        HumanMessage(content="2+3", additional_kwargs={}, example=False),
-        AIMessage(content="5", additional_kwargs={}, example=False),
-        HumanMessage(content="100 + 1", additional_kwargs={}, example=False),
+        HumanMessage(content="2+2", additional_kwargs={}),
+        AIMessage(content="4", additional_kwargs={}),
+        HumanMessage(content="2+3", additional_kwargs={}),
+        AIMessage(content="5", additional_kwargs={}),
+        HumanMessage(content="100 + 1", additional_kwargs={}),
     ]
     messages = await final_prompt.aformat_messages(input="100 + 1")
     assert messages == expected

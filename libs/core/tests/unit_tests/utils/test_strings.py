@@ -47,3 +47,58 @@ def test_existing_string_functions() -> None:
     result = stringify_dict(data)
     assert "key: value" in result
     assert "number: 123" in result
+
+
+def test_stringify_value_nested_structures() -> None:
+    """Test stringifying nested structures."""
+    # Test nested dict in list
+    nested_data = {
+        "users": [
+            {"name": "Alice", "age": 25},
+            {"name": "Bob", "age": 30},
+        ],
+        "metadata": {"total_users": 2, "active": True},
+    }
+
+    result = stringify_value(nested_data)
+
+    # Should contain all the nested values
+    assert "users:" in result
+    assert "name: Alice" in result
+    assert "name: Bob" in result
+    assert "metadata:" in result
+    assert "total_users: 2" in result
+    assert "active: True" in result
+
+    # Test list of mixed types
+    mixed_list = ["string", 42, {"key": "value"}, ["nested", "list"]]
+    result = stringify_value(mixed_list)
+
+    assert "string" in result
+    assert "42" in result
+    assert "key: value" in result
+    assert "nested" in result
+    assert "list" in result
+
+
+def test_comma_list_with_iterables() -> None:
+    """Test `comma_list` works with various iterable types."""
+    # Tuple
+    assert comma_list((1, 2, 3)) == "1, 2, 3"
+
+    # Generator
+    assert comma_list(x for x in range(3)) == "0, 1, 2"
+
+    # Range
+    assert comma_list(range(3)) == "0, 1, 2"
+
+    # Empty iterable
+    assert comma_list([]) == ""
+    assert comma_list(()) == ""
+
+    # Single item
+    assert comma_list([1]) == "1"
+    assert comma_list(("single",)) == "single"
+
+    # Mixed types
+    assert comma_list([1, "two", 3.0]) == "1, two, 3.0"

@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from langchain.evaluation.scoring.eval_chain import (
+from langchain_classic.evaluation.scoring.eval_chain import (
     LabeledScoreStringEvalChain,
     ScoreStringEvalChain,
     ScoreStringResultOutputParser,
@@ -72,7 +72,7 @@ def test_labeled_pairwise_string_comparison_chain_missing_ref() -> None:
     )
     chain = LabeledScoreStringEvalChain.from_llm(llm=llm)
     with pytest.raises(
-        ValueError, match="LabeledScoreStringEvalChain requires a reference string."
+        ValueError, match="LabeledScoreStringEvalChain requires a reference string"
     ):
         chain.evaluate_strings(
             prediction="I like pie.",

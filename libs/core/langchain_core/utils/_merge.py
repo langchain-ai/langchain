@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 
 def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]:
     r"""Merge dictionaries.
 
     Merge many dicts, handling specific scenarios where a key exists in both
-    dictionaries but has a value of None in 'left'. In such cases, the method uses the
-    value from 'right' for that key in the merged dictionary.
+    dictionaries but has a value of `None` in `'left'`. In such cases, the method uses
+    the value from `'right'` for that key in the merged dictionary.
 
     Args:
         left: The first dictionary to merge.
@@ -22,11 +22,10 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
         TypeError: If the value has an unsupported type.
 
     Example:
-        If left = {"function_call": {"arguments": None}} and
-        right = {"function_call": {"arguments": "{\n"}}
-        then, after merging, for the key "function_call",
-        the value from 'right' is used,
-        resulting in merged = {"function_call": {"arguments": "{\n"}}.
+        If `left = {"function_call": {"arguments": None}}` and
+        `right = {"function_call": {"arguments": "{\n"}}`, then, after merging, for the
+        key `'function_call'`, the value from `'right'` is used, resulting in
+        `merged = {"function_call": {"arguments": "{\n"}}`.
     """
     merged = left.copy()
     for right in others:
@@ -57,6 +56,11 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 #             "should either occur once or have the same value across "
                 #             "all dicts."
                 #         )
+                if (right_k == "index" and merged[right_k].startswith("lc_")) or (
+                    right_k in {"id", "output_version", "model_provider"}
+                    and merged[right_k] == right_v
+                ):
+                    continue
                 merged[right_k] += right_v
             elif isinstance(merged[right_k], dict):
                 merged[right_k] = merge_dicts(merged[right_k], right_v)
@@ -75,8 +79,8 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
     return merged
 
 
-def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]:
-    """Add many lists, handling None.
+def merge_lists(left: list | None, *others: list | None) -> list | None:
+    """Add many lists, handling `None`.
 
     Args:
         left: The first list to merge.
@@ -93,7 +97,16 @@ def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]
             merged = other.copy()
         else:
             for e in other:
-                if isinstance(e, dict) and "index" in e and isinstance(e["index"], int):
+                if (
+                    isinstance(e, dict)
+                    and "index" in e
+                    and (
+                        isinstance(e["index"], int)
+                        or (
+                            isinstance(e["index"], str) and e["index"].startswith("lc_")
+                        )
+                    )
+                ):
                     to_merge = [
                         i
                         for i, e_left in enumerate(merged)
@@ -102,11 +115,35 @@ def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]
                     if to_merge:
                         # TODO: Remove this once merge_dict is updated with special
                         # handling for 'type'.
-                        new_e = (
-                            {k: v for k, v in e.items() if k != "type"}
-                            if "type" in e
-                            else e
-                        )
+                        if (left_type := merged[to_merge[0]].get("type")) and (
+                            e.get("type") == "non_standard" and "value" in e
+                        ):
+                            if left_type != "non_standard":
+                                # standard + non_standard
+                                new_e: dict[str, Any] = {
+                                    "extras": {
+                                        k: v
+                                        for k, v in e["value"].items()
+                                        if k != "type"
+                                    }
+                                }
+                            else:
+                                # non_standard + non_standard
+                                new_e = {
+                                    "value": {
+                                        k: v
+                                        for k, v in e["value"].items()
+                                        if k != "type"
+                                    }
+                                }
+                                if "index" in e:
+                                    new_e["index"] = e["index"]
+                        else:
+                            new_e = (
+                                {k: v for k, v in e.items() if k != "type"}
+                                if "type" in e
+                                else e
+                            )
                         merged[to_merge[0]] = merge_dicts(merged[to_merge[0]], new_e)
                     else:
                         merged.append(e)
@@ -118,9 +155,9 @@ def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]
 def merge_obj(left: Any, right: Any) -> Any:
     """Merge two objects.
 
-    It handles specific scenarios where a key exists in both
-    dictionaries but has a value of None in 'left'. In such cases, the method uses the
-    value from 'right' for that key in the merged dictionary.
+    It handles specific scenarios where a key exists in both dictionaries but has a
+    value of `None` in `'left'`. In such cases, the method uses the value from `'right'`
+    for that key in the merged dictionary.
 
     Args:
         left: The first object to merge.

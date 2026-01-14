@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from langsmith import Client, get_tracing_context
@@ -21,6 +21,8 @@ from typing_extensions import override
 
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
+from langchain_core.messages.ai import UsageMetadata, add_usage
+from langchain_core.tracers._compat import run_construct, run_to_dict
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
@@ -30,7 +32,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()
-_EXECUTOR: Optional[ThreadPoolExecutor] = None
+_EXECUTOR: ThreadPoolExecutor | None = None
 
 
 def log_error_once(method: str, exception: Exception) -> None:
@@ -69,6 +71,32 @@ def _get_executor() -> ThreadPoolExecutor:
     return _EXECUTOR
 
 
+def _get_usage_metadata_from_generations(
+    generations: list[list[dict[str, Any]]],
+) -> UsageMetadata | None:
+    """Extract and aggregate `usage_metadata` from generations.
+
+    Iterates through generations to find and aggregate all `usage_metadata` found in
+    messages. This is typically present in chat model outputs.
+
+    Args:
+        generations: List of generation batches, where each batch is a list
+            of generation dicts that may contain a `'message'` key with
+            `'usage_metadata'`.
+
+    Returns:
+        The aggregated `usage_metadata` dict if found, otherwise `None`.
+    """
+    output: UsageMetadata | None = None
+    for generation_batch in generations:
+        for generation in generation_batch:
+            if isinstance(generation, dict) and "message" in generation:
+                message = generation["message"]
+                if isinstance(message, dict) and "usage_metadata" in message:
+                    output = add_usage(output, message["usage_metadata"])
+    return output
+
+
 class LangChainTracer(BaseTracer):
     """Implementation of the SharedTracer that POSTS to the LangChain endpoint."""
 
@@ -76,10 +104,10 @@ class LangChainTracer(BaseTracer):
 
     def __init__(
         self,
-        example_id: Optional[Union[UUID, str]] = None,
-        project_name: Optional[str] = None,
-        client: Optional[Client] = None,
-        tags: Optional[list[str]] = None,
+        example_id: UUID | str | None = None,
+        project_name: str | None = None,
+        client: Client | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer.
@@ -89,7 +117,7 @@ class LangChainTracer(BaseTracer):
             project_name: The project name. Defaults to the tracer project.
             client: The client. Defaults to the global client.
             tags: The tags. Defaults to an empty list.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
         """
         super().__init__(**kwargs)
         self.example_id = (
@@ -98,7 +126,7 @@ class LangChainTracer(BaseTracer):
         self.project_name = project_name or ls_utils.get_tracer_project()
         self.client = client or get_client()
         self.tags = tags or []
-        self.latest_run: Optional[Run] = None
+        self.latest_run: Run | None = None
         self.run_has_token_event_map: dict[str, bool] = {}
 
     def _start_trace(self, run: Run) -> None:
@@ -122,10 +150,10 @@ class LangChainTracer(BaseTracer):
         messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        parent_run_id: Optional[UUID] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        name: Optional[str] = None,
+        tags: list[str] | None = None,
+        parent_run_id: UUID | None = None,
+        metadata: dict[str, Any] | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for an LLM run.
@@ -134,14 +162,14 @@ class LangChainTracer(BaseTracer):
             serialized: The serialized model.
             messages: The messages.
             run_id: The run ID.
-            tags: The tags. Defaults to None.
-            parent_run_id: The parent run ID. Defaults to None.
-            metadata: The metadata. Defaults to None.
-            name: The name. Defaults to None.
-            kwargs: Additional keyword arguments.
+            tags: The tags.
+            parent_run_id: The parent run ID.
+            metadata: The metadata.
+            name: The name.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            Run: The run.
+            The run.
         """
         start_time = datetime.now(timezone.utc)
         if metadata:
@@ -156,7 +184,7 @@ class LangChainTracer(BaseTracer):
             start_time=start_time,
             run_type="llm",
             tags=tags,
-            name=name,  # type: ignore[arg-type]
+            name=name,
         )
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
@@ -165,8 +193,9 @@ class LangChainTracer(BaseTracer):
     def _persist_run(self, run: Run) -> None:
         # We want to free up more memory by avoiding keeping a reference to the
         # whole nested run tree.
-        self.latest_run = Run.construct(
-            **run.dict(exclude={"child_runs", "inputs", "outputs"}),
+        run_data = run_to_dict(run, exclude={"child_runs", "inputs", "outputs"})
+        self.latest_run = run_construct(
+            **run_data,
             inputs=run.inputs,
             outputs=run.outputs,
         )
@@ -175,7 +204,7 @@ class LangChainTracer(BaseTracer):
         """Get the LangSmith root run URL.
 
         Returns:
-            str: The LangSmith root run URL.
+            The LangSmith root run URL.
 
         Raises:
             ValueError: If no traced run is found.
@@ -220,7 +249,8 @@ class LangChainTracer(BaseTracer):
             log_error_once("post", e)
             raise
 
-    def _update_run_single(self, run: Run) -> None:
+    @staticmethod
+    def _update_run_single(run: Run) -> None:
         """Update a run."""
         if run.extra.get("__disabled"):
             return
@@ -242,8 +272,8 @@ class LangChainTracer(BaseTracer):
         self,
         token: str,
         run_id: UUID,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
-        parent_run_id: Optional[UUID] = None,
+        chunk: GenerationChunk | ChatGenerationChunk | None = None,
+        parent_run_id: UUID | None = None,
     ) -> Run:
         run_id_str = str(run_id)
         if run_id_str not in self.run_has_token_event_map:
@@ -266,6 +296,15 @@ class LangChainTracer(BaseTracer):
 
     def _on_llm_end(self, run: Run) -> None:
         """Process the LLM Run."""
+        # Extract usage_metadata from outputs and store in extra.metadata
+        if run.outputs and "generations" in run.outputs:
+            usage_metadata = _get_usage_metadata_from_generations(
+                run.outputs["generations"]
+            )
+            if usage_metadata is not None:
+                if "metadata" not in run.extra:
+                    run.extra["metadata"] = {}
+                run.extra["metadata"]["usage_metadata"] = usage_metadata
         self._update_run_single(run)
 
     def _on_llm_error(self, run: Run) -> None:
@@ -276,15 +315,28 @@ class LangChainTracer(BaseTracer):
         """Process the Chain Run upon start."""
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
-        self._persist_run_single(run)
+        # Skip persisting if inputs are deferred (e.g., iterator/generator inputs).
+        # The run will be posted when _on_chain_end is called with realized inputs.
+        if not run.extra.get("defers_inputs"):
+            self._persist_run_single(run)
 
     def _on_chain_end(self, run: Run) -> None:
         """Process the Chain Run."""
-        self._update_run_single(run)
+        # If inputs were deferred, persist (POST) the run now that inputs are realized.
+        # Otherwise, update (PATCH) the existing run.
+        if run.extra.get("defers_inputs"):
+            self._persist_run_single(run)
+        else:
+            self._update_run_single(run)
 
     def _on_chain_error(self, run: Run) -> None:
         """Process the Chain Run upon error."""
-        self._update_run_single(run)
+        # If inputs were deferred, persist (POST) the run now that inputs are realized.
+        # Otherwise, update (PATCH) the existing run.
+        if run.extra.get("defers_inputs"):
+            self._persist_run_single(run)
+        else:
+            self._update_run_single(run)
 
     def _on_tool_start(self, run: Run) -> None:
         """Process the Tool Run upon start."""

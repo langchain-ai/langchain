@@ -1,10 +1,10 @@
 import asyncio
 from itertools import cycle
-from typing import Any, Optional, Union
+from typing import Any
 from uuid import UUID
 
 import pytest
-from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
+from pytest_benchmark.fixture import BenchmarkFixture
 from typing_extensions import override
 
 from langchain_core.callbacks.base import AsyncCallbackHandler
@@ -21,9 +21,9 @@ class MyCustomAsyncHandler(AsyncCallbackHandler):
         messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Any:
         # Do nothing
@@ -35,10 +35,10 @@ class MyCustomAsyncHandler(AsyncCallbackHandler):
         self,
         token: str,
         *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         await asyncio.sleep(0)
@@ -49,7 +49,7 @@ async def test_async_callbacks_in_sync(benchmark: BenchmarkFixture) -> None:
     infinite_cycle = cycle([AIMessage(content=" ".join(["hello", "goodbye"] * 5))])
     model = GenericFakeChatModel(messages=infinite_cycle)
 
-    @benchmark  # type: ignore[misc]
+    @benchmark  # type: ignore[untyped-decorator]
     def sync_callbacks() -> None:
         for _ in range(5):
             for _ in model.stream("meow", {"callbacks": [MyCustomAsyncHandler()]}):

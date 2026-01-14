@@ -2,7 +2,6 @@
 
 import sys
 from collections import defaultdict
-from typing import Optional
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -54,7 +53,7 @@ def get_pypi_versions(package_name: str) -> List[str]:
     return list(response.json()["releases"].keys())
 
 
-def get_minimum_version(package_name: str, spec_string: str) -> Optional[str]:
+def get_minimum_version(package_name: str, spec_string: str) -> str | None:
     """Find the minimum published version that satisfies the given constraints.
 
     Args:
@@ -99,7 +98,7 @@ def _check_python_version_from_requirement(
         return True
     else:
         marker_str = str(requirement.marker)
-        if "python_version" or "python_full_version" in marker_str:
+        if "python_version" in marker_str or "python_full_version" in marker_str:
             python_version_str = "".join(
                 char
                 for char in marker_str
@@ -114,7 +113,7 @@ def get_min_version_from_toml(
     versions_for: str,
     python_version: str,
     *,
-    include: Optional[list] = None,
+    include: list | None = None,
 ):
     # Parse the TOML file
     with open(toml_path, "rb") as file:

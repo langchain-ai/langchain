@@ -2,7 +2,7 @@
 
 import re
 from tempfile import NamedTemporaryFile
-from typing import Any, Literal, Union
+from typing import Any, Literal
 from unittest import mock
 
 import pytest
@@ -264,7 +264,7 @@ def test_prompt_from_template_with_partial_variables() -> None:
 def test_prompt_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     template = "This is a {foo} test."
-    input_variables: list = []
+    input_variables: list[str] = []
     with pytest.raises(
         ValueError,
         match=re.escape("check for mismatched or missing input parameters from []"),
@@ -354,8 +354,7 @@ def test_prompt_invalid_template_format() -> None:
 def test_prompt_from_file() -> None:
     """Test prompt can be successfully constructed from a file."""
     template_file = "tests/unit_tests/data/prompt_file.txt"
-    input_variables = ["question"]
-    prompt = PromptTemplate.from_file(template_file, input_variables)
+    prompt = PromptTemplate.from_file(template_file)
     assert prompt.template == "Question: {question}\nAnswer:"
 
 
@@ -506,7 +505,7 @@ Your variable again: {{ foo }}
 def test_prompt_jinja2_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     template = "This is a {{ foo }} test."
-    input_variables: list = []
+    input_variables: list[str] = []
     with pytest.warns(UserWarning, match="Missing variables: {'foo'}"):
         PromptTemplate(
             input_variables=input_variables,
@@ -628,7 +627,7 @@ async def test_prompt_ainvoke_with_metadata() -> None:
 def test_prompt_falsy_vars(
     template_format: PromptTemplateFormat,
     value: Any,
-    expected: Union[str, dict[str, str]],
+    expected: str | dict[str, str],
 ) -> None:
     # each line is value, f-string, mustache
     if template_format == "f-string":

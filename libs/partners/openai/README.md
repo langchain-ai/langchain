@@ -1,24 +1,25 @@
 # langchain-openai
 
-This package contains the LangChain integrations for OpenAI through their `openai` SDK.
+[![PyPI - Version](https://img.shields.io/pypi/v/langchain-openai?label=%20)](https://pypi.org/project/langchain-openai/#history)
+[![PyPI - License](https://img.shields.io/pypi/l/langchain-openai)](https://opensource.org/licenses/MIT)
+[![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-openai)](https://pypistats.org/packages/langchain-openai)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40LangChain)](https://x.com/langchain)
 
-## Installation and Setup
+Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
 
-- Install the LangChain partner package
+## Quick Install
 
 ```bash
 pip install langchain-openai
 ```
 
-- Get an OpenAI api key and set it as an environment variable (`OPENAI_API_KEY`)
+## 🤔 What is this?
 
-## Chat model
+This package contains the LangChain integrations for OpenAI through their `openai` SDK.
 
-See a [usage example](https://python.langchain.com/docs/integrations/chat/openai).
+## 📖 Documentation
 
-```python
-from langchain_openai import ChatOpenAI
-```
+For full documentation, see the [API reference](https://reference.langchain.com/python/integrations/langchain_openai/). For conceptual guides, tutorials, and examples on using these classes, see the [LangChain Docs](https://docs.langchain.com/oss/python/integrations/providers/openai).
 
 ### High concurrency - optional OpenAI aiohttp backend
 
@@ -47,42 +48,12 @@ llm = ChatOpenAI()  # Will automatically use aiohttp if available
 
 For more details, see the [OpenAI Python library documentation](https://github.com/openai/openai-python#httpx-client).
 
-If you are using a model hosted on `Azure`, you should use different wrapper for that:
+## 📕 Releases & Versioning
 
-```python
-from langchain_openai import AzureChatOpenAI
-```
+See our [Releases](https://docs.langchain.com/oss/python/release-policy) and [Versioning](https://docs.langchain.com/oss/python/versioning) policies.
 
-For a more detailed walkthrough of the `Azure` wrapper, see [AzureChatOpenAI](https://python.langchain.com/docs/integrations/chat/azure_chat_openai)
+## 💁 Contributing
 
-## Text Embedding Model
+As an open-source project in a rapidly developing field, we are extremely open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
 
-See a [usage example](https://python.langchain.com/docs/integrations/text_embedding/openai)
-
-```python
-from langchain_openai import OpenAIEmbeddings
-```
-
-If you are using a model hosted on `Azure`, you should use different wrapper for that:
-
-```python
-from langchain_openai import AzureOpenAIEmbeddings
-```
-
-For a more detailed walkthrough of the `Azure` wrapper, see [AzureOpenAIEmbeddings](https://python.langchain.com/docs/integrations/text_embedding/azureopenai)
-
-## LLM (Legacy)
-
-LLM refers to the legacy text-completion models that preceded chat models. See a [usage example](https://python.langchain.com/docs/integrations/llms/openai).
-
-```python
-from langchain_openai import OpenAI
-```
-
-If you are using a model hosted on `Azure`, you should use different wrapper for that:
-
-```python
-from langchain_openai import AzureOpenAI
-```
-
-For a more detailed walkthrough of the `Azure` wrapper, see [Azure OpenAI](https://python.langchain.com/docs/integrations/llms/azure_openai)
+For detailed information on how to contribute, see the [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview).

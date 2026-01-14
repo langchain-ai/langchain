@@ -1,4 +1,4 @@
-from langchain.schema.output_parser import __all__
+from langchain_classic.schema.output_parser import __all__
 
 EXPECTED_ALL = [
     "BaseCumulativeTransformOutputParser",

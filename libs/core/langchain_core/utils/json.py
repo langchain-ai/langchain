@@ -4,12 +4,23 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any, Callable, Union
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.exceptions import OutputParserException
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 
 def _replace_new_line(match: re.Match[str]) -> str:
+    """Replace newline characters in a regex match with escaped sequences.
+
+    Args:
+        match: Regex match object containing the string to process.
+
+    Returns:
+        String with newlines, carriage returns, tabs, and quotes properly escaped.
+    """
     value = match.group(2)
     value = re.sub(r"\n", r"\\n", value)
     value = re.sub(r"\r", r"\\r", value)
@@ -19,7 +30,7 @@ def _replace_new_line(match: re.Match[str]) -> str:
     return match.group(1) + value + match.group(3)
 
 
-def _custom_parser(multiline_string: Union[str, bytes, bytearray]) -> str:
+def _custom_parser(multiline_string: str | bytes | bytearray) -> str:
     r"""Custom parser for multiline strings.
 
     The LLM response for `action_input` may be a multiline
@@ -50,7 +61,7 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
 
     Args:
         s: The JSON string to parse.
-        strict: Whether to use strict parsing. Defaults to False.
+        strict: Whether to use strict parsing.
 
     Returns:
         The parsed JSON object as a Python dictionary.
@@ -131,7 +142,7 @@ _json_markdown_re = re.compile(r"```(json)?(.*)", re.DOTALL)
 
 def parse_json_markdown(
     json_string: str, *, parser: Callable[[str], Any] = parse_partial_json
-) -> dict:
+) -> Any:
     """Parse a JSON string from a Markdown string.
 
     Args:
@@ -158,7 +169,21 @@ _json_strip_chars = " \n\r\t`"
 
 def _parse_json(
     json_str: str, *, parser: Callable[[str], Any] = parse_partial_json
-) -> dict:
+) -> Any:
+    """Parse a JSON string, handling special characters and whitespace.
+
+    Strips whitespace, newlines, and backticks from the start and end of the string,
+    then processes special characters before parsing.
+
+    Args:
+        json_str: The JSON string to parse.
+        parser: Optional custom parser function.
+
+            Defaults to `parse_partial_json`.
+
+    Returns:
+        Parsed JSON object.
+    """
     # Strip whitespace,newlines,backtick from the start and end
     json_str = json_str.strip(_json_strip_chars)
 

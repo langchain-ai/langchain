@@ -1,5 +1,8 @@
 .vs/
+.claude/
 .idea/
+#Emacs backup
+*~
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -76,10 +79,6 @@ instance/
 
 # Scrapy stuff:
 .scrapy
-
-# Sphinx documentation
-docs/_build/
-docs/docs/_build/
 
 # PyBuilder
 target/
@@ -161,25 +160,9 @@ data_map*
 *replit*
 
 node_modules
-docs/.yarn/
-docs/node_modules/
-docs/.docusaurus/
-docs/.cache-loader/
-docs/_dist
-docs/api_reference/*api_reference.rst
-docs/api_reference/*.md
-docs/api_reference/_build
-docs/api_reference/*/
-!docs/api_reference/_static/
-!docs/api_reference/templates/
-!docs/api_reference/themes/
-!docs/api_reference/_extensions/
-!docs/api_reference/scripts/
-docs/docs/build
-docs/docs/node_modules
-docs/docs/yarn.lock
-_dist
-docs/docs/templates
 
 prof
 virtualenv/
+scratch/
+
+.langgraph_api/

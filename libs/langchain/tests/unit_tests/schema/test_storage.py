@@ -1,4 +1,4 @@
-from langchain.schema.storage import __all__
+from langchain_classic.schema.storage import __all__
 
 EXPECTED_ALL = ["BaseStore", "K", "V"]
 

@@ -6,13 +6,14 @@ import logging
 import threading
 import weakref
 from concurrent.futures import Future, ThreadPoolExecutor, wait
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
 import langsmith
 from langsmith.evaluation.evaluator import EvaluationResult, EvaluationResults
 
 from langchain_core.tracers import langchain as langchain_tracer
+from langchain_core.tracers._compat import run_copy
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import tracing_v2_enabled
 from langchain_core.tracers.langchain import _get_executor
@@ -43,19 +44,19 @@ class EvaluatorCallbackHandler(BaseTracer):
     """
 
     name: str = "evaluator_callback_handler"
-    example_id: Optional[UUID] = None
+    example_id: UUID | None = None
     """The example ID associated with the runs."""
     client: langsmith.Client
     """The LangSmith client instance used for evaluating the runs."""
     evaluators: Sequence[langsmith.RunEvaluator] = ()
     """The sequence of run evaluators to be executed."""
-    executor: Optional[ThreadPoolExecutor] = None
+    executor: ThreadPoolExecutor | None = None
     """The thread pool executor used for running the evaluators."""
     futures: weakref.WeakSet[Future] = weakref.WeakSet()
     """The set of futures representing the running evaluators."""
     skip_unfinished: bool = True
     """Whether to skip runs that are not finished or raised an error."""
-    project_name: Optional[str] = None
+    project_name: str | None = None
     """The LangSmith project name to be organize eval chain runs under."""
     logged_eval_results: dict[tuple[str, str], list[EvaluationResult]]
     lock: threading.Lock
@@ -63,11 +64,11 @@ class EvaluatorCallbackHandler(BaseTracer):
     def __init__(
         self,
         evaluators: Sequence[langsmith.RunEvaluator],
-        client: Optional[langsmith.Client] = None,
-        example_id: Optional[Union[UUID, str]] = None,
+        client: langsmith.Client | None = None,
+        example_id: UUID | str | None = None,
         skip_unfinished: bool = True,  # noqa: FBT001,FBT002
-        project_name: Optional[str] = "evaluators",
-        max_concurrency: Optional[int] = None,
+        project_name: str | None = "evaluators",
+        max_concurrency: int | None = None,
         **kwargs: Any,
     ) -> None:
         """Create an EvaluatorCallbackHandler.
@@ -103,7 +104,7 @@ class EvaluatorCallbackHandler(BaseTracer):
             )
         else:
             self.executor = None
-        self.futures = weakref.WeakSet()
+        self.futures = weakref.WeakSet[Future[None]]()
         self.skip_unfinished = skip_unfinished
         self.project_name = project_name
         self.logged_eval_results = {}
@@ -154,9 +155,9 @@ class EvaluatorCallbackHandler(BaseTracer):
                     res
                 )
 
+    @staticmethod
     def _select_eval_results(
-        self,
-        results: Union[EvaluationResult, EvaluationResults],
+        results: EvaluationResult | EvaluationResults,
     ) -> list[EvaluationResult]:
         if isinstance(results, EvaluationResult):
             results_ = [results]
@@ -172,9 +173,9 @@ class EvaluatorCallbackHandler(BaseTracer):
 
     def _log_evaluation_feedback(
         self,
-        evaluator_response: Union[EvaluationResult, EvaluationResults],
+        evaluator_response: EvaluationResult | EvaluationResults,
         run: Run,
-        source_run_id: Optional[UUID] = None,
+        source_run_id: UUID | None = None,
     ) -> list[EvaluationResult]:
         results = self._select_eval_results(evaluator_response)
         for res in results:
@@ -206,7 +207,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         if self.skip_unfinished and not run.outputs:
             logger.debug("Skipping unfinished run %s", run.id)
             return
-        run_ = run.copy()
+        run_ = run_copy(run)
         run_.reference_example_id = self.example_id
         for evaluator in self.evaluators:
             if self.executor is None:

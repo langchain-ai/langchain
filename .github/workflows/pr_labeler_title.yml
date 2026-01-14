@@ -1,6 +1,7 @@
 # Label PRs based on their titles.
 #
-# See `.github/pr-title-labeler.yml` to see rules for each label/title pattern.
+# Uses conventional commit types from PR titles to apply labels.
+# Note: Scope-based labeling (e.g., integration labels) is handled by pr_labeler_file.yml
 
 name: "🏷️ PR Title Labeler"
 
@@ -8,11 +9,11 @@ on:
   # Safe since we're not checking out or running the PR's code
   # Never check out the PR's head in a pull_request_target job
   pull_request_target:
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, edited]
 
 jobs:
   pr-title-labeler:
-    name: 'label'
+    name: "label"
     permissions:
       contents: read
       pull-requests: write
@@ -20,9 +21,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Label PR based on title
-      # Archived repo; latest commit (v0.1.0)
-      uses: grafana/pr-labeler-action@f19222d3ef883d2ca5f04420fdfe8148003763f0
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        configuration-path: .github/pr-title-labeler.yml
+      - name: Label PR based on title
+        uses: bcoe/conventional-release-labels@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          type_labels: >-
+            {
+              "feat": "feature",
+              "fix": "fix",
+              "docs": "documentation",
+              "style": "linting",
+              "refactor": "refactor",
+              "perf": "performance",
+              "test": "tests",
+              "build": "infra",
+              "ci": "infra",
+              "chore": "infra",
+              "revert": "revert",
+              "release": "release",
+              "breaking": "breaking"
+            }
+          ignored_types: '[]'

@@ -3,14 +3,13 @@
   dict({
     '$defs': dict({
       'AIMessage': dict({
-        'additionalProperties': True,
         'description': '''
           Message from an AI.
           
-          AIMessage is returned from a chat model as a response to a prompt.
+          An `AIMessage` is returned from a chat model as a response to a prompt.
           
           This message represents the output of the model and consists of both
-          the raw output as returned by the model together standardized fields
+          the raw output as returned by the model and standardized fields
           (e.g., tool calls, usage metadata) added by the LangChain framework.
         ''',
         'properties': dict({
@@ -39,11 +38,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -57,8 +51,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/InvalidToolCall',
             }),
@@ -82,8 +74,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCall',
             }),
@@ -115,12 +105,24 @@
         'type': 'object',
       }),
       'AIMessageChunk': dict({
-        'additionalProperties': True,
-        'description': 'Message chunk from an AI.',
+        'description': 'Message chunk from an AI (yielded when streaming).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
           }),
           'content': dict({
             'anyOf': list([
@@ -143,11 +145,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -161,8 +158,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/InvalidToolCall',
             }),
@@ -186,8 +181,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCallChunk',
             }),
@@ -195,8 +188,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCall',
             }),
@@ -228,7 +219,6 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'additionalProperties': True,
         'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
@@ -303,7 +293,6 @@
         'type': 'object',
       }),
       'ChatMessageChunk': dict({
-        'additionalProperties': True,
         'description': 'Chat Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
@@ -378,15 +367,14 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'additionalProperties': True,
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          ``FunctionMessage`` are an older version of the ``ToolMessage`` schema, and
-          do not contain the ``tool_call_id`` field.
+          `FunctionMessage` are an older version of the `ToolMessage` schema, and
+          do not contain the `tool_call_id` field.
           
-          The ``tool_call_id`` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
+          The `tool_call_id` field is used to associate the tool call request with the
+          tool call response. Useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
         'properties': dict({
@@ -450,7 +438,6 @@
         'type': 'object',
       }),
       'FunctionMessageChunk': dict({
-        'additionalProperties': True,
         'description': 'Function Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
@@ -513,26 +500,24 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'additionalProperties': True,
         'description': '''
-          Message from a human.
+          Message from the user.
           
-          ``HumanMessage``s are messages that are passed in from a human to the model.
+          A `HumanMessage` is a message that is passed in from a user to the model.
           
           Example:
+              ```python
+              from langchain_core.messages import HumanMessage, SystemMessage
           
-              .. code-block:: python
+              messages = [
+                  SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                  HumanMessage(content="What is your name?"),
+              ]
           
-                  from langchain_core.messages import HumanMessage, SystemMessage
-          
-                  messages = [
-                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
-                      HumanMessage(content="What is your name?"),
-                  ]
-          
-                  # Instantiate a chat model and invoke it with the messages
-                  model = ...
-                  print(model.invoke(messages))
+              # Instantiate a chat model and invoke it with the messages
+              model = ...
+              print(model.invoke(messages))
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -559,11 +544,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -607,7 +587,6 @@
         'type': 'object',
       }),
       'HumanMessageChunk': dict({
-        'additionalProperties': True,
         'description': 'Human Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
@@ -634,11 +613,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -688,17 +662,17 @@
           Does *not* need to sum to full input token count. Does *not* need to have all keys.
           
           Example:
-              .. code-block:: python
-          
-                  {
-                      "audio": 10,
-                      "cache_creation": 200,
-                      "cache_read": 100,
-                  }
-          
-          .. versionadded:: 0.3.9
+              ```python
+              {
+                  "audio": 10,
+                  "cache_creation": 200,
+                  "cache_read": 100,
+              }
+              ```
           
           May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -721,7 +695,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an ``error`` key to surface errors made during generation
+          Here we add an `error` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -747,6 +721,10 @@
             ]),
             'title': 'Error',
           }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -757,6 +735,17 @@
               }),
             ]),
             'title': 'Id',
+          }),
+          'index': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'string',
+              }),
+            ]),
+            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -776,9 +765,10 @@
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -791,14 +781,16 @@
           Does *not* need to sum to full output token count. Does *not* need to have all keys.
           
           Example:
-              .. code-block:: python
+              ```python
+              {
+                  "audio": 10,
+                  "reasoning": 200,
+              }
+              ```
           
-                  {
-                      "audio": 10,
-                      "reasoning": 200,
-                  }
+          May also hold extra provider-specific keys.
           
-          .. versionadded:: 0.3.9
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -814,7 +806,6 @@
         'type': 'object',
       }),
       'SystemMessage': dict({
-        'additionalProperties': True,
         'description': '''
           Message for priming AI behavior.
           
@@ -822,18 +813,17 @@
           of input messages.
           
           Example:
+              ```python
+              from langchain_core.messages import HumanMessage, SystemMessage
           
-              .. code-block:: python
+              messages = [
+                  SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                  HumanMessage(content="What is your name?"),
+              ]
           
-                  from langchain_core.messages import HumanMessage, SystemMessage
-          
-                  messages = [
-                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
-                      HumanMessage(content="What is your name?"),
-                  ]
-          
-                  # Define a chat model and invoke it with the messages
-                  print(model.invoke(messages))
+              # Define a chat model and invoke it with the messages
+              print(model.invoke(messages))
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -903,7 +893,6 @@
         'type': 'object',
       }),
       'SystemMessageChunk': dict({
-        'additionalProperties': True,
         'description': 'System Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
@@ -974,16 +963,22 @@
       }),
       'ToolCall': dict({
         'description': '''
-          Represents a request to call a tool.
+          Represents an AI's request to call a tool.
           
           Example:
+              ```python
+              {"name": "foo", "args": {"a": 1}, "id": "123"}
+              ```
           
-              .. code-block:: python
+              This represents a request to call the tool named `'foo'` with arguments
+              `{"a": 1}` and an identifier of `'123'`.
           
-                  {"name": "foo", "args": {"a": 1}, "id": "123"}
+          !!! note "Factory function"
           
-              This represents a request to call the tool named ``'foo'`` with arguments
-              ``{"a": 1}`` and an identifier of ``'123'``.
+              `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+              include:
+          
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -1021,23 +1016,22 @@
       }),
       'ToolCallChunk': dict({
         'description': '''
-          A chunk of a tool call (e.g., as part of a stream).
+          A chunk of a tool call (yielded when streaming).
           
-          When merging ``ToolCallChunk``s (e.g., via ``AIMessageChunk.__add__``),
-          all string attributes are concatenated. Chunks are only merged if their
-          values of ``index`` are equal and not None.
+          When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+          string attributes are concatenated. Chunks are only merged if their values of
+          `index` are equal and not `None`.
           
           Example:
+          ```python
+          left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
+          right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
           
-          .. code-block:: python
-          
-              left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-              right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
-          
-              (
-                  AIMessageChunk(content="", tool_call_chunks=left_chunks)
-                  + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-              ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
+          (
+              AIMessageChunk(content="", tool_call_chunks=left_chunks)
+              + AIMessageChunk(content="", tool_call_chunks=right_chunks)
+          ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
+          ```
         ''',
         'properties': dict({
           'args': dict({
@@ -1100,47 +1094,45 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'additionalProperties': True,
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          ``ToolMessage``s contain the result of a tool invocation. Typically, the result
-          is encoded inside the ``content`` field.
+          `ToolMessage` objects contain the result of a tool invocation. Typically, the result
+          is encoded inside the `content` field.
           
-          Example: A ``ToolMessage`` representing a result of ``42`` from a tool call with id
+          `tool_call_id` is used to associate the tool call request with the tool call
+          response. Useful in situations where a chat model is able to request multiple tool
+          calls in parallel.
           
-              .. code-block:: python
+          Example:
+              A `ToolMessage` representing a result of `42` from a tool call with id
           
-                  from langchain_core.messages import ToolMessage
+              ```python
+              from langchain_core.messages import ToolMessage
           
-                  ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ```
           
-          
-          Example: A ``ToolMessage`` where only part of the tool output is sent to the model
+          Example:
+              A `ToolMessage` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
-              .. versionadded:: 0.2.17
+              ```python
+              from langchain_core.messages import ToolMessage
           
-              .. code-block:: python
+              tool_output = {
+                  "stdout": "From the graph we can see that the correlation between "
+                  "x and y is ...",
+                  "stderr": None,
+                  "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+              }
           
-                  from langchain_core.messages import ToolMessage
-          
-                  tool_output = {
-                      "stdout": "From the graph we can see that the correlation between "
-                      "x and y is ...",
-                      "stderr": None,
-                      "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-                  }
-          
-                  ToolMessage(
-                      content=tool_output["stdout"],
-                      artifact=tool_output,
-                      tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-                  )
-          
-          The ``tool_call_id`` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
-          to request multiple tool calls in parallel.
+              ToolMessage(
+                  content=tool_output["stdout"],
+                  artifact=tool_output,
+                  tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+              )
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -1222,7 +1214,6 @@
         'type': 'object',
       }),
       'ToolMessageChunk': dict({
-        'additionalProperties': True,
         'description': 'Tool Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
@@ -1310,26 +1301,32 @@
           This is a standard representation of token usage that is consistent across models.
           
           Example:
-              .. code-block:: python
+              ```python
+              {
+                  "input_tokens": 350,
+                  "output_tokens": 240,
+                  "total_tokens": 590,
+                  "input_token_details": {
+                      "audio": 10,
+                      "cache_creation": 200,
+                      "cache_read": 100,
+                  },
+                  "output_token_details": {
+                      "audio": 10,
+                      "reasoning": 200,
+                  },
+              }
+              ```
           
-                  {
-                      "input_tokens": 350,
-                      "output_tokens": 240,
-                      "total_tokens": 590,
-                      "input_token_details": {
-                          "audio": 10,
-                          "cache_creation": 200,
-                          "cache_read": 100,
-                      },
-                      "output_token_details": {
-                          "audio": 10,
-                          "reasoning": 200,
-                      },
-                  }
+          !!! warning "Behavior changed in `langchain-core` 0.3.9"
           
-          .. versionchanged:: 0.3.9
+              Added `input_token_details` and `output_token_details`.
           
-              Added ``input_token_details`` and ``output_token_details``.
+          !!! note "LangSmith SDK"
+          
+              The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
+              LangSmith's `UsageMetadata` has additional fields to capture cost information
+              used by the LangSmith platform.
         ''',
         'properties': dict({
           'input_token_details': dict({
@@ -1421,14 +1418,13 @@
   dict({
     '$defs': dict({
       'AIMessage': dict({
-        'additionalProperties': True,
         'description': '''
           Message from an AI.
           
-          AIMessage is returned from a chat model as a response to a prompt.
+          An `AIMessage` is returned from a chat model as a response to a prompt.
           
           This message represents the output of the model and consists of both
-          the raw output as returned by the model together standardized fields
+          the raw output as returned by the model and standardized fields
           (e.g., tool calls, usage metadata) added by the LangChain framework.
         ''',
         'properties': dict({
@@ -1457,11 +1453,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -1475,8 +1466,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/InvalidToolCall',
             }),
@@ -1500,8 +1489,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCall',
             }),
@@ -1533,12 +1520,24 @@
         'type': 'object',
       }),
       'AIMessageChunk': dict({
-        'additionalProperties': True,
-        'description': 'Message chunk from an AI.',
+        'description': 'Message chunk from an AI (yielded when streaming).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
           }),
           'content': dict({
             'anyOf': list([
@@ -1561,11 +1560,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -1579,8 +1573,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/InvalidToolCall',
             }),
@@ -1604,8 +1596,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCallChunk',
             }),
@@ -1613,8 +1603,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCall',
             }),
@@ -1646,7 +1634,6 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'additionalProperties': True,
         'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
@@ -1721,7 +1708,6 @@
         'type': 'object',
       }),
       'ChatMessageChunk': dict({
-        'additionalProperties': True,
         'description': 'Chat Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
@@ -1796,15 +1782,14 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'additionalProperties': True,
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          ``FunctionMessage`` are an older version of the ``ToolMessage`` schema, and
-          do not contain the ``tool_call_id`` field.
+          `FunctionMessage` are an older version of the `ToolMessage` schema, and
+          do not contain the `tool_call_id` field.
           
-          The ``tool_call_id`` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
+          The `tool_call_id` field is used to associate the tool call request with the
+          tool call response. Useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
         'properties': dict({
@@ -1868,7 +1853,6 @@
         'type': 'object',
       }),
       'FunctionMessageChunk': dict({
-        'additionalProperties': True,
         'description': 'Function Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
@@ -1931,26 +1915,24 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'additionalProperties': True,
         'description': '''
-          Message from a human.
+          Message from the user.
           
-          ``HumanMessage``s are messages that are passed in from a human to the model.
+          A `HumanMessage` is a message that is passed in from a user to the model.
           
           Example:
+              ```python
+              from langchain_core.messages import HumanMessage, SystemMessage
           
-              .. code-block:: python
+              messages = [
+                  SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                  HumanMessage(content="What is your name?"),
+              ]
           
-                  from langchain_core.messages import HumanMessage, SystemMessage
-          
-                  messages = [
-                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
-                      HumanMessage(content="What is your name?"),
-                  ]
-          
-                  # Instantiate a chat model and invoke it with the messages
-                  model = ...
-                  print(model.invoke(messages))
+              # Instantiate a chat model and invoke it with the messages
+              model = ...
+              print(model.invoke(messages))
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -1977,11 +1959,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -2025,7 +2002,6 @@
         'type': 'object',
       }),
       'HumanMessageChunk': dict({
-        'additionalProperties': True,
         'description': 'Human Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
@@ -2052,11 +2028,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -2106,17 +2077,17 @@
           Does *not* need to sum to full input token count. Does *not* need to have all keys.
           
           Example:
-              .. code-block:: python
-          
-                  {
-                      "audio": 10,
-                      "cache_creation": 200,
-                      "cache_read": 100,
-                  }
-          
-          .. versionadded:: 0.3.9
+              ```python
+              {
+                  "audio": 10,
+                  "cache_creation": 200,
+                  "cache_read": 100,
+              }
+              ```
           
           May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -2139,7 +2110,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an ``error`` key to surface errors made during generation
+          Here we add an `error` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -2165,6 +2136,10 @@
             ]),
             'title': 'Error',
           }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -2175,6 +2150,17 @@
               }),
             ]),
             'title': 'Id',
+          }),
+          'index': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'string',
+              }),
+            ]),
+            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -2194,9 +2180,10 @@
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -2209,14 +2196,16 @@
           Does *not* need to sum to full output token count. Does *not* need to have all keys.
           
           Example:
-              .. code-block:: python
+              ```python
+              {
+                  "audio": 10,
+                  "reasoning": 200,
+              }
+              ```
           
-                  {
-                      "audio": 10,
-                      "reasoning": 200,
-                  }
+          May also hold extra provider-specific keys.
           
-          .. versionadded:: 0.3.9
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -2232,7 +2221,6 @@
         'type': 'object',
       }),
       'SystemMessage': dict({
-        'additionalProperties': True,
         'description': '''
           Message for priming AI behavior.
           
@@ -2240,18 +2228,17 @@
           of input messages.
           
           Example:
+              ```python
+              from langchain_core.messages import HumanMessage, SystemMessage
           
-              .. code-block:: python
+              messages = [
+                  SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                  HumanMessage(content="What is your name?"),
+              ]
           
-                  from langchain_core.messages import HumanMessage, SystemMessage
-          
-                  messages = [
-                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
-                      HumanMessage(content="What is your name?"),
-                  ]
-          
-                  # Define a chat model and invoke it with the messages
-                  print(model.invoke(messages))
+              # Define a chat model and invoke it with the messages
+              print(model.invoke(messages))
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -2321,7 +2308,6 @@
         'type': 'object',
       }),
       'SystemMessageChunk': dict({
-        'additionalProperties': True,
         'description': 'System Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
@@ -2392,16 +2378,22 @@
       }),
       'ToolCall': dict({
         'description': '''
-          Represents a request to call a tool.
+          Represents an AI's request to call a tool.
           
           Example:
+              ```python
+              {"name": "foo", "args": {"a": 1}, "id": "123"}
+              ```
           
-              .. code-block:: python
+              This represents a request to call the tool named `'foo'` with arguments
+              `{"a": 1}` and an identifier of `'123'`.
           
-                  {"name": "foo", "args": {"a": 1}, "id": "123"}
+          !!! note "Factory function"
           
-              This represents a request to call the tool named ``'foo'`` with arguments
-              ``{"a": 1}`` and an identifier of ``'123'``.
+              `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+              include:
+          
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -2439,23 +2431,22 @@
       }),
       'ToolCallChunk': dict({
         'description': '''
-          A chunk of a tool call (e.g., as part of a stream).
+          A chunk of a tool call (yielded when streaming).
           
-          When merging ``ToolCallChunk``s (e.g., via ``AIMessageChunk.__add__``),
-          all string attributes are concatenated. Chunks are only merged if their
-          values of ``index`` are equal and not None.
+          When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+          string attributes are concatenated. Chunks are only merged if their values of
+          `index` are equal and not `None`.
           
           Example:
+          ```python
+          left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
+          right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
           
-          .. code-block:: python
-          
-              left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-              right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
-          
-              (
-                  AIMessageChunk(content="", tool_call_chunks=left_chunks)
-                  + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-              ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
+          (
+              AIMessageChunk(content="", tool_call_chunks=left_chunks)
+              + AIMessageChunk(content="", tool_call_chunks=right_chunks)
+          ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
+          ```
         ''',
         'properties': dict({
           'args': dict({
@@ -2518,47 +2509,45 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'additionalProperties': True,
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          ``ToolMessage``s contain the result of a tool invocation. Typically, the result
-          is encoded inside the ``content`` field.
+          `ToolMessage` objects contain the result of a tool invocation. Typically, the result
+          is encoded inside the `content` field.
           
-          Example: A ``ToolMessage`` representing a result of ``42`` from a tool call with id
+          `tool_call_id` is used to associate the tool call request with the tool call
+          response. Useful in situations where a chat model is able to request multiple tool
+          calls in parallel.
           
-              .. code-block:: python
+          Example:
+              A `ToolMessage` representing a result of `42` from a tool call with id
           
-                  from langchain_core.messages import ToolMessage
+              ```python
+              from langchain_core.messages import ToolMessage
           
-                  ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+              ```
           
-          
-          Example: A ``ToolMessage`` where only part of the tool output is sent to the model
+          Example:
+              A `ToolMessage` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
-              .. versionadded:: 0.2.17
+              ```python
+              from langchain_core.messages import ToolMessage
           
-              .. code-block:: python
+              tool_output = {
+                  "stdout": "From the graph we can see that the correlation between "
+                  "x and y is ...",
+                  "stderr": None,
+                  "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+              }
           
-                  from langchain_core.messages import ToolMessage
-          
-                  tool_output = {
-                      "stdout": "From the graph we can see that the correlation between "
-                      "x and y is ...",
-                      "stderr": None,
-                      "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-                  }
-          
-                  ToolMessage(
-                      content=tool_output["stdout"],
-                      artifact=tool_output,
-                      tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-                  )
-          
-          The ``tool_call_id`` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
-          to request multiple tool calls in parallel.
+              ToolMessage(
+                  content=tool_output["stdout"],
+                  artifact=tool_output,
+                  tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+              )
+              ```
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -2640,7 +2629,6 @@
         'type': 'object',
       }),
       'ToolMessageChunk': dict({
-        'additionalProperties': True,
         'description': 'Tool Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
@@ -2728,26 +2716,32 @@
           This is a standard representation of token usage that is consistent across models.
           
           Example:
-              .. code-block:: python
+              ```python
+              {
+                  "input_tokens": 350,
+                  "output_tokens": 240,
+                  "total_tokens": 590,
+                  "input_token_details": {
+                      "audio": 10,
+                      "cache_creation": 200,
+                      "cache_read": 100,
+                  },
+                  "output_token_details": {
+                      "audio": 10,
+                      "reasoning": 200,
+                  },
+              }
+              ```
           
-                  {
-                      "input_tokens": 350,
-                      "output_tokens": 240,
-                      "total_tokens": 590,
-                      "input_token_details": {
-                          "audio": 10,
-                          "cache_creation": 200,
-                          "cache_read": 100,
-                      },
-                      "output_token_details": {
-                          "audio": 10,
-                          "reasoning": 200,
-                      },
-                  }
+          !!! warning "Behavior changed in `langchain-core` 0.3.9"
           
-          .. versionchanged:: 0.3.9
+              Added `input_token_details` and `output_token_details`.
           
-              Added ``input_token_details`` and ``output_token_details``.
+          !!! note "LangSmith SDK"
+          
+              The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
+              LangSmith's `UsageMetadata` has additional fields to capture cost information
+              used by the LangSmith platform.
         ''',
         'properties': dict({
           'input_token_details': dict({

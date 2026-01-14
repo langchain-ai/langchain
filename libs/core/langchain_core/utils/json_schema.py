@@ -3,13 +3,29 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-def _retrieve_ref(path: str, schema: dict) -> Union[list, dict]:
+def _retrieve_ref(path: str, schema: dict) -> list | dict:
+    """Retrieve a referenced object from a JSON schema using a path.
+
+    Resolves JSON schema references (e.g., `'#/definitions/MyType'`) by traversing the
+    schema structure.
+
+    Args:
+        path: Reference path starting with `'#'` (e.g., `'#/definitions/MyType'`).
+        schema: The JSON schema dictionary to search in.
+
+    Returns:
+        A deep copy of the referenced object (dict or list).
+
+    Raises:
+        ValueError: If the path does not start with `'#'`.
+        KeyError: If the reference path is not found in the schema.
+    """
     components = path.split("/")
     if components[0] != "#":
         msg = (
@@ -17,7 +33,7 @@ def _retrieve_ref(path: str, schema: dict) -> Union[list, dict]:
             "with #."
         )
         raise ValueError(msg)
-    out: Union[list, dict] = schema
+    out: list | dict = schema
     for component in components[1:]:
         if component in out:
             if isinstance(out, list):
@@ -56,7 +72,7 @@ def _process_dict_properties(
         elif isinstance(value, (dict, list)):
             # Recursively process nested objects and arrays
             result[key] = _dereference_refs_helper(
-                value, full_schema, processed_refs, skip_keys, shallow_refs
+                value, full_schema, processed_refs, skip_keys, shallow_refs=shallow_refs
             )
         else:
             # Copy primitive values directly
@@ -67,9 +83,10 @@ def _process_dict_properties(
 def _dereference_refs_helper(
     obj: Any,
     full_schema: dict[str, Any],
-    processed_refs: Optional[set[str]],
+    processed_refs: set[str] | None,
     skip_keys: Sequence[str],
-    shallow_refs: bool,  # noqa: FBT001
+    *,
+    shallow_refs: bool,
 ) -> Any:
     """Dereference JSON Schema $ref objects, handling both pure and mixed references.
 
@@ -85,7 +102,7 @@ def _dereference_refs_helper(
         full_schema: The complete schema containing all definitions
         processed_refs: Set tracking currently processing refs (for cycle detection)
         skip_keys: Keys under which to skip recursion
-        shallow_refs: If True, only break cycles; if False, deep-inline all refs
+        shallow_refs: If `True`, only break cycles; if False, deep-inline all refs
 
     Returns:
         The object with $ref properties resolved and merged with other properties.
@@ -117,7 +134,11 @@ def _dereference_refs_helper(
         # Fetch and recursively resolve the referenced object
         referenced_object = deepcopy(_retrieve_ref(ref_path, full_schema))
         resolved_reference = _dereference_refs_helper(
-            referenced_object, full_schema, processed_refs, skip_keys, shallow_refs
+            referenced_object,
+            full_schema,
+            processed_refs,
+            skip_keys,
+            shallow_refs=shallow_refs,
         )
 
         # Clean up: remove from processing set before returning
@@ -155,7 +176,7 @@ def _dereference_refs_helper(
     if isinstance(obj, list):
         return [
             _dereference_refs_helper(
-                item, full_schema, processed_refs, skip_keys, shallow_refs
+                item, full_schema, processed_refs, skip_keys, shallow_refs=shallow_refs
             )
             for item in obj
         ]
@@ -167,31 +188,36 @@ def _dereference_refs_helper(
 def dereference_refs(
     schema_obj: dict,
     *,
-    full_schema: Optional[dict] = None,
-    skip_keys: Optional[Sequence[str]] = None,
+    full_schema: dict | None = None,
+    skip_keys: Sequence[str] | None = None,
 ) -> dict:
-    """Resolve and inline JSON Schema $ref references in a schema object.
+    """Resolve and inline JSON Schema `$ref` references in a schema object.
 
-    This function processes a JSON Schema and resolves all $ref references by replacing
-    them with the actual referenced content. It handles both simple references and
-    complex cases like circular references and mixed $ref objects that contain
-    additional properties alongside the $ref.
+    This function processes a JSON Schema and resolves all `$ref` references by
+    replacing them with the actual referenced content.
+
+    Handles both simple references and complex cases like circular references and mixed
+    `$ref` objects that contain additional properties alongside the `$ref`.
 
     Args:
-        schema_obj: The JSON Schema object or fragment to process. This can be a
-            complete schema or just a portion of one.
-        full_schema: The complete schema containing all definitions that $refs might
-            point to. If not provided, defaults to schema_obj (useful when the
-            schema is self-contained).
-        skip_keys: Controls recursion behavior and reference resolution depth:
-            - If None (default): Only recurse under '$defs' and use shallow reference
-              resolution (break cycles but don't deep-inline nested refs)
-            - If provided (even as []): Recurse under all keys and use deep reference
-              resolution (fully inline all nested references)
+        schema_obj: The JSON Schema object or fragment to process.
+
+            This can be a complete schema or just a portion of one.
+        full_schema: The complete schema containing all definitions that `$refs` might
+            point to.
+
+            If not provided, defaults to `schema_obj` (useful when the schema is
+            self-contained).
+        skip_keys: Controls recursion behavior and reference resolution depth.
+
+            - If `None` (Default): Only recurse under `'$defs'` and use shallow
+                reference resolution (break cycles but don't deep-inline nested refs)
+            - If provided (even as `[]`): Recurse under all keys and use deep reference
+                resolution (fully inline all nested references)
 
     Returns:
-        A new dictionary with all $ref references resolved and inlined. The original
-        schema_obj is not modified.
+        A new dictionary with all $ref references resolved and inlined.
+            The original `schema_obj` is not modified.
 
     Examples:
         Basic reference resolution:
@@ -203,7 +229,8 @@ def dereference_refs(
         >>> result = dereference_refs(schema)
         >>> result["properties"]["name"]  # {"type": "string"}
 
-        Mixed $ref with additional properties:
+        Mixed `$ref` with additional properties:
+
         >>> schema = {
         ...     "properties": {
         ...         "name": {"$ref": "#/$defs/base", "description": "User name"}
@@ -215,6 +242,7 @@ def dereference_refs(
         # {"type": "string", "minLength": 1, "description": "User name"}
 
         Handling circular references:
+
         >>> schema = {
         ...     "properties": {"user": {"$ref": "#/$defs/User"}},
         ...     "$defs": {
@@ -226,13 +254,19 @@ def dereference_refs(
         ... }
         >>> result = dereference_refs(schema)  # Won't cause infinite recursion
 
-    Note:
+    !!! note
+
         - Circular references are handled gracefully by breaking cycles
-        - Mixed $ref objects (with both $ref and other properties) are supported
-        - Additional properties in mixed $refs override resolved properties
-        - The $defs section is preserved in the output by default
+        - Mixed `$ref` objects (with both `$ref` and other properties) are supported
+        - Additional properties in mixed `$refs` override resolved properties
+        - The `$defs` section is preserved in the output by default
     """
     full = full_schema or schema_obj
     keys_to_skip = list(skip_keys) if skip_keys is not None else ["$defs"]
     shallow = skip_keys is None
-    return _dereference_refs_helper(schema_obj, full, None, keys_to_skip, shallow)
+    return cast(
+        "dict",
+        _dereference_refs_helper(
+            schema_obj, full, None, keys_to_skip, shallow_refs=shallow
+        ),
+    )

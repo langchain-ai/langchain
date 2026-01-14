@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from langchain_core.stores import InvalidKeyException
 
-from langchain.storage.file_system import LocalFileStore
+from langchain_classic.storage.file_system import LocalFileStore
 
 
 @pytest.fixture
@@ -140,13 +140,13 @@ def test_catches_forbidden_keys(file_store: LocalFileStore) -> None:
     with pytest.raises(InvalidKeyException):
         file_store.mset([("/etc", b"value1")])
     with pytest.raises(InvalidKeyException):
-        list(file_store.yield_keys("/etc/passwd"))
+        list(file_store.yield_keys(prefix="/etc/passwd"))
     with pytest.raises(InvalidKeyException):
         file_store.mget(["/etc/passwd"])
 
     # check relative paths
     with pytest.raises(InvalidKeyException):
-        list(file_store.yield_keys(".."))
+        list(file_store.yield_keys(prefix=".."))
 
     with pytest.raises(InvalidKeyException):
         file_store.mget(["../etc/passwd"])
@@ -155,4 +155,4 @@ def test_catches_forbidden_keys(file_store: LocalFileStore) -> None:
         file_store.mset([("../etc", b"value1")])
 
     with pytest.raises(InvalidKeyException):
-        list(file_store.yield_keys("../etc/passwd"))
+        list(file_store.yield_keys(prefix="../etc/passwd"))

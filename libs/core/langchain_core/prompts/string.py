@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import warnings
-from abc import ABC
+from abc import ABC, abstractmethod
 from string import Formatter
-from typing import Any, Callable, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from pydantic import BaseModel, create_model
+from typing_extensions import override
 
 from langchain_core.prompt_values import PromptValue, StringPromptValue
 from langchain_core.prompts.base import BasePromptTemplate
@@ -15,8 +16,11 @@ from langchain_core.utils import get_colored_text, mustache
 from langchain_core.utils.formatting import formatter
 from langchain_core.utils.interactive_env import is_interactive_env
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
 try:
-    from jinja2 import Environment, meta
+    from jinja2 import meta
     from jinja2.sandbox import SandboxedEnvironment
 
     _HAS_JINJA2 = True
@@ -58,13 +62,9 @@ def jinja2_formatter(template: str, /, **kwargs: Any) -> str:
         )
         raise ImportError(msg)
 
-    # This uses a sandboxed environment to prevent arbitrary code execution.
-    # Jinja2 uses an opt-out rather than opt-in approach for sand-boxing.
-    # Please treat this sand-boxing as a best-effort approach rather than
-    # a guarantee of security.
-    # We recommend to never use jinja2 templates with untrusted inputs.
-    # https://jinja.palletsprojects.com/en/3.1.x/sandbox/
-    # approach not a guarantee of security.
+    # Use a restricted sandbox that blocks ALL attribute/method access
+    # Only simple variable lookups like {{variable}} are allowed
+    # Attribute access like {{variable.attr}} or {{variable.method()}} is blocked
     return SandboxedEnvironment().from_string(template).render(**kwargs)
 
 
@@ -100,7 +100,7 @@ def _get_jinja2_variables_from_template(template: str) -> set[str]:
             "Please install it with `pip install jinja2`."
         )
         raise ImportError(msg)
-    env = Environment()  # noqa: S701
+    env = SandboxedEnvironment()
     ast = env.parse(template)
     return meta.find_undeclared_variables(ast)
 
@@ -121,13 +121,16 @@ def mustache_formatter(template: str, /, **kwargs: Any) -> str:
 def mustache_template_vars(
     template: str,
 ) -> set[str]:
-    """Get the variables from a mustache template.
+    """Get the top-level variables from a mustache template.
+
+    For nested variables like `{{person.name}}`, only the top-level
+    key (`person`) is returned.
 
     Args:
         template: The template string.
 
     Returns:
-        The variables from the template.
+       The top-level variables from the template.
     """
     variables: set[str] = set()
     section_depth = 0
@@ -148,9 +151,7 @@ def mustache_template_vars(
 Defs = dict[str, "Defs"]
 
 
-def mustache_schema(
-    template: str,
-) -> type[BaseModel]:
+def mustache_schema(template: str) -> type[BaseModel]:
     """Get the variables from a mustache template.
 
     Args:
@@ -174,6 +175,11 @@ def mustache_schema(
             fields[prefix] = False
         elif type_ in {"variable", "no escape"}:
             fields[prefix + tuple(key.split("."))] = True
+
+    for fkey, fval in fields.items():
+        fields[fkey] = fval and not any(
+            is_subsequence(fkey, k) for k in fields if k != fkey
+        )
     defs: Defs = {}  # None means leaf node
     while fields:
         field, is_leaf = fields.popitem()
@@ -184,17 +190,20 @@ def mustache_schema(
     return _create_model_recursive("PromptInput", defs)
 
 
-def _create_model_recursive(name: str, defs: Defs) -> type:
-    return create_model(  # type: ignore[call-overload]
-        name,
-        **{
-            k: (_create_model_recursive(k, v), None) if v else (type(v), None)
-            for k, v in defs.items()
-        },
+def _create_model_recursive(name: str, defs: Defs) -> type[BaseModel]:
+    return cast(
+        "type[BaseModel]",
+        create_model(  # type: ignore[call-overload]
+            name,
+            **{
+                k: (_create_model_recursive(k, v), None) if v else (type(v), None)
+                for k, v in defs.items()
+            },
+        ),
     )
 
 
-DEFAULT_FORMATTER_MAPPING: dict[str, Callable] = {
+DEFAULT_FORMATTER_MAPPING: dict[str, Callable[..., str]] = {
     "f-string": formatter.format,
     "mustache": mustache_formatter,
     "jinja2": jinja2_formatter,
@@ -264,6 +273,30 @@ def get_template_variables(template: str, template_format: str) -> list[str]:
         msg = f"Unsupported template format: {template_format}"
         raise ValueError(msg)
 
+    # For f-strings, block attribute access and indexing syntax
+    # This prevents template injection attacks via accessing dangerous attributes
+    if template_format == "f-string":
+        for var in input_variables:
+            # Formatter().parse() returns field names with dots/brackets if present
+            # e.g., "obj.attr" or "obj[0]" - we need to block these
+            if "." in var or "[" in var or "]" in var:
+                msg = (
+                    f"Invalid variable name {var!r} in f-string template. "
+                    f"Variable names cannot contain attribute "
+                    f"access (.) or indexing ([])."
+                )
+                raise ValueError(msg)
+
+            # Block variable names that are all digits (e.g., "0", "100")
+            # These are interpreted as positional arguments, not keyword arguments
+            if var.isdigit():
+                msg = (
+                    f"Invalid variable name {var!r} in f-string template. "
+                    f"Variable names cannot be all digits as they are interpreted "
+                    f"as positional arguments."
+                )
+                raise ValueError(msg)
+
     return sorted(input_variables)
 
 
@@ -272,10 +305,10 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
-            ``["langchain", "prompts", "base"]``
+            `["langchain", "prompts", "base"]`
         """
         return ["langchain", "prompts", "base"]
 
@@ -283,7 +316,7 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
         """Format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
@@ -294,12 +327,16 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
         """Async format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
         """
         return StringPromptValue(text=await self.aformat(**kwargs))
+
+    @override
+    @abstractmethod
+    def format(self, **kwargs: Any) -> str: ...
 
     def pretty_repr(
         self,
@@ -326,3 +363,12 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
     def pretty_print(self) -> None:
         """Print a pretty representation of the prompt."""
         print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
+
+
+def is_subsequence(child: Sequence, parent: Sequence) -> bool:
+    """Return True if child is subsequence of parent."""
+    if len(child) == 0 or len(parent) == 0:
+        return False
+    if len(parent) < len(child):
+        return False
+    return all(child[i] == parent[i] for i in range(len(child)))

@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from langchain.evaluation.parsing.base import (
+from langchain_classic.evaluation.parsing.base import (
     JsonEqualityEvaluator,
     JsonValidityEvaluator,
 )

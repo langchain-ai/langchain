@@ -1,23 +1,22 @@
 # langchain-nomic
 
-This package contains the LangChain integration with Nomic
+[![PyPI - Version](https://img.shields.io/pypi/v/langchain-nomic?label=%20)](https://pypi.org/project/langchain-nomic/#history)
+[![PyPI - License](https://img.shields.io/pypi/l/langchain-nomic)](https://opensource.org/licenses/MIT)
+[![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-nomic)](https://pypistats.org/packages/langchain-nomic)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40LangChain)](https://x.com/langchain)
 
-## Installation
+Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+
+## Quick Install
 
 ```bash
-pip install -U langchain-nomic
+pip install langchain-nomic
 ```
 
-And you should configure credentials by setting the following environment variables:
+## 🤔 What is this?
 
-* `NOMIC_API_KEY`: your nomic API key
+This package contains the LangChain integration with Nomic
 
-## Embeddings
+## 📖 Documentation
 
-`NomicEmbeddings` class exposes embeddings from Nomic.
-
-```python
-from langchain_nomic import NomicEmbeddings
-
-embeddings = NomicEmbeddings()
-embeddings.embed_query("What is the meaning of life?")
+View the [documentation](https://docs.langchain.com/oss/python/integrations/providers/nomic) for more details.
