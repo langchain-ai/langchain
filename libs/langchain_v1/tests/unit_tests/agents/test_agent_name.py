@@ -70,7 +70,6 @@ def test_agent_name_on_multiple_iterations() -> None:
         assert msg.name == "multi_turn_agent"
 
 
-@pytest.mark.asyncio
 async def test_agent_name_async() -> None:
     """Test that agent name is set on AIMessage in async execution."""
     tool_calls: list[list[ToolCall]] = [[]]
@@ -86,7 +85,6 @@ async def test_agent_name_async() -> None:
     assert ai_messages[0].name == "async_agent"
 
 
-@pytest.mark.asyncio
 async def test_agent_name_async_multiple_iterations() -> None:
     """Test that agent name is set on all AIMessages in async multi-turn."""
     agent = create_agent(
@@ -165,7 +163,6 @@ def test_lc_agent_name_in_stream_metadata_multiple_iterations() -> None:
     assert all(name == "multi_turn_streaming_agent" for name in metadata_with_agent_name)
 
 
-@pytest.mark.asyncio
 async def test_lc_agent_name_in_astream_metadata() -> None:
     """Test that lc_agent_name is included in metadata when async streaming with name."""
     tool_calls: list[list[ToolCall]] = [[]]
@@ -186,7 +183,6 @@ async def test_lc_agent_name_in_astream_metadata() -> None:
     assert all(name == "async_streaming_agent" for name in metadata_with_agent_name)
 
 
-@pytest.mark.asyncio
 async def test_lc_agent_name_not_in_astream_metadata_when_name_not_provided() -> None:
     """Test that lc_agent_name is not in async stream metadata when name not provided."""
     tool_calls: list[list[ToolCall]] = [[]]
@@ -201,7 +197,6 @@ async def test_lc_agent_name_not_in_astream_metadata_when_name_not_provided() ->
         assert "lc_agent_name" not in metadata
 
 
-@pytest.mark.asyncio
 async def test_lc_agent_name_in_astream_metadata_multiple_iterations() -> None:
     """Test that lc_agent_name is in metadata for all async stream events in multi-turn."""
     agent = create_agent(
