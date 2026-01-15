@@ -5,7 +5,6 @@ This module tests that the name parameter correctly sets .name on AIMessage outp
 
 from __future__ import annotations
 
-import pytest
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
