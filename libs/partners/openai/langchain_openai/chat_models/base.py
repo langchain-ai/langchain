@@ -354,42 +354,38 @@ def _convert_message_to_dict(
     elif isinstance(message, FunctionMessage):
         message_dict["role"] = "function"
     elif isinstance(message, ToolMessage):
-        # 1. Check if we are using the newer 'responses' API or forced Harmony
         force_harmony = os.getenv("LC_FORCE_HARMONY_TOOLS") == "1"
 
         if api == "responses" or force_harmony:
             content_blocks = []
             raw_content = message.content
 
-            # 2. Normalize content to a list
             if isinstance(raw_content, str):
                 raw_content = [raw_content]
             elif not isinstance(raw_content, list):
                 raw_content = []
 
-            # 3. Build the content blocks using 'text' instead of 'output_text'
             for block in raw_content:
                 if isinstance(block, dict):
-                    if block.get("type") == "output_text":
-                        content_blocks.append(
-                            {"type": "text", "text": block.get("text", "")}
-                        )
-                    else:
-                        content_blocks.append(block)
+                    text_val = (
+                        block.get("text", "")
+                        if block.get("type") == "output_text"
+                        else str(block)
+                    )
+                    content_blocks.append({"type": "text", "text": text_val})
                 else:
                     content_blocks.append({"type": "text", "text": str(block)})
 
             if not content_blocks:
                 content_blocks = [{"type": "text", "text": ""}]
 
-            # 4. Construct the Harmony-compatible dict
             message_dict = {
                 "type": "tool_result",
+                "role": "tool",
                 "tool_call_id": message.tool_call_id,
                 "content": content_blocks,
             }
         else:
-            # 5. Standard legacy OpenAI tool format (role/content/tool_call_id)
             message_dict["role"] = "tool"
             message_dict["tool_call_id"] = message.tool_call_id
             supported_props = {"content", "role", "tool_call_id"}
