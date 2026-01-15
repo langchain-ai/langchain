@@ -564,7 +564,7 @@ class SummarizationMiddleware(AgentMiddleware):
         # orphaned tool responses
         return idx
 
-    def _create_summary(self, messages_to_summarize: list[AnyMessage], runtime: Runtime) -> str:
+    def _create_summary(self, messages_to_summarize: list[AnyMessage], _runtime: Runtime) -> str:
         """Generate summary for the given messages.
 
         Args:
@@ -606,7 +606,7 @@ class SummarizationMiddleware(AgentMiddleware):
             return f"Error generating summary: {e!s}"
 
     async def _acreate_summary(
-        self, messages_to_summarize: list[AnyMessage], runtime: Runtime
+        self, messages_to_summarize: list[AnyMessage], _runtime: Runtime
     ) -> str:
         """Generate summary for the given messages.
 
