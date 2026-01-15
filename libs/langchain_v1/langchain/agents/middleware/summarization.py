@@ -271,7 +271,7 @@ class SummarizationMiddleware(AgentMiddleware):
             raise ValueError(msg)
 
     @override
-    def before_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any] | None:
+    def before_model(self, state: AgentState[Any], _runtime: Runtime) -> dict[str, Any] | None:
         """Process messages before model invocation, potentially triggering summarization.
 
         Args:
@@ -295,7 +295,7 @@ class SummarizationMiddleware(AgentMiddleware):
 
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
 
-        summary = self._create_summary(messages_to_summarize, runtime)
+        summary = self._create_summary(messages_to_summarize)
         new_messages = self._build_new_messages(summary)
 
         return {
@@ -308,7 +308,7 @@ class SummarizationMiddleware(AgentMiddleware):
 
     @override
     async def abefore_model(
-        self, state: AgentState[Any], runtime: Runtime
+        self, state: AgentState[Any], _runtime: Runtime
     ) -> dict[str, Any] | None:
         """Process messages before model invocation, potentially triggering summarization.
 
@@ -333,7 +333,7 @@ class SummarizationMiddleware(AgentMiddleware):
 
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
 
-        summary = await self._acreate_summary(messages_to_summarize, runtime)
+        summary = await self._acreate_summary(messages_to_summarize)
         new_messages = self._build_new_messages(summary)
 
         return {
@@ -564,14 +564,11 @@ class SummarizationMiddleware(AgentMiddleware):
         # orphaned tool responses
         return idx
 
-    def _create_summary(self, messages_to_summarize: list[AnyMessage], _runtime: Runtime) -> str:
+    def _create_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
         """Generate summary for the given messages.
 
         Args:
             messages_to_summarize: Messages to summarize.
-            runtime: The runtime environment, used to inherit config (including
-                `langgraph_checkpoint_ns`) so that LangGraph's `StreamMessagesHandler`
-                can properly track and tag the summarization model call.
         """
         if not messages_to_summarize:
             return "No previous conversation history."
@@ -605,16 +602,11 @@ class SummarizationMiddleware(AgentMiddleware):
         except Exception as e:
             return f"Error generating summary: {e!s}"
 
-    async def _acreate_summary(
-        self, messages_to_summarize: list[AnyMessage], _runtime: Runtime
-    ) -> str:
+    async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
         """Generate summary for the given messages.
 
         Args:
             messages_to_summarize: Messages to summarize.
-            runtime: The runtime environment, used to inherit config (including
-                `langgraph_checkpoint_ns`) so that LangGraph's `StreamMessagesHandler`
-                can properly track and tag the summarization model call.
         """
         if not messages_to_summarize:
             return "No previous conversation history."
