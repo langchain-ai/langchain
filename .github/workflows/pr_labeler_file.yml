@@ -8,7 +8,7 @@ on:
   # Safe since we're not checking out or running the PR's code
   # Never check out the PR's head in a pull_request_target job
   pull_request_target:
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, synchronize, reopened]
 
 jobs:
   labeler:
