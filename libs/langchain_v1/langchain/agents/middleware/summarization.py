@@ -19,6 +19,8 @@ from langchain_core.messages.utils import (
     get_buffer_string,
     trim_messages,
 )
+from langchain_core.runnables.config import RunnableConfig, merge_configs
+from langgraph.config import get_config
 from langgraph.graph.message import (
     REMOVE_ALL_MESSAGES,
 )
@@ -40,12 +42,27 @@ Your sole objective in this task is to extract the highest quality/most relevant
 
 <objective_information>
 You're nearing the total number of input tokens you can accept, so you must extract the highest quality/most relevant pieces of information from your conversation history.
-This context will then overwrite the conversation history presented below. Because of this, ensure the context you extract is only the most important information to your overall goal.
+This context will then overwrite the conversation history presented below. Because of this, ensure the context you extract is only the most important information to continue working toward your overall goal.
 </objective_information>
 
 <instructions>
-The conversation history below will be replaced with the context you extract in this step. Because of this, you must do your very best to extract and record all of the most important context from the conversation history.
+The conversation history below will be replaced with the context you extract in this step.
 You want to ensure that you don't repeat any actions you've already completed, so the context you extract from the conversation history should be focused on the most important information to your overall goal.
+
+You should structure your summary using the following sections. Each section acts as a checklist - you must populate it with relevant information or explicitly state "None" if there is nothing to report for that section:
+
+## SESSION INTENT
+What is the user's primary goal or request? What overall task are you trying to accomplish? This should be concise but complete enough to understand the purpose of the entire session.
+
+## SUMMARY
+Extract and record all of the most important context from the conversation history. Include important choices, conclusions, or strategies determined during this conversation. Include the reasoning behind key decisions. Document any rejected options and why they were not pursued.
+
+## ARTIFACTS
+What artifacts, files, or resources were created, modified, or accessed during this conversation? For file modifications, list specific file paths and briefly describe the changes made to each. This section prevents silent loss of artifact information.
+
+## NEXT STEPS
+What specific tasks remain to be completed to achieve the session intent? What should you do next?
+
 </instructions>
 
 The user will message you with the full message history you'll be extracting context from, to then replace. Carefully read over it all, and think deeply about what information is most important to your overall goal that should be saved:
@@ -269,7 +286,7 @@ class SummarizationMiddleware(AgentMiddleware):
             raise ValueError(msg)
 
     @override
-    def before_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any] | None:
+    def before_model(self, state: AgentState[Any], _runtime: Runtime) -> dict[str, Any] | None:
         """Process messages before model invocation, potentially triggering summarization.
 
         Args:
@@ -306,7 +323,7 @@ class SummarizationMiddleware(AgentMiddleware):
 
     @override
     async def abefore_model(
-        self, state: AgentState[Any], runtime: Runtime
+        self, state: AgentState[Any], _runtime: Runtime
     ) -> dict[str, Any] | None:
         """Process messages before model invocation, potentially triggering summarization.
 
@@ -563,7 +580,11 @@ class SummarizationMiddleware(AgentMiddleware):
         return idx
 
     def _create_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
-        """Generate summary for the given messages."""
+        """Generate summary for the given messages.
+
+        Args:
+            messages_to_summarize: Messages to summarize.
+        """
         if not messages_to_summarize:
             return "No previous conversation history."
 
@@ -575,14 +596,33 @@ class SummarizationMiddleware(AgentMiddleware):
         # message objects
         formatted_messages = get_buffer_string(trimmed_messages)
 
+        # Merge parent config with summarization metadata.
+        # Use get_config() to get the current LangGraph config which contains
+        # langgraph_checkpoint_ns - required by StreamMessagesHandler to properly
+        # track the model call and propagate metadata (including lc_source) to
+        # stream chunks.
         try:
-            response = self.model.invoke(self.summary_prompt.format(messages=formatted_messages))
+            base_config: RunnableConfig = get_config()
+        except RuntimeError:
+            # Fallback if called outside a runnable context
+            base_config = {}
+        config = merge_configs(base_config, {"metadata": {"lc_source": "summarization"}})
+
+        try:
+            response = self.model.invoke(
+                self.summary_prompt.format(messages=formatted_messages),
+                config=config,
+            )
             return response.text.strip()
         except Exception as e:
             return f"Error generating summary: {e!s}"
 
     async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
-        """Generate summary for the given messages."""
+        """Generate summary for the given messages.
+
+        Args:
+            messages_to_summarize: Messages to summarize.
+        """
         if not messages_to_summarize:
             return "No previous conversation history."
 
@@ -594,9 +634,22 @@ class SummarizationMiddleware(AgentMiddleware):
         # message objects
         formatted_messages = get_buffer_string(trimmed_messages)
 
+        # Merge parent config with summarization metadata.
+        # Use get_config() to get the current LangGraph config which contains
+        # langgraph_checkpoint_ns - required by StreamMessagesHandler to properly
+        # track the model call and propagate metadata (including lc_source) to
+        # stream chunks.
+        try:
+            base_config: RunnableConfig = get_config()
+        except RuntimeError:
+            # Fallback if called outside a runnable context
+            base_config = {}
+        config = merge_configs(base_config, {"metadata": {"lc_source": "summarization"}})
+
         try:
             response = await self.model.ainvoke(
-                self.summary_prompt.format(messages=formatted_messages)
+                self.summary_prompt.format(messages=formatted_messages),
+                config=config,
             )
             return response.text.strip()
         except Exception as e:
