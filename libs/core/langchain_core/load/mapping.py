@@ -181,7 +181,7 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "Document",
     ),
     ("langchain", "output_parsers", "fix", "OutputFixingParser"): (
-        "langchain",
+        "langchain_core",
         "output_parsers",
         "fix",
         "OutputFixingParser",
