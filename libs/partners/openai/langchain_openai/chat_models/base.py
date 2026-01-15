@@ -370,13 +370,12 @@ def _convert_message_to_dict(
             # 3. Build the content blocks using 'text' instead of 'output_text'
             for block in raw_content:
                 if isinstance(block, dict):
-                    # Standardize to 'text' for vLLM/OpenAI schema compatibility
-                    text_val = (
-                        block.get("text", "")
-                        if block.get("type") == "output_text"
-                        else str(block)
-                    )
-                    content_blocks.append({"type": "text", "text": text_val})
+                    if block.get("type") == "output_text":
+                        content_blocks.append(
+                            {"type": "text", "text": block.get("text", "")}
+                        )
+                    else:
+                        content_blocks.append(block)
                 else:
                     content_blocks.append({"type": "text", "text": str(block)})
 

@@ -544,7 +544,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.2.3"
+version = "1.2.4"
 source = { editable = "../../langchain_v1" }
 dependencies = [
     { name = "langchain-core" },
@@ -577,7 +577,7 @@ requires-dist = [
 provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
-lint = [{ name = "ruff", specifier = ">=0.14.10,<0.15.0" }]
+lint = [{ name = "ruff", specifier = ">=0.14.11,<0.15.0" }]
 test = [
     { name = "langchain-openai", editable = "." },
     { name = "langchain-tests", editable = "../../standard-tests" },
@@ -637,7 +637,7 @@ dev = [
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
     { name = "setuptools", specifier = ">=67.6.1,<68.0.0" },
 ]
-lint = [{ name = "ruff", specifier = ">=0.14.10,<0.15.0" }]
+lint = [{ name = "ruff", specifier = ">=0.14.11,<0.15.0" }]
 test = [
     { name = "blockbuster", specifier = ">=1.5.18,<1.6.0" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
@@ -677,6 +677,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "langchain-core" },
+    { name = "ruff" },
 ]
 lint = [
     { name = "ruff" },
@@ -719,7 +720,10 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "langchain-core", editable = "../../core" }]
+dev = [
+    { name = "langchain-core", editable = "../../core" },
+    { name = "ruff", specifier = ">=0.13.3" },
+]
 lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
@@ -787,7 +791,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-lint = [{ name = "ruff", specifier = ">=0.14.10,<0.15.0" }]
+lint = [{ name = "ruff", specifier = ">=0.14.11,<0.15.0" }]
 test = [{ name = "langchain-core", editable = "../../core" }]
 test-integration = []
 typing = [

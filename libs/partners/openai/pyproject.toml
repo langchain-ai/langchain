@@ -46,7 +46,10 @@ test = [
     "langchain-tests",
 ]
 lint = ["ruff>=0.13.1,<0.14.0"]
-dev = ["langchain-core"]
+dev = [
+    "langchain-core",
+    "ruff>=0.13.3",
+]
 test_integration = [
     "httpx>=0.27.0,<1.0.0",
     "pillow>=10.3.0,<12.0.0",
