@@ -19,6 +19,8 @@ from langchain_core.messages.utils import (
     get_buffer_string,
     trim_messages,
 )
+from langchain_core.runnables.config import RunnableConfig, merge_configs
+from langgraph.config import get_config
 from langgraph.graph.message import (
     REMOVE_ALL_MESSAGES,
 )
@@ -293,7 +295,7 @@ class SummarizationMiddleware(AgentMiddleware):
 
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
 
-        summary = self._create_summary(messages_to_summarize)
+        summary = self._create_summary(messages_to_summarize, runtime)
         new_messages = self._build_new_messages(summary)
 
         return {
@@ -331,7 +333,7 @@ class SummarizationMiddleware(AgentMiddleware):
 
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
 
-        summary = await self._acreate_summary(messages_to_summarize)
+        summary = await self._acreate_summary(messages_to_summarize, runtime)
         new_messages = self._build_new_messages(summary)
 
         return {
@@ -562,8 +564,15 @@ class SummarizationMiddleware(AgentMiddleware):
         # orphaned tool responses
         return idx
 
-    def _create_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
-        """Generate summary for the given messages."""
+    def _create_summary(self, messages_to_summarize: list[AnyMessage], runtime: Runtime) -> str:
+        """Generate summary for the given messages.
+
+        Args:
+            messages_to_summarize: Messages to summarize.
+            runtime: The runtime environment, used to inherit config (including
+                `langgraph_checkpoint_ns`) so that LangGraph's `StreamMessagesHandler`
+                can properly track and tag the summarization model call.
+        """
         if not messages_to_summarize:
             return "No previous conversation history."
 
@@ -575,17 +584,38 @@ class SummarizationMiddleware(AgentMiddleware):
         # message objects
         formatted_messages = get_buffer_string(trimmed_messages)
 
+        # Merge parent config with summarization metadata.
+        # Use get_config() to get the current LangGraph config which contains
+        # langgraph_checkpoint_ns - required by StreamMessagesHandler to properly
+        # track the model call and propagate metadata (including lc_source) to
+        # stream chunks.
+        try:
+            base_config: RunnableConfig = get_config()
+        except RuntimeError:
+            # Fallback if called outside a runnable context
+            base_config = {}
+        config = merge_configs(base_config, {"metadata": {"lc_source": "summarization"}})
+
         try:
             response = self.model.invoke(
                 self.summary_prompt.format(messages=formatted_messages),
-                config={"metadata": {"lc_source": "summarization"}},
+                config=config,
             )
             return response.text.strip()
         except Exception as e:
             return f"Error generating summary: {e!s}"
 
-    async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
-        """Generate summary for the given messages."""
+    async def _acreate_summary(
+        self, messages_to_summarize: list[AnyMessage], runtime: Runtime
+    ) -> str:
+        """Generate summary for the given messages.
+
+        Args:
+            messages_to_summarize: Messages to summarize.
+            runtime: The runtime environment, used to inherit config (including
+                `langgraph_checkpoint_ns`) so that LangGraph's `StreamMessagesHandler`
+                can properly track and tag the summarization model call.
+        """
         if not messages_to_summarize:
             return "No previous conversation history."
 
@@ -597,10 +627,22 @@ class SummarizationMiddleware(AgentMiddleware):
         # message objects
         formatted_messages = get_buffer_string(trimmed_messages)
 
+        # Merge parent config with summarization metadata.
+        # Use get_config() to get the current LangGraph config which contains
+        # langgraph_checkpoint_ns - required by StreamMessagesHandler to properly
+        # track the model call and propagate metadata (including lc_source) to
+        # stream chunks.
+        try:
+            base_config: RunnableConfig = get_config()
+        except RuntimeError:
+            # Fallback if called outside a runnable context
+            base_config = {}
+        config = merge_configs(base_config, {"metadata": {"lc_source": "summarization"}})
+
         try:
             response = await self.model.ainvoke(
                 self.summary_prompt.format(messages=formatted_messages),
-                config={"metadata": {"lc_source": "summarization"}},
+                config=config,
             )
             return response.text.strip()
         except Exception as e:
