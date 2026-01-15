@@ -576,7 +576,10 @@ class SummarizationMiddleware(AgentMiddleware):
         formatted_messages = get_buffer_string(trimmed_messages)
 
         try:
-            response = self.model.invoke(self.summary_prompt.format(messages=formatted_messages))
+            response = self.model.invoke(
+                self.summary_prompt.format(messages=formatted_messages),
+                config={"metadata": {"lc_source": "summarization"}},
+            )
             return response.text.strip()
         except Exception as e:
             return f"Error generating summary: {e!s}"
@@ -596,7 +599,8 @@ class SummarizationMiddleware(AgentMiddleware):
 
         try:
             response = await self.model.ainvoke(
-                self.summary_prompt.format(messages=formatted_messages)
+                self.summary_prompt.format(messages=formatted_messages),
+                config={"metadata": {"lc_source": "summarization"}},
             )
             return response.text.strip()
         except Exception as e:
