@@ -1219,7 +1219,7 @@ def test_usage_metadata_trigger() -> None:
 class ConfigCapturingModel(BaseChatModel):
     """Mock model that captures the config passed to invoke/ainvoke."""
 
-    captured_configs: list[RunnableConfig | None] = []
+    captured_configs: list[RunnableConfig | None] = Field(default_factory=list, exclude=True)
 
     @override
     def invoke(
@@ -1261,7 +1261,7 @@ class ConfigCapturingModel(BaseChatModel):
 
 
 @pytest.mark.parametrize("use_async", [False, True], ids=["sync", "async"])
-async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None:
+async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None:  # noqa: FBT001
     """Test that summary creation passes `lc_source` metadata to the model.
 
     When called outside a LangGraph runnable context, `get_config()` raises
