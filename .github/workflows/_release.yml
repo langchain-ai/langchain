@@ -474,6 +474,7 @@ jobs:
   # Test external packages that depend on langchain-core/langchain against the new release
   # Only runs for core and langchain_v1 releases to catch breaking changes before publish
   test-dependents:
+    name: "📦 Dependent: ${{ matrix.package.name }}"
     needs:
       - build
       - release-notes

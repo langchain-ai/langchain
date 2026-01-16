@@ -208,7 +208,7 @@ jobs:
     # Defend against forks running scheduled jobs, but allow manual runs from forks
     if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
 
-    name: "📦 Dependents: ${{ matrix.package }}"
+    name: "📦 Dependent: ${{ matrix.package.name }}"
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
