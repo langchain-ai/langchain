@@ -1263,6 +1263,22 @@ def test_anthropic_uses_actual_secret_value_from_secretstr() -> None:
     )
 
 
+def test_client_args_passed_correctly() -> None:
+    """Test that client args are passed correctly to the Anthropi cClient."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+        client_args={"timeout": 30, "base_url": "https://custom-anthropic.com"},
+    )
+    with patch.object(anthropic, "Client") as mock_client:
+        _ = chat_model._client  # type: ignore[attr-defined]
+        mock_client.assert_called_once_with(
+            api_key="secret-api-key",
+            timeout=30,
+            base_url="https://custom-anthropic.com",
+        )
+
+
 class GetWeather(BaseModel):
     """Get the current weather in a given location."""
 

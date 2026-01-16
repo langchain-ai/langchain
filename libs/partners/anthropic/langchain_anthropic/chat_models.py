@@ -819,6 +819,21 @@ class ChatAnthropic(BaseChatModel):
     default_headers: Mapping[str, str] | None = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
 
+    client_args: dict[str, Any] | None = Field(default=None)
+    """Additional arguments to pass to the underlying Anthropic client.
+
+    Applied to both sync and async clients.
+
+    !!! example "custom HTTP client"
+
+        ```python
+        llm = ChatAnthropic(
+            model="claude-sonnet-4-5-20250929",
+            client_args={"http_client": httpx.Client(timeout=10.0)},
+        )
+        ```
+    """
+
     betas: list[str] | None = None
     """List of beta features to enable. If specified, invocations will be routed
     through `client.beta.messages.create`.
@@ -1003,7 +1018,10 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _client(self) -> anthropic.Client:
         client_params = self._client_params
-        http_client_params = {"base_url": client_params["base_url"]}
+        http_client_params = {
+            "base_url": client_params["base_url"],
+            **(self.client_args or {}),
+        }
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
         if self.anthropic_proxy:
@@ -1018,7 +1036,10 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _async_client(self) -> anthropic.AsyncClient:
         client_params = self._client_params
-        http_client_params = {"base_url": client_params["base_url"]}
+        http_client_params = {
+            "base_url": client_params["base_url"],
+            **(self.client_args or {}),
+        }
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
         if self.anthropic_proxy:
