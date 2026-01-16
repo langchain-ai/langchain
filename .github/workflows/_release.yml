@@ -497,8 +497,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-
-      - uses: actions/checkout@v6
         with:
           repository: ${{ matrix.package.repo }}
           path: ${{ matrix.package.name }}
