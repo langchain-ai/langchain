@@ -3610,3 +3610,53 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
+
+
+def test_injected_args_no_pydantic_warnings_during_parse_input() -> None:
+    """Test that no Pydantic warnings are triggered during _parse_input with injected args.
+
+    When injected args are in the schema but have type mismatches with the actual
+    values, model_dump() should not serialize them to avoid Pydantic warnings.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/34770
+    """
+    import warnings
+
+    class InjectedContext:
+        """A context object that will be injected."""
+
+        def __init__(self, data: dict[str, Any]) -> None:
+            self.data = data
+
+    class ToolArgsWithInjected(BaseModel):
+        """Tool args schema with an injected arg."""
+
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+        query: str = Field(..., description="The search query")
+        # Annotated with a specific type, but actual value may differ
+        context: Annotated[InjectedContext, InjectedToolArg()] = Field(
+            ..., description="Injected context"
+        )
+
+    @tool("search_with_context", args_schema=ToolArgsWithInjected)
+    def search_with_context(query: str, context: InjectedContext) -> str:
+        """Search with injected context.
+
+        Args:
+            query: The search query.
+            context: The injected context.
+        """
+        return f"Query: {query}, Context: {context.data}"
+
+    # Create an injected context
+    injected_context = InjectedContext(data={"key": "value"})
+
+    # Invoke the tool - should not trigger any Pydantic warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # Turn warnings into errors
+        result = search_with_context.invoke(
+            {"query": "test", "context": injected_context}
+        )
+
+    assert result == "Query: test, Context: {'key': 'value'}"

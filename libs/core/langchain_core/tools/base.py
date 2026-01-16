@@ -688,8 +688,15 @@ class ChildTool(BaseTool):
             if isinstance(input_args, dict):
                 return tool_input
             if issubclass(input_args, BaseModel):
-                # Check args_schema for InjectedToolCallId
-                for k, v in get_all_basemodel_annotations(input_args).items():
+                # Identify injected arg keys to exclude from model_dump.
+                # Injected args are handled separately and should not be serialized
+                # to avoid Pydantic warnings from type mismatches.
+                annotations = get_all_basemodel_annotations(input_args)
+                injected_keys: set[str] = set()
+                for k, v in annotations.items():
+                    if _is_injected_arg_type(v):
+                        injected_keys.add(k)
+                    # Check for InjectedToolCallId specifically
                     if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
                         if tool_call_id is None:
                             msg = (
@@ -702,10 +709,17 @@ class ChildTool(BaseTool):
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
                 result = input_args.model_validate(tool_input)
-                result_dict = result.model_dump()
+                result_dict = result.model_dump(exclude=injected_keys)
             elif issubclass(input_args, BaseModelV1):
-                # Check args_schema for InjectedToolCallId
-                for k, v in get_all_basemodel_annotations(input_args).items():
+                # Identify injected arg keys to exclude from dict().
+                # Injected args are handled separately and should not be serialized
+                # to avoid Pydantic warnings from type mismatches.
+                annotations = get_all_basemodel_annotations(input_args)
+                injected_keys = set()
+                for k, v in annotations.items():
+                    if _is_injected_arg_type(v):
+                        injected_keys.add(k)
+                    # Check for InjectedToolCallId specifically
                     if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
                         if tool_call_id is None:
                             msg = (
@@ -718,7 +732,7 @@ class ChildTool(BaseTool):
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
                 result = input_args.parse_obj(tool_input)
-                result_dict = result.dict()
+                result_dict = result.dict(exclude=injected_keys)
             else:
                 msg = (
                     f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"
@@ -762,6 +776,12 @@ class ChildTool(BaseTool):
                         )
                         raise ValueError(msg)
                     validated_input[k] = tool_call_id
+
+            # Add injected args from schema that were provided in tool_input.
+            # These were excluded from model_dump() to avoid serialization warnings.
+            for k in injected_keys:
+                if k in tool_input and k not in validated_input:
+                    validated_input[k] = tool_input[k]
 
             return validated_input
 
