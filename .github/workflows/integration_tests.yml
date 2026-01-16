@@ -122,7 +122,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: "📦 Install Dependencies"
-        # Get dependencies for whichever package is being tested in the matrix
+        # Partner packages use [tool.uv.sources] in their pyproject.toml to resolve
+        # langchain-core/langchain to local editable installs, so `uv sync` automatically
+        # tests against the versions from the current branch (not published releases).
         run: |
           echo "Running scheduled tests, installing dependencies with uv..."
           cd langchain/${{ matrix.working-directory }}
