@@ -1,8 +1,8 @@
 # Routine integration tests against partner libraries with live API credentials.
 #
-# Uses `make integration_tests` for each library in the matrix.
+# Uses `make integration_tests` within each library being tested.
 #
-# Runs daily. Can also be triggered manually for immediate updates.
+# Runs daily with the option to trigger manually.
 
 name: "⏰ Integration Tests"
 run-name: "Run Integration Tests - ${{ inputs.working-directory-force || 'all libs' }} (Python ${{ inputs.python-version-force || '3.10, 3.13' }})"
@@ -24,13 +24,24 @@ permissions:
 
 env:
   UV_FROZEN: "true"
-  DEFAULT_LIBS: '["libs/partners/openai", "libs/partners/anthropic", "libs/partners/fireworks", "libs/partners/groq", "libs/partners/mistralai", "libs/partners/xai", "libs/partners/google-vertexai", "libs/partners/google-genai", "libs/partners/aws"]'
+  DEFAULT_LIBS: >-
+    ["libs/partners/openai",
+    "libs/partners/anthropic",
+    "libs/partners/fireworks",
+    "libs/partners/groq",
+    "libs/partners/mistralai",
+    "libs/partners/xai",
+    "libs/partners/google-vertexai",
+    "libs/partners/google-genai",
+    "libs/partners/aws"]
 
 jobs:
   # Generate dynamic test matrix based on input parameters or defaults
   # Only runs on the main repo (for scheduled runs) or when manually triggered
   compute-matrix:
+    # Defend against forks running scheduled jobs, but allow manual runs from forks
     if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
+
     runs-on: ubuntu-latest
     name: "📋 Compute Test Matrix"
     outputs:
@@ -57,8 +68,9 @@ jobs:
           matrix="{\"python-version\": $python_version, \"working-directory\": $working_directory}"
           echo $matrix
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
+
   # Run integration tests against partner libraries with live API credentials
-  build:
+  integration-tests:
     if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
     name: "🐍 Python ${{ matrix.python-version }}: ${{ matrix.working-directory }}"
     runs-on: ubuntu-latest
@@ -74,15 +86,27 @@ jobs:
       - uses: actions/checkout@v6
         with:
           path: langchain
+
+      # These libraries exist outside of the monorepo and need to be checked out separately
       - uses: actions/checkout@v6
         with:
           repository: langchain-ai/langchain-google
           path: langchain-google
+      - name: "🔐 Authenticate to Google Cloud"
+        id: "auth"
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: "${{ secrets.GOOGLE_CREDENTIALS }}"
       - uses: actions/checkout@v6
         with:
           repository: langchain-ai/langchain-aws
           path: langchain-aws
-
+      - name: "🔐 Configure AWS Credentials"
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
       - name: "📦 Organize External Libraries"
         run: |
           rm -rf \
@@ -97,27 +121,20 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: "🔐 Authenticate to Google Cloud"
-        id: "auth"
-        uses: google-github-actions/auth@v3
-        with:
-          credentials_json: "${{ secrets.GOOGLE_CREDENTIALS }}"
-
-      - name: "🔐 Configure AWS Credentials"
-        uses: aws-actions/configure-aws-credentials@v5
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
       - name: "📦 Install Dependencies"
+        # Get dependencies for whichever package is being tested in the matrix
         run: |
           echo "Running scheduled tests, installing dependencies with uv..."
           cd langchain/${{ matrix.working-directory }}
           uv sync --group test --group test_integration
 
       - name: "🚀 Run Integration Tests"
+        # WARNING: All secrets below are available to every matrix job regardless of
+        # which package is being tested. This is intentional for simplicity, but means
+        # any test file could technically access any key. Only use for trusted code.
         env:
+          LANGCHAIN_TESTS_USER_AGENT: ${{ secrets.LANGCHAIN_TESTS_USER_AGENT }}
+
           AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
@@ -155,7 +172,6 @@ jobs:
           WATSONX_APIKEY: ${{ secrets.WATSONX_APIKEY }}
           WATSONX_PROJECT_ID: ${{ secrets.WATSONX_PROJECT_ID }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
-          LANGCHAIN_TESTS_USER_AGENT: ${{ secrets.LANGCHAIN_TESTS_USER_AGENT }}
         run: |
           cd langchain/${{ matrix.working-directory }}
           make integration_tests
