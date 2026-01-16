@@ -5,6 +5,7 @@ import json
 import sys
 import textwrap
 import threading
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
@@ -3613,14 +3614,13 @@ def test_tool_args_schema_falsy_defaults() -> None:
 
 
 def test_injected_args_no_pydantic_warnings_during_parse_input() -> None:
-    """Test that no Pydantic warnings are triggered during _parse_input with injected args.
+    """Test that no Pydantic warnings are triggered for injected args.
 
     When injected args are in the schema but have type mismatches with the actual
     values, model_dump() should not serialize them to avoid Pydantic warnings.
 
     Regression test for https://github.com/langchain-ai/langchain/issues/34770
     """
-    import warnings
 
     class InjectedContext:
         """A context object that will be injected."""
