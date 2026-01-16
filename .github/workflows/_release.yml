@@ -498,11 +498,15 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          path: langchain
+
+      - uses: actions/checkout@v6
+        with:
           repository: ${{ matrix.package.repo }}
           path: ${{ matrix.package.name }}
 
       - name: Set up Python + uv
-        uses: "./.github/actions/uv_setup"
+        uses: "./langchain/.github/actions/uv_setup"
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -535,7 +539,10 @@ jobs:
       - release-notes
       - test-pypi-publish
       - pre-release-checks
+      - test-dependents
       # - test-prior-published-packages-against-new-core
+    # Run if all needed jobs succeeded or were skipped (test-dependents only runs for core/langchain_v1)
+    if: ${{ !cancelled() && !failure() }}
     runs-on: ubuntu-latest
     permissions:
       # This permission is used for trusted publishing:
