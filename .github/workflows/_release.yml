@@ -471,6 +471,66 @@ jobs:
           uv pip install ../../core/dist/*.whl
           make integration_tests
 
+  # Test external packages that depend on langchain-core/langchain against the new release
+  # Only runs for core and langchain_v1 releases to catch breaking changes before publish
+  test-dependents:
+    needs:
+      - build
+      - release-notes
+      - test-pypi-publish
+      - pre-release-checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    # Only run for core or langchain_v1 releases
+    if: startsWith(inputs.working-directory, 'libs/core') || startsWith(inputs.working-directory, 'libs/langchain_v1')
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - name: deepagents
+            repo: langchain-ai/deepagents
+            path: libs/deepagents
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ matrix.package.repo }}
+          path: ${{ matrix.package.name }}
+
+      - name: Set up Python + uv
+        uses: "./.github/actions/uv_setup"
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist/
+
+      - name: Install ${{ matrix.package.name }} with local packages
+        # External dependents don't have [tool.uv.sources] pointing to this repo,
+        # so we install the package normally then override with the built wheel.
+        run: |
+          cd ${{ matrix.package.name }}/${{ matrix.package.path }}
+
+          # Install the package with test dependencies
+          uv sync --group test
+
+          # Override with the built wheel from this release
+          uv pip install $GITHUB_WORKSPACE/dist/*.whl
+
+      - name: Run ${{ matrix.package.name }} tests
+        run: |
+          cd ${{ matrix.package.name }}/${{ matrix.package.path }}
+          make test
+
   publish:
     # Publishes the package to PyPI
     needs:
