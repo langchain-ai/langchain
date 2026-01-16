@@ -208,13 +208,14 @@ jobs:
     # Defend against forks running scheduled jobs, but allow manual runs from forks
     if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
 
-    name: "📦 Dependent: ${{ matrix.package.name }}"
+    name: "🐍 Python ${{ matrix.python-version }}: ${{ matrix.package.path }}"
     runs-on: ubuntu-latest
+    needs: [compute-matrix]
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11"]
+        python-version: ${{ fromJSON(needs.compute-matrix.outputs.matrix).python-version }}
         package:
           - name: deepagents
             repo: langchain-ai/deepagents

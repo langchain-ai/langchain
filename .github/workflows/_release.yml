@@ -474,7 +474,7 @@ jobs:
   # Test external packages that depend on langchain-core/langchain against the new release
   # Only runs for core and langchain_v1 releases to catch breaking changes before publish
   test-dependents:
-    name: "📦 Dependent: ${{ matrix.package.name }}"
+    name: "🐍 Python ${{ matrix.python-version }}: ${{ matrix.package.path }}"
     needs:
       - build
       - release-notes
@@ -488,6 +488,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        python-version: ["3.10", "3.13"]
         package:
           - name: deepagents
             repo: langchain-ai/deepagents
@@ -505,7 +506,7 @@ jobs:
       - name: Set up Python + uv
         uses: "./.github/actions/uv_setup"
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: ${{ matrix.python-version }}
 
       - uses: actions/download-artifact@v7
         with:
