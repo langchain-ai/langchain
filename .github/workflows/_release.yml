@@ -492,10 +492,7 @@ jobs:
           - name: deepagents
             repo: langchain-ai/deepagents
             path: libs/deepagents
-    env:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    # No API keys needed for now - deepagents `make test` only runs unit tests
 
     steps:
       - uses: actions/checkout@v6

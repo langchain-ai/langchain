@@ -251,15 +251,8 @@ jobs:
             -e $GITHUB_WORKSPACE/langchain/libs/core \
             -e $GITHUB_WORKSPACE/langchain/libs/langchain_v1
 
+      # No API keys needed for now - deepagents `make test` only runs unit tests
       - name: "🚀 Run ${{ matrix.package.name }} Tests"
-        env:
-          # Add any necessary secrets for dependent package tests here
-          # WARNING: All secrets below are available to every matrix job regardless of
-          # which package is being tested. This is intentional for simplicity, but means
-          # any test file could technically access any key. Only use for trusted code.
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           cd ${{ matrix.package.name }}/${{ matrix.package.path }}
           make test
