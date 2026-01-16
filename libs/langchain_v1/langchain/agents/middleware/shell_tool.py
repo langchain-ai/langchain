@@ -6,6 +6,7 @@ import contextlib
 import logging
 import os
 import queue
+import re
 import signal
 import subprocess
 import tempfile
@@ -494,6 +495,22 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
 
     state_schema = ShellToolState
 
+    # Dangerous command patterns that should be blocked
+    DANGEROUS_COMMAND_PATTERNS: tuple[str, ...] = (
+        r"rm\s+(-[rfv]+\s+)*(/|~|\$HOME)",  # Recursive delete of root/home
+        r"rm\s+-[rfv]*\s+\*",  # Delete all files
+        r"mkfs\.",  # Format filesystem
+        r"dd\s+if=.*of=/dev/",  # Direct disk write
+        r":\(\)\{\s*:\|:&\s*\};:",  # Fork bomb
+        r"chmod\s+(-R\s+)?777\s+/",  # Dangerous permissions on root
+        r"curl.*\|\s*(ba)?sh",  # Remote code execution
+        r"wget.*\|\s*(ba)?sh",  # Remote code execution
+        r">(>)?\s*/dev/sd[a-z]",  # Direct disk write
+        r"\bshutdown\b|\breboot\b|\bhalt\b|\bpoweroff\b",  # System control
+        r"mv\s+/\s",  # Move root
+        r"chmod\s+000\s+/",  # Remove all permissions from root
+    )
+
     def __init__(
         self,
         workspace_root: str | Path | None = None,
@@ -741,6 +758,21 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
                 matches_by_type.setdefault(rule.pii_type, []).extend(matches)
         return updated, matches_by_type
 
+    def _validate_command_safety(self, command: str) -> tuple[bool, str]:
+        """Validate a command against dangerous patterns.
+
+        Args:
+            command: The shell command to validate.
+
+        Returns:
+            A tuple of (is_safe, error_message). If is_safe is False,
+            error_message contains the matched pattern.
+        """
+        for pattern in self.DANGEROUS_COMMAND_PATTERNS:
+            if re.search(pattern, command, re.IGNORECASE):
+                return False, f"Command matches dangerous pattern: {pattern}"
+        return True, ""
+
     def _run_shell_tool(
         self,
         resources: _SessionResources,
@@ -766,6 +798,17 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         if not command or not isinstance(command, str):
             msg = "Shell tool expects a 'command' string when restart is not requested."
             raise ToolException(msg)
+
+        # Validate command safety before execution
+        is_safe, error_msg = self._validate_command_safety(command)
+        if not is_safe:
+            LOGGER.warning("Blocked dangerous command: %s - %s", command, error_msg)
+            return self._format_tool_message(
+                f"Security: Command blocked. {error_msg}",
+                tool_call_id,
+                status="error",
+                artifact={"blocked": True, "reason": error_msg},
+            )
 
         LOGGER.info("Executing shell command: %s", command)
         result = session.execute(command, timeout=self._execution_policy.command_timeout)
