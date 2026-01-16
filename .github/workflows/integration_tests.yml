@@ -46,6 +46,7 @@ jobs:
     name: "📋 Compute Test Matrix"
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      python-version-min-3-11: ${{ steps.set-matrix.outputs.python-version-min-3-11 }}
     steps:
       - name: "🔢 Generate Python & Library Matrix"
         id: set-matrix
@@ -58,9 +59,16 @@ jobs:
           # python-version should default to 3.10 and 3.13, but is overridden to [PYTHON_VERSION_FORCE] if set
           # working-directory should default to DEFAULT_LIBS, but is overridden to [WORKING_DIRECTORY_FORCE] if set
           python_version='["3.10", "3.13"]'
+          python_version_min_3_11='["3.11", "3.13"]'
           working_directory="$DEFAULT_LIBS"
           if [ -n "$PYTHON_VERSION_FORCE" ]; then
             python_version="[\"$PYTHON_VERSION_FORCE\"]"
+            # Bound forced version to >= 3.11 for packages requiring it
+            if [ "$(echo "$PYTHON_VERSION_FORCE >= 3.11" | bc -l)" -eq 1 ]; then
+              python_version_min_3_11="[\"$PYTHON_VERSION_FORCE\"]"
+            else
+              python_version_min_3_11='["3.11"]'
+            fi
           fi
           if [ -n "$WORKING_DIRECTORY_FORCE" ]; then
             working_directory="[\"$WORKING_DIRECTORY_FORCE\"]"
@@ -68,6 +76,7 @@ jobs:
           matrix="{\"python-version\": $python_version, \"working-directory\": $working_directory}"
           echo $matrix
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
+          echo "python-version-min-3-11=$python_version_min_3_11" >> $GITHUB_OUTPUT
 
   # Run integration tests against partner libraries with live API credentials
   integration-tests:
@@ -215,7 +224,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ${{ fromJSON(needs.compute-matrix.outputs.matrix).python-version }}
+        # deepagents requires Python >= 3.11, use bounded version from compute-matrix
+        python-version: ${{ fromJSON(needs.compute-matrix.outputs.python-version-min-3-11) }}
         package:
           - name: deepagents
             repo: langchain-ai/deepagents
