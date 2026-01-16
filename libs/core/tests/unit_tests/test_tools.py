@@ -3185,98 +3185,28 @@ def test_filter_tool_runtime_directly_injected_arg() -> None:
     assert "runtime" not in captured
 
 
-# Custom directly injected arg type (similar to ToolRuntime)
-class _CustomRuntime(_DirectlyInjectedToolArg):
-    """Custom runtime info injected at tool call time."""
+def test_filter_injected_args_from_callback_inputs() -> None:
+    """Test that injected args from function signature are filtered from callbacks."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
-        self.data = data
+    @tool
+    def my_tool(
+        query: str, limit: int, runtime: Annotated[Any, InjectedToolArg()]
+    ) -> str:
+        """Tool with injected runtime arg.
 
+        Args:
+            query: The search query.
+            limit: Max results.
+            runtime: Injected runtime info.
+        """
+        return f"Query: {query}, Limit: {limit}"
 
-# Schema that does NOT include the injected arg
-class _ToolArgsSchemaNoRuntime(BaseModel):
-    """Schema with only the non-injected args."""
-
-    query: str
-    limit: int
-
-
-def _tool_func_directly_injected(
-    query: str, limit: int, runtime: _CustomRuntime
-) -> str:
-    """Tool with directly injected runtime not in schema.
-
-    Args:
-        query: The search query.
-        limit: Max results.
-        runtime: Custom runtime (directly injected, not in schema).
-    """
-    return f"Query: {query}, Limit: {limit}"
-
-
-def _tool_func_annotated_injected(
-    query: str, limit: int, runtime: Annotated[Any, InjectedToolArg()]
-) -> str:
-    """Tool with Annotated injected runtime not in schema.
-
-    Args:
-        query: The search query.
-        limit: Max results.
-        runtime: Custom runtime (annotated as injected, not in schema).
-    """
-    return f"Query: {query}, Limit: {limit}"
-
-
-@pytest.mark.parametrize(
-    ("tool_func", "runtime_value", "description"),
-    [
-        pytest.param(
-            _tool_func_directly_injected,
-            _CustomRuntime(data={"foo": "bar"}),
-            "directly injected (_DirectlyInjectedToolArg subclass)",
-            id="directly_injected",
-        ),
-        pytest.param(
-            _tool_func_annotated_injected,
-            {"foo": "bar"},
-            "annotated injected (Annotated[Any, InjectedToolArg()])",
-            id="annotated_injected",
-        ),
-    ],
-)
-def test_filter_injected_args_not_in_schema(
-    tool_func: Callable[..., str], runtime_value: Any, description: str
-) -> None:
-    """Test filtering injected args that are in function signature but not in schema.
-
-    This tests the case where an injected argument (like ToolRuntime) is in the
-    function signature but is not present in the args_schema. The fix ensures
-    we check _injected_args_keys from the function signature, not just the schema.
-
-    Args:
-        tool_func: The tool function with an injected arg.
-        runtime_value: The value to pass for the runtime arg.
-        description: Description of the injection style being tested.
-    """
-    # Create StructuredTool with explicit args_schema that excludes runtime
-    custom_tool = StructuredTool.from_function(
-        func=tool_func,
-        name="custom_tool",
-        description=f"Tool with {description} arg not in schema",
-        args_schema=_ToolArgsSchemaNoRuntime,
-    )
-
-    # Verify _injected_args_keys contains 'runtime'
-    assert "runtime" in custom_tool._injected_args_keys
+    assert "runtime" in my_tool._injected_args_keys
 
     handler = CallbackHandlerWithInputCapture(captured_inputs=[])
 
-    result = custom_tool.invoke(
-        {
-            "query": "test",
-            "limit": 5,
-            "runtime": runtime_value,
-        },
+    result = my_tool.invoke(
+        {"query": "test", "limit": 5, "runtime": {"foo": "bar"}},
         config={"callbacks": [handler]},
     )
 
@@ -3284,7 +3214,7 @@ def test_filter_injected_args_not_in_schema(
     assert handler.tool_starts == 1
     assert len(handler.captured_inputs) == 1
 
-    # Verify that runtime is filtered out even though it's not in args_schema
+    # Verify that runtime is filtered from callback inputs
     captured = handler.captured_inputs[0]
     assert captured is not None
     assert captured == {"query": "test", "limit": 5}

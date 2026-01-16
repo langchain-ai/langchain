@@ -762,7 +762,10 @@ class ChildTool(BaseTool):
                     if has_default:
                         validated_input[k] = getattr(result, k)
 
-            for k in self._injected_args_keys:
+            # Add injected args from both function signature and schema.
+            # These were excluded from model_dump() to avoid serialization warnings.
+            all_injected_keys = injected_keys | self._injected_args_keys
+            for k in all_injected_keys:
                 if k in tool_input:
                     validated_input[k] = tool_input[k]
                 elif k == "tool_call_id":
@@ -776,12 +779,6 @@ class ChildTool(BaseTool):
                         )
                         raise ValueError(msg)
                     validated_input[k] = tool_call_id
-
-            # Add injected args from schema that were provided in tool_input.
-            # These were excluded from model_dump() to avoid serialization warnings.
-            for k in injected_keys:
-                if k in tool_input and k not in validated_input:
-                    validated_input[k] = tool_input[k]
 
             return validated_input
 
