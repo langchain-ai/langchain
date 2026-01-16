@@ -19,6 +19,7 @@ from typing import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
+    from langchain_core.runnables import RunnableConfig
     from langgraph.types import Command
 
 # Needed as top level import for Pydantic schema generation on AgentState
@@ -47,6 +48,8 @@ if TYPE_CHECKING:
 
 __all__ = [
     "AgentMiddleware",
+    "AgentRequest",
+    "AgentResponse",
     "AgentState",
     "ContextT",
     "ModelRequest",
@@ -62,7 +65,9 @@ __all__ = [
     "before_model",
     "dynamic_prompt",
     "hook_config",
+    "wrap_agent_call",
     "wrap_tool_call",
+    "wrap_model_call",
 ]
 
 JumpTo = Literal["tools", "model", "end"]
@@ -290,6 +295,26 @@ Middleware can return either:
 
 
 @dataclass
+class AgentRequest:
+    """Agent request information."""
+
+    input: Any
+    config: RunnableConfig | None = None
+    kwargs: dict[str, Any] = field(default_factory=dict)
+
+    def override(self, **overrides: Any) -> AgentRequest:
+        """Replace the request with a new request with the given overrides."""
+        return replace(self, **overrides)
+
+
+@dataclass
+class AgentResponse:
+    """Agent response information."""
+
+    output: Any
+
+
+@dataclass
 class OmitFromSchema:
     """Annotation used to mark state attributes as omitted from input or output schemas."""
 
@@ -432,6 +457,85 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         Returns:
             Agent state updates to apply after model call.
         """
+
+    def wrap_agent_call(
+        self,
+        request: AgentRequest,
+        handler: Callable[[AgentRequest], AgentResponse],
+    ) -> AgentResponse:
+        """Intercept and control agent execution via handler callback.
+
+        Async version is `awrap_agent_call`
+
+        The handler callback executes the agent request and returns a `AgentResponse`.
+        Middleware can call the handler multiple times for retry logic, skip calling
+        it to short-circuit, or modify the request/response. Multiple middleware
+        compose with first in list as outermost layer.
+
+        Args:
+            request: Agent request to execute (includes input and config).
+            handler: Callback that executes the agent request and returns
+                `AgentResponse`.
+
+                Call this to execute the agent.
+
+                Can be called multiple times for retry logic.
+
+                Can skip calling it to short-circuit.
+
+        Returns:
+            The agent call result.
+        """
+        msg = (
+            "Synchronous implementation of wrap_agent_call is not available. "
+            "You are likely encountering this error because you defined only the async version "
+            "(awrap_agent_call) and invoked your agent in a synchronous context "
+            "(e.g., using `invoke()`). "
+            "To resolve this, either: "
+            "(1) subclass AgentMiddleware and implement the synchronous wrap_agent_call method, "
+            "(2) use the @wrap_agent_call decorator on a standalone sync function, or "
+            "(3) invoke your agent asynchronously using `ainvoke()`."
+        )
+        raise NotImplementedError(msg)
+
+    async def awrap_agent_call(
+        self,
+        request: AgentRequest,
+        handler: Callable[[AgentRequest], Awaitable[AgentResponse]],
+    ) -> AgentResponse:
+        """Intercept and control async agent execution via handler callback.
+
+        The handler callback executes the agent request and returns a `AgentResponse`.
+
+        Middleware can call the handler multiple times for retry logic, skip calling
+        it to short-circuit, or modify the request/response. Multiple middleware
+        compose with first in list as outermost layer.
+
+        Args:
+            request: Agent request to execute (includes input and config).
+            handler: Async callback that executes the agent request and returns
+                `AgentResponse`.
+
+                Call this to execute the agent.
+
+                Can be called multiple times for retry logic.
+
+                Can skip calling it to short-circuit.
+
+        Returns:
+            The agent call result.
+        """
+        msg = (
+            "Asynchronous implementation of awrap_agent_call is not available. "
+            "You are likely encountering this error because you defined only the sync version "
+            "(wrap_agent_call) and invoked your agent in an asynchronous context "
+            "(e.g., using `ainvoke()`). "
+            "To resolve this, either: "
+            "(1) subclass AgentMiddleware and implement the asynchronous awrap_agent_call method, "
+            "(2) use the @wrap_agent_call decorator on a standalone async function, or "
+            "(3) invoke your agent synchronously using `invoke()`."
+        )
+        raise NotImplementedError(msg)
 
     def wrap_model_call(
         self,
@@ -751,7 +855,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             "To resolve this, either: "
             "(1) subclass AgentMiddleware and implement the asynchronous awrap_tool_call method, "
             "(2) use the @wrap_tool_call decorator on a standalone async function, or "
-            "(3) invoke your agent synchronously using `stream()` or `invoke()`."
+            "(3) invoke your agent asynchronously using `astream()` or `ainvoke()`."
         )
         raise NotImplementedError(msg)
 
@@ -789,6 +893,21 @@ class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):  # typ
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
         """Intercept model execution via handler callback."""
+        ...
+
+
+class _CallableReturningAgentResponse(Protocol[StateT_contra, ContextT]):
+    """Callable for agent call interception with handler callback.
+
+    Receives handler callback to execute agent and returns `AgentResponse`.
+    """
+
+    def __call__(
+        self,
+        request: AgentRequest,
+        handler: Callable[[AgentRequest], AgentResponse],
+    ) -> AgentResponse:
+        """Intercept agent execution via handler callback."""
         ...
 
 
@@ -2002,6 +2121,114 @@ def wrap_tool_call(
                 "state_schema": AgentState,
                 "tools": tools or [],
                 "wrap_tool_call": wrapped,
+            },
+        )()
+
+    if func is not None:
+        return decorator(func)
+    return decorator
+
+
+@overload
+def wrap_agent_call(
+    func: _CallableReturningAgentResponse[StateT, ContextT],
+) -> AgentMiddleware[StateT, ContextT]: ...
+
+
+@overload
+def wrap_agent_call(
+    func: None = None,
+    *,
+    state_schema: type[StateT] | None = None,
+    tools: list[BaseTool] | None = None,
+    name: str | None = None,
+) -> Callable[
+    [_CallableReturningAgentResponse[StateT, ContextT]],
+    AgentMiddleware[StateT, ContextT],
+]: ...
+
+
+def wrap_agent_call(
+    func: _CallableReturningAgentResponse[StateT, ContextT] | None = None,
+    *,
+    state_schema: type[StateT] | None = None,
+    tools: list[BaseTool] | None = None,
+    name: str | None = None,
+) -> (
+    Callable[
+        [_CallableReturningAgentResponse[StateT, ContextT]],
+        AgentMiddleware[StateT, ContextT],
+    ]
+    | AgentMiddleware[StateT, ContextT]
+):
+    """Create middleware with `wrap_agent_call` hook from a function.
+
+    Async version is `awrap_agent_call`.
+
+    Converts a function with handler callback into middleware that can intercept
+    agent calls, implement retry logic, monitor execution, and modify responses.
+
+    Args:
+        func: Function accepting (request, handler) that calls
+            handler(request) to execute the agent and returns `AgentResponse`.
+
+            Can be sync or async.
+        state_schema: Custom state schema.
+
+            Defaults to `AgentState`.
+        tools: Additional tools to register with this middleware.
+        name: Middleware class name.
+
+            Defaults to function name.
+
+    Returns:
+        `AgentMiddleware` instance if func provided, otherwise a decorator.
+    """
+
+    def decorator(
+        func: _CallableReturningAgentResponse[StateT, ContextT],
+    ) -> AgentMiddleware[StateT, ContextT]:
+        is_async = iscoroutinefunction(func)
+
+        if is_async:
+
+            async def async_wrapped(
+                _self: AgentMiddleware[StateT, ContextT],
+                request: AgentRequest,
+                handler: Callable[[AgentRequest], Awaitable[AgentResponse]],
+            ) -> AgentResponse:
+                return await func(request, handler)  # type: ignore[misc, arg-type]
+
+            middleware_name = name or cast(
+                "str", getattr(func, "__name__", "WrapAgentCallMiddleware")
+            )
+
+            return type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": state_schema or AgentState,
+                    "tools": tools or [],
+                    "awrap_agent_call": async_wrapped,
+                },
+            )()
+
+        def wrapped(
+            _self: AgentMiddleware[StateT, ContextT],
+            request: AgentRequest,
+            handler: Callable[[AgentRequest], AgentResponse],
+        ) -> AgentResponse:
+            return func(request, handler)
+
+        middleware_name = name or cast("str", getattr(func, "__name__", "WrapAgentCallMiddleware"))
+
+        return type(
+            middleware_name,
+            (AgentMiddleware,),
+            {
+                "state_schema": state_schema or AgentState,
+                "tools": tools or [],
+                "wrap_agent_call": wrapped,
             },
         )()
 
