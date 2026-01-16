@@ -220,6 +220,9 @@ def init_chat_model(
     Args:
         model: The model name, optionally prefixed with provider (e.g., `'openai:gpt-4o'`).
 
+            Prefer exact model IDs from provider docs over aliases for reliable behavior
+            (e.g., dated versions like `'...-20250514'` instead of `'...-latest'`).
+
             Will attempt to infer `model_provider` from model if not specified.
 
             The following providers will be inferred based on these model prefixes:

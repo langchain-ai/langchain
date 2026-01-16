@@ -1,5 +1,6 @@
 """String utilities."""
 
+from collections.abc import Iterable
 from typing import Any
 
 
@@ -33,11 +34,11 @@ def stringify_dict(data: dict) -> str:
     return "".join(f"{key}: {stringify_value(value)}\n" for key, value in data.items())
 
 
-def comma_list(items: list[Any]) -> str:
-    """Convert a list to a comma-separated string.
+def comma_list(items: Iterable[Any]) -> str:
+    """Convert an iterable to a comma-separated string.
 
     Args:
-        items: The list to convert.
+        items: The iterable to convert.
 
     Returns:
         The comma-separated string.

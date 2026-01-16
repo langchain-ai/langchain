@@ -1,5 +1,5 @@
 name: "✨ Feature Request"
-description: Request a new feature or enhancement for LangChain. For questions, please use the LangChain forum.
+description: Request a new feature or enhancement for LangChain. For questions, please use the LangChain forum (below).
 labels: ["feature request"]
 type: feature
 body:
