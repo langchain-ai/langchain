@@ -23,10 +23,10 @@ from langchain_core.callbacks import (
 )
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
-    _EMPTY_SET,
     FILTERED_ARGS,
     ArgsSchema,
     BaseTool,
+    InjectedToolCallId,
     _get_runnable_config_param,
     _is_injected_arg_type,
     create_schema_from_function,
@@ -246,15 +246,24 @@ class StructuredTool(BaseTool):
         )
 
     @functools.cached_property
-    def _injected_args_keys(self) -> frozenset[str]:
+    def _injected_arg_info(self) -> tuple[frozenset[str], str | None]:
+        # Combine injected args from schema (via super) and function signature
+        schema_keys, schema_tc_key = super()._injected_arg_info
         fn = self.func or self.coroutine
         if fn is None:
-            return _EMPTY_SET
-        return frozenset(
-            k
-            for k, v in signature(fn).parameters.items()
-            if _is_injected_arg_type(v.annotation)
-        )
+            return schema_keys, schema_tc_key
+
+        func_keys: set[str] = set()
+        func_tc_key: str | None = None
+        for k, v in signature(fn).parameters.items():
+            if _is_injected_arg_type(v.annotation):
+                func_keys.add(k)
+                if _is_injected_arg_type(
+                    v.annotation, injected_type=InjectedToolCallId
+                ):
+                    func_tc_key = k
+
+        return schema_keys | func_keys, schema_tc_key or func_tc_key
 
 
 def _filter_schema_args(func: Callable) -> list[str]:

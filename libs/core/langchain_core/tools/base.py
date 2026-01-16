@@ -602,9 +602,33 @@ class ChildTool(BaseTool):
         )
 
     @functools.cached_property
+    def _injected_arg_info(self) -> tuple[frozenset[str], str | None]:
+        """Get injected argument info from the args_schema annotations.
+
+        Returns:
+            Tuple of (all_injected_keys, tool_call_id_key).
+        """
+        if self.args_schema is None or isinstance(self.args_schema, dict):
+            return _EMPTY_SET, None
+        annotations = get_all_basemodel_annotations(self.args_schema)
+        injected: set[str] = set()
+        tool_call_id_key: str | None = None
+        for k, v in annotations.items():
+            if _is_injected_arg_type(v):
+                injected.add(k)
+                if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
+                    tool_call_id_key = k
+        return frozenset(injected), tool_call_id_key
+
+    @functools.cached_property
     def _injected_args_keys(self) -> frozenset[str]:
-        # base implementation doesn't manage injected args
-        return _EMPTY_SET
+        """Get injected argument keys from the args_schema annotations."""
+        return self._injected_arg_info[0]
+
+    @functools.cached_property
+    def _injected_tool_call_id_key(self) -> str | None:
+        """Get the key for InjectedToolCallId argument, if any."""
+        return self._injected_arg_info[1]
 
     # --- Runnable ---
 
@@ -666,123 +690,85 @@ class ChildTool(BaseTool):
         """
         input_args = self.args_schema
 
-        if isinstance(tool_input, str):
-            if input_args is not None:
-                if isinstance(input_args, dict):
-                    msg = (
-                        "String tool inputs are not allowed when "
-                        "using tools with JSON schema args_schema."
-                    )
-                    raise ValueError(msg)
-                key_ = next(iter(get_fields(input_args).keys()))
-                if issubclass(input_args, BaseModel):
-                    input_args.model_validate({key_: tool_input})
-                elif issubclass(input_args, BaseModelV1):
-                    input_args.parse_obj({key_: tool_input})
-                else:
-                    msg = f"args_schema must be a Pydantic BaseModel, got {input_args}"
-                    raise TypeError(msg)
+        # No schema - return input as-is
+        if input_args is None:
             return tool_input
 
-        if input_args is not None:
-            if isinstance(input_args, dict):
-                return tool_input
-            if issubclass(input_args, BaseModel):
-                # Identify injected arg keys to exclude from model_dump.
-                # Injected args don't need to be validated and we don't assume
-                # they're serializable, so we exclude them.
-                annotations = get_all_basemodel_annotations(input_args)
-                injected_keys: set[str] = set()
-                for k, v in annotations.items():
-                    if _is_injected_arg_type(v):
-                        injected_keys.add(k)
-                    # Check for InjectedToolCallId specifically
-                    if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
-                        if tool_call_id is None:
-                            msg = (
-                                "When tool includes an InjectedToolCallId "
-                                "argument, tool must always be invoked with a full "
-                                "model ToolCall of the form: {'args': {...}, "
-                                "'name': '...', 'type': 'tool_call', "
-                                "'tool_call_id': '...'}"
-                            )
-                            raise ValueError(msg)
-                        tool_input[k] = tool_call_id
-                result = input_args.model_validate(tool_input)
-                result_dict = result.model_dump(exclude=injected_keys)
-            elif issubclass(input_args, BaseModelV1):
-                # Identify injected arg keys to exclude from dict().
-                # Injected args don't need to be validated and we don't assume
-                # they're serializable, so we exclude them.
-                annotations = get_all_basemodel_annotations(input_args)
-                injected_keys = set()
-                for k, v in annotations.items():
-                    if _is_injected_arg_type(v):
-                        injected_keys.add(k)
-                    # Check for InjectedToolCallId specifically
-                    if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
-                        if tool_call_id is None:
-                            msg = (
-                                "When tool includes an InjectedToolCallId "
-                                "argument, tool must always be invoked with a full "
-                                "model ToolCall of the form: {'args': {...}, "
-                                "'name': '...', 'type': 'tool_call', "
-                                "'tool_call_id': '...'}"
-                            )
-                            raise ValueError(msg)
-                        tool_input[k] = tool_call_id
-                result = input_args.parse_obj(tool_input)
-                result_dict = result.dict(exclude=injected_keys)
-            else:
+        # JSON schema dict - string input not allowed, dict passes through
+        if isinstance(input_args, dict):
+            if isinstance(tool_input, str):
                 msg = (
-                    f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"
+                    "String tool inputs are not allowed when "
+                    "using tools with JSON schema args_schema."
                 )
-                raise NotImplementedError(msg)
+                raise ValueError(msg)  # noqa: TRY004
+            return tool_input
 
-            # Include fields from tool_input, plus fields with explicit defaults.
-            # This applies Pydantic defaults (like Field(default=1)) while excluding
-            # synthetic "args"/"kwargs" fields that Pydantic creates for *args/**kwargs.
-            field_info = get_fields(input_args)
-            validated_input = {}
-            for k in result_dict:
-                if k in tool_input:
-                    # Field was provided in input - include it (validated)
+        # Must be a Pydantic BaseModel at this point
+        if not issubclass(input_args, (BaseModel, BaseModelV1)):
+            msg = f"args_schema must be a Pydantic BaseModel, got {input_args}"
+            raise TypeError(msg)
+
+        is_v2 = issubclass(input_args, BaseModel)
+
+        # String input - validate and return as-is
+        if isinstance(tool_input, str):
+            key_ = next(iter(get_fields(input_args).keys()))
+            if is_v2:
+                input_args.model_validate({key_: tool_input})
+            else:
+                cast("type[BaseModelV1]", input_args).parse_obj({key_: tool_input})
+            return tool_input
+
+        # Dict input - full validation flow
+        injected_keys = self._injected_args_keys
+
+        # Inject tool_call_id for InjectedToolCallId field
+        if (tc_key := self._injected_tool_call_id_key) is not None:
+            if tool_call_id is not None:
+                # Real tool_call_id from ToolCall overrides any LLM-generated value
+                tool_input[tc_key] = tool_call_id
+            elif tc_key not in tool_input:
+                msg = (
+                    "When tool includes an InjectedToolCallId argument, tool "
+                    "must always be invoked with a full model ToolCall of the "
+                    "form: {'args': {...}, 'name': '...', 'type': 'tool_call', "
+                    "'tool_call_id': '...'}"
+                )
+                raise ValueError(msg)
+
+        # Validate and dump to dict (excluding injected keys to avoid warnings)
+        result: BaseModel | BaseModelV1
+        if is_v2:
+            result = input_args.model_validate(tool_input)
+            result_dict = result.model_dump(exclude=set(injected_keys))
+        else:
+            result = cast("type[BaseModelV1]", input_args).parse_obj(tool_input)
+            result_dict = result.dict(exclude=injected_keys)
+
+        # Build validated_input: include provided fields + fields with defaults
+        field_info = get_fields(input_args)
+        validated_input: dict[str, Any] = {}
+        for k in result_dict:
+            if k in tool_input:
+                validated_input[k] = getattr(result, k)
+            elif k in field_info and k not in ("args", "kwargs"):
+                # Include fields with explicit defaults (not synthetic *args/**kwargs)
+                fi = field_info[k]
+                has_default = (
+                    not fi.is_required()
+                    if hasattr(fi, "is_required")
+                    else not getattr(fi, "required", True)
+                )
+                if has_default:
                     validated_input[k] = getattr(result, k)
-                elif k in field_info and k not in ("args", "kwargs"):
-                    # Check if field has an explicit default defined in the schema.
-                    # Exclude "args"/"kwargs" as these are synthetic fields for variadic
-                    # parameters that should not be passed as keyword arguments.
-                    fi = field_info[k]
-                    # Pydantic v2 uses is_required() method, v1 uses required attribute
-                    has_default = (
-                        not fi.is_required()
-                        if hasattr(fi, "is_required")
-                        else not getattr(fi, "required", True)
-                    )
-                    if has_default:
-                        validated_input[k] = getattr(result, k)
 
-            # Add injected args from both function signature and schema.
-            # These were excluded from model_dump() to avoid serialization warnings.
-            all_injected_keys = injected_keys | self._injected_args_keys
-            for k in all_injected_keys:
-                if k in tool_input:
-                    validated_input[k] = tool_input[k]
-                elif k == "tool_call_id":
-                    if tool_call_id is None:
-                        msg = (
-                            "When tool includes an InjectedToolCallId "
-                            "argument, tool must always be invoked with a full "
-                            "model ToolCall of the form: {'args': {...}, "
-                            "'name': '...', 'type': 'tool_call', "
-                            "'tool_call_id': '...'}"
-                        )
-                        raise ValueError(msg)
-                    validated_input[k] = tool_call_id
+        # Add back injected args (were excluded from model_dump)
+        for k in injected_keys:
+            if k in tool_input:
+                validated_input[k] = tool_input[k]
 
-            return validated_input
-
-        return tool_input
+        return validated_input
 
     @abstractmethod
     def _run(self, *args: Any, **kwargs: Any) -> Any:
