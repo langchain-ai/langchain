@@ -202,3 +202,58 @@ jobs:
           # grep will exit non-zero if the target message isn't found,
           # and `set -e` above will cause the step to fail.
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
+
+  # Test dependent packages against local packages to catch breaking changes
+  test-dependents:
+    # Defend against forks running scheduled jobs, but allow manual runs from forks
+    if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
+
+    name: "🐍 Python ${{ matrix.python-version }}: ${{ matrix.package.path }}"
+    runs-on: ubuntu-latest
+    needs: [compute-matrix]
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ${{ fromJSON(needs.compute-matrix.outputs.matrix).python-version }}
+        package:
+          - name: deepagents
+            repo: langchain-ai/deepagents
+            path: libs/deepagents
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: langchain
+
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ matrix.package.repo }}
+          path: ${{ matrix.package.name }}
+
+      - name: "🐍 Set up Python ${{ matrix.python-version }} + UV"
+        uses: "./langchain/.github/actions/uv_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: "📦 Install ${{ matrix.package.name }} with Local"
+        # Unlike partner packages (which use [tool.uv.sources] for local resolution),
+        # external dependents live in separate repos and need explicit overrides to
+        # test against the langchain versions from the current branch, as their
+        # pyproject.toml files point to released versions.
+        run: |
+          cd ${{ matrix.package.name }}/${{ matrix.package.path }}
+
+          # Install the package with test dependencies
+          uv sync --group test
+
+          # Override langchain packages with local versions
+          uv pip install \
+            -e $GITHUB_WORKSPACE/langchain/libs/core \
+            -e $GITHUB_WORKSPACE/langchain/libs/langchain_v1
+
+      # No API keys needed for now - deepagents `make test` only runs unit tests
+      - name: "🚀 Run ${{ matrix.package.name }} Tests"
+        run: |
+          cd ${{ matrix.package.name }}/${{ matrix.package.path }}
+          make test
