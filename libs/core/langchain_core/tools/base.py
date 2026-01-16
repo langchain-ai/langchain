@@ -689,8 +689,8 @@ class ChildTool(BaseTool):
                 return tool_input
             if issubclass(input_args, BaseModel):
                 # Identify injected arg keys to exclude from model_dump.
-                # Injected args are handled separately and should not be serialized
-                # to avoid Pydantic warnings from type mismatches.
+                # Injected args don't need to be validated and we don't assume
+                # they're serializable, so we exclude them.
                 annotations = get_all_basemodel_annotations(input_args)
                 injected_keys: set[str] = set()
                 for k, v in annotations.items():
@@ -712,8 +712,8 @@ class ChildTool(BaseTool):
                 result_dict = result.model_dump(exclude=injected_keys)
             elif issubclass(input_args, BaseModelV1):
                 # Identify injected arg keys to exclude from dict().
-                # Injected args are handled separately and should not be serialized
-                # to avoid Pydantic warnings from type mismatches.
+                # Injected args don't need to be validated and we don't assume
+                # they're serializable, so we exclude them.
                 annotations = get_all_basemodel_annotations(input_args)
                 injected_keys = set()
                 for k, v in annotations.items():
