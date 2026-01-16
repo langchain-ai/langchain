@@ -9,6 +9,7 @@ repos:
       - id: check-toml # validate TOML syntax
       - id: end-of-file-fixer # ensure files end with a newline
       - id: trailing-whitespace # remove trailing whitespace from lines
+        exclude: \.ambr$
 
   # Text normalization hooks for consistent formatting
   - repo: https://github.com/sirosen/texthooks

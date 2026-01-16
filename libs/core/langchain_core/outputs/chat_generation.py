@@ -57,16 +57,18 @@ class ChatGeneration(Generation):
         text = ""
         if isinstance(self.message.content, str):
             text = self.message.content
-        # Assumes text in content blocks in OpenAI format.
-        # Uses first text block.
+        # Extracts first text block from content blocks.
+        # Skips blocks with explicit non-text type (e.g., thinking, reasoning).
         elif isinstance(self.message.content, list):
             for block in self.message.content:
                 if isinstance(block, str):
                     text = block
                     break
                 if isinstance(block, dict) and "text" in block:
-                    text = block["text"]
-                    break
+                    block_type = block.get("type")
+                    if block_type is None or block_type == "text":
+                        text = block["text"]
+                        break
         self.text = text
         return self
 
