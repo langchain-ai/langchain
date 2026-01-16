@@ -15,6 +15,7 @@ from typing import (
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
+from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
@@ -25,6 +26,8 @@ from typing_extensions import NotRequired, Required, TypedDict
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
+    AgentRequest,
+    AgentResponse,
     AgentState,
     JumpTo,
     ModelRequest,
@@ -278,6 +281,187 @@ def _chain_async_model_call_handlers(
         return _normalize_to_model_response(final_result)
 
     return final_normalized
+
+
+def _chain_agent_call_handlers(
+    handlers: Sequence[
+        Callable[
+            [AgentRequest, Callable[[AgentRequest], AgentResponse]],
+            AgentResponse,
+        ]
+    ],
+) -> (
+    Callable[
+        [AgentRequest, Callable[[AgentRequest], AgentResponse]],
+        AgentResponse,
+    ]
+    | None
+):
+    """Compose multiple wrap_agent_call handlers into single middleware stack."""
+    if not handlers:
+        return None
+
+    if len(handlers) == 1:
+        return handlers[0]
+
+    def compose_two(
+        outer: Callable[
+            [AgentRequest, Callable[[AgentRequest], AgentResponse]],
+            AgentResponse,
+        ],
+        inner: Callable[
+            [AgentRequest, Callable[[AgentRequest], AgentResponse]],
+            AgentResponse,
+        ],
+    ) -> Callable[
+        [AgentRequest, Callable[[AgentRequest], AgentResponse]],
+        AgentResponse,
+    ]:
+        def composed(
+            request: AgentRequest,
+            handler: Callable[[AgentRequest], AgentResponse],
+        ) -> AgentResponse:
+            def inner_handler(req: AgentRequest) -> AgentResponse:
+                return inner(req, handler)
+
+            return outer(request, inner_handler)
+
+        return composed
+
+    result = handlers[-1]
+    for handler in reversed(handlers[:-1]):
+        result = compose_two(handler, result)
+
+    return result
+
+
+def _chain_async_agent_call_handlers(
+    handlers: Sequence[
+        Callable[
+            [AgentRequest, Callable[[AgentRequest], Awaitable[AgentResponse]]],
+            Awaitable[AgentResponse],
+        ]
+    ],
+) -> (
+    Callable[
+        [AgentRequest, Callable[[AgentRequest], Awaitable[AgentResponse]]],
+        Awaitable[AgentResponse],
+    ]
+    | None
+):
+    """Compose multiple async wrap_agent_call handlers into single middleware stack."""
+    if not handlers:
+        return None
+
+    if len(handlers) == 1:
+        return handlers[0]
+
+    def compose_two(
+        outer: Callable[
+            [AgentRequest, Callable[[AgentRequest], Awaitable[AgentResponse]]],
+            Awaitable[AgentResponse],
+        ],
+        inner: Callable[
+            [AgentRequest, Callable[[AgentRequest], Awaitable[AgentResponse]]],
+            Awaitable[AgentResponse],
+        ],
+    ) -> Callable[
+        [AgentRequest, Callable[[AgentRequest], Awaitable[AgentResponse]]],
+        Awaitable[AgentResponse],
+    ]:
+        async def composed(
+            request: AgentRequest,
+            handler: Callable[[AgentRequest], Awaitable[AgentResponse]],
+        ) -> AgentResponse:
+            async def inner_handler(req: AgentRequest) -> AgentResponse:
+                return await inner(req, handler)
+
+            return await outer(request, inner_handler)
+
+        return composed
+
+    result = handlers[-1]
+    for handler in reversed(handlers[:-1]):
+        result = compose_two(handler, result)
+
+    return result
+
+
+class _CompiledAgentWrapper(Runnable):
+    """Wrapper for CompiledStateGraph that applies agent middleware."""
+
+    def __init__(
+        self,
+        agent: CompiledStateGraph,
+        wrapper_handler: Callable[
+            [AgentRequest, Callable[[AgentRequest], AgentResponse]], AgentResponse
+        ]
+        | None,
+        async_wrapper_handler: Callable[
+            [AgentRequest, Callable[[AgentRequest], Awaitable[AgentResponse]]],
+            Awaitable[AgentResponse],
+        ]
+        | None,
+    ):
+        self._agent = agent
+        self._wrapper_handler = wrapper_handler
+        self._async_wrapper_handler = async_wrapper_handler
+
+    def invoke(
+        self,
+        input: _InputAgentState,
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
+    ) -> _OutputAgentState[Any]:
+        if not self._wrapper_handler:
+            return self._agent.invoke(input, config, **kwargs)
+
+        request = AgentRequest(input=input, config=config, kwargs=kwargs)
+
+        def handler(req: AgentRequest) -> AgentResponse:
+            output = self._agent.invoke(req.input, req.config, **req.kwargs)
+            return AgentResponse(output=output)
+
+        response = self._wrapper_handler(request, handler)
+        return cast("_OutputAgentState[Any]", response.output)
+
+    async def ainvoke(
+        self,
+        input: _InputAgentState,
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
+    ) -> _OutputAgentState[Any]:
+        if not self._async_wrapper_handler:
+            return await self._agent.ainvoke(input, config, **kwargs)
+
+        request = AgentRequest(input=input, config=config, kwargs=kwargs)
+
+        async def handler(req: AgentRequest) -> AgentResponse:
+            output = await self._agent.ainvoke(req.input, req.config, **req.kwargs)
+            return AgentResponse(output=output)
+
+        response = await self._async_wrapper_handler(request, handler)
+        return cast("_OutputAgentState[Any]", response.output)
+
+    def stream(
+        self,
+        input: _InputAgentState,
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        return self._agent.stream(input, config, **kwargs)
+
+    async def astream(
+        self,
+        input: _InputAgentState,
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        async for chunk in self._agent.astream(input, config, **kwargs):
+            yield chunk
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._agent, name)
 
 
 def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None = None) -> type:
@@ -1486,7 +1670,7 @@ def create_agent(
     if name:
         config["metadata"] = {"lc_agent_name": name}
 
-    return graph.compile(
+    compiled_graph = graph.compile(
         checkpointer=checkpointer,
         store=store,
         interrupt_before=interrupt_before,
@@ -1495,6 +1679,41 @@ def create_agent(
         name=name,
         cache=cache,
     ).with_config(config)
+
+    # Collect middleware with wrap_agent_call or awrap_agent_call hooks
+    middleware_w_wrap_agent_call = [
+        m
+        for m in middleware
+        if m.__class__.wrap_agent_call is not AgentMiddleware.wrap_agent_call
+        or m.__class__.awrap_agent_call is not AgentMiddleware.awrap_agent_call
+    ]
+
+    middleware_w_awrap_agent_call = [
+        m
+        for m in middleware
+        if m.__class__.awrap_agent_call is not AgentMiddleware.awrap_agent_call
+        or m.__class__.wrap_agent_call is not AgentMiddleware.wrap_agent_call
+    ]
+
+    if not middleware_w_wrap_agent_call and not middleware_w_awrap_agent_call:
+        return compiled_graph
+
+    wrap_agent_call_handler = None
+    if middleware_w_wrap_agent_call:
+        sync_handlers = [m.wrap_agent_call for m in middleware_w_wrap_agent_call]
+        wrap_agent_call_handler = _chain_agent_call_handlers(sync_handlers)
+
+    awrap_agent_call_handler = None
+    if middleware_w_awrap_agent_call:
+        async_handlers = [m.awrap_agent_call for m in middleware_w_awrap_agent_call]
+        awrap_agent_call_handler = _chain_async_agent_call_handlers(async_handlers)
+
+    return cast(
+        "CompiledStateGraph[AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]]",
+        _CompiledAgentWrapper(
+            compiled_graph, wrap_agent_call_handler, awrap_agent_call_handler
+        ),
+    )
 
 
 def _resolve_jump(
