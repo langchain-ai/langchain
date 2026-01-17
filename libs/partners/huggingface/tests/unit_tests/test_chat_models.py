@@ -328,14 +328,17 @@ def test_inheritance_with_empty_llm() -> None:
 
 
 def test_convert_chunk_to_message_chunk_with_reasoning_content() -> None:
-    """Test that reasoning_content is extracted from chunk and included in AIMessageChunk.
+    """Test reasoning_content extraction from chunk to AIMessageChunk.
 
-    Verifies that both 'reasoning' field from dict-style chunks and 
-    'reasoning_content' attribute from object-style chunks are correctly 
+    Verifies that both 'reasoning' field from dict-style chunks and
+    'reasoning_content' attribute from object-style chunks are correctly
     propagated to AIMessageChunk.additional_kwargs['reasoning_content'].
     """
     from langchain_core.messages import AIMessageChunk
-    from langchain_huggingface.chat_models.huggingface import _convert_chunk_to_message_chunk
+
+    from langchain_huggingface.chat_models.huggingface import (
+        _convert_chunk_to_message_chunk,
+    )
 
     # Test case 1: reasoning field from dict delta
     chunk_with_reasoning_dict = {
@@ -344,20 +347,20 @@ def test_convert_chunk_to_message_chunk_with_reasoning_content() -> None:
                 "delta": {
                     "role": "assistant",
                     "content": "The answer is 42",
-                    "reasoning": "Let me think through this step by step..."
+                    "reasoning": "Let me think through this step by step...",
                 }
             }
         ]
     }
 
-    result = _convert_chunk_to_message_chunk(
-        chunk_with_reasoning_dict, 
-        AIMessageChunk
-    )
+    result = _convert_chunk_to_message_chunk(chunk_with_reasoning_dict, AIMessageChunk)
 
     assert isinstance(result, AIMessageChunk)
     assert result.content == "The answer is 42"
-    assert result.additional_kwargs["reasoning_content"] == "Let me think through this step by step..."
+    assert (
+        result.additional_kwargs["reasoning_content"]
+        == "Let me think through this step by step..."
+    )
 
     # Test case 2: reasoning_content from object attribute (fallback)
     class MockDelta:
@@ -370,44 +373,30 @@ def test_convert_chunk_to_message_chunk_with_reasoning_content() -> None:
 
     class MockChunk(dict):
         def __init__(self) -> None:
-            super().__init__({
-                "choices": [
-                    {
-                        "delta": {
-                            "role": "assistant",
-                            "content": "Response content"
-                        }
-                    }
-                ]
-            })
+            super().__init__(
+                {
+                    "choices": [
+                        {"delta": {"role": "assistant", "content": "Response content"}}
+                    ]
+                }
+            )
             self.choices = [MockChoice()]
 
     chunk_with_reasoning_attr = MockChunk()
-    result = _convert_chunk_to_message_chunk(
-        chunk_with_reasoning_attr,
-        AIMessageChunk
-    )
+    result = _convert_chunk_to_message_chunk(chunk_with_reasoning_attr, AIMessageChunk)
 
     assert isinstance(result, AIMessageChunk)
     assert result.content == "Response content"
-    assert result.additional_kwargs["reasoning_content"] == "Object-based reasoning trace"
+    assert (
+        result.additional_kwargs["reasoning_content"] == "Object-based reasoning trace"
+    )
 
     # Test case 3: no reasoning present (None should be set)
     chunk_without_reasoning = {
-        "choices": [
-            {
-                "delta": {
-                    "role": "assistant",
-                    "content": "Simple response"
-                }
-            }
-        ]
+        "choices": [{"delta": {"role": "assistant", "content": "Simple response"}}]
     }
 
-    result = _convert_chunk_to_message_chunk(
-        chunk_without_reasoning,
-        AIMessageChunk
-    )
+    result = _convert_chunk_to_message_chunk(chunk_without_reasoning, AIMessageChunk)
 
     assert isinstance(result, AIMessageChunk)
     assert result.content == "Simple response"
@@ -416,17 +405,19 @@ def test_convert_chunk_to_message_chunk_with_reasoning_content() -> None:
     # Test case 4: dict reasoning takes precedence over object attribute
     class MockChunkBoth(dict):
         def __init__(self) -> None:
-            super().__init__({
-                "choices": [
-                    {
-                        "delta": {
-                            "role": "assistant",
-                            "content": "Response",
-                            "reasoning": "Dict reasoning value"
+            super().__init__(
+                {
+                    "choices": [
+                        {
+                            "delta": {
+                                "role": "assistant",
+                                "content": "Response",
+                                "reasoning": "Dict reasoning value",
+                            }
                         }
-                    }
-                ]
-            })
+                    ]
+                }
+            )
             self.choices = [MockChoice()]  # Has reasoning_content attribute
 
     chunk_with_both = MockChunkBoth()
