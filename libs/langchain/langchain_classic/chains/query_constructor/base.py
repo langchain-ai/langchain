@@ -384,7 +384,26 @@ def load_query_constructor_runnable(
 
     Returns:
         A Runnable that can be used to construct queries.
+
+    Raises:
+        ValueError: If allowed_values contains keys that don't match any attribute
+            names in attribute_info.
     """
+    # Validate allowed_values keys match actual attribute names
+    if allowed_values:
+        attr_names = {
+            ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"]
+            for ainfo in attribute_info
+        }
+        invalid_keys = set(allowed_values.keys()) - attr_names
+        if invalid_keys:
+            msg = (
+                "allowed_values contains keys that don't match any attribute names: "
+                f"{sorted(invalid_keys)}. "
+                f"Valid attribute names are: {sorted(attr_names)}"
+            )
+            raise ValueError(msg)
+
     prompt = get_query_constructor_prompt(
         document_contents,
         attribute_info,

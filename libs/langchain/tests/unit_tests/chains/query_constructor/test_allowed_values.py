@@ -3,9 +3,12 @@
 import json
 import re
 
+import pytest
+
 from langchain_classic.chains.query_constructor.base import (
     _format_attribute_info,
     get_query_constructor_prompt,
+    load_query_constructor_runnable,
 )
 from langchain_classic.chains.query_constructor.schema import AttributeInfo
 
@@ -74,23 +77,6 @@ class TestFormatAttributeInfoWithAllowedValues:
         parsed = json.loads(result.replace("{{", "{").replace("}}", "}"))
 
         assert parsed["genre"]["allowed_values"] == ["action", "comedy"]
-
-    def test_format_ignores_unknown_fields_in_allowed_values(self) -> None:
-        """Test that allowed_values for non-existent fields are ignored."""
-        info = [
-            AttributeInfo(name="genre", type="string", description="The movie genre"),
-        ]
-        allowed_values = {
-            "genre": ["action"],
-            "nonexistent": ["value"],  # This field doesn't exist in info
-        }
-        result = _format_attribute_info(info, allowed_values=allowed_values)
-        parsed = json.loads(result.replace("{{", "{").replace("}}", "}"))
-
-        assert "genre" in parsed
-        assert parsed["genre"]["allowed_values"] == ["action"]
-        # nonexistent field should not appear since it's not in info
-        assert "nonexistent" not in parsed
 
 
 class TestGetQueryConstructorPromptWithAllowedValues:
@@ -165,3 +151,45 @@ class TestPromptInstructionsForAllowedValues:
 
         assert "allowed_values" in SCHEMA_WITH_LIMIT
         assert "only use values from that list" in SCHEMA_WITH_LIMIT
+
+
+class TestValidateAllowedValues:
+    """Test validation of allowed_values parameter."""
+
+    def test_invalid_allowed_values_raises_error(self) -> None:
+        """Test that invalid allowed_values keys raise ValueError."""
+        from tests.unit_tests.llms.fake_llm import FakeLLM
+
+        llm = FakeLLM(queries={"test": "response"}, sequential_responses=True)
+        attribute_info = [
+            AttributeInfo(name="genre", type="string", description="The movie genre"),
+        ]
+
+        with pytest.raises(
+            ValueError,
+            match="allowed_values contains keys that don't match any attribute names",
+        ):
+            load_query_constructor_runnable(
+                llm=llm,
+                document_contents="Movie descriptions",
+                attribute_info=attribute_info,
+                allowed_values={"nonexistent": ["value"]},
+            )
+
+    def test_valid_allowed_values_does_not_raise(self) -> None:
+        """Test that valid allowed_values keys don't raise an error."""
+        from tests.unit_tests.llms.fake_llm import FakeLLM
+
+        llm = FakeLLM(queries={"test": "response"}, sequential_responses=True)
+        attribute_info = [
+            AttributeInfo(name="genre", type="string", description="The movie genre"),
+        ]
+
+        # Should not raise
+        runnable = load_query_constructor_runnable(
+            llm=llm,
+            document_contents="Movie descriptions",
+            attribute_info=attribute_info,
+            allowed_values={"genre": ["action", "comedy"]},
+        )
+        assert runnable is not None
