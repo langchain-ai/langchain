@@ -3405,6 +3405,8 @@ def test_create_chat_result_with_null_choices_in_model_dump() -> None:
     """
     from unittest.mock import MagicMock
 
+    import openai
+
     # Create a mock response that simulates vLLM behavior:
     # - model_dump() returns {"choices": None, ...}
     # - but response.choices has valid data
@@ -3420,7 +3422,8 @@ def test_create_chat_result_with_null_choices_in_model_dump() -> None:
         },
     }
 
-    mock_response = MagicMock()
+    # Use spec to make mock pass isinstance(response, openai.BaseModel) check
+    mock_response = MagicMock(spec=openai.BaseModel)
     mock_response.model_dump.return_value = {
         "choices": None,  # Simulates the bug where model_dump returns null
         "created": 1234567890,
