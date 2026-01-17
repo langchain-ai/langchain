@@ -1,4 +1,4 @@
-.PHONY: all format lint test tests test_watch integration_tests help extended_tests
+.PHONY: all format lint test tests test_watch integration_tests help extended_tests check_version
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -30,6 +30,9 @@ test_profile:
 
 check_imports: $(shell find langchain_core -name '*.py')
 	uv run --group test python ./scripts/check_imports.py $^
+
+check_version:
+	uv run python ./scripts/check_version.py
 
 extended_tests:
 	uv run --group test pytest --only-extended --disable-socket --allow-unix-socket $(TEST_FILE)
@@ -69,6 +72,7 @@ help:
 	@echo '----'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
+	@echo 'check_version                - validate version consistency'
 	@echo 'test                         - run unit tests'
 	@echo 'tests                        - run unit tests'
 	@echo 'test TEST_FILE=<test_file>   - run all tests in file'

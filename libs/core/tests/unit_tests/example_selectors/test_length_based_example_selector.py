@@ -57,3 +57,18 @@ def test_selector_trims_all_examples(
     super super super super long, this will affect the example right?"""
     output = selector.select_examples({"question": longest_question})
     assert output == []
+
+
+# edge case
+def test_selector_empty_example(
+    selector: LengthBasedExampleSelector,
+) -> None:
+    """Test Empty Example result empty."""
+    empty_list: list[dict] = []
+    empty_selector = LengthBasedExampleSelector(
+        examples=empty_list,
+        example_prompt=selector.example_prompt,
+        max_length=30,
+    )
+    output = empty_selector.select_examples({"question": "empty question"})
+    assert output == []

@@ -24,7 +24,7 @@ Homepage = "https://docs.langchain.com/oss/python/integrations/providers/mistral
 Documentation = "https://reference.langchain.com/python/integrations/langchain_mistralai/"
 Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/mistralai"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-mistralai%22"
-Twitter = "https://x.com/LangChainAI"
+Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
@@ -86,6 +86,9 @@ unfixable = ["B028"] # People should intentionally tune the stacklevel
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.coverage.run]
 omit = ["tests/*"]
