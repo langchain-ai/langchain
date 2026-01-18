@@ -220,13 +220,11 @@ class TestResponseFormatAsModel:
             # matching our anonymous schema, but it should NOT raise ValueError
             # during the binding phase.
             try:
-                agent.invoke(
-                    {"messages": [HumanMessage("hi")]}, config={"recursion_limit": 1}
-                )
+                agent.invoke({"messages": [HumanMessage("hi")]}, config={"recursion_limit": 1})
             except ValueError as e:
                 if "which wasn't declared" in str(e):
                     pytest.fail(f"Tool name mismatch occurred: {e}")
-            except Exception:
+            except Exception:  # noqa: S110
                 # Other exceptions mean we passed the binding phase
                 pass
 
