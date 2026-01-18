@@ -3226,6 +3226,3 @@ def test_openai_structured_output_refusal_handling_responses_api() -> None:
         pass
     except ValueError as e:
         pytest.fail(f"This is a wrong behavior. Error details: {e}")
-
-
-

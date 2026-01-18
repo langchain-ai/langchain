@@ -1908,7 +1908,6 @@ class BaseChatOpenAI(BaseChatModel):
             kwargs["response_format"] = _convert_to_openai_response_format(
                 response_format, strict=strict
             )
-
         return super().bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(
