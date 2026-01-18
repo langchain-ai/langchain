@@ -286,9 +286,14 @@ class ProviderStrategy(Generic[SchemaT]):
         """
         # OpenAI:
         # - see https://platform.openai.com/docs/guides/structured-outputs
+        inner_schema = self.schema_spec.json_schema
+        if isinstance(inner_schema, dict) and "title" not in inner_schema:
+            inner_schema = inner_schema.copy()
+            inner_schema["title"] = self.schema_spec.name
+
         json_schema: dict[str, Any] = {
             "name": self.schema_spec.name,
-            "schema": self.schema_spec.json_schema,
+            "schema": inner_schema,
         }
         if self.schema_spec.strict:
             json_schema["strict"] = True
