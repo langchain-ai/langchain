@@ -1037,7 +1037,14 @@ def create_agent(
                 effective_response_format = ProviderStrategy(schema=request.response_format.schema)
             else:
                 # Model doesn't support provider strategy - use ToolStrategy
-                effective_response_format = ToolStrategy(schema=request.response_format.schema)
+                # Reuse the strategy from setup if possible to preserve tool names
+                if (
+                    request.response_format is initial_response_format
+                    and tool_strategy_for_setup is not None
+                ):
+                    effective_response_format = tool_strategy_for_setup
+                else:
+                    effective_response_format = ToolStrategy(schema=request.response_format.schema)
         else:
             # User explicitly specified a strategy - preserve it
             effective_response_format = request.response_format
