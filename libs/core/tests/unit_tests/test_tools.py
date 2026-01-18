@@ -57,6 +57,7 @@ from langchain_core.tools.base import (
     InjectedToolCallId,
     SchemaAnnotationError,
     _DirectlyInjectedToolArg,
+    _get_runnable_config_param,
     _is_message_content_block,
     _is_message_content_type,
     get_all_basemodel_annotations,
@@ -1175,6 +1176,13 @@ async def test_async_tool_pass_config(tool: BaseTool) -> None:
         await tool.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}})
         == "baz"
     )
+
+
+def test_get_runnable_config_param_optional() -> None:
+    async def fn(*, config: RunnableConfig | None) -> None:
+        pass
+
+    assert _get_runnable_config_param(fn) == "config"
 
 
 class OptionalConfigTool(BaseTool):
