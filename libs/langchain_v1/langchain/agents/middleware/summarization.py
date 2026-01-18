@@ -19,8 +19,6 @@ from langchain_core.messages.utils import (
     get_buffer_string,
     trim_messages,
 )
-from langchain_core.runnables.config import RunnableConfig, merge_configs
-from langgraph.config import get_config
 from langgraph.graph.message import (
     REMOVE_ALL_MESSAGES,
 )
@@ -286,7 +284,7 @@ class SummarizationMiddleware(AgentMiddleware):
             raise ValueError(msg)
 
     @override
-    def before_model(self, state: AgentState[Any], _runtime: Runtime) -> dict[str, Any] | None:
+    def before_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any] | None:
         """Process messages before model invocation, potentially triggering summarization.
 
         Args:
@@ -323,7 +321,7 @@ class SummarizationMiddleware(AgentMiddleware):
 
     @override
     async def abefore_model(
-        self, state: AgentState[Any], _runtime: Runtime
+        self, state: AgentState[Any], runtime: Runtime
     ) -> dict[str, Any] | None:
         """Process messages before model invocation, potentially triggering summarization.
 
@@ -596,22 +594,10 @@ class SummarizationMiddleware(AgentMiddleware):
         # message objects
         formatted_messages = get_buffer_string(trimmed_messages)
 
-        # Merge parent config with summarization metadata.
-        # Use get_config() to get the current LangGraph config which contains
-        # langgraph_checkpoint_ns - required by StreamMessagesHandler to properly
-        # track the model call and propagate metadata (including lc_source) to
-        # stream chunks.
-        try:
-            base_config: RunnableConfig = get_config()
-        except RuntimeError:
-            # Fallback if called outside a runnable context
-            base_config = {}
-        config = merge_configs(base_config, {"metadata": {"lc_source": "summarization"}})
-
         try:
             response = self.model.invoke(
                 self.summary_prompt.format(messages=formatted_messages),
-                config=config,
+                config={"metadata": {"lc_source": "summarization"}},
             )
             return response.text.strip()
         except Exception as e:
@@ -634,22 +620,10 @@ class SummarizationMiddleware(AgentMiddleware):
         # message objects
         formatted_messages = get_buffer_string(trimmed_messages)
 
-        # Merge parent config with summarization metadata.
-        # Use get_config() to get the current LangGraph config which contains
-        # langgraph_checkpoint_ns - required by StreamMessagesHandler to properly
-        # track the model call and propagate metadata (including lc_source) to
-        # stream chunks.
-        try:
-            base_config: RunnableConfig = get_config()
-        except RuntimeError:
-            # Fallback if called outside a runnable context
-            base_config = {}
-        config = merge_configs(base_config, {"metadata": {"lc_source": "summarization"}})
-
         try:
             response = await self.model.ainvoke(
                 self.summary_prompt.format(messages=formatted_messages),
-                config=config,
+                config={"metadata": {"lc_source": "summarization"}},
             )
             return response.text.strip()
         except Exception as e:

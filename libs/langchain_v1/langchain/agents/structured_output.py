@@ -269,7 +269,7 @@ class ProviderStrategy(Generic[SchemaT]):
         *,
         strict: bool | None = None,
     ) -> None:
-        """Initialize ProviderStrategy with schema.
+        """Initialize `ProviderStrategy` with schema.
 
         Args:
             schema: Schema to enforce via the provider's native structured output.
@@ -448,8 +448,9 @@ class AutoStrategy(Generic[SchemaT]):
         self,
         schema: type[SchemaT] | dict[str, Any],
     ) -> None:
-        """Initialize AutoStrategy with schema."""
+        """Initialize `AutoStrategy` with schema."""
         self.schema = schema
 
 
 ResponseFormat = ToolStrategy[SchemaT] | ProviderStrategy[SchemaT] | AutoStrategy[SchemaT]
+"""Union type for all supported response format strategies."""
