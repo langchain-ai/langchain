@@ -197,6 +197,39 @@ class TestResponseFormatAsModel:
         assert response["structured_response"] == EXPECTED_WEATHER_DICT
         assert len(response["messages"]) == 5
 
+    def test_autostrategy_with_anonymous_json_schema(self) -> None:
+        """Test response_format as anonymous JSON schema (AutoStrategy).
+
+        Verifies that tool name mismatch is avoided when using AutoStrategy with
+        schemas that generate random names by ensuring the ToolStrategy instance
+        is reused during execution.
+        """
+        anonymous_schema = {
+            "type": "object",
+            "properties": {
+                "result": {"type": "string"},
+            },
+            "required": ["result"],
+        }
+
+        with patch("langchain.agents.factory._supports_provider_strategy", return_value=False):
+            model = FakeToolCallingModel(tool_calls=[])
+            agent = create_agent(model, [], response_format=anonymous_schema)
+
+            # We expect a recursion error or similar because we didn't mock the tool call
+            # matching our anonymous schema, but it should NOT raise ValueError
+            # during the binding phase.
+            try:
+                agent.invoke(
+                    {"messages": [HumanMessage("hi")]}, config={"recursion_limit": 1}
+                )
+            except ValueError as e:
+                if "which wasn't declared" in str(e):
+                    pytest.fail(f"Tool name mismatch occurred: {e}")
+            except Exception:
+                # Other exceptions mean we passed the binding phase
+                pass
+
 
 class TestResponseFormatAsToolStrategy:
     def test_pydantic_model(self) -> None:
