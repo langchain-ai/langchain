@@ -52,6 +52,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         keep_separator: bool | Literal["start", "end"] = False,  # noqa: FBT001,FBT002
         add_start_index: bool = False,  # noqa: FBT001,FBT002
         strip_whitespace: bool = True,  # noqa: FBT001,FBT002
+        overlap_threshold: int | None = None,
     ) -> None:
         """Create a new TextSplitter.
 
@@ -64,11 +65,17 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             add_start_index: If `True`, includes chunk's start index in metadata
             strip_whitespace: If `True`, strips whitespace from the start and end of
                 every document
+            overlap_threshold: Optional threshold for applying overlap. When set,
+                overlap is applied when chunk size reaches this threshold, even if
+                `chunk_size` is not exceeded. Must satisfy:
+                `chunk_overlap < overlap_threshold <= chunk_size`. When `None`
+                (default), overlap is only applied when `chunk_size` is exceeded.
 
         Raises:
             ValueError: If `chunk_size` is less than or equal to 0
             ValueError: If `chunk_overlap` is less than 0
             ValueError: If `chunk_overlap` is greater than chunk_size
+            ValueError: If `overlap_threshold` is invalid
         """
         if chunk_size <= 0:
             msg = f"chunk_size must be > 0, got {chunk_size}"
@@ -82,12 +89,26 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 f"({chunk_size}), should be smaller."
             )
             raise ValueError(msg)
+        if overlap_threshold is not None:
+            if overlap_threshold <= chunk_overlap:
+                msg = (
+                    f"overlap_threshold ({overlap_threshold}) must be greater than "
+                    f"chunk_overlap ({chunk_overlap})."
+                )
+                raise ValueError(msg)
+            if overlap_threshold > chunk_size:
+                msg = (
+                    f"overlap_threshold ({overlap_threshold}) must be less than or "
+                    f"equal to chunk_size ({chunk_size})."
+                )
+                raise ValueError(msg)
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
         self._length_function = length_function
         self._keep_separator = keep_separator
         self._add_start_index = add_start_index
         self._strip_whitespace = strip_whitespace
+        self._overlap_threshold = overlap_threshold
 
     @abstractmethod
     def split_text(self, text: str) -> list[str]:
@@ -154,6 +175,14 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         # chunks to send to the LLM.
         separator_len = self._length_function(separator)
 
+        # Use overlap_threshold if set, otherwise use chunk_size
+        # This allows overlap to be applied even when chunks don't exceed chunk_size
+        threshold = (
+            self._overlap_threshold
+            if self._overlap_threshold is not None
+            else self._chunk_size
+        )
+
         docs = []
         current_doc: list[str] = []
         total = 0
@@ -161,7 +190,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             len_ = self._length_function(d)
             if (
                 total + len_ + (separator_len if len(current_doc) > 0 else 0)
-                > self._chunk_size
+                > threshold
             ):
                 if total > self._chunk_size:
                     logger.warning(
@@ -179,7 +208,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                     # - or if we still have any chunks and the length is long
                     while total > self._chunk_overlap or (
                         total + len_ + (separator_len if len(current_doc) > 0 else 0)
-                        > self._chunk_size
+                        > threshold
                         and total > 0
                     ):
                         total -= self._length_function(current_doc[0]) + (
