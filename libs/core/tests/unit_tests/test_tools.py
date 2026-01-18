@@ -1177,6 +1177,35 @@ async def test_async_tool_pass_config(tool: BaseTool) -> None:
     )
 
 
+class OptionalConfigTool(BaseTool):
+    name: str = "optional_config_tool"
+    description: str = "Tool that accepts Optional[RunnableConfig]"
+
+    def _run(
+        self,
+        query: str,
+        *,
+        config: RunnableConfig | None,
+        **kwargs: Any,
+    ) -> str:
+        # Fail loudly if config was not passed
+        assert config is not None
+        return f"config_value={config.get('configurable', {}).get('value')}"
+
+
+def test_optional_runnable_config_is_passed() -> None:
+    tool = OptionalConfigTool()
+
+    runnable_config = RunnableConfig(configurable={"value": "test123"})
+
+    result = tool.invoke(
+        {"query": "hello"},
+        config=runnable_config,
+    )
+
+    assert result == "config_value=test123"
+
+
 def test_tool_description() -> None:
     def foo(bar: str) -> str:
         """The foo."""

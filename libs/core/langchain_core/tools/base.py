@@ -6,6 +6,7 @@ import functools
 import inspect
 import json
 import logging
+import types
 import typing
 import warnings
 from abc import ABC, abstractmethod
@@ -17,6 +18,7 @@ from typing import (
     Any,
     Literal,
     TypeVar,
+    Union,
     cast,
     get_args,
     get_origin,
@@ -1352,6 +1354,11 @@ def _get_runnable_config_param(func: Callable) -> str | None:
         return None
     for name, type_ in type_hints.items():
         if type_ is RunnableConfig:
+            return name
+
+        origin = get_origin(type_)
+
+        if origin in (Union, types.UnionType) and RunnableConfig in get_args(type_):
             return name
     return None
 
