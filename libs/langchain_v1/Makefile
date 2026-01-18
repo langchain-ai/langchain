@@ -1,4 +1,4 @@
-.PHONY: all start_services stop_services coverage coverage_agents test test_fast extended_tests test_watch test_watch_extended integration_tests check_imports lint format lint_diff format_diff lint_package lint_tests help
+.PHONY: all start_services stop_services coverage coverage_agents test test_fast extended_tests test_watch test_watch_extended integration_tests check_imports check_version lint format lint_diff format_diff lint_package lint_tests help
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -69,6 +69,9 @@ integration_tests:
 check_imports: $(shell find langchain -name '*.py')
 	uv run python ./scripts/check_imports.py $^
 
+check_version:
+	uv run python ./scripts/check_version.py
+
 ######################
 # LINTING AND FORMATTING
 ######################
@@ -100,6 +103,7 @@ help:
 	@echo '-- LINTING --'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
+	@echo 'check_version                - validate version consistency'
 	@echo '-- TESTS --'
 	@echo 'coverage                     - run unit tests and generate coverage report'
 	@echo 'coverage_agents              - run middleware and agent tests with coverage report'
