@@ -11,6 +11,8 @@ from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
+    ChatMessage,
+    FunctionMessage,
     HumanMessage,
     SystemMessage,
     ToolCall,
@@ -1778,3 +1780,439 @@ def test_convert_to_openai_messages_reasoning_content() -> None:
         ],
     }
     assert mixed_result == expected_mixed
+
+
+# Tests for get_buffer_string XML format
+
+
+def test_get_buffer_string_xml_basic() -> None:
+    """Test basic XML format output."""
+    messages = [
+        HumanMessage(content="Hello"),
+        AIMessage(content="Hi there"),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    expected = (
+        '<message type="human">Hello</message>\n<message type="ai">Hi there</message>'
+    )
+    assert result == expected
+
+
+def test_get_buffer_string_xml_custom_prefixes() -> None:
+    """Test XML format with custom human and ai prefixes."""
+    messages = [
+        HumanMessage(content="Hello"),
+        AIMessage(content="Hi there"),
+    ]
+    result = get_buffer_string(
+        messages, human_prefix="User", ai_prefix="Assistant", format="xml"
+    )
+    expected = (
+        '<message type="user">Hello</message>\n'
+        '<message type="assistant">Hi there</message>'
+    )
+    assert result == expected
+
+
+def test_get_buffer_string_xml_all_message_types() -> None:
+    """Test XML format with all message types."""
+    messages = [
+        SystemMessage(content="System message"),
+        HumanMessage(content="Human message"),
+        AIMessage(content="AI message"),
+        FunctionMessage(content="Function result", name="test_fn"),
+        ToolMessage(content="Tool result", tool_call_id="123"),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    expected = (
+        '<message type="system">System message</message>\n'
+        '<message type="human">Human message</message>\n'
+        '<message type="ai">AI message</message>\n'
+        '<message type="function">Function result</message>\n'
+        '<message type="tool">Tool result</message>'
+    )
+    assert result == expected
+
+
+def test_get_buffer_string_xml_custom_separator() -> None:
+    """Test XML format with custom message separator."""
+    messages = [
+        HumanMessage(content="Hello"),
+        AIMessage(content="Hi there"),
+    ]
+    result = get_buffer_string(messages, format="xml", message_separator="\n\n")
+    expected = (
+        '<message type="human">Hello</message>\n\n<message type="ai">Hi there</message>'
+    )
+    assert result == expected
+
+
+def test_get_buffer_string_prefix_custom_separator() -> None:
+    """Test prefix format with custom message separator."""
+    messages = [
+        HumanMessage(content="Hello"),
+        AIMessage(content="Hi there"),
+    ]
+    result = get_buffer_string(messages, format="prefix", message_separator=" | ")
+    expected = "Human: Hello | AI: Hi there"
+    assert result == expected
+
+
+def test_get_buffer_string_backward_compatibility() -> None:
+    """Test that default behavior is unchanged (backward compatible)."""
+    messages = [
+        HumanMessage(content="Hello"),
+        AIMessage(content="Hi there"),
+    ]
+    result = get_buffer_string(messages)
+    expected = "Human: Hello\nAI: Hi there"
+    assert result == expected
+
+
+def test_get_buffer_string_xml_escaping() -> None:
+    """Test XML format properly escapes special characters in content."""
+    messages = [
+        HumanMessage(content="Is 5 < 10 & 10 > 5?"),
+        AIMessage(content='Yes, and here\'s a "quote"'),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    # xml.sax.saxutils.escape escapes <, >, & (not quotes in content)
+    expected = (
+        '<message type="human">Is 5 &lt; 10 &amp; 10 &gt; 5?</message>\n'
+        '<message type="ai">Yes, and here\'s a "quote"</message>'
+    )
+    assert result == expected
+
+
+def test_get_buffer_string_xml_role_like_content() -> None:
+    """Test XML format handles content containing role-like prefixes."""
+    messages = [
+        HumanMessage(content="Example: Human: some text"),
+        AIMessage(content="I see the example with AI: prefix"),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    # XML format avoids ambiguity - the role-like prefixes are just content
+    expected = (
+        '<message type="human">Example: Human: some text</message>\n'
+        '<message type="ai">I see the example with AI: prefix</message>'
+    )
+    assert result == expected
+
+
+def test_get_buffer_string_xml_chat_message_valid_role() -> None:
+    """Test XML format with ChatMessage having valid XML tag name role."""
+    messages = [
+        ChatMessage(content="Hello", role="Assistant"),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    # Role is used directly as the type attribute value
+    expected = '<message type="Assistant">Hello</message>'
+    assert result == expected
+
+
+def test_get_buffer_string_xml_chat_message_custom_role() -> None:
+    """Test XML format with ChatMessage having custom role (spaces allowed)."""
+    messages = [
+        ChatMessage(content="Hello", role="my custom role"),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    # Custom roles with spaces use quoteattr for proper escaping
+    expected = '<message type="my custom role">Hello</message>'
+    assert result == expected
+
+
+def test_get_buffer_string_xml_chat_message_role_special_chars() -> None:
+    """Test XML format escapes special characters in role attribute."""
+    messages = [
+        ChatMessage(content="Hello", role='role"with<special>'),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    # quoteattr handles escaping of special characters in attribute values
+    # Note: quoteattr uses single quotes when the string contains double quotes
+    expected = """<message type='role"with&lt;special&gt;'>Hello</message>"""
+    assert result == expected
+
+
+def test_get_buffer_string_xml_tool_calls_with_content() -> None:
+    """Test XML format with AIMessage having both content and tool_calls."""
+    messages = [
+        AIMessage(
+            content="Let me check that",
+            tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": {"city": "NYC"},
+                    "id": "call_1",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    # Nested structure with content and tool_call elements
+    expected = (
+        '<message type="ai">\n'
+        "  <content>Let me check that</content>\n"
+        '  <tool_call id="call_1" name="get_weather">{"city": "NYC"}</tool_call>\n'
+        "</message>"
+    )
+    assert result == expected
+
+
+def test_get_buffer_string_xml_tool_calls_empty_content() -> None:
+    """Test XML format with AIMessage having empty content and tool_calls."""
+    messages = [
+        AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": "search",
+                    "args": {"query": "test"},
+                    "id": "call_2",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    # No content element when content is empty
+    expected = (
+        '<message type="ai">\n'
+        '  <tool_call id="call_2" name="search">{"query": "test"}</tool_call>\n'
+        "</message>"
+    )
+    assert result == expected
+
+
+def test_get_buffer_string_xml_tool_calls_escaping() -> None:
+    """Test XML format escapes special characters in tool calls."""
+    messages = [
+        AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": "calculate",
+                    "args": {"expression": "5 < 10 & 10 > 5"},
+                    "id": "call_3",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    # Special characters in tool_calls args should be escaped
+    assert "&lt;" in result
+    assert "&gt;" in result
+    assert "&amp;" in result
+    # Verify overall structure
+    assert result.startswith('<message type="ai">')
+    assert result.endswith("</message>")
+
+
+def test_get_buffer_string_xml_function_call_legacy() -> None:
+    """Test XML format with legacy function_call in additional_kwargs."""
+    messages = [
+        AIMessage(
+            content="Calling function",
+            additional_kwargs={
+                "function_call": {"name": "test_fn", "arguments": '{"x": 1}'}
+            },
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    # Nested structure with function_call element
+    # Note: arguments is a string, so quotes inside are escaped
+    expected = (
+        '<message type="ai">\n'
+        "  <content>Calling function</content>\n"
+        '  <function_call name="test_fn">{"x": 1}</function_call>\n'
+        "</message>"
+    )
+    assert result == expected
+
+
+def test_get_buffer_string_xml_empty_content() -> None:
+    """Test XML format with empty content."""
+    messages = [
+        HumanMessage(content=""),
+        AIMessage(content=""),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    expected = '<message type="human"></message>\n<message type="ai"></message>'
+    assert result == expected
+
+
+def test_get_buffer_string_xml_structured_content() -> None:
+    """Test XML format with structured content (list content blocks)."""
+    messages = [
+        HumanMessage(content=[{"type": "text", "text": "Hello, world!"}]),
+        AIMessage(content=[{"type": "text", "text": "Hi there!"}]),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    # m.text property should extract text from structured content
+    expected = (
+        '<message type="human">Hello, world!</message>\n'
+        '<message type="ai">Hi there!</message>'
+    )
+    assert result == expected
+
+
+def test_get_buffer_string_xml_empty_messages_list() -> None:
+    """Test XML format with empty messages list."""
+    messages: list[BaseMessage] = []
+    result = get_buffer_string(messages, format="xml")
+    expected = ""
+    assert result == expected
+
+
+def test_get_buffer_string_xml_unicode_content() -> None:
+    """Test XML format with Unicode content."""
+    messages = [
+        HumanMessage(content="你好世界"),  # Chinese: Hello World
+        AIMessage(content="こんにちは"),  # Japanese: Hello
+    ]
+    result = get_buffer_string(messages, format="xml")
+    expected = (
+        '<message type="human">你好世界</message>\n'
+        '<message type="ai">こんにちは</message>'
+    )
+    assert result == expected
+
+
+def test_get_buffer_string_xml_multiline_content() -> None:
+    """Test XML format with multiline content."""
+    messages = [
+        HumanMessage(content="Line 1\nLine 2\nLine 3"),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    expected = '<message type="human">Line 1\nLine 2\nLine 3</message>'
+    assert result == expected
+
+
+def test_get_buffer_string_xml_tool_calls_preferred_over_function_call() -> None:
+    """Test that tool_calls takes precedence over legacy function_call in XML."""
+    messages = [
+        AIMessage(
+            content="Calling tools",
+            tool_calls=[
+                {
+                    "name": "modern_tool",
+                    "args": {"key": "value"},
+                    "id": "call_3",
+                    "type": "tool_call",
+                }
+            ],
+            additional_kwargs={
+                "function_call": {"name": "legacy_function", "arguments": "{}"}
+            },
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "modern_tool" in result
+    assert "legacy_function" not in result
+    # Should use tool_call element, not function_call
+    assert "<tool_call" in result
+    assert "<function_call" not in result
+
+
+def test_get_buffer_string_xml_multiple_tool_calls() -> None:
+    """Test XML format with AIMessage having multiple tool_calls."""
+    messages = [
+        AIMessage(
+            content="I'll help with that",
+            tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": {"city": "NYC"},
+                    "id": "call_1",
+                    "type": "tool_call",
+                },
+                {
+                    "name": "get_time",
+                    "args": {"timezone": "EST"},
+                    "id": "call_2",
+                    "type": "tool_call",
+                },
+            ],
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    # Should have nested structure with multiple tool_call elements
+    expected = (
+        '<message type="ai">\n'
+        "  <content>I'll help with that</content>\n"
+        '  <tool_call id="call_1" name="get_weather">{"city": "NYC"}</tool_call>\n'
+        '  <tool_call id="call_2" name="get_time">{"timezone": "EST"}</tool_call>\n'
+        "</message>"
+    )
+    assert result == expected
+
+
+def test_get_buffer_string_xml_tool_call_special_chars_in_attrs() -> None:
+    """Test that tool call attributes with quotes are properly escaped."""
+    messages: list[BaseMessage] = [
+        AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": 'search"with"quotes',
+                    "args": {"query": "test"},
+                    "id": 'call"id',
+                    "type": "tool_call",
+                },
+            ],
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    # quoteattr uses single quotes when value contains double quotes
+    assert "name='search\"with\"quotes'" in result
+    assert "id='call\"id'" in result
+
+
+def test_get_buffer_string_xml_tool_call_none_id() -> None:
+    """Test that tool calls with None id are handled correctly."""
+    messages: list[BaseMessage] = [
+        AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": "search",
+                    "args": {},
+                    "id": None,
+                    "type": "tool_call",
+                },
+            ],
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    # Should handle None by converting to empty string
+    assert 'id=""' in result
+
+
+def test_get_buffer_string_xml_function_call_special_chars_in_name() -> None:
+    """Test that function_call name with quotes is properly escaped."""
+    messages: list[BaseMessage] = [
+        AIMessage(
+            content="",
+            additional_kwargs={
+                "function_call": {
+                    "name": 'func"name',
+                    "arguments": "{}",
+                }
+            },
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    # quoteattr uses single quotes when value contains double quotes
+    assert "name='func\"name'" in result
+
+
+def test_get_buffer_string_invalid_format() -> None:
+    """Test that invalid format values raise ValueError."""
+    messages: list[BaseMessage] = [HumanMessage(content="Hello")]
+    with pytest.raises(ValueError, match="Unrecognized format"):
+        get_buffer_string(messages, format="xm")  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="Unrecognized format"):
+        get_buffer_string(messages, format="invalid")  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="Unrecognized format"):
+        get_buffer_string(messages, format="")  # type: ignore[arg-type]
