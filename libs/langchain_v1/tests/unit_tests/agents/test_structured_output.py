@@ -1,7 +1,5 @@
-
-from typing import Any, Dict
-
 from langchain.agents.structured_output import ProviderStrategy
+
 
 def test_provider_strategy_injects_title() -> None:
     """Test that ProviderStrategy injects a title into the inner schema if missing.
@@ -12,10 +10,8 @@ def test_provider_strategy_injects_title() -> None:
     # 1. Define a schema without a 'title'
     schema = {
         "type": "object",
-        "properties": {
-            "result": {"type": "string"}
-        },
-        "required": ["result"]
+        "properties": {"result": {"type": "string"}},
+        "required": ["result"],
     }
 
     # 2. Initialize ProviderStrategy
@@ -40,6 +36,7 @@ def test_provider_strategy_injects_title() -> None:
 
     # 6. Verify strict mode is preserved
     assert json_schema["strict"] is True
+
 
 def test_provider_strategy_preserves_existing_title() -> None:
     """Test that ProviderStrategy respects an existing title."""
