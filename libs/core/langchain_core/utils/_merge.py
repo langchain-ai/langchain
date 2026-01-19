@@ -110,7 +110,14 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
                     to_merge = [
                         i
                         for i, e_left in enumerate(merged)
-                        if "index" in e_left and e_left["index"] == e["index"]
+                        if (
+                            e_left.get("index") == e.get("index")
+                            and (
+                                e_left.get("id") is None
+                                or e.get("id") is None
+                                or e_left.get("id") == e.get("id")
+                            )
+                        )
                     ]
                     if to_merge:
                         # TODO: Remove this once merge_dict is updated with special
