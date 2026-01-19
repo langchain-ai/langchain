@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import asyncio
 import uuid
-from collections.abc import Callable
 from enum import Enum
 from itertools import islice
 from operator import itemgetter
@@ -13,10 +13,10 @@ from typing import (
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-from qdrant_client import QdrantClient, models
+from qdrant_client import AsyncQdrantClient, QdrantClient, models
 
 if TYPE_CHECKING:
-    from collections.abc import Generator, Iterable, Sequence
+    from collections.abc import AsyncGenerator, Callable, Generator, Iterable, Sequence
 
     from langchain_qdrant.sparse_embeddings import SparseEmbeddings
 
@@ -158,18 +158,57 @@ class QdrantVectorStore(VectorStore):
         * [SIM=0.832268] foo [{'baz': 'bar', '_id': '44ec7094-b061-45ac-8fbf-014b0f18e8aa', '_collection_name': 'demo_collection'}]
         ```
 
-    Async:
+    Async Usage:
+        Async operations work with all Qdrant modes. For remote Qdrant instances,
+        native async operations are used via AsyncQdrantClient. For in-memory mode
+        (`:memory:`), async methods automatically fall back to running sync operations
+        in a thread pool, since sync and async clients create separate isolated
+        in-memory instances.
+
         ```python
-        # add documents
-        # await vector_store.aadd_documents(documents=documents, ids=ids)
+        from langchain_qdrant import QdrantVectorStore
+        from qdrant_client import QdrantClient, AsyncQdrantClient
+        from qdrant_client.http.models import Distance, VectorParams
+        from langchain_openai import OpenAIEmbeddings
 
-        # delete documents
-        # await vector_store.adelete(ids=["3"])
+        # Option 1: Remote Qdrant with native async support
+        client = QdrantClient(url="http://localhost:6333")
+        async_client = AsyncQdrantClient(url="http://localhost:6333")
 
-        # search
-        # results = vector_store.asimilarity_search(query="thud",k=1)
+        # Create collection (sync operation)
+        client.create_collection(
+            collection_name="demo_collection",
+            vectors_config=VectorParams(size=1536, distance=Distance.COSINE),
+        )
 
-        # search with score
+        # Initialize vector store with both clients
+        vector_store = QdrantVectorStore(
+            client=client,
+            async_client=async_client,
+            collection_name="demo_collection",
+            embedding=OpenAIEmbeddings(),
+        )
+
+        # Option 2: Auto-create clients (remote Qdrant)
+        vector_store = QdrantVectorStore.from_texts(
+            texts=["foo", "bar"],
+            embedding=OpenAIEmbeddings(),
+            url="http://localhost:6333",  # Creates both sync and async clients
+            collection_name="demo_collection",
+        )
+
+        # Option 3: In-memory mode (async methods use sync fallback)
+        vector_store_memory = QdrantVectorStore.from_texts(
+            texts=["foo", "bar"],
+            embedding=OpenAIEmbeddings(),
+            location=":memory:",  # Async methods fall back to sync
+            collection_name="demo_collection",
+        )
+
+        # Use async methods (works for all options above)
+        await vector_store.aadd_documents(documents=documents, ids=ids)
+        await vector_store.adelete(ids=["3"])
+        results = await vector_store.asimilarity_search(query="thud", k=1)
         results = await vector_store.asimilarity_search_with_score(query="qux", k=1)
         for doc, score in results:
             print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
@@ -221,11 +260,29 @@ class QdrantVectorStore(VectorStore):
         sparse_vector_name: str = SPARSE_VECTOR_NAME,
         validate_embeddings: bool = True,  # noqa: FBT001, FBT002
         validate_collection_config: bool = True,  # noqa: FBT001, FBT002
+        async_client: AsyncQdrantClient | None = None,
     ) -> None:
         """Initialize a new instance of `QdrantVectorStore`.
 
+        Args:
+            client: Qdrant client to use for synchronous operations.
+            collection_name: Name of the collection.
+            embedding: Embedding function to use for dense vectors.
+            retrieval_mode: Retrieval mode to use (DENSE, SPARSE, or HYBRID).
+            vector_name: Name of the dense vector in the collection.
+            content_payload_key: Payload key for document content.
+            metadata_payload_key: Payload key for document metadata.
+            distance: Distance metric for similarity search.
+            sparse_embedding: Sparse embedding function for SPARSE/HYBRID modes.
+            sparse_vector_name: Name of the sparse vector in the collection.
+            validate_embeddings: Whether to validate embeddings configuration.
+            validate_collection_config: Whether to validate collection configuration.
+            async_client: Optional async client for native async operations.
+                If not provided, async methods will fall back to running sync
+                methods in an executor.
+
         ```python
-        qdrant = Qdrant(
+        qdrant = QdrantVectorStore(
             client=client,
             collection_name="my-collection",
             embedding=OpenAIEmbeddings(),
@@ -249,6 +306,7 @@ class QdrantVectorStore(VectorStore):
             )
 
         self._client = client
+        self._async_client = async_client
         self.collection_name = collection_name
         self._embeddings = embedding
         self.retrieval_mode = retrieval_mode
@@ -268,6 +326,16 @@ class QdrantVectorStore(VectorStore):
 
         """
         return self._client
+
+    @property
+    def async_client(self) -> AsyncQdrantClient | None:
+        """Get the async Qdrant client instance if available.
+
+        Returns:
+            AsyncQdrantClient: An instance of `AsyncQdrantClient`, or None if not set.
+
+        """
+        return self._async_client
 
     @property
     def embeddings(self) -> Embeddings | None:
@@ -462,7 +530,7 @@ class QdrantVectorStore(VectorStore):
         Returns:
             QdrantVectorStore: A new instance of `QdrantVectorStore`.
         """
-        client = QdrantClient(
+        client, async_client = cls._generate_clients(
             location=location,
             url=url,
             port=port,
@@ -490,6 +558,7 @@ class QdrantVectorStore(VectorStore):
             sparse_vector_name=sparse_vector_name,
             validate_embeddings=validate_embeddings,
             validate_collection_config=validate_collection_config,
+            async_client=async_client,
         )
 
     def add_texts(  # type: ignore[override]
@@ -511,6 +580,53 @@ class QdrantVectorStore(VectorStore):
             texts, metadatas, ids, batch_size
         ):
             self.client.upsert(
+                collection_name=self.collection_name, points=points, **kwargs
+            )
+            added_ids.extend(batch_ids)
+
+        return added_ids
+
+    async def aadd_texts(  # type: ignore[override]
+        self,
+        texts: Iterable[str],
+        metadatas: list[dict] | None = None,
+        ids: Sequence[str | int] | None = None,
+        batch_size: int = 64,
+        **kwargs: Any,
+    ) -> list[str | int]:
+        """Async add texts with embeddings to the `VectorStore`.
+
+        Args:
+            texts: Iterable of strings to add to the `VectorStore`.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of IDs to associate with the texts.
+            batch_size: How many vectors to upload per request.
+            **kwargs: Additional keyword arguments passed to Qdrant upsert.
+
+        Returns:
+            List of IDs from adding the texts into the `VectorStore`.
+
+        Note:
+            For in-memory mode, this method falls back to running the sync version
+            in a thread pool since AsyncQdrantClient creates a separate isolated
+            in-memory instance.
+
+        """
+        # Fallback to sync method if async_client is not available
+        if self._async_client is None:
+            return await asyncio.to_thread(
+                self.add_texts,
+                texts=texts,
+                metadatas=metadatas,
+                ids=ids,
+                batch_size=batch_size,
+            )
+
+        added_ids: list[str | int] = []
+        async for batch_ids, points in self._agenerate_batches(
+            texts, metadatas, ids, batch_size
+        ):
+            await self._async_client.upsert(
                 collection_name=self.collection_name, points=points, **kwargs
             )
             added_ids.extend(batch_ids)
@@ -725,6 +841,304 @@ class QdrantVectorStore(VectorStore):
         )
         return list(map(itemgetter(0), results))
 
+    async def asimilarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        filter: models.Filter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
+        offset: int = 0,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
+        hybrid_fusion: models.FusionQuery | None = None,
+        **kwargs: Any,
+    ) -> list[Document]:
+        """Async return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return.
+            filter: Filter by metadata using Qdrant filter.
+            search_params: Additional search parameters.
+            offset: Offset of the first result to return.
+            score_threshold: Minimum score threshold for results.
+            consistency: Read consistency of the search.
+            hybrid_fusion: Fusion strategy for hybrid search.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List of `Document` objects most similar to the query.
+
+        """
+        results = await self.asimilarity_search_with_score(
+            query,
+            k,
+            filter=filter,
+            search_params=search_params,
+            offset=offset,
+            score_threshold=score_threshold,
+            consistency=consistency,
+            hybrid_fusion=hybrid_fusion,
+            **kwargs,
+        )
+        return list(map(itemgetter(0), results))
+
+    async def asimilarity_search_with_score(
+        self,
+        query: str,
+        k: int = 4,
+        filter: models.Filter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
+        offset: int = 0,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
+        hybrid_fusion: models.FusionQuery | None = None,
+        **kwargs: Any,
+    ) -> list[tuple[Document, float]]:
+        """Async return docs most similar to query with scores.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return.
+            filter: Filter by metadata using Qdrant filter.
+            search_params: Additional search parameters.
+            offset: Offset of the first result to return.
+            score_threshold: Minimum score threshold for results.
+            consistency: Read consistency of the search.
+            hybrid_fusion: Fusion strategy for hybrid search.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List of documents most similar to the query text and score for each.
+
+        Note:
+            For in-memory mode, this method falls back to running the sync version
+            in a thread pool since AsyncQdrantClient creates a separate isolated
+            in-memory instance.
+
+        """
+        # Fallback to sync method if async_client is not available
+        if self._async_client is None:
+            return await asyncio.to_thread(
+                self.similarity_search_with_score,
+                query=query,
+                k=k,
+                filter=filter,
+                search_params=search_params,
+                offset=offset,
+                score_threshold=score_threshold,
+                consistency=consistency,
+                **kwargs,
+            )
+
+        query_options = {
+            "collection_name": self.collection_name,
+            "query_filter": filter,
+            "search_params": search_params,
+            "limit": k,
+            "offset": offset,
+            "with_payload": True,
+            "with_vectors": False,
+            "score_threshold": score_threshold,
+            "consistency": consistency,
+            **kwargs,
+        }
+
+        if self.retrieval_mode == RetrievalMode.DENSE:
+            embeddings = self._require_embeddings("DENSE mode")
+            query_dense_embedding = await embeddings.aembed_query(query)
+            results = (
+                await self._async_client.query_points(
+                    query=query_dense_embedding,
+                    using=self.vector_name,
+                    **query_options,
+                )
+            ).points
+
+        elif self.retrieval_mode == RetrievalMode.SPARSE:
+            query_sparse_embedding = await self.sparse_embeddings.aembed_query(query)
+            results = (
+                await self._async_client.query_points(
+                    query=models.SparseVector(
+                        indices=query_sparse_embedding.indices,
+                        values=query_sparse_embedding.values,
+                    ),
+                    using=self.sparse_vector_name,
+                    **query_options,
+                )
+            ).points
+
+        elif self.retrieval_mode == RetrievalMode.HYBRID:
+            embeddings = self._require_embeddings("HYBRID mode")
+            query_dense_embedding = await embeddings.aembed_query(query)
+            query_sparse_embedding = await self.sparse_embeddings.aembed_query(query)
+            results = (
+                await self._async_client.query_points(
+                    prefetch=[
+                        models.Prefetch(
+                            using=self.vector_name,
+                            query=query_dense_embedding,
+                            filter=filter,
+                            limit=k,
+                            params=search_params,
+                        ),
+                        models.Prefetch(
+                            using=self.sparse_vector_name,
+                            query=models.SparseVector(
+                                indices=query_sparse_embedding.indices,
+                                values=query_sparse_embedding.values,
+                            ),
+                            filter=filter,
+                            limit=k,
+                            params=search_params,
+                        ),
+                    ],
+                    query=hybrid_fusion or models.FusionQuery(fusion=models.Fusion.RRF),
+                    **query_options,
+                )
+            ).points
+
+        else:
+            msg = f"Invalid retrieval mode. {self.retrieval_mode}."
+            raise ValueError(msg)
+
+        return [
+            (
+                self._document_from_point(
+                    result,
+                    self.collection_name,
+                    self.content_payload_key,
+                    self.metadata_payload_key,
+                ),
+                result.score,
+            )
+            for result in results
+        ]
+
+    async def asimilarity_search_with_score_by_vector(
+        self,
+        embedding: list[float],
+        k: int = 4,
+        filter: models.Filter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
+        offset: int = 0,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
+        **kwargs: Any,
+    ) -> list[tuple[Document, float]]:
+        """Async return docs most similar to embedding vector with scores.
+
+        Args:
+            embedding: Embedding vector to look up documents similar to.
+            k: Number of Documents to return.
+            filter: Filter by metadata using Qdrant filter.
+            search_params: Additional search parameters.
+            offset: Offset of the first result to return.
+            score_threshold: Minimum score threshold for results.
+            consistency: Read consistency of the search.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List of `Document` objects most similar to the query and score for each.
+
+        Note:
+            For in-memory mode, this method falls back to running the sync version
+            in a thread pool since AsyncQdrantClient creates a separate isolated
+            in-memory instance.
+
+        """
+        # Fallback to sync method if async_client is not available
+        if self._async_client is None:
+            return await asyncio.to_thread(
+                self.similarity_search_with_score_by_vector,
+                embedding=embedding,
+                k=k,
+                filter=filter,
+                search_params=search_params,
+                offset=offset,
+                score_threshold=score_threshold,
+                consistency=consistency,
+                **kwargs,
+            )
+
+        qdrant_filter = filter
+
+        self._validate_collection_for_dense(
+            client=self.client,
+            collection_name=self.collection_name,
+            vector_name=self.vector_name,
+            distance=self.distance,
+            dense_embeddings=embedding,
+        )
+        results = (
+            await self._async_client.query_points(
+                collection_name=self.collection_name,
+                query=embedding,
+                using=self.vector_name,
+                query_filter=qdrant_filter,
+                search_params=search_params,
+                limit=k,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+                score_threshold=score_threshold,
+                consistency=consistency,
+                **kwargs,
+            )
+        ).points
+
+        return [
+            (
+                self._document_from_point(
+                    result,
+                    self.collection_name,
+                    self.content_payload_key,
+                    self.metadata_payload_key,
+                ),
+                result.score,
+            )
+            for result in results
+        ]
+
+    async def asimilarity_search_by_vector(
+        self,
+        embedding: list[float],
+        k: int = 4,
+        filter: models.Filter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
+        offset: int = 0,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
+        **kwargs: Any,
+    ) -> list[Document]:
+        """Async return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding vector to look up documents similar to.
+            k: Number of Documents to return.
+            filter: Filter by metadata using Qdrant filter.
+            search_params: Additional search parameters.
+            offset: Offset of the first result to return.
+            score_threshold: Minimum score threshold for results.
+            consistency: Read consistency of the search.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List of `Document` objects most similar to the query.
+
+        """
+        results = await self.asimilarity_search_with_score_by_vector(
+            embedding,
+            k,
+            filter=filter,
+            search_params=search_params,
+            offset=offset,
+            score_threshold=score_threshold,
+            consistency=consistency,
+            **kwargs,
+        )
+        return list(map(itemgetter(0), results))
+
     def max_marginal_relevance_search(
         self,
         query: str,
@@ -853,6 +1267,210 @@ class QdrantVectorStore(VectorStore):
             for result in results
         ]
 
+    async def amax_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: models.Filter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
+        **kwargs: Any,
+    ) -> list[Document]:
+        """Async return docs using maximal marginal relevance with dense vectors.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 for diversity (0=max diversity).
+            filter: Filter by metadata using Qdrant filter.
+            search_params: Additional search parameters.
+            score_threshold: Minimum score threshold for results.
+            consistency: Read consistency of the search.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List of `Document` objects selected by maximal marginal relevance.
+
+        Note:
+            For in-memory mode, this method falls back to running the sync version
+            in a thread pool since AsyncQdrantClient creates a separate isolated
+            in-memory instance.
+
+        """
+        # Fallback to sync method if async_client is not available
+        if self._async_client is None:
+            return await asyncio.to_thread(
+                self.max_marginal_relevance_search,
+                query=query,
+                k=k,
+                fetch_k=fetch_k,
+                lambda_mult=lambda_mult,
+                filter=filter,
+                search_params=search_params,
+                score_threshold=score_threshold,
+                consistency=consistency,
+                **kwargs,
+            )
+
+        self._validate_collection_for_dense(
+            self.client,
+            self.collection_name,
+            self.vector_name,
+            self.distance,
+            self.embeddings,
+        )
+
+        embeddings = self._require_embeddings("amax_marginal_relevance_search")
+        query_embedding = await embeddings.aembed_query(query)
+        return await self.amax_marginal_relevance_search_by_vector(
+            query_embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            search_params=search_params,
+            score_threshold=score_threshold,
+            consistency=consistency,
+            **kwargs,
+        )
+
+    async def amax_marginal_relevance_search_by_vector(
+        self,
+        embedding: list[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: models.Filter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
+        **kwargs: Any,
+    ) -> list[Document]:
+        """Async return docs using maximal marginal relevance with dense vectors.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding vector to look up documents similar to.
+            k: Number of Documents to return.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 for diversity (0=max diversity).
+            filter: Filter by metadata using Qdrant filter.
+            search_params: Additional search parameters.
+            score_threshold: Minimum score threshold for results.
+            consistency: Read consistency of the search.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List of `Document` objects selected by maximal marginal relevance.
+
+        """
+        results = await self.amax_marginal_relevance_search_with_score_by_vector(
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            search_params=search_params,
+            score_threshold=score_threshold,
+            consistency=consistency,
+            **kwargs,
+        )
+        return list(map(itemgetter(0), results))
+
+    async def amax_marginal_relevance_search_with_score_by_vector(
+        self,
+        embedding: list[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: models.Filter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
+        **kwargs: Any,
+    ) -> list[tuple[Document, float]]:
+        """Async return docs using maximal marginal relevance with scores.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding vector to look up documents similar to.
+            k: Number of Documents to return.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 for diversity (0=max diversity).
+            filter: Filter by metadata using Qdrant filter.
+            search_params: Additional search parameters.
+            score_threshold: Minimum score threshold for results.
+            consistency: Read consistency of the search.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List of `Document` objects selected by maximal marginal relevance and
+                score for each.
+
+        Note:
+            For in-memory mode, this method falls back to running the sync version
+            in a thread pool since AsyncQdrantClient creates a separate isolated
+            in-memory instance.
+
+        """
+        # Fallback to sync method if async_client is not available
+        if self._async_client is None:
+            return await asyncio.to_thread(
+                self.max_marginal_relevance_search_with_score_by_vector,
+                embedding=embedding,
+                k=k,
+                fetch_k=fetch_k,
+                lambda_mult=lambda_mult,
+                filter=filter,
+                search_params=search_params,
+                score_threshold=score_threshold,
+                consistency=consistency,
+                **kwargs,
+            )
+
+        results = (
+            await self._async_client.query_points(
+                collection_name=self.collection_name,
+                query=models.NearestQuery(
+                    nearest=embedding,
+                    mmr=models.Mmr(diversity=lambda_mult, candidates_limit=fetch_k),
+                ),
+                query_filter=filter,
+                search_params=search_params,
+                limit=k,
+                with_payload=True,
+                with_vectors=True,
+                score_threshold=score_threshold,
+                consistency=consistency,
+                using=self.vector_name,
+                **kwargs,
+            )
+        ).points
+
+        return [
+            (
+                self._document_from_point(
+                    result,
+                    self.collection_name,
+                    self.content_payload_key,
+                    self.metadata_payload_key,
+                ),
+                result.score,
+            )
+            for result in results
+        ]
+
     def delete(  # type: ignore[override]
         self,
         ids: list[str | int] | None = None,
@@ -876,6 +1494,69 @@ class QdrantVectorStore(VectorStore):
 
     def get_by_ids(self, ids: Sequence[str | int], /) -> list[Document]:
         results = self.client.retrieve(self.collection_name, ids, with_payload=True)
+
+        return [
+            self._document_from_point(
+                result,
+                self.collection_name,
+                self.content_payload_key,
+                self.metadata_payload_key,
+            )
+            for result in results
+        ]
+
+    async def adelete(  # type: ignore[override]
+        self,
+        ids: list[str | int] | None = None,
+        **kwargs: Any,
+    ) -> bool | None:
+        """Async delete documents by their ids.
+
+        Args:
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            True if deletion is successful, `False` otherwise.
+
+        Note:
+            For in-memory mode, this method falls back to running the sync version
+            in a thread pool since AsyncQdrantClient creates a separate isolated
+            in-memory instance.
+
+        """
+        # Fallback to sync method if async_client is not available
+        if self._async_client is None:
+            return await asyncio.to_thread(self.delete, ids)
+
+        result = await self._async_client.delete(
+            collection_name=self.collection_name,
+            points_selector=ids,
+        )
+        return result.status == models.UpdateStatus.COMPLETED
+
+    async def aget_by_ids(self, ids: Sequence[str | int], /) -> list[Document]:
+        """Async get documents by their IDs.
+
+        Args:
+            ids: List of IDs to retrieve.
+
+        Returns:
+            List of `Document` objects.
+
+        Note:
+            For in-memory mode, this method falls back to running the sync version
+            in a thread pool since AsyncQdrantClient creates a separate isolated
+            in-memory instance.
+
+        """
+        # Fallback to sync method if async_client is not available
+        if self._async_client is None:
+            return await asyncio.to_thread(self.get_by_ids, ids)
+
+        results = await self._async_client.retrieve(
+            self.collection_name, ids, with_payload=True
+        )
 
         return [
             self._document_from_point(
@@ -918,7 +1599,7 @@ class QdrantVectorStore(VectorStore):
         if validate_embeddings:
             cls._validate_embeddings(retrieval_mode, embedding, sparse_embedding)
         collection_name = collection_name or uuid.uuid4().hex
-        client = QdrantClient(**client_options)
+        client, async_client = cls._generate_clients(**client_options)
 
         collection_exists = client.collection_exists(collection_name)
 
@@ -994,6 +1675,7 @@ class QdrantVectorStore(VectorStore):
             sparse_vector_name=sparse_vector_name,
             validate_embeddings=False,
             validate_collection_config=False,
+            async_client=async_client,
         )
 
     @staticmethod
@@ -1146,6 +1828,108 @@ class QdrantVectorStore(VectorStore):
         msg = f"Unknown retrieval mode. {self.retrieval_mode} to build vectors."
         raise ValueError(msg)
 
+    async def _abuild_vectors(
+        self,
+        texts: Iterable[str],
+    ) -> list[models.VectorStruct]:
+        """Async version of _build_vectors.
+
+        Build vector representations for the given texts using async embedding methods.
+        """
+        texts_list = list(texts)
+
+        if self.retrieval_mode == RetrievalMode.DENSE:
+            embeddings = self._require_embeddings("DENSE mode")
+            batch_embeddings = await embeddings.aembed_documents(texts_list)
+            return [
+                {
+                    self.vector_name: vector,
+                }
+                for vector in batch_embeddings
+            ]
+
+        if self.retrieval_mode == RetrievalMode.SPARSE:
+            batch_sparse_embeddings = await self.sparse_embeddings.aembed_documents(
+                texts_list
+            )
+            return [
+                {
+                    self.sparse_vector_name: models.SparseVector(
+                        values=vector.values, indices=vector.indices
+                    )
+                }
+                for vector in batch_sparse_embeddings
+            ]
+
+        if self.retrieval_mode == RetrievalMode.HYBRID:
+            embeddings = self._require_embeddings("HYBRID mode")
+            dense_embeddings = await embeddings.aembed_documents(texts_list)
+            sparse_embeddings = await self.sparse_embeddings.aembed_documents(
+                texts_list
+            )
+
+            if len(dense_embeddings) != len(sparse_embeddings):
+                msg = "Mismatched length between dense and sparse embeddings."
+                raise ValueError(msg)
+
+            return [
+                {
+                    self.vector_name: dense_vector,
+                    self.sparse_vector_name: models.SparseVector(
+                        values=sparse_vector.values, indices=sparse_vector.indices
+                    ),
+                }
+                for dense_vector, sparse_vector in zip(
+                    dense_embeddings, sparse_embeddings, strict=False
+                )
+            ]
+
+        msg = f"Unknown retrieval mode. {self.retrieval_mode} to build vectors."
+        raise ValueError(msg)
+
+    async def _agenerate_batches(
+        self,
+        texts: Iterable[str],
+        metadatas: list[dict] | None = None,
+        ids: Sequence[str | int] | None = None,
+        batch_size: int = 64,
+    ) -> AsyncGenerator[tuple[list[str | int], list[models.PointStruct]], None]:
+        """Async generator version of _generate_batches.
+
+        Generate batches of points for upserting to Qdrant using async embedding.
+        """
+        texts_iterator = iter(texts)
+        metadatas_iterator = iter(metadatas or [])
+        ids_iterator = iter(ids or [uuid.uuid4().hex for _ in iter(texts)])
+
+        while batch_texts := list(islice(texts_iterator, batch_size)):
+            batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
+            batch_ids = list(islice(ids_iterator, batch_size))
+
+            # Use async embedding
+            vectors = await self._abuild_vectors(batch_texts)
+
+            points = [
+                models.PointStruct(
+                    id=point_id,
+                    vector=vector,
+                    payload=payload,
+                )
+                for point_id, vector, payload in zip(
+                    batch_ids,
+                    vectors,
+                    self._build_payloads(
+                        batch_texts,
+                        batch_metadatas,
+                        self.content_payload_key,
+                        self.metadata_payload_key,
+                    ),
+                    strict=False,
+                )
+            ]
+
+            yield batch_ids, points
+
     @classmethod
     def _validate_collection_config(
         cls: type[QdrantVectorStore],
@@ -1293,3 +2077,77 @@ class QdrantVectorStore(VectorStore):
                 "when retrieval mode is 'hybrid'"
             )
             raise ValueError(msg)
+
+    @staticmethod
+    def _generate_clients(
+        location: str | None = None,
+        url: str | None = None,
+        port: int | None = 6333,
+        grpc_port: int = 6334,
+        prefer_grpc: bool = False,  # noqa: FBT001, FBT002
+        https: bool | None = None,  # noqa: FBT001
+        api_key: str | None = None,
+        prefix: str | None = None,
+        timeout: int | None = None,
+        host: str | None = None,
+        path: str | None = None,
+        **kwargs: Any,
+    ) -> tuple[QdrantClient, AsyncQdrantClient | None]:
+        """Generate sync and async Qdrant clients.
+
+        Args:
+            location: Location of the Qdrant server. Use ':memory:' for in-memory.
+            url: URL of the Qdrant server.
+            port: Port of the REST API interface.
+            grpc_port: Port of the gRPC interface.
+            prefer_grpc: Whether to prefer gRPC over REST.
+            https: Whether to use HTTPS.
+            api_key: API key for authentication.
+            prefix: URL prefix for the REST API.
+            timeout: Timeout for requests.
+            host: Host name of the Qdrant server.
+            path: Path for local storage (local mode).
+            **kwargs: Additional arguments passed to the client.
+
+        Returns:
+            A tuple of (sync_client, async_client). async_client is None for
+            local/in-memory mode since AsyncQdrantClient doesn't support those.
+        """
+        sync_client = QdrantClient(
+            location=location,
+            url=url,
+            port=port,
+            grpc_port=grpc_port,
+            prefer_grpc=prefer_grpc,
+            https=https,
+            api_key=api_key,
+            prefix=prefix,
+            timeout=timeout,
+            host=host,
+            path=path,
+            **kwargs,
+        )
+
+        # AsyncQdrantClient technically supports :memory: mode (since v1.1.1),
+        # but sync and async clients create separate isolated in-memory instances
+        # that cannot share data. Therefore, we don't create async_client for
+        # in-memory mode to avoid confusion.
+        # Path-based local mode is also not supported by AsyncQdrantClient.
+        if location == ":memory:" or path is not None:
+            async_client = None
+        else:
+            async_client = AsyncQdrantClient(
+                location=location,
+                url=url,
+                port=port,
+                grpc_port=grpc_port,
+                prefer_grpc=prefer_grpc,
+                https=https,
+                api_key=api_key,
+                prefix=prefix,
+                timeout=timeout,
+                host=host,
+                **kwargs,
+            )
+
+        return sync_client, async_client
