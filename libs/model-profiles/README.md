@@ -3,7 +3,7 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/langchain-model-profiles?label=%20)](https://pypi.org/project/langchain-model-profiles/#history)
 [![PyPI - License](https://img.shields.io/pypi/l/langchain-model-profiles)](https://opensource.org/licenses/MIT)
 [![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-model-profiles)](https://pypistats.org/packages/langchain-model-profiles)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40LangChain)](https://x.com/langchain)
 
 > [!WARNING]
 > This package is currently in development and the API is subject to change.

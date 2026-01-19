@@ -1,24 +1,59 @@
+from collections.abc import Iterable
+from typing import Any
 from unittest.mock import patch
 
 import pytest
+from langchain_core.callbacks import AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
 from langchain_core.language_models import ModelProfile
+from langchain_core.language_models.base import (
+    LanguageModelInput,
+)
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, RemoveMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    AnyMessage,
+    BaseMessage,
+    HumanMessage,
+    MessageLikeRepresentation,
+    RemoveMessage,
+    ToolMessage,
+)
 from langchain_core.messages.utils import count_tokens_approximately, get_buffer_string
 from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
+from langgraph.runtime import Runtime
+from pydantic import Field
+from typing_extensions import override
 
+from langchain.agents import AgentState
 from langchain.agents.middleware.summarization import SummarizationMiddleware
+from langchain.chat_models import init_chat_model
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 class MockChatModel(BaseChatModel):
     """Mock chat model for testing."""
 
-    def invoke(self, prompt):  # type: ignore[no-untyped-def]
+    @override
+    def invoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
         return AIMessage(content="Generated summary")
 
-    def _generate(self, messages, **kwargs):  # type: ignore[no-untyped-def]
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
     @property
@@ -29,7 +64,14 @@ class MockChatModel(BaseChatModel):
 class ProfileChatModel(BaseChatModel):
     """Mock chat model with profile for testing."""
 
-    def _generate(self, messages, **kwargs):  # type: ignore[no-untyped-def]
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
     profile: ModelProfile | None = ModelProfile(max_input_tokens=1000)
@@ -78,16 +120,16 @@ def test_summarization_middleware_no_summarization_cases() -> None:
 
     # Test when summarization is disabled
     middleware_disabled = SummarizationMiddleware(model=model, trigger=None)
-    state = {"messages": [HumanMessage(content="Hello"), AIMessage(content="Hi")]}
-    result = middleware_disabled.before_model(state, None)
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), AIMessage(content="Hi")])
+    result = middleware_disabled.before_model(state, Runtime())
     assert result is None
 
     # Test when token count is below threshold
-    def mock_token_counter(messages):
+    def mock_token_counter(_: Iterable[MessageLikeRepresentation]) -> int:
         return 500  # Below threshold
 
     middleware.token_counter = mock_token_counter
-    result = middleware.before_model(state, None)
+    result = middleware.before_model(state, Runtime())
     assert result is None
 
 
@@ -97,7 +139,7 @@ def test_summarization_middleware_helper_methods() -> None:
     middleware = SummarizationMiddleware(model=model, trigger=("tokens", 1000))
 
     # Test message ID assignment
-    messages = [HumanMessage(content="Hello"), AIMessage(content="Hi")]
+    messages: list[AnyMessage] = [HumanMessage(content="Hello"), AIMessage(content="Hi")]
     middleware._ensure_message_ids(messages)
     for msg in messages:
         assert msg.id is not None
@@ -123,6 +165,7 @@ def test_summarization_middleware_helper_methods() -> None:
     assert isinstance(new_messages[0], HumanMessage)
     assert "Here is a summary of the conversation to date:" in new_messages[0].content
     assert summary in new_messages[0].content
+    assert new_messages[0].additional_kwargs.get("lc_source") == "summarization"
 
 
 def test_summarization_middleware_summary_creation() -> None:
@@ -130,7 +173,7 @@ def test_summarization_middleware_summary_creation() -> None:
     middleware = SummarizationMiddleware(model=MockChatModel(), trigger=("tokens", 1000))
 
     # Test normal summary creation
-    messages = [HumanMessage(content="Hello"), AIMessage(content="Hi")]
+    messages: list[AnyMessage] = [HumanMessage(content="Hello"), AIMessage(content="Hi")]
     summary = middleware._create_summary(messages)
     assert summary == "Generated summary"
 
@@ -140,15 +183,30 @@ def test_summarization_middleware_summary_creation() -> None:
 
     # Test error handling
     class ErrorModel(BaseChatModel):
-        def invoke(self, prompt):
+        @override
+        def invoke(
+            self,
+            input: LanguageModelInput,
+            config: RunnableConfig | None = None,
+            *,
+            stop: list[str] | None = None,
+            **kwargs: Any,
+        ) -> AIMessage:
             msg = "Model error"
             raise ValueError(msg)
 
-        def _generate(self, messages, **kwargs):
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
         @property
-        def _llm_type(self):
+        def _llm_type(self) -> str:
             return "mock"
 
     middleware_error = SummarizationMiddleware(model=ErrorModel(), trigger=("tokens", 1000))
@@ -164,12 +222,16 @@ def test_summarization_middleware_summary_creation() -> None:
 
 def test_summarization_middleware_trim_limit_none_keeps_all_messages() -> None:
     """Verify disabling trim limit preserves full message sequence."""
-    messages = [HumanMessage(content=str(i)) for i in range(10)]
+    messages: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(10)]
     middleware = SummarizationMiddleware(
         model=MockChatModel(),
         trim_tokens_to_summarize=None,
     )
-    middleware.token_counter = len
+
+    def token_counter(messages: Iterable[MessageLikeRepresentation]) -> int:
+        return len(list(messages))
+
+    middleware.token_counter = token_counter
 
     trimmed = middleware._trim_messages_for_summary(messages)
     assert trimmed is messages
@@ -178,8 +240,8 @@ def test_summarization_middleware_trim_limit_none_keeps_all_messages() -> None:
 def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     """Ensure automatic profile inference triggers summarization when limits are exceeded."""
 
-    def token_counter(messages):
-        return len(messages) * 200
+    def token_counter(messages: Iterable[MessageLikeRepresentation]) -> int:
+        return len(list(messages)) * 200
 
     middleware = SummarizationMiddleware(
         model=ProfileChatModel(),
@@ -188,20 +250,20 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         token_counter=token_counter,
     )
 
-    state = {
-        "messages": [
+    state = AgentState[Any](
+        messages=[
             HumanMessage(content="Message 1"),
             AIMessage(content="Message 2"),
             HumanMessage(content="Message 3"),
             AIMessage(content="Message 4"),
         ]
-    }
+    )
 
     # Test we don't engage summarization
     # we have total_tokens = 4 * 200 = 800
     # and max_input_tokens = 1000
     # since 0.81 * 1000 == 810 > 800 -> summarization not triggered
-    result = middleware.before_model(state, None)
+    result = middleware.before_model(state, Runtime())
     assert result is None
 
     # Engage summarization
@@ -212,7 +274,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         keep=("fraction", 0.5),
         token_counter=token_counter,
     )
-    result = middleware.before_model(state, None)
+    result = middleware.before_model(state, Runtime())
     assert result is not None
     assert isinstance(result["messages"][0], RemoveMessage)
     summary_message = result["messages"][1]
@@ -232,7 +294,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         keep=("fraction", 0.6),
         token_counter=token_counter,
     )
-    result = middleware.before_model(state, None)
+    result = middleware.before_model(state, Runtime())
     assert result is not None
     assert [message.content for message in result["messages"][2:]] == [
         "Message 2",
@@ -249,7 +311,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         keep=("fraction", 0.8),
         token_counter=token_counter,
     )
-    assert middleware.before_model(state, None) is None
+    assert middleware.before_model(state, Runtime()) is None
 
     # Test with tokens_to_keep as absolute int value
     middleware_int = SummarizationMiddleware(
@@ -258,7 +320,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         keep=("tokens", 400),  # Keep exactly 400 tokens (2 messages)
         token_counter=token_counter,
     )
-    result = middleware_int.before_model(state, None)
+    result = middleware_int.before_model(state, Runtime())
     assert result is not None
     assert [message.content for message in result["messages"][2:]] == [
         "Message 3",
@@ -272,7 +334,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         keep=("tokens", 600),  # Keep 600 tokens (3 messages)
         token_counter=token_counter,
     )
-    result = middleware_int_large.before_model(state, None)
+    result = middleware_int_large.before_model(state, Runtime())
     assert result is not None
     assert [message.content for message in result["messages"][2:]] == [
         "Message 2",
@@ -281,10 +343,10 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     ]
 
 
-def test_summarization_middleware_token_retention_advances_past_tool_messages() -> None:
-    """Ensure token retention advances past tool messages for aggressive summarization."""
+def test_summarization_middleware_token_retention_preserves_ai_tool_pairs() -> None:
+    """Ensure token retention preserves AI/Tool message pairs together."""
 
-    def token_counter(messages: list[AnyMessage]) -> int:
+    def token_counter(messages: Iterable[MessageLikeRepresentation]) -> int:
         return sum(len(getattr(message, "content", "")) for message in messages)
 
     middleware = SummarizationMiddleware(
@@ -297,7 +359,7 @@ def test_summarization_middleware_token_retention_advances_past_tool_messages() 
     # Total tokens: 300 + 200 + 50 + 180 + 160 = 890
     # Target keep: 500 tokens (50% of 1000)
     # Binary search finds cutoff around index 2 (ToolMessage)
-    # We advance past it to index 3 (HumanMessage)
+    # We move back to index 1 to preserve the AIMessage with its ToolMessage
     messages: list[AnyMessage] = [
         HumanMessage(content="H" * 300),
         AIMessage(
@@ -309,43 +371,53 @@ def test_summarization_middleware_token_retention_advances_past_tool_messages() 
         HumanMessage(content="H" * 160),
     ]
 
-    state = {"messages": messages}
-    result = middleware.before_model(state, None)
+    state = AgentState[Any](messages=messages)
+    result = middleware.before_model(state, Runtime())
     assert result is not None
 
     preserved_messages = result["messages"][2:]
-    # With aggressive summarization, we advance past the ToolMessage
-    # So we preserve messages from index 3 onward (the two HumanMessages)
-    assert preserved_messages == messages[3:]
+    # We move the cutoff back to include the AIMessage with its ToolMessage
+    # So we preserve messages from index 1 onward (AI + Tool + Human + Human)
+    assert preserved_messages == messages[1:]
 
-    # Verify preserved tokens are within budget
-    target_token_count = int(1000 * 0.5)
-    preserved_tokens = middleware.token_counter(preserved_messages)
-    assert preserved_tokens <= target_token_count
+    # Verify the AI/Tool pair is preserved together
+    assert isinstance(preserved_messages[0], AIMessage)
+    assert preserved_messages[0].tool_calls
+    assert isinstance(preserved_messages[1], ToolMessage)
+    assert preserved_messages[1].tool_call_id == preserved_messages[0].tool_calls[0]["id"]
 
 
 def test_summarization_middleware_missing_profile() -> None:
     """Ensure automatic profile inference falls back when profiles are unavailable."""
 
     class ImportErrorProfileModel(BaseChatModel):
-        def _generate(self, messages, **kwargs):
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
             raise NotImplementedError
 
         @property
         def _llm_type(self) -> str:
             return "mock"
 
-        @property
-        def profile(self):
-            msg = "Profile not available"
-            raise ImportError(msg)
+        # NOTE: Using __getattribute__ because @property cannot override Pydantic fields.
+        def __getattribute__(self, name: str) -> Any:
+            if name == "profile":
+                msg = "Profile not available"
+                raise AttributeError(msg)
+            return super().__getattribute__(name)
 
     with pytest.raises(
         ValueError,
         match="Model profile information is required to use fractional token limits",
     ):
         _ = SummarizationMiddleware(
-            model=ImportErrorProfileModel, trigger=("fraction", 0.5), keep=("messages", 1)
+            model=ImportErrorProfileModel(), trigger=("fraction", 0.5), keep=("messages", 1)
         )
 
 
@@ -358,12 +430,12 @@ def test_summarization_middleware_full_workflow() -> None:
         )
 
     # Mock high token count to trigger summarization
-    def mock_token_counter(messages):
+    def mock_token_counter(_: Iterable[MessageLikeRepresentation]) -> int:
         return 1500  # Above threshold
 
     middleware.token_counter = mock_token_counter
 
-    messages = [
+    messages: list[AnyMessage] = [
         HumanMessage(content="1"),
         HumanMessage(content="2"),
         HumanMessage(content="3"),
@@ -371,8 +443,8 @@ def test_summarization_middleware_full_workflow() -> None:
         HumanMessage(content="5"),
     ]
 
-    state = {"messages": messages}
-    result = middleware.before_model(state, None)
+    state = AgentState[Any](messages=messages)
+    result = middleware.before_model(state, Runtime())
 
     assert result is not None
     assert "messages" in result
@@ -397,14 +469,28 @@ async def test_summarization_middleware_full_workflow_async() -> None:
     """Test SummarizationMiddleware complete summarization workflow."""
 
     class MockModel(BaseChatModel):
-        def _generate(self, messages, **kwargs):
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Blep"))])
 
-        async def _agenerate(self, messages, **kwargs):
+        @override
+        async def _agenerate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: AsyncCallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Blip"))])
 
         @property
-        def _llm_type(self):
+        def _llm_type(self) -> str:
             return "mock"
 
     middleware = SummarizationMiddleware(
@@ -412,12 +498,12 @@ async def test_summarization_middleware_full_workflow_async() -> None:
     )
 
     # Mock high token count to trigger summarization
-    def mock_token_counter(messages):
+    def mock_token_counter(_: Iterable[MessageLikeRepresentation]) -> int:
         return 1500  # Above threshold
 
     middleware.token_counter = mock_token_counter
 
-    messages = [
+    messages: list[AnyMessage] = [
         HumanMessage(content="1"),
         HumanMessage(content="2"),
         HumanMessage(content="3"),
@@ -425,8 +511,8 @@ async def test_summarization_middleware_full_workflow_async() -> None:
         HumanMessage(content="5"),
     ]
 
-    state = {"messages": messages}
-    result = await middleware.abefore_model(state, None)
+    state = AgentState[Any](messages=messages)
+    result = await middleware.abefore_model(state, Runtime())
 
     assert result is not None
     assert "messages" in result
@@ -449,26 +535,26 @@ def test_summarization_middleware_keep_messages() -> None:
     )
 
     # Below threshold - no summarization
-    messages_below = [
+    messages_below: list[AnyMessage] = [
         HumanMessage(content="1"),
         HumanMessage(content="2"),
         HumanMessage(content="3"),
         HumanMessage(content="4"),
     ]
-    state_below = {"messages": messages_below}
-    result = middleware.before_model(state_below, None)
+    state_below = AgentState[Any](messages=messages_below)
+    result = middleware.before_model(state_below, Runtime())
     assert result is None
 
     # At threshold - should trigger summarization
-    messages_at_threshold = [
+    messages_at_threshold: list[AnyMessage] = [
         HumanMessage(content="1"),
         HumanMessage(content="2"),
         HumanMessage(content="3"),
         HumanMessage(content="4"),
         HumanMessage(content="5"),
     ]
-    state_at = {"messages": messages_at_threshold}
-    result = middleware.before_model(state_at, None)
+    state_at = AgentState[Any](messages=messages_at_threshold)
+    result = middleware.before_model(state_at, Runtime())
     assert result is not None
     assert "messages" in result
     expected_types = ["remove", "human", "human", "human"]
@@ -477,9 +563,9 @@ def test_summarization_middleware_keep_messages() -> None:
     assert [message.content for message in result["messages"][2:]] == ["4", "5"]
 
     # Above threshold - should also trigger summarization
-    messages_above = [*messages_at_threshold, HumanMessage(content="6")]
-    state_above = {"messages": messages_above}
-    result = middleware.before_model(state_above, None)
+    messages_above: list[AnyMessage] = [*messages_at_threshold, HumanMessage(content="6")]
+    state_above = AgentState[Any](messages=messages_above)
+    result = middleware.before_model(state_above, Runtime())
     assert result is not None
     assert "messages" in result
     expected_types = ["remove", "human", "human", "human"]
@@ -489,7 +575,7 @@ def test_summarization_middleware_keep_messages() -> None:
 
     # Test with both parameters disabled
     middleware_disabled = SummarizationMiddleware(model=MockChatModel(), trigger=None)
-    result = middleware_disabled.before_model(state_above, None)
+    result = middleware_disabled.before_model(state_above, Runtime())
     assert result is None
 
 
@@ -507,7 +593,7 @@ def test_summarization_middleware_keep_messages() -> None:
     ],
 )
 def test_summarization_middleware_validation_edge_cases(
-    param_name: str, param_value: tuple[str, float | int], expected_error: str
+    param_name: str, param_value: Any, expected_error: str
 ) -> None:
     """Test validation of context size parameters with edge cases."""
     model = FakeToolCallingModel()
@@ -525,31 +611,31 @@ def test_summarization_middleware_multiple_triggers() -> None:
     )
 
     # Mock token counter to return low count
-    def mock_low_tokens(messages):
+    def mock_low_tokens(_: Iterable[MessageLikeRepresentation]) -> int:
         return 100
 
     middleware.token_counter = mock_low_tokens
 
     # Should not trigger - neither condition met
-    messages = [HumanMessage(content=str(i)) for i in range(5)]
-    state = {"messages": messages}
-    result = middleware.before_model(state, None)
+    messages: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(5)]
+    state = AgentState[Any](messages=messages)
+    result = middleware.before_model(state, Runtime())
     assert result is None
 
     # Should trigger - message count threshold met
     messages = [HumanMessage(content=str(i)) for i in range(10)]
-    state = {"messages": messages}
-    result = middleware.before_model(state, None)
+    state = AgentState[Any](messages=messages)
+    result = middleware.before_model(state, Runtime())
     assert result is not None
 
     # Test token trigger
-    def mock_high_tokens(messages):
+    def mock_high_tokens(_: Iterable[MessageLikeRepresentation]) -> int:
         return 600
 
     middleware.token_counter = mock_high_tokens
     messages = [HumanMessage(content=str(i)) for i in range(5)]
-    state = {"messages": messages}
-    result = middleware.before_model(state, None)
+    state = AgentState[Any](messages=messages)
+    result = middleware.before_model(state, Runtime())
     assert result is not None
 
 
@@ -557,11 +643,18 @@ def test_summarization_middleware_profile_edge_cases() -> None:
     """Test profile retrieval with various edge cases."""
 
     class NoProfileModel(BaseChatModel):
-        def _generate(self, messages, **kwargs):
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
         @property
-        def _llm_type(self):
+        def _llm_type(self) -> str:
             return "mock"
 
     # Model without profile attribute
@@ -569,48 +662,70 @@ def test_summarization_middleware_profile_edge_cases() -> None:
     assert middleware._get_profile_limits() is None
 
     class InvalidProfileModel(BaseChatModel):
-        def _generate(self, messages, **kwargs):
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
         @property
-        def _llm_type(self):
+        def _llm_type(self) -> str:
             return "mock"
 
-        @property
-        def profile(self):
-            return "invalid_profile_type"
+        # NOTE: Using __getattribute__ because @property cannot override Pydantic fields.
+        def __getattribute__(self, name: str) -> Any:
+            if name == "profile":
+                return "invalid_profile_type"
+            return super().__getattribute__(name)
 
     # Model with non-dict profile
     middleware = SummarizationMiddleware(model=InvalidProfileModel(), trigger=("messages", 5))
     assert middleware._get_profile_limits() is None
 
     class MissingTokensModel(BaseChatModel):
-        def _generate(self, messages, **kwargs):
+        profile: ModelProfile | None = Field(default=ModelProfile(other_field=100), exclude=True)  # type: ignore[typeddict-unknown-key]
+
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
         @property
-        def _llm_type(self):
+        def _llm_type(self) -> str:
             return "mock"
-
-        @property
-        def profile(self):
-            return {"other_field": 100}
 
     # Model with profile but no max_input_tokens
     middleware = SummarizationMiddleware(model=MissingTokensModel(), trigger=("messages", 5))
     assert middleware._get_profile_limits() is None
 
     class InvalidTokenTypeModel(BaseChatModel):
-        def _generate(self, messages, **kwargs):
+        profile: ModelProfile | None = Field(
+            default=ModelProfile(max_input_tokens="not_an_int"),  # type: ignore[typeddict-item]
+            exclude=True,
+        )
+
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
         @property
-        def _llm_type(self):
+        def _llm_type(self) -> str:
             return "mock"
-
-        @property
-        def profile(self):
-            return {"max_input_tokens": "not_an_int"}
 
     # Model with non-int max_input_tokens
     middleware = SummarizationMiddleware(model=InvalidTokenTypeModel(), trigger=("messages", 5))
@@ -622,14 +737,14 @@ def test_summarization_middleware_trim_messages_error_fallback() -> None:
     middleware = SummarizationMiddleware(model=MockChatModel(), trigger=("messages", 5))
 
     # Create a mock token counter that raises an exception
-    def failing_token_counter(messages):
+    def failing_token_counter(_: Iterable[MessageLikeRepresentation]) -> int:
         msg = "Token counting failed"
         raise ValueError(msg)
 
     middleware.token_counter = failing_token_counter
 
     # Should fall back to last 15 messages
-    messages = [HumanMessage(content=str(i)) for i in range(20)]
+    messages: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(20)]
     trimmed = middleware._trim_messages_for_summary(messages)
     assert len(trimmed) == 15
     assert trimmed == messages[-15:]
@@ -642,12 +757,12 @@ def test_summarization_middleware_binary_search_edge_cases() -> None:
     )
 
     # Test with single message that's too large
-    def token_counter_single_large(messages):
-        return len(messages) * 200
+    def token_counter_single_large(messages: Iterable[MessageLikeRepresentation]) -> int:
+        return len(list(messages)) * 200
 
     middleware.token_counter = token_counter_single_large
 
-    single_message = [HumanMessage(content="x" * 200)]
+    single_message: list[AnyMessage] = [HumanMessage(content="x" * 200)]
     cutoff = middleware._find_token_based_cutoff(single_message)
     assert cutoff == 0
 
@@ -656,17 +771,17 @@ def test_summarization_middleware_binary_search_edge_cases() -> None:
     assert cutoff == 0
 
     # Test when all messages fit within token budget
-    def token_counter_small(messages):
-        return len(messages) * 10
+    def token_counter_small(messages: Iterable[MessageLikeRepresentation]) -> int:
+        return len(list(messages)) * 10
 
     middleware.token_counter = token_counter_small
-    messages = [HumanMessage(content=str(i)) for i in range(5)]
+    messages: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(5)]
     cutoff = middleware._find_token_based_cutoff(messages)
     assert cutoff == 0
 
 
 def test_summarization_middleware_find_safe_cutoff_point() -> None:
-    """Test _find_safe_cutoff_point finds safe cutoff past ToolMessages."""
+    """Test `_find_safe_cutoff_point` preserves AI/Tool message pairs."""
     model = FakeToolCallingModel()
     middleware = SummarizationMiddleware(
         model=model, trigger=("messages", 10), keep=("messages", 2)
@@ -676,7 +791,7 @@ def test_summarization_middleware_find_safe_cutoff_point() -> None:
         HumanMessage(content="msg1"),
         AIMessage(content="ai", tool_calls=[{"name": "tool", "args": {}, "id": "call1"}]),
         ToolMessage(content="result1", tool_call_id="call1"),
-        ToolMessage(content="result2", tool_call_id="call2"),
+        ToolMessage(content="result2", tool_call_id="call2"),  # orphan - no matching AI
         HumanMessage(content="msg2"),
     ]
 
@@ -684,8 +799,14 @@ def test_summarization_middleware_find_safe_cutoff_point() -> None:
     assert middleware._find_safe_cutoff_point(messages, 0) == 0
     assert middleware._find_safe_cutoff_point(messages, 1) == 1
 
-    # Starting at a ToolMessage advances to the next non-ToolMessage
-    assert middleware._find_safe_cutoff_point(messages, 2) == 4
+    # Starting at ToolMessage with matching AIMessage moves back to include it
+    # ToolMessage at index 2 has tool_call_id="call1" which matches AIMessage at index 1
+    assert middleware._find_safe_cutoff_point(messages, 2) == 1
+
+    # Starting at orphan ToolMessage (no matching AIMessage) falls back to advancing
+    # ToolMessage at index 3 has tool_call_id="call2" with no matching AIMessage
+    # Since we only collect from cutoff_index onwards, only {call2} is collected
+    # No match found, so we fall back to advancing past ToolMessages
     assert middleware._find_safe_cutoff_point(messages, 3) == 4
 
     # Starting at the HumanMessage after tools returns that index
@@ -699,6 +820,65 @@ def test_summarization_middleware_find_safe_cutoff_point() -> None:
     assert middleware._find_safe_cutoff_point(messages, len(messages) + 5) == len(messages) + 5
 
 
+def test_summarization_middleware_find_safe_cutoff_point_orphan_tool() -> None:
+    """Test `_find_safe_cutoff_point` with truly orphan `ToolMessage` (no matching `AIMessage`)."""
+    model = FakeToolCallingModel()
+    middleware = SummarizationMiddleware(
+        model=model, trigger=("messages", 10), keep=("messages", 2)
+    )
+
+    # Messages where ToolMessage has no matching AIMessage at all
+    messages: list[AnyMessage] = [
+        HumanMessage(content="msg1"),
+        AIMessage(content="ai_no_tools"),  # No tool_calls
+        ToolMessage(content="orphan_result", tool_call_id="orphan_call"),
+        HumanMessage(content="msg2"),
+    ]
+
+    # Starting at orphan ToolMessage falls back to advancing forward
+    assert middleware._find_safe_cutoff_point(messages, 2) == 3
+
+
+def test_summarization_cutoff_moves_backward_to_include_ai_message() -> None:
+    """Test that cutoff moves backward to include `AIMessage` with its `ToolMessage`s.
+
+    Previously, when the cutoff landed on a `ToolMessage`, the code would advance
+    FORWARD past all `ToolMessage`s. This could result in orphaned `ToolMessage`s (kept
+    without their `AIMessage`) or aggressive summarization that removed AI/Tool pairs.
+
+    The fix searches backward from a `ToolMessage` to find the `AIMessage` with matching
+    `tool_calls`, ensuring the pair stays together in the preserved messages.
+    """
+    model = FakeToolCallingModel()
+    middleware = SummarizationMiddleware(
+        model=model, trigger=("messages", 10), keep=("messages", 2)
+    )
+
+    # Scenario: cutoff lands on ToolMessage that has a matching AIMessage before it
+    messages: list[AnyMessage] = [
+        HumanMessage(content="initial question"),  # index 0
+        AIMessage(
+            content="I'll use a tool",
+            tool_calls=[{"name": "search", "args": {"q": "test"}, "id": "call_abc"}],
+        ),  # index 1
+        ToolMessage(content="search result", tool_call_id="call_abc"),  # index 2
+        HumanMessage(content="followup"),  # index 3
+    ]
+
+    # When cutoff is at index 2 (ToolMessage), it should move BACKWARD to index 1
+    # to include the AIMessage that generated the tool call
+    result = middleware._find_safe_cutoff_point(messages, 2)
+
+    assert result == 1, (
+        f"Expected cutoff to move backward to index 1 (AIMessage), got {result}. "
+        "The cutoff should preserve AI/Tool pairs together."
+    )
+
+    assert isinstance(messages[result], AIMessage)
+    assert messages[result].tool_calls  # type: ignore[union-attr]
+    assert messages[result].tool_calls[0]["id"] == "call_abc"  # type: ignore[union-attr]
+
+
 def test_summarization_middleware_zero_and_negative_target_tokens() -> None:
     """Test handling of edge cases with target token calculations."""
     # Test with very small fraction that rounds to zero
@@ -707,11 +887,11 @@ def test_summarization_middleware_zero_and_negative_target_tokens() -> None:
     )
 
     # Should set threshold to 1 when calculated value is <= 0
-    messages = [HumanMessage(content="test")]
+    messages: list[AnyMessage] = [HumanMessage(content="test")]
 
     # The trigger fraction calculation: int(1000 * 0.0001) = 0, but should be set to 1
     # Token count of 1 message should exceed threshold of 1
-    def token_counter(msgs):
+    def token_counter(_: Iterable[MessageLikeRepresentation]) -> int:
         return 2
 
     middleware.token_counter = token_counter
@@ -722,19 +902,33 @@ async def test_summarization_middleware_async_error_handling() -> None:
     """Test async summary creation with errors."""
 
     class ErrorAsyncModel(BaseChatModel):
-        def _generate(self, messages, **kwargs):
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
-        async def _agenerate(self, messages, **kwargs):
+        @override
+        async def _agenerate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: AsyncCallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
             msg = "Async model error"
             raise ValueError(msg)
 
         @property
-        def _llm_type(self):
+        def _llm_type(self) -> str:
             return "mock"
 
     middleware = SummarizationMiddleware(model=ErrorAsyncModel(), trigger=("messages", 5))
-    messages = [HumanMessage(content="test")]
+    messages: list[AnyMessage] = [HumanMessage(content="test")]
     summary = await middleware._acreate_summary(messages)
     assert "Error generating summary: Async model error" in summary
 
@@ -746,7 +940,7 @@ def test_summarization_middleware_cutoff_at_boundary() -> None:
     )
 
     # When we want to keep exactly as many messages as we have
-    messages = [HumanMessage(content=str(i)) for i in range(5)]
+    messages: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(5)]
     cutoff = middleware._find_safe_cutoff(messages, 5)
     assert cutoff == 0  # Should not cut anything
 
@@ -781,19 +975,14 @@ def test_summarization_middleware_fraction_trigger_with_no_profile() -> None:
     )
 
     # Test that when fractional condition can't be evaluated, other triggers still work
-    messages = [HumanMessage(content=str(i)) for i in range(100)]
+    messages: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(100)]
 
     # Mock _get_profile_limits to return None
-    original_method = middleware._get_profile_limits
-    middleware._get_profile_limits = lambda: None
-
-    # Should still trigger based on message count
-    state = {"messages": messages}
-    result = middleware.before_model(state, None)
-    assert result is not None
-
-    # Restore original method
-    middleware._get_profile_limits = original_method
+    with patch.object(middleware, "_get_profile_limits", autospec=True, return_value=None):
+        # Should still trigger based on message count
+        state = AgentState[Any](messages=messages)
+        result = middleware.before_model(state, Runtime())
+        assert result is not None
 
 
 def test_summarization_adjust_token_counts() -> None:
@@ -814,7 +1003,7 @@ def test_summarization_adjust_token_counts() -> None:
 
 
 def test_summarization_middleware_many_parallel_tool_calls_safety() -> None:
-    """Test cutoff safety with many parallel tool calls extending beyond old search range."""
+    """Test cutoff safety preserves AI message with many parallel tool calls."""
     middleware = SummarizationMiddleware(
         model=MockChatModel(), trigger=("messages", 15), keep=("messages", 5)
     )
@@ -826,20 +1015,21 @@ def test_summarization_middleware_many_parallel_tool_calls_safety() -> None:
     ]
     messages: list[AnyMessage] = [human_message, ai_message, *tool_messages]
 
-    # Cutoff at index 7 (a ToolMessage) advances to index 12 (end of messages)
-    assert middleware._find_safe_cutoff_point(messages, 7) == 12
+    # Cutoff at index 7 (a ToolMessage) moves back to index 1 (AIMessage)
+    # to preserve the AI/Tool pair together
+    assert middleware._find_safe_cutoff_point(messages, 7) == 1
 
-    # Any cutoff pointing at a ToolMessage (indices 2-11) advances to index 12
+    # Any cutoff pointing at a ToolMessage (indices 2-11) moves back to index 1
     for i in range(2, 12):
-        assert middleware._find_safe_cutoff_point(messages, i) == 12
+        assert middleware._find_safe_cutoff_point(messages, i) == 1
 
     # Cutoff at index 0, 1 (before tool messages) stays the same
     assert middleware._find_safe_cutoff_point(messages, 0) == 0
     assert middleware._find_safe_cutoff_point(messages, 1) == 1
 
 
-def test_summarization_middleware_find_safe_cutoff_advances_past_tools() -> None:
-    """Test _find_safe_cutoff advances past ToolMessages to find safe cutoff."""
+def test_summarization_middleware_find_safe_cutoff_preserves_ai_tool_pair() -> None:
+    """Test `_find_safe_cutoff` preserves AI/Tool message pairs together."""
     middleware = SummarizationMiddleware(
         model=MockChatModel(), trigger=("messages", 10), keep=("messages", 3)
     )
@@ -862,15 +1052,15 @@ def test_summarization_middleware_find_safe_cutoff_advances_past_tools() -> None
     ]
 
     # Target cutoff index is len(messages) - messages_to_keep = 6 - 3 = 3
-    # Index 3 is a ToolMessage, so we advance past the tool sequence to index 5
+    # Index 3 is a ToolMessage, we move back to index 1 to include AIMessage
     cutoff = middleware._find_safe_cutoff(messages, messages_to_keep=3)
-    assert cutoff == 5
+    assert cutoff == 1
 
     # With messages_to_keep=2, target cutoff index is 6 - 2 = 4
-    # Index 4 is a ToolMessage, so we advance past the tool sequence to index 5
-    # This is aggressive - we keep only 1 message instead of 2
+    # Index 4 is a ToolMessage, we move back to index 1 to include AIMessage
+    # This preserves the AI + Tools + Human, more than requested but valid
     cutoff = middleware._find_safe_cutoff(messages, messages_to_keep=2)
-    assert cutoff == 5
+    assert cutoff == 1
 
 
 def test_summarization_middleware_cutoff_at_start_of_tool_sequence() -> None:
@@ -947,3 +1137,150 @@ def test_create_summary_uses_get_buffer_string_format() -> None:
         f"str(messages) should produce significantly more tokens. "
         f"Got ratio {str_ratio:.2f}x (expected > 1.5)"
     )
+
+
+@pytest.mark.requires("langchain_anthropic")
+def test_usage_metadata_trigger() -> None:
+    model = init_chat_model("anthropic:claude-sonnet-4-5")
+    middleware = SummarizationMiddleware(
+        model=model, trigger=("tokens", 10_000), keep=("messages", 4)
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="msg1"),
+        AIMessage(
+            content="msg2",
+            tool_calls=[{"name": "tool", "args": {}, "id": "call1"}],
+            response_metadata={"model_provider": "anthropic"},
+            usage_metadata={
+                "input_tokens": 5000,
+                "output_tokens": 1000,
+                "total_tokens": 6000,
+            },
+        ),
+        ToolMessage(content="result", tool_call_id="call1"),
+        AIMessage(
+            content="msg3",
+            response_metadata={"model_provider": "anthropic"},
+            usage_metadata={
+                "input_tokens": 6100,
+                "output_tokens": 900,
+                "total_tokens": 7000,
+            },
+        ),
+        HumanMessage(content="msg4"),
+        AIMessage(
+            content="msg5",
+            response_metadata={"model_provider": "anthropic"},
+            usage_metadata={
+                "input_tokens": 7500,
+                "output_tokens": 2501,
+                "total_tokens": 10_001,
+            },
+        ),
+    ]
+    # reported token count should override count of zero
+    assert middleware._should_summarize(messages, 0)
+
+    # don't engage unless model provider matches
+    messages.extend(
+        [
+            HumanMessage(content="msg6"),
+            AIMessage(
+                content="msg7",
+                response_metadata={"model_provider": "not-anthropic"},
+                usage_metadata={
+                    "input_tokens": 7500,
+                    "output_tokens": 2501,
+                    "total_tokens": 10_001,
+                },
+            ),
+        ]
+    )
+    assert not middleware._should_summarize(messages, 0)
+
+    # don't engage if subsequent message stays under threshold (e.g., after summarization)
+    messages.extend(
+        [
+            HumanMessage(content="msg8"),
+            AIMessage(
+                content="msg9",
+                response_metadata={"model_provider": "anthropic"},
+                usage_metadata={
+                    "input_tokens": 7500,
+                    "output_tokens": 2499,
+                    "total_tokens": 9999,
+                },
+            ),
+        ]
+    )
+    assert not middleware._should_summarize(messages, 0)
+
+
+class ConfigCapturingModel(BaseChatModel):
+    """Mock model that captures the config passed to invoke/ainvoke."""
+
+    captured_configs: list[RunnableConfig | None] = Field(default_factory=list, exclude=True)
+
+    @override
+    def invoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_configs.append(config)
+        return AIMessage(content="Summary")
+
+    @override
+    async def ainvoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_configs.append(config)
+        return AIMessage(content="Summary")
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+    @property
+    def _llm_type(self) -> str:
+        return "config-capturing"
+
+
+@pytest.mark.parametrize("use_async", [False, True], ids=["sync", "async"])
+async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None:  # noqa: FBT001
+    """Test that summary creation passes `lc_source` metadata to the model.
+
+    When called outside a LangGraph runnable context, `get_config()` raises
+    `RuntimeError`. The middleware catches this and still passes the `lc_source`
+    metadata to the model.
+    """
+    model = ConfigCapturingModel()
+    model.captured_configs = []  # Reset for this test
+    middleware = SummarizationMiddleware(model=model, trigger=("tokens", 1000))
+    messages: list[AnyMessage] = [HumanMessage(content="Hello"), AIMessage(content="Hi")]
+
+    if use_async:
+        summary = await middleware._acreate_summary(messages)
+    else:
+        summary = middleware._create_summary(messages)
+
+    assert summary == "Summary"
+    assert len(model.captured_configs) == 1
+    config = model.captured_configs[0]
+    assert config is not None
+    assert "metadata" in config
+    assert config["metadata"]["lc_source"] == "summarization"
