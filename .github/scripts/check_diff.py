@@ -154,13 +154,17 @@ def _get_pydantic_test_configs(
             core_max_pydantic_minor = package["version"].split(".")[1]
             break
 
-    with open(f"./{dir_}/uv.lock", "rb") as f:
-        dir_uv_lock_data = tomllib.load(f)
+    if os.path.exists(f"./{dir_}/uv.lock"):
+        with open(f"./{dir_}/uv.lock", "rb") as f:
+            dir_uv_lock_data = tomllib.load(f)
 
-    for package in dir_uv_lock_data["package"]:
-        if package["name"] == "pydantic":
-            dir_max_pydantic_minor = package["version"].split(".")[1]
-            break
+        for package in dir_uv_lock_data["package"]:
+            if package["name"] == "pydantic":
+                dir_max_pydantic_minor = package["version"].split(".")[1]
+                break
+    else:
+        # Default if no lock file exists
+        dir_max_pydantic_minor = "10"
 
     core_min_pydantic_version = get_min_version_from_toml(
         "./libs/core/pyproject.toml", "release", python_version, include=["pydantic"]
