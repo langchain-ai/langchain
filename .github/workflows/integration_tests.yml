@@ -1,8 +1,8 @@
 # Routine integration tests against partner libraries with live API credentials.
 #
-# Uses `make integration_tests` for each library in the matrix.
+# Uses `make integration_tests` within each library being tested.
 #
-# Runs daily. Can also be triggered manually for immediate updates.
+# Runs daily with the option to trigger manually.
 
 name: "⏰ Integration Tests"
 run-name: "Run Integration Tests - ${{ inputs.working-directory-force || 'all libs' }} (Python ${{ inputs.python-version-force || '3.10, 3.13' }})"
@@ -24,17 +24,29 @@ permissions:
 
 env:
   UV_FROZEN: "true"
-  DEFAULT_LIBS: '["libs/partners/openai", "libs/partners/anthropic", "libs/partners/fireworks", "libs/partners/groq", "libs/partners/mistralai", "libs/partners/xai", "libs/partners/google-vertexai", "libs/partners/google-genai", "libs/partners/aws"]'
+  DEFAULT_LIBS: >-
+    ["libs/partners/openai",
+    "libs/partners/anthropic",
+    "libs/partners/fireworks",
+    "libs/partners/groq",
+    "libs/partners/mistralai",
+    "libs/partners/xai",
+    "libs/partners/google-vertexai",
+    "libs/partners/google-genai",
+    "libs/partners/aws"]
 
 jobs:
   # Generate dynamic test matrix based on input parameters or defaults
   # Only runs on the main repo (for scheduled runs) or when manually triggered
   compute-matrix:
+    # Defend against forks running scheduled jobs, but allow manual runs from forks
     if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
+
     runs-on: ubuntu-latest
     name: "📋 Compute Test Matrix"
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      python-version-min-3-11: ${{ steps.set-matrix.outputs.python-version-min-3-11 }}
     steps:
       - name: "🔢 Generate Python & Library Matrix"
         id: set-matrix
@@ -47,9 +59,16 @@ jobs:
           # python-version should default to 3.10 and 3.13, but is overridden to [PYTHON_VERSION_FORCE] if set
           # working-directory should default to DEFAULT_LIBS, but is overridden to [WORKING_DIRECTORY_FORCE] if set
           python_version='["3.10", "3.13"]'
+          python_version_min_3_11='["3.11", "3.13"]'
           working_directory="$DEFAULT_LIBS"
           if [ -n "$PYTHON_VERSION_FORCE" ]; then
             python_version="[\"$PYTHON_VERSION_FORCE\"]"
+            # Bound forced version to >= 3.11 for packages requiring it
+            if [ "$(echo "$PYTHON_VERSION_FORCE >= 3.11" | bc -l)" -eq 1 ]; then
+              python_version_min_3_11="[\"$PYTHON_VERSION_FORCE\"]"
+            else
+              python_version_min_3_11='["3.11"]'
+            fi
           fi
           if [ -n "$WORKING_DIRECTORY_FORCE" ]; then
             working_directory="[\"$WORKING_DIRECTORY_FORCE\"]"
@@ -57,8 +76,10 @@ jobs:
           matrix="{\"python-version\": $python_version, \"working-directory\": $working_directory}"
           echo $matrix
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
+          echo "python-version-min-3-11=$python_version_min_3_11" >> $GITHUB_OUTPUT
+
   # Run integration tests against partner libraries with live API credentials
-  build:
+  integration-tests:
     if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
     name: "🐍 Python ${{ matrix.python-version }}: ${{ matrix.working-directory }}"
     runs-on: ubuntu-latest
@@ -74,15 +95,27 @@ jobs:
       - uses: actions/checkout@v6
         with:
           path: langchain
+
+      # These libraries exist outside of the monorepo and need to be checked out separately
       - uses: actions/checkout@v6
         with:
           repository: langchain-ai/langchain-google
           path: langchain-google
+      - name: "🔐 Authenticate to Google Cloud"
+        id: "auth"
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: "${{ secrets.GOOGLE_CREDENTIALS }}"
       - uses: actions/checkout@v6
         with:
           repository: langchain-ai/langchain-aws
           path: langchain-aws
-
+      - name: "🔐 Configure AWS Credentials"
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
       - name: "📦 Organize External Libraries"
         run: |
           rm -rf \
@@ -97,27 +130,27 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: "🔐 Authenticate to Google Cloud"
-        id: "auth"
-        uses: google-github-actions/auth@v3
-        with:
-          credentials_json: "${{ secrets.GOOGLE_CREDENTIALS }}"
-
-      - name: "🔐 Configure AWS Credentials"
-        uses: aws-actions/configure-aws-credentials@v5
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
       - name: "📦 Install Dependencies"
+        # Partner packages use [tool.uv.sources] in their pyproject.toml to resolve
+        # langchain-core/langchain to local editable installs, so `uv sync` automatically
+        # tests against the versions from the current branch (not published releases).
+
+        # TODO: external google/aws don't have local resolution since they live in
+        # separate repos, so they pull `core`/`langchain_v1` from PyPI. We should update
+        # their dev groups to use git source dependencies pointing to the current
+        # branch's latest commit SHA to fully test against local langchain changes.
         run: |
           echo "Running scheduled tests, installing dependencies with uv..."
           cd langchain/${{ matrix.working-directory }}
           uv sync --group test --group test_integration
 
       - name: "🚀 Run Integration Tests"
+        # WARNING: All secrets below are available to every matrix job regardless of
+        # which package is being tested. This is intentional for simplicity, but means
+        # any test file could technically access any key. Only use for trusted code.
         env:
+          LANGCHAIN_TESTS_USER_AGENT: ${{ secrets.LANGCHAIN_TESTS_USER_AGENT }}
+
           AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
@@ -155,7 +188,6 @@ jobs:
           WATSONX_APIKEY: ${{ secrets.WATSONX_APIKEY }}
           WATSONX_PROJECT_ID: ${{ secrets.WATSONX_PROJECT_ID }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
-          LANGCHAIN_TESTS_USER_AGENT: ${{ secrets.LANGCHAIN_TESTS_USER_AGENT }}
         run: |
           cd langchain/${{ matrix.working-directory }}
           make integration_tests
@@ -179,3 +211,59 @@ jobs:
           # grep will exit non-zero if the target message isn't found,
           # and `set -e` above will cause the step to fail.
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
+
+  # Test dependent packages against local packages to catch breaking changes
+  test-dependents:
+    # Defend against forks running scheduled jobs, but allow manual runs from forks
+    if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
+
+    name: "🐍 Python ${{ matrix.python-version }}: ${{ matrix.package.path }}"
+    runs-on: ubuntu-latest
+    needs: [compute-matrix]
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # deepagents requires Python >= 3.11, use bounded version from compute-matrix
+        python-version: ${{ fromJSON(needs.compute-matrix.outputs.python-version-min-3-11) }}
+        package:
+          - name: deepagents
+            repo: langchain-ai/deepagents
+            path: libs/deepagents
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: langchain
+
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ matrix.package.repo }}
+          path: ${{ matrix.package.name }}
+
+      - name: "🐍 Set up Python ${{ matrix.python-version }} + UV"
+        uses: "./langchain/.github/actions/uv_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: "📦 Install ${{ matrix.package.name }} with Local"
+        # Unlike partner packages (which use [tool.uv.sources] for local resolution),
+        # external dependents live in separate repos and need explicit overrides to
+        # test against the langchain versions from the current branch, as their
+        # pyproject.toml files point to released versions.
+        run: |
+          cd ${{ matrix.package.name }}/${{ matrix.package.path }}
+
+          # Install the package with test dependencies
+          uv sync --group test
+
+          # Override langchain packages with local versions
+          uv pip install \
+            -e $GITHUB_WORKSPACE/langchain/libs/core \
+            -e $GITHUB_WORKSPACE/langchain/libs/langchain_v1
+
+      # No API keys needed for now - deepagents `make test` only runs unit tests
+      - name: "🚀 Run ${{ matrix.package.name }} Tests"
+        run: |
+          cd ${{ matrix.package.name }}/${{ matrix.package.path }}
+          make test
