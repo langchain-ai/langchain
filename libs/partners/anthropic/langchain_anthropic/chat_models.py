@@ -836,12 +836,12 @@ class ChatAnthropic(BaseChatModel):
         )
         ```
 
-    !!! example "custom timeout does not override default_request_timeout"
+    !!! example "setting timeout twice (raises validation error)"
         ```python
         llm = ChatAnthropic(
             model="claude-sonnet-4-5-20250929",
             default_request_timeout=10,
-            client_args={"timeout": 5},  # This will be overridden to 10
+            client_args={"timeout": 5},  # This will raise a validation error
         )
         ```
 
