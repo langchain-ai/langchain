@@ -824,8 +824,9 @@ class ChatAnthropic(BaseChatModel):
 
     Applied to both sync and async clients.
 
-    These will be superseded by any arguments passed directly in this class's
-    constructor.
+    An exception is raised if there is overlap between parameters passed here
+    and those set via other ChatAnthropic parameters (e.g., `timeout`, and
+    `base_url`) either default or user-specified.
 
     !!! example "custom CA bundle"
 

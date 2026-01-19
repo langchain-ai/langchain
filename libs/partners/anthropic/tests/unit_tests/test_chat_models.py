@@ -1268,9 +1268,9 @@ def test_anthropic_client_args_passed_correctly() -> None:
     chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
         model=MODEL_NAME,
         anthropic_api_key="secret-api-key",
-        client_args={"base_url": "https://custom-anthropic.com"},
+        client_args={"transport": "custom-transport"},
     )
-    assert chat_model._client._client.base_url == "https://custom-anthropic.com"
+    assert chat_model._client._client._transport == "custom-transport"
 
 
 def test_anthropic_raises_error_on_conflicting_client_args() -> None:
