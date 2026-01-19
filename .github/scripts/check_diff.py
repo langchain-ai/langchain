@@ -31,6 +31,7 @@ LANGCHAIN_DIRS = [
     "libs/langchain",
     "libs/langchain_v1",
     "libs/model-profiles",
+    "libs/community",
 ]
 
 # When set to True, we are ignoring core dependents
