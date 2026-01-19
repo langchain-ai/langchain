@@ -9,10 +9,10 @@ license = { text = "MIT" }
 readme = "README.md"
 authors = []
 
-version = "1.2.3"
+version = "1.2.6"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.1,<2.0.0",
+    "langchain-core>=1.2.7,<2.0.0",
     "langgraph>=1.0.2,<1.1.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
@@ -41,7 +41,7 @@ Homepage = "https://docs.langchain.com/"
 Documentation = "https://reference.langchain.com/python/langchain/langchain/"
 Source = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain%3D%3D1%22"
-Twitter = "https://x.com/LangChainAI"
+Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
