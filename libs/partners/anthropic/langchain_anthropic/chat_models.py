@@ -820,18 +820,31 @@ class ChatAnthropic(BaseChatModel):
     """Headers to pass to the Anthropic clients, will be used for every API call."""
 
     client_args: dict[str, Any] | None = Field(default=None)
-    """Additional arguments to pass to the underlying Anthropic client.
+    """Additional arguments to pass to the underlying httpx client.
 
     Applied to both sync and async clients.
 
-    !!! example "custom HTTP client"
+    These will be superseded by any arguments passed directly in this class's
+    constructor.
+
+    !!! example "custom CA bundle"
 
         ```python
         llm = ChatAnthropic(
             model="claude-sonnet-4-5-20250929",
-            client_args={"http_client": httpx.Client(timeout=10.0)},
+            client_args={"verify": "/path/to/ca-bundle.crt"},
         )
         ```
+
+    !!! example "custom timeout does not override default_request_timeout"
+        ```python
+        llm = ChatAnthropic(
+            model="claude-sonnet-4-5-20250929",
+            default_request_timeout=10,
+            client_args={"timeout": 5},  # This will be overridden to 10
+        )
+        ```
+
     """
 
     betas: list[str] | None = None
@@ -999,6 +1012,22 @@ class ChatAnthropic(BaseChatModel):
             self.profile = _get_default_model_profile(self.model)
         return self
 
+    @model_validator(mode="after")
+    def _validate_client_args(self) -> Self:
+        """Validate client_args do not conflict with existing params."""
+        if self.client_args:
+            overlapping_keys = set(self._client_params).intersection(self.client_args)
+            if overlapping_keys:
+                msg = f"Conflicting keys found between client_args: {overlapping_keys}"
+                raise ValueError(msg)
+            if "proxy" in self.client_args and self.anthropic_proxy:
+                msg = (
+                    "Conflicting keys found between client_args 'proxy' and "
+                    "ChatAnthropic parameters: 'anthropic_proxy'"
+                )
+                raise ValueError(msg)
+        return self
+
     @cached_property
     def _client_params(self) -> dict[str, Any]:
         client_params: dict[str, Any] = {
@@ -1018,14 +1047,13 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _client(self) -> anthropic.Client:
         client_params = self._client_params
-        http_client_params = {
-            "base_url": client_params["base_url"],
-            **(self.client_args or {}),
-        }
+        http_client_params = {"base_url": client_params["base_url"]}
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
         if self.anthropic_proxy:
             http_client_params["anthropic_proxy"] = self.anthropic_proxy
+        if self.client_args:
+            http_client_params.update(self.client_args)
         http_client = _get_default_httpx_client(**http_client_params)
         params = {
             **client_params,
@@ -1036,14 +1064,13 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _async_client(self) -> anthropic.AsyncClient:
         client_params = self._client_params
-        http_client_params = {
-            "base_url": client_params["base_url"],
-            **(self.client_args or {}),
-        }
+        http_client_params = {"base_url": client_params["base_url"]}
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
         if self.anthropic_proxy:
             http_client_params["anthropic_proxy"] = self.anthropic_proxy
+        if self.client_args:
+            http_client_params.update(self.client_args)
         http_client = _get_default_async_httpx_client(**http_client_params)
         params = {
             **client_params,
