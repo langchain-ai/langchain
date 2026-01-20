@@ -1078,8 +1078,12 @@ def create_agent(
                     )
                     raise ValueError(msg)
 
-            # Force tool use if we have structured output tools
-            tool_choice = "any" if structured_output_tools else request.tool_choice
+            # Force tool use if we have structured output tools and force_tool_choice is True
+            # When force_tool_choice=False, allow model to generate natural text before tool calls
+            if structured_output_tools and effective_response_format.force_tool_choice:
+                tool_choice = "any"
+            else:
+                tool_choice = request.tool_choice
             return (
                 request.model.bind_tools(
                     final_tools, tool_choice=tool_choice, **request.model_settings

@@ -216,6 +216,17 @@ class ToolStrategy(Generic[SchemaT]):
     - `False`: No retry, let exceptions propagate
     """
 
+    force_tool_choice: bool
+    """Whether to force immediate tool call by setting tool_choice='any'.
+
+    - `True` (default): Forces model to call a structured output tool immediately,
+        which ensures structured output but prevents natural explanatory text before
+        the tool call during streaming.
+    - `False`: Allows model to generate natural text before calling tools, enabling
+        a more conversational streaming experience. Note: This reduces the guarantee
+        that the model will return structured output on the first response.
+    """
+
     def __init__(
         self,
         schema: type[SchemaT] | UnionType | dict[str, Any],
@@ -226,15 +237,25 @@ class ToolStrategy(Generic[SchemaT]):
         | type[Exception]
         | tuple[type[Exception], ...]
         | Callable[[Exception], str] = True,
+        force_tool_choice: bool = True,
     ) -> None:
         """Initialize `ToolStrategy`.
 
-        Initialize `ToolStrategy` with schemas, tool message content, and error handling
-        strategy.
+        Initialize `ToolStrategy` with schemas, tool message content, error handling
+        strategy, and tool choice behavior.
+
+        Args:
+            schema: Schema for the tool calls.
+            tool_message_content: Optional content for the tool message returned when
+                the model calls a structured output tool.
+            handle_errors: Error handling strategy for structured output failures.
+            force_tool_choice: Whether to force immediate tool call by setting
+                tool_choice='any'. Defaults to True for backward compatibility.
         """
         self.schema = schema
         self.tool_message_content = tool_message_content
         self.handle_errors = handle_errors
+        self.force_tool_choice = force_tool_choice
 
         def _iter_variants(schema: Any) -> Iterable[Any]:
             """Yield leaf variants from Union and JSON Schema oneOf."""
