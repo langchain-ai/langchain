@@ -65,7 +65,13 @@ class TestForceToolChoice:
         """Test that force_tool_choice=True explicitly forces immediate tool call."""
         tool_calls = [
             [{"args": {}, "id": "1", "name": "get_weather"}],
-            [{"name": "WeatherResponse", "id": "2", "args": {"temperature": 75.0, "condition": "sunny"}}]
+            [
+                {
+                    "name": "WeatherResponse",
+                    "id": "2",
+                    "args": {"temperature": 75.0, "condition": "sunny"},
+                }
+            ]
         ]
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
@@ -82,17 +88,22 @@ class TestForceToolChoice:
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         # Should get structured response
-        assert response["structured_response"] == WeatherResponse(temperature=75.0, condition="sunny")
+        assert response["structured_response"] == WeatherResponse(
+            temperature=75.0, condition="sunny"
+        )
 
     def test_force_tool_choice_false_allows_flexibility(self) -> None:
-        """
-        Test that force_tool_choice=False allows model to respond
-        without forcing tool call.
-        """
+        """Test that force_tool_choice=False allows model flexibility."""
         # Simulate model that might return text first or skip structured output
         tool_calls = [
             [{"args": {}, "id": "1", "name": "get_weather"}],
-            [{"name": "WeatherResponse", "id": "2", "args": {"temperature": 75.0, "condition": "sunny"}}]
+            [
+                {
+                    "name": "WeatherResponse",
+                    "id": "2",
+                    "args": {"temperature": 75.0, "condition": "sunny"},
+                }
+            ]
         ]
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
@@ -109,13 +120,21 @@ class TestForceToolChoice:
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         # Should still get structured response if model chose to call the tool
-        assert response["structured_response"] == WeatherResponse(temperature=75.0, condition="sunny")
+        assert response["structured_response"] == WeatherResponse(
+            temperature=75.0, condition="sunny"
+        )
 
     def test_backward_compatibility(self) -> None:
         """Ensure existing code without force_tool_choice works as before."""
         tool_calls = [
             [{"args": {}, "id": "1", "name": "get_weather"}],
-            [{"name": "WeatherResponse", "id": "2", "args": {"temperature": 75.0, "condition": "sunny"}}]
+            [
+                {
+                    "name": "WeatherResponse",
+                    "id": "2",
+                    "args": {"temperature": 75.0, "condition": "sunny"},
+                }
+            ]
         ]
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
@@ -133,14 +152,22 @@ class TestForceToolChoice:
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         # Should maintain backward compatible behavior
-        assert response["structured_response"] == WeatherResponse(temperature=75.0, condition="sunny")
+        assert response["structured_response"] == WeatherResponse(
+            temperature=75.0, condition="sunny"
+        )
         assert len(response["messages"]) == 5
 
     def test_force_tool_choice_with_handle_errors(self) -> None:
-        """Test that force_tool_choice works alongside handle_errors parameter."""
+        """Test force_tool_choice works with handle_errors parameter."""
         tool_calls = [
             [{"args": {}, "id": "1", "name": "get_weather"}],
-            [{"name": "WeatherResponse", "id": "2", "args": {"temperature": 75.0, "condition": "sunny"}}]
+            [
+                {
+                    "name": "WeatherResponse",
+                    "id": "2",
+                    "args": {"temperature": 75.0, "condition": "sunny"},
+                }
+            ]
         ]
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
@@ -158,4 +185,6 @@ class TestForceToolChoice:
 
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
-        assert response["structured_response"] == WeatherResponse(temperature=75.0, condition="sunny")
+        assert response["structured_response"] == WeatherResponse(
+            temperature=75.0, condition="sunny"
+        )
