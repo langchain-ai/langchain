@@ -1778,3 +1778,217 @@ def test_convert_to_openai_messages_reasoning_content() -> None:
         ],
     }
     assert mixed_result == expected_mixed
+
+
+def test_get_buffer_string_xml_format_basic() -> None:
+    """Test get_buffer_string with XML format for basic messages."""
+    messages = [
+        HumanMessage(content="Hello, world!"),
+        AIMessage(content="Hi there!"),
+        SystemMessage(content="System message"),
+    ]
+    expected = "<human>Hello, world!</human>\n<ai>Hi there!</ai>\n<system>System message</system>"
+    actual = get_buffer_string(messages, format="xml")
+    assert actual == expected
+
+
+def test_get_buffer_string_xml_format_with_special_chars() -> None:
+    """Test get_buffer_string XML format escapes special characters."""
+    messages = [
+        HumanMessage(content="Hello <world> & 'friends'"),
+        AIMessage(content='Response with "quotes" and <tags>'),
+    ]
+    expected = (
+        "<human>Hello &lt;world&gt; &amp; &apos;friends&apos;</human>\n"
+        "<ai>Response with &quot;quotes&quot; and &lt;tags&gt;</ai>"
+    )
+    actual = get_buffer_string(messages, format="xml")
+    assert actual == expected
+
+
+def test_get_buffer_string_xml_format_prevents_ambiguity() -> None:
+    """Test that XML format prevents ambiguity with content containing role names."""
+    messages = [
+        HumanMessage(content="Human: this looks like a message prefix"),
+        AIMessage(content="AI: this also looks like a prefix"),
+    ]
+    # With XML format, the boundaries are clear
+    expected = (
+        "<human>Human: this looks like a message prefix</human>\n"
+        "<ai>AI: this also looks like a prefix</ai>"
+    )
+    actual = get_buffer_string(messages, format="xml")
+    assert actual == expected
+
+    # Verify the content is properly escaped and unambiguous
+    assert "<human>" in actual
+    assert "</human>" in actual
+    assert actual.count("<human>") == 1
+    assert actual.count("</human>") == 1
+
+
+def test_get_buffer_string_xml_format_multiline_content() -> None:
+    """Test XML format with multiline content."""
+    messages = [
+        HumanMessage(content="Line 1\nLine 2\nLine 3"),
+        AIMessage(content="Response line 1\nResponse line 2"),
+    ]
+    expected = (
+        "<human>Line 1\nLine 2\nLine 3</human>\n"
+        "<ai>Response line 1\nResponse line 2</ai>"
+    )
+    actual = get_buffer_string(messages, format="xml")
+    assert actual == expected
+
+
+def test_get_buffer_string_xml_format_with_tool_calls() -> None:
+    """Test get_buffer_string XML format with tool calls."""
+    messages = [
+        HumanMessage(content="What's the weather?"),
+        AIMessage(
+            content="Let me check",
+            tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": {"city": "NYC"},
+                    "id": "call_1",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "<human>What&apos;s the weather?</human>" in result
+    assert "<ai>Let me check<tool_calls>" in result
+    assert "get_weather" in result
+    assert "</tool_calls></ai>" in result
+
+
+def test_get_buffer_string_xml_format_with_function_call() -> None:
+    """Test get_buffer_string XML format with legacy function call."""
+    messages = [
+        AIMessage(
+            content="Calling function",
+            additional_kwargs={
+                "function_call": {
+                    "name": "test_function",
+                    "arguments": '{"arg": "value"}',
+                }
+            },
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "<ai>Calling function<function_call>" in result
+    assert "test_function" in result
+    assert "</function_call></ai>" in result
+
+
+def test_get_buffer_string_xml_format_empty_content() -> None:
+    """Test get_buffer_string XML format with empty content."""
+    messages = [
+        HumanMessage(content=""),
+        AIMessage(content=""),
+        SystemMessage(content=""),
+    ]
+    expected = "<human></human>\n<ai></ai>\n<system></system>"
+    actual = get_buffer_string(messages, format="xml")
+    assert actual == expected
+
+
+def test_get_buffer_string_xml_format_custom_separator() -> None:
+    """Test get_buffer_string XML format with custom message separator."""
+    messages = [
+        HumanMessage(content="Hello"),
+        AIMessage(content="Hi"),
+    ]
+    expected = "<human>Hello</human>\n\n<ai>Hi</ai>"
+    actual = get_buffer_string(messages, format="xml", message_separator="\n\n")
+    assert actual == expected
+
+
+def test_get_buffer_string_xml_format_all_message_types() -> None:
+    """Test get_buffer_string XML format with all message types."""
+    from langchain_core.messages import ChatMessage, FunctionMessage
+
+    messages = [
+        SystemMessage(content="System"),
+        HumanMessage(content="Human"),
+        AIMessage(content="AI"),
+        FunctionMessage(content="Function", name="func"),
+        ToolMessage(content="Tool", tool_call_id="123"),
+        ChatMessage(content="Custom", role="Custom Role"),
+    ]
+    result = get_buffer_string(messages, format="xml")
+
+    assert "<system>System</system>" in result
+    assert "<human>Human</human>" in result
+    assert "<ai>AI</ai>" in result
+    assert "<function>Function</function>" in result
+    assert "<tool>Tool</tool>" in result
+    assert "<custom_role>Custom</custom_role>" in result
+
+
+def test_get_buffer_string_xml_format_structured_content() -> None:
+    """Test get_buffer_string XML format with structured content."""
+    messages = [
+        HumanMessage(content=[{"type": "text", "text": "Hello, world!"}]),
+        AIMessage(content=[{"type": "text", "text": "Hi there!"}]),
+    ]
+    expected = "<human>Hello, world!</human>\n<ai>Hi there!</ai>"
+    actual = get_buffer_string(messages, format="xml")
+    assert actual == expected
+
+
+def test_get_buffer_string_prefix_format_unchanged() -> None:
+    """Test that default prefix format behavior is unchanged."""
+    messages = [
+        HumanMessage(content="Hello"),
+        AIMessage(content="Hi"),
+    ]
+    # Default format should still be prefix
+    result_default = get_buffer_string(messages)
+    result_explicit = get_buffer_string(messages, format="prefix")
+
+    assert result_default == result_explicit
+    assert result_default == "Human: Hello\nAI: Hi"
+    assert "<human>" not in result_default
+
+
+def test_get_buffer_string_xml_format_code_blocks() -> None:
+    """Test XML format with code blocks that might contain special characters."""
+    messages = [
+        HumanMessage(content="Here's some code:\n```python\nif x > 5:\n    print('hello')\n```"),
+        AIMessage(content="Code with <html> tags & special chars"),
+    ]
+    result = get_buffer_string(messages, format="xml")
+
+    # Verify special characters are escaped
+    assert "&gt;" in result
+    assert "&lt;" in result
+    assert "&apos;" in result
+    assert "&amp;" in result
+
+    # Verify structure is maintained
+    assert result.startswith("<human>")
+    assert "</human>" in result
+    assert "<ai>" in result
+    assert result.endswith("</ai>")
+
+
+def test_get_buffer_string_xml_format_nested_conversation() -> None:
+    """Test XML format with content that looks like nested conversations."""
+    messages = [
+        HumanMessage(content="User said: 'Human: I have a question'\nWhat does this mean?"),
+        AIMessage(content="The user is quoting: 'AI: Here is my response'"),
+    ]
+    result = get_buffer_string(messages, format="xml")
+
+    # With XML format, nested conversation patterns are unambiguous
+    assert result.count("<human>") == 1
+    assert result.count("</human>") == 1
+    assert result.count("<ai>") == 1
+    assert result.count("</ai>") == 1
+
+    # The quoted text should be in the content, not parsed as separate messages
+    assert "Human: I have a question" in result
+    assert "AI: Here is my response" in result

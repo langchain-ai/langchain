@@ -103,14 +103,22 @@ def get_buffer_string(
     human_prefix: str = "Human",
     ai_prefix: str = "AI",
     message_separator: str = "\n",
+    *,
+    format: Literal["prefix", "xml"] = "prefix",
 ) -> str:
     r"""Convert a sequence of messages to strings and concatenate them into one string.
 
     Args:
         messages: Messages to be converted to strings.
         human_prefix: The prefix to prepend to contents of `HumanMessage`s.
+            Only used when `format='prefix'`.
         ai_prefix: The prefix to prepend to contents of `AIMessage`.
+            Only used when `format='prefix'`.
         message_separator: The separator to use between messages.
+        format: Output format for messages. Options:
+            - `'prefix'` (default): Uses prefix-based format like `"Human: content"`.
+            - `'xml'`: Uses XML-style tags like `"<human>content</human>"` for
+                clearer message boundaries.
 
     Returns:
         A single string concatenation of all input messages.
@@ -123,9 +131,14 @@ def get_buffer_string(
         and a function call under `additional_kwargs["function_call"]`, only the tool
         calls will be appended to the string representation.
 
+        When using `format='xml'`, message content is automatically escaped to prevent
+        XML injection. Special characters (`<`, `>`, `&`, `'`, `"`) are converted to
+        their XML entity equivalents.
+
     Example:
+        Prefix format (default):
         ```python
-        from langchain_core import AIMessage, HumanMessage
+        from langchain_core.messages import AIMessage, HumanMessage
 
         messages = [
             HumanMessage(content="Hi, how are you?"),
@@ -134,7 +147,23 @@ def get_buffer_string(
         get_buffer_string(messages)
         # -> "Human: Hi, how are you?\nAI: Good, how are you?"
         ```
+
+        XML format:
+        ```python
+        from langchain_core.messages import AIMessage, HumanMessage
+
+        messages = [
+            HumanMessage(content="Hi, how are you?"),
+            AIMessage(content="Good, how are you?"),
+        ]
+        get_buffer_string(messages, format="xml")
+        # -> "<human>Hi, how are you?</human>\n<ai>Good, how are you?</ai>"
+        ```
     """
+    if format == "xml":
+        return _get_buffer_string_xml(messages, message_separator)
+
+    # Original prefix-based format
     string_messages = []
     for m in messages:
         if isinstance(m, HumanMessage):
@@ -161,6 +190,77 @@ def get_buffer_string(
             elif "function_call" in m.additional_kwargs:
                 # Legacy behavior assumes only one function call per message
                 message += f"{m.additional_kwargs['function_call']}"
+
+        string_messages.append(message)
+
+    return message_separator.join(string_messages)
+
+
+def _escape_xml_content(text: str) -> str:
+    """Escape special XML characters in text content.
+
+    Args:
+        text: Text to escape.
+
+    Returns:
+        Text with XML special characters escaped.
+    """
+    return (
+        text.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&apos;")
+    )
+
+
+def _get_buffer_string_xml(
+    messages: Sequence[BaseMessage],
+    message_separator: str = "\n",
+) -> str:
+    """Convert messages to XML-formatted string.
+
+    Args:
+        messages: Messages to be converted to strings.
+        message_separator: The separator to use between messages.
+
+    Returns:
+        A single XML-formatted string concatenation of all input messages.
+
+    Raises:
+        ValueError: If an unsupported message type is encountered.
+    """
+    string_messages = []
+    for m in messages:
+        if isinstance(m, HumanMessage):
+            tag = "human"
+        elif isinstance(m, AIMessage):
+            tag = "ai"
+        elif isinstance(m, SystemMessage):
+            tag = "system"
+        elif isinstance(m, FunctionMessage):
+            tag = "function"
+        elif isinstance(m, ToolMessage):
+            tag = "tool"
+        elif isinstance(m, ChatMessage):
+            tag = m.role.lower().replace(" ", "_")
+        else:
+            msg = f"Got unsupported message type: {m}"
+            raise ValueError(msg)
+
+        content = _escape_xml_content(m.text)
+        message = f"<{tag}>{content}</{tag}>"
+
+        if isinstance(m, AIMessage):
+            if m.tool_calls:
+                tool_calls_str = _escape_xml_content(str(m.tool_calls))
+                message = f"<{tag}>{content}<tool_calls>{tool_calls_str}</tool_calls></{tag}>"
+            elif "function_call" in m.additional_kwargs:
+                # Legacy behavior assumes only one function call per message
+                func_call_str = _escape_xml_content(
+                    str(m.additional_kwargs["function_call"])
+                )
+                message = f"<{tag}>{content}<function_call>{func_call_str}</function_call></{tag}>"
 
         string_messages.append(message)
 
