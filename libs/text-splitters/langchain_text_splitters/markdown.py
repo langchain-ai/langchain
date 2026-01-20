@@ -439,7 +439,7 @@ class ExperimentalMarkdownSyntaxTextSplitter:
             chunk += raw_line
             if self._match_code(raw_line):
                 return chunk
-        return ""
+        return chunk
 
     def _complete_chunk_doc(self) -> None:
         chunk_content = self.current_chunk.page_content
