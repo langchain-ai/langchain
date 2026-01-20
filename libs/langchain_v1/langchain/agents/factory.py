@@ -1080,6 +1080,7 @@ def create_agent(
 
             # Force tool use if we have structured output tools and force_tool_choice is True
             # When force_tool_choice=False, allow model to generate natural text before tool calls
+            tool_choice: str | None
             if structured_output_tools and effective_response_format.force_tool_choice:
                 tool_choice = "any"
             else:
