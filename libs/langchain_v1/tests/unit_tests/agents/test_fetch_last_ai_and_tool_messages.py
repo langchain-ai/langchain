@@ -5,7 +5,6 @@ including the scenario where no AIMessage exists in the message list
 (fixes issue #34792).
 """
 
-import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 
 from langchain.agents.factory import _fetch_last_ai_and_tool_messages
