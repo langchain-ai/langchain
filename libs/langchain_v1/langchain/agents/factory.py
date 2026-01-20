@@ -1535,9 +1535,7 @@ def _fetch_last_ai_and_tool_messages(
         dummy_ai = AIMessage(content="", tool_calls=[])
         return dummy_ai, []
 
-    tool_messages = [
-        m for m in messages[last_ai_index + 1 :] if isinstance(m, ToolMessage)
-    ]
+    tool_messages = [m for m in messages[last_ai_index + 1 :] if isinstance(m, ToolMessage)]
     return last_ai_message, tool_messages
 
 
