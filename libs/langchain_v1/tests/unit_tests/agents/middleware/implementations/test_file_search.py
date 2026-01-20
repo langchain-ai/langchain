@@ -384,25 +384,31 @@ class TestGrepEdgeCases:
 
         assert "/test.py" in result
 
-    def test_grep_case_insensitive_flag(self, tmp_path: Path) -> None:
-        """Test grep with case_insensitive parameter."""
+    def test_grep_case_insensitive_finds_different_case(self, tmp_path: Path) -> None:
+        """Test grep with case_insensitive=True finds differently cased text."""
         (tmp_path / "test.py").write_text("HELLO world\n", encoding="utf-8")
-        (tmp_path / "other.py").write_text("goodbye\n", encoding="utf-8")
 
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
 
         assert isinstance(middleware.grep_search, StructuredTool)
         assert middleware.grep_search.func is not None
-
-        # Case-insensitive search should find HELLO
         result = middleware.grep_search.func(pattern="hello", case_insensitive=True)
+
         assert "/test.py" in result
 
-        # Case-sensitive search should not find HELLO
+    def test_grep_case_sensitive_misses_different_case(self, tmp_path: Path) -> None:
+        """Test grep with case_insensitive=False misses differently cased text."""
+        (tmp_path / "test.py").write_text("HELLO world\n", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
         result = middleware.grep_search.func(pattern="hello", case_insensitive=False)
+
         assert "/test.py" not in result
 
-    def test_grep_case_insensitive_ripgrep_command(
+    def test_grep_case_insensitive_ripgrep_includes_flag(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Ensure ripgrep receives -i flag when case_insensitive=True."""
@@ -428,9 +434,29 @@ class TestGrepEdgeCases:
         cmd = captured["cmd"]
         assert "-i" in cmd
 
-        # Test without case_insensitive
-        captured.clear()
+    def test_grep_case_sensitive_ripgrep_excludes_flag(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Ensure ripgrep does not receive -i flag when case_insensitive=False."""
+        (tmp_path / "example.py").write_text("print('hello')\n", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=True)
+
+        captured: dict[str, list[str]] = {}
+
+        class DummyResult:
+            stdout = ""
+
+        def fake_run(*args: Any, **kwargs: Any) -> DummyResult:
+            cmd = args[0]
+            captured["cmd"] = cmd
+            return DummyResult()
+
+        monkeypatch.setattr("langchain.agents.middleware.file_search.subprocess.run", fake_run)
+
         middleware._ripgrep_search("hello", "/", None, case_insensitive=False)
+
+        assert "cmd" in captured
         cmd = captured["cmd"]
         assert "-i" not in cmd
 
