@@ -5,7 +5,6 @@ Tests to ensure that:
 2. force_tool_choice=False allows natural text before tool calls
 """
 
-import pytest
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 
@@ -34,7 +33,13 @@ class TestForceToolChoice:
         """Test that force_tool_choice=True is the default and forces immediate tool call."""
         tool_calls = [
             [{"args": {}, "id": "1", "name": "get_weather"}],
-            [{"name": "WeatherResponse", "id": "2", "args": {"temperature": 75.0, "condition": "sunny"}}]
+            [
+                {
+                    "name": "WeatherResponse",
+                    "id": "2",
+                    "args": {"temperature": 75.0, "condition": "sunny"},
+                }
+            ]
         ]
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
@@ -49,7 +54,9 @@ class TestForceToolChoice:
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         # Should get structured response
-        assert response["structured_response"] == WeatherResponse(temperature=75.0, condition="sunny")
+        assert response["structured_response"] == WeatherResponse(
+            temperature=75.0, condition="sunny"
+        )
 
         # Verify the model was bound with tool_choice="any"
         # This is implicit in the FakeToolCallingModel behavior
@@ -67,7 +74,9 @@ class TestForceToolChoice:
         agent = create_agent(
             model,
             [get_weather],
-            response_format=ToolStrategy(WeatherResponse, force_tool_choice=True)
+            response_format=ToolStrategy(
+                WeatherResponse, force_tool_choice=True
+            )
         )
 
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
@@ -76,7 +85,10 @@ class TestForceToolChoice:
         assert response["structured_response"] == WeatherResponse(temperature=75.0, condition="sunny")
 
     def test_force_tool_choice_false_allows_flexibility(self) -> None:
-        """Test that force_tool_choice=False allows model to respond without forcing tool call."""
+        """
+        Test that force_tool_choice=False allows model to respond
+        without forcing tool call.
+        """
         # Simulate model that might return text first or skip structured output
         tool_calls = [
             [{"args": {}, "id": "1", "name": "get_weather"}],
@@ -89,7 +101,9 @@ class TestForceToolChoice:
         agent = create_agent(
             model,
             [get_weather],
-            response_format=ToolStrategy(WeatherResponse, force_tool_choice=False)
+            response_format=ToolStrategy(
+                WeatherResponse, force_tool_choice=False
+            )
         )
 
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
