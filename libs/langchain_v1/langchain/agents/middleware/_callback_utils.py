@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
-from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.runnables.config import RunnableConfig, ensure_config
 from langchain_core.tracers.base import BaseTracer
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from langchain_core.callbacks.base import BaseCallbackHandler
 
 
 @lru_cache(maxsize=1)
