@@ -117,6 +117,31 @@ def test_check_package_version(
             {"a": [{"idx": 0, "b": "f"}]},
             {"a": [{"idx": 0, "b": "{"}, {"idx": 0, "b": "f"}]},
         ),
+        # Tool call fields should NOT be concatenated (fixes #34807)
+        # 'name' field - different values should keep first (not concatenate)
+        (
+            {"name": "read_file", "id": "abc"},
+            {"name": "search_text", "id": "def"},
+            {"name": "read_file", "id": "abc"},
+        ),
+        # 'type' field should not concatenate
+        (
+            {"type": "tool_call", "value": "a"},
+            {"type": "function", "value": "b"},
+            {"type": "tool_call", "value": "ab"},
+        ),
+        # 'function' field should not concatenate
+        (
+            {"function": "get_data", "value": "x"},
+            {"function": "process_data", "value": "y"},
+            {"function": "get_data", "value": "xy"},
+        ),
+        # 'id' field should not concatenate even when different
+        (
+            {"id": "tooluse_ABC", "name": "foo"},
+            {"id": "tooluse_DEF", "name": "bar"},
+            {"id": "tooluse_ABC", "name": "foo"},
+        ),
     ],
 )
 def test_merge_dicts(
