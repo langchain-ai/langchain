@@ -779,7 +779,7 @@ def create_agent(
     # This allows middleware to dynamically add tools that ToolNode can execute
     current_tools_container: dict[str, list[BaseTool | dict[str, Any]]] = {"tools": []}
 
-    def get_dynamic_tools() -> list[BaseTool]:
+    async def get_dynamic_tools() -> list[BaseTool]:
         """Return tools from the last model request, or static tools if none set."""
         tools_from_request = current_tools_container.get("tools", [])
         if tools_from_request:
