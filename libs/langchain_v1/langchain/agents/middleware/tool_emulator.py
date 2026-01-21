@@ -150,9 +150,7 @@ class LLMToolEmulator(AgentMiddleware):
         # Get emulated response from LLM
         # Use filtered callbacks that preserve tracing (LangSmith) but block
         # streaming to prevent internal model output leaking to agent stream
-        response = self.model.invoke(
-            [HumanMessage(prompt)], config=get_internal_call_config()
-        )
+        response = self.model.invoke([HumanMessage(prompt)], config=get_internal_call_config())
 
         # Short-circuit: return emulated result without executing real tool
         return ToolMessage(

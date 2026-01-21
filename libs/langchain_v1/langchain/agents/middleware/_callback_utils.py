@@ -56,7 +56,7 @@ def get_internal_call_config(
     elif isinstance(callbacks, list):
         handlers = callbacks
     else:
-        return {"callbacks": []}
+        return {"callbacks": []}  # type: ignore[unreachable]
 
     # Build whitelist of callback types that SHOULD see internal calls
     allowed_types: tuple[type[BaseCallbackHandler], ...] = (BaseTracer,)
@@ -68,8 +68,6 @@ def get_internal_call_config(
     if additional_callback_types:
         allowed_types = (*allowed_types, *additional_callback_types)
 
-    filtered_callbacks = [
-        handler for handler in handlers if isinstance(handler, allowed_types)
-    ]
+    filtered_callbacks = [handler for handler in handlers if isinstance(handler, allowed_types)]
 
     return {"callbacks": filtered_callbacks}
