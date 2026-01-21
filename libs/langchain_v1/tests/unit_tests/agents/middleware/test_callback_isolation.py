@@ -218,9 +218,9 @@ class TestCallbackIsolationIntegration:
             config = get_internal_call_config()
 
             # Verify tracer is included (would see LangSmith events)
-            assert any(
-                isinstance(cb, BaseTracer) for cb in config["callbacks"]
-            ), "At least one tracer should be preserved"
+            assert any(isinstance(cb, BaseTracer) for cb in config["callbacks"]), (
+                "At least one tracer should be preserved"
+            )
 
             # Verify no streaming handlers (would leak tokens)
             assert not any(
