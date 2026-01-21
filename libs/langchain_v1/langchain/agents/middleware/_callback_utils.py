@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 def _get_usage_handler_type() -> type[BaseCallbackHandler] | None:
     """Get UsageMetadataCallbackHandler type if available."""
     try:
-        from langchain_core.callbacks.usage import UsageMetadataCallbackHandler
+        from langchain_core.callbacks.usage import UsageMetadataCallbackHandler  # noqa: PLC0415
     except ImportError:
         return None
     else:
