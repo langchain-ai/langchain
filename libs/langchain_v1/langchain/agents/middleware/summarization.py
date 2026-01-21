@@ -63,7 +63,7 @@ What specific tasks remain to be completed to achieve the session intent? What s
 
 </instructions>
 
-The user will message you with the full message history you'll be extracting context from, to then replace. Carefully read over it all, and think deeply about what information is most important to your overall goal that should be saved:
+The user will message you with the full message history from which you'll extract context to create a replacement. Carefully read through it all and think deeply about what information is most important to your overall goal and should be saved:
 
 With all of this in mind, please carefully read over the entire conversation history, and extract the most important and relevant context to replace it so that you can free up space in the conversation history.
 Respond ONLY with the extracted context. Do not include any additional information, or text before or after the extracted context.
