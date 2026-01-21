@@ -1046,7 +1046,12 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         Returns:
             The content with placeholders replaced by preserved elements.
         """
-        for placeholder, preserved_content in preserved_elements.items():
+        # Sort placeholders by length descending to prevent shorter placeholders
+        # from matching inside longer ones (e.g., PRESERVED_1 inside PRESERVED_11).
+        sorted_placeholders = sorted(
+            preserved_elements.items(), key=lambda x: len(x[0]), reverse=True
+        )
+        for placeholder, preserved_content in sorted_placeholders:
             content = content.replace(placeholder, preserved_content.strip())
         return content
 
