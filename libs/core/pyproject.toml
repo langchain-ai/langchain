@@ -41,7 +41,7 @@ typing = [
 ]
 dev = [
     "jupyter>=1.0.0,<2.0.0",
-    "setuptools>=67.6.1,<68.0.0",
+    "setuptools>=67.6.1,<79.0.0",
     "grandalf>=0.8.0,<1.0.0",
 ]
 test = [
