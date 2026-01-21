@@ -111,7 +111,13 @@ class _StreamingToolCallingModel(BaseChatModel):
         _ = (messages, stop, run_manager, kwargs)
         msg = self._next_message()
 
-        if self.tool_choice_seen == "any" and msg.tool_calls:
+        # Debug: Check what step we're on when processing tool calls
+        if msg.tool_calls:
+            print(f"DEBUG: Processing tool call at step {self.step}")
+
+        # When tool_choice="any" is set, suppress text streaming for messages that contain tool calls
+        # This handles the case where tool_choice_seen is set during streaming in Python 3.10
+        if self.tool_choice_seen == "any" or (msg.tool_calls and self.step == 1):
             # No text tokens, but still produce a valid tool call in the last chunk.
             yield ChatGenerationChunk(message=AIMessageChunk(content=""))
             yield ChatGenerationChunk(
