@@ -9,17 +9,17 @@ filters callbacks to:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, patch
-from uuid import UUID
 
-import pytest
 from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_core.tracers.base import BaseTracer
-from langchain_core.tracers.schemas import Run
 
 from langchain.agents.middleware._callback_utils import get_internal_call_config
+
+if TYPE_CHECKING:
+    from langchain_core.tracers.schemas import Run
 
 
 class MockTracer(BaseTracer):
@@ -125,18 +125,20 @@ class TestGetInternalCallConfig:
         )
         mock_usage_handler = mock_usage_class()
 
-        with patch(
-            "langchain.agents.middleware._callback_utils._get_usage_handler_type",
-            return_value=mock_usage_class,
-        ):
-            with patch(
+        with (
+            patch(
+                "langchain.agents.middleware._callback_utils._get_usage_handler_type",
+                return_value=mock_usage_class,
+            ),
+            patch(
                 "langchain.agents.middleware._callback_utils.ensure_config",
                 return_value={"callbacks": [mock_usage_handler]},
-            ):
-                config = get_internal_call_config()
-                callbacks = config["callbacks"]
+            ),
+        ):
+            config = get_internal_call_config()
+            callbacks = config["callbacks"]
 
-                assert mock_usage_handler in callbacks, "Usage handler should be preserved"
+            assert mock_usage_handler in callbacks, "Usage handler should be preserved"
 
     def test_additional_callback_types_preserved(self) -> None:
         """User-specified additional callback types should be preserved."""
