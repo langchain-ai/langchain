@@ -150,7 +150,7 @@ class TestGetInternalCallConfig:
             return_value={"callbacks": [custom_handler, streaming_handler]},
         ):
             config = get_internal_call_config(
-                additional_callback_types=[CustomObservabilityHandler]
+                additional_callback_types=[CustomObservabilityHandler],
             )
             callbacks = config["callbacks"]
 
