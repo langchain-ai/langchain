@@ -123,37 +123,52 @@ def test_middleware_can_modify_tools() -> None:
     assert tool_messages[0].name == "tool_a"
 
 
-def test_unknown_tool_raises_error() -> None:
-    """Test that using an unknown tool in ModelRequest raises a clear error."""
+def test_dynamic_tool_via_middleware() -> None:
+    """Test that middleware can dynamically add tools that weren't pre-registered."""
 
     @tool
-    def known_tool(value: str) -> str:
-        """A known tool."""
-        return "result"
+    def static_tool(value: str) -> str:
+        """A static tool passed to create_agent."""
+        return "static result"
 
     @tool
-    def unknown_tool(value: str) -> str:
-        """An unknown tool not passed to create_agent."""
-        return "unknown"
+    def dynamic_tool(value: str) -> str:
+        """A dynamic tool added by middleware, not pre-registered."""
+        return f"dynamic result: {value}"
 
-    class BadMiddleware(AgentMiddleware):
+    class DynamicToolMiddleware(AgentMiddleware):
         def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
         ) -> ModelCallResult:
-            # Add an unknown tool
-            return handler(request.override(tools=[*request.tools, unknown_tool]))
+            # Add a dynamic tool that wasn't passed to create_agent
+            return handler(request.override(tools=[*request.tools, dynamic_tool]))
 
-    agent = create_agent(
-        model=FakeToolCallingModel(),
-        tools=[known_tool],
-        system_prompt="You are a helpful assistant.",
-        middleware=[BadMiddleware()],
+    # Model will call the dynamic tool
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [{"args": {"value": "test input"}, "id": "1", "name": "dynamic_tool"}],
+            [],
+        ]
     )
 
-    with pytest.raises(ValueError, match="Middleware returned unknown tool names"):
-        agent.invoke({"messages": [HumanMessage("Hello")]})
+    # Note: dynamic_tool is NOT passed to create_agent, only static_tool is
+    agent = create_agent(
+        model=model,
+        tools=[static_tool],
+        system_prompt="You are a helpful assistant.",
+        middleware=[DynamicToolMiddleware()],
+    )
+
+    result = agent.invoke({"messages": [HumanMessage("Use the dynamic tool")]})
+
+    # Verify that the dynamic tool was executed successfully
+    messages = result["messages"]
+    tool_messages = [m for m in messages if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 1
+    assert tool_messages[0].name == "dynamic_tool"
+    assert "dynamic result: test input" in tool_messages[0].content
 
 
 def test_middleware_can_add_and_remove_tools() -> None:
