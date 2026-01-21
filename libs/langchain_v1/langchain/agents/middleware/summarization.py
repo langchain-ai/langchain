@@ -596,7 +596,7 @@ class SummarizationMiddleware(AgentMiddleware):
 
         try:
             response = self.model.invoke(
-                self.summary_prompt.format(messages=formatted_messages),
+                self.summary_prompt.format(messages=formatted_messages).rstrip(),
                 config={"metadata": {"lc_source": "summarization"}},
             )
             return response.text.strip()
@@ -622,7 +622,7 @@ class SummarizationMiddleware(AgentMiddleware):
 
         try:
             response = await self.model.ainvoke(
-                self.summary_prompt.format(messages=formatted_messages),
+                self.summary_prompt.format(messages=formatted_messages).rstrip(),
                 config={"metadata": {"lc_source": "summarization"}},
             )
             return response.text.strip()
