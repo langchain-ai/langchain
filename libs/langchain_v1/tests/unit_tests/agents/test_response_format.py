@@ -10,10 +10,11 @@ import pytest
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessageChunk, HumanMessage
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel, Field
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, override
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.types import (
@@ -31,6 +32,228 @@ from langchain.agents.structured_output import (
 from langchain.messages import AIMessage
 from langchain.tools import BaseTool, tool
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+
+class _StreamingToolCallingModel(BaseChatModel):
+    """Fake streaming chat model to test response_format + streaming interaction.
+
+    This model simulates a typical two-step tool-using flow:
+    1) emit an assistant message that triggers a tool call
+    2) emit a final assistant message
+
+    When bound with `tool_choice="any"` (ToolStrategy), it streams no natural
+    text for the first step.
+    """
+
+    step: int = 0
+    tool_choice_seen: str | None = None
+
+    @property
+    @override
+    def _llm_type(self) -> str:
+        return "streaming-tool-calling-fake"
+
+    @override
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable[..., Any] | BaseTool],
+        *,
+        tool_choice: str | None = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, AIMessage]:
+        self.tool_choice_seen = tool_choice
+
+        tool_dicts: list[dict[str, Any]] = []
+        for t in tools:
+            if isinstance(t, dict):
+                tool_dicts.append(t)
+                continue
+            if not isinstance(t, BaseTool):
+                msg = (
+                    "Only BaseTool and dict are supported by _StreamingToolCallingModel.bind_tools"
+                )
+                raise TypeError(msg)
+            tool_dicts.append({"type": "function", "function": {"name": t.name}})
+
+        return self.bind(tools=tool_dicts, **kwargs)
+
+    def _next_message(self) -> AIMessage:
+        if self.step == 0:
+            self.step += 1
+            return AIMessage(
+                content="I will check the weather now.",
+                tool_calls=[{"id": "call_1", "name": "get_weather", "args": {}}],
+            )
+
+        self.step += 1
+        return AIMessage(content="It is sunny and 75°F.")
+
+    @override
+    def _generate(
+        self,
+        messages: list[Any],
+        stop: list[str] | None = None,
+        run_manager: Any | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        _ = (messages, stop, run_manager, kwargs)
+        msg = self._next_message()
+        return ChatResult(generations=[ChatGeneration(message=msg)])
+
+    @override
+    def _stream(
+        self,
+        messages: list[Any],
+        stop: list[str] | None = None,
+        run_manager: Any | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        _ = (messages, stop, run_manager, kwargs)
+        msg = self._next_message()
+
+        if self.tool_choice_seen == "any" and msg.tool_calls:
+            # No text tokens, but still produce a valid tool call in the last chunk.
+            yield ChatGenerationChunk(message=AIMessageChunk(content=""))
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(
+                    content="",
+                    tool_calls=[{"id": "call_1", "name": "get_weather", "args": {}}],
+                    chunk_position="last",
+                )
+            )
+            return
+
+        text = str(msg.content)
+        for idx, ch in enumerate(text):
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(
+                    content=ch,
+                    chunk_position=("last" if idx == len(text) - 1 else None),
+                    tool_calls=msg.tool_calls if idx == len(text) - 1 else [],
+                )
+            )
+
+
+async def _collect_streamed_text(agent: Any) -> str:
+    text: list[str] = []
+    async for msg, _meta in agent.astream(
+        {"messages": [HumanMessage("What's the weather in Boston?")]},
+        stream_mode="messages",
+    ):
+        content_blocks = getattr(msg, "content_blocks", None) or []
+        text.extend(
+            str(block_text)
+            for block in content_blocks
+            if isinstance(block, dict)
+            and block.get("type") == "text"
+            and (block_text := block.get("text"))
+        )
+        if (
+            not getattr(msg, "content_blocks", None)
+            and isinstance(getattr(msg, "content", None), str)
+            and msg.content
+        ):
+            text.append(msg.content)
+    return "".join(text)
+
+
+@pytest.mark.asyncio
+async def test_tool_strategy_suppresses_initial_text_streaming() -> None:
+    """ToolStrategy forces `tool_choice="any"`, suppressing pre-tool text streaming."""
+    model_baseline = _StreamingToolCallingModel()
+    agent_baseline = create_agent(model_baseline, [get_weather])
+    baseline_text = await _collect_streamed_text(agent_baseline)
+
+    model_tool = _StreamingToolCallingModel()
+    agent_tool = create_agent(
+        model_tool, [get_weather], response_format=ToolStrategy(WeatherBaseModel)
+    )
+    tool_text = await _collect_streamed_text(agent_tool)
+
+    assert model_baseline.tool_choice_seen is None
+    assert model_tool.tool_choice_seen == "any"
+
+    # Baseline includes the model's pre-tool natural language statement.
+    assert "I will check the weather now." in baseline_text
+    # ToolStrategy suppresses the pre-tool natural language text in this scenario.
+    assert "I will check the weather now." not in tool_text
+
+
+class _FinalizeModeProviderModel(_StreamingToolCallingModel):
+    """Streaming fake model that supports ProviderStrategy on a finalization call."""
+
+    @override
+    def _generate(
+        self,
+        messages: list[Any],
+        stop: list[str] | None = None,
+        run_manager: Any | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        _ = (messages, stop, run_manager)
+        if kwargs.get("response_format"):
+            msg = AIMessage(content=json.dumps({"temperature": 75.0, "condition": "sunny"}))
+            return ChatResult(generations=[ChatGeneration(message=msg)])
+        return super()._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
+
+    @override
+    async def _agenerate(
+        self,
+        messages: list[Any],
+        stop: list[str] | None = None,
+        run_manager: Any | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        _ = (messages, stop, run_manager)
+        if kwargs.get("response_format"):
+            msg = AIMessage(content=json.dumps({"temperature": 75.0, "condition": "sunny"}))
+            return ChatResult(generations=[ChatGeneration(message=msg)])
+        return await super()._agenerate(messages, stop=stop, run_manager=run_manager, **kwargs)
+
+    @override
+    def _stream(
+        self,
+        messages: list[Any],
+        stop: list[str] | None = None,
+        run_manager: Any | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        _ = (messages, stop, run_manager)
+        if kwargs.get("response_format"):
+            payload = json.dumps({"temperature": 75.0, "condition": "sunny"})
+            for idx, ch in enumerate(payload):
+                yield ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content=ch,
+                        chunk_position=("last" if idx == len(payload) - 1 else None),
+                    )
+                )
+            return
+        yield from super()._stream(messages, stop=stop, run_manager=run_manager, **kwargs)
+
+
+@pytest.mark.asyncio
+async def test_finalize_mode_preserves_streaming_and_returns_structured_output() -> None:
+    """Finalize mode preserves text streaming and returns structured_response at end."""
+    model_for_stream = _FinalizeModeProviderModel()
+    agent_for_stream = create_agent(
+        model_for_stream,
+        [get_weather],
+        response_format=ProviderStrategy(WeatherBaseModel),
+        structured_output_mode="finalize",
+    )
+    streamed_text = await _collect_streamed_text(agent_for_stream)
+    assert "I will check the weather now." in streamed_text
+
+    model_for_invoke = _FinalizeModeProviderModel()
+    agent_for_invoke = create_agent(
+        model_for_invoke,
+        [get_weather],
+        response_format=ProviderStrategy(WeatherBaseModel),
+        structured_output_mode="finalize",
+    )
+    result = await agent_for_invoke.ainvoke({"messages": [HumanMessage("What's the weather?")]})
+    assert isinstance(result.get("structured_response"), WeatherBaseModel)
 
 
 # Test data models
