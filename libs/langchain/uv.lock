@@ -2351,7 +2351,10 @@ dev = [
     { name = "jupyter" },
     { name = "langchain-core" },
     { name = "langchain-text-splitters" },
+    { name = "mypy" },
     { name = "playwright" },
+    { name = "pytest" },
+    { name = "ruff" },
     { name = "setuptools" },
 ]
 lint = [
@@ -2440,7 +2443,10 @@ dev = [
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
     { name = "langchain-core", editable = "../core" },
     { name = "langchain-text-splitters", editable = "../text-splitters" },
+    { name = "mypy", specifier = ">=1.19.1" },
     { name = "playwright", specifier = ">=1.28.0,<2.0.0" },
+    { name = "pytest", specifier = ">=8.4.2" },
+    { name = "ruff", specifier = ">=0.14.11" },
     { name = "setuptools", specifier = ">=67.6.1,<81.0.0" },
 ]
 lint = [
