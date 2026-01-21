@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage, ToolMessage
 
+from langchain.agents.middleware._callback_utils import get_internal_call_config
 from langchain.agents.middleware.types import AgentMiddleware
 from langchain.chat_models.base import init_chat_model
 
@@ -147,9 +148,11 @@ class LLMToolEmulator(AgentMiddleware):
         )
 
         # Get emulated response from LLM
-        # Pass empty callbacks to prevent inheriting streaming callbacks from
-        # parent context, which would leak internal model output to agent stream
-        response = self.model.invoke([HumanMessage(prompt)], config={"callbacks": []})
+        # Use filtered callbacks that preserve tracing (LangSmith) but block
+        # streaming to prevent internal model output leaking to agent stream
+        response = self.model.invoke(
+            [HumanMessage(prompt)], config=get_internal_call_config()
+        )
 
         # Short-circuit: return emulated result without executing real tool
         return ToolMessage(
@@ -201,9 +204,11 @@ class LLMToolEmulator(AgentMiddleware):
         )
 
         # Get emulated response from LLM (using async invoke)
-        # Pass empty callbacks to prevent inheriting streaming callbacks from
-        # parent context, which would leak internal model output to agent stream
-        response = await self.model.ainvoke([HumanMessage(prompt)], config={"callbacks": []})
+        # Use filtered callbacks that preserve tracing (LangSmith) but block
+        # streaming to prevent internal model output leaking to agent stream
+        response = await self.model.ainvoke(
+            [HumanMessage(prompt)], config=get_internal_call_config()
+        )
 
         # Short-circuit: return emulated result without executing real tool
         return ToolMessage(

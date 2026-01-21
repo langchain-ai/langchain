@@ -11,6 +11,7 @@ from langchain_core.messages import HumanMessage
 from pydantic import Field, TypeAdapter
 from typing_extensions import TypedDict
 
+from langchain.agents.middleware._callback_utils import get_internal_call_config
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     ModelCallResult,
@@ -294,14 +295,14 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         schema = type_adapter.json_schema()
         structured_model = selection_request.model.with_structured_output(schema)
 
-        # Pass empty callbacks to prevent inheriting streaming callbacks from
-        # parent context, which would leak internal model output to agent stream
+        # Use filtered callbacks that preserve tracing (LangSmith) but block
+        # streaming to prevent internal model output leaking to agent stream
         response = structured_model.invoke(
             [
                 {"role": "system", "content": selection_request.system_message},
                 selection_request.last_user_message,
             ],
-            config={"callbacks": []},
+            config=get_internal_call_config(),
         )
 
         # Response should be a dict since we're passing a schema (not a Pydantic model class)
@@ -340,14 +341,14 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         schema = type_adapter.json_schema()
         structured_model = selection_request.model.with_structured_output(schema)
 
-        # Pass empty callbacks to prevent inheriting streaming callbacks from
-        # parent context, which would leak internal model output to agent stream
+        # Use filtered callbacks that preserve tracing (LangSmith) but block
+        # streaming to prevent internal model output leaking to agent stream
         response = await structured_model.ainvoke(
             [
                 {"role": "system", "content": selection_request.system_message},
                 selection_request.last_user_message,
             ],
-            config={"callbacks": []},
+            config=get_internal_call_config(),
         )
 
         # Response should be a dict since we're passing a schema (not a Pydantic model class)
