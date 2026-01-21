@@ -85,6 +85,7 @@ Suggest PR titles that follow Conventional Commits format. Refer to .github/work
 ### Maintain stable public interfaces
 
 CRITICAL: Always attempt to preserve function signatures, argument positions, and names for exported/public methods. Do not make breaking changes.
+You should warn the developer for any function signature changes, regardless of whether they look breaking or not.
 
 **Before making ANY changes to public APIs:**
 
