@@ -25,6 +25,7 @@ from langgraph.graph.message import (
 from langgraph.runtime import Runtime
 from typing_extensions import override
 
+from langchain.agents.middleware._callback_utils import get_internal_call_config
 from langchain.agents.middleware.types import AgentMiddleware, AgentState
 from langchain.chat_models import BaseChatModel, init_chat_model
 
@@ -595,9 +596,14 @@ class SummarizationMiddleware(AgentMiddleware):
         formatted_messages = get_buffer_string(trimmed_messages)
 
         try:
+            # Use filtered callbacks that preserve tracing (LangSmith) but block
+            # streaming to prevent internal model output leaking to agent stream
             response = self.model.invoke(
                 self.summary_prompt.format(messages=formatted_messages),
-                config={"metadata": {"lc_source": "summarization"}},
+                config={
+                    **get_internal_call_config(),
+                    "metadata": {"lc_source": "summarization"},
+                },
             )
             return response.text.strip()
         except Exception as e:
@@ -621,9 +627,14 @@ class SummarizationMiddleware(AgentMiddleware):
         formatted_messages = get_buffer_string(trimmed_messages)
 
         try:
+            # Use filtered callbacks that preserve tracing (LangSmith) but block
+            # streaming to prevent internal model output leaking to agent stream
             response = await self.model.ainvoke(
                 self.summary_prompt.format(messages=formatted_messages),
-                config={"metadata": {"lc_source": "summarization"}},
+                config={
+                    **get_internal_call_config(),
+                    "metadata": {"lc_source": "summarization"},
+                },
             )
             return response.text.strip()
         except Exception as e:
