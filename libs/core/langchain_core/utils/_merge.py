@@ -56,9 +56,17 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 #             "should either occur once or have the same value across "
                 #             "all dicts."
                 #         )
-                if (right_k == "index" and merged[right_k].startswith("lc_")) or (
-                    right_k in {"id", "output_version", "model_provider"}
-                    and merged[right_k] == right_v
+                if (
+                    (right_k == "index" and merged[right_k].startswith("lc_"))
+                    or (
+                        right_k in {"output_version", "model_provider"}
+                        and merged[right_k] == right_v
+                    )
+                    or (
+                        # Skip concatenation for tool call fields to prevent invalid
+                        # merged values like "read_filesearch_text" from parallel calls
+                        right_k in {"name", "id", "type", "function"}
+                    )
                 ):
                     continue
                 merged[right_k] += right_v
