@@ -775,14 +775,15 @@ def create_agent(
     # Tools that require client-side execution (must be in ToolNode)
     available_tools = middleware_tools + regular_tools
 
-    # Only create ToolNode if we have client-side tools
+    # Create ToolNode if we have client-side tools OR if middleware defines wrap_tool_call
+    # (which may handle dynamically registered tools)
     tool_node = (
         ToolNode(
             tools=available_tools,
             wrap_tool_call=wrap_tool_call_wrapper,
             awrap_tool_call=awrap_tool_call_wrapper,
         )
-        if available_tools
+        if available_tools or wrap_tool_call_wrapper or awrap_tool_call_wrapper
         else None
     )
 
@@ -997,6 +998,10 @@ def create_agent(
             ValueError: If `ToolStrategy` specifies tools not declared upfront.
         """
         # Validate ONLY client-side tools that need to exist in tool_node
+        # Skip validation when wrap_tool_call is defined, as middleware may handle
+        # dynamic tools that are added at runtime via wrap_model_call
+        has_wrap_tool_call = wrap_tool_call_wrapper or awrap_tool_call_wrapper
+
         # Build map of available client-side tools from the ToolNode
         # (which has already converted callables)
         available_tools_by_name = {}
@@ -1004,29 +1009,31 @@ def create_agent(
             available_tools_by_name = tool_node.tools_by_name.copy()
 
         # Check if any requested tools are unknown CLIENT-SIDE tools
-        unknown_tool_names = []
-        for t in request.tools:
-            # Only validate BaseTool instances (skip built-in dict tools)
-            if isinstance(t, dict):
-                continue
-            if isinstance(t, BaseTool) and t.name not in available_tools_by_name:
-                unknown_tool_names.append(t.name)
+        # Only validate if wrap_tool_call is NOT defined (no dynamic tool handling)
+        if not has_wrap_tool_call:
+            unknown_tool_names = []
+            for t in request.tools:
+                # Only validate BaseTool instances (skip built-in dict tools)
+                if isinstance(t, dict):
+                    continue
+                if isinstance(t, BaseTool) and t.name not in available_tools_by_name:
+                    unknown_tool_names.append(t.name)
 
-        if unknown_tool_names:
-            available_tool_names = sorted(available_tools_by_name.keys())
-            msg = (
-                f"Middleware returned unknown tool names: {unknown_tool_names}\n\n"
-                f"Available client-side tools: {available_tool_names}\n\n"
-                "To fix this issue:\n"
-                "1. Ensure the tools are passed to create_agent() via "
-                "the 'tools' parameter\n"
-                "2. If using custom middleware with tools, ensure "
-                "they're registered via middleware.tools attribute\n"
-                "3. Verify that tool names in ModelRequest.tools match "
-                "the actual tool.name values\n"
-                "Note: Built-in provider tools (dict format) can be added dynamically."
-            )
-            raise ValueError(msg)
+            if unknown_tool_names:
+                available_tool_names = sorted(available_tools_by_name.keys())
+                msg = (
+                    f"Middleware returned unknown tool names: {unknown_tool_names}\n\n"
+                    f"Available client-side tools: {available_tool_names}\n\n"
+                    "To fix this issue:\n"
+                    "1. Ensure the tools are passed to create_agent() via "
+                    "the 'tools' parameter\n"
+                    "2. If using custom middleware with tools, ensure "
+                    "they're registered via middleware.tools attribute\n"
+                    "3. Define a wrap_tool_call handler in your middleware to "
+                    "handle dynamically added tools\n"
+                    "Note: Built-in provider tools (dict format) can be added dynamically."
+                )
+                raise ValueError(msg)
 
         # Determine effective response format (auto-detect if needed)
         effective_response_format: ResponseFormat[Any] | None
