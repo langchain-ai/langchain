@@ -242,13 +242,23 @@ def _format_content_block_xml(block: dict) -> str | None:
     return None
 
 
-def _get_message_type_str(m: BaseMessage, human_prefix: str, ai_prefix: str) -> str:
+def _get_message_type_str(
+    m: BaseMessage,
+    human_prefix: str,
+    ai_prefix: str,
+    system_prefix: str,
+    function_prefix: str,
+    tool_prefix: str,
+) -> str:
     """Get the type string for XML message element.
 
     Args:
         m: The message to get the type string for.
-        human_prefix: The prefix to use for HumanMessage.
-        ai_prefix: The prefix to use for AIMessage.
+        human_prefix: The prefix to use for `HumanMessage`.
+        ai_prefix: The prefix to use for `AIMessage`.
+        system_prefix: The prefix to use for `SystemMessage`.
+        function_prefix: The prefix to use for `FunctionMessage`.
+        tool_prefix: The prefix to use for `ToolMessage`.
 
     Returns:
         The type string for the message element.
@@ -261,11 +271,11 @@ def _get_message_type_str(m: BaseMessage, human_prefix: str, ai_prefix: str) -> 
     if isinstance(m, AIMessage):
         return ai_prefix.lower()
     if isinstance(m, SystemMessage):
-        return "system"
+        return system_prefix.lower()
     if isinstance(m, FunctionMessage):
-        return "function"
+        return function_prefix.lower()
     if isinstance(m, ToolMessage):
-        return "tool"
+        return tool_prefix.lower()
     if isinstance(m, ChatMessage):
         return m.role
     msg = f"Got unsupported message type: {m}"
@@ -276,6 +286,10 @@ def get_buffer_string(
     messages: Sequence[BaseMessage],
     human_prefix: str = "Human",
     ai_prefix: str = "AI",
+    *,
+    system_prefix: str = "System",
+    function_prefix: str = "Function",
+    tool_prefix: str = "Tool",
     message_separator: str = "\n",
     format: Literal["prefix", "xml"] = "prefix",  # noqa: A002
 ) -> str:
@@ -285,6 +299,9 @@ def get_buffer_string(
         messages: Messages to be converted to strings.
         human_prefix: The prefix to prepend to contents of `HumanMessage`s.
         ai_prefix: The prefix to prepend to contents of `AIMessage`.
+        system_prefix: The prefix to prepend to contents of `SystemMessage`s.
+        function_prefix: The prefix to prepend to contents of `FunctionMessage`s.
+        tool_prefix: The prefix to prepend to contents of `ToolMessage`s.
         message_separator: The separator to use between messages.
         format: The output format. ``'prefix'`` uses ``Role: content`` format
             (default). ``'xml'`` uses XML-style ``<message type="role">`` format
@@ -306,8 +323,9 @@ def get_buffer_string(
 
         - All messages use uniform `<message type="role">content</message>` format.
         - The `type` attribute uses `human_prefix` (lowercased) for `HumanMessage`,
-            `ai_prefix` (lowercased) for `AIMessage`, lowercase names for
-            `SystemMessage`/`FunctionMessage`/`ToolMessage`, and the original role
+            `ai_prefix` (lowercased) for `AIMessage`, `system_prefix` (lowercased)
+            for `SystemMessage`, `function_prefix` (lowercased) for `FunctionMessage`,
+            `tool_prefix` (lowercased) for `ToolMessage`, and the original role
             (unchanged) for `ChatMessage`.
         - Message content is escaped using `xml.sax.saxutils.escape()`.
         - Attribute values are escaped using `xml.sax.saxutils.quoteattr()`.
@@ -391,11 +409,11 @@ def get_buffer_string(
         elif isinstance(m, AIMessage):
             role = ai_prefix
         elif isinstance(m, SystemMessage):
-            role = "System"
+            role = system_prefix
         elif isinstance(m, FunctionMessage):
-            role = "Function"
+            role = function_prefix
         elif isinstance(m, ToolMessage):
-            role = "Tool"
+            role = tool_prefix
         elif isinstance(m, ChatMessage):
             role = m.role
         else:
@@ -403,7 +421,9 @@ def get_buffer_string(
             raise ValueError(msg)  # noqa: TRY004
 
         if format == "xml":
-            msg_type = _get_message_type_str(m, human_prefix, ai_prefix)
+            msg_type = _get_message_type_str(
+                m, human_prefix, ai_prefix, system_prefix, function_prefix, tool_prefix
+            )
 
             # Format content blocks
             if isinstance(m.content, str):

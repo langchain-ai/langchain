@@ -2549,3 +2549,115 @@ def test_get_buffer_string_xml_no_truncation_under_limit() -> None:
     result = get_buffer_string(messages, format="xml")
     assert short_text in result
     assert "..." not in result
+
+
+def test_get_buffer_string_custom_system_prefix() -> None:
+    """Test `get_buffer_string` with custom `system_prefix`."""
+    messages: list[BaseMessage] = [
+        SystemMessage(content="You are a helpful assistant."),
+        HumanMessage(content="Hello"),
+    ]
+    result = get_buffer_string(messages, system_prefix="Instructions")
+    assert result == "Instructions: You are a helpful assistant.\nHuman: Hello"
+
+
+def test_get_buffer_string_custom_function_prefix() -> None:
+    """Test `get_buffer_string` with custom `function_prefix`."""
+    messages: list[BaseMessage] = [
+        HumanMessage(content="Call a function"),
+        FunctionMessage(name="test_func", content="Function result"),
+    ]
+    result = get_buffer_string(messages, function_prefix="Func")
+    assert result == "Human: Call a function\nFunc: Function result"
+
+
+def test_get_buffer_string_custom_tool_prefix() -> None:
+    """Test `get_buffer_string` with custom `tool_prefix`."""
+    messages: list[BaseMessage] = [
+        HumanMessage(content="Use a tool"),
+        ToolMessage(tool_call_id="call_123", content="Tool result"),
+    ]
+    result = get_buffer_string(messages, tool_prefix="ToolResult")
+    assert result == "Human: Use a tool\nToolResult: Tool result"
+
+
+def test_get_buffer_string_all_custom_prefixes() -> None:
+    """Test `get_buffer_string` with all custom prefixes."""
+    messages: list[BaseMessage] = [
+        SystemMessage(content="System says hello"),
+        HumanMessage(content="Human says hello"),
+        AIMessage(content="AI says hello"),
+        FunctionMessage(name="func", content="Function says hello"),
+        ToolMessage(tool_call_id="call_1", content="Tool says hello"),
+    ]
+    result = get_buffer_string(
+        messages,
+        human_prefix="User",
+        ai_prefix="Assistant",
+        system_prefix="Sys",
+        function_prefix="Fn",
+        tool_prefix="T",
+    )
+    expected = (
+        "Sys: System says hello\n"
+        "User: Human says hello\n"
+        "Assistant: AI says hello\n"
+        "Fn: Function says hello\n"
+        "T: Tool says hello"
+    )
+    assert result == expected
+
+
+def test_get_buffer_string_xml_custom_system_prefix() -> None:
+    """Test `get_buffer_string` XML format with custom `system_prefix`."""
+    messages: list[BaseMessage] = [
+        SystemMessage(content="You are a helpful assistant."),
+    ]
+    result = get_buffer_string(messages, system_prefix="Instructions", format="xml")
+    assert (
+        result == '<message type="instructions">You are a helpful assistant.</message>'
+    )
+
+
+def test_get_buffer_string_xml_custom_function_prefix() -> None:
+    """Test `get_buffer_string` XML format with custom `function_prefix`."""
+    messages: list[BaseMessage] = [
+        FunctionMessage(name="test_func", content="Function result"),
+    ]
+    result = get_buffer_string(messages, function_prefix="Fn", format="xml")
+    assert result == '<message type="fn">Function result</message>'
+
+
+def test_get_buffer_string_xml_custom_tool_prefix() -> None:
+    """Test `get_buffer_string` XML format with custom `tool_prefix`."""
+    messages: list[BaseMessage] = [
+        ToolMessage(tool_call_id="call_123", content="Tool result"),
+    ]
+    result = get_buffer_string(messages, tool_prefix="ToolOutput", format="xml")
+    assert result == '<message type="tooloutput">Tool result</message>'
+
+
+def test_get_buffer_string_xml_all_custom_prefixes() -> None:
+    """Test `get_buffer_string` XML format with all custom prefixes."""
+    messages: list[BaseMessage] = [
+        SystemMessage(content="System message"),
+        HumanMessage(content="Human message"),
+        AIMessage(content="AI message"),
+        FunctionMessage(name="func", content="Function message"),
+        ToolMessage(tool_call_id="call_1", content="Tool message"),
+    ]
+    result = get_buffer_string(
+        messages,
+        human_prefix="User",
+        ai_prefix="Assistant",
+        system_prefix="Sys",
+        function_prefix="Fn",
+        tool_prefix="T",
+        format="xml",
+    )
+    # The messages are processed in order, not by type
+    assert '<message type="sys">System message</message>' in result
+    assert '<message type="user">Human message</message>' in result
+    assert '<message type="assistant">AI message</message>' in result
+    assert '<message type="fn">Function message</message>' in result
+    assert '<message type="t">Tool message</message>' in result
