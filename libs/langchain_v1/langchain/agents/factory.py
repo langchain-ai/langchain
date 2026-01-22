@@ -7,7 +7,6 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Literal,
     cast,
     get_args,
     get_origin,
@@ -548,7 +547,6 @@ def create_agent(
     system_prompt: str | SystemMessage | None = None,
     middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
     response_format: ResponseFormat[ResponseT] | type[ResponseT] | dict[str, Any] | None = None,
-    structured_output_mode: Literal["loop", "finalize"] = "loop",
     state_schema: type[AgentState[ResponseT]] | None = None,
     context_schema: type[ContextT] | None = None,
     checkpointer: Checkpointer | None = None,
@@ -617,12 +615,6 @@ def create_agent(
 
                 See the [Structured output](https://docs.langchain.com/oss/python/langchain/structured-output)
                 docs for more information.
-        structured_output_mode: Controls when structured output is produced.
-
-            - `"loop"`: Current behavior. Structured output is handled within the agent loop.
-            - `"finalize"`: Opt-in mode. Disables structured output during the tool loop
-              (preserving natural text streaming) and runs a single final step to produce
-              `structured_response`.
         state_schema: An optional `TypedDict` schema that extends `AgentState`.
 
             When provided, this schema is used instead of `AgentState` as the base
@@ -727,9 +719,7 @@ def create_agent(
         # Raw schema - wrap in AutoStrategy to enable auto-detection
         initial_response_format = AutoStrategy(schema=response_format)
 
-    finalize_structured_output = (
-        response_format is not None and structured_output_mode == "finalize"
-    )
+    finalize_structured_output = response_format is not None and bool(tools)
 
     # For AutoStrategy, convert to ToolStrategy to setup tools upfront
     # (may be replaced with ProviderStrategy later based on model)

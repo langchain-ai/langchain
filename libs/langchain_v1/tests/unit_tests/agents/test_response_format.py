@@ -111,13 +111,9 @@ class _StreamingToolCallingModel(BaseChatModel):
         _ = (messages, stop, run_manager, kwargs)
         msg = self._next_message()
 
-        # Debug: Check what step we're on when processing tool calls
-        if msg.tool_calls:
-            print(f"DEBUG: Processing tool call at step {self.step}")
-
-        # When tool_choice="any" is set, suppress text streaming for messages that contain tool calls
-        # This handles the case where tool_choice_seen is set during streaming in Python 3.10
-        if self.tool_choice_seen == "any" or (msg.tool_calls and self.step == 1):
+        # When tool_choice="any" is set, some providers stream tool calls without
+        # emitting natural language tokens for the tool-call message.
+        if self.tool_choice_seen == "any" and msg.tool_calls:
             # No text tokens, but still produce a valid tool call in the last chunk.
             yield ChatGenerationChunk(message=AIMessageChunk(content=""))
             yield ChatGenerationChunk(
@@ -164,25 +160,26 @@ async def _collect_streamed_text(agent: Any) -> str:
 
 
 @pytest.mark.asyncio
-async def test_tool_strategy_suppresses_initial_text_streaming() -> None:
-    """ToolStrategy forces `tool_choice="any"`, suppressing pre-tool text streaming."""
+async def test_auto_finalize_allows_streaming_with_tools() -> None:
+    """When tools are present, finalize mode is auto-selected, allowing text streaming."""
     model_baseline = _StreamingToolCallingModel()
     agent_baseline = create_agent(model_baseline, [get_weather])
     baseline_text = await _collect_streamed_text(agent_baseline)
 
     model_tool = _StreamingToolCallingModel()
+    # Providing tools + response_format triggers auto-finalize mode
     agent_tool = create_agent(
         model_tool, [get_weather], response_format=ToolStrategy(WeatherBaseModel)
     )
     tool_text = await _collect_streamed_text(agent_tool)
 
+    # In finalize mode, tool_choice is NOT forced to "any" on the main loop
     assert model_baseline.tool_choice_seen is None
-    assert model_tool.tool_choice_seen == "any"
 
     # Baseline includes the model's pre-tool natural language statement.
     assert "I will check the weather now." in baseline_text
-    # ToolStrategy suppresses the pre-tool natural language text in this scenario.
-    assert "I will check the weather now." not in tool_text
+    # Auto-finalize mode preserves the pre-tool natural language text.
+    assert "I will check the weather now." in tool_text
 
 
 class _FinalizeModeProviderModel(_StreamingToolCallingModel):
@@ -246,7 +243,6 @@ async def test_finalize_mode_preserves_streaming_and_returns_structured_output()
         model_for_stream,
         [get_weather],
         response_format=ProviderStrategy(WeatherBaseModel),
-        structured_output_mode="finalize",
     )
     streamed_text = await _collect_streamed_text(agent_for_stream)
     assert "I will check the weather now." in streamed_text
@@ -256,7 +252,6 @@ async def test_finalize_mode_preserves_streaming_and_returns_structured_output()
         model_for_invoke,
         [get_weather],
         response_format=ProviderStrategy(WeatherBaseModel),
-        structured_output_mode="finalize",
     )
     result = await agent_for_invoke.ainvoke({"messages": [HumanMessage("What's the weather?")]})
     assert isinstance(result.get("structured_response"), WeatherBaseModel)
