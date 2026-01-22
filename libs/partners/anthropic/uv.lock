@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10.0, <4.0.0"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
@@ -495,7 +495,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.1.3"
+version = "1.2.0"
 source = { editable = "../../langchain_v1" }
 dependencies = [
     { name = "langchain-core" },
@@ -528,7 +528,7 @@ requires-dist = [
 provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
-lint = [{ name = "ruff", specifier = ">=0.14.2,<0.15.0" }]
+lint = [{ name = "ruff", specifier = ">=0.14.10,<0.15.0" }]
 test = [
     { name = "langchain-openai", editable = "../openai" },
     { name = "langchain-tests", editable = "../../standard-tests" },
@@ -551,7 +551,7 @@ test-integration = [
     { name = "wrapt", specifier = ">=1.15.0,<2.0.0" },
 ]
 typing = [
-    { name = "mypy", specifier = ">=1.18.1,<1.19.0" },
+    { name = "mypy", specifier = ">=1.19.1,<1.20.0" },
     { name = "types-toml", specifier = ">=0.10.8.20240310,<1.0.0.0" },
 ]
 
@@ -642,7 +642,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.2.0"
+version = "1.2.6"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -673,7 +673,7 @@ dev = [
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
     { name = "setuptools", specifier = ">=67.6.1,<68.0.0" },
 ]
-lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
+lint = [{ name = "ruff", specifier = ">=0.14.10,<0.15.0" }]
 test = [
     { name = "blockbuster", specifier = ">=1.5.18,<1.6.0" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
@@ -695,14 +695,14 @@ test = [
 test-integration = []
 typing = [
     { name = "langchain-text-splitters", directory = "../../text-splitters" },
-    { name = "mypy", specifier = ">=1.18.1,<1.19.0" },
+    { name = "mypy", specifier = ">=1.19.1,<1.20.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
     { name = "types-requests", specifier = ">=2.28.11.5,<3.0.0.0" },
 ]
 
 [[package]]
 name = "langchain-tests"
-version = "1.1.0"
+version = "1.1.2"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -736,12 +736,12 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
+lint = [{ name = "ruff", specifier = ">=0.14.10,<0.15.0" }]
 test = [{ name = "langchain-core", editable = "../../core" }]
 test-integration = []
 typing = [
     { name = "langchain-core", editable = "../../core" },
-    { name = "mypy", specifier = ">=1.18.1,<1.19.0" },
+    { name = "mypy", specifier = ">=1.19.1,<1.20.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
 ]
 

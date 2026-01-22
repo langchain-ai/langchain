@@ -8,7 +8,6 @@ import logging
 import types
 import typing
 import uuid
-from collections.abc import Mapping
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -35,7 +34,7 @@ from langchain_core.utils.json_schema import dereference_refs
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Mapping
 
     from langchain_core.tools import BaseTool
 
@@ -47,6 +46,20 @@ PYTHON_TO_JSON_TYPES = {
     "float": "number",
     "bool": "boolean",
 }
+
+_ORIGIN_MAP: dict[type, Any] = {
+    dict: dict,
+    list: list,
+    tuple: tuple,
+    set: set,
+    collections.abc.Iterable: typing.Iterable,
+    collections.abc.Mapping: typing.Mapping,
+    collections.abc.Sequence: typing.Sequence,
+    collections.abc.MutableMapping: typing.MutableMapping,
+}
+# Add UnionType mapping for Python 3.10+
+if hasattr(types, "UnionType"):
+    _ORIGIN_MAP[types.UnionType] = Union
 
 
 class FunctionDescription(TypedDict):
@@ -224,7 +237,7 @@ _MAX_TYPED_DICT_RECURSION = 25
 def _convert_any_typed_dicts_to_pydantic(
     type_: type,
     *,
-    visited: dict,
+    visited: dict[type, type],
     depth: int = 0,
 ) -> type:
     if type_ in visited:
@@ -275,7 +288,9 @@ def _convert_any_typed_dicts_to_pydantic(
                 if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
                 fields[arg] = (new_arg_type, Field_v1(**field_kwargs))
-        model = create_model_v1(typed_dict.__name__, **fields)
+        model = cast(
+            "type[BaseModelV1]", create_model_v1(typed_dict.__name__, **fields)
+        )
         model.__doc__ = description
         visited[typed_dict] = model
         return model
@@ -285,7 +300,7 @@ def _convert_any_typed_dicts_to_pydantic(
             _convert_any_typed_dicts_to_pydantic(arg, depth=depth + 1, visited=visited)
             for arg in type_args
         )
-        return subscriptable_origin[type_args]  # type: ignore[index]
+        return cast("type", subscriptable_origin[type_args])  # type: ignore[index]
     return type_
 
 
@@ -413,11 +428,20 @@ def convert_to_openai_function(
             "dict", _convert_python_function_to_openai_function(function)
         )
     else:
+        if isinstance(function, dict) and (
+            "type" in function or "properties" in function
+        ):
+            msg = (
+                f"Unsupported function\n\n{function}\n\nTo use a JSON schema as a "
+                "function, it must have a top-level 'title' key to be used as the "
+                "function name."
+            )
+            raise ValueError(msg)
         msg = (
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
             " as Dict, pydantic.BaseModel, or Callable. If they're a dict they must"
             " either be in OpenAI function format or valid JSON schema with top-level"
-            " 'title' and 'description' keys."
+            " 'title' key."
         )
         raise ValueError(msg)
 
@@ -431,12 +455,6 @@ def convert_to_openai_function(
             raise ValueError(msg)
         oai_function["strict"] = strict
         if strict:
-            # As of 08/06/24, OpenAI requires that additionalProperties be supplied and
-            # set to False if strict is True.
-            # All properties layer needs 'additionalProperties=False'
-            oai_function["parameters"] = _recursive_set_additional_properties_false(
-                oai_function["parameters"]
-            )
             # All fields must be `required`
             parameters = oai_function.get("parameters")
             if isinstance(parameters, dict):
@@ -445,6 +463,13 @@ def convert_to_openai_function(
                     parameters = dict(parameters)
                     parameters["required"] = list(fields.keys())
                     oai_function["parameters"] = parameters
+
+            # As of 08/06/24, OpenAI requires that additionalProperties be supplied and
+            # set to False if strict is True.
+            # All properties layer needs 'additionalProperties=False'
+            oai_function["parameters"] = _recursive_set_additional_properties_false(
+                oai_function["parameters"]
+            )
     return oai_function
 
 
@@ -732,22 +757,7 @@ def _parse_google_docstring(
 
 
 def _py_38_safe_origin(origin: type) -> type:
-    origin_union_type_map: dict[type, Any] = (
-        {types.UnionType: Union} if hasattr(types, "UnionType") else {}
-    )
-
-    origin_map: dict[type, Any] = {
-        dict: dict,
-        list: list,
-        tuple: tuple,
-        set: set,
-        collections.abc.Iterable: typing.Iterable,
-        collections.abc.Mapping: typing.Mapping,
-        collections.abc.Sequence: typing.Sequence,
-        collections.abc.MutableMapping: typing.MutableMapping,
-        **origin_union_type_map,
-    }
-    return cast("type", origin_map.get(origin, origin))
+    return cast("type", _ORIGIN_MAP.get(origin, origin))
 
 
 def _recursive_set_additional_properties_false(

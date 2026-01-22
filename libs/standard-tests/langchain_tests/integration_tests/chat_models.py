@@ -820,20 +820,42 @@ class ChatModelIntegrationTests(ChatModelTests):
             ```python
             yield ChatGenerationChunk(message=AIMessageChunk(content="chunk text"))
             ```
+
+            The final chunk must have `chunk_position='last'` to signal stream
+            completion. This enables proper parsing of `tool_call_chunks` into
+            `tool_calls` on the aggregated message:
+
+            ```python
+            for i, token in enumerate(tokens):
+                is_last = i == len(tokens) - 1
+                yield ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content=token,
+                        chunk_position="last" if is_last else None,
+                    )
+                )
+            ```
         """
-        num_chunks = 0
+        chunks: list[AIMessageChunk] = []
         full: AIMessageChunk | None = None
         for chunk in model.stream("Hello"):
             assert chunk is not None
             assert isinstance(chunk, AIMessageChunk)
             assert isinstance(chunk.content, str | list)
-            num_chunks += 1
+            chunks.append(chunk)
             full = chunk if full is None else full + chunk
-        assert num_chunks > 0
+        assert len(chunks) > 0
         assert isinstance(full, AIMessageChunk)
         assert full.content
         assert len(full.content_blocks) == 1
         assert full.content_blocks[0]["type"] == "text"
+
+        # Verify chunk_position signaling
+        last_chunk = chunks[-1]
+        assert last_chunk.chunk_position == "last", (
+            f"Final chunk must have chunk_position='last', "
+            f"got {last_chunk.chunk_position!r}"
+        )
 
     @pytest.mark.parametrize("model", [{}, {"output_version": "v1"}], indirect=True)
     async def test_astream(self, model: BaseChatModel) -> None:
@@ -861,20 +883,29 @@ class ChatModelIntegrationTests(ChatModelTests):
             ```python
             yield ChatGenerationChunk(message=AIMessageChunk(content="chunk text"))
             ```
+
+            See `test_stream` troubleshooting for `chunk_position` requirements.
         """
-        num_chunks = 0
+        chunks: list[AIMessageChunk] = []
         full: AIMessageChunk | None = None
         async for chunk in model.astream("Hello"):
             assert chunk is not None
             assert isinstance(chunk, AIMessageChunk)
             assert isinstance(chunk.content, str | list)
-            num_chunks += 1
+            chunks.append(chunk)
             full = chunk if full is None else full + chunk
-        assert num_chunks > 0
+        assert len(chunks) > 0
         assert isinstance(full, AIMessageChunk)
         assert full.content
         assert len(full.content_blocks) == 1
         assert full.content_blocks[0]["type"] == "text"
+
+        # Verify chunk_position signaling
+        last_chunk = chunks[-1]
+        assert last_chunk.chunk_position == "last", (
+            f"Final chunk must have chunk_position='last', "
+            f"got {last_chunk.chunk_position!r}"
+        )
 
     def test_invoke_with_model_override(self, model: BaseChatModel) -> None:
         """Test that model name can be overridden at invoke time via kwargs.
@@ -2336,11 +2367,13 @@ class ChatModelIntegrationTests(ChatModelTests):
             punchline: str = FieldV1(description="answer to resolve the joke")
 
         # Pydantic class
+        # Note: with_structured_output return type is dict | pydantic.BaseModel (v2),
+        # but this test validates pydantic.v1.BaseModel support at runtime.
         chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
         result = chat.invoke("Tell me a joke about cats.")
-        assert isinstance(result, Joke)
+        assert isinstance(result, Joke)  # type: ignore[unreachable]
 
-        chunk = None
+        chunk = None  # type: ignore[unreachable]
         for chunk in chat.stream("Tell me a joke about cats."):
             assert isinstance(chunk, Joke)
         assert chunk is not None, "Stream returned no chunks - possible API issue"

@@ -2,31 +2,42 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
-from typing import cast
+from typing import TYPE_CHECKING, Any, cast
 
 from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.messages import (
     AIMessage,
+    AnyMessage,
+    BaseMessage,
     MessageLikeRepresentation,
     ToolMessage,
 )
-from langgraph.runtime import Runtime
+from typing_extensions import override
 
 from langchain.agents.middleware.context_editing import (
     ClearToolUsesEdit,
     ContextEditingMiddleware,
 )
-from langchain.agents.middleware.types import AgentState, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentState,
+    ModelRequest,
+    ModelResponse,
+)
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from langgraph.runtime import Runtime
 
 
 class _TokenCountingChatModel(FakeChatModel):
     """Fake chat model that counts tokens deterministically for tests."""
 
+    @override
     def get_num_tokens_from_messages(
         self,
-        messages: list[MessageLikeRepresentation],
-        tools: Iterable | None = None,
+        messages: list[BaseMessage],
+        tools: Sequence | None = None,
     ) -> int:
         return sum(_count_message_tokens(message) for message in messages)
 
@@ -43,7 +54,7 @@ def _count_content(content: MessageLikeRepresentation) -> int:
     if isinstance(content, str):
         return len(content)
     if isinstance(content, list):
-        return sum(_count_content(block) for block in content)  # type: ignore[arg-type]
+        return sum(_count_content(block) for block in content)
     if isinstance(content, dict):
         return len(str(content))
     return len(str(content))
@@ -53,10 +64,10 @@ def _make_state_and_request(
     messages: list[AIMessage | ToolMessage],
     *,
     system_prompt: str | None = None,
-) -> tuple[AgentState, ModelRequest]:
+) -> tuple[AgentState[Any], ModelRequest]:
     model = _TokenCountingChatModel()
-    conversation = list(messages)
-    state = cast("AgentState", {"messages": conversation})
+    conversation: list[AnyMessage] = list(messages)
+    state = cast("AgentState[Any]", {"messages": conversation})
     request = ModelRequest(
         model=model,
         system_prompt=system_prompt,
@@ -86,10 +97,10 @@ def test_no_edit_when_below_trigger() -> None:
 
     modified_request = None
 
-    def mock_handler(req: ModelRequest) -> AIMessage:
+    def mock_handler(req: ModelRequest) -> ModelResponse:
         nonlocal modified_request
         modified_request = req
-        return AIMessage(content="mock response")
+        return ModelResponse(result=[AIMessage(content="mock response")])
 
     # Call wrap_model_call which creates a new request
     middleware.wrap_model_call(request, mock_handler)
@@ -126,10 +137,10 @@ def test_clear_tool_outputs_and_inputs() -> None:
 
     modified_request = None
 
-    def mock_handler(req: ModelRequest) -> AIMessage:
+    def mock_handler(req: ModelRequest) -> ModelResponse:
         nonlocal modified_request
         modified_request = req
-        return AIMessage(content="mock response")
+        return ModelResponse(result=[AIMessage(content="mock response")])
 
     # Call wrap_model_call which creates a new request with edits
     middleware.wrap_model_call(request, mock_handler)
@@ -149,7 +160,9 @@ def test_clear_tool_outputs_and_inputs() -> None:
     assert context_meta["cleared_tool_inputs"] == [tool_call_id]
 
     # Original request should be unchanged
-    assert request.messages[0].tool_calls[0]["args"] == {"query": "foo"}
+    request_ai_message = request.messages[0]
+    assert isinstance(request_ai_message, AIMessage)
+    assert request_ai_message.tool_calls[0]["args"] == {"query": "foo"}
     assert request.messages[1].content == "x" * 200
 
 
@@ -162,13 +175,15 @@ def test_respects_keep_last_tool_results() -> None:
     ]
 
     for call_id, text in edits:
-        conversation.append(
-            AIMessage(
-                content="",
-                tool_calls=[{"id": call_id, "name": "tool", "args": {"input": call_id}}],
+        conversation.extend(
+            (
+                AIMessage(
+                    content="",
+                    tool_calls=[{"id": call_id, "name": "tool", "args": {"input": call_id}}],
+                ),
+                ToolMessage(content=text, tool_call_id=call_id),
             )
         )
-        conversation.append(ToolMessage(content=text, tool_call_id=call_id))
 
     _state, request = _make_state_and_request(conversation)
 
@@ -185,10 +200,10 @@ def test_respects_keep_last_tool_results() -> None:
 
     modified_request = None
 
-    def mock_handler(req: ModelRequest) -> AIMessage:
+    def mock_handler(req: ModelRequest) -> ModelResponse:
         nonlocal modified_request
         modified_request = req
-        return AIMessage(content="mock response")
+        return ModelResponse(result=[AIMessage(content="mock response")])
 
     # Call wrap_model_call which creates a new request with edits
     middleware.wrap_model_call(request, mock_handler)
@@ -238,10 +253,10 @@ def test_exclude_tools_prevents_clearing() -> None:
 
     modified_request = None
 
-    def mock_handler(req: ModelRequest) -> AIMessage:
+    def mock_handler(req: ModelRequest) -> ModelResponse:
         nonlocal modified_request
         modified_request = req
-        return AIMessage(content="mock response")
+        return ModelResponse(result=[AIMessage(content="mock response")])
 
     # Call wrap_model_call which creates a new request with edits
     middleware.wrap_model_call(request, mock_handler)
@@ -277,10 +292,10 @@ async def test_no_edit_when_below_trigger_async() -> None:
 
     modified_request = None
 
-    async def mock_handler(req: ModelRequest) -> AIMessage:
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
         nonlocal modified_request
         modified_request = req
-        return AIMessage(content="mock response")
+        return ModelResponse(result=[AIMessage(content="mock response")])
 
     # Call awrap_model_call which creates a new request
     await middleware.awrap_model_call(request, mock_handler)
@@ -318,10 +333,10 @@ async def test_clear_tool_outputs_and_inputs_async() -> None:
 
     modified_request = None
 
-    async def mock_handler(req: ModelRequest) -> AIMessage:
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
         nonlocal modified_request
         modified_request = req
-        return AIMessage(content="mock response")
+        return ModelResponse(result=[AIMessage(content="mock response")])
 
     # Call awrap_model_call which creates a new request with edits
     await middleware.awrap_model_call(request, mock_handler)
@@ -341,7 +356,9 @@ async def test_clear_tool_outputs_and_inputs_async() -> None:
     assert context_meta["cleared_tool_inputs"] == [tool_call_id]
 
     # Original request should be unchanged
-    assert request.messages[0].tool_calls[0]["args"] == {"query": "foo"}
+    request_ai_message = request.messages[0]
+    assert isinstance(request_ai_message, AIMessage)
+    assert request_ai_message.tool_calls[0]["args"] == {"query": "foo"}
     assert request.messages[1].content == "x" * 200
 
 
@@ -355,13 +372,15 @@ async def test_respects_keep_last_tool_results_async() -> None:
     ]
 
     for call_id, text in edits:
-        conversation.append(
-            AIMessage(
-                content="",
-                tool_calls=[{"id": call_id, "name": "tool", "args": {"input": call_id}}],
+        conversation.extend(
+            (
+                AIMessage(
+                    content="",
+                    tool_calls=[{"id": call_id, "name": "tool", "args": {"input": call_id}}],
+                ),
+                ToolMessage(content=text, tool_call_id=call_id),
             )
         )
-        conversation.append(ToolMessage(content=text, tool_call_id=call_id))
 
     _state, request = _make_state_and_request(conversation)
 
@@ -378,10 +397,10 @@ async def test_respects_keep_last_tool_results_async() -> None:
 
     modified_request = None
 
-    async def mock_handler(req: ModelRequest) -> AIMessage:
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
         nonlocal modified_request
         modified_request = req
-        return AIMessage(content="mock response")
+        return ModelResponse(result=[AIMessage(content="mock response")])
 
     # Call awrap_model_call which creates a new request with edits
     await middleware.awrap_model_call(request, mock_handler)
@@ -432,10 +451,10 @@ async def test_exclude_tools_prevents_clearing_async() -> None:
 
     modified_request = None
 
-    async def mock_handler(req: ModelRequest) -> AIMessage:
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
         nonlocal modified_request
         modified_request = req
-        return AIMessage(content="mock response")
+        return ModelResponse(result=[AIMessage(content="mock response")])
 
     # Call awrap_model_call which creates a new request with edits
     await middleware.awrap_model_call(request, mock_handler)

@@ -20,9 +20,7 @@ from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
 from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
-from langgraph.runtime import Runtime
 from langgraph.types import Command, Send
-from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict
 
 from langchain.agents.middleware.types import (
@@ -53,11 +51,13 @@ from langchain.chat_models import init_chat_model
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
 
-    from langchain_core.runnables import Runnable
+    from langchain_core.runnables import Runnable, RunnableConfig
     from langgraph.cache.base import BaseCache
     from langgraph.graph.state import CompiledStateGraph
+    from langgraph.runtime import Runtime
     from langgraph.store.base import BaseStore
     from langgraph.types import Checkpointer
+    from langgraph.typing import ContextT
 
     from langchain.agents.middleware.types import ToolCallRequest, ToolCallWrapper
 
@@ -288,6 +288,9 @@ def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None 
         schema_name: Name for the generated `TypedDict`
         omit_flag: If specified, omit fields with this flag set (`'input'` or
             `'output'`)
+
+    Returns:
+        Merged schema as `TypedDict`
     """
     all_annotations = {}
 
@@ -311,10 +314,10 @@ def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None 
     return TypedDict(schema_name, all_annotations)  # type: ignore[operator]
 
 
-def _extract_metadata(type_: type) -> list:
+def _extract_metadata(type_: type) -> list[Any]:
     """Extract metadata from a field type, handling Required/NotRequired and Annotated wrappers."""
     # Handle Required[Annotated[...]] or NotRequired[Annotated[...]]
-    if get_origin(type_) in (Required, NotRequired):
+    if get_origin(type_) in {Required, NotRequired}:
         inner_type = get_args(type_)[0]
         if get_origin(inner_type) is Annotated:
             return list(get_args(inner_type)[1:])
@@ -361,7 +364,9 @@ def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> l
     return []
 
 
-def _supports_provider_strategy(model: str | BaseChatModel, tools: list | None = None) -> bool:
+def _supports_provider_strategy(
+    model: str | BaseChatModel, tools: list[BaseTool | dict[str, Any]] | None = None
+) -> bool:
     """Check if a model supports provider-specific structured output.
 
     Args:
@@ -400,7 +405,7 @@ def _supports_provider_strategy(model: str | BaseChatModel, tools: list | None =
 
 def _handle_structured_output_error(
     exception: Exception,
-    response_format: ResponseFormat,
+    response_format: ResponseFormat[Any],
 ) -> tuple[bool, str]:
     """Handle structured output error. Returns `(should_retry, retry_tool_message)`."""
     if not isinstance(response_format, ToolStrategy):
@@ -414,18 +419,15 @@ def _handle_structured_output_error(
         return True, STRUCTURED_OUTPUT_ERROR_TEMPLATE.format(error=str(exception))
     if isinstance(handle_errors, str):
         return True, handle_errors
-    if isinstance(handle_errors, type) and issubclass(handle_errors, Exception):
-        if isinstance(exception, handle_errors):
+    if isinstance(handle_errors, type):
+        if issubclass(handle_errors, Exception) and isinstance(exception, handle_errors):
             return True, STRUCTURED_OUTPUT_ERROR_TEMPLATE.format(error=str(exception))
         return False, ""
     if isinstance(handle_errors, tuple):
         if any(isinstance(exception, exc_type) for exc_type in handle_errors):
             return True, STRUCTURED_OUTPUT_ERROR_TEMPLATE.format(error=str(exception))
         return False, ""
-    if callable(handle_errors):
-        # type narrowing not working appropriately w/ callable check, can fix later
-        return True, handle_errors(exception)  # type: ignore[return-value,call-arg]
-    return False, ""
+    return True, handle_errors(exception)
 
 
 def _chain_tool_call_wrappers(
@@ -455,10 +457,10 @@ def _chain_tool_call_wrappers(
 
         def composed(
             request: ToolCallRequest,
-            execute: Callable[[ToolCallRequest], ToolMessage | Command],
-        ) -> ToolMessage | Command:
+            execute: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+        ) -> ToolMessage | Command[Any]:
             # Create a callable that invokes inner with the original execute
-            def call_inner(req: ToolCallRequest) -> ToolMessage | Command:
+            def call_inner(req: ToolCallRequest) -> ToolMessage | Command[Any]:
                 return inner(req, execute)
 
             # Outer can call call_inner multiple times
@@ -477,14 +479,14 @@ def _chain_tool_call_wrappers(
 def _chain_async_tool_call_wrappers(
     wrappers: Sequence[
         Callable[
-            [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]],
-            Awaitable[ToolMessage | Command],
+            [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]]],
+            Awaitable[ToolMessage | Command[Any]],
         ]
     ],
 ) -> (
     Callable[
-        [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]],
-        Awaitable[ToolMessage | Command],
+        [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]]],
+        Awaitable[ToolMessage | Command[Any]],
     ]
     | None
 ):
@@ -504,25 +506,25 @@ def _chain_async_tool_call_wrappers(
 
     def compose_two(
         outer: Callable[
-            [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]],
-            Awaitable[ToolMessage | Command],
+            [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]]],
+            Awaitable[ToolMessage | Command[Any]],
         ],
         inner: Callable[
-            [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]],
-            Awaitable[ToolMessage | Command],
+            [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]]],
+            Awaitable[ToolMessage | Command[Any]],
         ],
     ) -> Callable[
-        [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]],
-        Awaitable[ToolMessage | Command],
+        [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]]],
+        Awaitable[ToolMessage | Command[Any]],
     ]:
         """Compose two async wrappers where outer wraps inner."""
 
         async def composed(
             request: ToolCallRequest,
-            execute: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
-        ) -> ToolMessage | Command:
+            execute: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+        ) -> ToolMessage | Command[Any]:
             # Create an async callable that invokes inner with the original execute
-            async def call_inner(req: ToolCallRequest) -> ToolMessage | Command:
+            async def call_inner(req: ToolCallRequest) -> ToolMessage | Command[Any]:
                 return await inner(req, execute)
 
             # Outer can call call_inner multiple times
@@ -540,11 +542,11 @@ def _chain_async_tool_call_wrappers(
 
 def create_agent(
     model: str | BaseChatModel,
-    tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
+    tools: Sequence[BaseTool | Callable[..., Any] | dict[str, Any]] | None = None,
     *,
     system_prompt: str | SystemMessage | None = None,
     middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
-    response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
+    response_format: ResponseFormat[ResponseT] | type[ResponseT] | dict[str, Any] | None = None,
     state_schema: type[AgentState[ResponseT]] | None = None,
     context_schema: type[ContextT] | None = None,
     checkpointer: Checkpointer | None = None,
@@ -553,7 +555,7 @@ def create_agent(
     interrupt_after: list[str] | None = None,
     debug: bool = False,
     name: str | None = None,
-    cache: BaseCache | None = None,
+    cache: BaseCache[Any] | None = None,
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
@@ -653,6 +655,9 @@ def create_agent(
     Returns:
         A compiled `StateGraph` that can be used for chat interactions.
 
+    Raises:
+        AssertionError: If duplicate middleware instances are provided.
+
     The agent node calls the language model with the messages list (after applying
     the system prompt). If the resulting [`AIMessage`][langchain.messages.AIMessage]
     contains `tool_calls`, the graph will then call the tools. The tools node executes
@@ -701,7 +706,7 @@ def create_agent(
     # Raw schemas are wrapped in AutoStrategy to preserve auto-detection intent.
     # AutoStrategy is converted to ToolStrategy upfront to calculate tools during agent creation,
     # but may be replaced with ProviderStrategy later based on model capabilities.
-    initial_response_format: ToolStrategy | ProviderStrategy | AutoStrategy | None
+    initial_response_format: ToolStrategy[Any] | ProviderStrategy[Any] | AutoStrategy[Any] | None
     if response_format is None:
         initial_response_format = None
     elif isinstance(response_format, (ToolStrategy, ProviderStrategy)):
@@ -716,13 +721,13 @@ def create_agent(
 
     # For AutoStrategy, convert to ToolStrategy to setup tools upfront
     # (may be replaced with ProviderStrategy later based on model)
-    tool_strategy_for_setup: ToolStrategy | None = None
+    tool_strategy_for_setup: ToolStrategy[Any] | None = None
     if isinstance(initial_response_format, AutoStrategy):
         tool_strategy_for_setup = ToolStrategy(schema=initial_response_format.schema)
     elif isinstance(initial_response_format, ToolStrategy):
         tool_strategy_for_setup = initial_response_format
 
-    structured_output_tools: dict[str, OutputToolBinding] = {}
+    structured_output_tools: dict[str, OutputToolBinding[Any]] = {}
     if tool_strategy_for_setup:
         for response_schema in tool_strategy_for_setup.schema_specs:
             structured_tool_info = OutputToolBinding.from_schema_spec(response_schema)
@@ -869,7 +874,7 @@ def create_agent(
     )
 
     def _handle_model_output(
-        output: AIMessage, effective_response_format: ResponseFormat | None
+        output: AIMessage, effective_response_format: ResponseFormat[Any] | None
     ) -> dict[str, Any]:
         """Handle model output including structured responses.
 
@@ -937,8 +942,7 @@ def create_agent(
 
                     tool_message_content = (
                         effective_response_format.tool_message_content
-                        if effective_response_format.tool_message_content
-                        else f"Returning structured response: {structured_response}"
+                        or f"Returning structured response: {structured_response}"
                     )
 
                     return {
@@ -973,7 +977,9 @@ def create_agent(
 
         return {"messages": [output]}
 
-    def _get_bound_model(request: ModelRequest) -> tuple[Runnable, ResponseFormat | None]:
+    def _get_bound_model(
+        request: ModelRequest,
+    ) -> tuple[Runnable[Any, Any], ResponseFormat[Any] | None]:
         """Get the model with appropriate tool bindings.
 
         Performs auto-detection of strategy if needed based on model capabilities.
@@ -985,6 +991,10 @@ def create_agent(
             Tuple of `(bound_model, effective_response_format)` where
             `effective_response_format` is the actual strategy used (may differ from
             initial if auto-detected).
+
+        Raises:
+            ValueError: If middleware returned unknown client-side tool names.
+            ValueError: If `ToolStrategy` specifies tools not declared upfront.
         """
         # Validate ONLY client-side tools that need to exist in tool_node
         # Build map of available client-side tools from the ToolNode
@@ -1019,7 +1029,7 @@ def create_agent(
             raise ValueError(msg)
 
         # Determine effective response format (auto-detect if needed)
-        effective_response_format: ResponseFormat | None
+        effective_response_format: ResponseFormat[Any] | None
         if isinstance(request.response_format, AutoStrategy):
             # User provided raw schema via AutoStrategy - auto-detect best strategy based on model
             if _supports_provider_strategy(request.model, tools=request.tools):
@@ -1113,7 +1123,7 @@ def create_agent(
             structured_response=structured_response,
         )
 
-    def model_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
+    def model_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
@@ -1168,7 +1178,7 @@ def create_agent(
             structured_response=structured_response,
         )
 
-    async def amodel_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
+    async def amodel_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
@@ -1472,6 +1482,10 @@ def create_agent(
             can_jump_to=_get_can_jump_to(middleware_w_after_agent[0], "after_agent"),
         )
 
+    config: RunnableConfig = {"recursion_limit": 10_000}
+    if name:
+        config["metadata"] = {"lc_agent_name": name}
+
     return graph.compile(
         checkpointer=checkpointer,
         store=store,
@@ -1480,7 +1494,7 @@ def create_agent(
         debug=debug,
         name=name,
         cache=cache,
-    ).with_config({"recursion_limit": 10_000})
+    ).with_config(config)
 
 
 def _resolve_jump(
@@ -1517,7 +1531,7 @@ def _fetch_last_ai_and_tool_messages(
 def _make_model_to_tools_edge(
     *,
     model_destination: str,
-    structured_output_tools: dict[str, OutputToolBinding],
+    structured_output_tools: dict[str, OutputToolBinding[Any]],
     end_destination: str,
 ) -> Callable[[dict[str, Any]], str | list[Send] | None]:
     def model_to_tools(
@@ -1601,7 +1615,7 @@ def _make_tools_to_model_edge(
     *,
     tool_node: ToolNode,
     model_destination: str,
-    structured_output_tools: dict[str, OutputToolBinding],
+    structured_output_tools: dict[str, OutputToolBinding[Any]],
     end_destination: str,
 ) -> Callable[[dict[str, Any]], str | None]:
     def tools_to_model(state: dict[str, Any]) -> str | None:

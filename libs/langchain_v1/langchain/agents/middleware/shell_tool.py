@@ -78,7 +78,7 @@ class _SessionResources:
     session: ShellSession
     tempdir: tempfile.TemporaryDirectory[str] | None
     policy: BaseExecutionPolicy
-    finalizer: weakref.finalize = field(init=False, repr=False)
+    finalizer: weakref.finalize = field(init=False, repr=False)  # type: ignore[type-arg]
 
     def __post_init__(self) -> None:
         self.finalizer = weakref.finalize(
@@ -90,7 +90,7 @@ class _SessionResources:
         )
 
 
-class ShellToolState(AgentState):
+class ShellToolState(AgentState[Any]):
     """Agent state extension for tracking shell session resources."""
 
     shell_session_resources: NotRequired[
@@ -134,7 +134,11 @@ class ShellSession:
         self._terminated = False
 
     def start(self) -> None:
-        """Start the shell subprocess and reader threads."""
+        """Start the shell subprocess and reader threads.
+
+        Raises:
+            RuntimeError: If the shell session pipes cannot be initialized.
+        """
         if self._process and self._process.poll() is None:
             return
 
@@ -211,9 +215,14 @@ class ShellSession:
         with self._lock:
             self._drain_queue()
             payload = command if command.endswith("\n") else f"{command}\n"
-            self._stdin.write(payload)
-            self._stdin.write(f"printf '{marker} %s\\n' $?\n")
-            self._stdin.flush()
+            try:
+                self._stdin.write(payload)
+                self._stdin.write(f"printf '{marker} %s\\n' $?\n")
+                self._stdin.flush()
+            except (BrokenPipeError, OSError):
+                # The shell exited before we could write the marker command.
+                # This happens when commands like 'exit 1' terminate the shell.
+                return self._collect_output_after_exit(deadline)
 
             return self._collect_output(marker, deadline, timeout)
 
@@ -292,6 +301,80 @@ class ShellSession:
                 total_lines=total_lines,
                 total_bytes=total_bytes,
             )
+
+        output = "".join(collected)
+        return CommandExecutionResult(
+            output=output,
+            exit_code=exit_code,
+            timed_out=False,
+            truncated_by_lines=truncated_by_lines,
+            truncated_by_bytes=truncated_by_bytes,
+            total_lines=total_lines,
+            total_bytes=total_bytes,
+        )
+
+    def _collect_output_after_exit(self, deadline: float) -> CommandExecutionResult:
+        """Collect output after the shell exited unexpectedly.
+
+        Called when a `BrokenPipeError` occurs while writing to stdin, indicating the
+        shell process terminated (e.g., due to an 'exit' command).
+
+        Args:
+            deadline: Absolute time by which collection must complete.
+
+        Returns:
+            `CommandExecutionResult` with collected output and the process exit code.
+        """
+        collected: list[str] = []
+        total_lines = 0
+        total_bytes = 0
+        truncated_by_lines = False
+        truncated_by_bytes = False
+
+        # Give reader threads a brief moment to enqueue any remaining output.
+        drain_timeout = 0.1
+        drain_deadline = min(time.monotonic() + drain_timeout, deadline)
+
+        while True:
+            remaining = drain_deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            try:
+                source, data = self._queue.get(timeout=remaining)
+            except queue.Empty:
+                break
+
+            if data is None:
+                # EOF marker from a reader thread; continue draining.
+                continue
+
+            total_lines += 1
+            encoded = data.encode("utf-8", "replace")
+            total_bytes += len(encoded)
+
+            if total_lines > self._policy.max_output_lines:
+                truncated_by_lines = True
+                continue
+
+            if (
+                self._policy.max_output_bytes is not None
+                and total_bytes > self._policy.max_output_bytes
+            ):
+                truncated_by_bytes = True
+                continue
+
+            if source == "stderr":
+                stripped = data.rstrip("\n")
+                collected.append(f"[stderr] {stripped}")
+                if data.endswith("\n"):
+                    collected.append("\n")
+            else:
+                collected.append(data)
+
+        # Get exit code from the terminated process.
+        exit_code: int | None = None
+        if self._process:
+            exit_code = self._process.poll()
 
         output = "".join(collected)
         return CommandExecutionResult(
@@ -440,6 +523,12 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
                 Defaults to `HostExecutionPolicy` for native execution.
             redaction_rules: Optional redaction rules to sanitize command output before
                 returning it to the model.
+
+                !!! warning
+                    Redaction rules are applied post execution and do not prevent
+                    exfiltration of secrets or sensitive data when using
+                    `HostExecutionPolicy`.
+
             tool_description: Optional override for the registered shell tool
                 description.
             tool_name: Name for the registered shell tool.
@@ -519,19 +608,35 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         normalized: dict[str, str] = {}
         for key, value in env.items():
             if not isinstance(key, str):
-                msg = "Environment variable names must be strings."
+                msg = "Environment variable names must be strings."  # type: ignore[unreachable]
                 raise TypeError(msg)
             normalized[key] = str(value)
         return normalized
 
     @override
     def before_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:
-        """Start the shell session and run startup commands."""
+        """Start the shell session and run startup commands.
+
+        Args:
+            state: The current agent state.
+            runtime: The runtime context.
+
+        Returns:
+            Shell session resources to be stored in the agent state.
+        """
         resources = self._get_or_create_resources(state)
         return {"shell_session_resources": resources}
 
     async def abefore_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:
-        """Async start the shell session and run startup commands."""
+        """Async start the shell session and run startup commands.
+
+        Args:
+            state: The current agent state.
+            runtime: The runtime context.
+
+        Returns:
+            Shell session resources to be stored in the agent state.
+        """
         return self.before_agent(state, runtime)
 
     @override
@@ -605,7 +710,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
             return
         for command in self._startup_commands:
             result = session.execute(command, timeout=self._execution_policy.startup_timeout)
-            if result.timed_out or (result.exit_code not in (0, None)):
+            if result.timed_out or (result.exit_code not in {0, None}):
                 msg = f"Startup command '{command}' failed with exit code {result.exit_code}"
                 raise RuntimeError(msg)
 
@@ -617,7 +722,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
                 result = session.execute(command, timeout=self._execution_policy.command_timeout)
                 if result.timed_out:
                     LOGGER.warning("Shutdown command '%s' timed out.", command)
-                elif result.exit_code not in (0, None):
+                elif result.exit_code not in {0, None}:
                     LOGGER.warning(
                         "Shutdown command '%s' exited with %s.", command, result.exit_code
                     )
@@ -708,7 +813,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
                 f"(observed {result.total_bytes})."
             )
 
-        if result.exit_code not in (0, None):
+        if result.exit_code not in {0, None}:
             sanitized_output = f"{sanitized_output.rstrip()}\n\nExit code: {result.exit_code}"
             final_status: Literal["success", "error"] = "error"
         else:

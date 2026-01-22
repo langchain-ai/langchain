@@ -18,15 +18,30 @@ from langchain_fireworks import ChatFireworks
 _MODEL = "accounts/fireworks/models/gpt-oss-120b"
 
 
-def test_tool_choice_bool() -> None:
-    """Test that tool choice is respected just passing in True."""
-    llm = ChatFireworks(model="fireworks/kimi-k2-instruct-0905")
+@pytest.mark.parametrize("strict", [None, True, False])
+def test_tool_choice_bool(strict: bool | None) -> None:  # noqa: FBT001
+    """Test that tool choice is respected with different strict values."""
+    llm = ChatFireworks(model="accounts/fireworks/models/kimi-k2-instruct-0905")
 
     class MyTool(BaseModel):
         name: str
         age: int
 
-    with_tool = llm.bind_tools([MyTool], tool_choice=True)
+    kwargs = {"tool_choice": True}
+    if strict is not None:
+        kwargs["strict"] = strict
+    with_tool = llm.bind_tools([MyTool], **kwargs)
+
+    # Verify that strict is correctly set in the tool definition
+    assert hasattr(with_tool, "kwargs")
+    tools = with_tool.kwargs.get("tools", [])
+    assert len(tools) == 1
+    tool_def = tools[0]
+    assert "function" in tool_def
+    if strict is None:
+        assert "strict" not in tool_def["function"]
+    else:
+        assert tool_def["function"].get("strict") is strict
 
     resp = with_tool.invoke("Who was the 27 year old named Erick?")
     assert isinstance(resp, AIMessage)
@@ -44,7 +59,7 @@ def test_tool_choice_bool() -> None:
 
 async def test_astream() -> None:
     """Test streaming tokens from ChatFireworks."""
-    llm = ChatFireworks(model="fireworks/kimi-k2-instruct-0905")
+    llm = ChatFireworks(model="accounts/fireworks/models/kimi-k2-instruct-0905")
 
     full: BaseMessageChunk | None = None
     chunks_with_token_counts = 0
@@ -142,7 +157,7 @@ def _get_joke_class(
 
 @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
 def test_structured_output_json_schema(schema_type: str) -> None:
-    llm = ChatFireworks(model="fireworks/kimi-k2-instruct-0905")
+    llm = ChatFireworks(model="accounts/fireworks/models/kimi-k2-instruct-0905")
     schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
     chat = llm.with_structured_output(schema, method="json_schema")
 

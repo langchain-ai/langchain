@@ -17,8 +17,8 @@ jobs:
           script: |
             const body = context.payload.issue.body || "";
 
-            // Extract text under "### Package"
-            const match = body.match(/### Package\s+([\s\S]*?)\n###/i);
+            // Extract text under "### Package" (handles " (Required)" suffix and being last section)
+            const match = body.match(/### Package[^\n]*\n([\s\S]*?)(?:\n###|$)/i);
             if (!match) return;
 
             const packageSection = match[1].trim();

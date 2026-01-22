@@ -23,7 +23,7 @@ def remove_request_headers(request: Any) -> Any:
     return request
 
 
-def remove_response_headers(response: dict) -> dict:
+def remove_response_headers(response: dict[str, Any]) -> dict[str, Any]:
     """Remove sensitive headers from the response."""
     for k in response["headers"]:
         response["headers"][k] = "**REDACTED**"
@@ -31,7 +31,7 @@ def remove_response_headers(response: dict) -> dict:
 
 
 @pytest.fixture(scope="session")
-def vcr_config() -> dict:
+def vcr_config() -> dict[str, Any]:
     """Extend the default configuration coming from langchain_tests."""
     config = base_vcr_config()
     config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
@@ -42,7 +42,7 @@ def vcr_config() -> dict:
     return config
 
 
-def pytest_recording_configure(config: dict, vcr: VCR) -> None:  # noqa: ARG001
+def pytest_recording_configure(config: dict[str, Any], vcr: VCR) -> None:  # noqa: ARG001
     vcr.register_persister(CustomPersister())
     vcr.register_serializer("yaml.gz", CustomSerializer())
 
@@ -80,8 +80,8 @@ def pytest_collection_modifyitems(config: pytest.Config, items: Sequence[pytest.
     # Used to avoid repeated calls to `util.find_spec`
     required_pkgs_info: dict[str, bool] = {}
 
-    only_extended = config.getoption("--only-extended") or False
-    only_core = config.getoption("--only-core") or False
+    only_extended = config.getoption("--only-extended", default=False)
+    only_core = config.getoption("--only-core", default=False)
 
     if only_extended and only_core:
         msg = "Cannot specify both `--only-extended` and `--only-core`."

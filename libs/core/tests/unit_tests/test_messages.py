@@ -370,6 +370,14 @@ class TestGetBufferString:
 
         assert get_buffer_string(msgs) == expected_output
 
+    def test_custom_message_separator(self) -> None:
+        msgs = [
+            self._HUMAN_MSG,
+            self._AI_MSG,
+        ]
+        expected_output = "Human: human\n\nAI: ai"
+        assert get_buffer_string(msgs, message_separator="\n\n") == expected_output
+
 
 def test_multiple_msg() -> None:
     human_msg = HumanMessage(content="human", additional_kwargs={"key": "value"})
@@ -925,7 +933,7 @@ def test_tool_message_serdes() -> None:
         },
     }
     assert dumpd(message) == ser_message
-    assert load(dumpd(message)) == message
+    assert load(dumpd(message), allowed_objects=[ToolMessage]) == message
 
 
 class BadObject:
@@ -954,7 +962,7 @@ def test_tool_message_ser_non_serializable() -> None:
     }
     assert dumpd(message) == ser_message
     with pytest.raises(NotImplementedError):
-        load(dumpd(ser_message))
+        load(dumpd(message), allowed_objects=[ToolMessage])
 
 
 def test_tool_message_to_dict() -> None:

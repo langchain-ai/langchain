@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from langgraph.runtime import Runtime
 
 
-class ModelCallLimitState(AgentState):
+class ModelCallLimitState(AgentState[Any]):
     """State schema for `ModelCallLimitMiddleware`.
 
     Extends `AgentState` with model call tracking fields.
@@ -148,7 +148,7 @@ class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, Any]):
             msg = "At least one limit must be specified (thread_limit or run_limit)"
             raise ValueError(msg)
 
-        if exit_behavior not in ("end", "error"):
+        if exit_behavior not in {"end", "error"}:
             msg = f"Invalid exit_behavior: {exit_behavior}. Must be 'end' or 'error'"
             raise ValueError(msg)
 
