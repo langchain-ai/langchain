@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 from langchain_core.messages import HumanMessage, ToolCall, ToolMessage
-from langchain_core.tools import BaseTool, tool
+from langchain_core.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 
@@ -74,9 +74,7 @@ class MultipleDynamicToolsMiddleware(AgentMiddleware):
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
         # Add multiple dynamic tools
-        updated = request.override(
-            tools=[*request.tools, dynamic_tool, another_dynamic_tool]
-        )
+        updated = request.override(tools=[*request.tools, dynamic_tool, another_dynamic_tool])
         return handler(updated)
 
     def wrap_tool_call(
@@ -340,9 +338,7 @@ class ConditionalDynamicToolMiddleware(AgentMiddleware):
         # Only add the tool if certain conditions are met
         messages = request.state.get("messages", [])
         if messages and "calculator" in str(messages[-1].content).lower():
-            updated = request.override(
-                tools=[*request.tools, another_dynamic_tool]
-            )
+            updated = request.override(tools=[*request.tools, another_dynamic_tool])
             return handler(updated)
         return handler(request)
 
