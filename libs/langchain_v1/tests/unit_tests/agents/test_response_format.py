@@ -161,16 +161,20 @@ async def _collect_streamed_text(agent: Any) -> str:
 
 @pytest.mark.asyncio
 async def test_auto_finalize_allows_streaming_with_tools() -> None:
-    """When tools are present, finalize mode is auto-selected, allowing text streaming."""
+    """When tools are present with auto-detectable response_format, finalize mode is
+    auto-selected, allowing text streaming.
+
+    Note: ToolStrategy doesn't use finalize mode because it requires tool execution
+    which can't happen in the finalize step. Using a raw schema (AutoStrategy) or
+    ProviderStrategy enables finalize mode.
+    """
     model_baseline = _StreamingToolCallingModel()
     agent_baseline = create_agent(model_baseline, [get_weather])
     baseline_text = await _collect_streamed_text(agent_baseline)
 
     model_tool = _StreamingToolCallingModel()
-    # Providing tools + response_format triggers auto-finalize mode
-    agent_tool = create_agent(
-        model_tool, [get_weather], response_format=ToolStrategy(WeatherBaseModel)
-    )
+    # Providing tools + response_format (raw schema -> AutoStrategy) triggers auto-finalize mode
+    agent_tool = create_agent(model_tool, [get_weather], response_format=WeatherBaseModel)
     tool_text = await _collect_streamed_text(agent_tool)
 
     # In finalize mode, tool_choice is NOT forced to "any" on the main loop

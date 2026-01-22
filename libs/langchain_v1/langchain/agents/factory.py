@@ -719,9 +719,12 @@ def create_agent(
         # Raw schema - wrap in AutoStrategy to enable auto-detection
         initial_response_format = AutoStrategy(schema=response_format)
 
-    # Only use finalize mode for AutoStrategy/ProviderStrategy with tools.
-    # ToolStrategy relies on the model calling the structured output tool during
-    # the agent loop, so it should NOT use finalize mode.
+    # Enable finalize mode when we have both tools and response_format, EXCEPT for
+    # ToolStrategy. ToolStrategy requires tool execution which can't happen in the
+    # finalize step (the tool node loop isn't run there). For ToolStrategy, the
+    # structured output tool is called during the main agent loop.
+    # Finalize mode allows text streaming by deferring structured output to a final
+    # step, avoiding tool_choice="any" which suppresses streaming.
     finalize_structured_output = (
         response_format is not None
         and bool(tools)
