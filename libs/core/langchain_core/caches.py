@@ -151,7 +151,6 @@ class InMemoryCache(BaseCache):
     """Cache that stores things in memory.
 
     Example:
-
         ```python
         from langchain_core.caches import InMemoryCache
         from langchain_core.outputs import Generation
