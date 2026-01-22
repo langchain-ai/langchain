@@ -719,7 +719,14 @@ def create_agent(
         # Raw schema - wrap in AutoStrategy to enable auto-detection
         initial_response_format = AutoStrategy(schema=response_format)
 
-    finalize_structured_output = response_format is not None and bool(tools)
+    # Only use finalize mode for AutoStrategy/ProviderStrategy with tools.
+    # ToolStrategy relies on the model calling the structured output tool during
+    # the agent loop, so it should NOT use finalize mode.
+    finalize_structured_output = (
+        response_format is not None
+        and bool(tools)
+        and not isinstance(response_format, ToolStrategy)
+    )
 
     # For AutoStrategy, convert to ToolStrategy to setup tools upfront
     # (may be replaced with ProviderStrategy later based on model)
