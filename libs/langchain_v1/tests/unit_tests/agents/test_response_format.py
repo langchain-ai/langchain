@@ -161,8 +161,9 @@ async def _collect_streamed_text(agent: Any) -> str:
 
 @pytest.mark.asyncio
 async def test_auto_finalize_allows_streaming_with_tools() -> None:
-    """When tools are present with auto-detectable response_format, finalize mode is
-    auto-selected, allowing text streaming.
+    """When tools are present with auto-detectable response_format, finalize mode is used.
+
+    Finalize mode is auto-selected, allowing text streaming.
 
     Note: ToolStrategy doesn't use finalize mode because it requires tool execution
     which can't happen in the finalize step. Using a raw schema (AutoStrategy) or

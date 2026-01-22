@@ -136,8 +136,8 @@ def test_inference_to_tool_output(*, use_responses_api: bool) -> None:
     assert response["structured_response"].temperature == 75.0
     assert response["structured_response"].condition.lower() == "sunny"
 
-    # With ToolStrategy: the model calls the structured output tool, which ends the loop.
-    # Pattern: human → ai (tool call) → tool → ai (structured tool call) → tool (structured response)
+    # With ToolStrategy: the model calls the structured output tool to end the loop.
+    # Pattern: human → ai (tool call) → tool → ai (struct tool call) → tool (response)
     assert len(response["messages"]) >= 5
 
     # Validate message pattern
