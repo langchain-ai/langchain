@@ -59,14 +59,9 @@ class DynamicToolMiddleware(AgentMiddleware):
         request: ToolCallRequest,
         handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
     ) -> ToolMessage | Command[Any]:
-        # Handle the dynamic tool
+        # Handle the dynamic tool by overriding the tool in the request
         if request.tool_call["name"] == "dynamic_tool":
-            result = dynamic_tool.invoke(request.tool_call["args"])
-            return ToolMessage(
-                content=str(result),
-                tool_call_id=request.tool_call["id"],
-                name=request.tool_call["name"],
-            )
+            return handler(request.override(tool=dynamic_tool))
         return handler(request)
 
 
@@ -90,21 +85,11 @@ class MultipleDynamicToolsMiddleware(AgentMiddleware):
         handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
     ) -> ToolMessage | Command[Any]:
         tool_name = request.tool_call["name"]
-        # Handle the dynamic tools
+        # Handle the dynamic tools by overriding the tool in the request
         if tool_name == "dynamic_tool":
-            result = dynamic_tool.invoke(request.tool_call["args"])
-            return ToolMessage(
-                content=str(result),
-                tool_call_id=request.tool_call["id"],
-                name=tool_name,
-            )
+            return handler(request.override(tool=dynamic_tool))
         if tool_name == "another_dynamic_tool":
-            result = another_dynamic_tool.invoke(request.tool_call["args"])
-            return ToolMessage(
-                content=str(result),
-                tool_call_id=request.tool_call["id"],
-                name=tool_name,
-            )
+            return handler(request.override(tool=another_dynamic_tool))
         return handler(request)
 
 
@@ -367,12 +352,7 @@ class ConditionalDynamicToolMiddleware(AgentMiddleware):
         handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
     ) -> ToolMessage | Command[Any]:
         if request.tool_call["name"] == "another_dynamic_tool":
-            result = another_dynamic_tool.invoke(request.tool_call["args"])
-            return ToolMessage(
-                content=str(result),
-                tool_call_id=request.tool_call["id"],
-                name=request.tool_call["name"],
-            )
+            return handler(request.override(tool=another_dynamic_tool))
         return handler(request)
 
 
@@ -492,12 +472,7 @@ def test_dynamic_tool_chained_middleware() -> None:
         ) -> ToolMessage | Command[Any]:
             call_log.append("second_tool")
             if request.tool_call["name"] == "dynamic_tool":
-                result = dynamic_tool.invoke(request.tool_call["args"])
-                return ToolMessage(
-                    content=str(result),
-                    tool_call_id=request.tool_call["id"],
-                    name=request.tool_call["name"],
-                )
+                return handler(request.override(tool=dynamic_tool))
             return handler(request)
 
     model = FakeToolCallingModel(
