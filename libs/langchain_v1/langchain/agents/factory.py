@@ -1392,11 +1392,15 @@ def create_agent(
 
     # Determine the exit node (runs once at end): after_agent or END
     if middleware_w_after_agent:
-        exit_node = f"{middleware_w_after_agent[-1].name}.after_agent"
+        after_loop_node = f"{middleware_w_after_agent[-1].name}.after_agent"
     else:
-        exit_node = END
+        after_loop_node = END
 
-    loop_end_node = "structured_output" if finalize_structured_output else exit_node
+    if finalize_structured_output:
+        exit_node = "structured_output"
+        graph.add_edge("structured_output", after_loop_node)
+    else:
+        exit_node = after_loop_node
 
     graph.add_edge(START, entry_node)
     # add conditional edges only if tools exist
@@ -1408,7 +1412,7 @@ def create_agent(
             any(tool.return_direct for tool in tool_node.tools_by_name.values())
             or structured_output_tools
         ):
-            tools_to_model_destinations.append(loop_end_node)
+            tools_to_model_destinations.append(exit_node)
 
         graph.add_conditional_edges(
             "tools",
@@ -1417,7 +1421,7 @@ def create_agent(
                     tool_node=tool_node,
                     model_destination=loop_entry_node,
                     structured_output_tools=structured_output_tools,
-                    end_destination=loop_end_node,
+                    end_destination=exit_node,
                 ),
                 trace=False,
             ),
@@ -1430,7 +1434,7 @@ def create_agent(
         #   potentially artificially injected tool messages, ex HITL
         # - there is a response format -- to allow for jumping to model to handle
         #   regenerating structured output tool calls
-        model_to_tools_destinations = ["tools", loop_end_node]
+        model_to_tools_destinations = ["tools", exit_node]
         if response_format or loop_exit_node != "model":
             model_to_tools_destinations.append(loop_entry_node)
 
@@ -1440,7 +1444,7 @@ def create_agent(
                 _make_model_to_tools_edge(
                     model_destination=loop_entry_node,
                     structured_output_tools=structured_output_tools,
-                    end_destination=loop_end_node,
+                    end_destination=exit_node,
                 ),
                 trace=False,
             ),
@@ -1452,23 +1456,23 @@ def create_agent(
             RunnableCallable(
                 _make_model_to_model_edge(
                     model_destination=loop_entry_node,
-                    end_destination=loop_end_node,
+                    end_destination=exit_node,
                 ),
                 trace=False,
             ),
-            [loop_entry_node, loop_end_node],
+            [loop_entry_node, exit_node],
         )
     elif loop_exit_node == "model":
         # If no tools and no after_model, go directly to exit_node
-        graph.add_edge(loop_exit_node, loop_end_node)
+        graph.add_edge(loop_exit_node, exit_node)
     # No tools but we have after_model - connect after_model to exit_node
     else:
         _add_middleware_edge(
             graph,
             name=f"{middleware_w_after_model[0].name}.after_model",
-            default_destination=loop_end_node,
+            default_destination=exit_node,
             model_destination=loop_entry_node,
-            end_destination=loop_end_node,
+            end_destination=exit_node,
             can_jump_to=_get_can_jump_to(middleware_w_after_model[0], "after_model"),
         )
 
@@ -1480,16 +1484,20 @@ def create_agent(
                 name=f"{m1.name}.before_agent",
                 default_destination=f"{m2.name}.before_agent",
                 model_destination=loop_entry_node,
-                end_destination=loop_end_node,
+                end_destination=exit_node,
                 can_jump_to=_get_can_jump_to(m1, "before_agent"),
             )
-        # Connect last before_agent to loop_entry_node (before_model or model)
+
+        # Connect the last before_agent to before_model (or model if no before_model)
+        # The 'default_destination' here is where the chain goes normally
         _add_middleware_edge(
             graph,
             name=f"{middleware_w_before_agent[-1].name}.before_agent",
-            default_destination=loop_entry_node,
+            default_destination=f"{middleware_w_before_model[0].name}.before_model"
+            if middleware_w_before_model
+            else "model",
             model_destination=loop_entry_node,
-            end_destination=loop_end_node,
+            end_destination=exit_node,
             can_jump_to=_get_can_jump_to(middleware_w_before_agent[-1], "before_agent"),
         )
 
@@ -1501,21 +1509,24 @@ def create_agent(
                 name=f"{m1.name}.before_model",
                 default_destination=f"{m2.name}.before_model",
                 model_destination=loop_entry_node,
-                end_destination=loop_end_node,
+                end_destination=exit_node,
                 can_jump_to=_get_can_jump_to(m1, "before_model"),
             )
-        # Go directly to model after the last before_model
+
+        # Connect the last before_model to model
         _add_middleware_edge(
             graph,
             name=f"{middleware_w_before_model[-1].name}.before_model",
             default_destination="model",
             model_destination=loop_entry_node,
-            end_destination=loop_end_node,
+            end_destination=exit_node,
             can_jump_to=_get_can_jump_to(middleware_w_before_model[-1], "before_model"),
         )
 
     # Add after_model middleware edges
     if middleware_w_after_model:
+        # Chain after_model middleware (runs in reverse order)
+        # model -> last -> ... -> first -> loop_exit
         graph.add_edge("model", f"{middleware_w_after_model[-1].name}.after_model")
         for idx in range(len(middleware_w_after_model) - 1, 0, -1):
             m1 = middleware_w_after_model[idx]
@@ -1525,11 +1536,11 @@ def create_agent(
                 name=f"{m1.name}.after_model",
                 default_destination=f"{m2.name}.after_model",
                 model_destination=loop_entry_node,
-                end_destination=loop_end_node,
+                end_destination=exit_node,
                 can_jump_to=_get_can_jump_to(m1, "after_model"),
             )
-        # Note: Connection from after_model to after_agent/END is handled above
-        # in the conditional edges section
+        # Note: Connection from after_model[0] to after_agent/END is handled above
+        # in the conditional edges section (via loop_exit_node)
 
     # Add after_agent middleware edges
     if middleware_w_after_agent:
@@ -1542,7 +1553,7 @@ def create_agent(
                 name=f"{m1.name}.after_agent",
                 default_destination=f"{m2.name}.after_agent",
                 model_destination=loop_entry_node,
-                end_destination=loop_end_node,
+                end_destination=exit_node,
                 can_jump_to=_get_can_jump_to(m1, "after_agent"),
             )
 
@@ -1552,12 +1563,9 @@ def create_agent(
             name=f"{middleware_w_after_agent[0].name}.after_agent",
             default_destination=END,
             model_destination=loop_entry_node,
-            end_destination=loop_end_node,
+            end_destination=exit_node,
             can_jump_to=_get_can_jump_to(middleware_w_after_agent[0], "after_agent"),
         )
-
-    if finalize_structured_output:
-        graph.add_edge("structured_output", exit_node)
 
     config: RunnableConfig = {"recursion_limit": 10_000}
     if name:
