@@ -2476,3 +2476,76 @@ def test_get_buffer_string_xml_url_with_special_chars() -> None:
     result = get_buffer_string(messages, format="xml")
     # quoteattr should handle the & in the URL
     assert "https://example.com/img?a=1&amp;b=2" in result
+
+
+def test_get_buffer_string_xml_text_plain_truncation() -> None:
+    """Test that text-plain content is truncated to 500 chars."""
+    long_text = "x" * 600
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text-plain", "text": long_text, "mime_type": "text/plain"},
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    # Should be truncated to 500 chars + "..."
+    assert "x" * 500 + "..." in result
+    assert "x" * 501 not in result
+
+
+def test_get_buffer_string_xml_server_tool_call_args_truncation() -> None:
+    """Test that server_tool_call args are truncated to 500 chars."""
+    long_value = "y" * 600
+    messages: list[BaseMessage] = [
+        AIMessage(
+            content=[
+                {
+                    "type": "server_tool_call",
+                    "id": "call_1",
+                    "name": "test_tool",
+                    "args": {"data": long_value},
+                },
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "..." in result
+    # The full 600-char value should not appear
+    assert long_value not in result
+
+
+def test_get_buffer_string_xml_server_tool_result_output_truncation() -> None:
+    """Test that server_tool_result output is truncated to 500 chars."""
+    long_output = "z" * 600
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "server_tool_result",
+                    "tool_call_id": "call_1",
+                    "status": "success",
+                    "output": {"result": long_output},
+                },
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "..." in result
+    # The full 600-char value should not appear
+    assert long_output not in result
+
+
+def test_get_buffer_string_xml_no_truncation_under_limit() -> None:
+    """Test that content under 500 chars is not truncated."""
+    short_text = "a" * 400
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text-plain", "text": short_text, "mime_type": "text/plain"},
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert short_text in result
+    assert "..." not in result

@@ -127,6 +127,16 @@ def _has_base64_data(block: dict) -> bool:
     return False
 
 
+_XML_CONTENT_BLOCK_MAX_LEN = 500
+
+
+def _truncate(text: str, max_len: int = _XML_CONTENT_BLOCK_MAX_LEN) -> str:
+    """Truncate text to `max_len` characters, adding ellipsis if truncated."""
+    if len(text) <= max_len:
+        return text
+    return text[:max_len] + "..."
+
+
 def _format_content_block_xml(block: dict) -> str | None:
     """Format a content block as XML.
 
@@ -136,6 +146,10 @@ def _format_content_block_xml(block: dict) -> str | None:
     Returns:
         XML string representation of the block, or `None` if the block should be
             skipped.
+
+    Note:
+        Plain text document content, server tool call arguments, and server tool
+        result outputs are truncated to 500 characters.
     """
     block_type = block.get("type", "")
 
@@ -197,13 +211,14 @@ def _format_content_block_xml(block: dict) -> str | None:
     # Plain text document blocks
     if block_type == "text-plain":
         text = block.get("text", "")
-        return escape(text) if text else None
+        return escape(_truncate(text)) if text else None
 
     # Server tool call blocks (from AI messages)
     if block_type == "server_tool_call":
         tc_id = quoteattr(str(block.get("id") or ""))
         tc_name = quoteattr(str(block.get("name") or ""))
-        tc_args = escape(json.dumps(block.get("args", {}), ensure_ascii=False))
+        tc_args_json = json.dumps(block.get("args", {}), ensure_ascii=False)
+        tc_args = escape(_truncate(tc_args_json))
         return (
             f"<server_tool_call id={tc_id} name={tc_name}>{tc_args}</server_tool_call>"
         )
@@ -213,7 +228,11 @@ def _format_content_block_xml(block: dict) -> str | None:
         tool_call_id = quoteattr(str(block.get("tool_call_id") or ""))
         status = quoteattr(str(block.get("status") or ""))
         output = block.get("output")
-        output_str = escape(json.dumps(output, ensure_ascii=False)) if output else ""
+        if output:
+            output_json = json.dumps(output, ensure_ascii=False)
+            output_str = escape(_truncate(output_json))
+        else:
+            output_str = ""
         return (
             f"<server_tool_result tool_call_id={tool_call_id} status={status}>"
             f"{output_str}</server_tool_result>"
@@ -301,6 +320,8 @@ def get_buffer_string(
         - Content blocks with base64-encoded data are skipped (including blocks
             with `base64` field or `data:` URLs).
         - Unknown block types are skipped.
+        - Plain text document content (`text-plain`), server tool call arguments,
+            and server tool result outputs are truncated to 500 characters.
 
     Example:
         Default prefix format:
