@@ -148,7 +148,32 @@ class BaseCache(ABC):
 
 
 class InMemoryCache(BaseCache):
-    """Cache that stores things in memory."""
+    """Cache that stores things in memory.
+
+    Example:
+
+        ```python
+        from langchain_core.caches import InMemoryCache
+        from langchain_core.outputs import Generation
+
+        # Initialize cache
+        cache = InMemoryCache()
+
+        # Update cache
+        cache.update(
+            prompt="What is the capital of France?",
+            llm_string="model='gpt-3.5-turbo', temperature=0.1",
+            return_val=[Generation(text="Paris")]
+        )
+
+        # Lookup cache
+        result = cache.lookup(
+            prompt="What is the capital of France?",
+            llm_string="model='gpt-3.5-turbo', temperature=0.1"
+        )
+        # result is [Generation(text="Paris")]
+        ```
+    """
 
     def __init__(self, *, maxsize: int | None = None) -> None:
         """Initialize with empty cache.

@@ -15,7 +15,39 @@ def _get_length_based(text: str) -> int:
 
 
 class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
-    """Select examples based on length."""
+    """Select examples based on length.
+
+    Example:
+
+        ```python
+        from langchain_core.example_selectors import LengthBasedExampleSelector
+        from langchain_core.prompts import PromptTemplate
+
+        # Define examples
+        examples = [
+            {"input": "happy", "output": "sad"},
+            {"input": "tall", "output": "short"},
+            {"input": "fast", "output": "slow"},
+        ]
+
+        # Create prompt template
+        example_prompt = PromptTemplate(
+            input_variables=["input", "output"],
+            template="Input: {input}\\nOutput: {output}"
+        )
+
+        # Create selector with max length constraint
+        selector = LengthBasedExampleSelector(
+            examples=examples,
+            example_prompt=example_prompt,
+            max_length=50  # Maximum prompt length
+        )
+
+        # Select examples for a new input
+        selected = selector.select_examples({"input": "large", "output": "tiny"})
+        # Returns examples that fit within max_length constraint
+        ```
+    """
 
     examples: list[dict]
     """A list of the examples that the prompt template expects."""
