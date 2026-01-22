@@ -3,24 +3,27 @@
 from __future__ import annotations
 
 import warnings
-from typing import cast
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
+from typing_extensions import override
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
-from langchain.agents.middleware.types import ModelRequest, ModelResponse
-from langgraph.runtime import Runtime
+from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
-from ...model import FakeToolCallingModel
+if TYPE_CHECKING:
+    from langchain_core.callbacks import AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
+    from langgraph.runtime import Runtime
 
 
 def _fake_runtime() -> Runtime:
-    return cast(Runtime, object())
+    return cast("Runtime", object())
 
 
 def _make_request() -> ModelRequest:
@@ -33,7 +36,7 @@ def _make_request() -> ModelRequest:
         tool_choice=None,
         tools=[],
         response_format=None,
-        state=cast("AgentState", {}),  # type: ignore[name-defined]
+        state=AgentState(messages=[]),
         runtime=_fake_runtime(),
         model_settings={},
     )
@@ -63,8 +66,16 @@ def test_fallback_on_primary_failure() -> None:
     """Test that fallback model is used when primary fails."""
 
     class FailingPrimaryModel(GenericFakeChatModel):
-        def _generate(self, messages, **kwargs):
-            raise ValueError("Primary model failed")
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            msg = "Primary model failed"
+            raise ValueError(msg)
 
     primary_model = FailingPrimaryModel(messages=iter([AIMessage(content="should not see")]))
     fallback_model = GenericFakeChatModel(messages=iter([AIMessage(content="fallback response")]))
@@ -87,8 +98,16 @@ def test_multiple_fallbacks() -> None:
     """Test that multiple fallback models are tried in sequence."""
 
     class FailingModel(GenericFakeChatModel):
-        def _generate(self, messages, **kwargs):
-            raise ValueError("Model failed")
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            msg = "Model failed"
+            raise ValueError(msg)
 
     primary_model = FailingModel(messages=iter([AIMessage(content="should not see")]))
     fallback1 = FailingModel(messages=iter([AIMessage(content="fallback1")]))
@@ -112,8 +131,16 @@ def test_all_models_fail() -> None:
     """Test that exception is raised when all models fail."""
 
     class AlwaysFailingModel(GenericFakeChatModel):
-        def _generate(self, messages, **kwargs):
-            raise ValueError("Model failed")
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            msg = "Model failed"
+            raise ValueError(msg)
 
     primary_model = AlwaysFailingModel(messages=iter([]))
     fallback_model = AlwaysFailingModel(messages=iter([]))
@@ -154,8 +181,16 @@ async def test_fallback_on_primary_failure_async() -> None:
     """Test async version - fallback model is used when primary fails."""
 
     class AsyncFailingPrimaryModel(GenericFakeChatModel):
-        async def _agenerate(self, messages, **kwargs):
-            raise ValueError("Primary model failed")
+        @override
+        async def _agenerate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: AsyncCallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            msg = "Primary model failed"
+            raise ValueError(msg)
 
     primary_model = AsyncFailingPrimaryModel(messages=iter([AIMessage(content="should not see")]))
     fallback_model = GenericFakeChatModel(messages=iter([AIMessage(content="fallback response")]))
@@ -178,8 +213,16 @@ async def test_multiple_fallbacks_async() -> None:
     """Test async version - multiple fallback models are tried in sequence."""
 
     class AsyncFailingModel(GenericFakeChatModel):
-        async def _agenerate(self, messages, **kwargs):
-            raise ValueError("Model failed")
+        @override
+        async def _agenerate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: AsyncCallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            msg = "Model failed"
+            raise ValueError(msg)
 
     primary_model = AsyncFailingModel(messages=iter([AIMessage(content="should not see")]))
     fallback1 = AsyncFailingModel(messages=iter([AIMessage(content="fallback1")]))
@@ -203,8 +246,16 @@ async def test_all_models_fail_async() -> None:
     """Test async version - exception is raised when all models fail."""
 
     class AsyncAlwaysFailingModel(GenericFakeChatModel):
-        async def _agenerate(self, messages, **kwargs):
-            raise ValueError("Model failed")
+        @override
+        async def _agenerate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: AsyncCallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            msg = "Model failed"
+            raise ValueError(msg)
 
     primary_model = AsyncAlwaysFailingModel(messages=iter([]))
     fallback_model = AsyncAlwaysFailingModel(messages=iter([]))
@@ -227,23 +278,38 @@ def test_model_fallback_middleware_with_agent() -> None:
     class FailingModel(BaseChatModel):
         """Model that always fails."""
 
-        def _generate(self, messages, **kwargs):
-            raise ValueError("Primary model failed")
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            msg = "Primary model failed"
+            raise ValueError(msg)
 
         @property
-        def _llm_type(self):
+        def _llm_type(self) -> str:
             return "failing"
 
     class SuccessModel(BaseChatModel):
         """Model that succeeds."""
 
-        def _generate(self, messages, **kwargs):
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
             return ChatResult(
                 generations=[ChatGeneration(message=AIMessage(content="Fallback success"))]
             )
 
         @property
-        def _llm_type(self):
+        def _llm_type(self) -> str:
             return "success"
 
     primary = FailingModel()
@@ -271,12 +337,20 @@ def test_model_fallback_middleware_exhausted_with_agent() -> None:
             super().__init__()
             self.name = name
 
-        def _generate(self, messages, **kwargs):
-            raise ValueError(f"{self.name} failed")
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            msg = f"{self.name} failed"
+            raise ValueError(msg)
 
         @property
-        def _llm_type(self):
-            return self.name
+        def _llm_type(self) -> str:
+            return self.name or "always_failing"
 
     primary = AlwaysFailingModel("primary")
     fallback1 = AlwaysFailingModel("fallback1")
@@ -294,7 +368,6 @@ def test_model_fallback_middleware_exhausted_with_agent() -> None:
 
 def test_model_fallback_middleware_initialization() -> None:
     """Test ModelFallbackMiddleware initialization."""
-
     # Test with no models - now a TypeError (missing required argument)
     with pytest.raises(TypeError):
         ModelFallbackMiddleware()  # type: ignore[call-arg]
@@ -317,7 +390,7 @@ def test_model_request_is_frozen() -> None:
     with pytest.warns(
         DeprecationWarning, match="Direct attribute assignment to ModelRequest.model is deprecated"
     ):
-        request.model = new_model  # type: ignore[misc]
+        request.model = new_model
 
     # Verify the assignment actually worked
     assert request.model == new_model
@@ -334,7 +407,7 @@ def test_model_request_is_frozen() -> None:
         DeprecationWarning,
         match="Direct attribute assignment to ModelRequest.messages is deprecated",
     ):
-        request.messages = []  # type: ignore[misc]
+        request.messages = []
 
     assert request.messages == []
 
@@ -342,7 +415,9 @@ def test_model_request_is_frozen() -> None:
     request2 = _make_request()
     with warnings.catch_warnings():
         warnings.simplefilter("error")  # Turn warnings into errors
-        new_request = request2.override(model=new_model, system_prompt="override prompt")
+        new_request = request2.override(
+            model=new_model, system_message=SystemMessage(content="override prompt")
+        )
 
     assert new_request.model == new_model
     assert new_request.system_prompt == "override prompt"

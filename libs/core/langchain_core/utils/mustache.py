@@ -85,7 +85,7 @@ def l_sa_check(
         # If all the characters since the last newline are spaces
         # Then the next tag could be a standalone
         # Otherwise it can't be
-        return padding.isspace() or padding == ""
+        return padding.isspace() or not padding
     return False
 
 
@@ -305,7 +305,7 @@ def tokenize(
 
         # Start yielding
         # Ignore literals that are empty
-        if literal != "":
+        if literal:
             yield ("literal", literal)
 
         # Ignore comments and set delimiters
@@ -352,7 +352,26 @@ def _get_key(
     def_ldel: str,
     def_rdel: str,
 ) -> Any:
-    """Return a key from the current scope."""
+    """Retrieve a value from the current scope using a dot-separated key path.
+
+    Traverses through nested dictionaries and lists using dot notation.
+
+    Supports special key `'.'` to return the current scope.
+
+    Args:
+        key: Dot-separated key path (e.g., `'user.name'` or `'.'` for current scope).
+        scopes: List of scope dictionaries to search through.
+        warn: Whether to log a warning when a key is not found.
+        keep: Whether to return the original template tag when key is not found.
+        def_ldel: Left delimiter for template (used when keep is `True`).
+        def_rdel: Right delimiter for template (used when keep is `True`).
+
+    Returns:
+        The value found at the key path.
+
+            If not found, returns the original template tag when keep is `True`,
+            otherwise returns an empty string.
+    """
     # If the key is a dot
     if key == ".":
         # Then just return the current scope

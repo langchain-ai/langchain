@@ -92,11 +92,12 @@ class Serializable(BaseModel, ABC):
 
     It relies on the following methods and properties:
 
-    - `is_lc_serializable`: Is this class serializable?
+    - [`is_lc_serializable`][langchain_core.load.serializable.Serializable.is_lc_serializable]: Is this class serializable?
+
         By design, even if a class inherits from `Serializable`, it is not serializable
         by default. This is to prevent accidental serialization of objects that should
         not be serialized.
-    - `get_lc_namespace`: Get the namespace of the LangChain object.
+    - [`get_lc_namespace`][langchain_core.load.serializable.Serializable.get_lc_namespace]: Get the namespace of the LangChain object.
 
         During deserialization, this namespace is used to identify
         the correct class to instantiate.
@@ -105,10 +106,10 @@ class Serializable(BaseModel, ABC):
         During deserialization an additional mapping is handle classes that have moved
         or been renamed across package versions.
 
-    - `lc_secrets`: A map of constructor argument names to secret ids.
-    - `lc_attributes`: List of additional attribute names that should be included
+    - [`lc_secrets`][langchain_core.load.serializable.Serializable.lc_secrets]: A map of constructor argument names to secret ids.
+    - [`lc_attributes`][langchain_core.load.serializable.Serializable.lc_attributes]: List of additional attribute names that should be included
         as part of the serialized representation.
-    """
+    """  # noqa: E501
 
     # Remove default BaseModel init docstring.
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -132,8 +133,9 @@ class Serializable(BaseModel, ABC):
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the LangChain object.
 
-        For example, if the class is `langchain.llms.openai.OpenAI`, then the
-        namespace is `["langchain", "llms", "openai"]`
+        For example, if the class is
+        [`langchain.llms.openai.OpenAI`][langchain_openai.OpenAI], then the namespace is
+        `["langchain", "llms", "openai"]`
 
         Returns:
             The namespace.

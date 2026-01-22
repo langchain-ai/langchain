@@ -209,11 +209,16 @@ def _convert_to_v1_from_converse(message: AIMessage) -> list[types.ContentBlock]
                     and message.chunk_position != "last"
                 ):
                     # Isolated chunk
-                    tool_call_chunk: types.ToolCallChunk = (
-                        message.tool_call_chunks[0].copy()  # type: ignore[assignment]
+                    chunk = message.tool_call_chunks[0]
+                    tool_call_chunk = types.ToolCallChunk(
+                        name=chunk.get("name"),
+                        id=chunk.get("id"),
+                        args=chunk.get("args"),
+                        type="tool_call_chunk",
                     )
-                    if "type" not in tool_call_chunk:
-                        tool_call_chunk["type"] = "tool_call_chunk"
+                    index = chunk.get("index")
+                    if index is not None:
+                        tool_call_chunk["index"] = index
                     yield tool_call_chunk
                 else:
                     tool_call_block: types.ToolCall | None = None
@@ -235,8 +240,6 @@ def _convert_to_v1_from_converse(message: AIMessage) -> list[types.ContentBlock]
                                     "id": tc.get("id"),
                                 }
                                 break
-                    else:
-                        pass
                     if not tool_call_block:
                         tool_call_block = {
                             "type": "tool_call",
@@ -253,11 +256,16 @@ def _convert_to_v1_from_converse(message: AIMessage) -> list[types.ContentBlock]
                 and isinstance(message, AIMessageChunk)
                 and len(message.tool_call_chunks) == 1
             ):
-                tool_call_chunk = (
-                    message.tool_call_chunks[0].copy()  # type: ignore[assignment]
+                chunk = message.tool_call_chunks[0]
+                tool_call_chunk = types.ToolCallChunk(
+                    name=chunk.get("name"),
+                    id=chunk.get("id"),
+                    args=chunk.get("args"),
+                    type="tool_call_chunk",
                 )
-                if "type" not in tool_call_chunk:
-                    tool_call_chunk["type"] = "tool_call_chunk"
+                index = chunk.get("index")
+                if index is not None:
+                    tool_call_chunk["index"] = index
                 yield tool_call_chunk
 
             else:
@@ -273,12 +281,26 @@ def _convert_to_v1_from_converse(message: AIMessage) -> list[types.ContentBlock]
 
 
 def translate_content(message: AIMessage) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a message with Bedrock Converse content."""
+    """Derive standard content blocks from a message with Bedrock Converse content.
+
+    Args:
+        message: The message to translate.
+
+    Returns:
+        The derived content blocks.
+    """
     return _convert_to_v1_from_converse(message)
 
 
 def translate_content_chunk(message: AIMessageChunk) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a chunk with Bedrock Converse content."""
+    """Derive standard content blocks from a chunk with Bedrock Converse content.
+
+    Args:
+        message: The message chunk to translate.
+
+    Returns:
+        The derived content blocks.
+    """
     return _convert_to_v1_from_converse(message)
 
 

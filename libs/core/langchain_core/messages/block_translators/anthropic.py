@@ -159,12 +159,12 @@ def _convert_citation_to_v1(citation: dict[str, Any]) -> types.Annotation:
 
         return url_citation
 
-    if citation_type in (
+    if citation_type in {
         "char_location",
         "content_block_location",
         "page_location",
         "search_result_location",
-    ):
+    }:
         document_citation: types.Citation = {
             "type": "citation",
             "cited_text": citation["cited_text"],
@@ -173,8 +173,6 @@ def _convert_citation_to_v1(citation: dict[str, Any]) -> types.Annotation:
             document_citation["title"] = citation["document_title"]
         elif title := citation.get("title"):
             document_citation["title"] = title
-        else:
-            pass
         known_fields = {
             "type",
             "cited_text",
@@ -245,11 +243,20 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                     and message.chunk_position != "last"
                 ):
                     # Isolated chunk
-                    tool_call_chunk: types.ToolCallChunk = (
-                        message.tool_call_chunks[0].copy()  # type: ignore[assignment]
+                    chunk = message.tool_call_chunks[0]
+
+                    tool_call_chunk = types.ToolCallChunk(
+                        name=chunk.get("name"),
+                        id=chunk.get("id"),
+                        args=chunk.get("args"),
+                        type="tool_call_chunk",
                     )
-                    if "type" not in tool_call_chunk:
-                        tool_call_chunk["type"] = "tool_call_chunk"
+                    if "caller" in block:
+                        tool_call_chunk["extras"] = {"caller": block["caller"]}
+
+                    index = chunk.get("index")
+                    if index is not None:
+                        tool_call_chunk["index"] = index
                     yield tool_call_chunk
                 else:
                     tool_call_block: types.ToolCall | None = None
@@ -271,8 +278,6 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                                     "id": tc.get("id"),
                                 }
                                 break
-                    else:
-                        pass
                     if not tool_call_block:
                         tool_call_block = {
                             "type": "tool_call",
@@ -282,17 +287,27 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                         }
                     if "index" in block:
                         tool_call_block["index"] = block["index"]
+                    if "caller" in block:
+                        if "extras" not in tool_call_block:
+                            tool_call_block["extras"] = {}
+                        tool_call_block["extras"]["caller"] = block["caller"]
+
                     yield tool_call_block
 
             elif block_type == "input_json_delta" and isinstance(
                 message, AIMessageChunk
             ):
                 if len(message.tool_call_chunks) == 1:
-                    tool_call_chunk = (
-                        message.tool_call_chunks[0].copy()  # type: ignore[assignment]
+                    chunk = message.tool_call_chunks[0]
+                    tool_call_chunk = types.ToolCallChunk(
+                        name=chunk.get("name"),
+                        id=chunk.get("id"),
+                        args=chunk.get("args"),
+                        type="tool_call_chunk",
                     )
-                    if "type" not in tool_call_chunk:
-                        tool_call_chunk["type"] = "tool_call_chunk"
+                    index = chunk.get("index")
+                    if index is not None:
+                        tool_call_chunk["index"] = index
                     yield tool_call_chunk
 
                 else:
@@ -446,12 +461,26 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
 
 
 def translate_content(message: AIMessage) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a message with Anthropic content."""
+    """Derive standard content blocks from a message with Anthropic content.
+
+    Args:
+        message: The message to translate.
+
+    Returns:
+        The derived content blocks.
+    """
     return _convert_to_v1_from_anthropic(message)
 
 
 def translate_content_chunk(message: AIMessageChunk) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a message chunk with Anthropic content."""
+    """Derive standard content blocks from a message chunk with Anthropic content.
+
+    Args:
+        message: The message chunk to translate.
+
+    Returns:
+        The derived content blocks.
+    """
     return _convert_to_v1_from_anthropic(message)
 
 

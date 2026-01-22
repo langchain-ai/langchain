@@ -8,6 +8,7 @@ from langchain_core.runnables import RunnableConfig, RunnableSequence
 from pydantic import SecretStr
 
 from langchain.chat_models import __all__, init_chat_model
+from langchain.chat_models.base import _SUPPORTED_PROVIDERS, _attempt_infer_model_provider
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
@@ -57,8 +58,44 @@ def test_init_missing_dep() -> None:
 
 
 def test_init_unknown_provider() -> None:
-    with pytest.raises(ValueError, match="Unsupported model_provider='bar'."):
+    with pytest.raises(ValueError, match="Unsupported provider='bar'"):
         init_chat_model("foo", model_provider="bar")
+
+
+def test_supported_providers_is_sorted() -> None:
+    """Test that supported providers are sorted alphabetically."""
+    assert list(_SUPPORTED_PROVIDERS) == sorted(_SUPPORTED_PROVIDERS.keys())
+
+
+@pytest.mark.parametrize(
+    ("model_name", "expected_provider"),
+    [
+        ("gpt-4o", "openai"),
+        ("o1-mini", "openai"),
+        ("o3-mini", "openai"),
+        ("chatgpt-4o-latest", "openai"),
+        ("text-davinci-003", "openai"),
+        ("claude-3-haiku-20240307", "anthropic"),
+        ("command-r-plus", "cohere"),
+        ("accounts/fireworks/models/mixtral-8x7b-instruct", "fireworks"),
+        ("Accounts/Fireworks/models/mixtral-8x7b-instruct", "fireworks"),
+        ("gemini-1.5-pro", "google_vertexai"),
+        ("gemini-2.5-pro", "google_vertexai"),
+        ("gemini-3-pro-preview", "google_vertexai"),
+        ("amazon.titan-text-express-v1", "bedrock"),
+        ("Amazon.Titan-Text-Express-v1", "bedrock"),
+        ("anthropic.claude-v2", "bedrock"),
+        ("Anthropic.Claude-V2", "bedrock"),
+        ("mistral-small", "mistralai"),
+        ("mixtral-8x7b", "mistralai"),
+        ("deepseek-v3", "deepseek"),
+        ("grok-beta", "xai"),
+        ("sonar-small", "perplexity"),
+        ("solar-pro", "upstage"),
+    ],
+)
+def test_attempt_infer_model_provider(model_name: str, expected_provider: str) -> None:
+    assert _attempt_infer_model_provider(model_name) == expected_provider
 
 
 @pytest.mark.requires("langchain_openai")
@@ -178,7 +215,13 @@ def test_configurable() -> None:
                 },
             ],
         },
-        "config": {"tags": ["foo"], "configurable": {}},
+        "config": {
+            "callbacks": None,
+            "configurable": {},
+            "metadata": {"model": "gpt-4o"},
+            "recursion_limit": 25,
+            "tags": ["foo"],
+        },
         "config_factories": [],
         "custom_input_type": None,
         "custom_output_type": None,
@@ -269,6 +312,7 @@ def test_configurable_with_default() -> None:
             "betas": None,
             "default_headers": None,
             "model_kwargs": {},
+            "reuse_last_container": None,
             "streaming": False,
             "stream_usage": True,
             "output_version": None,
@@ -276,7 +320,13 @@ def test_configurable_with_default() -> None:
         "kwargs": {
             "tools": [{"name": "foo", "description": "foo", "input_schema": {}}],
         },
-        "config": {"tags": ["foo"], "configurable": {}},
+        "config": {
+            "callbacks": None,
+            "configurable": {},
+            "metadata": {"bar_model": "claude-sonnet-4-5-20250929"},
+            "recursion_limit": 25,
+            "tags": ["foo"],
+        },
         "config_factories": [],
         "custom_input_type": None,
         "custom_output_type": None,

@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import warnings
-from abc import ABC
+from abc import ABC, abstractmethod
 from string import Formatter
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from pydantic import BaseModel, create_model
+from typing_extensions import override
 
 from langchain_core.prompt_values import PromptValue, StringPromptValue
 from langchain_core.prompts.base import BasePromptTemplate
@@ -20,64 +21,7 @@ if TYPE_CHECKING:
 
 try:
     from jinja2 import meta
-    from jinja2.exceptions import SecurityError
     from jinja2.sandbox import SandboxedEnvironment
-
-    class _RestrictedSandboxedEnvironment(SandboxedEnvironment):
-        """A more restrictive Jinja2 sandbox that blocks all attribute/method access.
-
-        This sandbox only allows simple variable lookups, no attribute or method access.
-        This prevents template injection attacks via methods like parse_raw().
-        """
-
-        def is_safe_attribute(self, _obj: Any, _attr: str, _value: Any) -> bool:
-            """Block ALL attribute access for security.
-
-            Only allow accessing variables directly from the context dict,
-            no attribute access on those objects.
-
-            Args:
-                _obj: The object being accessed (unused, always blocked).
-                _attr: The attribute name (unused, always blocked).
-                _value: The attribute value (unused, always blocked).
-
-            Returns:
-                False - all attribute access is blocked.
-            """
-            # Block all attribute access
-            return False
-
-        def is_safe_callable(self, _obj: Any) -> bool:
-            """Block all method calls for security.
-
-            Args:
-                _obj: The object being checked (unused, always blocked).
-
-            Returns:
-                False - all callables are blocked.
-            """
-            return False
-
-        def getattr(self, obj: Any, attribute: str) -> Any:
-            """Override getattr to block all attribute access.
-
-            Args:
-                obj: The object.
-                attribute: The attribute name.
-
-            Returns:
-                Never returns.
-
-            Raises:
-                SecurityError: Always, to block attribute access.
-            """
-            msg = (
-                f"Access to attributes is not allowed in templates. "
-                f"Attempted to access '{attribute}' on {type(obj).__name__}. "
-                f"Use only simple variable names like {{{{variable}}}} "
-                f"without dots or methods."
-            )
-            raise SecurityError(msg)
 
     _HAS_JINJA2 = True
 except ImportError:
@@ -121,7 +65,7 @@ def jinja2_formatter(template: str, /, **kwargs: Any) -> str:
     # Use a restricted sandbox that blocks ALL attribute/method access
     # Only simple variable lookups like {{variable}} are allowed
     # Attribute access like {{variable.attr}} or {{variable.method()}} is blocked
-    return _RestrictedSandboxedEnvironment().from_string(template).render(**kwargs)
+    return SandboxedEnvironment().from_string(template).render(**kwargs)
 
 
 def validate_jinja2(template: str, input_variables: list[str]) -> None:
@@ -156,7 +100,7 @@ def _get_jinja2_variables_from_template(template: str) -> set[str]:
             "Please install it with `pip install jinja2`."
         )
         raise ImportError(msg)
-    env = _RestrictedSandboxedEnvironment()
+    env = SandboxedEnvironment()
     ast = env.parse(template)
     return meta.find_undeclared_variables(ast)
 
@@ -246,17 +190,20 @@ def mustache_schema(template: str) -> type[BaseModel]:
     return _create_model_recursive("PromptInput", defs)
 
 
-def _create_model_recursive(name: str, defs: Defs) -> type:
-    return create_model(  # type: ignore[call-overload]
-        name,
-        **{
-            k: (_create_model_recursive(k, v), None) if v else (type(v), None)
-            for k, v in defs.items()
-        },
+def _create_model_recursive(name: str, defs: Defs) -> type[BaseModel]:
+    return cast(
+        "type[BaseModel]",
+        create_model(  # type: ignore[call-overload]
+            name,
+            **{
+                k: (_create_model_recursive(k, v), None) if v else (type(v), None)
+                for k, v in defs.items()
+            },
+        ),
     )
 
 
-DEFAULT_FORMATTER_MAPPING: dict[str, Callable] = {
+DEFAULT_FORMATTER_MAPPING: dict[str, Callable[..., str]] = {
     "f-string": formatter.format,
     "mustache": mustache_formatter,
     "jinja2": jinja2_formatter,
@@ -386,6 +333,10 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
             A formatted string.
         """
         return StringPromptValue(text=await self.aformat(**kwargs))
+
+    @override
+    @abstractmethod
+    def format(self, **kwargs: Any) -> str: ...
 
     def pretty_repr(
         self,

@@ -1,6 +1,5 @@
 """Tests for ModelRetryMiddleware functionality."""
 
-import asyncio
 import time
 from typing import Any
 
@@ -14,6 +13,7 @@ from pydantic import Field
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware._retry import calculate_delay
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
+from langchain.agents.middleware.types import wrap_model_call
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
@@ -319,7 +319,7 @@ def test_model_retry_custom_exception_filter() -> None:
     class CustomError(Exception):
         """Custom exception with retry_me attribute."""
 
-        def __init__(self, message: str, retry_me: bool):
+        def __init__(self, message: str, *, retry_me: bool):
             """Initialize custom error.
 
             Args:
@@ -354,8 +354,10 @@ def test_model_retry_custom_exception_filter() -> None:
             """
             attempt_count["value"] += 1
             if attempt_count["value"] == 1:
-                raise CustomError("Retryable error", retry_me=True)
-            raise CustomError("Non-retryable error", retry_me=False)
+                msg = "Retryable error"
+                raise CustomError(msg, retry_me=True)
+            msg = "Non-retryable error"
+            raise CustomError(msg, retry_me=False)
 
     def should_retry(exc: Exception) -> bool:
         return isinstance(exc, CustomError) and exc.retry_me
@@ -656,8 +658,6 @@ def test_model_retry_multiple_middleware_composition() -> None:
     call_log = []
 
     # Custom middleware that logs calls
-    from langchain.agents.middleware.types import wrap_model_call
-
     @wrap_model_call
     def logging_middleware(request, handler):
         call_log.append("before_model")

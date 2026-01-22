@@ -29,38 +29,39 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     `ToolMessage` objects contain the result of a tool invocation. Typically, the result
     is encoded inside the `content` field.
 
-    Example: A `ToolMessage` representing a result of `42` from a tool call with id
+    `tool_call_id` is used to associate the tool call request with the tool call
+    response. Useful in situations where a chat model is able to request multiple tool
+    calls in parallel.
 
-    ```python
-    from langchain_core.messages import ToolMessage
+    Example:
+        A `ToolMessage` representing a result of `42` from a tool call with id
 
-    ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
-    ```
+        ```python
+        from langchain_core.messages import ToolMessage
 
-    Example: A `ToolMessage` where only part of the tool output is sent to the model
-    and the full output is passed in to artifact.
+        ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+        ```
 
-    ```python
-    from langchain_core.messages import ToolMessage
+    Example:
+        A `ToolMessage` where only part of the tool output is sent to the model
+        and the full output is passed in to artifact.
 
-    tool_output = {
-        "stdout": "From the graph we can see that the correlation between "
-        "x and y is ...",
-        "stderr": None,
-        "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-    }
+        ```python
+        from langchain_core.messages import ToolMessage
 
-    ToolMessage(
-        content=tool_output["stdout"],
-        artifact=tool_output,
-        tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-    )
-    ```
+        tool_output = {
+            "stdout": "From the graph we can see that the correlation between "
+            "x and y is ...",
+            "stderr": None,
+            "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+        }
 
-    The `tool_call_id` field is used to associate the tool call request with the
-    tool call response. Useful in situations where a chat model is able
-    to request multiple tool calls in parallel.
-
+        ToolMessage(
+            content=tool_output["stdout"],
+            artifact=tool_output,
+            tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+        )
+        ```
     """
 
     tool_call_id: str
@@ -213,20 +214,29 @@ class ToolCall(TypedDict):
         This represents a request to call the tool named `'foo'` with arguments
         `{"a": 1}` and an identifier of `'123'`.
 
+    !!! note "Factory function"
+
+        `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+        include:
+
+        * Required arguments strictly validated at creation time
     """
 
     name: str
     """The name of the tool to be called."""
+
     args: dict[str, Any]
-    """The arguments to the tool call."""
+    """The arguments to the tool call as a dictionary."""
+
     id: str | None
     """An identifier associated with the tool call.
 
     An identifier is needed to associate a tool call request with a tool
     call result in events when multiple concurrent tool calls are made.
-
     """
+
     type: NotRequired[Literal["tool_call"]]
+    """Used for discrimination."""
 
 
 def tool_call(
@@ -239,7 +249,7 @@ def tool_call(
 
     Args:
         name: The name of the tool to be called.
-        args: The arguments to the tool call.
+        args: The arguments to the tool call as a dictionary.
         id: An identifier associated with the tool call.
 
     Returns:
@@ -251,9 +261,9 @@ def tool_call(
 class ToolCallChunk(TypedDict):
     """A chunk of a tool call (yielded when streaming).
 
-    When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
-    all string attributes are concatenated. Chunks are only merged if their
-    values of `index` are equal and not None.
+    When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+    string attributes are concatenated. Chunks are only merged if their values of
+    `index` are equal and not `None`.
 
     Example:
     ```python
@@ -269,13 +279,25 @@ class ToolCallChunk(TypedDict):
 
     name: str | None
     """The name of the tool to be called."""
+
     args: str | None
-    """The arguments to the tool call."""
+    """The arguments to the tool call as a JSON-parseable string."""
+
     id: str | None
-    """An identifier associated with the tool call."""
+    """An identifier associated with the tool call.
+
+    An identifier is needed to associate a tool call request with a tool
+    call result in events when multiple concurrent tool calls are made.
+    """
+
     index: int | None
-    """The index of the tool call in a sequence."""
+    """The index of the tool call in a sequence.
+
+    Used for merging chunks.
+    """
+
     type: NotRequired[Literal["tool_call_chunk"]]
+    """Used for discrimination."""
 
 
 def tool_call_chunk(
@@ -289,7 +311,7 @@ def tool_call_chunk(
 
     Args:
         name: The name of the tool to be called.
-        args: The arguments to the tool call.
+        args: The arguments to the tool call as a JSON string.
         id: An identifier associated with the tool call.
         index: The index of the tool call in a sequence.
 
@@ -312,7 +334,7 @@ def invalid_tool_call(
 
     Args:
         name: The name of the tool to be called.
-        args: The arguments to the tool call.
+        args: The arguments to the tool call as a JSON string.
         id: An identifier associated with the tool call.
         error: An error message associated with the tool call.
 
