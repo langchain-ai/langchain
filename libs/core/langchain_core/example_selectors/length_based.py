@@ -32,14 +32,14 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
         # Create prompt template
         example_prompt = PromptTemplate(
             input_variables=["input", "output"],
-            template="Input: {input}\nOutput: {output}"
+            template="Input: {input}\nOutput: {output}",
         )
 
         # Create selector with max length constraint
         selector = LengthBasedExampleSelector(
             examples=examples,
             example_prompt=example_prompt,
-            max_length=50  # Maximum prompt length
+            max_length=50,  # Maximum prompt length
         )
 
         # Select examples for a new input
