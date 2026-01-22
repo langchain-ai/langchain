@@ -279,7 +279,7 @@ def test_dynamic_tool_without_handler_raises_error() -> None:
     # The error message should guide the user to define wrap_tool_call
     with pytest.raises(
         ValueError,
-        match=r"Unknown tool names from middleware.*dynamic_tool",
+        match=r"(?s)Middleware added tools.*Unknown tools:.*dynamic_tool",
     ):
         agent.invoke(
             {"messages": [HumanMessage("Use the dynamic tool")]},
@@ -319,7 +319,7 @@ def test_dynamic_tool_no_static_without_handler_raises_error() -> None:
     # The error should guide the user to define wrap_tool_call
     with pytest.raises(
         ValueError,
-        match=r"Unknown tool names from middleware.*dynamic_tool",
+        match=r"(?s)Middleware added tools.*Unknown tools:.*dynamic_tool",
     ):
         agent.invoke(
             {"messages": [HumanMessage("Use the dynamic tool")]},
@@ -748,7 +748,7 @@ async def test_async_dynamic_tool_without_handler_raises_error() -> None:
     # Should raise an error because dynamic_tool is not handled
     with pytest.raises(
         ValueError,
-        match=r"Unknown tool names from middleware.*dynamic_tool",
+        match=r"(?s)Middleware added tools.*Unknown tools:.*dynamic_tool",
     ):
         await agent.ainvoke(
             {"messages": [HumanMessage("Use the dynamic tool")]},
