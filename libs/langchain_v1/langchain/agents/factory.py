@@ -64,17 +64,29 @@ if TYPE_CHECKING:
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
 DYNAMIC_TOOL_ERROR_TEMPLATE = """
-Unknown tool names from middleware: {unknown_tool_names}
-Available tools: {available_tool_names}
+Middleware added tools that the agent doesn't know how to execute.
 
-To fix this:
-* If the tool is static, pass it to create_agent(tools=[...]) or middleware.tools
-* If the tool is dynamic, define wrap_tool_call/awrap_tool_call to handle it:
+Unknown tools: {unknown_tool_names}
+Registered tools: {available_tool_names}
 
-    def wrap_tool_call(self, request, handler):
-        if request.tool_call['name'] == 'my_tool':
-            return handler(request.override(tool=my_tool))
-        return handler(request)
+This happens when middleware modifies `request.tools` in `wrap_model_call` to include
+tools that weren't passed to `create_agent()`.
+
+How to fix this:
+
+Option 1: Register tools at agent creation (recommended for most cases)
+    Pass the tools to `create_agent(tools=[...])` or set them on `middleware.tools`.
+    This makes tools available for every agent invocation.
+
+Option 2: Handle dynamic tools in middleware (for tools created at runtime)
+    Implement `wrap_tool_call` to execute tools that are added dynamically:
+
+    class MyMiddleware(AgentMiddleware):
+        def wrap_tool_call(self, request, handler):
+            if request.tool_call["name"] == "dynamic_tool":
+                # Execute the dynamic tool yourself or override with tool instance
+                return handler(request.override(tool=my_dynamic_tool))
+            return handler(request)
 """.strip()
 
 FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
