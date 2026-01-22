@@ -303,10 +303,11 @@ def get_buffer_string(
         function_prefix: The prefix to prepend to contents of `FunctionMessage`s.
         tool_prefix: The prefix to prepend to contents of `ToolMessage`s.
         message_separator: The separator to use between messages.
-        format: The output format. ``'prefix'`` uses ``Role: content`` format
-            (default). ``'xml'`` uses XML-style ``<message type="role">`` format
-            with proper character escaping, which is useful when message content
-            may contain role-like prefixes that could cause ambiguity.
+        format: The output format. `'prefix'` uses `Role: content` format (default).
+
+            `'xml'` uses XML-style `<message type='role'>` format with proper character
+            escaping, which is useful when message content may contain role-like
+            prefixes that could cause ambiguity.
 
     Returns:
         A single string concatenation of all input messages.
