@@ -24,7 +24,6 @@ class TestGroq(ChatModelIntegrationTests):
     def chat_model_params(self) -> dict:
         return {"model": "llama-3.3-70b-versatile", "rate_limiter": rate_limiter}
 
-    @pytest.mark.xfail(reason="Not yet implemented.")
     def test_tool_message_histories_list_content(
         self, model: BaseChatModel, my_adder_tool: BaseTool
     ) -> None:
