@@ -1029,8 +1029,15 @@ def create_agent(
                     "the 'tools' parameter\n"
                     "2. If using custom middleware with tools, ensure "
                     "they're registered via middleware.tools attribute\n"
-                    "3. Define a wrap_tool_call handler in your middleware to "
-                    "handle dynamically added tools\n"
+                    "3. Define wrap_tool_call (sync) and/or awrap_tool_call (async) "
+                    "handlers in your middleware to handle dynamically added tools. "
+                    "Use request.override(tool=...) to provide the tool implementation:\n\n"
+                    "   def wrap_tool_call(self, request, handler):\n"
+                    "       if request.tool_call['name'] == 'my_dynamic_tool':\n"
+                    "           return handler(request.override(tool=my_dynamic_tool))\n"
+                    "       return handler(request)\n\n"
+                    "Note: Implement both sync and async versions if your agent may be "
+                    "invoked via invoke()/stream() and ainvoke()/astream().\n"
                     "Note: Built-in provider tools (dict format) can be added dynamically."
                 )
                 raise ValueError(msg)
