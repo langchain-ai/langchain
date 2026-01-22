@@ -159,16 +159,17 @@ def get_buffer_string(
         and a function call under `additional_kwargs["function_call"]`, only the tool
         calls will be appended to the string representation.
 
-        When using ``format='xml'``:
+        When using `format='xml'`:
 
-        - All messages use uniform ``<message type="role">content</message>`` format.
-        - The ``type`` attribute uses ``human_prefix`` (lowercased) for `HumanMessage`,
-          ``ai_prefix`` (lowercased) for `AIMessage`, and lowercase role names for
-          other message types.
-        - Message content is escaped using ``xml.sax.saxutils.escape()``.
-        - Attribute values are escaped using ``xml.sax.saxutils.quoteattr()``.
-        - AI messages with tool calls use nested structure with ``<content>`` and
-          ``<tool_call>`` elements.
+        - All messages use uniform `<message type="role">content</message>` format.
+        - The `type` attribute uses `human_prefix` (lowercased) for `HumanMessage`,
+            `ai_prefix` (lowercased) for `AIMessage`, lowercase names for
+            `SystemMessage`/`FunctionMessage`/`ToolMessage`, and the original role
+            (unchanged) for `ChatMessage`.
+        - Message content is escaped using `xml.sax.saxutils.escape()`.
+        - Attribute values are escaped using `xml.sax.saxutils.quoteattr()`.
+        - AI messages with tool calls use nested structure with `<content>` and
+            `<tool_call>` elements.
 
     Example:
         Default prefix format:

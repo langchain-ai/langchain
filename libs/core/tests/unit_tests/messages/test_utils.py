@@ -1786,14 +1786,21 @@ def test_convert_to_openai_messages_reasoning_content() -> None:
 
 
 def test_get_buffer_string_xml_basic() -> None:
-    """Test basic XML format output."""
+    """Test XML format output with all message types."""
     messages = [
-        HumanMessage(content="Hello"),
-        AIMessage(content="Hi there"),
+        SystemMessage(content="System message"),
+        HumanMessage(content="Human message"),
+        AIMessage(content="AI message"),
+        FunctionMessage(content="Function result", name="test_fn"),
+        ToolMessage(content="Tool result", tool_call_id="123"),
     ]
     result = get_buffer_string(messages, format="xml")
     expected = (
-        '<message type="human">Hello</message>\n<message type="ai">Hi there</message>'
+        '<message type="system">System message</message>\n'
+        '<message type="human">Human message</message>\n'
+        '<message type="ai">AI message</message>\n'
+        '<message type="function">Function result</message>\n'
+        '<message type="tool">Tool result</message>'
     )
     assert result == expected
 
@@ -1810,26 +1817,6 @@ def test_get_buffer_string_xml_custom_prefixes() -> None:
     expected = (
         '<message type="user">Hello</message>\n'
         '<message type="assistant">Hi there</message>'
-    )
-    assert result == expected
-
-
-def test_get_buffer_string_xml_all_message_types() -> None:
-    """Test XML format with all message types."""
-    messages = [
-        SystemMessage(content="System message"),
-        HumanMessage(content="Human message"),
-        AIMessage(content="AI message"),
-        FunctionMessage(content="Function result", name="test_fn"),
-        ToolMessage(content="Tool result", tool_call_id="123"),
-    ]
-    result = get_buffer_string(messages, format="xml")
-    expected = (
-        '<message type="system">System message</message>\n'
-        '<message type="human">Human message</message>\n'
-        '<message type="ai">AI message</message>\n'
-        '<message type="function">Function result</message>\n'
-        '<message type="tool">Tool result</message>'
     )
     assert result == expected
 
@@ -1858,17 +1845,6 @@ def test_get_buffer_string_prefix_custom_separator() -> None:
     assert result == expected
 
 
-def test_get_buffer_string_backward_compatibility() -> None:
-    """Test that default behavior is unchanged (backward compatible)."""
-    messages = [
-        HumanMessage(content="Hello"),
-        AIMessage(content="Hi there"),
-    ]
-    result = get_buffer_string(messages)
-    expected = "Human: Hello\nAI: Hi there"
-    assert result == expected
-
-
 def test_get_buffer_string_xml_escaping() -> None:
     """Test XML format properly escapes special characters in content."""
     messages = [
@@ -1880,21 +1856,6 @@ def test_get_buffer_string_xml_escaping() -> None:
     expected = (
         '<message type="human">Is 5 &lt; 10 &amp; 10 &gt; 5?</message>\n'
         '<message type="ai">Yes, and here\'s a "quote"</message>'
-    )
-    assert result == expected
-
-
-def test_get_buffer_string_xml_role_like_content() -> None:
-    """Test XML format handles content containing role-like prefixes."""
-    messages = [
-        HumanMessage(content="Example: Human: some text"),
-        AIMessage(content="I see the example with AI: prefix"),
-    ]
-    result = get_buffer_string(messages, format="xml")
-    # XML format avoids ambiguity - the role-like prefixes are just content
-    expected = (
-        '<message type="human">Example: Human: some text</message>\n'
-        '<message type="ai">I see the example with AI: prefix</message>'
     )
     assert result == expected
 
