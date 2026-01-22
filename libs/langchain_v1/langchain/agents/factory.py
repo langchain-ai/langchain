@@ -1514,15 +1514,18 @@ def _resolve_jump(
 
 def _fetch_last_ai_and_tool_messages(
     messages: list[AnyMessage],
-) -> tuple[AIMessage, list[ToolMessage]]:
-    last_ai_index: int
-    last_ai_message: AIMessage
+) -> tuple[AIMessage | None, list[ToolMessage]]:
+    last_ai_index: int = -1
+    last_ai_message: AIMessage | None = None
 
     for i in range(len(messages) - 1, -1, -1):
         if isinstance(messages[i], AIMessage):
             last_ai_index = i
             last_ai_message = cast("AIMessage", messages[i])
             break
+
+    if last_ai_index == -1:
+        return None, []
 
     tool_messages = [m for m in messages[last_ai_index + 1 :] if isinstance(m, ToolMessage)]
     return last_ai_message, tool_messages
@@ -1550,7 +1553,7 @@ def _make_model_to_tools_edge(
 
         # 2. if the model hasn't called any tools, exit the loop
         # this is the classic exit condition for an agent loop
-        if len(last_ai_message.tool_calls) == 0:
+        if last_ai_message is None or len(last_ai_message.tool_calls) == 0:
             return end_destination
 
         pending_tool_calls = [
@@ -1620,6 +1623,9 @@ def _make_tools_to_model_edge(
 ) -> Callable[[dict[str, Any]], str | None]:
     def tools_to_model(state: dict[str, Any]) -> str | None:
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
+
+        if last_ai_message is None:
+            return model_destination
 
         # 1. Exit condition: All executed tools have return_direct=True
         # Filter to only client-side tools (provider tools are not in tool_node)
