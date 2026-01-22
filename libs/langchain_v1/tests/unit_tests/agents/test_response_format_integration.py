@@ -1,4 +1,4 @@
-"""Test response_format for langchain-openai.
+r"""Test response_format for langchain-openai.
 
 If tests fail, cassettes may need to be re-recorded.
 
@@ -41,16 +41,23 @@ for request, response in list(zip(requests, responses)):
     print(json.dumps(resp, indent=2, default=bytes_encoder))
 print("\n\n")
 ```
-"""
+"""  # noqa: E501
 
 import os
+from typing import TYPE_CHECKING, Any
+from unittest.mock import patch
 
 import pytest
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 
 from langchain.agents import create_agent
-from langchain.agents.structured_output import ToolStrategy
+from langchain.agents.structured_output import ProviderStrategy, ToolStrategy
+
+if TYPE_CHECKING:
+    from langchain_openai import ChatOpenAI
+else:
+    ChatOpenAI = pytest.importorskip("langchain_openai").ChatOpenAI
 
 
 class WeatherBaseModel(BaseModel):
@@ -60,19 +67,16 @@ class WeatherBaseModel(BaseModel):
     condition: str = Field(description="Weather condition")
 
 
-def get_weather(city: str) -> str:  # noqa: ARG001
+def get_weather(city: str) -> str:
     """Get the weather for a city."""
     return f"The weather in {city} is sunny and 75°F."
 
 
-@pytest.mark.requires("langchain_openai")
 @pytest.mark.vcr
 @pytest.mark.parametrize("use_responses_api", [False, True])
-def test_inference_to_native_output(use_responses_api: bool) -> None:
+def test_inference_to_native_output(*, use_responses_api: bool) -> None:
     """Test that native output is inferred when a model supports it."""
-    from langchain_openai import ChatOpenAI
-
-    model_kwargs = {"model": "gpt-5", "use_responses_api": use_responses_api}
+    model_kwargs: dict[str, Any] = {"model": "gpt-5", "use_responses_api": use_responses_api}
 
     if "OPENAI_API_KEY" not in os.environ:
         model_kwargs["api_key"] = "foo"
@@ -103,14 +107,11 @@ def test_inference_to_native_output(use_responses_api: bool) -> None:
     ]
 
 
-@pytest.mark.requires("langchain_openai")
 @pytest.mark.vcr
 @pytest.mark.parametrize("use_responses_api", [False, True])
-def test_inference_to_tool_output(use_responses_api: bool) -> None:
+def test_inference_to_tool_output(*, use_responses_api: bool) -> None:
     """Test that tool output is inferred when a model supports it."""
-    from langchain_openai import ChatOpenAI
-
-    model_kwargs = {"model": "gpt-5", "use_responses_api": use_responses_api}
+    model_kwargs: dict[str, Any] = {"model": "gpt-5", "use_responses_api": use_responses_api}
 
     if "OPENAI_API_KEY" not in os.environ:
         model_kwargs["api_key"] = "foo"
@@ -139,4 +140,50 @@ def test_inference_to_tool_output(use_responses_api: bool) -> None:
         "tool",  # "The weather is sunny and 75°F."
         "ai",  # structured response
         "tool",  # artificial tool message
+    ]
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_strict_mode(*, use_responses_api: bool) -> None:
+    model_kwargs: dict[str, Any] = {"model": "gpt-5", "use_responses_api": use_responses_api}
+
+    if "OPENAI_API_KEY" not in os.environ:
+        model_kwargs["api_key"] = "foo"
+
+    model = ChatOpenAI(**model_kwargs)
+
+    # spy on _get_request_payload to check that `strict` is enabled
+    original_method = model._get_request_payload
+    payloads = []
+
+    def capture_payload(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        result = original_method(*args, **kwargs)
+        payloads.append(result)
+        return result
+
+    with patch.object(model, "_get_request_payload", side_effect=capture_payload):
+        agent = create_agent(
+            model,
+            tools=[get_weather],
+            response_format=ProviderStrategy(WeatherBaseModel, strict=True),
+        )
+        response = agent.invoke({"messages": [HumanMessage("What's the weather in Boston?")]})
+
+        assert len(payloads) == 2
+        if use_responses_api:
+            assert payloads[-1]["text"]["format"]["strict"]
+        else:
+            assert payloads[-1]["response_format"]["json_schema"]["strict"]
+
+    assert isinstance(response["structured_response"], WeatherBaseModel)
+    assert response["structured_response"].temperature == 75.0
+    assert response["structured_response"].condition.lower() == "sunny"
+    assert len(response["messages"]) == 4
+
+    assert [m.type for m in response["messages"]] == [
+        "human",  # "What's the weather?"
+        "ai",  # "What's the weather?"
+        "tool",  # "The weather is sunny and 75°F."
+        "ai",  # structured response
     ]

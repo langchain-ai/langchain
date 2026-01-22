@@ -148,7 +148,8 @@ def _convert_mistral_chat_message_to_message(
     if role != "assistant":
         msg = f"Expected role to be 'assistant', got {role}"
         raise ValueError(msg)
-    content = cast("str", _message["content"])
+    # Mistral returns None for tool invocations
+    content = _message.get("content", "") or ""
 
     additional_kwargs: dict = {}
     tool_calls = []

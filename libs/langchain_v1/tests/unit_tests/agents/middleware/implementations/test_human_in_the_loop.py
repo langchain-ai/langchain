@@ -1,3 +1,4 @@
+import re
 from typing import Any
 from unittest.mock import patch
 
@@ -5,6 +6,7 @@ import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langgraph.runtime import Runtime
 
+from langchain.agents.middleware import InterruptOnConfig
 from langchain.agents.middleware.human_in_the_loop import (
     Action,
     HumanInTheLoopMiddleware,
@@ -14,7 +16,6 @@ from langchain.agents.middleware.types import AgentState
 
 def test_human_in_the_loop_middleware_initialization() -> None:
     """Test HumanInTheLoopMiddleware initialization."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}},
         description_prefix="Custom prefix",
@@ -28,19 +29,19 @@ def test_human_in_the_loop_middleware_initialization() -> None:
 
 def test_human_in_the_loop_middleware_no_interrupts_needed() -> None:
     """Test HumanInTheLoopMiddleware when no interrupts are needed."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
 
     # Test with no messages
-    state: dict[str, Any] = {"messages": []}
-    result = middleware.after_model(state, None)
+    state = AgentState[Any](messages=[])
+    result = middleware.after_model(state, Runtime())
     assert result is None
 
     # Test with message but no tool calls
-    state = {"messages": [HumanMessage(content="Hello"), AIMessage(content="Hi there")]}
-    result = middleware.after_model(state, None)
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), AIMessage(content="Hi there")])
+
+    result = middleware.after_model(state, Runtime())
     assert result is None
 
     # Test with tool calls that don't require interrupts
@@ -48,14 +49,13 @@ def test_human_in_the_loop_middleware_no_interrupts_needed() -> None:
         content="I'll help you",
         tool_calls=[{"name": "other_tool", "args": {"input": "test"}, "id": "1"}],
     )
-    state = {"messages": [HumanMessage(content="Hello"), ai_message]}
-    result = middleware.after_model(state, None)
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+    result = middleware.after_model(state, Runtime())
     assert result is None
 
 
 def test_human_in_the_loop_middleware_single_tool_accept() -> None:
     """Test HumanInTheLoopMiddleware with single tool accept response."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
@@ -64,13 +64,13 @@ def test_human_in_the_loop_middleware_single_tool_accept() -> None:
         content="I'll help you",
         tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
     )
-    state = {"messages": [HumanMessage(content="Hello"), ai_message]}
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
 
-    def mock_accept(requests):
+    def mock_accept(_: Any) -> dict[str, Any]:
         return {"decisions": [{"type": "approve"}]}
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_accept):
-        result = middleware.after_model(state, None)
+        result = middleware.after_model(state, Runtime())
         assert result is not None
         assert "messages" in result
         assert len(result["messages"]) == 1
@@ -82,7 +82,7 @@ def test_human_in_the_loop_middleware_single_tool_accept() -> None:
     )
     state["messages"].append(AIMessage(content="test_tool called with result: Tool message"))
 
-    result = middleware.after_model(state, None)
+    result = middleware.after_model(state, Runtime())
     # No interrupts needed
     assert result is None
 
@@ -97,9 +97,9 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
         content="I'll help you",
         tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
     )
-    state = {"messages": [HumanMessage(content="Hello"), ai_message]}
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
 
-    def mock_edit(requests):
+    def mock_edit(_: Any) -> dict[str, Any]:
         return {
             "decisions": [
                 {
@@ -113,7 +113,7 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
         }
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_edit):
-        result = middleware.after_model(state, None)
+        result = middleware.after_model(state, Runtime())
         assert result is not None
         assert "messages" in result
         assert len(result["messages"]) == 1
@@ -123,7 +123,6 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
 
 def test_human_in_the_loop_middleware_single_tool_response() -> None:
     """Test HumanInTheLoopMiddleware with single tool response with custom message."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
@@ -132,15 +131,15 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
         content="I'll help you",
         tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
     )
-    state = {"messages": [HumanMessage(content="Hello"), ai_message]}
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
 
-    def mock_response(requests):
+    def mock_response(_: Any) -> dict[str, Any]:
         return {"decisions": [{"type": "reject", "message": "Custom response message"}]}
 
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_response
     ):
-        result = middleware.after_model(state, None)
+        result = middleware.after_model(state, Runtime())
         assert result is not None
         assert "messages" in result
         assert len(result["messages"]) == 2
@@ -153,7 +152,6 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
 
 def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
     """Test HumanInTheLoopMiddleware with multiple tools and mixed response types."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
             "get_forecast": {"allowed_decisions": ["approve", "edit", "reject"]},
@@ -168,9 +166,9 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
             {"name": "get_temperature", "args": {"location": "San Francisco"}, "id": "2"},
         ],
     )
-    state = {"messages": [HumanMessage(content="What's the weather?"), ai_message]}
+    state = AgentState[Any](messages=[HumanMessage(content="What's the weather?"), ai_message])
 
-    def mock_mixed_responses(requests):
+    def mock_mixed_responses(_: Any) -> dict[str, Any]:
         return {
             "decisions": [
                 {"type": "approve"},
@@ -181,7 +179,7 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_mixed_responses
     ):
-        result = middleware.after_model(state, None)
+        result = middleware.after_model(state, Runtime())
         assert result is not None
         assert "messages" in result
         assert (
@@ -203,7 +201,6 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
 
 def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
     """Test HumanInTheLoopMiddleware with multiple tools and edit responses."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
             "get_forecast": {"allowed_decisions": ["approve", "edit", "reject"]},
@@ -218,9 +215,9 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
             {"name": "get_temperature", "args": {"location": "San Francisco"}, "id": "2"},
         ],
     )
-    state = {"messages": [HumanMessage(content="What's the weather?"), ai_message]}
+    state = AgentState[Any](messages=[HumanMessage(content="What's the weather?"), ai_message])
 
-    def mock_edit_responses(requests):
+    def mock_edit_responses(_: Any) -> dict[str, Any]:
         return {
             "decisions": [
                 {
@@ -243,7 +240,7 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_edit_responses
     ):
-        result = middleware.after_model(state, None)
+        result = middleware.after_model(state, Runtime())
         assert result is not None
         assert "messages" in result
         assert len(result["messages"]) == 1
@@ -257,7 +254,6 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
 
 def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
     """Test HumanInTheLoopMiddleware with edit action that includes modified args."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
@@ -266,9 +262,9 @@ def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
         content="I'll help you",
         tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
     )
-    state = {"messages": [HumanMessage(content="Hello"), ai_message]}
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
 
-    def mock_edit_with_args(requests):
+    def mock_edit_with_args(_: Any) -> dict[str, Any]:
         return {
             "decisions": [
                 {
@@ -285,7 +281,7 @@ def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
         "langchain.agents.middleware.human_in_the_loop.interrupt",
         side_effect=mock_edit_with_args,
     ):
-        result = middleware.after_model(state, None)
+        result = middleware.after_model(state, Runtime())
         assert result is not None
         assert "messages" in result
         assert len(result["messages"]) == 1
@@ -306,22 +302,28 @@ def test_human_in_the_loop_middleware_unknown_response_type() -> None:
         content="I'll help you",
         tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
     )
-    state = {"messages": [HumanMessage(content="Hello"), ai_message]}
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
 
-    def mock_unknown(requests):
+    def mock_unknown(_: Any) -> dict[str, Any]:
         return {"decisions": [{"type": "unknown"}]}
 
-    with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_unknown):
-        with pytest.raises(
+    with (
+        patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_unknown),
+        pytest.raises(
             ValueError,
-            match=r"Unexpected human decision: {'type': 'unknown'}. Decision type 'unknown' is not allowed for tool 'test_tool'. Expected one of \['approve', 'edit', 'reject'\] based on the tool's configuration.",
-        ):
-            middleware.after_model(state, None)
+            match=re.escape(
+                "Unexpected human decision: {'type': 'unknown'}. "
+                "Decision type 'unknown' is not allowed for tool 'test_tool'. "
+                "Expected one of ['approve', 'edit', 'reject'] based on the tool's "
+                "configuration."
+            ),
+        ),
+    ):
+        middleware.after_model(state, Runtime())
 
 
 def test_human_in_the_loop_middleware_disallowed_action() -> None:
     """Test HumanInTheLoopMiddleware with action not allowed by tool config."""
-
     # edit is not allowed by tool config
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "reject"]}}
@@ -331,9 +333,9 @@ def test_human_in_the_loop_middleware_disallowed_action() -> None:
         content="I'll help you",
         tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
     )
-    state = {"messages": [HumanMessage(content="Hello"), ai_message]}
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
 
-    def mock_disallowed_action(requests):
+    def mock_disallowed_action(_: Any) -> dict[str, Any]:
         return {
             "decisions": [
                 {
@@ -346,20 +348,27 @@ def test_human_in_the_loop_middleware_disallowed_action() -> None:
             ]
         }
 
-    with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt",
-        side_effect=mock_disallowed_action,
-    ):
-        with pytest.raises(
+    with (
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            side_effect=mock_disallowed_action,
+        ),
+        pytest.raises(
             ValueError,
-            match=r"Unexpected human decision: {'type': 'edit', 'edited_action': {'name': 'test_tool', 'args': {'input': 'modified'}}}. Decision type 'edit' is not allowed for tool 'test_tool'. Expected one of \['approve', 'reject'\] based on the tool's configuration.",
-        ):
-            middleware.after_model(state, None)
+            match=re.escape(
+                "Unexpected human decision: {'type': 'edit', 'edited_action': "
+                "{'name': 'test_tool', 'args': {'input': 'modified'}}}. "
+                "Decision type 'edit' is not allowed for tool 'test_tool'. "
+                "Expected one of ['approve', 'reject'] based on the tool's "
+                "configuration."
+            ),
+        ),
+    ):
+        middleware.after_model(state, Runtime())
 
 
 def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> None:
     """Test HumanInTheLoopMiddleware with mix of auto-approved and interrupt tools."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"interrupt_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
@@ -371,13 +380,13 @@ def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> Non
             {"name": "interrupt_tool", "args": {"input": "interrupt"}, "id": "2"},
         ],
     )
-    state = {"messages": [HumanMessage(content="Hello"), ai_message]}
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
 
-    def mock_accept(requests):
+    def mock_accept(_: Any) -> dict[str, Any]:
         return {"decisions": [{"type": "approve"}]}
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_accept):
-        result = middleware.after_model(state, None)
+        result = middleware.after_model(state, Runtime())
         assert result is not None
         assert "messages" in result
         assert len(result["messages"]) == 1
@@ -391,7 +400,6 @@ def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> Non
 
 def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
     """Test that interrupt requests are structured correctly."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}},
         description_prefix="Custom prefix",
@@ -401,11 +409,11 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
         content="I'll help you",
         tool_calls=[{"name": "test_tool", "args": {"input": "test", "location": "SF"}, "id": "1"}],
     )
-    state = {"messages": [HumanMessage(content="Hello"), ai_message]}
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
 
     captured_request = None
 
-    def mock_capture_requests(request):
+    def mock_capture_requests(request: Any) -> dict[str, Any]:
         nonlocal captured_request
         captured_request = request
         return {"decisions": [{"type": "approve"}]}
@@ -413,7 +421,7 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_capture_requests
     ):
-        middleware.after_model(state, None)
+        middleware.after_model(state, Runtime())
 
         assert captured_request is not None
         assert "action_requests" in captured_request
@@ -441,14 +449,14 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
         content="I'll help you",
         tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
     )
-    state = {"messages": [HumanMessage(content="Hello"), ai_message]}
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
 
     # Test accept
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt",
         return_value={"decisions": [{"type": "approve"}]},
     ):
-        result = middleware.after_model(state, None)
+        result = middleware.after_model(state, Runtime())
         assert result is not None
         assert "messages" in result
         assert len(result["messages"]) == 1
@@ -469,7 +477,7 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
             ]
         },
     ):
-        result = middleware.after_model(state, None)
+        result = middleware.after_model(state, Runtime())
         assert result is not None
         assert "messages" in result
         assert len(result["messages"]) == 1
@@ -477,7 +485,7 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
 
     middleware = HumanInTheLoopMiddleware(interrupt_on={"test_tool": False})
 
-    result = middleware.after_model(state, None)
+    result = middleware.after_model(state, Runtime())
     # No interruption should occur
     assert result is None
 
@@ -490,53 +498,63 @@ def test_human_in_the_loop_middleware_sequence_mismatch() -> None:
         content="I'll help you",
         tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
     )
-    state = {"messages": [HumanMessage(content="Hello"), ai_message]}
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
 
     # Test with too few responses
-    with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value={"decisions": []},  # No responses for 1 tool call
-    ):
-        with pytest.raises(
+    with (
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            return_value={"decisions": []},  # No responses for 1 tool call
+        ),
+        pytest.raises(
             ValueError,
-            match=r"Number of human decisions \(0\) does not match number of hanging tool calls \(1\)\.",
-        ):
-            middleware.after_model(state, None)
+            match=re.escape(
+                "Number of human decisions (0) does not match number of hanging tool calls (1)."
+            ),
+        ),
+    ):
+        middleware.after_model(state, Runtime())
 
     # Test with too many responses
-    with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value={
-            "decisions": [
-                {"type": "approve"},
-                {"type": "approve"},
-            ]
-        },  # 2 responses for 1 tool call
-    ):
-        with pytest.raises(
+    with (
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            return_value={
+                "decisions": [
+                    {"type": "approve"},
+                    {"type": "approve"},
+                ]
+            },  # 2 responses for 1 tool call
+        ),
+        pytest.raises(
             ValueError,
-            match=r"Number of human decisions \(2\) does not match number of hanging tool calls \(1\)\.",
-        ):
-            middleware.after_model(state, None)
+            match=re.escape(
+                "Number of human decisions (2) does not match number of hanging tool calls (1)."
+            ),
+        ),
+    ):
+        middleware.after_model(state, Runtime())
 
 
 def test_human_in_the_loop_middleware_description_as_callable() -> None:
     """Test that description field accepts both string and callable."""
 
-    def custom_description(tool_call: ToolCall, state: AgentState, runtime: Runtime) -> str:
+    def custom_description(
+        tool_call: ToolCall, state: AgentState[Any], runtime: Runtime[None]
+    ) -> str:
         """Generate a custom description."""
         return f"Custom: {tool_call['name']} with args {tool_call['args']}"
 
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
-            "tool_with_callable": {
-                "allowed_decisions": ["approve"],
-                "description": custom_description,
-            },
-            "tool_with_string": {
-                "allowed_decisions": ["approve"],
-                "description": "Static description",
-            },
+            "tool_with_callable": InterruptOnConfig(
+                allowed_decisions=["approve"],
+                description=custom_description,
+            ),
+            "tool_with_string": InterruptOnConfig(
+                allowed_decisions=["approve"],
+                description="Static description",
+            ),
         }
     )
 
@@ -547,11 +565,11 @@ def test_human_in_the_loop_middleware_description_as_callable() -> None:
             {"name": "tool_with_string", "args": {"y": 2}, "id": "2"},
         ],
     )
-    state = {"messages": [HumanMessage(content="Hello"), ai_message]}
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
 
     captured_request = None
 
-    def mock_capture_requests(request):
+    def mock_capture_requests(request: Any) -> dict[str, Any]:
         nonlocal captured_request
         captured_request = request
         return {"decisions": [{"type": "approve"}, {"type": "approve"}]}
@@ -559,7 +577,7 @@ def test_human_in_the_loop_middleware_description_as_callable() -> None:
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_capture_requests
     ):
-        middleware.after_model(state, None)
+        middleware.after_model(state, Runtime())
 
         assert captured_request is not None
         assert "action_requests" in captured_request
@@ -600,16 +618,16 @@ def test_human_in_the_loop_middleware_preserves_tool_call_order() -> None:
             {"name": "tool_e", "args": {"val": 5}, "id": "id_e"},
         ],
     )
-    state = {"messages": [HumanMessage(content="Test"), ai_message]}
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
 
-    def mock_approve_all(requests):
+    def mock_approve_all(_: Any) -> dict[str, Any]:
         # Approve both interrupt tools (B and D)
         return {"decisions": [{"type": "approve"}, {"type": "approve"}]}
 
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_approve_all
     ):
-        result = middleware.after_model(state, None)
+        result = middleware.after_model(state, Runtime())
         assert result is not None
         assert "messages" in result
 
@@ -647,9 +665,9 @@ def test_human_in_the_loop_middleware_preserves_order_with_edits() -> None:
             {"name": "tool_d", "args": {"val": 4}, "id": "id_d"},
         ],
     )
-    state = {"messages": [HumanMessage(content="Test"), ai_message]}
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
 
-    def mock_edit_responses(requests):
+    def mock_edit_responses(_: Any) -> dict[str, Any]:
         # Edit tool_b, approve tool_d
         return {
             "decisions": [
@@ -664,7 +682,7 @@ def test_human_in_the_loop_middleware_preserves_order_with_edits() -> None:
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_edit_responses
     ):
-        result = middleware.after_model(state, None)
+        result = middleware.after_model(state, Runtime())
         assert result is not None
 
         updated_ai_message = result["messages"][0]
@@ -701,9 +719,9 @@ def test_human_in_the_loop_middleware_preserves_order_with_rejections() -> None:
             {"name": "tool_e", "args": {"val": 5}, "id": "id_e"},
         ],
     )
-    state = {"messages": [HumanMessage(content="Test"), ai_message]}
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
 
-    def mock_mixed_responses(requests):
+    def mock_mixed_responses(_: Any) -> dict[str, Any]:
         # Reject tool_b, approve tool_d
         return {
             "decisions": [
@@ -715,7 +733,7 @@ def test_human_in_the_loop_middleware_preserves_order_with_rejections() -> None:
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_mixed_responses
     ):
-        result = middleware.after_model(state, None)
+        result = middleware.after_model(state, Runtime())
         assert result is not None
         assert len(result["messages"]) == 2  # AI message + tool message for rejection
 

@@ -64,6 +64,7 @@ from langchain_openai.chat_models._compat import (
     _convert_to_v03_ai_message,
 )
 from langchain_openai.chat_models.base import (
+    OpenAIRefusalError,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
     _convert_dict_to_message,
@@ -74,7 +75,9 @@ from langchain_openai.chat_models.base import (
     _format_message_content,
     _get_last_messages,
     _make_computer_call_output_from_message,
+    _model_prefers_responses_api,
     _oai_structured_outputs_parser,
+    _resize,
 )
 
 
@@ -142,6 +145,10 @@ def test_profile() -> None:
     # Test passing in profile
     model = ChatOpenAI(model="gpt-5", profile={"tool_calling": False})
     assert model.profile == {"tool_calling": False}
+
+    # Test overrides for gpt-5 input tokens
+    model = ChatOpenAI(model="gpt-5")
+    assert model.profile["max_input_tokens"] == 272_000
 
 
 def test_openai_o1_temperature() -> None:
@@ -995,6 +1002,32 @@ def test_get_num_tokens_from_messages() -> None:
         actual = llm.get_num_tokens_from_messages(messages)
     assert actual == 13
 
+    # Test Responses
+    messages = [
+        AIMessage(
+            [
+                {
+                    "type": "function_call",
+                    "name": "multiply",
+                    "arguments": '{"x":5,"y":4}',
+                    "call_id": "call_abc123",
+                    "id": "fc_abc123",
+                    "status": "completed",
+                },
+            ],
+            tool_calls=[
+                {
+                    "type": "tool_call",
+                    "name": "multiply",
+                    "args": {"x": 5, "y": 4},
+                    "id": "call_abc123",
+                }
+            ],
+        )
+    ]
+    actual = llm.get_num_tokens_from_messages(messages)
+    assert actual
+
 
 class Foo(BaseModel):
     bar: int
@@ -1065,6 +1098,12 @@ def test__create_usage_metadata_responses() -> None:
         input_token_details={"cache_read": 50},
         output_token_details={"reasoning": 10},
     )
+
+
+def test__resize_caps_dimensions_preserving_ratio() -> None:
+    """Larger side capped at 2048 then smaller at 768 keeping aspect ratio."""
+    assert _resize(2048, 4096) == (768, 1536)
+    assert _resize(4096, 2048) == (1536, 768)
 
 
 def test__convert_to_openai_response_format() -> None:
@@ -1322,7 +1361,7 @@ def test_structured_outputs_parser() -> None:
         partial(_oai_structured_outputs_parser, schema=GenerateUsername)
     )
     serialized = dumps(llm_output)
-    deserialized = loads(serialized)
+    deserialized = loads(serialized, allowed_objects=[ChatGeneration, AIMessage])
     assert isinstance(deserialized, ChatGeneration)
     result = output_parser.invoke(cast(AIMessage, deserialized.message))
     assert result == parsed_response
@@ -2089,6 +2128,38 @@ def test__construct_responses_api_input_multiple_message_components() -> None:
             "id": "msg_234",
         },
     ]
+
+
+def test__construct_responses_api_input_skips_blocks_without_text() -> None:
+    """Test that blocks without 'text' key are skipped."""
+    # Test case: block with type "text" but missing "text" key
+    messages = [
+        AIMessage(
+            content=[
+                {"type": "text", "text": "valid text", "id": "msg_123"},
+                {"type": "text", "id": "msg_123"},  # Missing "text" key
+                {"type": "output_text", "text": "valid output", "id": "msg_123"},
+                {"type": "output_text", "id": "msg_123"},  # Missing "text" key
+            ]
+        )
+    ]
+    result = _construct_responses_api_input(messages)
+
+    # Should only include blocks with valid text content
+    assert len(result) == 1
+    assert result[0]["type"] == "message"
+    assert result[0]["role"] == "assistant"
+    assert len(result[0]["content"]) == 2
+    assert result[0]["content"][0] == {
+        "type": "output_text",
+        "text": "valid text",
+        "annotations": [],
+    }
+    assert result[0]["content"][1] == {
+        "type": "output_text",
+        "text": "valid output",
+        "annotations": [],
+    }
 
 
 def test__construct_responses_api_input_human_message_with_image_url_conversion() -> (
@@ -3056,3 +3127,102 @@ def test_gpt_5_temperature_case_insensitive(
         messages = [HumanMessage(content="Hello")]
         payload = llm._get_request_payload(messages)
         assert payload["temperature"] == 0.7
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_gpt_5_1_temperature_with_reasoning_effort_none(
+    use_responses_api: bool,
+) -> None:
+    """Test that temperature is preserved when reasoning_effort is explicitly 'none'."""
+    # Test with reasoning_effort='none' explicitly set
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning_effort="none",
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert payload["temperature"] == 0.5
+
+    # Test with reasoning={'effort': 'none'}
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning={"effort": "none"},
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert payload["temperature"] == 0.5
+
+    # Test that temperature is restricted by default (no reasoning_effort)
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+    # Test that temperature is still restricted when reasoning_effort is something else
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning_effort="low",
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+    # Test with reasoning={'effort': 'low'}
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning={"effort": "low"},
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+
+def test_model_prefers_responses_api() -> None:
+    assert _model_prefers_responses_api("gpt-5.2-pro")
+    assert not _model_prefers_responses_api("gpt-5.1")
+
+
+def test_openai_structured_output_refusal_handling_responses_api() -> None:
+    """
+    Test that _oai_structured_outputs_parser raises OpenAIRefusalError
+    when the AIMessage contains a refusal block from OpenAI's Responses API.
+    """
+    ai_msg = AIMessage(
+        content=[
+            {
+                "id": "rs_fake_id",
+                "summary": [],
+                "type": "reasoning",
+                "encrypted_content": "fake_encrypted_content",
+            },
+            {
+                "type": "refusal",
+                "refusal": "refused content in string",
+                "id": "msg_fake_id",
+            },
+        ],
+    )
+
+    # schema does not matter in this issue
+    class MySchema(BaseModel):
+        foo: int
+
+    try:
+        _oai_structured_outputs_parser(ai_msg, MySchema)
+    except OpenAIRefusalError:
+        # OpenAIRefusalError was raised. This is the proper behavior.
+        pass
+    except ValueError as e:
+        pytest.fail(f"This is a wrong behavior. Error details: {e}")

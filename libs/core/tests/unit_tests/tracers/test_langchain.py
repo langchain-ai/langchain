@@ -1,6 +1,5 @@
 import threading
 import time
-import unittest
 import unittest.mock
 import uuid
 from typing import Any
@@ -12,7 +11,10 @@ from langsmith.run_trees import RunTree
 from langsmith.utils import get_env_var, get_tracer_project
 
 from langchain_core.outputs import LLMResult
-from langchain_core.tracers.langchain import LangChainTracer
+from langchain_core.tracers.langchain import (
+    LangChainTracer,
+    _get_usage_metadata_from_generations,
+)
 from langchain_core.tracers.schemas import Run
 
 
@@ -122,8 +124,10 @@ def test_log_lock() -> None:
 def test_correct_get_tracer_project(
     envvars: dict[str, str], expected_project_name: str
 ) -> None:
-    get_env_var.cache_clear()
-    get_tracer_project.cache_clear()
+    if hasattr(get_env_var, "cache_clear"):
+        get_env_var.cache_clear()  # type: ignore[attr-defined]
+    if hasattr(get_tracer_project, "cache_clear"):
+        get_tracer_project.cache_clear()
     with pytest.MonkeyPatch.context() as mp:
         for k, v in envvars.items():
             mp.setenv(k, v)
@@ -147,57 +151,420 @@ def test_correct_get_tracer_project(
         assert projects == [expected_project_name]
 
 
-def test_exclude_inputs_for_normal_invocations() -> None:
-    """Test that normal invocations exclude inputs from PATCH."""
+@pytest.mark.parametrize(
+    ("generations", "expected"),
+    [
+        # Returns usage_metadata when present
+        (
+            [
+                [
+                    {
+                        "text": "Hello!",
+                        "message": {
+                            "content": "Hello!",
+                            "usage_metadata": {
+                                "input_tokens": 10,
+                                "output_tokens": 20,
+                                "total_tokens": 30,
+                            },
+                        },
+                    }
+                ]
+            ],
+            {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30},
+        ),
+        # Returns None when no usage_metadata
+        ([[{"text": "Hello!", "message": {"content": "Hello!"}}]], None),
+        # Returns None when no message
+        ([[{"text": "Hello!"}]], None),
+        # Returns None for empty generations
+        ([], None),
+        ([[]], None),
+        # Aggregates usage_metadata across multiple generations
+        (
+            [
+                [
+                    {
+                        "text": "First",
+                        "message": {
+                            "content": "First",
+                            "usage_metadata": {
+                                "input_tokens": 5,
+                                "output_tokens": 10,
+                                "total_tokens": 15,
+                            },
+                        },
+                    },
+                    {
+                        "text": "Second",
+                        "message": {
+                            "content": "Second",
+                            "usage_metadata": {
+                                "input_tokens": 50,
+                                "output_tokens": 100,
+                                "total_tokens": 150,
+                            },
+                        },
+                    },
+                ]
+            ],
+            {"input_tokens": 55, "output_tokens": 110, "total_tokens": 165},
+        ),
+        # Finds usage_metadata across multiple batches
+        (
+            [
+                [{"text": "No message here"}],
+                [
+                    {
+                        "text": "Has message",
+                        "message": {
+                            "content": "Has message",
+                            "usage_metadata": {
+                                "input_tokens": 10,
+                                "output_tokens": 20,
+                                "total_tokens": 30,
+                            },
+                        },
+                    }
+                ],
+            ],
+            {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30},
+        ),
+    ],
+    ids=[
+        "returns_usage_metadata_when_present",
+        "returns_none_when_no_usage_metadata",
+        "returns_none_when_no_message",
+        "returns_none_for_empty_list",
+        "returns_none_for_empty_batch",
+        "aggregates_across_multiple_generations",
+        "finds_across_multiple_batches",
+    ],
+)
+def test_get_usage_metadata_from_generations(
+    generations: list[list[dict[str, Any]]], expected: dict[str, Any] | None
+) -> None:
+    """Test `_get_usage_metadata_from_generations` utility function."""
+    result = _get_usage_metadata_from_generations(generations)
+    assert result == expected
+
+
+def test_on_llm_end_stores_usage_metadata_in_run_extra() -> None:
+    """Test that `usage_metadata` is stored in `run.extra.metadata` on llm end."""
     client = unittest.mock.MagicMock(spec=Client)
     client.tracing_queue = None
     tracer = LangChainTracer(client=client)
 
-    # Track patch calls
-    patch_calls = []
-    _original_patch = RunTree.patch
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_llm_start({"name": "test_llm"}, ["foo"], run_id=run_id)
 
-    def mock_patch(_self: Any, **kwargs: Any) -> Any:
-        patch_calls.append(kwargs)
-        return None
+    run = tracer.run_map[str(run_id)]
+    usage_metadata = {"input_tokens": 100, "output_tokens": 200, "total_tokens": 300}
+    run.outputs = {
+        "generations": [
+            [
+                {
+                    "text": "Hello!",
+                    "message": {"content": "Hello!", "usage_metadata": usage_metadata},
+                }
+            ]
+        ]
+    }
 
-    with unittest.mock.patch.object(RunTree, "patch", new=mock_patch):
-        run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
-        # Normal invocation with real inputs
-        tracer.on_chain_start(
-            {"name": "test_chain"}, {"input": "real input"}, run_id=run_id
-        )
-        tracer.on_chain_end({"output": "result"}, run_id=run_id)
-        tracer.wait_for_futures()
+    captured_run = None
 
-    # Verify that exclude_inputs was True for normal invocation
-    assert len(patch_calls) == 1
-    assert patch_calls[0].get("exclude_inputs") is True
+    def capture_run(r: Run) -> None:
+        nonlocal captured_run
+        captured_run = r
+
+    with unittest.mock.patch.object(tracer, "_update_run_single", capture_run):
+        tracer._on_llm_end(run)
+
+    assert captured_run is not None
+    assert "metadata" in captured_run.extra
+    assert captured_run.extra["metadata"]["usage_metadata"] == usage_metadata
 
 
-def test_include_inputs_for_streaming_invocations() -> None:
-    """Test that streaming invocations include inputs in PATCH."""
+def test_on_llm_end_no_usage_metadata_when_not_present() -> None:
+    """Test that no `usage_metadata` is added when not present in outputs."""
     client = unittest.mock.MagicMock(spec=Client)
     client.tracing_queue = None
     tracer = LangChainTracer(client=client)
 
-    # Track patch calls
-    patch_calls = []
-    _original_patch = RunTree.patch
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_llm_start({"name": "test_llm"}, ["foo"], run_id=run_id)
 
-    def mock_patch(_self: Any, **kwargs: Any) -> Any:
-        patch_calls.append(kwargs)
-        return None
+    run = tracer.run_map[str(run_id)]
+    run.outputs = {
+        "generations": [[{"text": "Hello!", "message": {"content": "Hello!"}}]]
+    }
 
-    with unittest.mock.patch.object(RunTree, "patch", new=mock_patch):
-        run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160b")
-        # Streaming invocation with placeholder inputs
-        tracer.on_chain_start({"name": "test_chain"}, {"input": ""}, run_id=run_id)
-        tracer.on_chain_end(
-            {"output": "result"}, run_id=run_id, inputs={"input": "accumulated input"}
-        )
-        tracer.wait_for_futures()
+    captured_run = None
 
-    # Verify that exclude_inputs was False for streaming invocation
-    assert len(patch_calls) == 1
-    assert patch_calls[0].get("exclude_inputs") is False
+    def capture_run(r: Run) -> None:
+        nonlocal captured_run
+        captured_run = r
+
+    with unittest.mock.patch.object(tracer, "_update_run_single", capture_run):
+        tracer._on_llm_end(run)
+
+    assert captured_run is not None
+    extra_metadata = captured_run.extra.get("metadata", {})
+    assert "usage_metadata" not in extra_metadata
+
+
+def test_on_llm_end_preserves_existing_metadata() -> None:
+    """Test that existing metadata is preserved when adding `usage_metadata`."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_llm_start(
+        {"name": "test_llm"},
+        ["foo"],
+        run_id=run_id,
+        metadata={"existing_key": "existing_value"},
+    )
+
+    run = tracer.run_map[str(run_id)]
+    usage_metadata = {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30}
+    run.outputs = {
+        "generations": [
+            [
+                {
+                    "text": "Hello!",
+                    "message": {"content": "Hello!", "usage_metadata": usage_metadata},
+                }
+            ]
+        ]
+    }
+
+    captured_run = None
+
+    def capture_run(r: Run) -> None:
+        nonlocal captured_run
+        captured_run = r
+
+    with unittest.mock.patch.object(tracer, "_update_run_single", capture_run):
+        tracer._on_llm_end(run)
+
+    assert captured_run is not None
+    assert "metadata" in captured_run.extra
+    assert captured_run.extra["metadata"]["usage_metadata"] == usage_metadata
+    assert captured_run.extra["metadata"]["existing_key"] == "existing_value"
+
+
+def test_on_chain_start_skips_persist_when_defers_inputs() -> None:
+    """Test that `_on_chain_start` skips persist when `defers_inputs` is set."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    # Pass defers_inputs=True to signal deferred inputs
+    tracer.on_chain_start(
+        {"name": "test_chain"},
+        {"input": ""},
+        run_id=run_id,
+        defers_inputs=True,
+    )
+
+    run = tracer.run_map[str(run_id)]
+
+    persist_called = False
+
+    def mock_persist() -> None:
+        nonlocal persist_called
+        persist_called = True
+
+    with unittest.mock.patch.object(tracer, "_persist_run_single", mock_persist):
+        tracer._on_chain_start(run)
+
+    # Should NOT call persist when defers_inputs is set
+    assert not persist_called
+
+
+def test_on_chain_start_persists_when_not_defers_inputs() -> None:
+    """Test that `_on_chain_start` persists when `defers_inputs` is not set."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    # Normal chain start without defers_inputs
+    tracer.on_chain_start(
+        {"name": "test_chain"},
+        {"input": "hello"},
+        run_id=run_id,
+    )
+
+    run = tracer.run_map[str(run_id)]
+
+    persist_called = False
+
+    def mock_persist(_: Any) -> None:
+        nonlocal persist_called
+        persist_called = True
+
+    with unittest.mock.patch.object(tracer, "_persist_run_single", mock_persist):
+        tracer._on_chain_start(run)
+
+    # Should call persist when defers_inputs is not set
+    assert persist_called
+
+
+def test_on_chain_end_persists_when_defers_inputs() -> None:
+    """Test that `_on_chain_end` calls persist (POST) when `defers_inputs` is set."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_chain_start(
+        {"name": "test_chain"},
+        {"input": ""},
+        run_id=run_id,
+        defers_inputs=True,
+    )
+
+    run = tracer.run_map[str(run_id)]
+    run.outputs = {"output": "result"}
+    run.inputs = {"input": "realized input"}
+
+    persist_called = False
+    update_called = False
+
+    def mock_persist(_: Any) -> None:
+        nonlocal persist_called
+        persist_called = True
+
+    def mock_update(_: Any) -> None:
+        nonlocal update_called
+        update_called = True
+
+    with (
+        unittest.mock.patch.object(tracer, "_persist_run_single", mock_persist),
+        unittest.mock.patch.object(tracer, "_update_run_single", mock_update),
+    ):
+        tracer._on_chain_end(run)
+
+    # Should call persist (POST), not update (PATCH) for deferred inputs
+    assert persist_called
+    assert not update_called
+
+
+def test_on_chain_end_updates_when_not_defers_inputs() -> None:
+    """Tests `_on_chain_end` calls update (PATCH) when `defers_inputs` is not set."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_chain_start(
+        {"name": "test_chain"},
+        {"input": "hello"},
+        run_id=run_id,
+    )
+
+    run = tracer.run_map[str(run_id)]
+    run.outputs = {"output": "result"}
+
+    persist_called = False
+    update_called = False
+
+    def mock_persist(_: Any) -> None:
+        nonlocal persist_called
+        persist_called = True
+
+    def mock_update(_: Any) -> None:
+        nonlocal update_called
+        update_called = True
+
+    with (
+        unittest.mock.patch.object(tracer, "_persist_run_single", mock_persist),
+        unittest.mock.patch.object(tracer, "_update_run_single", mock_update),
+    ):
+        tracer._on_chain_end(run)
+
+    # Should call update (PATCH), not persist (POST) for normal inputs
+    assert not persist_called
+    assert update_called
+
+
+def test_on_chain_error_persists_when_defers_inputs() -> None:
+    """Test that `_on_chain_error` calls persist (POST) when `defers_inputs` is set."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_chain_start(
+        {"name": "test_chain"},
+        {"input": ""},
+        run_id=run_id,
+        defers_inputs=True,
+    )
+
+    run = tracer.run_map[str(run_id)]
+    run.error = "Test error"
+    run.inputs = {"input": "realized input"}
+
+    persist_called = False
+    update_called = False
+
+    def mock_persist(_: Any) -> None:
+        nonlocal persist_called
+        persist_called = True
+
+    def mock_update(_: Any) -> None:
+        nonlocal update_called
+        update_called = True
+
+    with (
+        unittest.mock.patch.object(tracer, "_persist_run_single", mock_persist),
+        unittest.mock.patch.object(tracer, "_update_run_single", mock_update),
+    ):
+        tracer._on_chain_error(run)
+
+    # Should call persist (POST), not update (PATCH) for deferred inputs
+    assert persist_called
+    assert not update_called
+
+
+def test_on_chain_error_updates_when_not_defers_inputs() -> None:
+    """Tests `_on_chain_error` calls update (PATCH) when `defers_inputs` is not set."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_chain_start(
+        {"name": "test_chain"},
+        {"input": "hello"},
+        run_id=run_id,
+    )
+
+    run = tracer.run_map[str(run_id)]
+    run.error = "Test error"
+
+    persist_called = False
+    update_called = False
+
+    def mock_persist(_: Any) -> None:
+        nonlocal persist_called
+        persist_called = True
+
+    def mock_update(_: Any) -> None:
+        nonlocal update_called
+        update_called = True
+
+    with (
+        unittest.mock.patch.object(tracer, "_persist_run_single", mock_persist),
+        unittest.mock.patch.object(tracer, "_update_run_single", mock_update),
+    ):
+        tracer._on_chain_error(run)
+
+    # Should call update (PATCH), not persist (POST) for normal inputs
+    assert not persist_called
+    assert update_called

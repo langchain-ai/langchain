@@ -11,17 +11,17 @@ from typing import Any
 
 from langchain_core.messages import HumanMessage, ToolMessage
 
-from .any_str import AnyStr
+from tests.unit_tests.agents.any_str import AnyStr
 
 
-def _AnyIdHumanMessage(**kwargs: Any) -> HumanMessage:
+def _AnyIdHumanMessage(**kwargs: Any) -> HumanMessage:  # noqa: N802
     """Create a human message with an any id field."""
     message = HumanMessage(**kwargs)
     message.id = AnyStr()
     return message
 
 
-def _AnyIdToolMessage(**kwargs: Any) -> ToolMessage:
+def _AnyIdToolMessage(**kwargs: Any) -> ToolMessage:  # noqa: N802
     """Create a tool message with an any id field."""
     message = ToolMessage(**kwargs)
     message.id = AnyStr()

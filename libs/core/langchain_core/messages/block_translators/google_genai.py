@@ -9,6 +9,13 @@ from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages import content as types
 from langchain_core.messages.content import Citation, create_citation
 
+try:
+    import filetype  # type: ignore[import-not-found]
+
+    _HAS_FILETYPE = True
+except ImportError:
+    _HAS_FILETYPE = False
+
 
 def _bytes_to_b64_str(bytes_: bytes) -> str:
     """Convert bytes to base64 encoded string."""
@@ -391,9 +398,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                                 "base64": url,
                             }
 
-                            try:
-                                import filetype  # type: ignore[import-not-found] # noqa: PLC0415
-
+                            if _HAS_FILETYPE:
                                 # Guess MIME type based on file bytes
                                 mime_type = None
                                 kind = filetype.guess(decoded_bytes)
@@ -401,9 +406,6 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                                     mime_type = kind.mime
                                 if mime_type:
                                     image_url_b64_block["mime_type"] = mime_type
-                            except ImportError:
-                                # filetype library not available, skip type detection
-                                pass
 
                             converted_blocks.append(
                                 cast("types.ImageContentBlock", image_url_b64_block)
@@ -411,7 +413,10 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                         except Exception:
                             # Not valid base64, treat as non-standard
                             converted_blocks.append(
-                                {"type": "non_standard", "value": item}
+                                {
+                                    "type": "non_standard",
+                                    "value": item,
+                                }
                             )
                 else:
                     # This likely won't be reached according to previous implementations
@@ -523,12 +528,26 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
 
 
 def translate_content(message: AIMessage) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a message with Google (GenAI) content."""
+    """Derive standard content blocks from a message with Google (GenAI) content.
+
+    Args:
+        message: The message to translate.
+
+    Returns:
+        The derived content blocks.
+    """
     return _convert_to_v1_from_genai(message)
 
 
 def translate_content_chunk(message: AIMessageChunk) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a chunk with Google (GenAI) content."""
+    """Derive standard content blocks from a chunk with Google (GenAI) content.
+
+    Args:
+        message: The message chunk to translate.
+
+    Returns:
+        The derived content blocks.
+    """
     return _convert_to_v1_from_genai(message)
 
 
