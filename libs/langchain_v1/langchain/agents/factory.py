@@ -63,6 +63,20 @@ if TYPE_CHECKING:
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
+DYNAMIC_TOOL_ERROR_TEMPLATE = """
+Unknown tool names from middleware: {unknown_tool_names}
+Available tools: {available_tool_names}
+
+To fix this:
+* If the tool is static, pass it to create_agent(tools=[...]) or middleware.tools
+* If the tool is dynamic, define wrap_tool_call/awrap_tool_call to handle it:
+
+    def wrap_tool_call(self, request, handler):
+        if request.tool_call['name'] == 'my_tool':
+            return handler(request.override(tool=my_tool))
+        return handler(request)
+""".strip()
+
 FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
     # if model profile data are not available, these models are assumed to support
     # structured output
@@ -1021,24 +1035,9 @@ def create_agent(
 
             if unknown_tool_names:
                 available_tool_names = sorted(available_tools_by_name.keys())
-                msg = (
-                    f"Middleware returned unknown tool names: {unknown_tool_names}\n\n"
-                    f"Available client-side tools: {available_tool_names}\n\n"
-                    "To fix this issue:\n"
-                    "1. Ensure the tools are passed to create_agent() via "
-                    "the 'tools' parameter\n"
-                    "2. If using custom middleware with tools, ensure "
-                    "they're registered via middleware.tools attribute\n"
-                    "3. Define wrap_tool_call (sync) and/or awrap_tool_call (async) "
-                    "handlers in your middleware to handle dynamically added tools. "
-                    "Use request.override(tool=...) to provide the tool implementation:\n\n"
-                    "   def wrap_tool_call(self, request, handler):\n"
-                    "       if request.tool_call['name'] == 'my_dynamic_tool':\n"
-                    "           return handler(request.override(tool=my_dynamic_tool))\n"
-                    "       return handler(request)\n\n"
-                    "Note: Implement both sync and async versions if your agent may be "
-                    "invoked via invoke()/stream() and ainvoke()/astream().\n"
-                    "Note: Built-in provider tools (dict format) can be added dynamically."
+                msg = DYNAMIC_TOOL_ERROR_TEMPLATE.format(
+                    unknown_tool_names=unknown_tool_names,
+                    available_tool_names=available_tool_names,
                 )
                 raise ValueError(msg)
 
