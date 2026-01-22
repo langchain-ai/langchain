@@ -99,6 +99,130 @@ AnyMessage = Annotated[
 """A type representing any defined `Message` or `MessageChunk` type."""
 
 
+def _has_base64_data(block: dict) -> bool:
+    """Check if a content block contains base64 encoded data.
+
+    Args:
+        block: A content block dictionary.
+
+    Returns:
+        Whether the block contains base64 data.
+    """
+    # Check for explicit base64 field (standard content blocks)
+    if block.get("base64"):
+        return True
+
+    # Check for data: URL in url field
+    url = block.get("url", "")
+    if isinstance(url, str) and url.startswith("data:"):
+        return True
+
+    # Check for OpenAI-style image_url with data: URL
+    image_url = block.get("image_url", {})
+    if isinstance(image_url, dict):
+        url = image_url.get("url", "")
+        if isinstance(url, str) and url.startswith("data:"):
+            return True
+
+    return False
+
+
+def _format_content_block_xml(block: dict) -> str | None:
+    """Format a content block as XML.
+
+    Args:
+        block: A LangChain content block.
+
+    Returns:
+        XML string representation of the block, or `None` if the block should be
+            skipped.
+    """
+    block_type = block.get("type", "")
+
+    # Skip blocks with base64 encoded data
+    if _has_base64_data(block):
+        return None
+
+    # Text blocks
+    if block_type == "text":
+        text = block.get("text", "")
+        return escape(text) if text else None
+
+    # Reasoning blocks
+    if block_type == "reasoning":
+        reasoning = block.get("reasoning", "")
+        if reasoning:
+            return f"<reasoning>{escape(reasoning)}</reasoning>"
+        return None
+
+    # Image blocks (URL only, base64 already filtered)
+    if block_type == "image":
+        url = block.get("url")
+        file_id = block.get("file_id")
+        if url:
+            return f"<image url={quoteattr(url)} />"
+        if file_id:
+            return f"<image file_id={quoteattr(file_id)} />"
+        return None
+
+    # OpenAI-style image_url blocks
+    if block_type == "image_url":
+        image_url = block.get("image_url", {})
+        if isinstance(image_url, dict):
+            url = image_url.get("url", "")
+            if url and not url.startswith("data:"):
+                return f"<image url={quoteattr(url)} />"
+        return None
+
+    # Audio blocks (URL only)
+    if block_type == "audio":
+        url = block.get("url")
+        file_id = block.get("file_id")
+        if url:
+            return f"<audio url={quoteattr(url)} />"
+        if file_id:
+            return f"<audio file_id={quoteattr(file_id)} />"
+        return None
+
+    # Video blocks (URL only)
+    if block_type == "video":
+        url = block.get("url")
+        file_id = block.get("file_id")
+        if url:
+            return f"<video url={quoteattr(url)} />"
+        if file_id:
+            return f"<video file_id={quoteattr(file_id)} />"
+        return None
+
+    # Plain text document blocks
+    if block_type == "text-plain":
+        text = block.get("text", "")
+        return escape(text) if text else None
+
+    # Server tool call blocks (from AI messages)
+    if block_type == "server_tool_call":
+        tc_id = quoteattr(str(block.get("id") or ""))
+        tc_name = quoteattr(str(block.get("name") or ""))
+        tc_args = escape(json.dumps(block.get("args", {}), ensure_ascii=False))
+        return (
+            f"<server_tool_call id={tc_id} name={tc_name}>{tc_args}</server_tool_call>"
+        )
+
+    # Server tool result blocks
+    if block_type == "server_tool_result":
+        tool_call_id = quoteattr(str(block.get("tool_call_id") or ""))
+        status = quoteattr(str(block.get("status") or ""))
+        output = block.get("output")
+        output_str = escape(json.dumps(output, ensure_ascii=False)) if output else ""
+        return (
+            f"<server_tool_result tool_call_id={tool_call_id} status={status}>"
+            f"{output_str}</server_tool_result>"
+        )
+
+    # Unknown block type - skip silently
+    return None
+
+
 def _get_message_type_str(m: BaseMessage, human_prefix: str, ai_prefix: str) -> str:
     """Get the type string for XML message element.
 
@@ -170,6 +294,13 @@ def get_buffer_string(
         - Attribute values are escaped using `xml.sax.saxutils.quoteattr()`.
         - AI messages with tool calls use nested structure with `<content>` and
             `<tool_call>` elements.
+        - For multi-modal content (list of content blocks), supported block types
+            are: `text`, `reasoning`, `image` (URL/file_id only), `image_url`
+            (OpenAI-style, URL only), `audio` (URL/file_id only), `video` (URL/file_id
+            only), `text-plain`, `server_tool_call`, and `server_tool_result`.
+        - Content blocks with base64-encoded data are skipped (including blocks
+            with `base64` field or `data:` URLs).
+        - Unknown block types are skipped.
 
     Example:
         Default prefix format:
@@ -250,11 +381,23 @@ def get_buffer_string(
             msg = f"Got unsupported message type: {m}"
             raise ValueError(msg)  # noqa: TRY004
 
-        content = m.text
-
         if format == "xml":
             msg_type = _get_message_type_str(m, human_prefix, ai_prefix)
-            escaped_content = escape(content)
+
+            # Format content blocks
+            if isinstance(m.content, str):
+                content_parts = [escape(m.content)] if m.content else []
+            else:
+                # List of content blocks
+                content_parts = []
+                for block in m.content:
+                    if isinstance(block, str):
+                        if block:
+                            content_parts.append(escape(block))
+                    else:
+                        formatted = _format_content_block_xml(block)
+                        if formatted:
+                            content_parts.append(formatted)
 
             # Check if this is an AIMessage with tool calls
             has_tool_calls = isinstance(m, AIMessage) and m.tool_calls
@@ -269,8 +412,8 @@ def get_buffer_string(
                 # Type narrowing: at this point m is AIMessage (verified above)
                 ai_msg = cast("AIMessage", m)
                 parts = [f"<message type={quoteattr(msg_type)}>"]
-                if escaped_content:
-                    parts.append(f"  <content>{escaped_content}</content>")
+                if content_parts:
+                    parts.append(f"  <content>{' '.join(content_parts)}</content>")
 
                 if has_tool_calls:
                     for tc in ai_msg.tool_calls:
@@ -295,10 +438,12 @@ def get_buffer_string(
                 message = "\n".join(parts)
             else:
                 # Simple structure for messages without tool calls
+                joined_content = " ".join(content_parts)
                 message = (
-                    f"<message type={quoteattr(msg_type)}>{escaped_content}</message>"
+                    f"<message type={quoteattr(msg_type)}>{joined_content}</message>"
                 )
         else:  # format == "prefix"
+            content = m.text
             message = f"{role}: {content}"
             tool_info = ""
             if isinstance(m, AIMessage):

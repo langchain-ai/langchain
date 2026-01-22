@@ -2173,3 +2173,306 @@ def test_get_buffer_string_invalid_format() -> None:
         get_buffer_string(messages, format="invalid")  # type: ignore[arg-type]
     with pytest.raises(ValueError, match="Unrecognized format"):
         get_buffer_string(messages, format="")  # type: ignore[arg-type]
+
+
+def test_get_buffer_string_xml_image_url_block() -> None:
+    """Test XML format with image content block containing URL."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "What is in this image?"},
+                {"type": "image", "url": "https://example.com/image.png"},
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert '<message type="human">' in result
+    assert "What is in this image?" in result
+    assert '<image url="https://example.com/image.png" />' in result
+
+
+def test_get_buffer_string_xml_image_file_id_block() -> None:
+    """Test XML format with image content block containing `file_id`."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Describe this:"},
+                {"type": "image", "file_id": "file-abc123"},
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert '<image file_id="file-abc123" />' in result
+
+
+def test_get_buffer_string_xml_image_base64_skipped() -> None:
+    """Test XML format skips image blocks with base64 data."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "What is this?"},
+                {"type": "image", "base64": "iVBORw0KGgo...", "mime_type": "image/png"},
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "What is this?" in result
+    assert "base64" not in result
+    assert "iVBORw0KGgo" not in result
+
+
+def test_get_buffer_string_xml_image_data_url_skipped() -> None:
+    """Test XML format skips image blocks with data: URLs."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Check this:"},
+                {"type": "image", "url": "data:image/png;base64,iVBORw0KGgo..."},
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "Check this:" in result
+    assert "data:image" not in result
+
+
+def test_get_buffer_string_xml_openai_image_url_block() -> None:
+    """Test XML format with OpenAI-style `image_url` block."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Analyze this:"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "https://example.com/photo.jpg"},
+                },
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "Analyze this:" in result
+    assert '<image url="https://example.com/photo.jpg" />' in result
+
+
+def test_get_buffer_string_xml_openai_image_url_data_skipped() -> None:
+    """Test XML format skips OpenAI-style `image_url` blocks with data: URLs."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "See this:"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "data:image/jpeg;base64,/9j/4AAQ..."},
+                },
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "See this:" in result
+    assert "data:image" not in result
+    assert "/9j/4AAQ" not in result
+
+
+def test_get_buffer_string_xml_audio_url_block() -> None:
+    """Test XML format with audio content block containing URL."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Transcribe this:"},
+                {"type": "audio", "url": "https://example.com/audio.mp3"},
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "Transcribe this:" in result
+    assert '<audio url="https://example.com/audio.mp3" />' in result
+
+
+def test_get_buffer_string_xml_audio_base64_skipped() -> None:
+    """Test XML format skips audio blocks with base64 data."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Listen:"},
+                {"type": "audio", "base64": "UklGRi...", "mime_type": "audio/wav"},
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "Listen:" in result
+    assert "UklGRi" not in result
+
+
+def test_get_buffer_string_xml_video_url_block() -> None:
+    """Test XML format with video content block containing URL."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Describe this video:"},
+                {"type": "video", "url": "https://example.com/video.mp4"},
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "Describe this video:" in result
+    assert '<video url="https://example.com/video.mp4" />' in result
+
+
+def test_get_buffer_string_xml_video_base64_skipped() -> None:
+    """Test XML format skips video blocks with base64 data."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Watch:"},
+                {"type": "video", "base64": "AAAAFGZ0eXA...", "mime_type": "video/mp4"},
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "Watch:" in result
+    assert "AAAAFGZ0eXA" not in result
+
+
+def test_get_buffer_string_xml_reasoning_block() -> None:
+    """Test XML format with reasoning content block."""
+    messages: list[BaseMessage] = [
+        AIMessage(
+            content=[
+                {"type": "reasoning", "reasoning": "Let me think about this..."},
+                {"type": "text", "text": "The answer is 42."},
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "<reasoning>Let me think about this...</reasoning>" in result
+    assert "The answer is 42." in result
+
+
+def test_get_buffer_string_xml_text_plain_block() -> None:
+    """Test XML format with text-plain content block."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Here is a document:"},
+                {
+                    "type": "text-plain",
+                    "text": "Document content here.",
+                    "mime_type": "text/plain",
+                },
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "Here is a document:" in result
+    assert "Document content here." in result
+
+
+def test_get_buffer_string_xml_server_tool_call_block() -> None:
+    """Test XML format with server_tool_call content block."""
+    messages: list[BaseMessage] = [
+        AIMessage(
+            content=[
+                {"type": "text", "text": "Let me search for that."},
+                {
+                    "type": "server_tool_call",
+                    "id": "call_123",
+                    "name": "web_search",
+                    "args": {"query": "weather today"},
+                },
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "Let me search for that." in result
+    assert '<server_tool_call id="call_123" name="web_search">' in result
+    assert '{"query": "weather today"}' in result
+    assert "</server_tool_call>" in result
+
+
+def test_get_buffer_string_xml_server_tool_result_block() -> None:
+    """Test XML format with server_tool_result content block."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "server_tool_result",
+                    "tool_call_id": "call_123",
+                    "status": "success",
+                    "output": {"temperature": 72, "conditions": "sunny"},
+                },
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert '<server_tool_result tool_call_id="call_123" status="success">' in result
+    assert '"temperature": 72' in result
+    assert "</server_tool_result>" in result
+
+
+def test_get_buffer_string_xml_unknown_block_type_skipped() -> None:
+    """Test XML format silently skips unknown block types."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Hello"},
+                {"type": "unknown_type", "data": "some data"},
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "Hello" in result
+    assert "unknown_type" not in result
+    assert "some data" not in result
+
+
+def test_get_buffer_string_xml_mixed_content_blocks() -> None:
+    """Test XML format with multiple different content block types."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Look at this image and document:"},
+                {"type": "image", "url": "https://example.com/img.png"},
+                {
+                    "type": "text-plain",
+                    "text": "Doc content",
+                    "mime_type": "text/plain",
+                },
+                # This should be skipped (base64)
+                {"type": "image", "base64": "abc123", "mime_type": "image/png"},
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "Look at this image and document:" in result
+    assert '<image url="https://example.com/img.png" />' in result
+    assert "Doc content" in result
+    assert "abc123" not in result
+
+
+def test_get_buffer_string_xml_escaping_in_content_blocks() -> None:
+    """Test that special XML characters are escaped in content blocks."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Is 5 < 10 & 10 > 5?"},
+                {"type": "reasoning", "reasoning": "Let's check: <value> & </value>"},
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "Is 5 &lt; 10 &amp; 10 &gt; 5?" in result
+    assert "&lt;value&gt; &amp; &lt;/value&gt;" in result
+
+
+def test_get_buffer_string_xml_url_with_special_chars() -> None:
+    """Test that URLs with special characters are properly quoted."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "image", "url": "https://example.com/img?a=1&b=2"},
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    # quoteattr should handle the & in the URL
+    assert "https://example.com/img?a=1&amp;b=2" in result
