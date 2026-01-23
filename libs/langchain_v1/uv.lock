@@ -442,6 +442,18 @@ wheels = [
 ]
 
 [[package]]
+name = "blockbuster"
+version = "1.5.26"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "forbiddenfruit", marker = "implementation_name == 'cpython'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/55/e0/dcbab602790a576b0b94108c07e2c048e5897df7cc83722a89582d733987/blockbuster-1.5.26.tar.gz", hash = "sha256:cc3ce8c70fa852a97ee3411155f31e4ad2665cd1c6c7d2f8bb1851dab61dc629", size = 36085, upload-time = "2025-12-05T10:43:47.735Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/95/c1/84fc6811122f54b20de2e5afb312ee07a3a47a328755587d1e505475239b/blockbuster-1.5.26-py3-none-any.whl", hash = "sha256:f8e53fb2dd4b6c6ec2f04907ddbd063ca7cd1ef587d24448ef4e50e81e3a79bb", size = 13226, upload-time = "2025-12-05T10:43:48.778Z" },
+]
+
+[[package]]
 name = "boto3"
 version = "1.40.72"
 source = { registry = "https://pypi.org/simple" }
@@ -999,6 +1011,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/5b/39/a39c176fca0cdd8f4
 wheels = [
     { url = "https://files.pythonhosted.org/packages/39/de/576c2dab45914e08c1fc4adfa4a334da037b8b4ad4df1fdab4b56904bd07/fireworks_ai-0.16.4-py3-none-any.whl", hash = "sha256:e7592fdec64aa35f0068b8fa8277e2440ef6f0d6355e818b7220e098f7ea0ee9", size = 193771, upload-time = "2025-05-18T07:16:20.611Z" },
 ]
+
+[[package]]
+name = "forbiddenfruit"
+version = "0.1.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e6/79/d4f20e91327c98096d605646bdc6a5ffedae820f38d378d3515c42ec5e60/forbiddenfruit-0.1.4.tar.gz", hash = "sha256:e3f7e66561a29ae129aac139a85d610dbf3dd896128187ed5454b6421f624253", size = 43756, upload-time = "2021-01-16T21:03:35.401Z" }
 
 [[package]]
 name = "frozenlist"
@@ -1926,6 +1944,7 @@ lint = [
     { name = "ruff" },
 ]
 test = [
+    { name = "blockbuster" },
     { name = "langchain-openai" },
     { name = "langchain-tests" },
     { name = "pytest" },
@@ -1978,6 +1997,7 @@ provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-verte
 [package.metadata.requires-dev]
 lint = [{ name = "ruff", specifier = ">=0.14.11,<0.15.0" }]
 test = [
+    { name = "blockbuster", specifier = ">=1.5.26,<1.6.0" },
     { name = "langchain-openai", editable = "../partners/openai" },
     { name = "langchain-tests", editable = "../standard-tests" },
     { name = "pytest", specifier = ">=8.0.0,<9.0.0" },
