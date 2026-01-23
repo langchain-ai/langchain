@@ -22,7 +22,6 @@ langchain/
 │   ├── text-splitters/   # Document chunking utilities
 │   ├── standard-tests/   # Shared test suite for integrations
 │   ├── model-profiles/   # Model configuration profiles
-│   └── cli/              # Command-line interface tools
 ├── .github/              # CI/CD workflows and templates
 ├── .vscode/              # VSCode IDE standard settings and recommended extensions
 └── README.md             # Information about LangChain
