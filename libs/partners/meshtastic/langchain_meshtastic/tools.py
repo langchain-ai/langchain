@@ -113,7 +113,8 @@ class MeshtasticSendTool(BaseTool):  # type: ignore[override]
         .. code-block:: python
 
             ToolMessage(
-                content="Successfully sent message to mesh network on channel 1: 'Emergency alert!'",
+                content="Successfully sent message to mesh network on "
+                        "channel 1: 'Emergency alert!'",
                 name="meshtastic_send",
                 tool_call_id="1",
             )
