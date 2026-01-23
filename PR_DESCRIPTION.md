@@ -1,16 +1,17 @@
 # PR Title
 
 ```
-feat(community): add MeshtasticSendTool - let your AI agents talk to the real world via LoRa radio
+feat(meshtastic): add langchain-meshtastic - let your AI agents talk to the real world via LoRa radio
 ```
 
 ---
 
 ## Summary
 
-**Your LangChain agent just got a radio.** This PR adds `MeshtasticSendTool`, enabling agents to broadcast messages over LoRa mesh networks - no internet required.
+**Your LangChain agent just got a radio.** This PR adds `langchain-meshtastic`, a new partner package enabling agents to broadcast messages over LoRa mesh networks - no internet required.
 
-- New tool for sending messages to decentralized mesh networks via Meshtastic hardware
+- New partner package at `libs/partners/meshtastic`
+- `MeshtasticSendTool` for sending messages to decentralized mesh networks
 - Auto-detects connected devices or accepts explicit device path configuration  
 - Comprehensive unit tests with hardware mocking for CI compatibility
 
@@ -27,7 +28,7 @@ Imagine an AI that can communicate when the grid goes dark. Meshtastic devices u
 ## Example Usage
 
 ```python
-from langchain_community.tools.meshtastic_tool import MeshtasticSendTool
+from langchain_meshtastic import MeshtasticSendTool
 from langchain.agents import create_react_agent
 from langchain_openai import ChatOpenAI
 
@@ -62,8 +63,9 @@ Unit tests mock the hardware interface to ensure CI/CD compatibility without req
 
 ## Areas Requiring Careful Review
 
-1. **Error message clarity**: The error messages are designed to be helpful for users troubleshooting connection issues
-2. **Resource cleanup**: The `finally` block ensures the serial interface is always closed, even on exceptions
+1. **Package structure**: Follows the same pattern as other partner packages (exa, ollama, etc.)
+2. **Error message clarity**: Error messages designed to help users troubleshoot connection issues
+3. **Resource cleanup**: `finally` block ensures serial interface is always closed
 
 ---
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
@@ -55,7 +55,7 @@ class MeshtasticSendInput(BaseModel):
     )
 
 
-class MeshtasticSendTool(BaseTool):
+class MeshtasticSendTool(BaseTool):  # type: ignore[override]
     """Tool for sending messages to a Meshtastic LoRa mesh network.
 
     This tool enables LangChain agents to communicate via Meshtastic devices,
@@ -68,14 +68,18 @@ class MeshtasticSendTool(BaseTool):
     - Privacy-focused messaging that doesn't rely on centralized servers
 
     Setup:
-        1. Install the meshtastic package: ``pip install meshtastic``
-        2. Connect a Meshtastic-compatible device via USB
-        3. The tool will auto-detect the device, or you can specify ``device_path``
+        Install ``langchain-meshtastic`` and the ``meshtastic`` package:
 
-    Example:
+        .. code-block:: bash
+
+            pip install langchain-meshtastic meshtastic
+
+        Connect a Meshtastic-compatible device via USB.
+
+    Instantiation:
         .. code-block:: python
 
-            from langchain_community.tools.meshtastic_tool import MeshtasticSendTool
+            from langchain_meshtastic import MeshtasticSendTool
 
             # Auto-detect connected device
             tool = MeshtasticSendTool()
@@ -83,8 +87,35 @@ class MeshtasticSendTool(BaseTool):
             # Or specify device path explicitly
             tool = MeshtasticSendTool(device_path="/dev/ttyUSB0")
 
-            # Send a message
-            result = tool.invoke({"message": "Hello from AI!", "channel_index": 0})
+    Invocation with args:
+        .. code-block:: python
+
+            tool.invoke({"message": "Hello from AI!", "channel_index": 0})
+
+        .. code-block:: python
+
+            "Successfully sent message to mesh network on channel 0: 'Hello from AI!'"
+
+    Invocation with ToolCall:
+        .. code-block:: python
+
+            tool.invoke(
+                {
+                    "args": {"message": "Emergency alert!", "channel_index": 1},
+                    "id": "1",
+                    "name": tool.name,
+                    "type": "tool_call",
+                }
+            )
+
+        .. code-block:: python
+
+            ToolMessage(
+                content="Successfully sent message to mesh network on channel 1: "
+                        "'Emergency alert!'",
+                name="meshtastic_send",
+                tool_call_id="1",
+            )
     """
 
     name: str = "meshtastic_send"
@@ -164,29 +195,3 @@ class MeshtasticSendTool(BaseTool):
                 except Exception:
                     # Ignore errors during cleanup
                     pass
-
-    async def _arun(
-        self,
-        message: str,
-        channel_index: int = 0,
-        run_manager: CallbackManagerForToolRun | None = None,
-    ) -> str:
-        """Async version of _run.
-
-        The meshtastic library is synchronous, so this delegates to _run
-        via the default executor.
-
-        Args:
-            message: The text message to broadcast.
-            channel_index: The channel index to send on (0-7).
-            run_manager: Optional callback manager for tracing.
-
-        Returns:
-            A status message indicating success or describing the failure.
-        """
-        # Delegate to sync implementation via default behavior in BaseTool
-        return self._run(
-            message=message,
-            channel_index=channel_index,
-            run_manager=run_manager,
-        )
