@@ -32,7 +32,13 @@
 #   fireworks, groq, huggingface, mistralai, nomic, ollama, openai,
 #   perplexity, prompty, qdrant, xai, infra, deps
 #
-# Multiple scopes can be used by separating them with a comma.
+# Multiple scopes can be used by separating them with a comma. For example:
+#
+#   feat(core,cli): add multi‐tenant support to core and cli
+#
+# Note: PRs touching the langchain package should use the 'langchain' scope. It is not
+#   acceptable to omit the scope for changes to the langchain package, despite it being
+#   the main package & name of the repo.
 #
 # Rules:
 #   1. The 'Type' must start with a lowercase letter.
