@@ -126,7 +126,7 @@ class TestMeshtasticSendTool:
 
     def test_generic_exception_handling(self, mock_meshtastic: MagicMock) -> None:
         """Test handling of unexpected exceptions."""
-        mock_meshtastic.sendText.side_effect = Exception("Unexpected error")
+        mock_meshtastic.sendText.side_effect = RuntimeError("Unexpected error")
 
         tool = MeshtasticSendTool()
         result = tool._run(message="Test")
@@ -144,7 +144,7 @@ class TestMeshtasticSendTool:
 
     def test_interface_closed_on_failure(self, mock_meshtastic: MagicMock) -> None:
         """Test that interface is closed even when send fails."""
-        mock_meshtastic.sendText.side_effect = RuntimeError("Send failed")
+        mock_meshtastic.sendText.side_effect = OSError("Send failed")
 
         tool = MeshtasticSendTool()
         tool._run(message="Test")
