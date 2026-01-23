@@ -595,7 +595,7 @@ class SummarizationMiddleware(AgentMiddleware):
 
         last_msg = messages[-1]
         is_active_turn = isinstance(last_msg, ToolMessage) or (
-            isinstance(last_msg, AIMessage) and bool(last_msg.tool_calls)
+            isinstance(last_msg, AIMessage) and last_msg.tool_calls
         )
 
         if is_active_turn:
