@@ -1,5 +1,6 @@
 """Unit tests for MeshtasticSendTool."""
 
+from collections.abc import Generator
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -17,7 +18,9 @@ def mock_serial_interface() -> MagicMock:
 
 
 @pytest.fixture
-def mock_meshtastic(mock_serial_interface: MagicMock) -> MagicMock:
+def mock_meshtastic(
+    mock_serial_interface: MagicMock,
+) -> Generator[MagicMock, None, None]:
     """Mock the meshtastic import and SerialInterface class."""
     with patch(
         "langchain_meshtastic.tools._get_meshtastic_serial_interface"
