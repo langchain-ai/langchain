@@ -102,9 +102,12 @@ asyncio_mode = "auto"
     "S101",    # Tests need assertions
     "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
     "ARG001",  # Unused function arguments in tests
+    "ARG002",  # Unused method arguments in tests
     "PLR2004", # Magic value in comparisons
     "PT011",   # pytest.raises() is too broad
+    "PLC0415", # import not at top level (needed for import tests)
 ]
 "scripts/*.py" = [
     "INP001",  # Not a package
+    "PLC0415", # import not at top level
 ]

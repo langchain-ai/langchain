@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING
 
 from langchain_core.callbacks import CallbackManagerForToolRun
@@ -24,7 +25,9 @@ def _get_meshtastic_serial_interface() -> type[SerialInterface]:
         ImportError: If the meshtastic package is not installed.
     """
     try:
-        from meshtastic.serial_interface import SerialInterface
+        from meshtastic.serial_interface import (  # noqa: PLC0415
+            SerialInterface,
+        )
     except ImportError as e:
         msg = (
             "Could not import meshtastic python package. "
@@ -47,8 +50,7 @@ class MeshtasticSendInput(BaseModel):
     channel_index: int = Field(
         default=0,
         description=(
-            "The channel index to send the message on. "
-            "Use 0 for the primary channel."
+            "The channel index to send the message on. Use 0 for the primary channel."
         ),
         ge=0,
         le=7,
@@ -111,8 +113,7 @@ class MeshtasticSendTool(BaseTool):  # type: ignore[override]
         .. code-block:: python
 
             ToolMessage(
-                content="Successfully sent message to mesh network on channel 1: "
-                        "'Emergency alert!'",
+                content="Successfully sent message to mesh network on channel 1: 'Emergency alert!'",
                 name="meshtastic_send",
                 tool_call_id="1",
             )
@@ -141,7 +142,7 @@ class MeshtasticSendTool(BaseTool):  # type: ignore[override]
         self,
         message: str,
         channel_index: int = 0,
-        run_manager: CallbackManagerForToolRun | None = None,
+        run_manager: CallbackManagerForToolRun | None = None,  # noqa: ARG002
     ) -> str:
         """Send a message to the Meshtastic mesh network.
 
@@ -169,12 +170,6 @@ class MeshtasticSendTool(BaseTool):  # type: ignore[override]
                 channelIndex=channel_index,
                 wantAck=True,
             )
-
-            return (
-                f"Successfully sent message to mesh network on channel "
-                f"{channel_index}: '{message}'"
-            )
-
         except FileNotFoundError:
             return (
                 "Error: No Meshtastic device found. "
@@ -186,12 +181,14 @@ class MeshtasticSendTool(BaseTool):  # type: ignore[override]
                 "You may need to add your user to the 'dialout' group or run with "
                 "elevated permissions."
             )
-        except Exception as e:
+        except (OSError, RuntimeError) as e:
             return f"Error sending message via Meshtastic: {e}"
+        else:
+            return (
+                f"Successfully sent message to mesh network on channel "
+                f"{channel_index}: '{message}'"
+            )
         finally:
             if interface is not None:
-                try:
+                with contextlib.suppress(Exception):
                     interface.close()
-                except Exception:
-                    # Ignore errors during cleanup
-                    pass
