@@ -63,6 +63,32 @@ if TYPE_CHECKING:
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
+DYNAMIC_TOOL_ERROR_TEMPLATE = """
+Middleware added tools that the agent doesn't know how to execute.
+
+Unknown tools: {unknown_tool_names}
+Registered tools: {available_tool_names}
+
+This happens when middleware modifies `request.tools` in `wrap_model_call` to include
+tools that weren't passed to `create_agent()`.
+
+How to fix this:
+
+Option 1: Register tools at agent creation (recommended for most cases)
+    Pass the tools to `create_agent(tools=[...])` or set them on `middleware.tools`.
+    This makes tools available for every agent invocation.
+
+Option 2: Handle dynamic tools in middleware (for tools created at runtime)
+    Implement `wrap_tool_call` to execute tools that are added dynamically:
+
+    class MyMiddleware(AgentMiddleware):
+        def wrap_tool_call(self, request, handler):
+            if request.tool_call["name"] == "dynamic_tool":
+                # Execute the dynamic tool yourself or override with tool instance
+                return handler(request.override(tool=my_dynamic_tool))
+            return handler(request)
+""".strip()
+
 FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
     # if model profile data are not available, these models are assumed to support
     # structured output
@@ -775,14 +801,15 @@ def create_agent(
     # Tools that require client-side execution (must be in ToolNode)
     available_tools = middleware_tools + regular_tools
 
-    # Only create ToolNode if we have client-side tools
+    # Create ToolNode if we have client-side tools OR if middleware defines wrap_tool_call
+    # (which may handle dynamically registered tools)
     tool_node = (
         ToolNode(
             tools=available_tools,
             wrap_tool_call=wrap_tool_call_wrapper,
             awrap_tool_call=awrap_tool_call_wrapper,
         )
-        if available_tools
+        if available_tools or wrap_tool_call_wrapper or awrap_tool_call_wrapper
         else None
     )
 
@@ -997,6 +1024,10 @@ def create_agent(
             ValueError: If `ToolStrategy` specifies tools not declared upfront.
         """
         # Validate ONLY client-side tools that need to exist in tool_node
+        # Skip validation when wrap_tool_call is defined, as middleware may handle
+        # dynamic tools that are added at runtime via wrap_model_call
+        has_wrap_tool_call = wrap_tool_call_wrapper or awrap_tool_call_wrapper
+
         # Build map of available client-side tools from the ToolNode
         # (which has already converted callables)
         available_tools_by_name = {}
@@ -1004,29 +1035,23 @@ def create_agent(
             available_tools_by_name = tool_node.tools_by_name.copy()
 
         # Check if any requested tools are unknown CLIENT-SIDE tools
-        unknown_tool_names = []
-        for t in request.tools:
-            # Only validate BaseTool instances (skip built-in dict tools)
-            if isinstance(t, dict):
-                continue
-            if isinstance(t, BaseTool) and t.name not in available_tools_by_name:
-                unknown_tool_names.append(t.name)
+        # Only validate if wrap_tool_call is NOT defined (no dynamic tool handling)
+        if not has_wrap_tool_call:
+            unknown_tool_names = []
+            for t in request.tools:
+                # Only validate BaseTool instances (skip built-in dict tools)
+                if isinstance(t, dict):
+                    continue
+                if isinstance(t, BaseTool) and t.name not in available_tools_by_name:
+                    unknown_tool_names.append(t.name)
 
-        if unknown_tool_names:
-            available_tool_names = sorted(available_tools_by_name.keys())
-            msg = (
-                f"Middleware returned unknown tool names: {unknown_tool_names}\n\n"
-                f"Available client-side tools: {available_tool_names}\n\n"
-                "To fix this issue:\n"
-                "1. Ensure the tools are passed to create_agent() via "
-                "the 'tools' parameter\n"
-                "2. If using custom middleware with tools, ensure "
-                "they're registered via middleware.tools attribute\n"
-                "3. Verify that tool names in ModelRequest.tools match "
-                "the actual tool.name values\n"
-                "Note: Built-in provider tools (dict format) can be added dynamically."
-            )
-            raise ValueError(msg)
+            if unknown_tool_names:
+                available_tool_names = sorted(available_tools_by_name.keys())
+                msg = DYNAMIC_TOOL_ERROR_TEMPLATE.format(
+                    unknown_tool_names=unknown_tool_names,
+                    available_tool_names=available_tool_names,
+                )
+                raise ValueError(msg)
 
         # Determine effective response format (auto-detect if needed)
         effective_response_format: ResponseFormat[Any] | None
