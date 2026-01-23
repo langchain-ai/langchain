@@ -1,5 +1,4 @@
 """Configuration utilities for Runnables."""
-
 from __future__ import annotations
 
 import asyncio
@@ -7,9 +6,17 @@ import asyncio
 # Cannot move uuid to TYPE_CHECKING as RunnableConfig is used in Pydantic models
 import uuid  # noqa: TC003
 import warnings
-from collections.abc import Awaitable, Callable, Generator, Iterable, Iterator, Sequence
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Generator,
+    Iterable,
+    Iterator,
+    Sequence,
+)
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
-from contextlib import contextmanager
+from contextlib import asynccontextmanager, contextmanager
 from contextvars import Context, ContextVar, Token, copy_context
 from functools import partial
 from typing import (
@@ -630,3 +637,75 @@ async def run_in_executor(
         )
 
     return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)
+
+@contextmanager
+def isolate_config() -> Iterator[None]:
+    """Context manager to isolate runnable config from parent context.
+
+    When making model calls inside callbacks, middleware hooks, or other nested
+    contexts, the calls may unexpectedly inherit parent streaming callbacks via
+    the `var_child_runnable_config` context variable. This causes tokens to
+    "leak" into the parent's stream output.
+
+    This context manager temporarily clears the inherited config context,
+    ensuring that model calls within do not inherit parent callbacks.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_core.runnables import isolate_config
+
+            class MyMiddleware(AgentMiddleware):
+                def before_model(self, state, runtime):
+                    with isolate_config():
+                        # This call won't stream to the parent
+                        response = self.model.invoke("Internal query")
+                    return None
+
+    Note:
+        After exiting the context, the original config context is restored.
+
+    .. versionadded:: 0.3.x
+    """
+    token = var_child_runnable_config.set(None)
+    try:
+        yield
+    finally:
+        var_child_runnable_config.reset(token)
+
+
+@asynccontextmanager
+async def aisolate_config() -> AsyncIterator[None]:
+    """Async context manager to isolate runnable config from parent context.
+
+    This is the async version of :func:`isolate_config`. Use this when making
+    async model calls inside middleware or callbacks that should not inherit
+    parent streaming callbacks.
+
+    When using `astream()` on an agent, any model calls made in middleware
+    hooks (like `abefore_model()`) will inherit the streaming callbacks,
+    causing their tokens to appear in the parent stream. This context manager
+    prevents that behavior.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_core.runnables import aisolate_config
+
+            class MyMiddleware(AgentMiddleware):
+                async def abefore_model(self, state, runtime):
+                    async with aisolate_config():
+                        # This call won't stream to the parent
+                        response = await self.model.ainvoke("Internal query")
+                    return None
+
+    Note:
+        After exiting the context, the original config context is restored.
+
+    .. versionadded:: 0.3.x
+    """
+    token = var_child_runnable_config.set(None)
+    try:
+        yield
+    finally:
+        var_child_runnable_config.reset(token)
