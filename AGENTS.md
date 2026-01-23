@@ -32,7 +32,7 @@ langchain/
 - **Integration layer** (`partners/`): Third-party service integrations. Note that this monorepo is not exhaustive of all LangChain integrations; some are maintained in separate repos, such as `langchain-ai/langchain-google` and `langchain-ai/langchain-aws`. Usually these repos are cloned at the same level as this monorepo, so if needed, you can refer to their code directly by navigating to `../langchain-google/` from this monorepo.
 - **Testing layer** (`standard-tests/`): Standardized integration tests for partner integrations
 
-### Development tools & commands**
+### Development tools & commands
 
 - `uv` – Fast Python package installer and resolver (replaces pip/poetry)
 - `make` – Task runner for common development commands. Feel free to look at the `Makefile` for available commands and usage patterns.
