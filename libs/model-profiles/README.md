@@ -30,7 +30,7 @@ LangChain model profiles augment the data from models.dev with some additional f
 
 ## 📖 Documentation
 
-For full documentation, see the [API reference](https://reference.langchain.com/python/langchain_model_profiles/). For conceptual guides, tutorials, and examples on using LangChain, see the [LangChain Docs](https://docs.langchain.com/oss/python/langchain/overview).
+For full documentation, see the [API reference](https://reference.langchain.com/python/langchain_model_profiles/). For conceptual guides, tutorials, and examples on using LangChain, see the [LangChain Docs](https://docs.langchain.com/oss/python/langchain/overview). You can also chat with the docs using [Chat LangChain](https://chat.langchain.com).
 
 ## Usage
 
