@@ -30,3 +30,12 @@ def test_mustache_schema_parent_child() -> None:
     }
     actual = mustache_schema(template).model_json_schema()
     assert expected == actual
+
+
+def test_get_template_variables_mustache_nested() -> None:
+    from langchain_core.prompts.string import get_template_variables
+    template = "Hello {{user.name}}, your role is {{user.role}}"
+    template_format = "mustache"
+    expected = ["user.name", "user.role"]
+    actual = get_template_variables(template, template_format)
+    assert actual == expected
