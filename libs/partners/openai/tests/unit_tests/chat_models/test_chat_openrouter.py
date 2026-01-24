@@ -1,6 +1,5 @@
 """Test ChatOpenRouter chat model."""
 
-from typing import cast
 from unittest.mock import MagicMock, patch
 
 import httpx
@@ -274,7 +273,9 @@ class TestChatOpenRouter:
         mock_client.return_value = mock_context
 
         llm = ChatOpenRouter(openai_api_key=SecretStr("test-key"))
-        messages: list[BaseMessage] = [HumanMessage(content="What's the weather in Paris?")]
+        messages: list[BaseMessage] = [
+            HumanMessage(content="What's the weather in Paris?")
+        ]
         result = llm._generate(messages)
 
         # Check tool calls
