@@ -39,26 +39,34 @@ class EvaluatorCallbackHandler(BaseTracer):
     """Tracer that runs a run evaluator whenever a run is persisted.
 
     Attributes:
-        client : Client
-            The LangSmith client instance used for evaluating the runs.
+        client: The LangSmith client instance used for evaluating the runs.
     """
 
     name: str = "evaluator_callback_handler"
+
     example_id: UUID | None = None
     """The example ID associated with the runs."""
+
     client: langsmith.Client
     """The LangSmith client instance used for evaluating the runs."""
+
     evaluators: Sequence[langsmith.RunEvaluator] = ()
     """The sequence of run evaluators to be executed."""
+
     executor: ThreadPoolExecutor | None = None
     """The thread pool executor used for running the evaluators."""
+
     futures: weakref.WeakSet[Future] = weakref.WeakSet()
     """The set of futures representing the running evaluators."""
+
     skip_unfinished: bool = True
     """Whether to skip runs that are not finished or raised an error."""
+
     project_name: str | None = None
     """The LangSmith project name to be organize eval chain runs under."""
+
     logged_eval_results: dict[tuple[str, str], list[EvaluationResult]]
+
     lock: threading.Lock
 
     def __init__(
@@ -74,19 +82,15 @@ class EvaluatorCallbackHandler(BaseTracer):
         """Create an EvaluatorCallbackHandler.
 
         Args:
-            evaluators : Sequence[RunEvaluator]
-                The run evaluators to apply to all top level runs.
-            client : LangSmith Client, optional
-                The LangSmith client instance to use for evaluating the runs.
+            evaluators: The run evaluators to apply to all top level runs.
+            client: The LangSmith client instance to use for evaluating the runs.
+
                 If not specified, a new instance will be created.
-            example_id : Union[UUID, str], optional
-                The example ID to be associated with the runs.
-            skip_unfinished: bool, optional
-                Whether to skip unfinished runs.
-            project_name : str, optional
-                The LangSmith project name to be organize eval chain runs under.
-            max_concurrency : int, optional
-                The maximum number of concurrent evaluators to run.
+            example_id: The example ID to be associated with the runs.
+            skip_unfinished: Whether to skip unfinished runs.
+            project_name: The LangSmith project name to be organize eval chain runs
+                under.
+            max_concurrency: The maximum number of concurrent evaluators to run.
         """
         super().__init__(**kwargs)
         self.example_id = (

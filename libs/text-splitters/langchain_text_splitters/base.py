@@ -54,7 +54,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         strip_whitespace: bool = True,  # noqa: FBT001,FBT002
         force_overlap_threshold: int | None = None,
     ) -> None:
-        """Create a new TextSplitter.
+        """Create a new `TextSplitter`.
 
         Args:
             chunk_size: Maximum size of chunks to return
@@ -73,8 +73,12 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         Raises:
             ValueError: If `chunk_size` is less than or equal to 0
             ValueError: If `chunk_overlap` is less than 0
+            
+            fix/text-splitter-overlap-threshold
             ValueError: If `chunk_overlap` is greater than chunk_size
             ValueError: If `force_overlap_threshold` is invalid
+            ValueError: If `chunk_overlap` is greater than `chunk_size`
+            master
         """
         if chunk_size <= 0:
             msg = f"chunk_size must be > 0, got {chunk_size}"
@@ -232,7 +236,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 
         Returns:
             An instance of `TextSplitter` using the Hugging Face tokenizer for length
-            calculation.
+                calculation.
         """
         if not _HAS_TRANSFORMERS:
             msg = (
@@ -263,8 +267,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 
         Args:
             encoding_name: The name of the tiktoken encoding to use.
-            model_name: The name of the model to use. If provided, this will
-                override the `encoding_name`.
+            model_name: The name of the model to use.
+
+                If provided, this will override the `encoding_name`.
             allowed_special: Special tokens that are allowed during encoding.
             disallowed_special: Special tokens that are disallowed during encoding.
 
@@ -337,8 +342,9 @@ class TokenTextSplitter(TextSplitter):
 
         Args:
             encoding_name: The name of the tiktoken encoding to use.
-            model_name: The name of the model to use. If provided, this will
-                override the `encoding_name`.
+            model_name: The name of the model to use.
+
+                If provided, this will override the `encoding_name`.
             allowed_special: Special tokens that are allowed during encoding.
             disallowed_special: Special tokens that are disallowed during encoding.
 
@@ -434,10 +440,13 @@ class Tokenizer:
 
     chunk_overlap: int
     """Overlap in tokens between chunks"""
+
     tokens_per_chunk: int
     """Maximum number of tokens per chunk"""
+
     decode: Callable[[list[int]], str]
     """ Function to decode a list of token IDs to a string"""
+
     encode: Callable[[str], list[int]]
     """ Function to encode a string to a list of token IDs"""
 
