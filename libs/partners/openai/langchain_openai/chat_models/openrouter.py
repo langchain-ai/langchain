@@ -251,9 +251,9 @@ class ChatOpenRouter(BaseChatModel):
 
     def _get_api_base(self) -> str:
         """Get API base URL."""
-        return self.base_url or os.getenv(
-            "OPENROUTER_API_BASE", "https://openrouter.ai/api/v1"
-        )
+        if self.base_url:
+            return self.base_url
+        return os.getenv("OPENROUTER_API_BASE") or "https://openrouter.ai/api/v1"
 
     def _get_api_key(self) -> str:
         """Get API key from instance or environment."""
@@ -330,7 +330,7 @@ class ChatOpenRouter(BaseChatModel):
                 content = message.get("content", "")
 
                 # Parse tool_calls
-                tool_calls = []
+                tool_calls: list[dict[str, Any]] = []
                 if "tool_calls" in message:
                     tool_calls.extend(
                         {
