@@ -668,6 +668,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Start a trace for a tool run."""
         name_ = _assign_name(name, serialized)
 
+        tool_call_id = kwargs.get("tool_call_id")
         self._write_run_start_info(
             run_id,
             tags=tags,
@@ -676,7 +677,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             name_=name_,
             run_type="tool",
             inputs=inputs,
-            tool_call_id=kwargs.get("tool_call_id"),
+            tool_call_id=tool_call_id,
         )
 
         self._send(
@@ -684,6 +685,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "event": "on_tool_start",
                 "data": {
                     "input": inputs or {},
+                    "tool_call_id": tool_call_id,
                 },
                 "name": name_,
                 "tags": tags or [],
@@ -731,6 +733,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     async def on_tool_end(self, output: Any, *, run_id: UUID, **kwargs: Any) -> None:
         """End a trace for a tool run."""
         run_info, inputs = self._get_tool_run_info_with_inputs(run_id)
+        tool_call_id = run_info.get("tool_call_id")
 
         self._send(
             {
@@ -738,6 +741,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "data": {
                     "output": output,
                     "input": inputs,
+                    "tool_call_id": tool_call_id,
                 },
                 "run_id": str(run_id),
                 "name": run_info["name"],
