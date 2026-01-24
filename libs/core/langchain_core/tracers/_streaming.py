@@ -1,4 +1,4 @@
-"""Internal tracers used for stream_log and astream events implementations."""
+"""Internal tracers used for `stream_log` and `astream` events implementations."""
 
 import typing
 from collections.abc import AsyncIterator, Iterator
@@ -12,11 +12,11 @@ T = typing.TypeVar("T")
 class _StreamingCallbackHandler(typing.Protocol[T]):
     """Types for streaming callback handlers.
 
-    This is a common mixin that the callback handlers
-    for both astream events and astream log inherit from.
+    This is a common mixin that the callback handlers for both astream events and
+    astream log inherit from.
 
-    The `tap_output_aiter` method is invoked in some contexts
-    to produce callbacks for intermediate results.
+    The `tap_output_aiter` method is invoked in some contexts to produce callbacks for
+    intermediate results.
     """
 
     def tap_output_aiter(
