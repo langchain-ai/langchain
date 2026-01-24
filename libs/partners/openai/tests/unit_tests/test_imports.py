@@ -3,6 +3,7 @@ from langchain_openai import __all__
 EXPECTED_ALL = [
     "OpenAI",
     "ChatOpenAI",
+    "ChatOpenRouter",
     "OpenAIEmbeddings",
     "AzureOpenAI",
     "AzureChatOpenAI",
