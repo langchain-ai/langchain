@@ -55,7 +55,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict[str, Any]:
     elif isinstance(message, ToolMessage):
         role = "tool"
     else:
-        role = "user"
+        role = getattr(message, "type", "user")
 
     content = message.content
     result: dict[str, Any] = {"role": role}
@@ -361,14 +361,16 @@ class ChatOpenRouter(BaseChatModel):
                 prompt_details = usage.get("prompt_tokens_details", {})
                 cached_tokens = prompt_details.get("cached_tokens", 0)
                 prompt_tokens = usage.get("prompt_tokens", 0)
-                if cached_tokens and prompt_tokens:
-                    cache_hit_rate = cached_tokens / prompt_tokens * 100
-                    logger.info(
-                        "Cache hit=%s/%s (%.1f%%)",
-                        cached_tokens,
-                        prompt_tokens,
-                        cache_hit_rate,
-                    )
+                cache_hit_rate = (
+                    (cached_tokens / prompt_tokens * 100) if prompt_tokens > 0 else 0
+                )
+                logger.info(
+                    "Cache hit=%s/%s (%.1f%%)",
+                    cached_tokens,
+                    prompt_tokens,
+                    cache_hit_rate,
+                )
+                if cached_tokens:
                     generation_info["cached_tokens"] = cached_tokens
                     generation_info["cache_hit_rate"] = cache_hit_rate
 
