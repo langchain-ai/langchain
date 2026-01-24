@@ -1,8 +1,8 @@
-"""Check version consistency between pyproject.toml and version.py.
+"""Check version consistency between `pyproject.toml` and `version.py`.
 
-This script validates that the version defined in pyproject.toml matches
-the VERSION variable in langchain_core/version.py. Intended for use as
-a pre-commit hook to prevent version mismatches.
+This script validates that the version defined in pyproject.toml matches the `VERSION`
+variable in `langchain_core/version.py`. Intended for use a a pre-commit hook to prevent
+version mismatches.
 """
 
 import re
@@ -11,14 +11,14 @@ from pathlib import Path
 
 
 def get_pyproject_version(pyproject_path: Path) -> str | None:
-    """Extract version from pyproject.toml."""
+    """Extract version from `pyproject.toml`."""
     content = pyproject_path.read_text()
     match = re.search(r'^version\s*=\s*"([^"]+)"', content, re.MULTILINE)
     return match.group(1) if match else None
 
 
 def get_version_py_version(version_path: Path) -> str | None:
-    """Extract VERSION from version.py."""
+    """Extract `VERSION` from `version.py`."""
     content = version_path.read_text()
     match = re.search(r'^VERSION\s*=\s*"([^"]+)"', content, re.MULTILINE)
     return match.group(1) if match else None
