@@ -1,15 +1,18 @@
 """Test ChatOpenRouter chat model."""
 
+from typing import cast
 from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
 from langchain_core.messages import (
     AIMessage,
+    BaseMessage,
     HumanMessage,
     SystemMessage,
     ToolMessage,
 )
+from pydantic import SecretStr
 
 from langchain_openai.chat_models.openrouter import (
     ChatOpenRouter,
@@ -195,13 +198,14 @@ class TestChatOpenRouter:
         mock_client.return_value = mock_context
 
         # Test
-        llm = ChatOpenRouter(openai_api_key="test-key")
-        messages = [HumanMessage(content="Hello")]
+        llm = ChatOpenRouter(openai_api_key=SecretStr("test-key"))
+        messages: list[BaseMessage] = [HumanMessage(content="Hello")]
         result = llm._generate(messages)
 
         # Assertions
         assert len(result.generations) == 1
         assert result.generations[0].message.content == "Hello! How can I help you?"
+        assert result.llm_output is not None
         assert result.llm_output["token_usage"]["total_tokens"] == 16
 
     @patch("httpx.Client")
@@ -226,12 +230,13 @@ class TestChatOpenRouter:
         mock_context.post = MagicMock(return_value=mock_response)
         mock_client.return_value = mock_context
 
-        llm = ChatOpenRouter(openai_api_key="test-key")
-        messages = [SystemMessage(content="System prompt")]
+        llm = ChatOpenRouter(openai_api_key=SecretStr("test-key"))
+        messages: list[BaseMessage] = [SystemMessage(content="System prompt")]
         result = llm._generate(messages)
 
         # Check cache statistics
         gen_info = result.generations[0].generation_info
+        assert gen_info is not None
         assert gen_info["cached_tokens"] == 800
         assert gen_info["cache_hit_rate"] == 80.0
 
@@ -268,8 +273,8 @@ class TestChatOpenRouter:
         mock_context.post = MagicMock(return_value=mock_response)
         mock_client.return_value = mock_context
 
-        llm = ChatOpenRouter(openai_api_key="test-key")
-        messages = [HumanMessage(content="What's the weather in Paris?")]
+        llm = ChatOpenRouter(openai_api_key=SecretStr("test-key"))
+        messages: list[BaseMessage] = [HumanMessage(content="What's the weather in Paris?")]
         result = llm._generate(messages)
 
         # Check tool calls
@@ -307,8 +312,8 @@ class TestChatOpenRouter:
         )
         mock_client.return_value = mock_context
 
-        llm = ChatOpenRouter(openai_api_key="test-key", max_retries=3)
-        messages = [HumanMessage(content="Test")]
+        llm = ChatOpenRouter(openai_api_key=SecretStr("test-key"), max_retries=3)
+        messages: list[BaseMessage] = [HumanMessage(content="Test")]
         result = llm._generate(messages)
 
         # Should have retried and succeeded
@@ -324,7 +329,7 @@ class TestIntegration:
     def test_invoke_real_api(self) -> None:
         """Test real API call (skipped by default)."""
         llm = ChatOpenRouter(model="google/gemini-flash-1.5", temperature=0)
-        messages = [HumanMessage(content="Say 'hello' in one word")]
+        messages: list[BaseMessage] = [HumanMessage(content="Say 'hello' in one word")]
         result = llm.invoke(messages)
         assert isinstance(result, AIMessage)
         assert len(result.content) > 0
@@ -333,8 +338,10 @@ class TestIntegration:
     def test_stream_real_api(self) -> None:
         """Test real streaming API call (skipped by default)."""
         llm = ChatOpenRouter(model="google/gemini-flash-1.5", temperature=0)
-        messages = [HumanMessage(content="Count to 3")]
+        messages: list[BaseMessage] = [HumanMessage(content="Count to 3")]
         chunks = list(llm.stream(messages))
         assert len(chunks) > 0
-        full_content = "".join(chunk.content for chunk in chunks)
+        full_content = "".join(
+            str(chunk.content) for chunk in chunks if chunk.content
+        )
         assert len(full_content) > 0
