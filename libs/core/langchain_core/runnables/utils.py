@@ -1,4 +1,4 @@
-"""Utility code for runnables."""
+"""Utility code for `Runnable` objects."""
 
 from __future__ import annotations
 
