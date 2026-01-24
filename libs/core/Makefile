@@ -13,6 +13,7 @@ test tests:
 	env \
 	-u LANGCHAIN_TRACING_V2 \
 	-u LANGCHAIN_API_KEY \
+	-u LANGSMITH_API_KEY \
 	-u LANGSMITH_TRACING \
 	-u LANGCHAIN_PROJECT \
 	uv run --group test pytest -n auto --disable-socket --allow-unix-socket $(TEST_FILE)
@@ -21,6 +22,7 @@ test_watch:
 	env \
 	-u LANGCHAIN_TRACING_V2 \
 	-u LANGCHAIN_API_KEY \
+	-u LANGSMITH_API_KEY \
 	-u LANGSMITH_TRACING \
 	-u LANGCHAIN_PROJECT \
 	uv run --group test ptw --snapshot-update --now . --disable-socket --allow-unix-socket -vv -- $(TEST_FILE)

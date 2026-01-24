@@ -1,4 +1,4 @@
-"""Base classes and utilities for `Runnable`s."""
+"""Base classes and utilities for `Runnable` objects."""
 
 from __future__ import annotations
 

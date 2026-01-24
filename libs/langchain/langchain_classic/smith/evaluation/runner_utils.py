@@ -198,7 +198,7 @@ def _wrap_in_chain_factory(
                 "Cannot directly evaluate a chain with stateful memory."
                 " To evaluate this chain, pass in a chain constructor"
                 " that initializes fresh memory each time it is called."
-                "  This will safegaurd against information"
+                "  This will safeguard against information"
                 " leakage between dataset examples."
                 "\nFor example:\n\n"
                 "def chain_constructor():\n"
