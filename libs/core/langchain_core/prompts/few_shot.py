@@ -35,11 +35,15 @@ class _FewShotPromptTemplateMixin(BaseModel):
 
     examples: list[dict] | None = None
     """Examples to format into the prompt.
-    Either this or example_selector should be provided."""
+
+    Either this or `example_selector` should be provided.
+    """
 
     example_selector: BaseExampleSelector | None = None
-    """ExampleSelector to choose the examples to format into the prompt.
-    Either this or examples should be provided."""
+    """`ExampleSelector` to choose the examples to format into the prompt.
+
+    Either this or `examples` should be provided.
+    """
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -49,7 +53,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def check_examples_and_selector(cls, values: dict) -> Any:
-        """Check that one and only one of examples/example_selector are provided.
+        """Check that one and only one of `examples`/`example_selector` are provided.
 
         Args:
             values: The values to check.
@@ -58,8 +62,9 @@ class _FewShotPromptTemplateMixin(BaseModel):
             The values if they are valid.
 
         Raises:
-            ValueError: If neither or both examples and example_selector are provided.
-            ValueError: If both examples and example_selector are provided.
+            ValueError: If neither or both `examples` and `example_selector` are
+                provided.
+            ValueError: If both `examples` and `example_selector` are provided.
         """
         examples = values.get("examples")
         example_selector = values.get("example_selector")
@@ -83,7 +88,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
             List of examples.
 
         Raises:
-            ValueError: If neither examples nor example_selector are provided.
+            ValueError: If neither `examples` nor `example_selector` are provided.
         """
         if self.examples is not None:
             return self.examples
@@ -102,7 +107,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
             List of examples.
 
         Raises:
-            ValueError: If neither examples nor example_selector are provided.
+            ValueError: If neither `examples` nor `example_selector` are provided.
         """
         if self.examples is not None:
             return self.examples
@@ -117,14 +122,14 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return False as this class is not serializable."""
+        """Return `False` as this class is not serializable."""
         return False
 
     validate_template: bool = False
     """Whether or not to try validating the template."""
 
     example_prompt: PromptTemplate
-    """PromptTemplate used to format an individual example."""
+    """`PromptTemplate` used to format an individual example."""
 
     suffix: str
     """A prompt template string to put after the examples."""
@@ -136,7 +141,10 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
     """A prompt template string to put before the examples."""
 
     template_format: Literal["f-string", "jinja2"] = "f-string"
-    """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
+    """The format of the prompt template.
+
+    Options are: `'f-string'`, `'jinja2'`.
+    """
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the few shot prompt template."""
@@ -174,7 +182,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
         Use this method to generate a string representation of a prompt.
 
         Args:
-            **kwargs: keyword arguments to use for formatting.
+            **kwargs: Keyword arguments to use for formatting.
 
         Returns:
             A string representation of the prompt.
@@ -202,7 +210,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
         Use this method to generate a string representation of a prompt.
 
         Args:
-            **kwargs: keyword arguments to use for formatting.
+            **kwargs: Keyword arguments to use for formatting.
 
         Returns:
             A string representation of the prompt.
@@ -236,7 +244,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
             file_path: The path to save the prompt template to.
 
         Raises:
-            ValueError: If example_selector is provided.
+            ValueError: If `example_selector` is provided.
         """
         if self.example_selector:
             msg = "Saving an example selector is not currently supported"
@@ -254,15 +262,22 @@ class FewShotChatMessagePromptTemplate(
 
     This structure enables creating a conversation with intermediate examples like:
 
-        System: You are a helpful AI Assistant
-        Human: What is 2+2?
-        AI: 4
-        Human: What is 2+3?
-        AI: 5
-        Human: What is 4+4?
+    ```txt
+    System: You are a helpful AI Assistant
 
-    This prompt template can be used to generate a fixed list of examples or else
-    to dynamically select examples based on the input.
+    Human: What is 2+2?
+
+    AI: 4
+
+    Human: What is 2+3?
+
+    AI: 5
+
+    Human: What is 4+4?
+    ```
+
+    This prompt template can be used to generate a fixed list of examples or else to
+    dynamically select examples based on the input.
 
     Examples:
         Prompt template with a fixed list of examples (matching the sample
@@ -355,15 +370,16 @@ class FewShotChatMessagePromptTemplate(
     """
 
     input_variables: list[str] = Field(default_factory=list)
-    """A list of the names of the variables the prompt template will use
-    to pass to the example_selector, if provided."""
+    """A list of the names of the variables the prompt template will use to pass to
+    the `example_selector`, if provided.
+    """
 
     example_prompt: BaseMessagePromptTemplate | BaseChatPromptTemplate
     """The class to format each example."""
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return False as this class is not serializable."""
+        """Return `False` as this class is not serializable."""
         return False
 
     model_config = ConfigDict(
@@ -375,7 +391,7 @@ class FewShotChatMessagePromptTemplate(
         """Format kwargs into a list of messages.
 
         Args:
-            **kwargs: keyword arguments to use for filling in templates in messages.
+            **kwargs: Keyword arguments to use for filling in templates in messages.
 
         Returns:
             A list of formatted messages with all template variables filled in.
@@ -396,7 +412,7 @@ class FewShotChatMessagePromptTemplate(
         """Async format kwargs into a list of messages.
 
         Args:
-            **kwargs: keyword arguments to use for filling in templates in messages.
+            **kwargs: Keyword arguments to use for filling in templates in messages.
 
         Returns:
             A list of formatted messages with all template variables filled in.
@@ -416,13 +432,13 @@ class FewShotChatMessagePromptTemplate(
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with inputs generating a string.
 
-        Use this method to generate a string representation of a prompt consisting
-        of chat messages.
+        Use this method to generate a string representation of a prompt consisting of
+        chat messages.
 
         Useful for feeding into a string-based completion language model or debugging.
 
         Args:
-            **kwargs: keyword arguments to use for formatting.
+            **kwargs: Keyword arguments to use for formatting.
 
         Returns:
             A string representation of the prompt
@@ -433,13 +449,13 @@ class FewShotChatMessagePromptTemplate(
     async def aformat(self, **kwargs: Any) -> str:
         """Async format the prompt with inputs generating a string.
 
-        Use this method to generate a string representation of a prompt consisting
-        of chat messages.
+        Use this method to generate a string representation of a prompt consisting of
+        chat messages.
 
         Useful for feeding into a string-based completion language model or debugging.
 
         Args:
-            **kwargs: keyword arguments to use for formatting.
+            **kwargs: Keyword arguments to use for formatting.
 
         Returns:
             A string representation of the prompt
