@@ -123,13 +123,16 @@ def mustache_formatter(template: str, /, **kwargs: Any) -> str:
 def mustache_template_vars(
     template: str,
 ) -> set[str]:
-    """Get the variables from a mustache template.
+    """Get the top-level variables from a mustache template.
+
+    For nested variables like `{{person.name}}`, only the top-level key (`person`) is
+    returned.
 
     Args:
         template: The template string.
 
     Returns:
-        The variables from the template.
+        The top-level variables from the template.
     """
     variables: set[str] = set()
     section_depth = 0
@@ -141,7 +144,7 @@ def mustache_template_vars(
             and key != "."
             and section_depth == 0
         ):
-            variables.add(key)
+            variables.add(key.split(".")[0])
         if type_ in {"section", "inverted section"}:
             section_depth += 1
     return variables
