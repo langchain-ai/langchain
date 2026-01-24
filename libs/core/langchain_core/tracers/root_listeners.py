@@ -76,7 +76,7 @@ class RootListenersTracer(BaseTracer):
 
 
 class AsyncRootListenersTracer(AsyncBaseTracer):
-    """Async Tracer that calls listeners on run start, end, and error."""
+    """Async tracer that calls listeners on run start, end, and error."""
 
     log_missing_parent = False
     """Whether to log a warning if the parent is missing."""
