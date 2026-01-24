@@ -107,7 +107,7 @@ def test_character_text_splitter_longer_words() -> None:
 
 # edge cases
 def test_character_text_splitter_no_separator_in_text() -> None:
-    """Text splitting where there is no seperator but a single word."""
+    """Text splitting where there is no separator but a single word."""
     text = "singleword"
     splitter = CharacterTextSplitter(separator=" ", chunk_size=10, chunk_overlap=0)
     output = splitter.split_text(text)

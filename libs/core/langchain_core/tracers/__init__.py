@@ -1,4 +1,4 @@
-"""**Tracers** are classes for tracing runs."""
+"""Tracers are classes for tracing runs."""
 
 from typing import TYPE_CHECKING
 
