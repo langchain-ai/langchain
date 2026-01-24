@@ -8,6 +8,7 @@ from urllib.parse import urljoin, urlparse
 logger = logging.getLogger(__name__)
 
 PREFIXES_TO_IGNORE = ("javascript:", "mailto:", "#")
+
 SUFFIXES_TO_IGNORE = (
     ".css",
     ".js",
@@ -28,12 +29,15 @@ SUFFIXES_TO_IGNORE = (
     ".pptx",
     ".pptm",
 )
+
 SUFFIXES_TO_IGNORE_REGEX = (
     "(?!" + "|".join([re.escape(s) + r"[\#'\"]" for s in SUFFIXES_TO_IGNORE]) + ")"
 )
+
 PREFIXES_TO_IGNORE_REGEX = (
     "(?!" + "|".join([re.escape(s) for s in PREFIXES_TO_IGNORE]) + ")"
 )
+
 DEFAULT_LINK_REGEX = (
     rf"href=[\"']{PREFIXES_TO_IGNORE_REGEX}((?:{SUFFIXES_TO_IGNORE_REGEX}.)*?)[\#'\"]"
 )
@@ -68,8 +72,8 @@ def extract_sub_links(
     """Extract all links from a raw HTML string and convert into absolute paths.
 
     Args:
-        raw_html: original HTML.
-        url: the url of the HTML.
+        raw_html: Original HTML.
+        url: The url of the HTML.
         base_url: the base URL to check for outside links against.
         pattern: Regex to use for extracting links from raw HTML.
         prevent_outside: If `True`, ignore external links which are not children
