@@ -1514,29 +1514,23 @@ def _resolve_jump(
 
 def _fetch_last_ai_and_tool_messages(
     messages: list[AnyMessage],
-) -> tuple[AIMessage, list[ToolMessage]]:
+) -> tuple[AIMessage | None, list[ToolMessage]]:
     """Return the last AI message and any subsequent tool messages.
 
-    If no AI message is found, return a synthetic AIMessage with no
-    tool calls and an empty list of tool messages. This avoids an
-    UnboundLocalError when the conversation state contains only
-    human or system messages.
-    """
-    last_ai_index: int | None = None
-    last_ai_message: AIMessage | None = None
+    Args:
+        messages: List of messages to search through.
 
+    Returns:
+        A tuple of (last_ai_message, tool_messages). If no AIMessage is found,
+        returns (None, []). Callers must handle the None case appropriately.
+    """
     for i in range(len(messages) - 1, -1, -1):
         if isinstance(messages[i], AIMessage):
-            last_ai_index = i
             last_ai_message = cast("AIMessage", messages[i])
-            break
+            tool_messages = [m for m in messages[i + 1 :] if isinstance(m, ToolMessage)]
+            return last_ai_message, tool_messages
 
-    if last_ai_index is None or last_ai_message is None:
-        dummy_ai = AIMessage(content="", tool_calls=[])
-        return dummy_ai, []
-
-    tool_messages = [m for m in messages[last_ai_index + 1 :] if isinstance(m, ToolMessage)]
-    return last_ai_message, tool_messages
+    return None, []
 
 
 def _make_model_to_tools_edge(
@@ -1557,9 +1551,14 @@ def _make_model_to_tools_edge(
             )
 
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
+
+        # 2. if no AIMessage exists (e.g., messages were cleared), exit the loop
+        if last_ai_message is None:
+            return end_destination
+
         tool_message_ids = [m.tool_call_id for m in tool_messages]
 
-        # 2. if the model hasn't called any tools, exit the loop
+        # 3. if the model hasn't called any tools, exit the loop
         # this is the classic exit condition for an agent loop
         if len(last_ai_message.tool_calls) == 0:
             return end_destination
@@ -1570,7 +1569,7 @@ def _make_model_to_tools_edge(
             if c["id"] not in tool_message_ids and c["name"] not in structured_output_tools
         ]
 
-        # 3. if there are pending tool calls, jump to the tool node
+        # 4. if there are pending tool calls, jump to the tool node
         if pending_tool_calls:
             return [
                 Send(
@@ -1584,11 +1583,11 @@ def _make_model_to_tools_edge(
                 for tool_call in pending_tool_calls
             ]
 
-        # 4. if there is a structured response, exit the loop
+        # 5. if there is a structured response, exit the loop
         if "structured_response" in state:
             return end_destination
 
-        # 5. AIMessage has tool calls, but there are no pending tool calls
+        # 6. AIMessage has tool calls, but there are no pending tool calls
         # which suggests the injection of artificial tool messages. jump to the model node
         return model_destination
 
@@ -1632,7 +1631,11 @@ def _make_tools_to_model_edge(
     def tools_to_model(state: dict[str, Any]) -> str | None:
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
 
-        # 1. Exit condition: All executed tools have return_direct=True
+        # 1. If no AIMessage exists (e.g., messages were cleared), route to model
+        if last_ai_message is None:
+            return model_destination
+
+        # 2. Exit condition: All executed tools have return_direct=True
         # Filter to only client-side tools (provider tools are not in tool_node)
         client_side_tool_calls = [
             c for c in last_ai_message.tool_calls if c["name"] in tool_node.tools_by_name
@@ -1642,11 +1645,11 @@ def _make_tools_to_model_edge(
         ):
             return end_destination
 
-        # 2. Exit condition: A structured output tool was executed
+        # 3. Exit condition: A structured output tool was executed
         if any(t.name in structured_output_tools for t in tool_messages):
             return end_destination
 
-        # 3. Default: Continue the loop
+        # 4. Default: Continue the loop
         #    Tool execution completed successfully, route back to the model
         #    so it can process the tool results and decide the next action.
         return model_destination
