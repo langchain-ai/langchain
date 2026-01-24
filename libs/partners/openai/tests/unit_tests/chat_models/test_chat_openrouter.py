@@ -342,7 +342,5 @@ class TestIntegration:
         messages: list[BaseMessage] = [HumanMessage(content="Count to 3")]
         chunks = list(llm.stream(messages))
         assert len(chunks) > 0
-        full_content = "".join(
-            str(chunk.content) for chunk in chunks if chunk.content
-        )
+        full_content = "".join(str(chunk.content) for chunk in chunks if chunk.content)
         assert len(full_content) > 0
