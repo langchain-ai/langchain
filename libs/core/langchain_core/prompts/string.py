@@ -144,6 +144,7 @@ def mustache_template_vars(
 
     return variables
 
+
 Defs = dict[str, "Defs"]
 
 
