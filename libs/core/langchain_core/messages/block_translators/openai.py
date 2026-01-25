@@ -143,6 +143,27 @@ def convert_to_openai_data_block(
         else:
             error_msg = "Key base64 is required for audio blocks."
             raise ValueError(error_msg)
+
+    elif block["type"] == "video":
+        if block.get("source_type") == "base64" or "base64" in block:
+            base64_data = block["data"] if "source_type" in block else block["base64"]
+            file = {"file_data": f"data:{block['mime_type']};base64,{base64_data}"}
+            formatted_block = {"type": "file", "file": file}
+            if api == "responses":
+                formatted_block = {"type": "input_file", **formatted_block["file"]}
+        elif block.get("source_type") == "id" or "file_id" in block:
+            file_id = block["id"] if "source_type" in block else block["file_id"]
+            formatted_block = {"type": "file", "file": {"file_id": file_id}}
+            if api == "responses":
+                formatted_block = {"type": "input_file", **formatted_block["file"]}
+        elif "url" in block:
+            if api == "chat/completions":
+                error_msg = "OpenAI Chat Completions does not support video URLs."
+                raise ValueError(error_msg)
+            formatted_block = {"type": "input_file", "file_url": block["url"]}
+        else:
+            error_msg = "Keys base64, url, or file_id required for video blocks."
+            raise ValueError(error_msg)
     else:
         error_msg = f"Block of type {block['type']} is not supported."
         raise ValueError(error_msg)
