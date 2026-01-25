@@ -1,10 +1,11 @@
 """Configuration for unit tests."""
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from importlib import util
 from typing import Any
 
 import pytest
+from blockbuster import BlockBuster, blockbuster_ctx
 from langchain_tests.conftest import CustomPersister, CustomSerializer, base_vcr_config
 from vcr import VCR
 
@@ -13,6 +14,12 @@ _EXTRA_HEADERS = [
     ("user-agent", "PLACEHOLDER"),
     ("x-openai-client-user-agent", "PLACEHOLDER"),
 ]
+
+
+@pytest.fixture(autouse=True)
+def blockbuster() -> Iterator[BlockBuster]:
+    with blockbuster_ctx() as bb:
+        yield bb
 
 
 def remove_request_headers(request: Any) -> Any:

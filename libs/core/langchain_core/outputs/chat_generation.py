@@ -17,26 +17,26 @@ if TYPE_CHECKING:
 class ChatGeneration(Generation):
     """A single chat generation output.
 
-    A subclass of `Generation` that represents the response from a chat model
-    that generates chat messages.
+    A subclass of `Generation` that represents the response from a chat model that
+    generates chat messages.
 
-    The `message` attribute is a structured representation of the chat message.
-    Most of the time, the message will be of type `AIMessage`.
+    The `message` attribute is a structured representation of the chat message. Most of
+    the time, the message will be of type `AIMessage`.
 
     Users working with chat models will usually access information via either
-    `AIMessage` (returned from runnable interfaces) or `LLMResult` (available
-    via callbacks).
+    `AIMessage` (returned from runnable interfaces) or `LLMResult` (available via
+    callbacks).
     """
 
     text: str = ""
     """The text contents of the output message.
 
-    !!! warning
-        SHOULD NOT BE SET DIRECTLY!
+    !!! warning "SHOULD NOT BE SET DIRECTLY!"
 
     """
     message: BaseMessage
     """The message output by the chat model."""
+
     # Override type to be ChatGeneration, ignore mypy error as this is intentional
     type: Literal["ChatGeneration"] = "ChatGeneration"  # type: ignore[assignment]
     """Type is used exclusively for serialization purposes."""
@@ -82,6 +82,7 @@ class ChatGenerationChunk(ChatGeneration):
     message: BaseMessageChunk
     """The message chunk output by the chat model."""
     # Override type to be ChatGeneration, ignore mypy error as this is intentional
+
     type: Literal["ChatGenerationChunk"] = "ChatGenerationChunk"  # type: ignore[assignment]
     """Type is used exclusively for serialization purposes."""
 
@@ -91,8 +92,8 @@ class ChatGenerationChunk(ChatGeneration):
         """Concatenate two `ChatGenerationChunk`s.
 
         Args:
-            other: The other `ChatGenerationChunk` or list of `ChatGenerationChunk`
-                to concatenate.
+            other: The other `ChatGenerationChunk` or list of `ChatGenerationChunk` to
+                concatenate.
 
         Raises:
             TypeError: If other is not a `ChatGenerationChunk` or list of
@@ -134,7 +135,7 @@ def merge_chat_generation_chunks(
         chunks: A list of `ChatGenerationChunk` to merge.
 
     Returns:
-        A merged `ChatGenerationChunk`, or None if the input list is empty.
+        A merged `ChatGenerationChunk`, or `None` if the input list is empty.
     """
     if not chunks:
         return None

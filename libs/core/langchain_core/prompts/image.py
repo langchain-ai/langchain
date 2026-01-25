@@ -18,9 +18,12 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
 
     template: dict = Field(default_factory=dict)
     """Template for the prompt."""
+
     template_format: PromptTemplateFormat = "f-string"
     """The format of the prompt template.
-    Options are: 'f-string', 'mustache', 'jinja2'."""
+
+    Options are: `'f-string'`, `'mustache'`, `'jinja2'`.
+    """
 
     def __init__(self, **kwargs: Any) -> None:
         """Create an image prompt template.

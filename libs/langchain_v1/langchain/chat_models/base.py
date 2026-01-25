@@ -209,6 +209,7 @@ def init_chat_model(
         changing your code
 
     !!! note "Installation requirements"
+
         Requires the integration package for the chosen model provider to be installed.
 
         See the `model_provider` parameter below for specific package names

@@ -56,7 +56,7 @@ def all_package_dirs() -> Set[str]:
     return {
         "/".join(path.split("/")[:-1]).lstrip("./")
         for path in glob.glob("./libs/**/pyproject.toml", recursive=True)
-        if "libs/cli" not in path and "libs/standard-tests" not in path
+        if "libs/standard-tests" not in path
     }
 
 
@@ -285,10 +285,6 @@ if __name__ == "__main__":
             dirs_to_run["test"].add("libs/partners/anthropic")
             dirs_to_run["test"].add("libs/partners/fireworks")
             dirs_to_run["test"].add("libs/partners/groq")
-
-        elif file.startswith("libs/cli"):
-            dirs_to_run["lint"].add("libs/cli")
-            dirs_to_run["test"].add("libs/cli")
 
         elif file.startswith("libs/partners"):
             partner_dir = file.split("/")[2]

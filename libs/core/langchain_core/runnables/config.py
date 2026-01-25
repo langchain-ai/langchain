@@ -1,4 +1,4 @@
-"""Configuration utilities for Runnables."""
+"""Configuration utilities for `Runnable` objects."""
 
 from __future__ import annotations
 
