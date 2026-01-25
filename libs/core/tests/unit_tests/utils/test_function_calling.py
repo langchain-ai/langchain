@@ -1053,8 +1053,9 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
 
 def test_convert_union_type() -> None:
     @tool
-    def magic_function(value: int | str) -> str:  # noqa: ARG001
+    def magic_function(value: int | str) -> str:
         """Compute a magic function."""
+        _ = value
         return ""
 
     result = convert_to_openai_function(magic_function)
@@ -1202,3 +1203,32 @@ def test_convert_to_openai_function_strict_defaults() -> None:
 
     func = convert_to_openai_function(MyModel, strict=True)
     assert func["parameters"]["additionalProperties"] is False
+
+
+def test_convert_to_openai_function_json_schema_missing_title_with_type() -> None:
+    """Test error for JSON schema with 'type' but no 'title'."""
+    schema_without_title = {
+        "type": "object",
+        "properties": {"arg1": {"type": "string"}},
+    }
+    with pytest.raises(ValueError, match="must have a top-level 'title' key"):
+        convert_to_openai_function(schema_without_title)
+
+
+def test_convert_to_openai_function_json_schema_missing_title_properties() -> None:
+    """Test error for JSON schema with 'properties' but no 'title'."""
+    schema_without_title = {
+        "properties": {"arg1": {"type": "string"}},
+    }
+    with pytest.raises(ValueError, match="must have a top-level 'title' key"):
+        convert_to_openai_function(schema_without_title)
+
+
+def test_convert_to_openai_function_json_schema_missing_title_includes_schema() -> None:
+    """Test that the error message includes the schema for debugging."""
+    schema_without_title = {
+        "type": "object",
+        "properties": {"my_field": {"type": "integer"}},
+    }
+    with pytest.raises(ValueError, match="my_field"):
+        convert_to_openai_function(schema_without_title)

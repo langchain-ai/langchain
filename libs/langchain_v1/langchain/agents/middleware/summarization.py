@@ -40,15 +40,30 @@ Your sole objective in this task is to extract the highest quality/most relevant
 
 <objective_information>
 You're nearing the total number of input tokens you can accept, so you must extract the highest quality/most relevant pieces of information from your conversation history.
-This context will then overwrite the conversation history presented below. Because of this, ensure the context you extract is only the most important information to your overall goal.
+This context will then overwrite the conversation history presented below. Because of this, ensure the context you extract is only the most important information to continue working toward your overall goal.
 </objective_information>
 
 <instructions>
-The conversation history below will be replaced with the context you extract in this step. Because of this, you must do your very best to extract and record all of the most important context from the conversation history.
+The conversation history below will be replaced with the context you extract in this step.
 You want to ensure that you don't repeat any actions you've already completed, so the context you extract from the conversation history should be focused on the most important information to your overall goal.
+
+You should structure your summary using the following sections. Each section acts as a checklist - you must populate it with relevant information or explicitly state "None" if there is nothing to report for that section:
+
+## SESSION INTENT
+What is the user's primary goal or request? What overall task are you trying to accomplish? This should be concise but complete enough to understand the purpose of the entire session.
+
+## SUMMARY
+Extract and record all of the most important context from the conversation history. Include important choices, conclusions, or strategies determined during this conversation. Include the reasoning behind key decisions. Document any rejected options and why they were not pursued.
+
+## ARTIFACTS
+What artifacts, files, or resources were created, modified, or accessed during this conversation? For file modifications, list specific file paths and briefly describe the changes made to each. This section prevents silent loss of artifact information.
+
+## NEXT STEPS
+What specific tasks remain to be completed to achieve the session intent? What should you do next?
+
 </instructions>
 
-The user will message you with the full message history you'll be extracting context from, to then replace. Carefully read over it all, and think deeply about what information is most important to your overall goal that should be saved:
+The user will message you with the full message history from which you'll extract context to create a replacement. Carefully read through it all and think deeply about what information is most important to your overall goal and should be saved:
 
 With all of this in mind, please carefully read over the entire conversation history, and extract the most important and relevant context to replace it so that you can free up space in the conversation history.
 Respond ONLY with the extracted context. Do not include any additional information, or text before or after the extracted context.
@@ -269,8 +284,16 @@ class SummarizationMiddleware(AgentMiddleware):
             raise ValueError(msg)
 
     @override
-    def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-        """Process messages before model invocation, potentially triggering summarization."""
+    def before_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any] | None:
+        """Process messages before model invocation, potentially triggering summarization.
+
+        Args:
+            state: The agent state.
+            runtime: The runtime environment.
+
+        Returns:
+            An updated state with summarized messages if summarization was performed.
+        """
         messages = state["messages"]
         self._ensure_message_ids(messages)
 
@@ -297,8 +320,18 @@ class SummarizationMiddleware(AgentMiddleware):
         }
 
     @override
-    async def abefore_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-        """Process messages before model invocation, potentially triggering summarization."""
+    async def abefore_model(
+        self, state: AgentState[Any], runtime: Runtime
+    ) -> dict[str, Any] | None:
+        """Process messages before model invocation, potentially triggering summarization.
+
+        Args:
+            state: The agent state.
+            runtime: The runtime environment.
+
+        Returns:
+            An updated state with summarized messages if summarization was performed.
+        """
         messages = state["messages"]
         self._ensure_message_ids(messages)
 
@@ -449,7 +482,8 @@ class SummarizationMiddleware(AgentMiddleware):
 
         return max_input_tokens
 
-    def _validate_context_size(self, context: ContextSize, parameter_name: str) -> ContextSize:
+    @staticmethod
+    def _validate_context_size(context: ContextSize, parameter_name: str) -> ContextSize:
         """Validate context configuration tuples."""
         kind, value = context
         if kind == "fraction":
@@ -465,19 +499,24 @@ class SummarizationMiddleware(AgentMiddleware):
             raise ValueError(msg)
         return context
 
-    def _build_new_messages(self, summary: str) -> list[HumanMessage]:
+    @staticmethod
+    def _build_new_messages(summary: str) -> list[HumanMessage]:
         return [
-            HumanMessage(content=f"Here is a summary of the conversation to date:\n\n{summary}")
+            HumanMessage(
+                content=f"Here is a summary of the conversation to date:\n\n{summary}",
+                additional_kwargs={"lc_source": "summarization"},
+            )
         ]
 
-    def _ensure_message_ids(self, messages: list[AnyMessage]) -> None:
+    @staticmethod
+    def _ensure_message_ids(messages: list[AnyMessage]) -> None:
         """Ensure all messages have unique IDs for the add_messages reducer."""
         for msg in messages:
             if msg.id is None:
                 msg.id = str(uuid.uuid4())
 
+    @staticmethod
     def _partition_messages(
-        self,
         conversation_messages: list[AnyMessage],
         cutoff_index: int,
     ) -> tuple[list[AnyMessage], list[AnyMessage]]:
@@ -502,7 +541,8 @@ class SummarizationMiddleware(AgentMiddleware):
         target_cutoff = len(messages) - messages_to_keep
         return self._find_safe_cutoff_point(messages, target_cutoff)
 
-    def _find_safe_cutoff_point(self, messages: list[AnyMessage], cutoff_index: int) -> int:
+    @staticmethod
+    def _find_safe_cutoff_point(messages: list[AnyMessage], cutoff_index: int) -> int:
         """Find a safe cutoff point that doesn't split AI/Tool message pairs.
 
         If the message at `cutoff_index` is a `ToolMessage`, search backward for the
@@ -538,7 +578,11 @@ class SummarizationMiddleware(AgentMiddleware):
         return idx
 
     def _create_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
-        """Generate summary for the given messages."""
+        """Generate summary for the given messages.
+
+        Args:
+            messages_to_summarize: Messages to summarize.
+        """
         if not messages_to_summarize:
             return "No previous conversation history."
 
@@ -551,13 +595,20 @@ class SummarizationMiddleware(AgentMiddleware):
         formatted_messages = get_buffer_string(trimmed_messages)
 
         try:
-            response = self.model.invoke(self.summary_prompt.format(messages=formatted_messages))
+            response = self.model.invoke(
+                self.summary_prompt.format(messages=formatted_messages).rstrip(),
+                config={"metadata": {"lc_source": "summarization"}},
+            )
             return response.text.strip()
         except Exception as e:
             return f"Error generating summary: {e!s}"
 
     async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
-        """Generate summary for the given messages."""
+        """Generate summary for the given messages.
+
+        Args:
+            messages_to_summarize: Messages to summarize.
+        """
         if not messages_to_summarize:
             return "No previous conversation history."
 
@@ -571,7 +622,8 @@ class SummarizationMiddleware(AgentMiddleware):
 
         try:
             response = await self.model.ainvoke(
-                self.summary_prompt.format(messages=formatted_messages)
+                self.summary_prompt.format(messages=formatted_messages).rstrip(),
+                config={"metadata": {"lc_source": "summarization"}},
             )
             return response.text.strip()
         except Exception as e:

@@ -152,13 +152,17 @@ class HTMLHeaderTextSplitter:
         Args:
             headers_to_split_on: A list of `(header_tag,
                 header_name)` pairs representing the headers that define splitting
-                boundaries. For example, `[("h1", "Header 1"), ("h2", "Header 2")]`
-                will split content by `h1` and `h2` tags, assigning their textual
-                content to the `Document` metadata.
+                boundaries.
+
+                For example, `[("h1", "Header 1"), ("h2", "Header 2")]` will split
+                content by `h1` and `h2` tags, assigning their textual content to the
+                `Document` metadata.
             return_each_element: If `True`, every HTML element encountered
                 (including headers, paragraphs, etc.) is returned as a separate
-                `Document`. If `False`, content under the same header hierarchy is
-                aggregated into fewer `Document` objects.
+                `Document`.
+
+                If `False`, content under the same header hierarchy is aggregated into
+                fewer `Document` objects.
         """
         # Sort headers by their numeric level so that h1 < h2 < h3...
         self.headers_to_split_on = sorted(
@@ -175,9 +179,10 @@ class HTMLHeaderTextSplitter:
             text: The HTML text to split.
 
         Returns:
-            A list of split Document objects. Each `Document` contains
-                `page_content` holding the extracted text and `metadata` that maps
-                the header hierarchy to their corresponding titles.
+            A list of split `Document` objects.
+
+                Each `Document` contains `page_content` holding the extracted text and
+                `metadata` that maps the header hierarchy to their corresponding titles.
         """
         return self.split_text_from_file(StringIO(text))
 
@@ -192,9 +197,10 @@ class HTMLHeaderTextSplitter:
             **kwargs: Additional keyword arguments for the request.
 
         Returns:
-            A list of split Document objects. Each `Document` contains
-                `page_content` holding the extracted text and `metadata` that maps
-                the header hierarchy to their corresponding titles.
+            A list of split `Document` objects.
+
+                Each `Document` contains `page_content` holding the extracted text and
+                `metadata` that maps the header hierarchy to their corresponding titles.
 
         Raises:
             requests.RequestException: If the HTTP request fails.
@@ -210,9 +216,10 @@ class HTMLHeaderTextSplitter:
             file: A file path or a file-like object containing HTML content.
 
         Returns:
-            A list of split Document objects. Each `Document` contains
-                `page_content` holding the extracted text and `metadata` that maps
-                the header hierarchy to their corresponding titles.
+            A list of split `Document` objects.
+
+                Each `Document` contains `page_content` holding the extracted text and
+                `metadata` that maps the header hierarchy to their corresponding titles.
         """
         if isinstance(file, str):
             html_content = pathlib.Path(file).read_text(encoding="utf-8")
@@ -223,15 +230,18 @@ class HTMLHeaderTextSplitter:
     def _generate_documents(self, html_content: str) -> Iterator[Document]:
         """Private method that performs a DFS traversal over the DOM and yields.
 
-        Document objects on-the-fly. This approach maintains the same splitting
-        logic (headers vs. non-headers, chunking, etc.) while walking the DOM
-        explicitly in code.
+        Document objects on-the-fly. This approach maintains the same splitting logic
+        (headers vs. non-headers, chunking, etc.) while walking the DOM explicitly in
+        code.
 
         Args:
             html_content: The raw HTML content.
 
         Yields:
             Document objects as they are created.
+
+        Raises:
+            ImportError: If BeautifulSoup is not installed.
         """
         if not _HAS_BS4:
             msg = (
@@ -338,7 +348,7 @@ class HTMLHeaderTextSplitter:
 class HTMLSectionSplitter:
     """Splitting HTML files based on specified tag and font sizes.
 
-    Requires `lxml` package.
+    Requires lxml package.
     """
 
     def __init__(
@@ -349,9 +359,11 @@ class HTMLSectionSplitter:
         """Create a new `HTMLSectionSplitter`.
 
         Args:
-            headers_to_split_on: list of tuples of headers we want to track mapped to
-                (arbitrary) keys for metadata. Allowed header values: `h1`, `h2`, `h3`,
-                `h4`, `h5`, `h6` e.g. `[("h1", "Header 1"), ("h2", "Header 2"]`.
+            headers_to_split_on: List of tuples of headers we want to track mapped to
+                (arbitrary) keys for metadata.
+
+                Allowed header values: `h1`, `h2`, `h3`, `h4`, `h5`, `h6`, e.g.:
+                `[("h1", "Header 1"), ("h2", "Header 2"]`.
             **kwargs: Additional optional arguments for customizations.
 
         """
@@ -362,7 +374,14 @@ class HTMLSectionSplitter:
         self.kwargs = kwargs
 
     def split_documents(self, documents: Iterable[Document]) -> list[Document]:
-        """Split documents."""
+        """Split documents.
+
+        Args:
+            documents: Iterable of `Document` objects to be split.
+
+        Returns:
+            A list of split `Document` objects.
+        """
         texts, metadatas = [], []
         for doc in documents:
             texts.append(doc.page_content)
@@ -378,13 +397,24 @@ class HTMLSectionSplitter:
 
         Args:
             text: HTML text
+
+        Returns:
+            A list of split `Document` objects.
         """
         return self.split_text_from_file(StringIO(text))
 
     def create_documents(
         self, texts: list[str], metadatas: list[dict[Any, Any]] | None = None
     ) -> list[Document]:
-        """Create a list of `Document` objects from a list of texts."""
+        """Create a list of `Document` objects from a list of texts.
+
+        Args:
+            texts: A list of texts to be split and converted into documents.
+            metadatas: Optional list of metadata to associate with each document.
+
+        Returns:
+            A list of `Document` objects.
+        """
         metadatas_ = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
@@ -410,11 +440,16 @@ class HTMLSectionSplitter:
             html_doc: The HTML document to be split into sections.
 
         Returns:
-            A list of dictionaries representing sections. Each dictionary contains:
+            A list of dictionaries representing sections.
+
+                Each dictionary contains:
 
                 * `'header'`: The header text or a default title for the first section.
                 * `'content'`: The content under the header.
                 * `'tag_name'`: The name of the header tag (e.g., `h1`, `h2`).
+
+        Raises:
+            ImportError: If BeautifulSoup is not installed.
         """
         if not _HAS_BS4:
             msg = "Unable to import BeautifulSoup/PageElement, \
@@ -467,6 +502,9 @@ class HTMLSectionSplitter:
 
         Returns:
             The transformed HTML content as a string.
+
+        Raises:
+            ImportError: If the `lxml` library is not installed.
         """
         if not _HAS_LXML:
             msg = "Unable to import lxml, please install with `pip install lxml`."
@@ -496,7 +534,7 @@ class HTMLSectionSplitter:
             file: A file path or a file-like object containing HTML content.
 
         Returns:
-            A list of split Document objects.
+            A list of split `Document` objects.
         """
         file_content = file.getvalue()
         file_content = self.convert_possible_tags_to_header(file_content)
@@ -521,7 +559,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
     Splits HTML content by headers into generalized chunks, preserving semantic
     structure. If chunks exceed the maximum chunk size, it uses
-    RecursiveCharacterTextSplitter for further splitting.
+    `RecursiveCharacterTextSplitter` for further splitting.
 
     The splitter preserves full HTML elements and converts links to Markdown-like links.
     It can also preserve images, videos, and audio elements by converting them into
@@ -583,10 +621,10 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         """Initialize splitter.
 
         Args:
-            headers_to_split_on: HTML headers (e.g., `h1`, `h2`)
-                that define content sections.
-            max_chunk_size: Maximum size for each chunk, with allowance for
-                exceeding this limit to preserve semantics.
+            headers_to_split_on: HTML headers (e.g., `h1`, `h2`) that define content
+                sections.
+            max_chunk_size: Maximum size for each chunk, with allowance for exceeding
+                this limit to preserve semantics.
             chunk_overlap: Number of characters to overlap between chunks to ensure
                 contextual continuity.
             separators: Delimiters used by `RecursiveCharacterTextSplitter` for
@@ -595,26 +633,28 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 intact during splitting.
             preserve_links: Converts `a` tags to Markdown links (`[text](url)`).
             preserve_images: Converts `img` tags to Markdown images (`![alt](src)`).
-            preserve_videos: Converts `video` tags to Markdown
-                video links (`![video](src)`).
-            preserve_audio: Converts `audio` tags to Markdown
-                audio links (`![audio](src)`).
-            custom_handlers: Optional custom handlers for
-                specific HTML tags, allowing tailored extraction or processing.
+            preserve_videos: Converts `video` tags to Markdown video links
+                (`![video](src)`).
+            preserve_audio: Converts `audio` tags to Markdown audio links
+                (`![audio](src)`).
+            custom_handlers: Optional custom handlers for specific HTML tags, allowing
+                tailored extraction or processing.
             stopword_removal: Optionally remove stopwords from the text.
             stopword_lang: The language of stopwords to remove.
-            normalize_text: Optionally normalize text
-                (e.g., lowercasing, removing punctuation).
-            external_metadata: Additional metadata to attach to
-                the Document objects.
-            allowlist_tags: Only these tags will be retained in
-                the HTML.
+            normalize_text: Optionally normalize text (e.g., lowercasing, removing
+                punctuation).
+            external_metadata: Additional metadata to attach to the Document objects.
+            allowlist_tags: Only these tags will be retained in the HTML.
             denylist_tags: These tags will be removed from the HTML.
-            preserve_parent_metadata: Whether to pass through parent document
-                metadata to split documents when calling
+            preserve_parent_metadata: Whether to pass through parent document metadata
+                to split documents when calling
                 `transform_documents/atransform_documents()`.
-            keep_separator: Whether separators
-                should be at the beginning of a chunk, at the end, or not at all.
+            keep_separator: Whether separators should be at the beginning of a chunk, at
+                the end, or not at all.
+
+        Raises:
+            ImportError: If BeautifulSoup or NLTK (when stopword removal is enabled)
+                is not installed.
         """
         if not _HAS_BS4:
             msg = (
@@ -697,7 +737,14 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> list[Document]:
-        """Transform sequence of documents by splitting them."""
+        """Transform sequence of documents by splitting them.
+
+        Args:
+            documents: A sequence of `Document` objects to be split.
+
+        Returns:
+            A sequence of split `Document` objects.
+        """
         transformed = []
         for doc in documents:
             splits = self.split_text(doc.page_content)
@@ -745,7 +792,8 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 wrapper.string = markdown_audio
                 audio_tag.replace_with(wrapper)
 
-    def _process_links(self, soup: BeautifulSoup) -> None:
+    @staticmethod
+    def _process_links(soup: BeautifulSoup) -> None:
         """Processes the links in the HTML content.
 
         Args:
@@ -946,8 +994,8 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         """Creates Document objects from the provided headers, content, and elements.
 
         Args:
-            headers: The headers to attach as metadata to the Document.
-            content: The content of the Document.
+            headers: The headers to attach as metadata to the `Document`.
+            content: The content of the `Document`.
             preserved_elements: Preserved elements to be reinserted into the content.
 
         Returns:
@@ -994,8 +1042,9 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
         return result
 
+    @staticmethod
     def _reinsert_preserved_elements(
-        self, content: str, preserved_elements: dict[str, str]
+        content: str, preserved_elements: dict[str, str]
     ) -> str:
         """Reinserts preserved elements into the content into their original positions.
 

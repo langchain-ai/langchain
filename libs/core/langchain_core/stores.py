@@ -26,25 +26,25 @@ V = TypeVar("V")
 class BaseStore(ABC, Generic[K, V]):
     """Abstract interface for a key-value store.
 
-    This is an interface that's meant to abstract away the details of
-    different key-value stores. It provides a simple interface for
-    getting, setting, and deleting key-value pairs.
+    This is an interface that's meant to abstract away the details of different
+    key-value stores. It provides a simple interface for getting, setting, and deleting
+    key-value pairs.
 
-    The basic methods are `mget`, `mset`, and `mdelete` for getting,
-    setting, and deleting multiple key-value pairs at once. The `yield_keys`
-    method is used to iterate over keys that match a given prefix.
+    The basic methods are `mget`, `mset`, and `mdelete` for getting, setting, and
+    deleting multiple key-value pairs at once. The `yield_keys` method is used to
+    iterate over keys that match a given prefix.
 
-    The async versions of these methods are also provided, which are
-    meant to be used in async contexts. The async methods are named with
-    an `a` prefix, e.g., `amget`, `amset`, `amdelete`, and `ayield_keys`.
+    The async versions of these methods are also provided, which are meant to be used in
+    async contexts. The async methods are named with an `a` prefix, e.g., `amget`,
+    `amset`, `amdelete`, and `ayield_keys`.
 
-    By default, the `amget`, `amset`, `amdelete`, and `ayield_keys` methods
-    are implemented using the synchronous methods. If the store can natively
-    support async  operations, it should override these methods.
+    By default, the `amget`, `amset`, `amdelete`, and `ayield_keys` methods are
+    implemented using the synchronous methods. If the store can natively support async
+    operations, it should override these methods.
 
-    By design the methods only accept batches of keys and values, and not
-    single keys or values. This is done to force user code to work with batches
-    which will usually be more efficient by saving on round trips to the store.
+    By design the methods only accept batches of keys and values, and not single keys or
+    values. This is done to force user code to work with batches which will usually be
+    more efficient by saving on round trips to the store.
 
     Examples:
         ```python
@@ -86,7 +86,7 @@ class BaseStore(ABC, Generic[K, V]):
 
         Returns:
             A sequence of optional values associated with the keys.
-            If a key is not found, the corresponding value will be `None`.
+                If a key is not found, the corresponding value will be `None`.
         """
 
     async def amget(self, keys: Sequence[K]) -> list[V | None]:
@@ -97,7 +97,7 @@ class BaseStore(ABC, Generic[K, V]):
 
         Returns:
             A sequence of optional values associated with the keys.
-            If a key is not found, the corresponding value will be `None`.
+                If a key is not found, the corresponding value will be `None`.
         """
         return await run_in_executor(None, self.mget, keys)
 
@@ -142,8 +142,9 @@ class BaseStore(ABC, Generic[K, V]):
 
         Yields:
             An iterator over keys that match the given prefix.
-            This method is allowed to return an iterator over either K or str
-            depending on what makes more sense for the given store.
+
+                This method is allowed to return an iterator over either K or str
+                depending on what makes more sense for the given store.
         """
 
     async def ayield_keys(
@@ -156,8 +157,9 @@ class BaseStore(ABC, Generic[K, V]):
 
         Yields:
             The keys that match the given prefix.
-            This method is allowed to return an iterator over either K or str
-            depending on what makes more sense for the given store.
+
+                This method is allowed to return an iterator over either K or str
+                depending on what makes more sense for the given store.
         """
         iterator = await run_in_executor(None, self.yield_keys, prefix=prefix)
         done = object()
@@ -172,7 +174,7 @@ ByteStore = BaseStore[str, bytes]
 
 
 class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
-    """In-memory implementation of the BaseStore using a dictionary."""
+    """In-memory implementation of the `BaseStore` using a dictionary."""
 
     def __init__(self) -> None:
         """Initialize an empty store."""
@@ -205,7 +207,7 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
     async def amdelete(self, keys: Sequence[str]) -> None:
         self.mdelete(keys)
 
-    def yield_keys(self, prefix: str | None = None) -> Iterator[str]:
+    def yield_keys(self, *, prefix: str | None = None) -> Iterator[str]:
         """Get an iterator over keys that match the given prefix.
 
         Args:
@@ -221,7 +223,7 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
                 if key.startswith(prefix):
                     yield key
 
-    async def ayield_keys(self, prefix: str | None = None) -> AsyncIterator[str]:
+    async def ayield_keys(self, *, prefix: str | None = None) -> AsyncIterator[str]:
         """Async get an async iterator over keys that match the given prefix.
 
         Args:

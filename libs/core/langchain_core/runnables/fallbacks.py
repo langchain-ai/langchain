@@ -1,4 +1,4 @@
-"""Runnable that can fallback to other Runnables if it fails."""
+"""`Runnable` that can fallback to other `Runnable` objects if it fails."""
 
 import asyncio
 import inspect
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
 
 class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
-    """`Runnable` that can fallback to other `Runnable`s if it fails.
+    """`Runnable` that can fallback to other `Runnable` objects if it fails.
 
     External APIs (e.g., APIs for a language model) may at times experience
     degraded performance or even downtime.

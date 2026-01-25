@@ -1,10 +1,11 @@
 """Configuration for unit tests."""
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from importlib import util
 from typing import Any
 
 import pytest
+from blockbuster import BlockBuster, blockbuster_ctx
 from langchain_tests.conftest import CustomPersister, CustomSerializer, base_vcr_config
 from vcr import VCR
 
@@ -15,6 +16,12 @@ _EXTRA_HEADERS = [
 ]
 
 
+@pytest.fixture(autouse=True)
+def blockbuster() -> Iterator[BlockBuster]:
+    with blockbuster_ctx() as bb:
+        yield bb
+
+
 def remove_request_headers(request: Any) -> Any:
     """Remove sensitive headers from the request."""
     for k in request.headers:
@@ -23,7 +30,7 @@ def remove_request_headers(request: Any) -> Any:
     return request
 
 
-def remove_response_headers(response: dict) -> dict:
+def remove_response_headers(response: dict[str, Any]) -> dict[str, Any]:
     """Remove sensitive headers from the response."""
     for k in response["headers"]:
         response["headers"][k] = "**REDACTED**"
@@ -31,7 +38,7 @@ def remove_response_headers(response: dict) -> dict:
 
 
 @pytest.fixture(scope="session")
-def vcr_config() -> dict:
+def vcr_config() -> dict[str, Any]:
     """Extend the default configuration coming from langchain_tests."""
     config = base_vcr_config()
     config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
@@ -42,7 +49,7 @@ def vcr_config() -> dict:
     return config
 
 
-def pytest_recording_configure(config: dict, vcr: VCR) -> None:  # noqa: ARG001
+def pytest_recording_configure(config: dict[str, Any], vcr: VCR) -> None:  # noqa: ARG001
     vcr.register_persister(CustomPersister())
     vcr.register_serializer("yaml.gz", CustomSerializer())
 

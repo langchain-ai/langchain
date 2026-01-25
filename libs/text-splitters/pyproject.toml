@@ -20,13 +20,13 @@ Homepage = "https://docs.langchain.com/"
 Documentation = "https://docs.langchain.com/"
 Source = "https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-text-splitters%22"
-Twitter = "https://x.com/LangChainAI"
+Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 lint = [
-    "ruff>=0.14.10,<0.15.0",
+    "ruff>=0.14.11,<0.15.0",
     "langchain-core"
 ]
 typing = [
@@ -93,7 +93,6 @@ ignore = [
 ]
 unfixable = [
     "B028",    # People should intentionally tune the stacklevel
-    "PLW1510", # People should intentionally set the check argument
 ]
 
 flake8-annotations.allow-star-arg-any = true
@@ -105,6 +104,8 @@ pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pyda
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.ruff.lint.per-file-ignores]
 "scripts/**" = [

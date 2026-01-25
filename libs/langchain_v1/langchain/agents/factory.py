@@ -51,7 +51,7 @@ from langchain.chat_models import init_chat_model
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
 
-    from langchain_core.runnables import Runnable
+    from langchain_core.runnables import Runnable, RunnableConfig
     from langgraph.cache.base import BaseCache
     from langgraph.graph.state import CompiledStateGraph
     from langgraph.runtime import Runtime
@@ -62,6 +62,32 @@ if TYPE_CHECKING:
     from langchain.agents.middleware.types import ToolCallRequest, ToolCallWrapper
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
+
+DYNAMIC_TOOL_ERROR_TEMPLATE = """
+Middleware added tools that the agent doesn't know how to execute.
+
+Unknown tools: {unknown_tool_names}
+Registered tools: {available_tool_names}
+
+This happens when middleware modifies `request.tools` in `wrap_model_call` to include
+tools that weren't passed to `create_agent()`.
+
+How to fix this:
+
+Option 1: Register tools at agent creation (recommended for most cases)
+    Pass the tools to `create_agent(tools=[...])` or set them on `middleware.tools`.
+    This makes tools available for every agent invocation.
+
+Option 2: Handle dynamic tools in middleware (for tools created at runtime)
+    Implement `wrap_tool_call` to execute tools that are added dynamically:
+
+    class MyMiddleware(AgentMiddleware):
+        def wrap_tool_call(self, request, handler):
+            if request.tool_call["name"] == "dynamic_tool":
+                # Execute the dynamic tool yourself or override with tool instance
+                return handler(request.override(tool=my_dynamic_tool))
+            return handler(request)
+""".strip()
 
 FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
     # if model profile data are not available, these models are assumed to support
@@ -97,13 +123,15 @@ def _chain_model_call_handlers(
     ]
     | None
 ):
-    """Compose multiple wrap_model_call handlers into single middleware stack.
+    """Compose multiple `wrap_model_call` handlers into single middleware stack.
 
-    Composes handlers so first in list becomes outermost layer. Each handler
-    receives a handler callback to execute inner layers.
+    Composes handlers so first in list becomes outermost layer. Each handler receives a
+    handler callback to execute inner layers.
 
     Args:
-        handlers: List of handlers. First handler wraps all others.
+        handlers: List of handlers.
+
+            First handler wraps all others.
 
     Returns:
         Composed handler, or `None` if handlers empty.
@@ -212,7 +240,9 @@ def _chain_async_model_call_handlers(
     """Compose multiple async `wrap_model_call` handlers into single middleware stack.
 
     Args:
-        handlers: List of async handlers. First handler wraps all others.
+        handlers: List of async handlers.
+
+            First handler wraps all others.
 
     Returns:
         Composed async handler, or `None` if handlers empty.
@@ -288,6 +318,9 @@ def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None 
         schema_name: Name for the generated `TypedDict`
         omit_flag: If specified, omit fields with this flag set (`'input'` or
             `'output'`)
+
+    Returns:
+        Merged schema as `TypedDict`
     """
     all_annotations = {}
 
@@ -311,8 +344,8 @@ def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None 
     return TypedDict(schema_name, all_annotations)  # type: ignore[operator]
 
 
-def _extract_metadata(type_: type) -> list:
-    """Extract metadata from a field type, handling Required/NotRequired and Annotated wrappers."""
+def _extract_metadata(type_: type) -> list[Any]:
+    """Extract metadata from a field type, handling `Required`/`NotRequired` and `Annotated` wrappers."""  # noqa: E501
     # Handle Required[Annotated[...]] or NotRequired[Annotated[...]]
     if get_origin(type_) in {Required, NotRequired}:
         inner_type = get_args(type_)[0]
@@ -361,13 +394,16 @@ def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> l
     return []
 
 
-def _supports_provider_strategy(model: str | BaseChatModel, tools: list | None = None) -> bool:
+def _supports_provider_strategy(
+    model: str | BaseChatModel, tools: list[BaseTool | dict[str, Any]] | None = None
+) -> bool:
     """Check if a model supports provider-specific structured output.
 
     Args:
         model: Model name string or `BaseChatModel` instance.
-        tools: Optional list of tools provided to the agent. Needed because some models
-            don't support structured output together with tool calling.
+        tools: Optional list of tools provided to the agent.
+
+            Needed because some models don't support structured output together with tool calling.
 
     Returns:
         `True` if the model supports provider-specific structured output, `False` otherwise.
@@ -400,9 +436,12 @@ def _supports_provider_strategy(model: str | BaseChatModel, tools: list | None =
 
 def _handle_structured_output_error(
     exception: Exception,
-    response_format: ResponseFormat,
+    response_format: ResponseFormat[Any],
 ) -> tuple[bool, str]:
-    """Handle structured output error. Returns `(should_retry, retry_tool_message)`."""
+    """Handle structured output error.
+
+    Returns `(should_retry, retry_tool_message)`.
+    """
     if not isinstance(response_format, ToolStrategy):
         return False, ""
 
@@ -414,18 +453,15 @@ def _handle_structured_output_error(
         return True, STRUCTURED_OUTPUT_ERROR_TEMPLATE.format(error=str(exception))
     if isinstance(handle_errors, str):
         return True, handle_errors
-    if isinstance(handle_errors, type) and issubclass(handle_errors, Exception):
-        if isinstance(exception, handle_errors):
+    if isinstance(handle_errors, type):
+        if issubclass(handle_errors, Exception) and isinstance(exception, handle_errors):
             return True, STRUCTURED_OUTPUT_ERROR_TEMPLATE.format(error=str(exception))
         return False, ""
     if isinstance(handle_errors, tuple):
         if any(isinstance(exception, exc_type) for exc_type in handle_errors):
             return True, STRUCTURED_OUTPUT_ERROR_TEMPLATE.format(error=str(exception))
         return False, ""
-    if callable(handle_errors):
-        # type narrowing not working appropriately w/ callable check, can fix later
-        return True, handle_errors(exception)  # type: ignore[return-value,call-arg]
-    return False, ""
+    return True, handle_errors(exception)
 
 
 def _chain_tool_call_wrappers(
@@ -440,9 +476,11 @@ def _chain_tool_call_wrappers(
         Composed wrapper, or `None` if empty.
 
     Example:
+        ```python
         wrapper = _chain_tool_call_wrappers([auth, cache, retry])
         # Request flows: auth -> cache -> retry -> tool
         # Response flows: tool -> retry -> cache -> auth
+        ```
     """
     if not wrappers:
         return None
@@ -455,10 +493,10 @@ def _chain_tool_call_wrappers(
 
         def composed(
             request: ToolCallRequest,
-            execute: Callable[[ToolCallRequest], ToolMessage | Command],
-        ) -> ToolMessage | Command:
+            execute: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+        ) -> ToolMessage | Command[Any]:
             # Create a callable that invokes inner with the original execute
-            def call_inner(req: ToolCallRequest) -> ToolMessage | Command:
+            def call_inner(req: ToolCallRequest) -> ToolMessage | Command[Any]:
                 return inner(req, execute)
 
             # Outer can call call_inner multiple times
@@ -477,14 +515,14 @@ def _chain_tool_call_wrappers(
 def _chain_async_tool_call_wrappers(
     wrappers: Sequence[
         Callable[
-            [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]],
-            Awaitable[ToolMessage | Command],
+            [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]]],
+            Awaitable[ToolMessage | Command[Any]],
         ]
     ],
 ) -> (
     Callable[
-        [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]],
-        Awaitable[ToolMessage | Command],
+        [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]]],
+        Awaitable[ToolMessage | Command[Any]],
     ]
     | None
 ):
@@ -504,25 +542,25 @@ def _chain_async_tool_call_wrappers(
 
     def compose_two(
         outer: Callable[
-            [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]],
-            Awaitable[ToolMessage | Command],
+            [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]]],
+            Awaitable[ToolMessage | Command[Any]],
         ],
         inner: Callable[
-            [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]],
-            Awaitable[ToolMessage | Command],
+            [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]]],
+            Awaitable[ToolMessage | Command[Any]],
         ],
     ) -> Callable[
-        [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]],
-        Awaitable[ToolMessage | Command],
+        [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]]],
+        Awaitable[ToolMessage | Command[Any]],
     ]:
         """Compose two async wrappers where outer wraps inner."""
 
         async def composed(
             request: ToolCallRequest,
-            execute: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
-        ) -> ToolMessage | Command:
+            execute: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+        ) -> ToolMessage | Command[Any]:
             # Create an async callable that invokes inner with the original execute
-            async def call_inner(req: ToolCallRequest) -> ToolMessage | Command:
+            async def call_inner(req: ToolCallRequest) -> ToolMessage | Command[Any]:
                 return await inner(req, execute)
 
             # Outer can call call_inner multiple times
@@ -540,11 +578,11 @@ def _chain_async_tool_call_wrappers(
 
 def create_agent(
     model: str | BaseChatModel,
-    tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
+    tools: Sequence[BaseTool | Callable[..., Any] | dict[str, Any]] | None = None,
     *,
     system_prompt: str | SystemMessage | None = None,
     middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
-    response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
+    response_format: ResponseFormat[ResponseT] | type[ResponseT] | dict[str, Any] | None = None,
     state_schema: type[AgentState[ResponseT]] | None = None,
     context_schema: type[ContextT] | None = None,
     checkpointer: Checkpointer | None = None,
@@ -553,7 +591,7 @@ def create_agent(
     interrupt_after: list[str] | None = None,
     debug: bool = False,
     name: str | None = None,
-    cache: BaseCache | None = None,
+    cache: BaseCache[Any] | None = None,
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
@@ -653,6 +691,9 @@ def create_agent(
     Returns:
         A compiled `StateGraph` that can be used for chat interactions.
 
+    Raises:
+        AssertionError: If duplicate middleware instances are provided.
+
     The agent node calls the language model with the messages list (after applying
     the system prompt). If the resulting [`AIMessage`][langchain.messages.AIMessage]
     contains `tool_calls`, the graph will then call the tools. The tools node executes
@@ -701,7 +742,7 @@ def create_agent(
     # Raw schemas are wrapped in AutoStrategy to preserve auto-detection intent.
     # AutoStrategy is converted to ToolStrategy upfront to calculate tools during agent creation,
     # but may be replaced with ProviderStrategy later based on model capabilities.
-    initial_response_format: ToolStrategy | ProviderStrategy | AutoStrategy | None
+    initial_response_format: ToolStrategy[Any] | ProviderStrategy[Any] | AutoStrategy[Any] | None
     if response_format is None:
         initial_response_format = None
     elif isinstance(response_format, (ToolStrategy, ProviderStrategy)):
@@ -716,13 +757,13 @@ def create_agent(
 
     # For AutoStrategy, convert to ToolStrategy to setup tools upfront
     # (may be replaced with ProviderStrategy later based on model)
-    tool_strategy_for_setup: ToolStrategy | None = None
+    tool_strategy_for_setup: ToolStrategy[Any] | None = None
     if isinstance(initial_response_format, AutoStrategy):
         tool_strategy_for_setup = ToolStrategy(schema=initial_response_format.schema)
     elif isinstance(initial_response_format, ToolStrategy):
         tool_strategy_for_setup = initial_response_format
 
-    structured_output_tools: dict[str, OutputToolBinding] = {}
+    structured_output_tools: dict[str, OutputToolBinding[Any]] = {}
     if tool_strategy_for_setup:
         for response_schema in tool_strategy_for_setup.schema_specs:
             structured_tool_info = OutputToolBinding.from_schema_spec(response_schema)
@@ -770,14 +811,15 @@ def create_agent(
     # Tools that require client-side execution (must be in ToolNode)
     available_tools = middleware_tools + regular_tools
 
-    # Only create ToolNode if we have client-side tools
+    # Create ToolNode if we have client-side tools OR if middleware defines wrap_tool_call
+    # (which may handle dynamically registered tools)
     tool_node = (
         ToolNode(
             tools=available_tools,
             wrap_tool_call=wrap_tool_call_wrapper,
             awrap_tool_call=awrap_tool_call_wrapper,
         )
-        if available_tools
+        if available_tools or wrap_tool_call_wrapper or awrap_tool_call_wrapper
         else None
     )
 
@@ -869,14 +911,14 @@ def create_agent(
     )
 
     def _handle_model_output(
-        output: AIMessage, effective_response_format: ResponseFormat | None
+        output: AIMessage, effective_response_format: ResponseFormat[Any] | None
     ) -> dict[str, Any]:
         """Handle model output including structured responses.
 
         Args:
             output: The AI message output from the model.
-            effective_response_format: The actual strategy used
-                (may differ from initial if auto-detected).
+            effective_response_format: The actual strategy used (may differ from initial
+                if auto-detected).
         """
         # Handle structured output with provider strategy
         if isinstance(effective_response_format, ProviderStrategy):
@@ -972,7 +1014,9 @@ def create_agent(
 
         return {"messages": [output]}
 
-    def _get_bound_model(request: ModelRequest) -> tuple[Runnable, ResponseFormat | None]:
+    def _get_bound_model(
+        request: ModelRequest,
+    ) -> tuple[Runnable[Any, Any], ResponseFormat[Any] | None]:
         """Get the model with appropriate tool bindings.
 
         Performs auto-detection of strategy if needed based on model capabilities.
@@ -984,8 +1028,16 @@ def create_agent(
             Tuple of `(bound_model, effective_response_format)` where
             `effective_response_format` is the actual strategy used (may differ from
             initial if auto-detected).
+
+        Raises:
+            ValueError: If middleware returned unknown client-side tool names.
+            ValueError: If `ToolStrategy` specifies tools not declared upfront.
         """
         # Validate ONLY client-side tools that need to exist in tool_node
+        # Skip validation when wrap_tool_call is defined, as middleware may handle
+        # dynamic tools that are added at runtime via wrap_model_call
+        has_wrap_tool_call = wrap_tool_call_wrapper or awrap_tool_call_wrapper
+
         # Build map of available client-side tools from the ToolNode
         # (which has already converted callables)
         available_tools_by_name = {}
@@ -993,32 +1045,26 @@ def create_agent(
             available_tools_by_name = tool_node.tools_by_name.copy()
 
         # Check if any requested tools are unknown CLIENT-SIDE tools
-        unknown_tool_names = []
-        for t in request.tools:
-            # Only validate BaseTool instances (skip built-in dict tools)
-            if isinstance(t, dict):
-                continue
-            if isinstance(t, BaseTool) and t.name not in available_tools_by_name:
-                unknown_tool_names.append(t.name)
+        # Only validate if wrap_tool_call is NOT defined (no dynamic tool handling)
+        if not has_wrap_tool_call:
+            unknown_tool_names = []
+            for t in request.tools:
+                # Only validate BaseTool instances (skip built-in dict tools)
+                if isinstance(t, dict):
+                    continue
+                if isinstance(t, BaseTool) and t.name not in available_tools_by_name:
+                    unknown_tool_names.append(t.name)
 
-        if unknown_tool_names:
-            available_tool_names = sorted(available_tools_by_name.keys())
-            msg = (
-                f"Middleware returned unknown tool names: {unknown_tool_names}\n\n"
-                f"Available client-side tools: {available_tool_names}\n\n"
-                "To fix this issue:\n"
-                "1. Ensure the tools are passed to create_agent() via "
-                "the 'tools' parameter\n"
-                "2. If using custom middleware with tools, ensure "
-                "they're registered via middleware.tools attribute\n"
-                "3. Verify that tool names in ModelRequest.tools match "
-                "the actual tool.name values\n"
-                "Note: Built-in provider tools (dict format) can be added dynamically."
-            )
-            raise ValueError(msg)
+            if unknown_tool_names:
+                available_tool_names = sorted(available_tools_by_name.keys())
+                msg = DYNAMIC_TOOL_ERROR_TEMPLATE.format(
+                    unknown_tool_names=unknown_tool_names,
+                    available_tool_names=available_tool_names,
+                )
+                raise ValueError(msg)
 
         # Determine effective response format (auto-detect if needed)
-        effective_response_format: ResponseFormat | None
+        effective_response_format: ResponseFormat[Any] | None
         if isinstance(request.response_format, AutoStrategy):
             # User provided raw schema via AutoStrategy - auto-detect best strategy based on model
             if _supports_provider_strategy(request.model, tools=request.tools):
@@ -1090,6 +1136,7 @@ def create_agent(
         """Execute model and return response.
 
         This is the core model execution logic wrapped by `wrap_model_call` handlers.
+
         Raises any exceptions that occur during model invocation.
         """
         # Get the bound model (with auto-detection if needed)
@@ -1112,7 +1159,7 @@ def create_agent(
             structured_response=structured_response,
         )
 
-    def model_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
+    def model_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
@@ -1167,7 +1214,7 @@ def create_agent(
             structured_response=structured_response,
         )
 
-    async def amodel_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
+    async def amodel_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
@@ -1471,6 +1518,10 @@ def create_agent(
             can_jump_to=_get_can_jump_to(middleware_w_after_agent[0], "after_agent"),
         )
 
+    config: RunnableConfig = {"recursion_limit": 10_000}
+    if name:
+        config["metadata"] = {"lc_agent_name": name}
+
     return graph.compile(
         checkpointer=checkpointer,
         store=store,
@@ -1479,7 +1530,7 @@ def create_agent(
         debug=debug,
         name=name,
         cache=cache,
-    ).with_config({"recursion_limit": 10_000})
+    ).with_config(config)
 
 
 def _resolve_jump(
@@ -1516,13 +1567,13 @@ def _fetch_last_ai_and_tool_messages(
 def _make_model_to_tools_edge(
     *,
     model_destination: str,
-    structured_output_tools: dict[str, OutputToolBinding],
+    structured_output_tools: dict[str, OutputToolBinding[Any]],
     end_destination: str,
 ) -> Callable[[dict[str, Any]], str | list[Send] | None]:
     def model_to_tools(
         state: dict[str, Any],
     ) -> str | list[Send] | None:
-        # 1. if there's an explicit jump_to in the state, use it
+        # 1. If there's an explicit jump_to in the state, use it
         if jump_to := state.get("jump_to"):
             return _resolve_jump(
                 jump_to,
@@ -1533,7 +1584,7 @@ def _make_model_to_tools_edge(
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
         tool_message_ids = [m.tool_call_id for m in tool_messages]
 
-        # 2. if the model hasn't called any tools, exit the loop
+        # 2. If the model hasn't called any tools, exit the loop
         # this is the classic exit condition for an agent loop
         if len(last_ai_message.tool_calls) == 0:
             return end_destination
@@ -1544,7 +1595,7 @@ def _make_model_to_tools_edge(
             if c["id"] not in tool_message_ids and c["name"] not in structured_output_tools
         ]
 
-        # 3. if there are pending tool calls, jump to the tool node
+        # 3. If there are pending tool calls, jump to the tool node
         if pending_tool_calls:
             return [
                 Send(
@@ -1558,12 +1609,12 @@ def _make_model_to_tools_edge(
                 for tool_call in pending_tool_calls
             ]
 
-        # 4. if there is a structured response, exit the loop
+        # 4. If there is a structured response, exit the loop
         if "structured_response" in state:
             return end_destination
 
-        # 5. AIMessage has tool calls, but there are no pending tool calls
-        # which suggests the injection of artificial tool messages. jump to the model node
+        # 5. AIMessage has tool calls, but there are no pending tool calls which suggests
+        # the injection of artificial tool messages. Jump to the model node
         return model_destination
 
     return model_to_tools
@@ -1589,8 +1640,8 @@ def _make_model_to_model_edge(
         if "structured_response" in state:
             return end_destination
 
-        # 3. Default: Continue the loop, there may have been an issue
-        #     with structured output generation, so we need to retry
+        # 3. Default: Continue the loop, there may have been an issue with structured
+        # output generation, so we need to retry
         return model_destination
 
     return model_to_model
@@ -1600,7 +1651,7 @@ def _make_tools_to_model_edge(
     *,
     tool_node: ToolNode,
     model_destination: str,
-    structured_output_tools: dict[str, OutputToolBinding],
+    structured_output_tools: dict[str, OutputToolBinding[Any]],
     end_destination: str,
 ) -> Callable[[dict[str, Any]], str | None]:
     def tools_to_model(state: dict[str, Any]) -> str | None:

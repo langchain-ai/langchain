@@ -9,6 +9,7 @@ repos:
       - id: check-toml # validate TOML syntax
       - id: end-of-file-fixer # ensure files end with a newline
       - id: trailing-whitespace # remove trailing whitespace from lines
+        exclude: \.ambr$
 
   # Text normalization hooks for consistent formatting
   - repo: https://github.com/sirosen/texthooks
@@ -115,4 +116,16 @@ repos:
         language: system
         entry: make -C libs/partners/qdrant format lint
         files: ^libs/partners/qdrant/
+        pass_filenames: false
+      - id: core-version
+        name: check core version consistency
+        language: system
+        entry: make -C libs/core check_version
+        files: ^libs/core/(pyproject\.toml|langchain_core/version\.py)$
+        pass_filenames: false
+      - id: langchain-v1-version
+        name: check langchain version consistency
+        language: system
+        entry: make -C libs/langchain_v1 check_version
+        files: ^libs/langchain_v1/(pyproject\.toml|langchain/__init__\.py)$
         pass_filenames: false

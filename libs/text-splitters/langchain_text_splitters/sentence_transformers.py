@@ -27,7 +27,18 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         tokens_per_chunk: int | None = None,
         **kwargs: Any,
     ) -> None:
-        """Create a new TextSplitter."""
+        """Create a new `TextSplitter`.
+
+        Args:
+            chunk_overlap: The number of tokens to overlap between chunks.
+            model_name: The name of the sentence transformer model to use.
+            tokens_per_chunk: The number of tokens per chunk.
+
+                If `None`, uses the maximum tokens allowed by the model.
+
+        Raises:
+            ImportError: If the `sentence_transformers` package is not installed.
+        """
         super().__init__(**kwargs, chunk_overlap=chunk_overlap)
 
         if not _HAS_SENTENCE_TRANSFORMERS:
@@ -72,7 +83,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
 
         Returns:
             A list of string components derived from the input text after encoding and
-            processing.
+                processing.
         """
 
         def encode_strip_start_and_stop_token_ids(text: str) -> list[int]:
@@ -97,7 +108,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             text: The input text for which the token count is calculated.
 
         Returns:
-            int: The number of tokens in the encoded text.
+            The number of tokens in the encoded text.
         """
         return len(self._encode(text))
 

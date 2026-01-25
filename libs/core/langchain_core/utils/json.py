@@ -33,10 +33,9 @@ def _replace_new_line(match: re.Match[str]) -> str:
 def _custom_parser(multiline_string: str | bytes | bytearray) -> str:
     r"""Custom parser for multiline strings.
 
-    The LLM response for `action_input` may be a multiline
-    string containing unescaped newlines, tabs or quotes. This function
-    replaces those characters with their escaped counterparts.
-    (newlines in JSON must be double-escaped: `\\n`).
+    The LLM response for `action_input` may be a multiline string containing unescaped
+    newlines, tabs or quotes. This function replaces those characters with their escaped
+    counterparts. (newlines in JSON must be double-escaped: `\\n`).
 
     Returns:
         The modified string with escaped newlines, tabs and quotes.
@@ -147,7 +146,7 @@ def parse_json_markdown(
 
     Args:
         json_string: The Markdown string.
-        parser: The parser to use. Defaults to `parse_partial_json`.
+        parser: The parser to use.
 
     Returns:
         The parsed JSON object as a Python dictionary.
@@ -178,8 +177,6 @@ def _parse_json(
     Args:
         json_str: The JSON string to parse.
         parser: Optional custom parser function.
-
-            Defaults to `parse_partial_json`.
 
     Returns:
         Parsed JSON object.
