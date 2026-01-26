@@ -4,6 +4,7 @@ These tests verify that middleware can dynamically register and handle tools
 that are not declared upfront when creating the agent.
 """
 
+import asyncio
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -210,7 +211,8 @@ async def invoke_agent(agent: Any, message: str, *, use_async: bool) -> dict[str
     config = {"configurable": {"thread_id": "test"}}
     if use_async:
         return await agent.ainvoke(input_data, config)
-    return agent.invoke(input_data, config)
+    # Run sync invoke in thread pool to avoid blocking the event loop
+    return await asyncio.to_thread(agent.invoke, input_data, config)
 
 
 # -----------------------------------------------------------------------------

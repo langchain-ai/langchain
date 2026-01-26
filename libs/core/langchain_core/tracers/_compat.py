@@ -1,8 +1,10 @@
-"""Compatibility helpers for Pydantic v1/v2 with langsmith Run objects.
+"""Compatibility helpers for Pydantic v1/v2 with langsmith `Run` objects.
 
-Note: The generic helpers (`pydantic_to_dict`, `pydantic_copy`) detect Pydantic
-version based on the langsmith `Run` model. They're intended for langsmith objects
-(`Run`, `Example`) which migrate together.
+!!! note
+
+    The generic helpers (`pydantic_to_dict`, `pydantic_copy`) detect Pydanti version
+    based on the langsmith `Run` model. They're intended for langsmith objects (`Run`,
+    `Example`) which migrate together.
 
 For general Pydantic v1/v2 handling, see `langchain_core.utils.pydantic`.
 """
@@ -24,7 +26,7 @@ def run_to_dict(run: Run, **kwargs: Any) -> dict[str, Any]:
 
     Args:
         run: The run to convert.
-        **kwargs: Additional arguments passed to model_dump/dict.
+        **kwargs: Additional arguments passed to `model_dump`/`dict`.
 
     Returns:
         Dictionary representation of the run.
@@ -39,7 +41,7 @@ def run_copy(run: Run, **kwargs: Any) -> Run:
 
     Args:
         run: The run to copy.
-        **kwargs: Additional arguments passed to model_copy/copy.
+        **kwargs: Additional arguments passed to `model_copy`/`copy`.
 
     Returns:
         A copy of the run.
@@ -56,7 +58,7 @@ def run_construct(**kwargs: Any) -> Run:
         **kwargs: Fields to set on the run.
 
     Returns:
-        A new Run instance constructed without validation.
+        A new `Run` instance constructed without validation.
     """
     if _RUN_IS_PYDANTIC_V2:
         return Run.model_construct(**kwargs)
@@ -68,7 +70,7 @@ def pydantic_to_dict(obj: Any, **kwargs: Any) -> dict[str, Any]:
 
     Args:
         obj: The Pydantic model to convert.
-        **kwargs: Additional arguments passed to model_dump/dict.
+        **kwargs: Additional arguments passed to `model_dump`/`dict`.
 
     Returns:
         Dictionary representation of the model.
@@ -83,7 +85,7 @@ def pydantic_copy(obj: T, **kwargs: Any) -> T:
 
     Args:
         obj: The Pydantic model to copy.
-        **kwargs: Additional arguments passed to model_copy/copy.
+        **kwargs: Additional arguments passed to `model_copy`/`copy`.
 
     Returns:
         A copy of the model.

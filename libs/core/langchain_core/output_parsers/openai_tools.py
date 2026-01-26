@@ -82,14 +82,14 @@ def make_invalid_tool_call(
     raw_tool_call: dict[str, Any],
     error_msg: str | None,
 ) -> InvalidToolCall:
-    """Create an InvalidToolCall from a raw tool call.
+    """Create an `InvalidToolCall` from a raw tool call.
 
     Args:
         raw_tool_call: The raw tool call.
         error_msg: The error message.
 
     Returns:
-        An InvalidToolCall instance with the error message.
+        An `InvalidToolCall` instance with the error message.
     """
     return invalid_tool_call(
         name=raw_tool_call["function"]["name"],
@@ -147,17 +147,20 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
 
     Useful when the parsed output may include unicode characters or new lines.
     """
+
     return_id: bool = False
     """Whether to return the tool call id."""
+
     first_tool_only: bool = False
     """Whether to return only the first tool call.
 
-    If `False`, the result will be a list of tool calls, or an empty list
-    if no tool calls are found.
+    If `False`, the result will be a list of tool calls, or an empty list if no tool
+    calls are found.
 
-    If true, and multiple tool calls are found, only the first one will be returned,
+    If `True`, and multiple tool calls are found, only the first one will be returned,
     and the other tool calls will be ignored.
-    If no tool calls are found, None will be returned.
+
+    If no tool calls are found, `None` will be returned.
     """
 
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
@@ -166,8 +169,10 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         Args:
             result: The result of the LLM call.
             partial: Whether to parse partial JSON.
+
                 If `True`, the output will be a JSON object containing
                 all the keys that have been returned so far.
+
                 If `False`, the output will be the full JSON object.
 
         Returns:
@@ -304,16 +309,18 @@ class PydanticToolsParser(JsonOutputToolsParser):
     tools: Annotated[list[TypeBaseModel], SkipValidation()]
     """The tools to parse."""
 
-    # TODO: Support more granular streaming of objects. Currently only streams once all
-    # Pydantic object fields are present.
+    # TODO: Support more granular streaming of objects.
+    # Currently only streams once all Pydantic object fields are present.
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a list of Pydantic objects.
 
         Args:
             result: The result of the LLM call.
             partial: Whether to parse partial JSON.
-                If `True`, the output will be a JSON object containing
-                    all the keys that have been returned so far.
+
+                If `True`, the output will be a JSON object containing all the keys that
+                have been returned so far.
+
                 If `False`, the output will be the full JSON object.
 
         Returns:
@@ -321,8 +328,8 @@ class PydanticToolsParser(JsonOutputToolsParser):
 
         Raises:
             ValueError: If the tool call arguments are not a dict.
-            ValidationError: If the tool call arguments do not conform
-                to the Pydantic model.
+            ValidationError: If the tool call arguments do not conform to the Pydantic
+                model.
         """
         json_results = super().parse_result(result, partial=partial)
         if not json_results:

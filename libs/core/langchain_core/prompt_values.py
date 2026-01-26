@@ -1,7 +1,7 @@
 """**Prompt values** for language model prompts.
 
-Prompt values are used to represent different pieces of prompts.
-They can be used to represent text, images, or chat message pieces.
+Prompt values are used to represent different pieces of prompts. They can be used to
+represent text, images, or chat message pieces.
 """
 
 from __future__ import annotations
@@ -56,6 +56,7 @@ class StringPromptValue(PromptValue):
 
     text: str
     """Prompt text."""
+
     type: Literal["StringPromptValue"] = "StringPromptValue"
 
     @classmethod
@@ -136,6 +137,7 @@ class ImagePromptValue(PromptValue):
 
     image_url: ImageURL
     """Image URL."""
+
     type: Literal["ImagePromptValue"] = "ImagePromptValue"
 
     def to_string(self) -> str:

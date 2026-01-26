@@ -1,4 +1,4 @@
-"""Runnable that retries a Runnable if it fails."""
+"""`Runnable` that retries a `Runnable` if it fails."""
 
 from typing import (
     TYPE_CHECKING,

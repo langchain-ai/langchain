@@ -394,10 +394,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    if: false # temporarily skip
     strategy:
       matrix:
-        partner: [openai, anthropic]
+        partner: [anthropic]
       fail-fast: false # Continue testing other partners if one fails
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -540,7 +539,7 @@ jobs:
       - test-pypi-publish
       - pre-release-checks
       - test-dependents
-      # - test-prior-published-packages-against-new-core
+      - test-prior-published-packages-against-new-core
     # Run if all needed jobs succeeded or were skipped (test-dependents only runs for core/langchain_v1)
     if: ${{ !cancelled() && !failure() }}
     runs-on: ubuntu-latest
