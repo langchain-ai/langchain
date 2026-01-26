@@ -2670,9 +2670,7 @@ def test_count_tokens_approximately_with_image_content() -> None:
             {"type": "text", "text": "What's in this image?"},
             {
                 "type": "image_url",
-                "image_url": {
-                    "url": "data:image/jpeg;base64," + "A" * 100000
-                },
+                "image_url": {"url": "data:image/jpeg;base64," + "A" * 100000},
             },
         ]
     )
@@ -2709,7 +2707,8 @@ def test_count_tokens_approximately_text_only_backward_compatible() -> None:
 
     token_count = count_tokens_approximately(messages)
 
-    # "Hello world" (11 chars / 4) + "Hi there!" (9 chars / 4) + 2 * 3 (extra) = ~15 tokens
+    # Should be ~15 tokens
+    # (11 chars + 9 chars + roles + 2*3 extra)
     assert 13 <= token_count <= 17
 
 

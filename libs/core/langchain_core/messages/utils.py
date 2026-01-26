@@ -2192,21 +2192,22 @@ def count_tokens_approximately(
 
     - For AI messages, the token count also includes stringified tool calls.
     - For tool messages, the token count also includes the tool call ID.
+    - For multimodal messages with images, applies a fixed token penalty per image
+      instead of counting base64-encoded characters.
 
     Args:
         messages: List of messages to count tokens for.
         chars_per_token: Number of characters per token to use for the approximation.
-
             One token corresponds to ~4 chars for common English text.
-
             You can also specify `float` values for more fine-grained control.
             [See more here](https://platform.openai.com/tokenizer).
         extra_tokens_per_message: Number of extra tokens to add per message, e.g.
             special tokens, including beginning/end of message.
-
             You can also specify `float` values for more fine-grained control.
             [See more here](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb).
         count_name: Whether to include message names in the count.
+        tokens_per_image: Fixed token cost per image (default: 85, aligned with
+            OpenAI's low-resolution image token cost).
 
     Returns:
         Approximate number of tokens in the messages.
@@ -2215,8 +2216,9 @@ def count_tokens_approximately(
         This is a simple approximation that may not match the exact token count used by
         specific models. For accurate counts, use model-specific tokenizers.
 
-    Warning:
-        This function does not currently support counting image tokens.
+        For multimodal messages containing images, a fixed token penalty is applied
+        per image instead of counting base64-encoded characters, which provides a
+        more realistic approximation.
 
     !!! version-added "Added in `langchain-core` 0.3.46"
     """
