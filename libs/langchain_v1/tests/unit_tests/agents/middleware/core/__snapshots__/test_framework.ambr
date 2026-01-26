@@ -88,10 +88,11 @@
   	__start__ --> NoopSeven\2ebefore_model;
   	model --> NoopEight\2eafter_model;
   	tools -.-> NoopSeven\2ebefore_model;
+  	tools -.-> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_create_agent_jump[postgres_pipe]
@@ -120,10 +121,11 @@
   	__start__ --> NoopSeven\2ebefore_model;
   	model --> NoopEight\2eafter_model;
   	tools -.-> NoopSeven\2ebefore_model;
+  	tools -.-> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_create_agent_jump[postgres_pool]
@@ -152,10 +154,11 @@
   	__start__ --> NoopSeven\2ebefore_model;
   	model --> NoopEight\2eafter_model;
   	tools -.-> NoopSeven\2ebefore_model;
+  	tools -.-> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_create_agent_jump[sqlite]
@@ -184,10 +187,11 @@
   	__start__ --> NoopSeven\2ebefore_model;
   	model --> NoopEight\2eafter_model;
   	tools -.-> NoopSeven\2ebefore_model;
+  	tools -.-> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_simple_agent_graph
