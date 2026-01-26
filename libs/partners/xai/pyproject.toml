@@ -65,6 +65,7 @@ docstring-code-line-length = 100
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
+    "ANN401",  # Allow annotating `Any`
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
