@@ -2184,6 +2184,7 @@ def count_tokens_approximately(
     chars_per_token: float = 4.0,
     extra_tokens_per_message: float = 3.0,
     count_name: bool = True,
+    tokens_per_image: int = 85,
 ) -> int:
     """Approximate the total number of tokens in messages.
 
@@ -2222,11 +2223,33 @@ def count_tokens_approximately(
     token_count = 0.0
     for message in convert_to_messages(messages):
         message_chars = 0
+
         if isinstance(message.content, str):
             message_chars += len(message.content)
+        # Handle multimodal content (list of content blocks)
+        elif isinstance(message.content, list):
+            for block in message.content:
+                if isinstance(block, str):
+                    # String block
+                    message_chars += len(block)
+                elif isinstance(block, dict):
+                    block_type = block.get("type", "")
 
-        # TODO: add support for approximate counting for image blocks
+                    # Apply fixed penalty for image blocks
+                    if block_type in ("image", "image_url"):
+                        token_count += tokens_per_image
+                    # Count text blocks normally
+                    elif block_type == "text":
+                        text = block.get("text", "")
+                        message_chars += len(text)
+                    # Conservative estimate for unknown block types
+                    else:
+                        message_chars += len(repr(block))
+                else:
+                    # Fallback for unexpected block types
+                    message_chars += len(repr(block))
         else:
+            # Fallback for other content types
             content = repr(message.content)
             message_chars += len(content)
 

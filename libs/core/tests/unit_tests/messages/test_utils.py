@@ -2661,3 +2661,69 @@ def test_get_buffer_string_xml_all_custom_prefixes() -> None:
     assert '<message type="assistant">AI message</message>' in result
     assert '<message type="fn">Function message</message>' in result
     assert '<message type="t">Tool message</message>' in result
+
+
+def test_count_tokens_approximately_with_image_content() -> None:
+    """Test approximate token counting with image content blocks."""
+    message_with_image = HumanMessage(
+        content=[
+            {"type": "text", "text": "What's in this image?"},
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": "data:image/jpeg;base64," + "A" * 100000
+                },
+            },
+        ]
+    )
+
+    token_count = count_tokens_approximately([message_with_image])
+
+    # Should be ~85 (image) + ~5 (text) + 3 (extra) = ~93 tokens, NOT 25,000+
+    assert token_count < 200, f"Expected <200 tokens, got {token_count}"
+    assert token_count > 80, f"Expected >80 tokens, got {token_count}"
+
+
+def test_count_tokens_approximately_with_multiple_images() -> None:
+    """Test token counting with multiple images."""
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": "Compare these images"},
+            {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,AAA"}},
+            {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,BBB"}},
+        ]
+    )
+
+    token_count = count_tokens_approximately([message])
+
+    # Should be ~85 * 2 (images) + ~6 (text) + 3 (extra) = ~179 tokens
+    assert 170 < token_count < 190
+
+
+def test_count_tokens_approximately_text_only_backward_compatible() -> None:
+    """Test that text-only messages still work correctly."""
+    messages = [
+        HumanMessage(content="Hello world"),
+        AIMessage(content="Hi there!"),
+    ]
+
+    token_count = count_tokens_approximately(messages)
+
+    # "Hello world" (11 chars / 4) + "Hi there!" (9 chars / 4) + 2 * 3 (extra) = ~15 tokens
+    assert 13 <= token_count <= 17
+
+
+def test_count_tokens_approximately_with_custom_image_penalty() -> None:
+    """Test custom tokens_per_image parameter."""
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": "test"},
+            {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,XYZ"}},
+        ]
+    )
+
+    # Using custom image penalty (e.g., for Anthropic models)
+    token_count = count_tokens_approximately([message], tokens_per_image=1600)
+
+    # Should be ~1600 (image) + ~1 (text) + 3 (extra) = ~1604 tokens
+    assert 1600 < token_count < 1610
