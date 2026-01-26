@@ -51,8 +51,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
         keep_separator: bool | Literal["start", "end"] = False,  # noqa: FBT001,FBT002
-        batched_length_function: Literal[False]  # noqa: FBT002
-        | Callable[[list[str]], list[int]] = False,
+        batched_length_function: Callable[[list[str]], list[int]] | None = None,
         add_start_index: bool = False,  # noqa: FBT001,FBT002
         strip_whitespace: bool = True,  # noqa: FBT001,FBT002
     ) -> None:
@@ -155,7 +154,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         return text or None
 
     def _iter_text_lengths(self, texts: Iterable[str]) -> Iterable[int]:
-        if self._batched_length_function is not False:
+        if self._batched_length_function:
             if not isinstance(texts, list):
                 texts = list(texts)
             lengths = self._batched_length_function(texts)
@@ -168,7 +167,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self,
         splits: Iterable[str],
         separator: str,
-        lengths: Literal[False] | Iterable[int] = False,  # noqa: FBT002
+        lengths: Iterable[int] | None = None,
     ) -> list[str]:
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
@@ -217,7 +216,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         return docs
 
     def _text_length(self, text: str) -> int:
-        if self._batched_length_function is not False:
+        if self._batched_length_function:
             return self._batched_length_function([text])[0]
         return self._length_function(text)
 
@@ -264,7 +263,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             length_function=_huggingface_tokenizer_length,
             batched_length_function=_huggingface_tokenizer_batched_length
             if batched
-            else False,
+            else None,
             **kwargs,
         )
 
