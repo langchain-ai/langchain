@@ -1467,7 +1467,7 @@ class BaseChatOpenAI(BaseChatModel):
             message = res.get("message", {})
             tool_calls = message.get("tool_calls")
             if tool_calls and res.get("finish_reason") == "stop":
-                res["finish_reason"] = "tool_calls"       
+                res["finish_reason"] = "tool_calls"
         token_usage = response_dict.get("usage")
         service_tier = response_dict.get("service_tier")
         for res in choices:
