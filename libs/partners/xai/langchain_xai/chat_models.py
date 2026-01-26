@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 import openai
 from langchain_core.messages import AIMessageChunk
 from langchain_core.utils import secret_from_env
-from langchain_openai.chat_models.base import ChatOpenAI
+from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
@@ -37,7 +37,7 @@ def _get_default_model_profile(model_name: str) -> ModelProfile:
     return default.copy()
 
 
-class ChatXAI(ChatOpenAI):  # type: ignore[override]
+class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     r"""ChatXAI chat model.
 
     Refer to [xAI's documentation](https://docs.x.ai/docs/api-reference#chat-completions)
