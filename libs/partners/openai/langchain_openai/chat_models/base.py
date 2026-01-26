@@ -1464,7 +1464,17 @@ class BaseChatOpenAI(BaseChatModel):
         if choices is None:
             msg = "Received response with null value for `choices`."
             raise TypeError(msg)
-
+    
+        for res in choices:
+            message = res.get("message", {})
+            if (
+                message 
+                and "tool_calls" in message 
+                and len(message["tool_calls"]) > 0 
+                and res.get("finish_reason") == "stop"
+            ):
+                res["finish_reason"] = "tool_calls"
+       
         token_usage = response_dict.get("usage")
         service_tier = response_dict.get("service_tier")
 
