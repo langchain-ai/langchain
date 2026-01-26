@@ -12,6 +12,38 @@ class TracerException(LangChainException):
     """Base class for exceptions in tracers module."""
 
 
+class ToolException(LangChainException):
+    """Exception raised when a tool encounters an error during execution.
+
+    This exception should be raised by tools when they fail to execute properly,
+    allowing the calling code to handle tool failures gracefully and potentially
+    retry or fall back to alternative approaches.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        tool_name: str | None = None,
+        *,
+        original_error: Exception | None = None,
+    ) -> None:
+        """Create a ToolException.
+
+        Args:
+            message: Human-readable description of what went wrong.
+            tool_name: Name of the tool that raised the exception.
+            original_error: The underlying exception that caused this error.
+        """
+        full_message = f"Tool '{tool_name}' failed: {message}" if tool_name else message
+        super().__init__(full_message)
+        self.tool_name = tool_name
+        self.original_error = original_error
+
+    def __repr__(self) -> str:
+        """Return a string representation of the exception."""
+        return f"ToolException(tool_name={self.tool_name!r}, message={self.args[0]!r})"
+
+
 class OutputParserException(ValueError, LangChainException):  # noqa: N818
     """Exception that output parsers should raise to signify a parsing error.
 
@@ -35,7 +67,7 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
             error: The error that's being re-raised or an error message.
             observation: String explanation of error which can be passed to a model to
                 try and remediate the issue.
-            llm_output: String model output which is error-ing.
+            llm_output: String model output which is erroring.
 
             send_to_llm: Whether to send the observation and llm_output back to an Agent
                 after an `OutputParserException` has been raised.
@@ -74,6 +106,7 @@ class ErrorCode(Enum):
     MODEL_NOT_FOUND = "MODEL_NOT_FOUND"  # Used in JS; not Py (yet)
     MODEL_RATE_LIMIT = "MODEL_RATE_LIMIT"  # Used in JS; not Py (yet)
     OUTPUT_PARSING_FAILURE = "OUTPUT_PARSING_FAILURE"
+    TOOL_EXECUTION_FAILURE = "TOOL_EXECUTION_FAILURE"
 
 
 def create_message(*, message: str, error_code: ErrorCode) -> str:
