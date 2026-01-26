@@ -386,6 +386,10 @@ class ParrotFakeChatModel(BaseChatModel):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
+        if not messages:
+            return ChatResult(
+                generations=[ChatGeneration(message=AIMessage(content=""))]
+            )
         return ChatResult(generations=[ChatGeneration(message=messages[-1])])
 
     @property
