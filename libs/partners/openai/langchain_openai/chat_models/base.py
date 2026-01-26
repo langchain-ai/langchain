@@ -1460,20 +1460,16 @@ class BaseChatOpenAI(BaseChatModel):
         except KeyError as e:
             msg = f"Response missing `choices` key: {response_dict.keys()}"
             raise KeyError(msg) from e
-
         if choices is None:
             msg = "Received response with null value for `choices`."
             raise TypeError(msg)
-    
         for res in choices:
             message = res.get("message", {})
             tool_calls = message.get("tool_calls")
             if tool_calls and res.get("finish_reason") == "stop":
-                res["finish_reason"] = "tool_calls"
-                
+                res["finish_reason"] = "tool_calls"       
         token_usage = response_dict.get("usage")
         service_tier = response_dict.get("service_tier")
-
         for res in choices:
             message = _convert_dict_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
