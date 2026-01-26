@@ -135,13 +135,18 @@ def mustache_template_vars(
         The top-level variables from the template.
     """
     variables: set[str] = set()
+    section_depth = 0
     for type_, key in mustache.tokenize(template):
-        if (
-            type_ in ("variable", "section", "inverted section", "no escape")
+        if type_ == "end":
+            section_depth -= 1
+        elif (
+            type_ in {"variable", "section", "inverted section", "no escape"}
             and key != "."
+            and section_depth == 0
         ):
             variables.add(key.split(".")[0])
-
+        if type_ in {"section", "inverted section"}:
+            section_depth += 1
     return variables
 
 
