@@ -113,6 +113,9 @@ dev = [
     "setuptools>=67.6.1,<81.0.0",
     "langchain-core",
     "langchain-text-splitters",
+    "ruff>=0.14.11",
+    "mypy>=1.19.1",
+    "pytest>=8.4.2",
 ]
 
 
