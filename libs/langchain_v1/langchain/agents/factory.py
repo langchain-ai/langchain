@@ -755,6 +755,18 @@ def create_agent(
         # Raw schema - wrap in AutoStrategy to enable auto-detection
         initial_response_format = AutoStrategy(schema=response_format)
 
+    # Enable finalize mode when we have both tools and response_format, EXCEPT for
+    # ToolStrategy. ToolStrategy requires tool execution which can't happen in the
+    # finalize step (the tool node loop isn't run there). For ToolStrategy, the
+    # structured output tool is called during the main agent loop.
+    # Finalize mode allows text streaming by deferring structured output to a final
+    # step, avoiding tool_choice="any" which suppresses streaming.
+    finalize_structured_output = (
+        response_format is not None
+        and bool(tools)
+        and not isinstance(response_format, ToolStrategy)
+    )
+
     # For AutoStrategy, convert to ToolStrategy to setup tools upfront
     # (may be replaced with ProviderStrategy later based on model)
     tool_strategy_for_setup: ToolStrategy[Any] | None = None
@@ -1165,7 +1177,7 @@ def create_agent(
             model=model,
             tools=default_tools,
             system_message=system_message,
-            response_format=initial_response_format,
+            response_format=None if finalize_structured_output else initial_response_format,
             messages=state["messages"],
             tool_choice=None,
             state=state,
@@ -1220,7 +1232,7 @@ def create_agent(
             model=model,
             tools=default_tools,
             system_message=system_message,
-            response_format=initial_response_format,
+            response_format=None if finalize_structured_output else initial_response_format,
             messages=state["messages"],
             tool_choice=None,
             state=state,
@@ -1243,6 +1255,76 @@ def create_agent(
 
     # Use sync or async based on model capabilities
     graph.add_node("model", RunnableCallable(model_node, amodel_node, trace=False))
+
+    def structured_output_node(
+        state: AgentState[Any], runtime: Runtime[ContextT]
+    ) -> dict[str, Any]:
+        """Finalize structured output after the agent loop.
+
+        This node is an opt-in mechanism that runs exactly once at the end of the tool
+        loop to produce `structured_response` via the configured `response_format`,
+        without impacting intermediate streaming behavior.
+        """
+        if not finalize_structured_output or initial_response_format is None:
+            return {}
+        if state.get("structured_response") is not None:
+            return {}
+
+        request = ModelRequest(
+            model=model,
+            tools=default_tools,
+            system_message=system_message,
+            response_format=initial_response_format,
+            messages=state["messages"],
+            tool_choice=None,
+            state=state,
+            runtime=runtime,
+        )
+
+        if wrap_model_call_handler is None:
+            response = _execute_model_sync(request)
+        else:
+            response = wrap_model_call_handler(request, _execute_model_sync)
+
+        state_updates: dict[str, Any] = {"messages": response.result}
+        if response.structured_response is not None:
+            state_updates["structured_response"] = response.structured_response
+        return state_updates
+
+    async def astructured_output_node(
+        state: AgentState[Any], runtime: Runtime[ContextT]
+    ) -> dict[str, Any]:
+        if not finalize_structured_output or initial_response_format is None:
+            return {}
+        if state.get("structured_response") is not None:
+            return {}
+
+        request = ModelRequest(
+            model=model,
+            tools=default_tools,
+            system_message=system_message,
+            response_format=initial_response_format,
+            messages=state["messages"],
+            tool_choice=None,
+            state=state,
+            runtime=runtime,
+        )
+
+        if awrap_model_call_handler is None:
+            response = await _execute_model_async(request)
+        else:
+            response = await awrap_model_call_handler(request, _execute_model_async)
+
+        state_updates: dict[str, Any] = {"messages": response.result}
+        if response.structured_response is not None:
+            state_updates["structured_response"] = response.structured_response
+        return state_updates
+
+    if finalize_structured_output:
+        graph.add_node(
+            "structured_output",
+            RunnableCallable(structured_output_node, astructured_output_node, trace=False),
+        )
 
     # Only add tools node if we have tools
     if tool_node is not None:
@@ -1356,9 +1438,15 @@ def create_agent(
 
     # Determine the exit node (runs once at end): after_agent or END
     if middleware_w_after_agent:
-        exit_node = f"{middleware_w_after_agent[-1].name}.after_agent"
+        after_loop_node = f"{middleware_w_after_agent[-1].name}.after_agent"
     else:
-        exit_node = END
+        after_loop_node = END
+
+    if finalize_structured_output:
+        exit_node = "structured_output"
+        graph.add_edge("structured_output", after_loop_node)
+    else:
+        exit_node = after_loop_node
 
     graph.add_edge(START, entry_node)
     # add conditional edges only if tools exist
@@ -1445,11 +1533,15 @@ def create_agent(
                 end_destination=exit_node,
                 can_jump_to=_get_can_jump_to(m1, "before_agent"),
             )
-        # Connect last before_agent to loop_entry_node (before_model or model)
+
+        # Connect the last before_agent to before_model (or model if no before_model)
+        # The 'default_destination' here is where the chain goes normally
         _add_middleware_edge(
             graph,
             name=f"{middleware_w_before_agent[-1].name}.before_agent",
-            default_destination=loop_entry_node,
+            default_destination=f"{middleware_w_before_model[0].name}.before_model"
+            if middleware_w_before_model
+            else "model",
             model_destination=loop_entry_node,
             end_destination=exit_node,
             can_jump_to=_get_can_jump_to(middleware_w_before_agent[-1], "before_agent"),
@@ -1466,7 +1558,8 @@ def create_agent(
                 end_destination=exit_node,
                 can_jump_to=_get_can_jump_to(m1, "before_model"),
             )
-        # Go directly to model after the last before_model
+
+        # Connect the last before_model to model
         _add_middleware_edge(
             graph,
             name=f"{middleware_w_before_model[-1].name}.before_model",
@@ -1478,6 +1571,8 @@ def create_agent(
 
     # Add after_model middleware edges
     if middleware_w_after_model:
+        # Chain after_model middleware (runs in reverse order)
+        # model -> last -> ... -> first -> loop_exit
         graph.add_edge("model", f"{middleware_w_after_model[-1].name}.after_model")
         for idx in range(len(middleware_w_after_model) - 1, 0, -1):
             m1 = middleware_w_after_model[idx]
@@ -1490,8 +1585,8 @@ def create_agent(
                 end_destination=exit_node,
                 can_jump_to=_get_can_jump_to(m1, "after_model"),
             )
-        # Note: Connection from after_model to after_agent/END is handled above
-        # in the conditional edges section
+        # Note: Connection from after_model[0] to after_agent/END is handled above
+        # in the conditional edges section (via loop_exit_node)
 
     # Add after_agent middleware edges
     if middleware_w_after_agent:
