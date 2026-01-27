@@ -626,6 +626,14 @@ class ChatOllama(BaseChatModel):
     same prompt.
     """
 
+    logprobs: bool | None = None
+    """Whether to return logprobs."""
+
+    top_logprobs: int | None = None
+    """Number of most likely tokens to return at each token position, each with an
+    associated log probability. `logprobs` must be set to true if this parameter is
+    used."""
+
     stop: list[str] | None = None
     """Sets the stop tokens to use."""
 
@@ -772,6 +780,8 @@ class ChatOllama(BaseChatModel):
             "model": kwargs.pop("model", self.model),
             "think": kwargs.pop("reasoning", self.reasoning),
             "format": kwargs.pop("format", self.format),
+            "logprobs": kwargs.pop("logprobs", self.logprobs),
+            "top_logprobs": kwargs.pop("top_logprobs", self.top_logprobs),
             "options": options_dict,
             "keep_alive": kwargs.pop("keep_alive", self.keep_alive),
             **kwargs,
