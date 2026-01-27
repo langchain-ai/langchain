@@ -103,6 +103,7 @@ class Serializable(BaseModel, ABC):
         the correct class to instantiate.
 
         Please see the `Reviver` class in `langchain_core.load.load` for more details.
+
         During deserialization an additional mapping is handle classes that have moved
         or been renamed across package versions.
 

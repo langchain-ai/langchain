@@ -1,0 +1,148 @@
+# Automatically tag issues and pull requests as "external" or "internal"
+# based on whether the author is a member of the langchain-ai
+# GitHub organization.
+#
+# Setup Requirements:
+# 1. Create a GitHub App with permissions:
+#    - Repository: Issues (write), Pull requests (write)
+#    - Organization: Members (read)
+# 2. Install the app on your organization and this repository
+# 3. Add these repository secrets:
+#    - ORG_MEMBERSHIP_APP_ID: Your app's ID
+#    - ORG_MEMBERSHIP_APP_PRIVATE_KEY: Your app's private key
+#
+# The GitHub App token is required to check private organization membership.
+# Without it, the workflow will fail.
+
+name: Tag External Contributions
+
+on:
+  issues:
+    types: [opened]
+  pull_request_target:
+    types: [opened]
+
+jobs:
+  tag-external:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.ORG_MEMBERSHIP_APP_ID }}
+          private-key: ${{ secrets.ORG_MEMBERSHIP_APP_PRIVATE_KEY }}
+
+      - name: Check if contributor is external
+        id: check-membership
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const author = context.payload.sender.login;
+
+            try {
+              // Check if the author is a member of the langchain-ai organization
+              // This requires org:read permissions to see private memberships
+              const membership = await github.rest.orgs.getMembershipForUser({
+                org: 'langchain-ai',
+                username: author
+              });
+
+              // Check if membership is active (not just pending invitation)
+              if (membership.data.state === 'active') {
+                console.log(`User ${author} is an active member of langchain-ai organization`);
+                core.setOutput('is-external', 'false');
+              } else {
+                console.log(`User ${author} has pending membership in langchain-ai organization`);
+                core.setOutput('is-external', 'true');
+              }
+            } catch (error) {
+              if (error.status === 404) {
+                console.log(`User ${author} is not a member of langchain-ai organization`);
+                core.setOutput('is-external', 'true');
+              } else {
+                console.error('Error checking membership:', error);
+                console.log('Status:', error.status);
+                console.log('Message:', error.message);
+                // If we can't determine membership due to API error, assume external for safety
+                core.setOutput('is-external', 'true');
+              }
+            }
+
+      - name: Add external label to issue
+        if: steps.check-membership.outputs.is-external == 'true' && github.event_name == 'issues'
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.issue.number;
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number,
+              labels: ['external']
+            });
+
+            console.log(`Added 'external' label to issue #${issue_number}`);
+
+      - name: Add external label to pull request
+        if: steps.check-membership.outputs.is-external == 'true' && github.event_name == 'pull_request_target'
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const pull_number = context.payload.pull_request.number;
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: pull_number,
+              labels: ['external']
+            });
+
+            console.log(`Added 'external' label to pull request #${pull_number}`);
+
+      - name: Add internal label to issue
+        if: steps.check-membership.outputs.is-external == 'false' && github.event_name == 'issues'
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.issue.number;
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number,
+              labels: ['internal']
+            });
+
+            console.log(`Added 'internal' label to issue #${issue_number}`);
+
+      - name: Add internal label to pull request
+        if: steps.check-membership.outputs.is-external == 'false' && github.event_name == 'pull_request_target'
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const pull_number = context.payload.pull_request.number;
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: pull_number,
+              labels: ['internal']
+            });
+
+            console.log(`Added 'internal' label to pull request #${pull_number}`);

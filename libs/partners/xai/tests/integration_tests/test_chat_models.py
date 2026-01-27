@@ -95,21 +95,21 @@ def test_reasoning(output_version: Literal["", "v1"]) -> None:
 
 
 def test_web_search() -> None:
-    llm = ChatXAI(
-        model=MODEL_NAME,
-        search_parameters={"mode": "on", "max_search_results": 3},
-    )
+    llm = ChatXAI(model=MODEL_NAME).bind_tools([{"type": "web_search"}])
 
     # Test invoke
-    response = llm.invoke("Provide me a digest of world news in the last 24 hours.")
+    response = llm.invoke("Look up the current time in Boston, MA.")
     assert response.content
-    assert response.additional_kwargs["citations"]
-    assert len(response.additional_kwargs["citations"]) <= 3
+    content_types = {block["type"] for block in response.content_blocks}
+    assert content_types == {"server_tool_call", "server_tool_result", "text"}
+    assert response.content_blocks[0]["name"] == "web_search"  # type: ignore[typeddict-item]
 
     # Test streaming
-    full = None
-    for chunk in llm.stream("Provide me a digest of world news in the last 24 hours."):
+    full: AIMessageChunk | None = None
+    for chunk in llm.stream("Look up the current time in Boston, MA."):
+        assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
-    assert full.additional_kwargs["citations"]
-    assert len(full.additional_kwargs["citations"]) <= 3
+    content_types = {block["type"] for block in full.content_blocks}
+    assert content_types == {"server_tool_call", "server_tool_result", "text"}
+    assert full.content_blocks[0]["name"] == "web_search"  # type: ignore[typeddict-item]

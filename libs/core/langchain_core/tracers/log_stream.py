@@ -42,30 +42,42 @@ class LogEntry(TypedDict):
 
     id: str
     """ID of the sub-run."""
+
     name: str
     """Name of the object being run."""
+
     type: str
     """Type of the object being run, eg. prompt, chain, llm, etc."""
+
     tags: list[str]
     """List of tags for the run."""
+
     metadata: dict[str, Any]
     """Key-value pairs of metadata for the run."""
+
     start_time: str
     """ISO-8601 timestamp of when the run started."""
 
     streamed_output_str: list[str]
     """List of LLM tokens streamed by this run, if applicable."""
+
     streamed_output: list[Any]
     """List of output chunks streamed by this run, if available."""
+
     inputs: NotRequired[Any | None]
-    """Inputs to this run. Not available currently via astream_log."""
+    """Inputs to this run. Not available currently via `astream_log`."""
+
     final_output: Any | None
     """Final output of this run.
 
-    Only available after the run has finished successfully."""
+    Only available after the run has finished successfully.
+    """
+
     end_time: str | None
     """ISO-8601 timestamp of when the run ended.
-    Only available after the run has finished."""
+
+    Only available after the run has finished.
+    """
 
 
 class RunState(TypedDict):
@@ -73,34 +85,45 @@ class RunState(TypedDict):
 
     id: str
     """ID of the run."""
+
     streamed_output: list[Any]
-    """List of output chunks streamed by Runnable.stream()"""
+    """List of output chunks streamed by `Runnable.stream()`"""
+
     final_output: Any | None
     """Final output of the run, usually the result of aggregating (`+`) streamed_output.
-    Updated throughout the run when supported by the Runnable."""
+
+    Updated throughout the run when supported by the `Runnable`.
+    """
 
     name: str
     """Name of the object being run."""
+
     type: str
-    """Type of the object being run, eg. prompt, chain, llm, etc."""
+    """Type of the object being run, e.g. prompt, chain, llm, etc."""
 
     # Do we want tags/metadata on the root run? Client kinda knows it in most situations
     # tags: list[str]
 
     logs: dict[str, LogEntry]
-    """Map of run names to sub-runs. If filters were supplied, this list will
-    contain only the runs that matched the filters."""
+    """Map of run names to sub-runs.
+
+    If filters were supplied, this list will contain only the runs that matched the
+    filters.
+    """
 
 
 class RunLogPatch:
     """Patch to the run log."""
 
     ops: list[dict[str, Any]]
-    """List of JSONPatch operations, which describe how to create the run state
-    from an empty dict. This is the minimal representation of the log, designed to
-    be serialized as JSON and sent over the wire to reconstruct the log on the other
-    side. Reconstruction of the state can be done with any JSONPatch-compliant library,
-    see https://jsonpatch.com for more information."""
+    """List of `JSONPatch` operations, which describe how to create the run state
+    from an empty dict.
+
+    This is the minimal representation of the log, designed to be serialized as JSON and
+    sent over the wire to reconstruct the log on the other side. Reconstruction of the
+    state can be done with any JSONPatch-compliant library, see https://jsonpatch.com
+    for more information.
+    """
 
     def __init__(self, *ops: dict[str, Any]) -> None:
         """Create a RunLogPatch.
@@ -159,7 +182,7 @@ class RunLog(RunLogPatch):
         self.state = state
 
     def __add__(self, other: RunLogPatch | Any) -> RunLog:
-        """Combine two `RunLog`s.
+        """Combine two `RunLog` objects.
 
         Args:
             other: The other `RunLog` or `RunLogPatch` to combine with.
@@ -226,24 +249,23 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
 
         Args:
             auto_close: Whether to close the stream when the root run finishes.
-            include_names: Only include runs from Runnables with matching names.
-            include_types: Only include runs from Runnables with matching types.
-            include_tags: Only include runs from Runnables with matching tags.
-            exclude_names: Exclude runs from Runnables with matching names.
-            exclude_types: Exclude runs from Runnables with matching types.
-            exclude_tags: Exclude runs from Runnables with matching tags.
-            _schema_format: Primarily changes how the inputs and outputs are
-                handled.
+            include_names: Only include runs from `Runnable` objects with matching
+                names.
+            include_types: Only include runs from `Runnable` objects with matching
+                types.
+            include_tags: Only include runs from `Runnable` objects with matching tags.
+            exclude_names: Exclude runs from `Runnable` objects with matching names.
+            exclude_types: Exclude runs from `Runnable` objects with matching types.
+            exclude_tags: Exclude runs from `Runnable` objects with matching tags.
+            _schema_format: Primarily changes how the inputs and outputs are handled.
 
                 **For internal use only. This API will change.**
 
-                - 'original' is the format used by all current tracers.
-                  This format is slightly inconsistent with respect to inputs
-                  and outputs.
-                - 'streaming_events' is used for supporting streaming events,
-                  for internal usage. It will likely change in the future, or
-                  be deprecated entirely in favor of a dedicated async tracer
-                  for streaming events.
+                - `'original'` is the format used by all current tracers. This format is
+                    slightly inconsistent with respect to inputs and outputs.
+                - 'streaming_events' is used for supporting streaming events, for
+                    internal usage. It will likely change in the future, or deprecated
+                    entirely in favor of a dedicated async tracer for streaming events.
 
         Raises:
             ValueError: If an invalid schema format is provided (internal use only).
@@ -285,13 +307,13 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
         return self.receive_stream.__aiter__()
 
     def send(self, *ops: dict[str, Any]) -> bool:
-        """Send a patch to the stream, return False if the stream is closed.
+        """Send a patch to the stream, return `False` if the stream is closed.
 
         Args:
             *ops: The operations to send to the stream.
 
         Returns:
-            `True` if the patch was sent successfully, False if the stream is closed.
+            `True` if the patch was sent successfully, `False` if the stream is closed.
         """
         # We will likely want to wrap this in try / except at some point
         # to handle exceptions that might arise at run time.
@@ -365,13 +387,13 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
             yield chunk
 
     def include_run(self, run: Run) -> bool:
-        """Check if a Run should be included in the log.
+        """Check if a `Run` should be included in the log.
 
         Args:
-            run: The Run to check.
+            run: The `Run` to check.
 
         Returns:
-            `True` if the run should be included, `False` otherwise.
+            `True` if the `Run` should be included, `False` otherwise.
         """
         if run.id == self.root_id:
             return False
@@ -466,7 +488,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
         )
 
     def _on_run_update(self, run: Run) -> None:
-        """Finish a run."""
+        """Finish a `Run`."""
         try:
             index = self._key_map_by_run_id.get(run.id)
 
@@ -542,18 +564,17 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
 def _get_standardized_inputs(
     run: Run, schema_format: Literal["original", "streaming_events"]
 ) -> Any:
-    """Extract standardized inputs from a run.
+    """Extract standardized inputs from a `Run`.
 
     Standardizes the inputs based on the type of the runnable used.
 
     Args:
-        run: Run object
+        run: `Run` object
         schema_format: The schema format to use.
 
     Returns:
-        Valid inputs are only dict. By conventions, inputs always represented
-        invocation using named arguments.
-        None means that the input is not yet known!
+        Valid inputs are only dict. By conventions, inputs always represented invocation
+            using named arguments. `None` means that the input is not yet known!
     """
     if schema_format == "original":
         msg = (
@@ -593,7 +614,7 @@ def _get_standardized_outputs(
         schema_format: The schema format to use.
 
     Returns:
-        An output if returned, otherwise a None
+        An output if returned, otherwise `None`.
     """
     outputs = load(run.outputs, allowed_objects="all")
     if schema_format == "original":
@@ -652,18 +673,18 @@ async def _astream_log_implementation(
     """Implementation of astream_log for a given runnable.
 
     The implementation has been factored out (at least temporarily) as both
-    astream_log and astream_events relies on it.
+    `astream_log` and `astream_events` relies on it.
 
     Args:
         runnable: The runnable to run in streaming mode.
         value: The input to the runnable.
         config: The config to pass to the runnable.
         stream: The stream to send the run logs to.
-        diff: Whether to yield run log patches (True) or full run logs (False).
-        with_streamed_output_list: Whether to include a list of all streamed
-            outputs in each patch. If `False`, only the final output will be included
-            in the patches.
-        **kwargs: Additional keyword arguments to pass to the runnable.
+        diff: Whether to yield run log patches (`True`) or full run logs (`False`).
+        with_streamed_output_list: Whether to include a list of all streamed outputs in
+            each patch. If `False`, only the final output will be included in the
+            patches.
+        **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
     Raises:
         ValueError: If the callbacks in the config are of an unexpected type.

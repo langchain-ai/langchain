@@ -1,3 +1,5 @@
+"""Microsoft Prompty integration for LangChain."""
+
 from langchain_prompty.core import InvokerFactory
 from langchain_prompty.langchain import create_chat_prompt
 from langchain_prompty.parsers import PromptyChatParser

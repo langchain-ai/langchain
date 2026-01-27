@@ -56,13 +56,13 @@ def _validate_data_dir(data_dir: Path) -> Path:
 def _load_augmentations(
     data_dir: Path,
 ) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
-    """Load augmentations from profile_augmentations.toml.
+    """Load augmentations from `profile_augmentations.toml`.
 
     Args:
-        data_dir: Directory containing profile_augmentations.toml.
+        data_dir: Directory containing `profile_augmentations.toml`.
 
     Returns:
-        Tuple of (provider_augmentations, model_augmentations).
+        Tuple of `(provider_augmentations, model_augmentations)`.
     """
     aug_file = data_dir / "profile_augmentations.toml"
     if not aug_file.exists():
@@ -213,9 +213,9 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     """Download and merge model profile data for a specific provider.
 
     Args:
-        provider: Provider ID from models.dev (e.g., 'anthropic', 'openai').
-        data_dir: Directory containing profile_augmentations.toml and where profiles.py
-            will be written.
+        provider: Provider ID from models.dev (e.g., `'anthropic'`, `'openai'`).
+        data_dir: Directory containing `profile_augmentations.toml` and where
+            `profiles.py` will be written.
     """
     # Validate and canonicalize data directory path
     data_dir = _validate_data_dir(data_dir)
