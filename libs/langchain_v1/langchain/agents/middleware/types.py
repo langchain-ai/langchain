@@ -353,6 +353,17 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     tools: Sequence[BaseTool]
     """Additional tools registered by the middleware."""
 
+    depends_on: Sequence[type[AgentMiddleware] | AgentMiddleware] = ()
+    """Middleware classes or instances that must be executed before this middleware.
+
+    Can be either:
+    - Middleware classes (will be auto-instantiated with default parameters)
+    - Middleware instances (will be used as-is)
+
+    Dependencies will be automatically added to the middleware list if not already
+    present, and will be ordered to execute before this middleware.
+    """
+
     @property
     def name(self) -> str:
         """The name of the middleware instance.
@@ -879,6 +890,7 @@ def before_model(
     tools: list[BaseTool] | None = None,
     can_jump_to: list[JumpTo] | None = None,
     name: str | None = None,
+    depends_on: Sequence[type[AgentMiddleware] | AgentMiddleware] | None = None,
 ) -> Callable[
     [_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]
 ]: ...
@@ -891,6 +903,7 @@ def before_model(
     tools: list[BaseTool] | None = None,
     can_jump_to: list[JumpTo] | None = None,
     name: str | None = None,
+    depends_on: Sequence[type[AgentMiddleware] | AgentMiddleware] | None = None,
 ) -> (
     Callable[[_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
@@ -912,6 +925,11 @@ def before_model(
         name: Optional name for the generated middleware class.
 
             If not provided, uses the decorated function's name.
+        depends_on: Optional list of middleware classes or instances that must be
+            executed before this middleware.
+
+            Can be either middleware classes (auto-instantiated) or instances (used as-is).
+            Dependencies will be automatically added if not present in the middleware list.
 
     Returns:
         Either an `AgentMiddleware` instance (if func is provided directly) or a
@@ -996,15 +1014,17 @@ def before_model(
                 "str", getattr(func, "__name__", "BeforeModelMiddleware")
             )
 
-            return type(
+            middleware_class = type(
                 middleware_name,
                 (AgentMiddleware,),
                 {
                     "state_schema": state_schema or AgentState,
                     "tools": tools or [],
                     "abefore_model": async_wrapped,
+                    "depends_on": depends_on or (),
                 },
-            )()
+            )
+            return middleware_class()
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
@@ -1020,15 +1040,17 @@ def before_model(
         # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "BeforeModelMiddleware"))
 
-        return type(
+        middleware_class = type(
             middleware_name,
             (AgentMiddleware,),
             {
                 "state_schema": state_schema or AgentState,
                 "tools": tools or [],
                 "before_model": wrapped,
+                "depends_on": depends_on or (),
             },
-        )()
+        )
+        return middleware_class()
 
     if func is not None:
         return decorator(func)
@@ -1049,6 +1071,7 @@ def after_model(
     tools: list[BaseTool] | None = None,
     can_jump_to: list[JumpTo] | None = None,
     name: str | None = None,
+    depends_on: Sequence[type[AgentMiddleware] | AgentMiddleware] | None = None,
 ) -> Callable[
     [_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]
 ]: ...
@@ -1061,6 +1084,7 @@ def after_model(
     tools: list[BaseTool] | None = None,
     can_jump_to: list[JumpTo] | None = None,
     name: str | None = None,
+    depends_on: Sequence[type[AgentMiddleware] | AgentMiddleware] | None = None,
 ) -> (
     Callable[[_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
@@ -1082,6 +1106,11 @@ def after_model(
         name: Optional name for the generated middleware class.
 
             If not provided, uses the decorated function's name.
+        depends_on: Optional list of middleware classes or instances that must be
+            executed before this middleware.
+
+            Can be either middleware classes (auto-instantiated) or instances (used as-is).
+            Dependencies will be automatically added if not present in the middleware list.
 
     Returns:
         Either an `AgentMiddleware` instance (if func is provided) or a decorator
@@ -1154,15 +1183,17 @@ def after_model(
 
             middleware_name = name or cast("str", getattr(func, "__name__", "AfterModelMiddleware"))
 
-            return type(
+            middleware_class = type(
                 middleware_name,
                 (AgentMiddleware,),
                 {
                     "state_schema": state_schema or AgentState,
                     "tools": tools or [],
                     "aafter_model": async_wrapped,
+                    "depends_on": depends_on or (),
                 },
-            )()
+            )
+            return middleware_class()
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
@@ -1178,15 +1209,17 @@ def after_model(
         # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "AfterModelMiddleware"))
 
-        return type(
+        middleware_class = type(
             middleware_name,
             (AgentMiddleware,),
             {
                 "state_schema": state_schema or AgentState,
                 "tools": tools or [],
                 "after_model": wrapped,
+                "depends_on": depends_on or (),
             },
-        )()
+        )
+        return middleware_class()
 
     if func is not None:
         return decorator(func)
@@ -1207,6 +1240,7 @@ def before_agent(
     tools: list[BaseTool] | None = None,
     can_jump_to: list[JumpTo] | None = None,
     name: str | None = None,
+    depends_on: Sequence[type[AgentMiddleware] | AgentMiddleware] | None = None,
 ) -> Callable[
     [_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]
 ]: ...
@@ -1219,6 +1253,7 @@ def before_agent(
     tools: list[BaseTool] | None = None,
     can_jump_to: list[JumpTo] | None = None,
     name: str | None = None,
+    depends_on: Sequence[type[AgentMiddleware] | AgentMiddleware] | None = None,
 ) -> (
     Callable[[_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
@@ -1240,6 +1275,11 @@ def before_agent(
         name: Optional name for the generated middleware class.
 
             If not provided, uses the decorated function's name.
+        depends_on: Optional list of middleware classes or instances that must be
+            executed before this middleware.
+
+            Can be either middleware classes (auto-instantiated) or instances (used as-is).
+            Dependencies will be automatically added if not present in the middleware list.
 
     Returns:
         Either an `AgentMiddleware` instance (if func is provided directly) or a
@@ -1347,15 +1387,17 @@ def before_agent(
                 "str", getattr(func, "__name__", "BeforeAgentMiddleware")
             )
 
-            return type(
+            middleware_class = type(
                 middleware_name,
                 (AgentMiddleware,),
                 {
                     "state_schema": state_schema or AgentState,
                     "tools": tools or [],
                     "abefore_agent": async_wrapped,
+                    "depends_on": depends_on or (),
                 },
-            )()
+            )
+            return middleware_class()
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
@@ -1371,15 +1413,17 @@ def before_agent(
         # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "BeforeAgentMiddleware"))
 
-        return type(
+        middleware_class = type(
             middleware_name,
             (AgentMiddleware,),
             {
                 "state_schema": state_schema or AgentState,
                 "tools": tools or [],
                 "before_agent": wrapped,
+                "depends_on": depends_on or (),
             },
-        )()
+        )
+        return middleware_class()
 
     if func is not None:
         return decorator(func)
@@ -1400,6 +1444,7 @@ def after_agent(
     tools: list[BaseTool] | None = None,
     can_jump_to: list[JumpTo] | None = None,
     name: str | None = None,
+    depends_on: Sequence[type[AgentMiddleware] | AgentMiddleware] | None = None,
 ) -> Callable[
     [_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]
 ]: ...
@@ -1412,6 +1457,7 @@ def after_agent(
     tools: list[BaseTool] | None = None,
     can_jump_to: list[JumpTo] | None = None,
     name: str | None = None,
+    depends_on: Sequence[type[AgentMiddleware] | AgentMiddleware] | None = None,
 ) -> (
     Callable[[_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
@@ -1435,6 +1481,11 @@ def after_agent(
         name: Optional name for the generated middleware class.
 
             If not provided, uses the decorated function's name.
+        depends_on: Optional list of middleware classes or instances that must be
+            executed before this middleware.
+
+            Can be either middleware classes (auto-instantiated) or instances (used as-is).
+            Dependencies will be automatically added if not present in the middleware list.
 
     Returns:
         Either an `AgentMiddleware` instance (if func is provided) or a decorator
@@ -1506,15 +1557,17 @@ def after_agent(
 
             middleware_name = name or cast("str", getattr(func, "__name__", "AfterAgentMiddleware"))
 
-            return type(
+            middleware_class = type(
                 middleware_name,
                 (AgentMiddleware,),
                 {
                     "state_schema": state_schema or AgentState,
                     "tools": tools or [],
                     "aafter_agent": async_wrapped,
+                    "depends_on": depends_on or (),
                 },
-            )()
+            )
+            return middleware_class()
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
@@ -1530,15 +1583,17 @@ def after_agent(
         # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "AfterAgentMiddleware"))
 
-        return type(
+        middleware_class = type(
             middleware_name,
             (AgentMiddleware,),
             {
                 "state_schema": state_schema or AgentState,
                 "tools": tools or [],
                 "after_agent": wrapped,
+                "depends_on": depends_on or (),
             },
-        )()
+        )
+        return middleware_class()
 
     if func is not None:
         return decorator(func)
@@ -1704,6 +1759,7 @@ def wrap_model_call(
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     name: str | None = None,
+    depends_on: Sequence[type[AgentMiddleware] | AgentMiddleware] | None = None,
 ) -> Callable[
     [_CallableReturningModelResponse[StateT, ContextT]],
     AgentMiddleware[StateT, ContextT],
@@ -1716,6 +1772,7 @@ def wrap_model_call(
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     name: str | None = None,
+    depends_on: Sequence[type[AgentMiddleware] | AgentMiddleware] | None = None,
 ) -> (
     Callable[
         [_CallableReturningModelResponse[StateT, ContextT]],
@@ -1740,6 +1797,11 @@ def wrap_model_call(
         name: Middleware class name.
 
             Defaults to function name.
+        depends_on: Optional list of middleware classes or instances that must be
+            executed before this middleware.
+
+            Can be either middleware classes (auto-instantiated) or instances (used as-is).
+            Dependencies will be automatically added if not present in the middleware list.
 
     Returns:
         `AgentMiddleware` instance if func provided, otherwise a decorator.
@@ -1816,15 +1878,17 @@ def wrap_model_call(
                 "str", getattr(func, "__name__", "WrapModelCallMiddleware")
             )
 
-            return type(
+            middleware_class = type(
                 middleware_name,
                 (AgentMiddleware,),
                 {
                     "state_schema": state_schema or AgentState,
                     "tools": tools or [],
                     "awrap_model_call": async_wrapped,
+                    "depends_on": depends_on or (),
                 },
-            )()
+            )
+            return middleware_class()
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
@@ -1835,15 +1899,17 @@ def wrap_model_call(
 
         middleware_name = name or cast("str", getattr(func, "__name__", "WrapModelCallMiddleware"))
 
-        return type(
+        middleware_class = type(
             middleware_name,
             (AgentMiddleware,),
             {
                 "state_schema": state_schema or AgentState,
                 "tools": tools or [],
                 "wrap_model_call": wrapped,
+                "depends_on": depends_on or (),
             },
-        )()
+        )
+        return middleware_class()
 
     if func is not None:
         return decorator(func)
@@ -1862,6 +1928,7 @@ def wrap_tool_call(
     *,
     tools: list[BaseTool] | None = None,
     name: str | None = None,
+    depends_on: Sequence[type[AgentMiddleware] | AgentMiddleware] | None = None,
 ) -> Callable[
     [_CallableReturningToolResponse],
     AgentMiddleware,
@@ -1873,6 +1940,7 @@ def wrap_tool_call(
     *,
     tools: list[BaseTool] | None = None,
     name: str | None = None,
+    depends_on: Sequence[type[AgentMiddleware] | AgentMiddleware] | None = None,
 ) -> (
     Callable[
         [_CallableReturningToolResponse],
@@ -1897,6 +1965,11 @@ def wrap_tool_call(
         name: Middleware class name.
 
             Defaults to function name.
+        depends_on: Optional list of middleware classes or instances that must be
+            executed before this middleware.
+
+            Can be either middleware classes (auto-instantiated) or instances (used as-is).
+            Dependencies will be automatically added if not present in the middleware list.
 
     Returns:
         `AgentMiddleware` instance if func provided, otherwise a decorator.
@@ -1976,15 +2049,17 @@ def wrap_tool_call(
                 "str", getattr(func, "__name__", "WrapToolCallMiddleware")
             )
 
-            return type(
+            middleware_class = type(
                 middleware_name,
                 (AgentMiddleware,),
                 {
                     "state_schema": AgentState,
                     "tools": tools or [],
                     "awrap_tool_call": async_wrapped,
+                    "depends_on": depends_on or (),
                 },
-            )()
+            )
+            return middleware_class()
 
         def wrapped(
             _self: AgentMiddleware,
@@ -1995,15 +2070,17 @@ def wrap_tool_call(
 
         middleware_name = name or cast("str", getattr(func, "__name__", "WrapToolCallMiddleware"))
 
-        return type(
+        middleware_class = type(
             middleware_name,
             (AgentMiddleware,),
             {
                 "state_schema": AgentState,
                 "tools": tools or [],
                 "wrap_tool_call": wrapped,
+                "depends_on": depends_on or (),
             },
-        )()
+        )
+        return middleware_class()
 
     if func is not None:
         return decorator(func)
