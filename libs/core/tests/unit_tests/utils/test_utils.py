@@ -489,3 +489,41 @@ def test_merge_obj_tuple_raises() -> None:
     """Test `merge_obj` raises `ValueError` for tuples."""
     with pytest.raises(ValueError, match="Unable to merge"):
         merge_obj((1, 2), (3, 4))
+
+
+def test_merge_lists_does_not_merge_same_index_with_different_ids() -> None:
+    """Elements sharing the same index but different IDs are not merged."""
+    first = [
+        {
+            "index": 1,
+            "id": "alpha",
+            "name": "alpha",
+            "type": "non_standard",
+        }
+    ]
+
+    second = [
+        {
+            "index": 1,
+            "id": "beta",
+            "name": "beta",
+            "type": "non_standard",
+        }
+    ]
+
+    result = merge_lists(first, second)
+
+    assert result == [
+        {
+            "index": 1,
+            "id": "alpha",
+            "name": "alpha",
+            "type": "non_standard",
+        },
+        {
+            "index": 1,
+            "id": "beta",
+            "name": "beta",
+            "type": "non_standard",
+        },
+    ]
