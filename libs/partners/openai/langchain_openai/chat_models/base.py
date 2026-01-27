@@ -134,7 +134,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# This SSL context is equivelent to the default `verify=True`.
+# This SSL context is equivalent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
@@ -1476,7 +1476,7 @@ class BaseChatOpenAI(BaseChatModel):
                 )
             generation_info = generation_info or {}
             if message.tool_calls:
-                 generation_info["finish_reason"] = "tool_calls"
+                generation_info["finish_reason"] = "tool_calls"
             else:
                 generation_info["finish_reason"] = (
                     res.get("finish_reason")
