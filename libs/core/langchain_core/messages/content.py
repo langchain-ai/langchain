@@ -480,8 +480,9 @@ class ReasoningContentBlock(TypedDict):
     reasoning: NotRequired[str]
     """Reasoning text.
 
-    Either the thought summary or the raw reasoning text itself. This is often parsed
-    from `<think>` tags in the model's response.
+    Either the thought summary or the raw reasoning text itself.
+
+    Often parsed from `<think>` tags in the model's response.
     """
 
     index: NotRequired[int | str]

@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
 
 from langchain_core.messages import ToolMessage
+from langchain_core.runnables import run_in_executor
 from langchain_core.tools.base import ToolException
 from langgraph.channels.untracked_value import UntrackedValue
 from pydantic import BaseModel, model_validator
@@ -641,7 +642,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         Returns:
             Shell session resources to be stored in the agent state.
         """
-        return self.before_agent(state, runtime)
+        return await run_in_executor(None, self.before_agent, state, runtime)
 
     @override
     def after_agent(self, state: ShellToolState, runtime: Runtime) -> None:
