@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 import textwrap
 import warnings
-from contextlib import nullcontext
+from contextlib import AbstractContextManager, nullcontext
 from functools import lru_cache, wraps
 from types import GenericAlias
 from typing import (
@@ -13,6 +13,7 @@ from typing import (
     Any,
     TypeVar,
     cast,
+    get_type_hints,
     overload,
 )
 
@@ -254,17 +255,12 @@ def _create_subset_model_v2(
         ),
     )
 
-    # TODO(0.3): Determine if there is a more "pydantic" way to preserve annotations.
-    # This is done to preserve __annotations__ when working with pydantic 2.x
-    # and using the Annotated type with TypedDict.
-    # Comment out the following line, to trigger the relevant test case.
-    selected_annotations = [
-        (name, annotation)
-        for name, annotation in model.__annotations__.items()
-        if name in field_names
-    ]
+    type_hints = get_type_hints(model, include_extras=True)
+    selected_annotations = {
+        name: type_hints[name] for name in field_names if name in type_hints
+    }
 
-    rtn.__annotations__ = dict(selected_annotations)
+    rtn.__annotations__ = selected_annotations
     rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
     return rtn
 
@@ -570,7 +566,11 @@ def create_model_v2(
         if name.startswith("model"):
             capture_warnings = True
 
-    with warnings.catch_warnings() if capture_warnings else nullcontext():
+    ctx = cast(
+        "AbstractContextManager",
+        warnings.catch_warnings() if capture_warnings else nullcontext(),
+    )
+    with ctx:
         if capture_warnings:
             warnings.filterwarnings(action="ignore")
         try:
