@@ -148,7 +148,7 @@ class _StreamingParser:
             self.pull_parser.close()
 
 
-class XMLOutputParser(BaseTransformOutputParser):
+class XMLOutputParser(BaseTransformOutputParser[dict[str, Any]]):
     """Parse an output using xml format.
 
     Returns a dictionary of tags.
@@ -170,7 +170,7 @@ class XMLOutputParser(BaseTransformOutputParser):
     3. A badly-formatted XML instance (unexpected 'tag' element):
         `'<foo>\n   <tag>\n   </tag>\n</foo>'`
     """
-    encoding_matcher: re.Pattern = re.compile(
+    encoding_matcher: re.Pattern[str] = re.compile(
         r"<([^>]*encoding[^>]*)>\n(.*)", re.MULTILINE | re.DOTALL
     )
 
@@ -272,13 +272,13 @@ class XMLOutputParser(BaseTransformOutputParser):
             # If root text contains any non-whitespace character it
             # returns {root.tag: root.text}
             return {root.tag: root.text}
-        result: dict = {root.tag: []}
+        root_tag: list[Any] = []
         for child in root:
             if len(child) == 0:
-                result[root.tag].append({child.tag: child.text})
+                root_tag.append({child.tag: child.text})
             else:
-                result[root.tag].append(self._root_to_dict(child))
-        return result
+                root_tag.append(self._root_to_dict(child))
+        return {root.tag: root_tag}
 
     @property
     def _type(self) -> str:

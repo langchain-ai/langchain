@@ -79,7 +79,7 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
     return merged
 
 
-def merge_lists(left: list | None, *others: list | None) -> list | None:
+def merge_lists(left: list[Any] | None, *others: list[Any] | None) -> list[Any] | None:
     """Add many lists, handling `None`.
 
     Args:

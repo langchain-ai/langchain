@@ -82,14 +82,14 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     status: Literal["success", "error"] = "success"
     """Status of the tool invocation."""
 
-    additional_kwargs: dict = Field(default_factory=dict, repr=False)
+    additional_kwargs: dict[str, Any] = Field(default_factory=dict, repr=False)
     """Currently inherited from `BaseMessage`, but not used."""
-    response_metadata: dict = Field(default_factory=dict, repr=False)
+    response_metadata: dict[str, Any] = Field(default_factory=dict, repr=False)
     """Currently inherited from `BaseMessage`, but not used."""
 
     @model_validator(mode="before")
     @classmethod
-    def coerce_args(cls, values: dict) -> dict:
+    def coerce_args(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Coerce the model arguments to the correct types.
 
         Args:
@@ -135,21 +135,21 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     @overload
     def __init__(
         self,
-        content: str | list[str | dict],
+        content: str | list[str | dict[str, Any]],
         **kwargs: Any,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        content: str | list[str | dict] | None = None,
+        content: str | list[str | dict[str, Any]] | None = None,
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None: ...
 
     def __init__(
         self,
-        content: str | list[str | dict] | None = None,
+        content: str | list[str | dict[str, Any]] | None = None,
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
@@ -164,7 +164,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
         """
         if content_blocks is not None:
             super().__init__(
-                content=cast("str | list[str | dict]", content_blocks),
+                content=cast("list[str | dict[str, Any]]", content_blocks),
                 **kwargs,
             )
         else:
@@ -347,7 +347,7 @@ def invalid_tool_call(
 
 
 def default_tool_parser(
-    raw_tool_calls: list[dict],
+    raw_tool_calls: list[dict[str, Any]],
 ) -> tuple[list[ToolCall], list[InvalidToolCall]]:
     """Best-effort parsing of tools.
 
@@ -383,7 +383,9 @@ def default_tool_parser(
     return tool_calls, invalid_tool_calls
 
 
-def default_tool_chunk_parser(raw_tool_calls: list[dict]) -> list[ToolCallChunk]:
+def default_tool_chunk_parser(
+    raw_tool_calls: list[dict[str, Any]],
+) -> list[ToolCallChunk]:
     """Best-effort parsing of tool chunks.
 
     Args:

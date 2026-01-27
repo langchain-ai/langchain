@@ -229,7 +229,7 @@ class RunLog(RunLogPatch):
 T = TypeVar("T")
 
 
-class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
+class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler[Any]):
     """Tracer that streams run logs to a stream."""
 
     def __init__(
