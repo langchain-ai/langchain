@@ -349,6 +349,7 @@ class SelfQueryRetriever(BaseRetriever):
         chain_kwargs: dict | None = None,
         enable_limit: bool = False,  # noqa: FBT001,FBT002
         use_original_query: bool = False,  # noqa: FBT001,FBT002
+        allowed_values: dict[str, list[str]] | None = None,
         **kwargs: Any,
     ) -> "SelfQueryRetriever":
         """Create a SelfQueryRetriever from an LLM and a vector store.
@@ -365,6 +366,11 @@ class SelfQueryRetriever(BaseRetriever):
             enable_limit: Whether to enable the limit operator.
             use_original_query: Whether to use the original query instead of the revised
                 query from the LLM.
+            allowed_values: Optional mapping of metadata field names to their allowed
+                values. For example: {"genre": ["action", "comedy", "drama"]}. When
+                provided, these values are included in the prompt to guide the LLM in
+                generating valid filter values that match actual data in the vector
+                store.
             **kwargs: Additional keyword arguments for the SelfQueryRetriever.
 
         Returns:
@@ -393,6 +399,7 @@ class SelfQueryRetriever(BaseRetriever):
             document_contents,
             metadata_field_info,
             enable_limit=enable_limit,
+            allowed_values=allowed_values,
             **chain_kwargs,
         )
         query_constructor = query_constructor.with_config(

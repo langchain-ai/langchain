@@ -167,11 +167,28 @@ def fix_filter_directive(
     return filter
 
 
-def _format_attribute_info(info: Sequence[AttributeInfo | dict]) -> str:
+def _format_attribute_info(
+    info: Sequence[AttributeInfo | dict],
+    allowed_values: dict[str, list[str]] | None = None,
+) -> str:
+    """Format attribute info into a JSON string for the prompt.
+
+    Args:
+        info: Sequence of AttributeInfo objects or dicts describing attributes.
+        allowed_values: Optional mapping of attribute names to their allowed values.
+            For example: {"genre": ["action", "comedy", "drama"]}
+
+    Returns:
+        JSON string representation of the attribute info.
+    """
+    allowed_values = allowed_values or {}
     info_dicts = {}
     for i in info:
         i_dict = dict(i)
-        info_dicts[i_dict.pop("name")] = i_dict
+        attr_name = i_dict.pop("name")
+        if attr_name in allowed_values:
+            i_dict["allowed_values"] = allowed_values[attr_name]
+        info_dicts[attr_name] = i_dict
     return json.dumps(info_dicts, indent=4).replace("{", "{{").replace("}", "}}")
 
 
@@ -207,6 +224,7 @@ def get_query_constructor_prompt(
     allowed_operators: Sequence[Operator] = tuple(Operator),
     enable_limit: bool = False,
     schema_prompt: BasePromptTemplate | None = None,
+    allowed_values: dict[str, list[str]] | None = None,
     **kwargs: Any,
 ) -> BasePromptTemplate:
     """Create query construction prompt.
@@ -221,6 +239,10 @@ def get_query_constructor_prompt(
         enable_limit: Whether to enable the limit operator.
         schema_prompt: Prompt for describing query schema. Should have string input
             variables allowed_comparators and allowed_operators.
+        allowed_values: Optional mapping of attribute names to their allowed values.
+            For example: {"genre": ["action", "comedy", "drama"]}. When provided,
+            these values are included in the prompt to guide the LLM in generating
+            valid filter values.
         kwargs: Additional named params to pass to FewShotPromptTemplate init.
 
     Returns:
@@ -230,7 +252,7 @@ def get_query_constructor_prompt(
         SCHEMA_WITH_LIMIT_PROMPT if enable_limit else DEFAULT_SCHEMA_PROMPT
     )
     schema_prompt = schema_prompt or default_schema_prompt
-    attribute_str = _format_attribute_info(attribute_info)
+    attribute_str = _format_attribute_info(attribute_info, allowed_values)
     schema = schema_prompt.format(
         allowed_comparators=" | ".join(allowed_comparators),
         allowed_operators=" | ".join(allowed_operators),
@@ -334,6 +356,7 @@ def load_query_constructor_runnable(
     enable_limit: bool = False,
     schema_prompt: BasePromptTemplate | None = None,
     fix_invalid: bool = False,
+    allowed_values: dict[str, list[str]] | None = None,
     **kwargs: Any,
 ) -> Runnable:
     """Load a query constructor runnable chain.
@@ -353,11 +376,34 @@ def load_query_constructor_runnable(
             variables allowed_comparators and allowed_operators.
         fix_invalid: Whether to fix invalid filter directives by ignoring invalid
             operators, comparators and attributes.
+        allowed_values: Optional mapping of attribute names to their allowed values.
+            For example: {"genre": ["action", "comedy", "drama"]}. When provided,
+            these values are included in the prompt to guide the LLM in generating
+            valid filter values.
         kwargs: Additional named params to pass to FewShotPromptTemplate init.
 
     Returns:
         A Runnable that can be used to construct queries.
+
+    Raises:
+        ValueError: If allowed_values contains keys that don't match any attribute
+            names in attribute_info.
     """
+    # Validate allowed_values keys match actual attribute names
+    if allowed_values:
+        attr_names = {
+            ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"]
+            for ainfo in attribute_info
+        }
+        invalid_keys = set(allowed_values.keys()) - attr_names
+        if invalid_keys:
+            msg = (
+                "allowed_values contains keys that don't match any attribute names: "
+                f"{sorted(invalid_keys)}. "
+                f"Valid attribute names are: {sorted(attr_names)}"
+            )
+            raise ValueError(msg)
+
     prompt = get_query_constructor_prompt(
         document_contents,
         attribute_info,
@@ -366,6 +412,7 @@ def load_query_constructor_runnable(
         allowed_operators=allowed_operators,
         enable_limit=enable_limit,
         schema_prompt=schema_prompt,
+        allowed_values=allowed_values,
         **kwargs,
     )
     allowed_attributes = [

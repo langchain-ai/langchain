@@ -146,3 +146,27 @@ async def test__aget_relevant_documents(
     )
     assert len(relevant_documents) == 1
     assert relevant_documents[0].metadata["foo"] == "bar"
+
+
+def test_from_llm_with_allowed_values(
+    fake_llm: FakeLLM,
+    fake_vectorstore: InMemoryVectorstoreWithSearch,
+) -> None:
+    """Test that from_llm accepts allowed_values parameter."""
+    retriever = SelfQueryRetriever.from_llm(
+        llm=fake_llm,
+        vectorstore=fake_vectorstore,
+        document_contents="test",
+        metadata_field_info=[
+            AttributeInfo(
+                name="genre",
+                type="string",
+                description="The movie genre",
+            ),
+        ],
+        structured_query_translator=FakeTranslator(),
+        allowed_values={"genre": ["action", "comedy", "drama"]},
+    )
+    # Verify the retriever was created successfully
+    assert retriever is not None
+    assert isinstance(retriever, SelfQueryRetriever)
