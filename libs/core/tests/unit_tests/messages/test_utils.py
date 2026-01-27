@@ -2727,6 +2727,7 @@ def test_count_tokens_approximately_with_custom_image_penalty() -> None:
     # Should be ~1600 (image) + ~1 (text) + 3 (extra) = ~1604 tokens
     assert 1600 < token_count < 1610
 
+
 def test_count_tokens_approximately_with_image_only_message() -> None:
     """Test token counting for a message that only contains an image."""
     message = HumanMessage(
@@ -2745,11 +2746,10 @@ def test_count_tokens_approximately_with_image_only_message() -> None:
     # so we expect something in the ~90-110 range.
     assert 80 < token_count < 120
 
+
 def test_count_tokens_approximately_with_unknown_block_type() -> None:
     """Test that unknown multimodal block types still contribute to token count."""
-    text_only = count_tokens_approximately(
-        [HumanMessage(content="hello")]
-    )
+    text_only = count_tokens_approximately([HumanMessage(content="hello")])
 
     message_with_unknown_block = HumanMessage(
         content=[
@@ -2764,8 +2764,9 @@ def test_count_tokens_approximately_with_unknown_block_type() -> None:
     # than the text-only version.
     assert mixed > text_only
 
+
 def test_count_tokens_approximately_ai_tool_calls_skipped_for_list_content() -> None:
-    """Test that tool_calls are not double-counted for list (Anthropic-style) content."""
+    """Test that tool_calls aren't double-counted for list (Anthropic-style) content."""
     tool_calls = [
         {
             "id": "call_1",
@@ -2792,6 +2793,7 @@ def test_count_tokens_approximately_ai_tool_calls_skipped_for_list_content() -> 
     # The message where tool_calls are added on top of string content should
     # be more expensive than the list-based variant.
     assert count_text > count_list
+
 
 def test_count_tokens_approximately_respects_count_name_flag() -> None:
     """Test that the count_name flag controls whether names are included."""
