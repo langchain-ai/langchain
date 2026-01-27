@@ -1,4 +1,4 @@
-"""Runnable that routes to a set of Runnables."""
+"""`Runnable` that routes to a set of `Runnable` objects."""
 
 from __future__ import annotations
 

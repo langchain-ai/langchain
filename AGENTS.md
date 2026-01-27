@@ -22,7 +22,6 @@ langchain/
 │   ├── text-splitters/   # Document chunking utilities
 │   ├── standard-tests/   # Shared test suite for integrations
 │   ├── model-profiles/   # Model configuration profiles
-│   └── cli/              # Command-line interface tools
 ├── .github/              # CI/CD workflows and templates
 ├── .vscode/              # VSCode IDE standard settings and recommended extensions
 └── README.md             # Information about LangChain
@@ -33,7 +32,7 @@ langchain/
 - **Integration layer** (`partners/`): Third-party service integrations. Note that this monorepo is not exhaustive of all LangChain integrations; some are maintained in separate repos, such as `langchain-ai/langchain-google` and `langchain-ai/langchain-aws`. Usually these repos are cloned at the same level as this monorepo, so if needed, you can refer to their code directly by navigating to `../langchain-google/` from this monorepo.
 - **Testing layer** (`standard-tests/`): Standardized integration tests for partner integrations
 
-### Development tools & commands**
+### Development tools & commands
 
 - `uv` – Fast Python package installer and resolver (replaces pip/poetry)
 - `make` – Task runner for common development commands. Feel free to look at the `Makefile` for available commands and usage patterns.
@@ -72,7 +71,15 @@ uv run --group lint mypy .
 
 #### Commit standards
 
-Suggest PR titles that follow Conventional Commits format. Refer to .github/workflows/pr_lint for allowed types and scopes.
+Suggest PR titles that follow Conventional Commits format. Refer to .github/workflows/pr_lint for allowed types and scopes. Note that all commit/PR titles should be in lowercase with the exception of proper nouns/named entities. All PR titles should include a scope with no exceptions. For example:
+
+```txt
+feat(langchain): add new chat completion feature
+fix(core): resolve type hinting issue in vector store
+chore(anthropic): update infrastructure dependencies
+```
+
+Note how `feat(langchain)` includes a scope even though it is the main package and name of the repo.
 
 #### Pull request guidelines
 
@@ -85,6 +92,7 @@ Suggest PR titles that follow Conventional Commits format. Refer to .github/work
 ### Maintain stable public interfaces
 
 CRITICAL: Always attempt to preserve function signatures, argument positions, and names for exported/public methods. Do not make breaking changes.
+You should warn the developer for any function signature changes, regardless of whether they look breaking or not.
 
 **Before making ANY changes to public APIs:**
 
@@ -178,4 +186,4 @@ def send_email(to: str, msg: str, *, priority: str = "normal") -> bool:
 ## Additional resources
 
 - **Documentation:** https://docs.langchain.com/oss/python/langchain/overview and source at https://github.com/langchain-ai/docs or `../docs/`. Prefer the local install and use file search tools for best results. If needed, use the docs MCP server as defined in `.mcp.json` for programmatic access.
-- **Contributing Guide:** [`.github/CONTRIBUTING.md`](https://docs.langchain.com/oss/python/contributing/overview)
+- **Contributing Guide:** [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview)

@@ -50,7 +50,6 @@ body:
         - label: langchain-anthropic
         - label: langchain-classic
         - label: langchain-core
-        - label: langchain-cli
         - label: langchain-model-profiles
         - label: langchain-tests
         - label: langchain-text-splitters

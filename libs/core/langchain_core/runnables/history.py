@@ -1,4 +1,4 @@
-"""Runnable that manages chat message history for another Runnable."""
+"""`Runnable` that manages chat message history for another `Runnable`."""
 
 from __future__ import annotations
 

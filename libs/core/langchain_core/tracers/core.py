@@ -56,25 +56,30 @@ class _TracerCore(ABC):
         """Initialize the tracer.
 
         Args:
-            _schema_format: Primarily changes how the inputs and outputs are
-                handled. For internal use only. This API will change.
+            _schema_format: Primarily changes how the inputs and outputs are handled.
 
-                - 'original' is the format used by all current tracers.
-                  This format is slightly inconsistent with respect to inputs
-                  and outputs.
-                - 'streaming_events' is used for supporting streaming events,
-                  for internal usage. It will likely change in the future, or
-                  be deprecated entirely in favor of a dedicated async tracer
-                  for streaming events.
-                - 'original+chat' is a format that is the same as 'original'
-                  except it does NOT raise an attribute error on_chat_model_start
-            **kwargs: Additional keyword arguments that will be passed to
-                the superclass.
+                For internal use only. This API will change.
+
+                - `'original'` is the format used by all current tracers.
+
+                    This format is slightly inconsistent with respect to inputs and
+                    outputs.
+                - `'streaming_events'` is used for supporting streaming events, for
+                    internal usage. It will likely change in the future, or be
+                    deprecated entirely in favor of a dedicated async tracer for
+                    streaming events.
+                - `'original+chat'` is a format that is the same as `'original'` except
+                    it does NOT raise an attribute error `on_chat_model_start`
+            **kwargs: Additional keyword arguments that will be passed to the
+                superclass.
         """
         super().__init__(**kwargs)
+
         self._schema_format = _schema_format  # For internal use only API will change.
+
         self.run_map: dict[str, Run] = {}
         """Map of run ID to run. Cleared on run end."""
+
         self.order_map: dict[UUID, tuple[UUID, str]] = {}
         """Map of run ID to (trace_id, dotted_order). Cleared when tracer GCed."""
 

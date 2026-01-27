@@ -99,13 +99,14 @@ def _parse_model_string(model_name: str) -> tuple[str, str]:
     Returns:
         A tuple of (provider, model_name)
 
-    ```python
-    _parse_model_string("openai:text-embedding-3-small")
-    # Returns: ("openai", "text-embedding-3-small")
+    Example:
+        ```python
+        _parse_model_string("openai:text-embedding-3-small")
+        # Returns: ("openai", "text-embedding-3-small")
 
-    _parse_model_string("bedrock:amazon.titan-embed-text-v1")
-    # Returns: ("bedrock", "amazon.titan-embed-text-v1")
-    ```
+        _parse_model_string("bedrock:amazon.titan-embed-text-v1")
+        # Returns: ("bedrock", "amazon.titan-embed-text-v1")
+        ```
 
     Raises:
         ValueError: If the model string is not in the correct format or
@@ -183,6 +184,7 @@ def init_embeddings(
     """Initialize an embedding model from a model name and optional provider.
 
     !!! note
+
         Requires the integration package for the chosen model provider to be installed.
 
         See the `model_provider` parameter below for specific package names

@@ -30,7 +30,6 @@ jobs:
               "langchain-anthropic": "anthropic",
               "langchain-classic": "langchain-classic",
               "langchain-core": "core",
-              "langchain-cli": "cli",
               "langchain-model-profiles": "model-profiles",
               "langchain-tests": "standard-tests",
               "langchain-text-splitters": "text-splitters",

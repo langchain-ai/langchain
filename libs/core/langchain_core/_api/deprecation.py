@@ -1,8 +1,7 @@
 """Helper functions for deprecating parts of the LangChain API.
 
-This module was adapted from matplotlibs _api/deprecation.py module:
-
-https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecation.py
+This module was adapted from matplotlib's [`_api/deprecation.py`](https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecation.py)
+module.
 
 !!! warning
 

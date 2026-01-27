@@ -55,7 +55,7 @@ PYDANTIC_VERSION = version.parse(pydantic.__version__)
 def get_pydantic_major_version() -> int:
     """DEPRECATED - Get the major version of Pydantic.
 
-    Use PYDANTIC_VERSION.major instead.
+    Use `PYDANTIC_VERSION.major` instead.
 
     Returns:
         The major version of Pydantic.
@@ -447,6 +447,7 @@ def create_model(
     Args:
         model_name: The name of the model.
         module_name: The name of the module where the model is defined.
+
             This is used by Pydantic to resolve any forward references.
         **field_definitions: The field definitions for the model.
 
@@ -515,13 +516,15 @@ def create_model_v2(
 ) -> type[BaseModel]:
     """Create a Pydantic model with the given field definitions.
 
-    Attention:
-        Please do not use outside of langchain packages. This API
-        is subject to change at any time.
+    !!! warning
+
+        Do not use outside of langchain packages. This API is subject to change at any
+        time.
 
     Args:
         model_name: The name of the model.
         module_name: The name of the module where the model is defined.
+
             This is used by Pydantic to resolve any forward references.
         field_definitions: The field definitions for the model.
         root: Type for a root model (`RootModel`)
