@@ -131,7 +131,7 @@ class Crawler:
 
             self.page.mouse.click(x, y)
         else:
-            logger.warning("Could not find element")  # noqa: T201
+            logger.warning("Could not find element")
 
     def type(self, id_: str | int, text: str) -> None:
         """Type text into an element with the given id.
@@ -475,5 +475,5 @@ class Crawler:
                 )
             id_counter += 1
 
-        logger.debug(f"Parsing time: {time.time() - start:0.2f} seconds")  # noqa: T201
+        logger.debug("Parsing time: %0.2f seconds", time.time() - start)
         return elements_of_interest
