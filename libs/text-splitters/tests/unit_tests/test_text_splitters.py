@@ -278,6 +278,92 @@ def test_character_text_splitting_args() -> None:
         CharacterTextSplitter(chunk_size=2, chunk_overlap=-1)
 
 
+def test_force_overlap_threshold_validation() -> None:
+    """Test validation of force_overlap_threshold parameter."""
+    # force_overlap_threshold > chunk_size should raise
+    with pytest.raises(ValueError, match="cannot be greater than chunk_size"):
+        CharacterTextSplitter(
+            chunk_size=10, chunk_overlap=0, force_overlap_threshold=15
+        )
+
+    # force_overlap_threshold <= 0 should raise
+    with pytest.raises(ValueError, match="force_overlap_threshold must be > 0"):
+        CharacterTextSplitter(chunk_size=10, chunk_overlap=0, force_overlap_threshold=0)
+    with pytest.raises(ValueError, match="force_overlap_threshold must be > 0"):
+        CharacterTextSplitter(
+            chunk_size=10, chunk_overlap=0, force_overlap_threshold=-1
+        )
+
+    # Valid configurations should not raise
+    splitter = CharacterTextSplitter(
+        chunk_size=10, chunk_overlap=0, force_overlap_threshold=5
+    )
+    assert splitter._force_overlap_threshold == 5
+
+    splitter = CharacterTextSplitter(
+        chunk_size=10, chunk_overlap=0, force_overlap_threshold=10
+    )
+    assert splitter._force_overlap_threshold == 10
+
+
+def test_force_overlap_threshold_none_preserves_behavior() -> None:
+    """Test that None (default) preserves existing behavior."""
+    text = "foo bar baz 123"
+    splitter = CharacterTextSplitter(
+        separator=" ",
+        chunk_size=7,
+        chunk_overlap=3,
+        force_overlap_threshold=None,  # Explicit None
+    )
+    output = splitter.split_text(text)
+    expected_output = ["foo bar", "bar baz", "baz 123"]
+    assert output == expected_output
+
+
+def test_force_overlap_threshold_applies_overlap() -> None:
+    """Test that force_overlap_threshold enables overlap for chunks at threshold."""
+    # Test with splits that individually fit but together need chunking
+    splitter = CharacterTextSplitter(
+        separator=" ",
+        chunk_size=20,
+        chunk_overlap=3,
+        force_overlap_threshold=7,
+    )
+    splits = ["foo", "bar", "baz", "qux"]
+    output = splitter._merge_splits(splits, separator=" ")
+
+    # With force_overlap_threshold=7, should create overlapping chunks
+    # Each chunk should have some overlap with the next
+    assert len(output) > 1
+    # Verify consecutive chunks share content due to overlap
+    for i in range(len(output) - 1):
+        current_words = set(output[i].split())
+        next_words = set(output[i + 1].split())
+        # Check there's overlap between consecutive chunks
+        assert len(current_words & next_words) > 0
+
+
+def test_force_overlap_threshold_with_recursive_splitter() -> None:
+    """Test force_overlap_threshold with RecursiveCharacterTextSplitter."""
+    text = """Chapter 1: Introduction.
+This is the first paragraph of content.
+Chapter 2: Background.
+This is the second paragraph of content."""
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=100,
+        chunk_overlap=20,
+        force_overlap_threshold=40,
+    )
+    output = splitter.split_text(text)
+
+    # Verify we get multiple chunks with some overlap
+    assert len(output) > 1
+    # Verify chunks are reasonable sizes
+    for chunk in output:
+        assert len(chunk) <= 100
+
+
 def test_merge_splits() -> None:
     """Test merging splits with a given separator."""
     splitter = CharacterTextSplitter(separator=" ", chunk_size=9, chunk_overlap=2)
