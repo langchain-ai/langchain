@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import os
+import warnings
 from collections.abc import Awaitable, Callable
 from functools import lru_cache
 from typing import Any, cast
@@ -110,6 +111,69 @@ def _get_default_async_httpx_client(
         return _build_async_httpx_client(base_url, timeout)
     else:
         return _cached_async_httpx_client(base_url, timeout)
+
+
+def _get_aiohttp_client() -> Any | None:
+    """Get OpenAI DefaultAioHttpClient if available.
+
+    Returns:
+        DefaultAioHttpClient instance if openai[aiohttp] is installed, None otherwise.
+    """
+    try:
+        from openai import DefaultAioHttpClient
+
+        return DefaultAioHttpClient()
+    except ImportError:
+        return None
+
+
+def _should_use_aiohttp() -> bool:
+    """Check if aiohttp backend should be used based on environment variable.
+
+    Returns:
+        True if LC_OPENAI_USE_AIOHTTP environment variable is set to a truthy value.
+    """
+    return os.getenv("LC_OPENAI_USE_AIOHTTP", "").lower() in ("1", "true", "yes", "on")
+
+
+def _get_http_client_for_aiohttp_env(
+    provided_client: Any | None,
+    base_url: str | None,
+    timeout: Any,
+    is_async: bool = False,
+) -> Any | None:
+    """Get appropriate HTTP client considering aiohttp environment variable.
+
+    Args:
+        provided_client: User-provided http client (takes precedence)
+        base_url: OpenAI API base URL
+        timeout: Request timeout
+        is_async: Whether to get async client
+
+    Returns:
+        Appropriate HTTP client or None to use OpenAI default
+    """
+    # User-provided client takes precedence
+    if provided_client is not None:
+        return provided_client
+
+    # Check if aiohttp should be used via environment variable
+    if _should_use_aiohttp():
+        aiohttp_client = _get_aiohttp_client()
+        if aiohttp_client is not None:
+            return aiohttp_client
+        warnings.warn(
+            "LC_OPENAI_USE_AIOHTTP is set but openai[aiohttp] is not installed. "
+            "Install with 'pip install \"openai[aiohttp]\"' to use the aiohttp "
+            "backend. Falling back to default httpx client.",
+            UserWarning,
+            stacklevel=3,
+        )
+
+    # Fall back to existing httpx client logic
+    if is_async:
+        return _get_default_async_httpx_client(base_url, timeout)
+    return _get_default_httpx_client(base_url, timeout)
 
 
 def _resolve_sync_and_async_api_keys(
