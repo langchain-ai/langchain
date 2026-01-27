@@ -76,16 +76,19 @@ def test_middleware_can_modify_tools() -> None:
     @tool
     def tool_a(value: str) -> str:
         """Tool A."""
+        _ = value
         return "A"
 
     @tool
     def tool_b(value: str) -> str:
         """Tool B."""
+        _ = value
         return "B"
 
     @tool
     def tool_c(value: str) -> str:
         """Tool C."""
+        _ = value
         return "C"
 
     class ToolFilteringMiddleware(AgentMiddleware):
@@ -129,11 +132,13 @@ def test_unknown_tool_raises_error() -> None:
     @tool
     def known_tool(value: str) -> str:
         """A known tool."""
+        _ = value
         return "result"
 
     @tool
     def unknown_tool(value: str) -> str:
         """An unknown tool not passed to create_agent."""
+        _ = value
         return "unknown"
 
     class BadMiddleware(AgentMiddleware):
@@ -218,6 +223,7 @@ def test_empty_tools_list_is_valid() -> None:
     @tool
     def some_tool(value: str) -> str:
         """Some tool."""
+        _ = value
         return "result"
 
     class NoToolsMiddleware(AgentMiddleware):
@@ -251,16 +257,19 @@ def test_tools_preserved_across_multiple_middleware() -> None:
     @tool
     def tool_a(value: str) -> str:
         """Tool A."""
+        _ = value
         return "A"
 
     @tool
     def tool_b(value: str) -> str:
         """Tool B."""
+        _ = value
         return "B"
 
     @tool
     def tool_c(value: str) -> str:
         """Tool C."""
+        _ = value
         return "C"
 
     class FirstMiddleware(AgentMiddleware):
@@ -324,11 +333,13 @@ def test_middleware_with_additional_tools() -> None:
     @tool
     def base_tool(value: str) -> str:
         """Base tool."""
+        _ = value
         return "base"
 
     @tool
     def middleware_tool(value: str) -> str:
         """Tool provided by middleware."""
+        _ = value
         return "middleware"
 
     class ToolProvidingMiddleware(AgentMiddleware):
@@ -366,6 +377,7 @@ def test_tool_node_not_accepted() -> None:
     @tool
     def some_tool(value: str) -> str:
         """Some tool."""
+        _ = value
         return "result"
 
     tool_node = ToolNode([some_tool])

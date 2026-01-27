@@ -22,6 +22,7 @@ from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.prebuilt import InjectedStore
 from langgraph.store.memory import InMemoryStore
+from typing_extensions import override
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.types import AgentMiddleware, AgentState
@@ -429,6 +430,7 @@ def test_tool_runtime_error_handling() -> None:
     @tool
     def safe_tool(x: int, runtime: ToolRuntime) -> str:
         """Tool that handles errors safely."""
+        assert isinstance(runtime, ToolRuntime)
         try:
             if x == 0:
                 return "Error: Cannot process zero"
@@ -467,10 +469,12 @@ def test_tool_runtime_with_middleware() -> None:
     runtime_calls = []
 
     class TestMiddleware(AgentMiddleware):
+        @override
         def before_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
             middleware_calls.append("before_model")
             return {}
 
+        @override
         def after_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
             middleware_calls.append("after_model")
             return {}
