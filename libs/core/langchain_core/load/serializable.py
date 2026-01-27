@@ -3,6 +3,7 @@
 import contextlib
 import logging
 from abc import ABC
+from collections.abc import Iterator
 from typing import (
     Any,
     Literal,
@@ -116,6 +117,28 @@ class Serializable(BaseModel, ABC):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """"""  # noqa: D419  # Intentional blank docstring
         super().__init__(*args, **kwargs)
+
+    @override
+    def __iter__(self) -> Iterator[tuple[str, Any]]:  # type: ignore[override]
+        """Iterate over field names and values.
+
+        This override takes a snapshot of __dict__ before iterating to prevent
+        RuntimeError when another thread modifies __dict__ during iteration
+        (e.g., via cached_property writes). This fixes the race condition where
+        concurrent serialization (dumpd) and invocation (invoke) operations
+        can cause "dictionary keys changed during iteration" errors.
+
+        See: https://github.com/langchain-ai/langchain/issues/34887
+
+        Note: The type: ignore[override] is needed because pydantic's
+        BaseModel.__iter__ returns Generator, but ruff PYI058 requires
+        Iterator for simple __iter__ methods.
+        """
+        # Take a snapshot to prevent RuntimeError during concurrent __dict__ mutation
+        # The list() call creates a copy of the items, making iteration thread-safe
+        return iter(
+            (k, v) for k, v in list(self.__dict__.items()) if not k.startswith("_")
+        )
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
