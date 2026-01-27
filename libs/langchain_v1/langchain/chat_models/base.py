@@ -971,7 +971,10 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
-        return self.__getattr__("bind_tools")(tools, **kwargs)
+        return cast(
+            "Runnable[LanguageModelInput, AIMessage]",
+            self.__getattr__("bind_tools")(tools, **kwargs),
+        )
 
     # Explicitly added to satisfy downstream linters.
     def with_structured_output(
@@ -979,4 +982,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         schema: dict[str, Any] | type[BaseModel],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, dict[str, Any] | BaseModel]:
-        return self.__getattr__("with_structured_output")(schema, **kwargs)
+        return cast(
+            "Runnable[LanguageModelInput, dict[str, Any] | BaseModel]",
+            self.__getattr__("with_structured_output")(schema, **kwargs),
+        )
