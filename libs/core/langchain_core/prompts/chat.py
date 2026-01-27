@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from pathlib import Path
@@ -14,6 +15,7 @@ from typing import (
     overload,
 )
 
+import yaml
 from pydantic import (
     Field,
     PositiveInt,
@@ -1311,7 +1313,25 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Args:
             file_path: path to file.
         """
-        raise NotImplementedError
+        from langchain_core.load import dumpd  # noqa: PLC0415
+
+        # Convert file to Path object.
+        save_path = Path(file_path)
+        directory_path = save_path.parent
+        directory_path.mkdir(parents=True, exist_ok=True)
+
+        # Use dumpd to get a serializable dictionary
+        prompt_dict = dumpd(self)
+
+        if save_path.suffix == ".json":
+            with save_path.open("w", encoding="utf-8") as f:
+                json.dump(prompt_dict, f, indent=4)
+        elif save_path.suffix.endswith((".yaml", ".yml")):
+            with save_path.open("w", encoding="utf-8") as f:
+                yaml.dump(prompt_dict, f, default_flow_style=False)
+        else:
+            msg = f"{save_path} must be json or yaml"
+            raise ValueError(msg)
 
     @override
     def pretty_repr(self, html: bool = False) -> str:
