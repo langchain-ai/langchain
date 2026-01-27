@@ -415,6 +415,12 @@ class ChatDeepSeek(BaseChatOpenAI):
         Returns:
             A Runnable that takes same inputs as a chat model.
         """
+        base_url = (
+            getattr(self, "openai_api_base", "") or getattr(self, "api_base", "") or ""
+        ).lower()
+        # Doc Reference: https://learn.microsoft.com/en-us/azure/ai-foundry/openai/reference?view=foundry-classic
+        if "azure.com" in base_url:
+            tool_choice = "required"
         # If strict mode is enabled and using default API base, switch to beta endpoint
         if strict is True and self.api_base == DEFAULT_API_BASE:
             # Create a new instance with beta endpoint
