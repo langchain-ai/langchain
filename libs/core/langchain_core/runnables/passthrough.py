@@ -346,7 +346,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             yield chunk
 
 
-_graph_passthrough: RunnablePassthrough = RunnablePassthrough()
+_graph_passthrough = RunnablePassthrough[Any]()
 
 
 class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
@@ -613,7 +613,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             **kwargs,
         )
         # start map output stream
-        first_map_chunk_task: asyncio.Task = asyncio.create_task(
+        first_map_chunk_task = asyncio.create_task(
             anext(map_output, None),
         )
         # consume passthrough stream
@@ -629,9 +629,11 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             if filtered:
                 yield filtered
         # yield map output
-        yield await first_map_chunk_task
-        async for chunk in map_output:
-            yield chunk
+        first_chunk = await first_map_chunk_task
+        if first_chunk is not None:
+            yield first_chunk
+            async for chunk in map_output:
+                yield chunk
 
     @override
     async def atransform(

@@ -58,7 +58,7 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
             A list of strings.
         """
 
-    def parse_iter(self, text: str) -> Iterator[re.Match]:
+    def parse_iter(self, text: str) -> Iterator[re.Match[str]]:
         """Parse the output of an LLM call.
 
         Args:
@@ -210,7 +210,7 @@ class NumberedListOutputParser(ListOutputParser):
         return re.findall(self.pattern, text)
 
     @override
-    def parse_iter(self, text: str) -> Iterator[re.Match]:
+    def parse_iter(self, text: str) -> Iterator[re.Match[str]]:
         return re.finditer(self.pattern, text)
 
     @property
@@ -241,7 +241,7 @@ class MarkdownListOutputParser(ListOutputParser):
         return re.findall(self.pattern, text, re.MULTILINE)
 
     @override
-    def parse_iter(self, text: str) -> Iterator[re.Match]:
+    def parse_iter(self, text: str) -> Iterator[re.Match[str]]:
         return re.finditer(self.pattern, text, re.MULTILINE)
 
     @property

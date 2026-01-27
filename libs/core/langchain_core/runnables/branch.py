@@ -77,9 +77,9 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             Runnable[Input, bool]
             | Callable[[Input], bool]
             | Callable[[Input], Awaitable[bool]],
-            RunnableLike,
+            RunnableLike[Input, Output],
         ]
-        | RunnableLike,
+        | RunnableLike[Input, Output],
     ) -> None:
         """A `Runnable` that runs one of two branches based on a condition.
 
@@ -106,9 +106,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             msg = "RunnableBranch default must be Runnable, callable or mapping."
             raise TypeError(msg)
 
-        default_ = cast(
-            "Runnable[Input, Output]", coerce_to_runnable(cast("RunnableLike", default))
-        )
+        default_ = coerce_to_runnable(cast("RunnableLike[Input, Output]", default))
 
         branches_ = []
 
