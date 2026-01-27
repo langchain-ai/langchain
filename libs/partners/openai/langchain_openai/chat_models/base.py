@@ -1475,11 +1475,14 @@ class BaseChatOpenAI(BaseChatModel):
                     token_usage, service_tier
                 )
             generation_info = generation_info or {}
-            generation_info["finish_reason"] = (
-                res.get("finish_reason")
-                if res.get("finish_reason") is not None
-                else generation_info.get("finish_reason")
-            )
+            if message.tool_calls:
+                 generation_info["finish_reason"] = "tool_calls"
+            else:
+                generation_info["finish_reason"] = (
+                    res.get("finish_reason")
+                    if res.get("finish_reason") is not None
+                    else generation_info.get("finish_reason")
+                )
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
             gen = ChatGeneration(message=message, generation_info=generation_info)
