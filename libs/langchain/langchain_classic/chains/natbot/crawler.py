@@ -291,7 +291,9 @@ class Crawler:
             return value
 
         # Pre-compute layout node index map for O(1) lookup
-        layout_node_map = {node_index: i for i, node_index in enumerate(layout_node_index)}
+        layout_node_map = {
+            node_index: i for i, node_index in enumerate(layout_node_index)
+        }
 
         for index, node_name_index in enumerate(node_names):
             node_parent = parent[index]
