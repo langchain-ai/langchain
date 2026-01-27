@@ -22,6 +22,7 @@ from langchain_groq.chat_models import (
     _convert_chunk_to_message_chunk,
     _convert_dict_to_message,
     _create_usage_metadata,
+    _format_message_content,
 )
 
 if "GROQ_API_KEY" not in os.environ:
@@ -945,3 +946,98 @@ def test_combine_llm_outputs_with_missing_details() -> None:
 def test_profile() -> None:
     model = ChatGroq(model="openai/gpt-oss-20b")
     assert model.profile
+
+
+def test_format_message_content_string() -> None:
+    """Test that string content is passed through unchanged."""
+    content = "hello"
+    assert content == _format_message_content(content)
+
+
+def test_format_message_content_none() -> None:
+    """Test that None content is passed through unchanged."""
+    content = None
+    assert content == _format_message_content(content)
+
+
+def test_format_message_content_empty_list() -> None:
+    """Test that empty list is passed through unchanged."""
+    content: list = []
+    assert content == _format_message_content(content)
+
+
+def test_format_message_content_text_and_image_url() -> None:
+    """Test that existing image_url format is passed through unchanged."""
+    content = [
+        {"type": "text", "text": "What is in this image?"},
+        {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}},
+    ]
+    assert content == _format_message_content(content)
+
+
+def test_format_message_content_langchain_image_base64() -> None:
+    """Test that LangChain image blocks with base64 are converted."""
+    content = {"type": "image", "base64": "<base64 data>", "mime_type": "image/png"}
+    expected = [
+        {
+            "type": "image_url",
+            "image_url": {"url": "data:image/png;base64,<base64 data>"},
+        }
+    ]
+    assert expected == _format_message_content([content])
+
+
+def test_format_message_content_langchain_image_url() -> None:
+    """Test that LangChain image blocks with URL are converted."""
+    content = {"type": "image", "url": "https://example.com/image.jpg"}
+    expected = [
+        {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}}
+    ]
+    assert expected == _format_message_content([content])
+
+
+def test_format_message_content_anthropic_image_base64() -> None:
+    """Test that Anthropic-style image blocks with source are converted."""
+    content = {
+        "type": "image",
+        "source": {
+            "type": "base64",
+            "media_type": "image/jpeg",
+            "data": "<base64 data>",
+        },
+    }
+    expected = [
+        {
+            "type": "image_url",
+            "image_url": {"url": "data:image/jpeg;base64,<base64 data>"},
+        }
+    ]
+    assert expected == _format_message_content([content])
+
+
+def test_format_message_content_anthropic_image_url() -> None:
+    """Test that Anthropic-style image blocks with URL source are converted."""
+    content = {
+        "type": "image",
+        "source": {
+            "type": "url",
+            "url": "https://example.com/image.png",
+        },
+    }
+    expected = [
+        {"type": "image_url", "image_url": {"url": "https://example.com/image.png"}}
+    ]
+    assert expected == _format_message_content([content])
+
+
+def test_format_message_content_mixed() -> None:
+    """Test that mixed content with text and image is handled correctly."""
+    content = [
+        {"type": "text", "text": "Describe this image"},
+        {"type": "image", "base64": "<data>", "mime_type": "image/png"},
+    ]
+    expected = [
+        {"type": "text", "text": "Describe this image"},
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,<data>"}},
+    ]
+    assert expected == _format_message_content(content)
