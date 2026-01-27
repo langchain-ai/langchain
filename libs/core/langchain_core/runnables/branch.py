@@ -13,7 +13,7 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
 from typing_extensions import override
 
 from langchain_core.runnables.base import (
@@ -35,6 +35,7 @@ from langchain_core.runnables.utils import (
     Output,
     get_unique_config_specs,
 )
+from langchain_core.utils.pydantic import TypeBaseModel
 
 _MIN_BRANCHES = 2
 
@@ -156,7 +157,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         return ["langchain", "schema", "runnable"]
 
     @override
-    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         runnables = (
             [self.default]
             + [r for _, r in self.branches]
@@ -164,10 +165,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         )
 
         for runnable in runnables:
-            if (
-                runnable.get_input_schema(config).model_json_schema().get("type")
-                is not None
-            ):
+            if runnable.get_input_jsonschema(config).get("type") is not None:
                 return runnable.get_input_schema(config)
 
         return super().get_input_schema(config)
