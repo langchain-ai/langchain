@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -37,7 +37,7 @@ class LLMResult(BaseModel):
     chat message.
     """
 
-    llm_output: dict | None = None
+    llm_output: dict[str, Any] | None = None
     """For arbitrary LLM provider specific output.
 
     This dictionary is a free-form dictionary that can contain any information that the

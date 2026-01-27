@@ -185,21 +185,21 @@ class AIMessage(BaseMessage):
     @overload
     def __init__(
         self,
-        content: str | list[str | dict],
+        content: str | list[str | dict[str, Any]],
         **kwargs: Any,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        content: str | list[str | dict] | None = None,
+        content: str | list[str | dict[str, Any]] | None = None,
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None: ...
 
     def __init__(
         self,
-        content: str | list[str | dict] | None = None,
+        content: str | list[str | dict[str, Any]] | None = None,
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
@@ -221,14 +221,14 @@ class AIMessage(BaseMessage):
                 kwargs["tool_calls"] = content_tool_calls
 
             super().__init__(
-                content=cast("str | list[str | dict]", content_blocks),
+                content=cast("list[str | dict[str, Any]]", content_blocks),
                 **kwargs,
             )
         else:
             super().__init__(content=content, **kwargs)
 
     @property
-    def lc_attributes(self) -> dict:
+    def lc_attributes(self) -> dict[str, Any]:
         """Attributes to be serialized.
 
         Includes all attributes, even if they are derived from other initialization
@@ -301,7 +301,7 @@ class AIMessage(BaseMessage):
     # TODO: remove this logic if possible, reducing breaking nature of changes
     @model_validator(mode="before")
     @classmethod
-    def _backwards_compat_tool_calls(cls, values: dict) -> Any:
+    def _backwards_compat_tool_calls(cls, values: dict[str, Any]) -> Any:
         check_additional_kwargs = not any(
             values.get(k)
             for k in ("tool_calls", "invalid_tool_calls", "tool_call_chunks")
@@ -407,7 +407,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
     @property
     @override
-    def lc_attributes(self) -> dict:
+    def lc_attributes(self) -> dict[str, Any]:
         return {
             "tool_calls": self.tool_calls,
             "invalid_tool_calls": self.invalid_tool_calls,
@@ -745,8 +745,8 @@ def add_usage(left: UsageMetadata | None, right: UsageMetadata | None) -> UsageM
         **cast(
             "UsageMetadata",
             _dict_int_op(
-                cast("dict", left),
-                cast("dict", right),
+                cast("dict[str, Any]", left),
+                cast("dict[str, Any]", right),
                 operator.add,
             ),
         )
@@ -808,8 +808,8 @@ def subtract_usage(
         **cast(
             "UsageMetadata",
             _dict_int_op(
-                cast("dict", left),
-                cast("dict", right),
+                cast("dict[str, Any]", left),
+                cast("dict[str, Any]", right),
                 (lambda le, ri: max(le - ri, 0)),
             ),
         )

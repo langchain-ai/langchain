@@ -1,17 +1,18 @@
 """Usage utilities."""
 
 from collections.abc import Callable
+from typing import Any
 
 
 def _dict_int_op(
-    left: dict,
-    right: dict,
+    left: dict[str, Any],
+    right: dict[str, Any],
     op: Callable[[int, int], int],
     *,
     default: int = 0,
     depth: int = 0,
     max_depth: int = 100,
-) -> dict:
+) -> dict[str, Any]:
     """Apply an integer operation to corresponding values in two dictionaries.
 
     Recursively combines two dictionaries by applying the given operation to integer
@@ -36,7 +37,7 @@ def _dict_int_op(
     if depth >= max_depth:
         msg = f"{max_depth=} exceeded, unable to combine dicts."
         raise ValueError(msg)
-    combined: dict = {}
+    combined: dict[str, Any] = {}
     for k in set(left).union(right):
         if isinstance(left.get(k, default), int) and isinstance(
             right.get(k, default), int

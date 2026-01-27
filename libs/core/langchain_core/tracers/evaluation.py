@@ -56,7 +56,7 @@ class EvaluatorCallbackHandler(BaseTracer):
     executor: ThreadPoolExecutor | None = None
     """The thread pool executor used for running the evaluators."""
 
-    futures: weakref.WeakSet[Future] = weakref.WeakSet()
+    futures: weakref.WeakSet[Future[None]] = weakref.WeakSet()
     """The set of futures representing the running evaluators."""
 
     skip_unfinished: bool = True

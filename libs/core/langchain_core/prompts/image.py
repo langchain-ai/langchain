@@ -16,7 +16,7 @@ from langchain_core.runnables import run_in_executor
 class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
     """Image prompt template for a multimodal model."""
 
-    template: dict = Field(default_factory=dict)
+    template: dict[str, Any] = Field(default_factory=dict)
     """Template for the prompt."""
 
     template_format: PromptTemplateFormat = "f-string"

@@ -6,7 +6,7 @@ import pytest
 from pydantic import BaseModel
 from typing_extensions import override
 
-from langchain_core.language_models import FakeListChatModel
+from langchain_core.language_models import FakeListChatModel, LanguageModelInput
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
 from langchain_core.messages import HumanMessage
@@ -29,8 +29,8 @@ class FakeStructuredChatModel(FakeListChatModel):
 
     @override
     def with_structured_output(
-        self, schema: dict | type[BaseModel], **kwargs: Any
-    ) -> Runnable:
+        self, schema: dict[str, Any] | type[BaseModel], **kwargs: Any
+    ) -> Runnable[LanguageModelInput, dict[str, Any] | BaseModel]:
         return RunnableLambda(partial(_fake_runnable, schema=schema, **kwargs))
 
     @property

@@ -7,7 +7,7 @@ from langchain_core import __version__
 
 
 @lru_cache(maxsize=1)
-def get_runtime_environment() -> dict:
+def get_runtime_environment() -> dict[str, str]:
     """Get information about the LangChain runtime environment.
 
     Returns:

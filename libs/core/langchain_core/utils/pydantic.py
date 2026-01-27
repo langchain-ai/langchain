@@ -126,7 +126,9 @@ def is_basemodel_instance(obj: Any) -> bool:
 
 
 # How to type hint this?
-def pre_init(func: Callable) -> Any:
+def pre_init(
+    func: Callable[[Any, dict[str, Any]], Any],
+) -> Callable[[Any, dict[str, Any]], Any]:
     """Decorator to run a function before model initialization.
 
     Args:
@@ -202,9 +204,9 @@ class _IgnoreUnserializable(GenerateJsonSchema):
 def _create_subset_model_v1(
     name: str,
     model: type[BaseModelV1],
-    field_names: list,
+    field_names: list[str],
     *,
-    descriptions: dict | None = None,
+    descriptions: dict[str, str] | None = None,
     fn_description: str | None = None,
 ) -> type[BaseModelV1]:
     """Create a Pydantic model with only a subset of model's fields."""
@@ -233,7 +235,7 @@ def _create_subset_model_v2(
     model: type[BaseModel],
     field_names: list[str],
     *,
-    descriptions: dict | None = None,
+    descriptions: dict[str, str] | None = None,
     fn_description: str | None = None,
 ) -> type[BaseModel]:
     """Create a Pydantic model with a subset of the model fields."""
@@ -278,7 +280,7 @@ def _create_subset_model(
     model: TypeBaseModel,
     field_names: list[str],
     *,
-    descriptions: dict | None = None,
+    descriptions: dict[str, str] | None = None,
     fn_description: str | None = None,
 ) -> type[BaseModel]:
     """Create subset model using the same pydantic version as the input model.

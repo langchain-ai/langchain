@@ -4,6 +4,7 @@ import json
 import logging
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -17,7 +18,7 @@ URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/pro
 logger = logging.getLogger(__name__)
 
 
-def load_prompt_from_config(config: dict) -> BasePromptTemplate:
+def load_prompt_from_config(config: dict[str, Any]) -> BasePromptTemplate[str]:
     """Load prompt from config dict.
 
     Args:
@@ -41,7 +42,7 @@ def load_prompt_from_config(config: dict) -> BasePromptTemplate:
     return prompt_loader(config)
 
 
-def _load_template(var_name: str, config: dict) -> dict:
+def _load_template(var_name: str, config: dict[str, Any]) -> dict[str, Any]:
     """Load template from the path if applicable."""
     # Check if template_path exists in config.
     if f"{var_name}_path" in config:
@@ -61,7 +62,7 @@ def _load_template(var_name: str, config: dict) -> dict:
     return config
 
 
-def _load_examples(config: dict) -> dict:
+def _load_examples(config: dict[str, Any]) -> dict[str, Any]:
     """Load examples if necessary."""
     if isinstance(config["examples"], list):
         pass
@@ -82,7 +83,7 @@ def _load_examples(config: dict) -> dict:
     return config
 
 
-def _load_output_parser(config: dict) -> dict:
+def _load_output_parser(config: dict[str, Any]) -> dict[str, Any]:
     """Load output parser."""
     if _config := config.get("output_parser"):
         if output_parser_type := _config.get("_type") != "default":
@@ -92,7 +93,7 @@ def _load_output_parser(config: dict) -> dict:
     return config
 
 
-def _load_few_shot_prompt(config: dict) -> FewShotPromptTemplate:
+def _load_few_shot_prompt(config: dict[str, Any]) -> FewShotPromptTemplate:
     """Load the "few shot" prompt from the config."""
     # Load the suffix and prefix templates.
     config = _load_template("suffix", config)
@@ -114,7 +115,7 @@ def _load_few_shot_prompt(config: dict) -> FewShotPromptTemplate:
     return FewShotPromptTemplate(**config)
 
 
-def _load_prompt(config: dict) -> PromptTemplate:
+def _load_prompt(config: dict[str, Any]) -> PromptTemplate:
     """Load the prompt template from config."""
     # Load the template from disk if necessary.
     config = _load_template("template", config)
@@ -134,7 +135,9 @@ def _load_prompt(config: dict) -> PromptTemplate:
     return PromptTemplate(**config)
 
 
-def load_prompt(path: str | Path, encoding: str | None = None) -> BasePromptTemplate:
+def load_prompt(
+    path: str | Path, encoding: str | None = None
+) -> BasePromptTemplate[str]:
     """Unified method for loading a prompt from LangChainHub or local filesystem.
 
     Args:
@@ -159,7 +162,7 @@ def load_prompt(path: str | Path, encoding: str | None = None) -> BasePromptTemp
 
 def _load_prompt_from_file(
     file: str | Path, encoding: str | None = None
-) -> BasePromptTemplate:
+) -> BasePromptTemplate[str]:
     """Load prompt from file."""
     # Convert file to a Path object.
     file_path = Path(file)
@@ -177,7 +180,7 @@ def _load_prompt_from_file(
     return load_prompt_from_config(config)
 
 
-def _load_chat_prompt(config: dict) -> ChatPromptTemplate:
+def _load_chat_prompt(config: dict[str, Any]) -> ChatPromptTemplate:
     """Load chat prompt from config."""
     messages = config.pop("messages")
     template = messages[0]["prompt"].pop("template") if messages else None
@@ -190,7 +193,7 @@ def _load_chat_prompt(config: dict) -> ChatPromptTemplate:
     return ChatPromptTemplate.from_template(template=template, **config)
 
 
-type_to_loader_dict: dict[str, Callable[[dict], BasePromptTemplate]] = {
+type_to_loader_dict: dict[str, Callable[[dict[str, Any]], BasePromptTemplate[str]]] = {
     "prompt": _load_prompt,
     "few_shot": _load_few_shot_prompt,
     "chat": _load_chat_prompt,

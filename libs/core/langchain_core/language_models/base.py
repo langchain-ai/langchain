@@ -284,8 +284,8 @@ class BaseLanguageModel(
         """
 
     def with_structured_output(
-        self, schema: dict | type, **kwargs: Any
-    ) -> Runnable[LanguageModelInput, dict | BaseModel]:
+        self, schema: dict[str, Any] | type, **kwargs: Any
+    ) -> Runnable[LanguageModelInput, dict[str, Any] | BaseModel]:
         """Not implemented on this class."""
         # Implement this on child class if there is a way of steering the model to
         # generate responses that match a given schema.
@@ -330,7 +330,7 @@ class BaseLanguageModel(
     def get_num_tokens_from_messages(
         self,
         messages: list[BaseMessage],
-        tools: Sequence | None = None,
+        tools: Sequence[Any] | None = None,
     ) -> int:
         """Get the number of tokens in the messages.
 

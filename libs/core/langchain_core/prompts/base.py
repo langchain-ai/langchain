@@ -37,7 +37,7 @@ FormatOutputType = TypeVar("FormatOutputType")
 
 
 class BasePromptTemplate(
-    RunnableSerializable[dict, PromptValue], ABC, Generic[FormatOutputType]
+    RunnableSerializable[dict[str, Any], PromptValue], ABC, Generic[FormatOutputType]
 ):
     """Base class for all prompt templates, returning a prompt."""
 
@@ -122,11 +122,11 @@ class BasePromptTemplate(
     )
 
     @cached_property
-    def _serialized(self) -> dict[str, Any]:
+    def _serialized(self) -> builtins.dict[str, Any]:
         # self is always a Serializable object in this case, thus the result is
         # guaranteed to be a dict since dumpd uses the default callback, which uses
         # obj.to_json which always returns TypedDict subclasses
-        return cast("dict[str, Any]", dumpd(self))
+        return cast("builtins.dict[str, Any]", dumpd(self))
 
     @property
     @override
@@ -156,7 +156,7 @@ class BasePromptTemplate(
             field_definitions={**required_input_variables, **optional_input_variables},
         )
 
-    def _validate_input(self, inner_input: Any) -> dict:
+    def _validate_input(self, inner_input: Any) -> builtins.dict[str, Any]:
         if not isinstance(inner_input, dict):
             if len(self.input_variables) == 1:
                 var_name = self.input_variables[0]
@@ -192,19 +192,24 @@ class BasePromptTemplate(
             )
         return inner_input_
 
-    def _format_prompt_with_error_handling(self, inner_input: dict) -> PromptValue:
+    def _format_prompt_with_error_handling(
+        self, inner_input: builtins.dict[str, Any]
+    ) -> PromptValue:
         inner_input_ = self._validate_input(inner_input)
         return self.format_prompt(**inner_input_)
 
     async def _aformat_prompt_with_error_handling(
-        self, inner_input: dict
+        self, inner_input: builtins.dict[str, Any]
     ) -> PromptValue:
         inner_input_ = self._validate_input(inner_input)
         return await self.aformat_prompt(**inner_input_)
 
     @override
     def invoke(
-        self, input: dict, config: RunnableConfig | None = None, **kwargs: Any
+        self,
+        input: builtins.dict[str, Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
     ) -> PromptValue:
         """Invoke the prompt.
 
@@ -230,7 +235,10 @@ class BasePromptTemplate(
 
     @override
     async def ainvoke(
-        self, input: dict, config: RunnableConfig | None = None, **kwargs: Any
+        self,
+        input: builtins.dict[str, Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
     ) -> PromptValue:
         """Async invoke the prompt.
 
@@ -276,7 +284,9 @@ class BasePromptTemplate(
         """
         return self.format_prompt(**kwargs)
 
-    def partial(self, **kwargs: str | Callable[[], str]) -> BasePromptTemplate:
+    def partial(
+        self, **kwargs: str | Callable[[], str]
+    ) -> BasePromptTemplate[FormatOutputType]:
         """Return a partial of the prompt template.
 
         Args:
@@ -292,7 +302,9 @@ class BasePromptTemplate(
         prompt_dict["partial_variables"] = {**self.partial_variables, **kwargs}
         return type(self)(**prompt_dict)
 
-    def _merge_partial_and_user_variables(self, **kwargs: Any) -> dict[str, Any]:
+    def _merge_partial_and_user_variables(
+        self, **kwargs: Any
+    ) -> builtins.dict[str, Any]:
         # Get partial params:
         partial_kwargs = {
             k: v if not callable(v) else v() for k, v in self.partial_variables.items()
@@ -336,7 +348,7 @@ class BasePromptTemplate(
         """Return the prompt type key."""
         raise NotImplementedError
 
-    def dict(self, **kwargs: Any) -> dict:
+    def dict(self, **kwargs: Any) -> builtins.dict[str, Any]:
         """Return dictionary representation of prompt.
 
         Args:
@@ -393,7 +405,9 @@ class BasePromptTemplate(
             raise ValueError(msg)
 
 
-def _get_document_info(doc: Document, prompt: BasePromptTemplate[str]) -> dict:
+def _get_document_info(
+    doc: Document, prompt: BasePromptTemplate[str]
+) -> dict[str, Any]:
     base_info = {"page_content": doc.page_content, **doc.metadata}
     missing_metadata = set(prompt.input_variables).difference(base_info)
     if len(missing_metadata) > 0:

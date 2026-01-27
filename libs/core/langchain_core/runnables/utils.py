@@ -46,7 +46,9 @@ Input = TypeVar("Input", contravariant=True)  # noqa: PLC0105
 Output = TypeVar("Output", covariant=True)  # noqa: PLC0105
 
 
-async def gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
+async def gated_coro(
+    semaphore: asyncio.Semaphore, coro: Coroutine[Any, Any, Any]
+) -> Any:
     """Run a coroutine with a semaphore.
 
     Args:
@@ -60,7 +62,9 @@ async def gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
         return await coro
 
 
-async def gather_with_concurrency(n: int | None, *coros: Coroutine) -> list:
+async def gather_with_concurrency(
+    n: int | None, *coros: Coroutine[Any, Any, Any]
+) -> list[Any]:
     """Gather coroutines with a limit on the number of concurrent coroutines.
 
     Args:
@@ -362,7 +366,7 @@ class GetLambdaSource(ast.NodeVisitor):
             self.source = ast.unparse(node)
 
 
-def get_function_first_arg_dict_keys(func: Callable) -> list[str] | None:
+def get_function_first_arg_dict_keys(func: Callable[..., Any]) -> list[str] | None:
     """Get the keys of the first argument of a function if it is a dict.
 
     Args:
@@ -381,7 +385,7 @@ def get_function_first_arg_dict_keys(func: Callable) -> list[str] | None:
         return None
 
 
-def get_lambda_source(func: Callable) -> str | None:
+def get_lambda_source(func: Callable[..., Any]) -> str | None:
     """Get the source code of a lambda function.
 
     Args:
@@ -405,7 +409,7 @@ def get_lambda_source(func: Callable) -> str | None:
 
 
 @lru_cache(maxsize=256)
-def get_function_nonlocals(func: Callable) -> list[Any]:
+def get_function_nonlocals(func: Callable[..., Any]) -> list[Any]:
     """Get the nonlocal variables accessed by a function.
 
     Args:
@@ -727,7 +731,7 @@ class _RootEventFilter:
 
 def is_async_generator(
     func: Any,
-) -> TypeGuard[Callable[..., AsyncIterator]]:
+) -> TypeGuard[Callable[..., AsyncIterator[Any]]]:
     """Check if a function is an async generator.
 
     Args:
@@ -744,7 +748,7 @@ def is_async_generator(
 
 def is_async_callable(
     func: Any,
-) -> TypeGuard[Callable[..., Awaitable]]:
+) -> TypeGuard[Callable[..., Awaitable[Any]]]:
     """Check if a function is async.
 
     Args:

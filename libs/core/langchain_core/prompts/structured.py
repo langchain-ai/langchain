@@ -28,7 +28,7 @@ from langchain_core.utils import get_pydantic_field_names
 class StructuredPrompt(ChatPromptTemplate):
     """Structured prompt template for a language model."""
 
-    schema_: dict | type
+    schema_: dict[str, Any] | type
     """Schema for the structured prompt."""
 
     structured_output_kwargs: dict[str, Any] = Field(default_factory=dict)
@@ -36,7 +36,7 @@ class StructuredPrompt(ChatPromptTemplate):
     def __init__(
         self,
         messages: Sequence[MessageLikeRepresentation],
-        schema_: dict | type[BaseModel] | None = None,
+        schema_: dict[str, Any] | type[BaseModel] | None = None,
         *,
         structured_output_kwargs: dict[str, Any] | None = None,
         template_format: PromptTemplateFormat = "f-string",
@@ -87,7 +87,7 @@ class StructuredPrompt(ChatPromptTemplate):
     def from_messages_and_schema(
         cls,
         messages: Sequence[MessageLikeRepresentation],
-        schema: dict | type,
+        schema: dict[str, Any] | type,
         **kwargs: Any,
     ) -> ChatPromptTemplate:
         """Create a chat prompt template from a variety of message formats.
@@ -143,7 +143,7 @@ class StructuredPrompt(ChatPromptTemplate):
         | Callable[[AsyncIterator[Any]], AsyncIterator[Other]]
         | Callable[[Any], Other]
         | Mapping[str, Runnable[Any, Other] | Callable[[Any], Other] | Any],
-    ) -> RunnableSerializable[dict, Other]:
+    ) -> RunnableSerializable[dict[str, Any], Other]:
         return self.pipe(other)
 
     def pipe(
@@ -154,7 +154,7 @@ class StructuredPrompt(ChatPromptTemplate):
         | Callable[[Any], Other]
         | Mapping[str, Runnable[Any, Other] | Callable[[Any], Other] | Any],
         name: str | None = None,
-    ) -> RunnableSerializable[dict, Other]:
+    ) -> RunnableSerializable[dict[str, Any], Other]:
         """Pipe the structured prompt to a language model.
 
         Args:

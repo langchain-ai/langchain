@@ -78,7 +78,7 @@ def _assert_events_equal_allow_superset_metadata(
 async def test_event_stream_with_simple_function_tool() -> None:
     """Test the event stream with a function and tool."""
 
-    def foo(_: int) -> dict:
+    def foo(_: int) -> dict[str, Any]:
         """Foo."""
         return {"x": 5}
 
@@ -1076,12 +1076,14 @@ async def test_event_streaming_with_tools() -> None:
         return "world"
 
     @tool
-    def with_parameters(x: int, y: str) -> dict:
+    def with_parameters(x: int, y: str) -> dict[str, Any]:
         """A tool that does nothing."""
         return {"x": x, "y": y}
 
     @tool
-    def with_parameters_and_callbacks(x: int, y: str, callbacks: Callbacks) -> dict:
+    def with_parameters_and_callbacks(
+        x: int, y: str, callbacks: Callbacks
+    ) -> dict[str, Any]:
         """A tool that does nothing."""
         _ = callbacks
         return {"x": x, "y": y}

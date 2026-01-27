@@ -211,7 +211,7 @@ DEFAULT_FORMATTER_MAPPING: dict[str, Callable[..., str]] = {
     "jinja2": jinja2_formatter,
 }
 
-DEFAULT_VALIDATOR_MAPPING: dict[str, Callable] = {
+DEFAULT_VALIDATOR_MAPPING: dict[str, Callable[[str, list[str]], None]] = {
     "f-string": formatter.validate_input_variables,
     "jinja2": validate_jinja2,
 }
@@ -306,7 +306,7 @@ def get_template_variables(template: str, template_format: str) -> list[str]:
     return sorted(input_variables)
 
 
-class StringPromptTemplate(BasePromptTemplate, ABC):
+class StringPromptTemplate(BasePromptTemplate[str], ABC):
     """String prompt that exposes the format method, returning a prompt."""
 
     @classmethod
@@ -371,7 +371,7 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
         print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
 
-def is_subsequence(child: Sequence, parent: Sequence) -> bool:
+def is_subsequence(child: Sequence[Any], parent: Sequence[Any]) -> bool:
     """Return `True` if child is subsequence of parent."""
     if len(child) == 0 or len(parent) == 0:
         return False

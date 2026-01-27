@@ -100,7 +100,7 @@ def make_invalid_tool_call(
 
 
 def parse_tool_calls(
-    raw_tool_calls: list[dict],
+    raw_tool_calls: list[dict[str, Any]],
     *,
     partial: bool = False,
     strict: bool = False,

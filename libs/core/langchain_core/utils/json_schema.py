@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-def _retrieve_ref(path: str, schema: dict) -> list | dict:
+def _retrieve_ref(path: str, schema: dict[str, Any]) -> list[Any] | dict[Any, Any]:
     """Retrieve a referenced object from a JSON schema using a path.
 
     Resolves JSON schema references (e.g., `'#/definitions/MyType'`) by traversing the
@@ -33,7 +33,7 @@ def _retrieve_ref(path: str, schema: dict) -> list | dict:
             "with #."
         )
         raise ValueError(msg)
-    out: list | dict = schema
+    out: list[Any] | dict[Any, Any] = schema
     for component in components[1:]:
         if component in out:
             if isinstance(out, list):
@@ -186,11 +186,11 @@ def _dereference_refs_helper(
 
 
 def dereference_refs(
-    schema_obj: dict,
+    schema_obj: dict[str, Any],
     *,
-    full_schema: dict | None = None,
+    full_schema: dict[str, Any] | None = None,
     skip_keys: Sequence[str] | None = None,
-) -> dict:
+) -> dict[str, Any]:
     """Resolve and inline JSON Schema `$ref` references in a schema object.
 
     This function processes a JSON Schema and resolves all `$ref` references by
@@ -266,7 +266,7 @@ def dereference_refs(
     keys_to_skip = list(skip_keys) if skip_keys is not None else ["$defs"]
     shallow = skip_keys is None
     return cast(
-        "dict",
+        "dict[str, Any]",
         _dereference_refs_helper(
             schema_obj, full, None, keys_to_skip, shallow_refs=shallow
         ),

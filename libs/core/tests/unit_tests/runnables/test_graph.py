@@ -226,7 +226,9 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
     str_parser = StrOutputParser()
     xml_parser = XMLOutputParser()
 
-    def conditional_str_parser(value: str) -> Runnable[BaseMessage | str, str]:
+    def conditional_str_parser(
+        value: str,
+    ) -> Runnable[BaseMessage | str, str | dict[str, Any]]:
         if value == "a":
             return str_parser
         return xml_parser

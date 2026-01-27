@@ -24,13 +24,13 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
-) -> Callable[[Callable | Runnable], BaseTool]: ...
+) -> Callable[[Callable[..., Any] | Runnable[Any, Any]], BaseTool]: ...
 
 
 @overload
 def tool(
     name_or_callable: str,
-    runnable: Runnable,
+    runnable: Runnable[Any, Any],
     *,
     description: str | None = None,
     return_direct: bool = False,
@@ -45,7 +45,7 @@ def tool(
 
 @overload
 def tool(
-    name_or_callable: Callable,
+    name_or_callable: Callable[..., Any],
     *,
     description: str | None = None,
     return_direct: bool = False,
@@ -70,12 +70,12 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
-) -> Callable[[Callable | Runnable], BaseTool]: ...
+) -> Callable[[Callable[..., Any] | Runnable[Any, Any]], BaseTool]: ...
 
 
 def tool(
-    name_or_callable: str | Callable | None = None,
-    runnable: Runnable | None = None,
+    name_or_callable: str | Callable[..., Any] | None = None,
+    runnable: Runnable[Any, Any] | None = None,
     *args: Any,
     description: str | None = None,
     return_direct: bool = False,
@@ -85,7 +85,7 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
-) -> BaseTool | Callable[[Callable | Runnable], BaseTool]:
+) -> BaseTool | Callable[[Callable[..., Any] | Runnable[Any, Any]], BaseTool]:
     """Convert Python functions and `Runnables` to LangChain tools.
 
     Can be used as a decorator with or without arguments to create tools from functions.
@@ -258,7 +258,7 @@ def tool(
 
     def _create_tool_factory(
         tool_name: str,
-    ) -> Callable[[Callable | Runnable], BaseTool]:
+    ) -> Callable[[Callable[..., Any] | Runnable[Any, Any]], BaseTool]:
         """Create a decorator that takes a callable and returns a tool.
 
         Args:
@@ -268,7 +268,9 @@ def tool(
             A function that takes a callable or `Runnable` and returns a tool.
         """
 
-        def _tool_factory(dec_func: Callable | Runnable) -> BaseTool:
+        def _tool_factory(
+            dec_func: Callable[..., Any] | Runnable[Any, Any],
+        ) -> BaseTool:
             tool_description = description
             if isinstance(dec_func, Runnable):
                 runnable = dec_func
@@ -381,7 +383,7 @@ def tool(
     # @tool(parse_docstring=True)
     # def my_tool():
     #    pass
-    def _partial(func: Callable | Runnable) -> BaseTool:
+    def _partial(func: Callable[..., Any] | Runnable[Any, Any]) -> BaseTool:
         """Partial function that takes a `Callable` and returns a tool."""
         name_ = func.get_name() if isinstance(func, Runnable) else func.__name__
         tool_factory = _create_tool_factory(name_)
@@ -390,14 +392,14 @@ def tool(
     return _partial
 
 
-def _get_description_from_runnable(runnable: Runnable) -> str:
+def _get_description_from_runnable(runnable: Runnable[Any, Any]) -> str:
     """Generate a placeholder description of a `Runnable`."""
     input_schema = runnable.input_schema.model_json_schema()
     return f"Takes {input_schema}."
 
 
 def _get_schema_from_runnable_and_arg_types(
-    runnable: Runnable,
+    runnable: Runnable[Any, Any],
     name: str,
     arg_types: dict[str, type] | None = None,
 ) -> type[BaseModel]:
@@ -417,7 +419,7 @@ def _get_schema_from_runnable_and_arg_types(
 
 
 def convert_runnable_to_tool(
-    runnable: Runnable,
+    runnable: Runnable[Any, Any],
     args_schema: type[BaseModel] | None = None,
     *,
     name: str | None = None,
