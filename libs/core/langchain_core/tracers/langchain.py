@@ -1,4 +1,4 @@
-"""A Tracer implementation that records to LangChain endpoint."""
+"""A tracer implementation that records to LangChain endpoint."""
 
 from __future__ import annotations
 
@@ -80,9 +80,8 @@ def _get_usage_metadata_from_generations(
     messages. This is typically present in chat model outputs.
 
     Args:
-        generations: List of generation batches, where each batch is a list
-            of generation dicts that may contain a `'message'` key with
-            `'usage_metadata'`.
+        generations: List of generation batches, where each batch is a list of
+            generation dicts that may contain a `'message'` key with `'usage_metadata'`.
 
     Returns:
         The aggregated `usage_metadata` dict if found, otherwise `None`.
@@ -98,7 +97,7 @@ def _get_usage_metadata_from_generations(
 
 
 class LangChainTracer(BaseTracer):
-    """Implementation of the SharedTracer that POSTS to the LangChain endpoint."""
+    """Implementation of the `SharedTracer` that `POSTS` to the LangChain endpoint."""
 
     run_inline = True
 
@@ -114,9 +113,15 @@ class LangChainTracer(BaseTracer):
 
         Args:
             example_id: The example ID.
-            project_name: The project name. Defaults to the tracer project.
-            client: The client. Defaults to the global client.
-            tags: The tags. Defaults to an empty list.
+            project_name: The project name.
+
+                Defaults to the tracer project.
+            client: The client.
+
+                Defaults to the global client.
+            tags: The tags.
+
+                Defaults to an empty list.
             **kwargs: Additional keyword arguments.
         """
         super().__init__(**kwargs)
