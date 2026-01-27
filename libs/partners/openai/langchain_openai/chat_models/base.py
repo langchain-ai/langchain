@@ -1475,7 +1475,7 @@ class BaseChatOpenAI(BaseChatModel):
                     token_usage, service_tier
                 )
             generation_info = generation_info or {}
-            if message.tool_calls:
+            if isinstance(message, AIMessage) and message.tool_calls:
                 generation_info["finish_reason"] = "tool_calls"
             else:
                 generation_info["finish_reason"] = (
