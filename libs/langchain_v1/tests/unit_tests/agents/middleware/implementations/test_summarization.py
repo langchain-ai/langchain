@@ -1284,3 +1284,37 @@ async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None
     assert config is not None
     assert "metadata" in config
     assert config["metadata"]["lc_source"] == "summarization"
+
+
+def test_summarization_middleware_preserves_active_turn() -> None:
+    """Ensure that summarization preserves entire active turns."""
+
+    def token_counter(messages: Iterable[MessageLikeRepresentation]) -> int:
+        return len(list(messages)) * 100
+
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=("messages", 6),
+        keep=("messages", 2),
+    )
+    middleware.token_counter = token_counter
+
+    # Turn starts at index 1
+    messages: list[AnyMessage] = [
+        HumanMessage(content="H1", id="h1"),
+        AIMessage(content="AI1", tool_calls=[{"name": "t1", "id": "c1", "args": {}}], id="ai1"),
+        ToolMessage(content="T1", tool_call_id="c1", id="tr1"),
+        AIMessage(content="AI2", tool_calls=[{"name": "t2", "id": "c2", "args": {}}], id="ai2"),
+        ToolMessage(content="T2", tool_call_id="c2", id="tr2"),
+        AIMessage(content="AI3", tool_calls=[{"name": "t3", "id": "c3", "args": {}}], id="ai3"),
+    ]
+
+    state = AgentState[Any](messages=messages)
+    result = middleware.before_model(state, Runtime())
+    assert result is not None
+
+    preserved_messages = result["messages"][2:]
+    # Should preserve from ai1 onwards (indices 1 to 5)
+    assert len(preserved_messages) == 5
+    assert preserved_messages == messages[1:]
+    assert [m.id for m in preserved_messages] == ["ai1", "tr1", "ai2", "tr2", "ai3"]
