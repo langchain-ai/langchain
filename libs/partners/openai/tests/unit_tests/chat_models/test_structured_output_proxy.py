@@ -3,7 +3,7 @@
 import json
 from unittest.mock import MagicMock
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 
 from langchain_openai import ChatOpenAI
 
@@ -51,7 +51,7 @@ def test_structured_output_proxy_fix() -> None:
     }
 
     # Initialize ChatOpenAI
-    llm = ChatOpenAI(model="gpt-4", api_key="test")
+    llm = ChatOpenAI(model="gpt-4", api_key=SecretStr("test"))
 
     # Inject Mock Client directly
     # _generate calls self.client.with_raw_response.create(...).parse()
