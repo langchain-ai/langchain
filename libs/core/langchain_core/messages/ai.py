@@ -320,7 +320,7 @@ class AIMessage(BaseMessage):
                     )
                     values["tool_calls"] = parsed_tool_calls
                     values["invalid_tool_calls"] = parsed_invalid_tool_calls
-            except Exception:
+            except (json.JSONDecodeError, KeyError, TypeError, ValueError):
                 logger.debug("Failed to parse tool calls", exc_info=True)
 
         # Ensure "type" is properly set on all tool call-like dicts.
@@ -527,7 +527,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                     )
                 else:
                     add_chunk_to_invalid_tool_calls(chunk)
-            except Exception:
+            except (json.JSONDecodeError, KeyError, TypeError, ValueError):
                 add_chunk_to_invalid_tool_calls(chunk)
         self.tool_calls = tool_calls
         self.invalid_tool_calls = invalid_tool_calls
