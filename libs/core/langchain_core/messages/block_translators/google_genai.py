@@ -542,12 +542,41 @@ def translate_content(message: AIMessage) -> list[types.ContentBlock]:
 def translate_content_chunk(message: AIMessageChunk) -> list[types.ContentBlock]:
     """Derive standard content blocks from a chunk with Google (GenAI) content.
 
+    For intermediate streaming chunks (`chunk_position != 'last'`), tool calls are
+    returned as `tool_call_chunk` blocks. For final/aggregated chunks, tool calls are
+    returned as `tool_call` blocks.
+
     Args:
         message: The message chunk to translate.
 
     Returns:
         The derived content blocks.
     """
+    # For intermediate streaming chunks with tool_call_chunks,
+    # produce tool_call_chunk blocks
+    if message.tool_call_chunks and message.chunk_position != "last":
+        # Start with non-tool-call content from the base conversion
+        blocks = _convert_to_v1_from_genai(message)
+
+        # Remove any tool_call blocks added by _convert_to_v1_from_genai
+        # (they were derived from message.tool_calls which auto-parses tool_call_chunks)
+        blocks = [b for b in blocks if b.get("type") != "tool_call"]
+
+        # Add tool_call_chunk blocks from tool_call_chunks
+        for chunk in message.tool_call_chunks:
+            tool_call_chunk_block: types.ToolCallChunk = {
+                "type": "tool_call_chunk",
+                "id": chunk.get("id"),
+                "name": chunk.get("name"),
+                "args": chunk.get("args"),
+            }
+            if (idx := chunk.get("index")) is not None:
+                tool_call_chunk_block["index"] = idx
+            blocks.append(tool_call_chunk_block)
+
+        return blocks
+
+    # Final/aggregated chunk or no tool_call_chunks: use standard conversion
     return _convert_to_v1_from_genai(message)
 
 
