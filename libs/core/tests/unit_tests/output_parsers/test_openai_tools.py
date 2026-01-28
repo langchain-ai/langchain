@@ -1423,3 +1423,88 @@ def test_parse_tool_call_partial_mode_with_none_arguments() -> None:
 
     # In partial mode, None arguments returns None (incomplete tool call)
     assert result is None
+
+
+def test_pydantic_tools_parser_unknown_tool_partial() -> None:
+    """Test that unknown tools are skipped when partial=True.
+
+    Reproduces issue #34910.
+    """
+
+    class Model1(BaseModel):
+        name: str
+        age: int
+
+    class Model2(BaseModel):
+        value: float
+
+    parser = PydanticToolsParser(tools=[Model1, Model2])
+
+    # Create a message with one known tool (Model1) and one unknown tool (Model3)
+    result = ChatGeneration(
+        message=AIMessage(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "type": "function",
+                        "id": "call_1",
+                        "function": {
+                            "name": "Model1",
+                            "arguments": '{"name": "Alice", "age": 30}',
+                        },
+                    },
+                    {
+                        "type": "function",
+                        "id": "call_2",
+                        "function": {
+                            "name": "Model3",  # Unknown tool
+                            "arguments": '{"unknown": "data"}',
+                        },
+                    },
+                ]
+            },
+        )
+    )
+
+    # With partial=True, should skip unknown tools and return only known ones
+    output = parser.parse_result([result], partial=True)
+    assert len(output) == 1
+    assert isinstance(output[0], Model1)
+    assert output[0].name == "Alice"
+    assert output[0].age == 30
+
+
+def test_pydantic_tools_parser_unknown_tool_non_partial() -> None:
+    """Test that unknown tools raise KeyError when partial=False.
+
+    Reproduces issue #34910.
+    """
+
+    class Model1(BaseModel):
+        name: str
+
+    parser = PydanticToolsParser(tools=[Model1])
+
+    result = ChatGeneration(
+        message=AIMessage(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "type": "function",
+                        "id": "call_1",
+                        "function": {
+                            "name": "UnknownModel",
+                            "arguments": '{"foo": "bar"}',
+                        },
+                    },
+                ]
+            },
+        )
+    )
+
+    # With partial=False (default), should raise KeyError for unknown tools
+    with pytest.raises(KeyError, match="Unknown tool name: UnknownModel"):
+        parser.parse_result([result], partial=False)
+
