@@ -19,6 +19,7 @@ from langchain_core.messages import (
     RemoveMessage,
     SystemMessage,
     ToolMessage,
+    ToolMessageChunk,
     convert_to_messages,
     convert_to_openai_image_block,
     get_buffer_string,
@@ -1048,6 +1049,25 @@ def test_tool_message_tool_call_id() -> None:
     ToolMessage("foo", tool_call_id=uuid.uuid4())
     ToolMessage("foo", tool_call_id=1)
     ToolMessage("foo", tool_call_id=1.0)
+
+
+def test_tool_message_chunk_none_content() -> None:
+    """Test that ToolMessageChunk handles None content correctly."""
+    # None should be converted to empty string
+    chunk = ToolMessageChunk(tool_call_id="1", content=None)
+    assert chunk.content == ""
+
+    # Merging two chunks with None content should not produce "NoneNone"
+    chunk1 = ToolMessageChunk(tool_call_id="1", content=None)
+    chunk2 = ToolMessageChunk(tool_call_id="1", content=None)
+    result = chunk1 + chunk2
+    assert result.content == ""
+
+    # Merging None with string
+    chunk1 = ToolMessageChunk(tool_call_id="1", content=None)
+    chunk2 = ToolMessageChunk(tool_call_id="1", content="hello")
+    result = chunk1 + chunk2
+    assert result.content == "hello"
 
 
 def test_message_text() -> None:
