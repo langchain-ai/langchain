@@ -23,6 +23,10 @@ try:
 except ImportError:
     _HAS_DEFUSEDXML = False
 
+# Pre-compiled regex patterns for performance
+_XML_BACKTICK_RE = re.compile(r"```(xml)?(.*)```", re.DOTALL)
+_WHITESPACE_RE = re.compile(r"\S")
+
 XML_FORMAT_INSTRUCTIONS = """The output should be formatted as a XML file.
 1. Output should conform to the tags below.
 2. If tags are not given, make them on your own.
@@ -233,7 +237,7 @@ class XMLOutputParser(BaseTransformOutputParser):
         else:
             et = ET  # Use the standard library parser
 
-        match = re.search(r"```(xml)?(.*)```", text, re.DOTALL)
+        match = _XML_BACKTICK_RE.search(text)
         if match is not None:
             # If match found, use the content within the backticks
             text = match.group(2)
@@ -268,7 +272,7 @@ class XMLOutputParser(BaseTransformOutputParser):
 
     def _root_to_dict(self, root: ET.Element) -> dict[str, str | list[Any]]:
         """Converts xml tree to python dictionary."""
-        if root.text and bool(re.search(r"\S", root.text)):
+        if root.text and bool(_WHITESPACE_RE.search(root.text)):
             # If root text contains any non-whitespace character it
             # returns {root.tag: root.text}
             return {root.tag: root.text}
