@@ -261,7 +261,35 @@ class ChatDeepSeek(BaseChatOpenAI):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> dict:
+        # Get original messages to preserve reasoning_content before base conversion
+        messages = self._convert_input(input_).to_messages()
+        # Store reasoning_content for AIMessages with tool_calls
+        # According to DeepSeek API docs, reasoning_content is REQUIRED when tool_calls
+        # are present during the tool invocation process (within same question/turn).
+        # See: https://api-docs.deepseek.com/guides/thinking_mode#tool-calls
+        reasoning_content_map = {}
+        for i, msg in enumerate(messages):
+            if (
+                isinstance(msg, AIMessage)
+                and (msg.tool_calls or msg.invalid_tool_calls)
+                and (reasoning := msg.additional_kwargs.get("reasoning_content"))
+            ):
+                reasoning_content_map[i] = reasoning
+
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+
+        # Restore reasoning_content for assistant messages with tool_calls
+        # This is required by DeepSeek API - missing it causes 400 error
+        if "messages" in payload and reasoning_content_map:
+            for i, message in enumerate(payload["messages"]):
+                if (
+                    i in reasoning_content_map
+                    and message.get("role") == "assistant"
+                    and message.get("tool_calls")
+                ):
+                    message["reasoning_content"] = reasoning_content_map[i]
+
+        # Apply DeepSeek-specific message formatting
         for message in payload["messages"]:
             if message["role"] == "tool" and isinstance(message["content"], list):
                 message["content"] = json.dumps(message["content"])
