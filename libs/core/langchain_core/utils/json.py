@@ -11,6 +11,13 @@ from langchain_core.exceptions import OutputParserException
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+# Pre-compiled regex patterns for performance
+_NEWLINE_RE = re.compile(r"\n")
+_CARRIAGE_RETURN_RE = re.compile(r"\r")
+_TAB_RE = re.compile(r"\t")
+_UNESCAPED_QUOTE_RE = re.compile(r'(?<!\\)"')
+_ACTION_INPUT_RE = re.compile(r'("action_input"\:\s*")(.*?)(")', re.DOTALL)
+
 
 def _replace_new_line(match: re.Match[str]) -> str:
     """Replace newline characters in a regex match with escaped sequences.
@@ -22,10 +29,10 @@ def _replace_new_line(match: re.Match[str]) -> str:
         String with newlines, carriage returns, tabs, and quotes properly escaped.
     """
     value = match.group(2)
-    value = re.sub(r"\n", r"\\n", value)
-    value = re.sub(r"\r", r"\\r", value)
-    value = re.sub(r"\t", r"\\t", value)
-    value = re.sub(r'(?<!\\)"', r"\"", value)
+    value = _NEWLINE_RE.sub(r"\\n", value)
+    value = _CARRIAGE_RETURN_RE.sub(r"\\r", value)
+    value = _TAB_RE.sub(r"\\t", value)
+    value = _UNESCAPED_QUOTE_RE.sub(r"\"", value)
 
     return match.group(1) + value + match.group(3)
 
@@ -43,11 +50,9 @@ def _custom_parser(multiline_string: str | bytes | bytearray) -> str:
     if isinstance(multiline_string, (bytes, bytearray)):
         multiline_string = multiline_string.decode()
 
-    return re.sub(
-        r'("action_input"\:\s*")(.*?)(")',
+    return _ACTION_INPUT_RE.sub(
         _replace_new_line,
         multiline_string,
-        flags=re.DOTALL,
     )
 
 
