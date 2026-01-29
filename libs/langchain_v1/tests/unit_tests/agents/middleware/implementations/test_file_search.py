@@ -124,6 +124,30 @@ class TestFilesystemGrepSearch:
 
         assert "Invalid regex pattern" in result
 
+    def test_grep_pattern_too_long(self, tmp_path: Path) -> None:
+        """Return no matches when regex pattern exceeds length limit."""
+        (tmp_path / "test.py").write_text("hello\n", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
+        result = middleware.grep_search.func(pattern="a" * 1025)
+
+        assert result == "No matches found"
+
+    def test_grep_nested_quantifier_pattern(self, tmp_path: Path) -> None:
+        """Return no matches when pattern includes nested quantifiers."""
+        (tmp_path / "test.py").write_text("aaaa\n", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
+        result = middleware.grep_search.func(pattern="(a+)+$")
+
+        assert result == "No matches found"
+
     def test_grep_no_matches(self, tmp_path: Path) -> None:
         """Test grep search with no matches."""
         (tmp_path / "test.py").write_text("hello\n", encoding="utf-8")

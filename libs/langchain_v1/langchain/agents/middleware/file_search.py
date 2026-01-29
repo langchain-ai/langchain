@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import fnmatch
 import json
+import logging
 import re
 import subprocess
 from contextlib import suppress
@@ -18,6 +19,9 @@ from typing import Literal
 from langchain_core.tools import tool
 
 from langchain.agents.middleware.types import AgentMiddleware
+
+LOGGER = logging.getLogger(__name__)
+MAX_REGEX_PATTERN_LENGTH = 1024
 
 
 def _expand_include_patterns(pattern: str) -> list[str] | None:
@@ -82,6 +86,71 @@ def _match_include_pattern(basename: str, pattern: str) -> bool:
         return False
 
     return any(fnmatch.fnmatch(basename, candidate) for candidate in expanded)
+
+
+def _has_nested_quantifiers(pattern: str) -> bool:
+    """Return True if pattern includes nested quantifiers inside a quantified group."""
+    stack: list[tuple[bool, bool]] = []
+    in_char_class = False
+    escape = False
+
+    for idx, char in enumerate(pattern):
+        if escape:
+            if stack:
+                stack[-1] = (stack[-1][0], True)
+            escape = False
+            continue
+
+        if char == "\\":
+            escape = True
+            continue
+
+        if in_char_class:
+            if char == "]":
+                in_char_class = False
+                if stack:
+                    stack[-1] = (stack[-1][0], True)
+            continue
+
+        if char == "[":
+            in_char_class = True
+            continue
+
+        if char == "(":
+            stack.append((False, False))
+            continue
+
+        if char == ")" and stack:
+            inner_has_quant, saw_atom = stack.pop()
+            next_char = pattern[idx + 1] if idx + 1 < len(pattern) else ""
+            group_quantified = next_char in "*+?" or next_char == "{"
+            if group_quantified and inner_has_quant:
+                return True
+            if stack:
+                parent_inner, _ = stack[-1]
+                stack[-1] = (
+                    parent_inner or inner_has_quant or group_quantified,
+                    True,
+                )
+            continue
+
+        if char in "*+?":
+            if stack and stack[-1][1]:
+                inner_has_quant, saw_atom = stack[-1]
+                stack[-1] = (inner_has_quant or True, saw_atom)
+            continue
+
+        if char == "{":
+            if stack and stack[-1][1]:
+                inner_has_quant, saw_atom = stack[-1]
+                stack[-1] = (inner_has_quant or True, saw_atom)
+            continue
+
+        if stack:
+            inner_has_quant, _ = stack[-1]
+            stack[-1] = (inner_has_quant, True)
+
+    return False
 
 
 class FilesystemFileSearchMiddleware(AgentMiddleware):
@@ -199,6 +268,12 @@ class FilesystemFileSearchMiddleware(AgentMiddleware):
                 Search results formatted according to `output_mode`.
                     Returns `'No matches found'` if no results.
             """
+            if len(pattern) > MAX_REGEX_PATTERN_LENGTH:
+                LOGGER.warning(
+                    "Skipping grep search because regex pattern exceeds %d characters.",
+                    MAX_REGEX_PATTERN_LENGTH,
+                )
+                return "No matches found"
             # Compile regex pattern (for validation)
             try:
                 re.compile(pattern)
@@ -319,6 +394,10 @@ class FilesystemFileSearchMiddleware(AgentMiddleware):
             return {}
 
         if not base_full.exists():
+            return {}
+
+        if _has_nested_quantifiers(pattern):
+            LOGGER.warning("Skipping regex search fallback due to nested quantifiers in pattern.")
             return {}
 
         regex = re.compile(pattern)
