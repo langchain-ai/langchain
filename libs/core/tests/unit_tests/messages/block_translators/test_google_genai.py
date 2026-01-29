@@ -1,8 +1,11 @@
 """Tests for Google GenAI block translator."""
 
+from langchain_core.messages import AIMessageChunk
 from langchain_core.messages.block_translators.google_genai import (
+    translate_content_chunk,
     translate_grounding_metadata_to_citations,
 )
+from langchain_core.messages.tool import tool_call_chunk
 
 
 def test_translate_grounding_metadata_web() -> None:
@@ -216,3 +219,80 @@ def test_translate_grounding_metadata_multiple_chunks() -> None:
     assert (
         citations[1].get("extras", {})["google_ai_metadata"]["place_id"] == "places/123"
     )
+
+
+def test_translate_content_chunk_intermediate_streaming() -> None:
+    """Intermediate chunks should have `tool_call_chunk` in `content_blocks`."""
+    chunk = AIMessageChunk(
+        content=[],
+        tool_call_chunks=[
+            tool_call_chunk(name="my_tool", args='{"arg": "value"}', id="123", index=0)
+        ],
+        response_metadata={"model_provider": "google_genai"},
+        # No chunk_position set (intermediate chunk)
+    )
+
+    blocks = translate_content_chunk(chunk)
+    tool_blocks = [b for b in blocks if b.get("type") == "tool_call_chunk"]
+    assert len(tool_blocks) == 1
+    assert tool_blocks[0].get("name") == "my_tool"
+    assert tool_blocks[0].get("args") == '{"arg": "value"}'
+    assert tool_blocks[0].get("index") == 0
+
+
+def test_translate_content_chunk_final_chunk() -> None:
+    """Final chunks should have `tool_call` in `content_blocks`."""
+    chunk = AIMessageChunk(
+        content=[],
+        tool_call_chunks=[
+            tool_call_chunk(name="my_tool", args='{"arg": "value"}', id="123")
+        ],
+        response_metadata={"model_provider": "google_genai"},
+        chunk_position="last",  # Final chunk
+    )
+
+    blocks = translate_content_chunk(chunk)
+    tool_blocks = [b for b in blocks if b.get("type") == "tool_call"]
+    assert len(tool_blocks) == 1
+    assert tool_blocks[0].get("name") == "my_tool"
+
+
+def test_translate_content_chunk_multiple_tool_calls() -> None:
+    """Test intermediate chunk with multiple `tool_call_chunks`."""
+    chunk = AIMessageChunk(
+        content=[],
+        tool_call_chunks=[
+            tool_call_chunk(name="tool_a", args='{"a": 1}', id="1", index=0),
+            tool_call_chunk(name="tool_b", args='{"b": 2}', id="2", index=1),
+        ],
+        response_metadata={"model_provider": "google_genai"},
+    )
+
+    blocks = translate_content_chunk(chunk)
+    tool_blocks = [b for b in blocks if b.get("type") == "tool_call_chunk"]
+    assert len(tool_blocks) == 2
+    assert tool_blocks[0].get("name") == "tool_a"
+    assert tool_blocks[0].get("index") == 0
+    assert tool_blocks[1].get("name") == "tool_b"
+    assert tool_blocks[1].get("index") == 1
+
+
+def test_translate_content_chunk_with_text_and_tool_call() -> None:
+    """Test intermediate chunk with both text `content` and `tool_call_chunks`."""
+    chunk = AIMessageChunk(
+        content=[{"type": "text", "text": "Let me call a tool."}],
+        tool_call_chunks=[
+            tool_call_chunk(name="my_tool", args='{"arg": "value"}', id="123", index=0)
+        ],
+        response_metadata={"model_provider": "google_genai"},
+    )
+
+    blocks = translate_content_chunk(chunk)
+
+    text_blocks = [b for b in blocks if b.get("type") == "text"]
+    tool_chunk_blocks = [b for b in blocks if b.get("type") == "tool_call_chunk"]
+
+    assert len(text_blocks) == 1
+    assert text_blocks[0].get("text") == "Let me call a tool."
+    assert len(tool_chunk_blocks) == 1
+    assert tool_chunk_blocks[0].get("name") == "my_tool"
