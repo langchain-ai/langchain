@@ -64,16 +64,22 @@ class RunInfo(TypedDict):
 
     name: str
     """The name of the run."""
+
     tags: list[str]
     """The tags associated with the run."""
+
     metadata: dict[str, Any]
     """The metadata associated with the run."""
+
     run_type: str
     """The type of the run."""
+
     inputs: NotRequired[Any]
     """The inputs to the run."""
+
     parent_run_id: UUID | None
     """The ID of the parent run."""
+
     tool_call_id: NotRequired[str | None]
     """The tool call ID associated with the run."""
 
@@ -177,16 +183,15 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     ) -> AsyncIterator[T]:
         """Tap the output aiter.
 
-        This method is used to tap the output of a Runnable that produces
-        an async iterator. It is used to generate stream events for the
-        output of the Runnable.
+        This method is used to tap the output of a `Runnable` that produces an async
+        iterator. It is used to generate stream events for the output of the `Runnable`.
 
         Args:
             run_id: The ID of the run.
-            output: The output of the Runnable.
+            output: The output of the `Runnable`.
 
         Yields:
-            The output of the Runnable.
+            The output of the `Runnable`.
         """
         sentinel = object()
         # atomic check and set
@@ -233,10 +238,10 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
         Args:
             run_id: The ID of the run.
-            output: The output of the Runnable.
+            output: The output of the `Runnable`.
 
         Yields:
-            The output of the Runnable.
+            The output of the `Runnable`.
         """
         sentinel = object()
         # atomic check and set
@@ -430,9 +435,11 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> None:
-        """Run on new output token. Only available when streaming is enabled.
+        """Run on new output token.
 
-        For both chat models and non-chat models (legacy LLMs).
+        Only available when streaming is enabled.
+
+        For both chat models and non-chat models (legacy text-completion LLMs).
 
         Raises:
             ValueError: If the run type is not `llm` or `chat_model`.
@@ -485,7 +492,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     ) -> None:
         """End a trace for a model run.
 
-        For both chat models and non-chat models (legacy LLMs).
+        For both chat models and non-chat models (legacy text-completion LLMs).
 
         Raises:
             ValueError: If the run type is not `'llm'` or `'chat_model'`.
@@ -628,7 +635,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             run_id: The run ID of the tool.
 
         Returns:
-            A tuple of (run_info, inputs).
+            A tuple of `(run_info, inputs)`.
 
         Raises:
             AssertionError: If the run ID is a tool call and does not have inputs.
@@ -753,7 +760,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         name: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Run when Retriever starts running."""
+        """Run when `Retriever` starts running."""
         name_ = _assign_name(name, serialized)
         run_type = "retriever"
 
@@ -788,7 +795,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     async def on_retriever_end(
         self, documents: Sequence[Document], *, run_id: UUID, **kwargs: Any
     ) -> None:
-        """Run when Retriever ends running."""
+        """Run when `Retriever` ends running."""
         run_info = self.run_map.pop(run_id)
 
         self._send(
@@ -1005,7 +1012,7 @@ async def _astream_events_implementation_v2(
     exclude_tags: Sequence[str] | None = None,
     **kwargs: Any,
 ) -> AsyncIterator[StandardStreamEvent]:
-    """Implementation of the astream events API for V2 runnables."""
+    """Implementation of the astream events API for v2 runnables."""
     event_streamer = _AstreamEventsCallbackHandler(
         include_names=include_names,
         include_types=include_types,

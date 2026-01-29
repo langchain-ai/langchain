@@ -8,13 +8,14 @@ def import_attr(
 ) -> object:
     """Import an attribute from a module located in a package.
 
-    This utility function is used in custom __getattr__ methods within __init__.py
+    This utility function is used in custom `__getattr__` methods within `__init__.py`
     files to dynamically import attributes.
 
     Args:
         attr_name: The name of the attribute to import.
-        module_name: The name of the module to import from. If `None`, the attribute
-            is imported from the package itself.
+        module_name: The name of the module to import from.
+
+            If `None`, the attribute is imported from the package itself.
         package: The name of the package where the module is located.
 
     Raises:
