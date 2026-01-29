@@ -1423,3 +1423,135 @@ def test_parse_tool_call_partial_mode_with_none_arguments() -> None:
 
     # In partial mode, None arguments returns None (incomplete tool call)
     assert result is None
+
+
+def test_pydantic_tools_parser_skips_unregistered_tool_when_partial() -> None:
+    """Test PydanticToolsParser skips unregistered tools when partial=True.
+
+    When the LLM calls a tool that isn't registered with the parser and
+    partial=True is set, the parser should gracefully skip it instead of
+    crashing with KeyError.
+    """
+
+    class RegisteredTool(BaseModel):
+        """A tool that is registered with the parser."""
+
+        value: int
+
+    parser = PydanticToolsParser(tools=[RegisteredTool])
+
+    # Message with both registered and unregistered tool calls
+    message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_unregistered",
+                "name": "UnregisteredTool",  # This tool is NOT in the parser
+                "args": {"foo": "bar"},
+            },
+            {
+                "id": "call_registered",
+                "name": "RegisteredTool",
+                "args": {"value": 42},
+            },
+        ],
+    )
+    generation = ChatGeneration(message=message)
+
+    # With partial=True, unregistered tool should be skipped
+    result = parser.parse_result([generation], partial=True)
+
+    # Should only contain the registered tool result
+    assert len(result) == 1
+    assert isinstance(result[0], RegisteredTool)
+    assert result[0].value == 42
+
+
+def test_pydantic_tools_parser_raises_keyerror_for_unregistered_tool() -> None:
+    """Test PydanticToolsParser raises KeyError for unregistered tools when partial=False.
+
+    When partial=False (the default), calling an unregistered tool should
+    raise a KeyError so the caller knows something went wrong.
+    """
+
+    class RegisteredTool(BaseModel):
+        """A tool that is registered with the parser."""
+
+        value: int
+
+    parser = PydanticToolsParser(tools=[RegisteredTool])
+
+    # Message with only an unregistered tool call
+    message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_unregistered",
+                "name": "UnregisteredTool",  # This tool is NOT in the parser
+                "args": {"foo": "bar"},
+            },
+        ],
+    )
+    generation = ChatGeneration(message=message)
+
+    # With partial=False (default), unregistered tool should raise KeyError
+    with pytest.raises(KeyError) as exc_info:
+        parser.parse_result([generation], partial=False)
+
+    assert "UnregisteredTool" in str(exc_info.value)
+
+
+def test_pydantic_tools_parser_first_tool_only_skips_unregistered_when_partial() -> None:
+    """Test first_tool_only mode gracefully handles unregistered first tool when partial=True.
+
+    When first_tool_only=True, the parent parser returns only the first tool call.
+    If that tool is unregistered and partial=True, we should get None instead of a crash.
+    """
+
+    class RegisteredTool(BaseModel):
+        """A tool that is registered with the parser."""
+
+        value: int
+
+    parser = PydanticToolsParser(tools=[RegisteredTool], first_tool_only=True)
+
+    # First tool is unregistered (this is what will be processed with first_tool_only=True)
+    message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_unregistered",
+                "name": "UnregisteredTool",
+                "args": {"foo": "bar"},
+            },
+            {
+                "id": "call_registered",
+                "name": "RegisteredTool",
+                "args": {"value": 99},
+            },
+        ],
+    )
+    generation = ChatGeneration(message=message)
+
+    # With partial=True and first_tool_only=True, if the first tool is unregistered,
+    # it should return None gracefully instead of raising KeyError
+    result = parser.parse_result([generation], partial=True)
+    assert result is None  # Gracefully returns None instead of crashing
+
+    # When the first tool IS registered, it should work
+    message_registered_first = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_registered",
+                "name": "RegisteredTool",
+                "args": {"value": 42},
+            },
+        ],
+    )
+    generation_registered = ChatGeneration(message=message_registered_first)
+    result_registered = parser.parse_result([generation_registered], partial=True)
+
+    assert isinstance(result_registered, RegisteredTool)
+    assert result_registered.value == 42
+
