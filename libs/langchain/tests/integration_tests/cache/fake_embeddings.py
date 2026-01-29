@@ -1,6 +1,7 @@
 """Fake Embedding class for testing purposes."""
 
 import math
+from typing import Any
 
 from langchain_core.embeddings import Embeddings
 from typing_extensions import override
@@ -12,7 +13,7 @@ class FakeEmbeddings(Embeddings):
     """Fake embeddings functionality for testing."""
 
     @override
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+    def embed_documents(self, texts: list[str], **_kwargs: Any) -> list[list[float]]:
         """Return simple embeddings.
 
         Embeddings encode each text as its index.
@@ -25,11 +26,13 @@ class FakeEmbeddings(Embeddings):
         """
         return [[1.0] * 9 + [float(i)] for i in range(len(texts))]
 
-    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
+    async def aembed_documents(
+        self, texts: list[str], **_kwargs: Any
+    ) -> list[list[float]]:
         return self.embed_documents(texts)
 
     @override
-    def embed_query(self, text: str) -> list[float]:
+    def embed_query(self, text: str, **_kwargs: Any) -> list[float]:
         """Return constant query embeddings.
 
         Embeddings are identical to embed_documents(texts)[0].
@@ -44,7 +47,7 @@ class FakeEmbeddings(Embeddings):
         """
         return [1.0] * 9 + [0.0]
 
-    async def aembed_query(self, text: str) -> list[float]:
+    async def aembed_query(self, text: str, **_kwargs: Any) -> list[float]:
         return self.embed_query(text)
 
 
@@ -59,7 +62,7 @@ class ConsistentFakeEmbeddings(FakeEmbeddings):
         self.known_texts: list[str] = []
         self.dimensionality = dimensionality
 
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+    def embed_documents(self, texts: list[str], **_kwargs: Any) -> list[list[float]]:
         """Return consistent embeddings for each text seen so far."""
         out_vectors = []
         for text in texts:
@@ -72,7 +75,7 @@ class ConsistentFakeEmbeddings(FakeEmbeddings):
         return out_vectors
 
     @override
-    def embed_query(self, text: str) -> list[float]:
+    def embed_query(self, text: str, **_kwargs: Any) -> list[float]:
         """Embed query text.
 
         Return consistent embeddings for the text, if seen before, or a constant
@@ -90,12 +93,12 @@ class ConsistentFakeEmbeddings(FakeEmbeddings):
 class AngularTwoDimensionalEmbeddings(Embeddings):
     """From angles (as strings in units of pi) to unit embedding vectors on a circle."""
 
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+    def embed_documents(self, texts: list[str], **_kwargs: Any) -> list[list[float]]:
         """Make a list of texts into a list of embedding vectors."""
         return [self.embed_query(text) for text in texts]
 
     @override
-    def embed_query(self, text: str) -> list[float]:
+    def embed_query(self, text: str, **_kwargs: Any) -> list[float]:
         """Embed query text.
 
         Convert input text to a 'vector' (list of floats).
