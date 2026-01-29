@@ -18,6 +18,8 @@ from langchain.agents.middleware.types import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from langgraph.runtime import Runtime
 
 ExitBehavior = Literal["continue", "error", "end"]
@@ -205,6 +207,7 @@ class ToolCallLimitMiddleware(
         thread_limit: int | None = None,
         run_limit: int | None = None,
         exit_behavior: ExitBehavior = "continue",
+        build_tool_message_content: Callable[[str | None], str] = _build_tool_message_content,
     ) -> None:
         """Initialize the tool call limit middleware.
 
@@ -224,6 +227,8 @@ class ToolCallLimitMiddleware(
                     for the single tool call that exceeded the limit. Raises
                     `NotImplementedError` if there are multiple parallel tool
                     calls to other tools or multiple pending tool calls.
+            build_tool_message_content:  Function override to handle the messaged
+                returned to the llm.
 
         Raises:
             ValueError: If both limits are `None`, if `exit_behavior` is invalid,
@@ -251,6 +256,7 @@ class ToolCallLimitMiddleware(
         self.thread_limit = thread_limit
         self.run_limit = run_limit
         self.exit_behavior = exit_behavior
+        self.build_tool_message_content = build_tool_message_content
 
     @property
     def name(self) -> str:
@@ -406,7 +412,7 @@ class ToolCallLimitMiddleware(
             )
 
         # Build tool message content (sent to model - no thread/run details)
-        tool_msg_content = _build_tool_message_content(self.tool_name)
+        tool_msg_content = self.build_tool_message_content(self.tool_name)
 
         # Inject artificial error ToolMessages for blocked tool calls
         artificial_messages: list[ToolMessage | AIMessage] = [
