@@ -942,6 +942,49 @@ class Chroma(VectorStore):
             msg,
         )
 
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        filter: dict[str, str] | None = None,  # noqa: A002
+        where_document: dict[str, str] | None = None,
+        **kwargs: Any,
+    ) -> list[tuple[Document, float]]:
+        """Override to ensure custom relevance_score_fn is properly applied.
+
+        This method ensures that Chroma-specific parameters (filter, where_document)
+        are properly passed through, and that the custom relevance_score_fn is
+        correctly applied to the raw distances returned by similarity_search_with_score.
+
+        Args:
+            query: Input text.
+            k: Number of Document objects to return.
+            filter: Filter by metadata.
+            where_document: dict used to filter by document contents.
+                    E.g. {"$contains": "hello"}.
+            **kwargs: Additional keyword arguments to pass to similarity search.
+                    Note: If 'filter' or 'where_document' are in kwargs, they will
+                    be ignored in favor of the explicit parameters.
+
+        Returns:
+            List of tuples of (doc, similarity_score) with relevance_score_fn applied.
+        """
+        relevance_score_fn = self._select_relevance_score_fn()
+        # Extract filter and where_document from kwargs if not explicitly provided
+        # This handles backward compatibility when called via base class with kwargs
+        if filter is None:
+            filter = kwargs.pop("filter", None)  # noqa: A001
+        if where_document is None:
+            where_document = kwargs.pop("where_document", None)
+        # Remove any remaining filter/where_document from kwargs to avoid conflicts
+        kwargs_clean = {
+            k: v for k, v in kwargs.items() if k not in ("filter", "where_document")
+        }
+        docs_and_scores = self.similarity_search_with_score(
+            query, k=k, filter=filter, where_document=where_document, **kwargs_clean
+        )
+        return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
+
     def similarity_search_by_image(
         self,
         uri: str,
