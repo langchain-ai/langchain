@@ -431,6 +431,14 @@ class ChatPerplexity(BaseChatModel):
         first_chunk = True
         prev_total_usage: UsageMetadata | None = None
 
+        # Accumulate metadata from all chunks
+        accumulated_citations: list[Any] = []
+        accumulated_images: list[Any] = []
+        accumulated_related_questions: list[Any] = []
+        accumulated_search_results: list[Any] = []
+        accumulated_videos: list[Any] = []
+        accumulated_reasoning_steps: list[Any] = []
+
         added_model_name: bool = False
         added_search_queries: bool = False
         added_search_context_size: bool = False
@@ -453,7 +461,23 @@ class ChatPerplexity(BaseChatModel):
                 continue
             choice = chunk["choices"][0]
 
+            # Accumulate metadata from each chunk
+            # (Perplexity sends some metadata in last chunk)
+            if chunk.get("citations"):
+                accumulated_citations = chunk.get("citations", [])
+            if chunk.get("images"):
+                accumulated_images = chunk.get("images", [])
+            if chunk.get("related_questions"):
+                accumulated_related_questions = chunk.get("related_questions", [])
+            if chunk.get("search_results"):
+                accumulated_search_results = chunk.get("search_results", [])
+            if chunk.get("videos"):
+                accumulated_videos = chunk.get("videos", [])
+            if chunk.get("reasoning_steps"):
+                accumulated_reasoning_steps = chunk.get("reasoning_steps", [])
+
             additional_kwargs = {}
+            # Original logic: add metadata from first chunk
             if first_chunk:
                 additional_kwargs["citations"] = chunk.get("citations", [])
                 for attr in ["images", "related_questions", "search_results"]:
@@ -494,6 +518,23 @@ class ChatPerplexity(BaseChatModel):
 
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
+                # Also add accumulated metadata from final chunk
+                # This catches metadata that arrives in the last chunk
+                # (like related_questions)
+                final_kwargs = {}
+                if accumulated_citations:
+                    final_kwargs["citations"] = accumulated_citations
+                if accumulated_images:
+                    final_kwargs["images"] = accumulated_images
+                if accumulated_related_questions:
+                    final_kwargs["related_questions"] = accumulated_related_questions
+                if accumulated_search_results:
+                    final_kwargs["search_results"] = accumulated_search_results
+                if accumulated_videos:
+                    final_kwargs["videos"] = accumulated_videos
+                if accumulated_reasoning_steps:
+                    final_kwargs["reasoning_steps"] = accumulated_reasoning_steps
+                chunk.additional_kwargs |= final_kwargs
 
             default_chunk_class = chunk.__class__
             chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
@@ -520,8 +561,17 @@ class ChatPerplexity(BaseChatModel):
         first_chunk = True
         prev_total_usage: UsageMetadata | None = None
 
+        # Accumulate metadata from all chunks
+        accumulated_citations: list[Any] = []
+        accumulated_images: list[Any] = []
+        accumulated_related_questions: list[Any] = []
+        accumulated_search_results: list[Any] = []
+        accumulated_videos: list[Any] = []
+        accumulated_reasoning_steps: list[Any] = []
+
         added_model_name: bool = False
         added_search_queries: bool = False
+        added_search_context_size: bool = False
         async for chunk in stream_resp:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -540,7 +590,23 @@ class ChatPerplexity(BaseChatModel):
                 continue
             choice = chunk["choices"][0]
 
+            # Accumulate metadata from each chunk
+            # (Perplexity sends some metadata in last chunk)
+            if chunk.get("citations"):
+                accumulated_citations = chunk.get("citations", [])
+            if chunk.get("images"):
+                accumulated_images = chunk.get("images", [])
+            if chunk.get("related_questions"):
+                accumulated_related_questions = chunk.get("related_questions", [])
+            if chunk.get("search_results"):
+                accumulated_search_results = chunk.get("search_results", [])
+            if chunk.get("videos"):
+                accumulated_videos = chunk.get("videos", [])
+            if chunk.get("reasoning_steps"):
+                accumulated_reasoning_steps = chunk.get("reasoning_steps", [])
+
             additional_kwargs = {}
+            # Original logic: add metadata from first chunk
             if first_chunk:
                 additional_kwargs["citations"] = chunk.get("citations", [])
                 for attr in ["images", "related_questions", "search_results"]:
@@ -563,8 +629,10 @@ class ChatPerplexity(BaseChatModel):
                     if not added_search_queries:
                         generation_info["num_search_queries"] = num_search_queries
                         added_search_queries = True
-                if search_context_size := total_usage.get("search_context_size"):
-                    generation_info["search_context_size"] = search_context_size
+                if not added_search_context_size:
+                    if search_context_size := total_usage.get("search_context_size"):
+                        generation_info["search_context_size"] = search_context_size
+                        added_search_context_size = True
 
             chunk = self._convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
@@ -579,6 +647,23 @@ class ChatPerplexity(BaseChatModel):
 
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
+                # Also add accumulated metadata from final chunk
+                # This catches metadata that arrives in the last chunk
+                # (like related_questions)
+                final_kwargs = {}
+                if accumulated_citations:
+                    final_kwargs["citations"] = accumulated_citations
+                if accumulated_images:
+                    final_kwargs["images"] = accumulated_images
+                if accumulated_related_questions:
+                    final_kwargs["related_questions"] = accumulated_related_questions
+                if accumulated_search_results:
+                    final_kwargs["search_results"] = accumulated_search_results
+                if accumulated_videos:
+                    final_kwargs["videos"] = accumulated_videos
+                if accumulated_reasoning_steps:
+                    final_kwargs["reasoning_steps"] = accumulated_reasoning_steps
+                chunk.additional_kwargs |= final_kwargs
 
             default_chunk_class = chunk.__class__
             chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
