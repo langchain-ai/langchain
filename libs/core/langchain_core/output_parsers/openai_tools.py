@@ -355,11 +355,14 @@ class PydanticToolsParser(JsonOutputToolsParser):
                     f"{res['args']}"
                 )
                 raise ValueError(msg)
+            # Skip unregistered tools when partial=True, raise KeyError otherwise
+            if res["type"] not in name_dict:
+                if partial:
+                    continue
+                raise KeyError(res["type"])
             try:
-                if res["type"] not in name_dict:
-                    raise KeyError(res["type"])
                 pydantic_objects.append(name_dict[res["type"]](**res["args"]))
-            except (ValidationError, ValueError, KeyError):
+            except (ValidationError, ValueError):
                 if partial:
                     continue
                 has_max_tokens_stop_reason = any(
