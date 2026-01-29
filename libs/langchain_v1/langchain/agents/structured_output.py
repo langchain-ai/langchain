@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import uuid
 from dataclasses import dataclass, is_dataclass
 from types import UnionType
@@ -74,14 +75,14 @@ class StructuredOutputValidationError(StructuredOutputError):
 
 
 def _parse_with_schema(
-    schema: type[SchemaT] | dict, schema_kind: SchemaKind, data: dict[str, Any]
+    schema: type[SchemaT] | dict[str, Any], schema_kind: SchemaKind, data: dict[str, Any]
 ) -> Any:
     """Parse data using for any supported schema type.
 
     Args:
         schema: The schema type (Pydantic model, `dataclass`, or `TypedDict`)
-        schema_kind: One of `"pydantic"`, `"dataclass"`, `"typeddict"`, or
-            `"json_schema"`
+        schema_kind: One of `'pydantic'`, `'dataclass'`, `'typeddict'`, or
+            `'json_schema'`
         data: The data to parse
 
     Returns:
@@ -105,21 +106,24 @@ def _parse_with_schema(
 class _SchemaSpec(Generic[SchemaT]):
     """Describes a structured output schema."""
 
-    schema: type[SchemaT]
+    schema: type[SchemaT] | dict[str, Any]
     """The schema for the response, can be a Pydantic model, `dataclass`, `TypedDict`,
-    or JSON schema dict."""
+    or JSON schema dict.
+    """
 
     name: str
     """Name of the schema, used for tool calling.
 
-    If not provided, the name will be the model name or `"response_format"` if it's a
-    JSON schema.
+    If not provided, the name will be the class name for models/dataclasses/TypedDicts,
+    or the `title` field for JSON schemas.
+
+    Falls back to a generated name if unavailable.
     """
 
     description: str
     """Custom description of the schema.
 
-    If not provided, provided will use the model's docstring.
+    If not provided, will use the model's docstring.
     """
 
     schema_kind: SchemaKind
@@ -128,18 +132,28 @@ class _SchemaSpec(Generic[SchemaT]):
     json_schema: dict[str, Any]
     """JSON schema associated with the schema."""
 
-    strict: bool = False
+    strict: bool | None = None
     """Whether to enforce strict validation of the schema."""
 
     def __init__(
         self,
-        schema: type[SchemaT],
+        schema: type[SchemaT] | dict[str, Any],
         *,
         name: str | None = None,
         description: str | None = None,
-        strict: bool = False,
+        strict: bool | None = None,
     ) -> None:
-        """Initialize SchemaSpec with schema and optional parameters."""
+        """Initialize `SchemaSpec` with schema and optional parameters.
+
+        Args:
+            schema: Schema to describe.
+            name: Optional name for the schema.
+            description: Optional description for the schema.
+            strict: Whether to enforce strict validation of the schema.
+
+        Raises:
+            ValueError: If the schema type is unsupported.
+        """
         self.schema = schema
 
         if name:
@@ -181,15 +195,16 @@ class _SchemaSpec(Generic[SchemaT]):
 class ToolStrategy(Generic[SchemaT]):
     """Use a tool calling strategy for model responses."""
 
-    schema: type[SchemaT]
+    schema: type[SchemaT] | UnionType | dict[str, Any]
     """Schema for the tool calls."""
 
-    schema_specs: list[_SchemaSpec[SchemaT]]
+    schema_specs: list[_SchemaSpec[Any]]
     """Schema specs for the tool calls."""
 
     tool_message_content: str | None
     """The content of the tool message to be returned when the model calls
-    an artificial structured output tool."""
+    an artificial structured output tool.
+    """
 
     handle_errors: (
         bool | str | type[Exception] | tuple[type[Exception], ...] | Callable[[Exception], str]
@@ -207,7 +222,7 @@ class ToolStrategy(Generic[SchemaT]):
 
     def __init__(
         self,
-        schema: type[SchemaT],
+        schema: type[SchemaT] | UnionType | dict[str, Any],
         *,
         tool_message_content: str | None = None,
         handle_errors: bool
@@ -227,7 +242,7 @@ class ToolStrategy(Generic[SchemaT]):
 
         def _iter_variants(schema: Any) -> Iterable[Any]:
             """Yield leaf variants from Union and JSON Schema oneOf."""
-            if get_origin(schema) in (UnionType, Union):
+            if get_origin(schema) in {UnionType, Union}:
                 for arg in get_args(schema):
                     yield from _iter_variants(arg)
                 return
@@ -246,7 +261,7 @@ class ToolStrategy(Generic[SchemaT]):
 class ProviderStrategy(Generic[SchemaT]):
     """Use the model provider's native structured output method."""
 
-    schema: type[SchemaT]
+    schema: type[SchemaT] | dict[str, Any]
     """Schema for native mode."""
 
     schema_spec: _SchemaSpec[SchemaT]
@@ -254,22 +269,37 @@ class ProviderStrategy(Generic[SchemaT]):
 
     def __init__(
         self,
-        schema: type[SchemaT],
+        schema: type[SchemaT] | dict[str, Any],
+        *,
+        strict: bool | None = None,
     ) -> None:
-        """Initialize ProviderStrategy with schema."""
+        """Initialize `ProviderStrategy` with schema.
+
+        Args:
+            schema: Schema to enforce via the provider's native structured output.
+            strict: Whether to request strict provider-side schema enforcement.
+        """
         self.schema = schema
-        self.schema_spec = _SchemaSpec(schema)
+        self.schema_spec = _SchemaSpec(schema, strict=strict)
 
     def to_model_kwargs(self) -> dict[str, Any]:
-        """Convert to kwargs to bind to a model to force structured output."""
+        """Convert to kwargs to bind to a model to force structured output.
+
+        Returns:
+            The kwargs to bind to a model.
+        """
         # OpenAI:
         # - see https://platform.openai.com/docs/guides/structured-outputs
-        response_format = {
+        json_schema: dict[str, Any] = {
+            "name": self.schema_spec.name,
+            "schema": self.schema_spec.json_schema,
+        }
+        if self.schema_spec.strict:
+            json_schema["strict"] = True
+
+        response_format: dict[str, Any] = {
             "type": "json_schema",
-            "json_schema": {
-                "name": self.schema_spec.name,
-                "schema": self.schema_spec.json_schema,
-            },
+            "json_schema": json_schema,
         }
         return {"response_format": response_format}
 
@@ -278,14 +308,15 @@ class ProviderStrategy(Generic[SchemaT]):
 class OutputToolBinding(Generic[SchemaT]):
     """Information for tracking structured output tool metadata.
 
-    This contains all necessary information to handle structured responses
-    generated via tool calls, including the original schema, its type classification,
-    and the corresponding tool implementation used by the tools strategy.
+    This contains all necessary information to handle structured responses generated via
+    tool calls, including the original schema, its type classification, and the
+    corresponding tool implementation used by the tools strategy.
     """
 
-    schema: type[SchemaT]
-    """The original schema provided for structured output
-    (Pydantic model, dataclass, TypedDict, or JSON schema dict)."""
+    schema: type[SchemaT] | dict[str, Any]
+    """The original schema provided for structured output (Pydantic model, dataclass,
+    TypedDict, or JSON schema dict).
+    """
 
     schema_kind: SchemaKind
     """Classification of the schema type for proper response construction."""
@@ -332,14 +363,15 @@ class OutputToolBinding(Generic[SchemaT]):
 class ProviderStrategyBinding(Generic[SchemaT]):
     """Information for tracking native structured output metadata.
 
-    This contains all necessary information to handle structured responses
-    generated via native provider output, including the original schema,
-    its type classification, and parsing logic for provider-enforced JSON.
+    This contains all necessary information to handle structured responses generated via
+    native provider output, including the original schema, its type classification, and
+    parsing logic for provider-enforced JSON.
     """
 
-    schema: type[SchemaT]
-    """The original schema provided for structured output
-    (Pydantic model, `dataclass`, `TypedDict`, or JSON schema dict)."""
+    schema: type[SchemaT] | dict[str, Any]
+    """The original schema provided for structured output (Pydantic model, `dataclass`,
+    `TypedDict`, or JSON schema dict).
+    """
 
     schema_kind: SchemaKind
     """Classification of the schema type for proper response construction."""
@@ -374,8 +406,6 @@ class ProviderStrategyBinding(Generic[SchemaT]):
         # Extract text content from AIMessage and parse as JSON
         raw_text = self._extract_text_content_from_message(response)
 
-        import json
-
         try:
             data = json.loads(raw_text)
         except Exception as e:
@@ -389,8 +419,9 @@ class ProviderStrategyBinding(Generic[SchemaT]):
         # Parse according to schema
         return _parse_with_schema(self.schema, self.schema_kind, data)
 
-    def _extract_text_content_from_message(self, message: AIMessage) -> str:
-        """Extract text content from an AIMessage.
+    @staticmethod
+    def _extract_text_content_from_message(message: AIMessage) -> str:
+        """Extract text content from an `AIMessage`.
 
         Args:
             message: The AI message to extract text from
@@ -401,32 +432,31 @@ class ProviderStrategyBinding(Generic[SchemaT]):
         content = message.content
         if isinstance(content, str):
             return content
-        if isinstance(content, list):
-            parts: list[str] = []
-            for c in content:
-                if isinstance(c, dict):
-                    if c.get("type") == "text" and "text" in c:
-                        parts.append(str(c["text"]))
-                    elif "content" in c and isinstance(c["content"], str):
-                        parts.append(c["content"])
-                else:
-                    parts.append(str(c))
-            return "".join(parts)
-        return str(content)
+        parts: list[str] = []
+        for c in content:
+            if isinstance(c, dict):
+                if c.get("type") == "text" and "text" in c:
+                    parts.append(str(c["text"]))
+                elif "content" in c and isinstance(c["content"], str):
+                    parts.append(c["content"])
+            else:
+                parts.append(str(c))
+        return "".join(parts)
 
 
 class AutoStrategy(Generic[SchemaT]):
     """Automatically select the best strategy for structured output."""
 
-    schema: type[SchemaT]
+    schema: type[SchemaT] | dict[str, Any]
     """Schema for automatic mode."""
 
     def __init__(
         self,
-        schema: type[SchemaT],
+        schema: type[SchemaT] | dict[str, Any],
     ) -> None:
-        """Initialize AutoStrategy with schema."""
+        """Initialize `AutoStrategy` with schema."""
         self.schema = schema
 
 
 ResponseFormat = ToolStrategy[SchemaT] | ProviderStrategy[SchemaT] | AutoStrategy[SchemaT]
+"""Union type for all supported response format strategies."""

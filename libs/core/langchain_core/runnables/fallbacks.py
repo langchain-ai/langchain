@@ -1,4 +1,4 @@
-"""Runnable that can fallback to other Runnables if it fails."""
+"""`Runnable` that can fallback to other `Runnable` objects if it fails."""
 
 import asyncio
 import inspect
@@ -28,14 +28,13 @@ from langchain_core.runnables.utils import (
     coro_with_context,
     get_unique_config_specs,
 )
-from langchain_core.utils.aiter import py_anext
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
 
 
 class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
-    """`Runnable` that can fallback to other `Runnable`s if it fails.
+    """`Runnable` that can fallback to other `Runnable` objects if it fails.
 
     External APIs (e.g., APIs for a language model) may at times experience
     degraded performance or even downtime.
@@ -563,7 +562,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         child_config,
                         **kwargs,
                     )
-                    chunk = await coro_with_context(py_anext(stream), context)
+                    chunk = await coro_with_context(anext(stream), context)
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e

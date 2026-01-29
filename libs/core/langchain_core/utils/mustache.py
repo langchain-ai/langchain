@@ -85,7 +85,7 @@ def l_sa_check(
         # If all the characters since the last newline are spaces
         # Then the next tag could be a standalone
         # Otherwise it can't be
-        return padding.isspace() or padding == ""
+        return padding.isspace() or not padding
     return False
 
 
@@ -201,30 +201,29 @@ def tokenize(
 ) -> Iterator[tuple[str, str]]:
     """Tokenize a mustache template.
 
-    Tokenizes a mustache template in a generator fashion,
-    using file-like objects. It also accepts a string containing
-    the template.
+    Tokenizes a mustache template in a generator fashion, using file-like objects. It
+    also accepts a string containing the template.
 
     Args:
         template: a file-like object, or a string of a mustache template
         def_ldel: The default left delimiter
-            ("{{" by default, as in spec compliant mustache)
+            (`'{{'` by default, as in spec compliant mustache)
         def_rdel: The default right delimiter
-            ("}}" by default, as in spec compliant mustache)
+            (`'}}'` by default, as in spec compliant mustache)
 
     Yields:
-        Mustache tags in the form of a tuple (tag_type, tag_key)
-        where tag_type is one of:
+        Mustache tags in the form of a tuple `(tag_type, tag_key)` where `tag_type` is
+            one of:
 
-        * literal
-        * section
-        * inverted section
-        * end
-        * partial
-        * no escape
+            * literal
+            * section
+            * inverted section
+            * end
+            * partial
+            * no escape
 
-        and tag_key is either the key or in the case of a literal tag,
-        the literal itself.
+            ...and `tag_key` is either the key or in the case of a literal tag, the
+            literal itself.
 
     Raises:
         ChevronError: If there is a syntax error in the template.
@@ -305,7 +304,7 @@ def tokenize(
 
         # Start yielding
         # Ignore literals that are empty
-        if literal != "":
+        if literal:
             yield ("literal", literal)
 
         # Ignore comments and set delimiters
@@ -352,7 +351,26 @@ def _get_key(
     def_ldel: str,
     def_rdel: str,
 ) -> Any:
-    """Return a key from the current scope."""
+    """Retrieve a value from the current scope using a dot-separated key path.
+
+    Traverses through nested dictionaries and lists using dot notation.
+
+    Supports special key `'.'` to return the current scope.
+
+    Args:
+        key: Dot-separated key path (e.g., `'user.name'` or `'.'` for current scope).
+        scopes: List of scope dictionaries to search through.
+        warn: Whether to log a warning when a key is not found.
+        keep: Whether to return the original template tag when key is not found.
+        def_ldel: Left delimiter for template (used when keep is `True`).
+        def_rdel: Right delimiter for template (used when keep is `True`).
+
+    Returns:
+        The value found at the key path.
+
+            If not found, returns the original template tag when keep is `True`,
+            otherwise returns an empty string.
+    """
     # If the key is a dot
     if key == ".":
         # Then just return the current scope
@@ -464,21 +482,27 @@ def render(
         template: A file-like object or a string containing the template.
         data: A python dictionary with your data scope.
         partials_path: The path to where your partials are stored.
-             If set to None, then partials won't be loaded from the file system
-             (defaults to '.').
+
+            If set to None, then partials won't be loaded from the file system
+
+            Defaults to `'.'`.
         partials_ext: The extension that you want the parser to look for
-            (defaults to 'mustache').
+
+            Defaults to `'mustache'`.
         partials_dict: A python dictionary which will be search for partials
-             before the filesystem is. {'include': 'foo'} is the same
-             as a file called include.mustache
-             (defaults to {}).
+            before the filesystem is.
+
+            `{'include': 'foo'}` is the same as a file called include.mustache
+            (defaults to `{}`).
         padding: This is for padding partials, and shouldn't be used
             (but can be if you really want to).
         def_ldel: The default left delimiter
-             ("{{" by default, as in spec compliant mustache).
+
+            (`'{{'` by default, as in spec compliant mustache).
         def_rdel: The default right delimiter
-             ("}}" by default, as in spec compliant mustache).
-        scopes: The list of scopes that get_key will look through.
+
+            (`'}}'` by default, as in spec compliant mustache).
+        scopes: The list of scopes that `get_key` will look through.
         warn: Log a warning when a template substitution isn't found in the data
         keep: Keep unreplaced tags when a substitution isn't found in the data.
 

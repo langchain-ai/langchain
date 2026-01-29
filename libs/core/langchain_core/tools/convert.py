@@ -2,7 +2,7 @@
 
 import inspect
 from collections.abc import Callable
-from typing import Any, Literal, get_type_hints, overload
+from typing import Any, Literal, cast, get_type_hints, overload
 
 from pydantic import BaseModel, Field, create_model
 
@@ -23,6 +23,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    extras: dict[str, Any] | None = None,
 ) -> Callable[[Callable | Runnable], BaseTool]: ...
 
 
@@ -38,6 +39,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    extras: dict[str, Any] | None = None,
 ) -> BaseTool: ...
 
 
@@ -52,6 +54,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    extras: dict[str, Any] | None = None,
 ) -> BaseTool: ...
 
 
@@ -66,6 +69,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    extras: dict[str, Any] | None = None,
 ) -> Callable[[Callable | Runnable], BaseTool]: ...
 
 
@@ -80,6 +84,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    extras: dict[str, Any] | None = None,
 ) -> BaseTool | Callable[[Callable | Runnable], BaseTool]:
     """Convert Python functions and `Runnables` to LangChain tools.
 
@@ -89,6 +94,7 @@ def tool(
     unless disabled.
 
     !!! note "Requirements"
+
         - Functions must have type hints for proper schema inference
         - When `infer_schema=False`, functions must be `(str) -> str` and have
             docstrings
@@ -96,7 +102,9 @@ def tool(
 
     Args:
         name_or_callable: Optional name of the tool or the `Callable` to be
-            converted to a tool. Overrides the function's name.
+            converted to a tool.
+
+            Overrides the function's name.
 
             Must be provided as a positional argument.
         runnable: Optional `Runnable` to convert to a tool.
@@ -106,19 +114,22 @@ def tool(
 
             Precedence for the tool description value is as follows:
 
-            - This `description` argument
-                (used even if docstring and/or `args_schema` are provided)
-            - Tool function docstring
-                (used even if `args_schema` is provided)
-            - `args_schema` description
-                (used only if `description` and docstring are not provided)
-        *args: Extra positional arguments. Must be empty.
+            - This `description` argument (used even if docstring and/or `args_schema`
+                are provided)
+            - Tool function docstring (used even if `args_schema` is provided)
+            - `args_schema` description (used only if `description` and docstring are
+                not provided)
+        *args: Extra positional arguments.
+
+            Must be empty.
         return_direct: Whether to return directly from the tool rather than continuing
             the agent loop.
         args_schema: Optional argument schema for user to specify.
         infer_schema: Whether to infer the schema of the arguments from the function's
-            signature. This also makes the resultant tool accept a dictionary input to
-            its `run()` function.
+            signature.
+
+            This also makes the resultant tool accept a dictionary input to its `run()`
+            function.
         response_format: The tool response format.
 
             If `'content'`, then the output of the tool is interpreted as the contents
@@ -130,6 +141,15 @@ def tool(
             parse parameter descriptions from Google Style function docstrings.
         error_on_invalid_docstring: If `parse_docstring` is provided, configure
             whether to raise `ValueError` on invalid Google Style docstrings.
+        extras: Optional provider-specific extra fields for the tool.
+
+            Used to pass configuration that doesn't fit into standard tool fields.
+            Chat models should process known extras when constructing model payloads.
+
+            !!! example
+
+                For example, Anthropic-specific fields like `cache_control`,
+                `defer_loading`, or `input_examples`.
 
     Raises:
         ValueError: If too many positional arguments are provided (e.g. violating the
@@ -203,10 +223,10 @@ def tool(
         }
         ```
 
-        Note that parsing by default will raise `ValueError` if the docstring
-        is considered invalid. A docstring is considered invalid if it contains
-        arguments not in the function signature, or is unable to be parsed into
-        a summary and `"Args:"` blocks. Examples below:
+        Note that parsing by default will raise `ValueError` if the docstring is
+        considered invalid. A docstring is considered invalid if it contains arguments
+        not in the function signature, or is unable to be parsed into a summary and
+        `'Args:'` blocks. Examples below:
 
         ```python
         # No args section
@@ -245,7 +265,7 @@ def tool(
             tool_name: The name that will be assigned to the tool.
 
         Returns:
-            A function that takes a callable or Runnable and returns a tool.
+            A function that takes a callable or `Runnable` and returns a tool.
         """
 
         def _tool_factory(dec_func: Callable | Runnable) -> BaseTool:
@@ -292,6 +312,7 @@ def tool(
                     response_format=response_format,
                     parse_docstring=parse_docstring,
                     error_on_invalid_docstring=error_on_invalid_docstring,
+                    extras=extras,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
@@ -308,6 +329,7 @@ def tool(
                 return_direct=return_direct,
                 coroutine=coroutine,
                 response_format=response_format,
+                extras=extras,
             )
 
         return _tool_factory
@@ -360,7 +382,7 @@ def tool(
     # def my_tool():
     #    pass
     def _partial(func: Callable | Runnable) -> BaseTool:
-        """Partial function that takes a callable and returns a tool."""
+        """Partial function that takes a `Callable` and returns a tool."""
         name_ = func.get_name() if isinstance(func, Runnable) else func.__name__
         tool_factory = _create_tool_factory(name_)
         return tool_factory(func)
@@ -369,7 +391,7 @@ def tool(
 
 
 def _get_description_from_runnable(runnable: Runnable) -> str:
-    """Generate a placeholder description of a runnable."""
+    """Generate a placeholder description of a `Runnable`."""
     input_schema = runnable.input_schema.model_json_schema()
     return f"Takes {input_schema}."
 
@@ -379,7 +401,7 @@ def _get_schema_from_runnable_and_arg_types(
     name: str,
     arg_types: dict[str, type] | None = None,
 ) -> type[BaseModel]:
-    """Infer args_schema for tool."""
+    """Infer `args_schema` for tool."""
     if arg_types is None:
         try:
             arg_types = get_type_hints(runnable.InputType)
@@ -391,7 +413,7 @@ def _get_schema_from_runnable_and_arg_types(
             )
             raise TypeError(msg) from e
     fields = {key: (key_type, Field(...)) for key, key_type in arg_types.items()}
-    return create_model(name, **fields)  # type: ignore[call-overload]
+    return cast("type[BaseModel]", create_model(name, **fields))  # type: ignore[call-overload]
 
 
 def convert_runnable_to_tool(
@@ -402,10 +424,10 @@ def convert_runnable_to_tool(
     description: str | None = None,
     arg_types: dict[str, type] | None = None,
 ) -> BaseTool:
-    """Convert a Runnable into a BaseTool.
+    """Convert a `Runnable` into a `BaseTool`.
 
     Args:
-        runnable: The runnable to convert.
+        runnable: The `Runnable` to convert.
         args_schema: The schema for the tool's input arguments.
         name: The name of the tool.
         description: The description of the tool.

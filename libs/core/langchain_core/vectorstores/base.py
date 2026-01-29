@@ -1,4 +1,4 @@
-"""**Vector store** stores embedded data and performs vector search.
+"""A vector store stores embedded data and performs vector search.
 
 One of the most common ways to store and search over unstructured data is to
 embed it and store the resulting embedding vectors, and then query the store
@@ -58,6 +58,7 @@ class VectorStore(ABC):
             metadatas: Optional list of metadatas associated with the texts.
             ids: Optional list of IDs associated with the texts.
             **kwargs: `VectorStore` specific parameters.
+
                 One of the kwargs should be `ids` which is a list of ids
                 associated with the texts.
 
@@ -294,8 +295,9 @@ class VectorStore(ABC):
 
         Args:
             query: Input text.
-            search_type: Type of search to perform. Can be `'similarity'`, `'mmr'`, or
-                `'similarity_score_threshold'`.
+            search_type: Type of search to perform.
+
+                Can be `'similarity'`, `'mmr'`, or `'similarity_score_threshold'`.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -328,8 +330,9 @@ class VectorStore(ABC):
 
         Args:
             query: Input text.
-            search_type: Type of search to perform. Can be `'similarity'`, `'mmr'`, or
-                `'similarity_score_threshold'`.
+            search_type: Type of search to perform.
+
+                Can be `'similarity'`, `'mmr'`, or `'similarity_score_threshold'`.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -400,11 +403,11 @@ class VectorStore(ABC):
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """The 'correct' relevance function.
 
-        may differ depending on a few things, including:
+        May differ depending on a few things, including:
 
-        - the distance / similarity metric used by the VectorStore
-        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
-        - embedding dimensionality
+        - The distance / similarity metric used by the VectorStore
+        - The scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - Embedding dimensionality
         - etc.
 
         Vectorstores should define their own selection-based method of relevance.
@@ -460,9 +463,10 @@ class VectorStore(ABC):
         Args:
             query: Input text.
             k: Number of `Document` objects to return.
-            **kwargs: kwargs to be passed to similarity search. Should include
-                `score_threshold`, An optional floating point value between `0` to `1`
-                to filter the resulting set of retrieved docs
+            **kwargs: Kwargs to be passed to similarity search.
+
+                Should include `score_threshold`, an optional floating point value
+                between `0` to `1` to filter the resulting set of retrieved docs.
 
         Returns:
             List of tuples of `(doc, similarity_score)`
@@ -487,9 +491,10 @@ class VectorStore(ABC):
         Args:
             query: Input text.
             k: Number of `Document` objects to return.
-            **kwargs: kwargs to be passed to similarity search. Should include
-                `score_threshold`, An optional floating point value between `0` to `1`
-                to filter the resulting set of retrieved docs
+            **kwargs: Kwargs to be passed to similarity search.
+
+                Should include `score_threshold`, an optional floating point value
+                between `0` to `1` to filter the resulting set of retrieved docs.
 
         Returns:
             List of tuples of `(doc, similarity_score)`
@@ -511,9 +516,10 @@ class VectorStore(ABC):
         Args:
             query: Input text.
             k: Number of `Document` objects to return.
-            **kwargs: kwargs to be passed to similarity search. Should include
-                `score_threshold`, An optional floating point value between `0` to `1`
-                to filter the resulting set of retrieved docs
+            **kwargs: Kwargs to be passed to similarity search.
+
+                Should include `score_threshold`, an optional floating point value
+                between `0` to `1` to filter the resulting set of retrieved docs.
 
         Returns:
             List of tuples of `(doc, similarity_score)`.
@@ -560,9 +566,10 @@ class VectorStore(ABC):
         Args:
             query: Input text.
             k: Number of `Document` objects to return.
-            **kwargs: kwargs to be passed to similarity search. Should include
-                `score_threshold`, An optional floating point value between `0` to `1`
-                to filter the resulting set of retrieved docs
+            **kwargs: Kwargs to be passed to similarity search.
+
+                Should include `score_threshold`, an optional floating point value
+                between `0` to `1` to filter the resulting set of retrieved docs.
 
         Returns:
             List of tuples of `(doc, similarity_score)`
@@ -666,9 +673,9 @@ class VectorStore(ABC):
             query: Text to look up documents similar to.
             k: Number of `Document` objects to return.
             fetch_k: Number of `Document` objects to fetch to pass to MMR algorithm.
-            lambda_mult: Number between `0` and `1` that determines the degree
-                of diversity among the results with `0` corresponding
-                to maximum diversity and `1` to minimum diversity.
+            lambda_mult: Number between `0` and `1` that determines the degree of
+                diversity among the results with `0` corresponding to maximum diversity
+                and `1` to minimum diversity.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -693,9 +700,9 @@ class VectorStore(ABC):
             query: Text to look up documents similar to.
             k: Number of `Document` objects to return.
             fetch_k: Number of `Document` objects to fetch to pass to MMR algorithm.
-            lambda_mult: Number between `0` and `1` that determines the degree
-                of diversity among the results with `0` corresponding
-                to maximum diversity and `1` to minimum diversity.
+            lambda_mult: Number between `0` and `1` that determines the degree of
+                diversity among the results with `0` corresponding to maximum diversity
+                and `1` to minimum diversity.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -731,9 +738,9 @@ class VectorStore(ABC):
             embedding: Embedding to look up documents similar to.
             k: Number of `Document` objects to return.
             fetch_k: Number of `Document` objects to fetch to pass to MMR algorithm.
-            lambda_mult: Number between `0` and `1` that determines the degree
-                of diversity among the results with `0` corresponding
-                to maximum diversity and `1` to minimum diversity.
+            lambda_mult: Number between `0` and `1` that determines the degree of
+                diversity among the results with `0` corresponding to maximum diversity
+                and `1` to minimum diversity.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -758,9 +765,9 @@ class VectorStore(ABC):
             embedding: Embedding to look up documents similar to.
             k: Number of `Document` objects to return.
             fetch_k: Number of `Document` objects to fetch to pass to MMR algorithm.
-            lambda_mult: Number between `0` and `1` that determines the degree
-                of diversity among the results with `0` corresponding
-                to maximum diversity and `1` to minimum diversity.
+            lambda_mult: Number between `0` and `1` that determines the degree of
+                diversity among the results with `0` corresponding to maximum diversity
+                and `1` to minimum diversity.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -900,13 +907,15 @@ class VectorStore(ABC):
 
         Args:
             **kwargs: Keyword arguments to pass to the search function.
+
                 Can include:
 
                 * `search_type`: Defines the type of search that the Retriever should
                     perform. Can be `'similarity'` (default), `'mmr'`, or
                     `'similarity_score_threshold'`.
-                * `search_kwargs`: Keyword arguments to pass to the search function. Can
-                    include things like:
+                * `search_kwargs`: Keyword arguments to pass to the search function.
+
+                    Can include things like:
 
                     * `k`: Amount of documents to return (Default: `4`)
                     * `score_threshold`: Minimum relevance threshold
@@ -957,10 +966,13 @@ class VectorStoreRetriever(BaseRetriever):
 
     vectorstore: VectorStore
     """VectorStore to use for retrieval."""
+
     search_type: str = "similarity"
     """Type of search to perform."""
+
     search_kwargs: dict = Field(default_factory=dict)
     """Keyword arguments to pass to the search function."""
+
     allowed_search_types: ClassVar[Collection[str]] = (
         "similarity",
         "similarity_score_threshold",
@@ -1008,6 +1020,7 @@ class VectorStoreRetriever(BaseRetriever):
         kwargs_ = self.search_kwargs | kwargs
 
         ls_params = super()._get_ls_params(**kwargs_)
+
         ls_params["ls_vector_store_provider"] = self.vectorstore.__class__.__name__
 
         if self.vectorstore.embeddings:

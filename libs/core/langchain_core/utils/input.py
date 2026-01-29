@@ -22,6 +22,9 @@ def get_color_mapping(
 
     Returns:
         The mapping of items to colors.
+
+    Raises:
+        ValueError: If no colors are available after applying exclusions.
     """
     colors = list(_TEXT_COLOR_MAPPING.keys())
     if excluded_colors is not None:
@@ -64,6 +67,7 @@ def print_text(
     """Print text with highlighting and no end characters.
 
     If a color is provided, the text will be printed in that color.
+
     If a file is provided, the text will be written to that file.
 
     Args:

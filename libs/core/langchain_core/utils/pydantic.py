@@ -55,7 +55,7 @@ PYDANTIC_VERSION = version.parse(pydantic.__version__)
 def get_pydantic_major_version() -> int:
     """DEPRECATED - Get the major version of Pydantic.
 
-    Use PYDANTIC_VERSION.major instead.
+    Use `PYDANTIC_VERSION.major` instead.
 
     Returns:
         The major version of Pydantic.
@@ -88,18 +88,18 @@ def is_pydantic_v2_subclass(cls: type) -> bool:
     """Check if the given class is Pydantic v2-like.
 
     Returns:
-        `True` if the given class is a subclass of Pydantic BaseModel 2.x.
+        `True` if the given class is a subclass of Pydantic `BaseModel` 2.x.
     """
     return issubclass(cls, BaseModel)
 
 
 def is_basemodel_subclass(cls: type) -> bool:
-    """Check if the given class is a subclass of Pydantic BaseModel.
+    """Check if the given class is a subclass of Pydantic `BaseModel`.
 
     Check if the given class is a subclass of any of the following:
 
-    * pydantic.BaseModel in Pydantic 2.x
-    * pydantic.v1.BaseModel in Pydantic 2.x
+    * `pydantic.BaseModel` in Pydantic 2.x
+    * `pydantic.v1.BaseModel` in Pydantic 2.x
 
     Returns:
         `True` if the given class is a subclass of Pydantic `BaseModel`.
@@ -112,12 +112,12 @@ def is_basemodel_subclass(cls: type) -> bool:
 
 
 def is_basemodel_instance(obj: Any) -> bool:
-    """Check if the given class is an instance of Pydantic BaseModel.
+    """Check if the given class is an instance of Pydantic `BaseModel`.
 
     Check if the given class is an instance of any of the following:
 
-    * pydantic.BaseModel in Pydantic 2.x
-    * pydantic.v1.BaseModel in Pydantic 2.x
+    * `pydantic.BaseModel` in Pydantic 2.x
+    * `pydantic.v1.BaseModel` in Pydantic 2.x
 
     Returns:
         `True` if the given class is an instance of Pydantic `BaseModel`.
@@ -143,7 +143,7 @@ def pre_init(func: Callable) -> Any:
         # So we keep root_validator for backward compatibility.
         @root_validator(pre=True)  # type: ignore[deprecated]
         @wraps(func)
-        def wrapper(cls: type[BaseModel], values: dict[str, Any]) -> dict[str, Any]:
+        def wrapper(cls: type[BaseModel], values: dict[str, Any]) -> Any:
             """Decorator to run a function before model initialization.
 
             Args:
@@ -206,7 +206,7 @@ def _create_subset_model_v1(
     *,
     descriptions: dict | None = None,
     fn_description: str | None = None,
-) -> type[BaseModel]:
+) -> type[BaseModelV1]:
     """Create a Pydantic model with only a subset of model's fields."""
     fields = {}
 
@@ -223,7 +223,7 @@ def _create_subset_model_v1(
             field.field_info.description = descriptions[field_name]
         fields[field_name] = (t, field.field_info)
 
-    rtn = create_model_v1(name, **fields)  # type: ignore[call-overload]
+    rtn = cast("type[BaseModelV1]", create_model_v1(name, **fields))  # type: ignore[call-overload]
     rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
     return rtn
 
@@ -247,8 +247,11 @@ def _create_subset_model_v2(
             field_info.metadata = field.metadata
         fields[field_name] = (field.annotation, field_info)
 
-    rtn = _create_model_base(  # type: ignore[call-overload]
-        name, **fields, __config__=ConfigDict(arbitrary_types_allowed=True)
+    rtn = cast(
+        "type[BaseModel]",
+        _create_model_base(  # type: ignore[call-overload]
+            name, **fields, __config__=ConfigDict(arbitrary_types_allowed=True)
+        ),
     )
 
     # TODO(0.3): Determine if there is a more "pydantic" way to preserve annotations.
@@ -353,14 +356,12 @@ def _create_root_model(
     """Create a base class."""
 
     def schema(
-        cls: type[BaseModel],
+        cls: type[BaseModelV1],
         by_alias: bool = True,  # noqa: FBT001,FBT002
         ref_template: str = DEFAULT_REF_TEMPLATE,
     ) -> dict[str, Any]:
-        # Complains about schema not being defined in superclass
-        schema_ = super(cls, cls).schema(  # type: ignore[misc]
-            by_alias=by_alias, ref_template=ref_template
-        )
+        super_cls = cast("type[BaseModelV1]", super(cls, cls))
+        schema_ = super_cls.schema(by_alias=by_alias, ref_template=ref_template)
         schema_["title"] = name
         return schema_
 
@@ -371,8 +372,8 @@ def _create_root_model(
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
         mode: JsonSchemaMode = "validation",
     ) -> dict[str, Any]:
-        # Complains about model_json_schema not being defined in superclass
-        schema_ = super(cls, cls).model_json_schema(  # type: ignore[misc]
+        super_cls = cast("type[BaseModel]", super(cls, cls))
+        schema_ = super_cls.model_json_schema(
             by_alias=by_alias,
             ref_template=ref_template,
             schema_generator=schema_generator,
@@ -446,6 +447,7 @@ def create_model(
     Args:
         model_name: The name of the model.
         module_name: The name of the module where the model is defined.
+
             This is used by Pydantic to resolve any forward references.
         **field_definitions: The field definitions for the model.
 
@@ -514,13 +516,15 @@ def create_model_v2(
 ) -> type[BaseModel]:
     """Create a Pydantic model with the given field definitions.
 
-    Attention:
-        Please do not use outside of langchain packages. This API
-        is subject to change at any time.
+    !!! warning
+
+        Do not use outside of langchain packages. This API is subject to change at any
+        time.
 
     Args:
         model_name: The name of the model.
         module_name: The name of the module where the model is defined.
+
             This is used by Pydantic to resolve any forward references.
         field_definitions: The field definitions for the model.
         root: Type for a root model (`RootModel`)

@@ -1,16 +1,27 @@
 from __future__ import annotations
 
-import pytest
+import os
+from typing import (
+    Any,
+)
+from unittest.mock import MagicMock
 
-# Skip this test since langgraph.prebuilt.responses is not available
-pytest.skip("langgraph.prebuilt.responses not available", allow_module_level=True)
+import pytest
+from langchain_core.messages import HumanMessage
+from langchain_core.tools import tool
+
+from langchain.agents import create_agent
+from langchain.agents.structured_output import (
+    ToolStrategy,
+)
+from tests.unit_tests.agents.utils import BaseSchema, load_spec
 
 try:
     from langchain_openai import ChatOpenAI
 except ImportError:
     skip_openai_integration_tests = True
 else:
-    skip_openai_integration_tests = False
+    skip_openai_integration_tests = "OPENAI_API_KEY" not in os.environ
 
 AGENT_PROMPT = """
 You are a strict polling bot.
@@ -33,10 +44,10 @@ class TestCase(BaseSchema):
 TEST_CASES = load_spec("return_direct", as_model=TestCase)
 
 
-def _make_tool(return_direct: bool):
+def _make_tool(*, return_direct: bool) -> dict[str, Any]:
     attempts = 0
 
-    def _side_effect():
+    def _side_effect() -> dict[str, Any]:
         nonlocal attempts
         attempts += 1
         return {
@@ -54,7 +65,7 @@ def _make_tool(return_direct: bool):
         ),
         return_direct=return_direct,
     )
-    def _wrapped():
+    def _wrapped() -> Any:
         return mock()
 
     return {"tool": _wrapped, "mock": mock}
@@ -63,7 +74,7 @@ def _make_tool(return_direct: bool):
 @pytest.mark.skipif(skip_openai_integration_tests, reason="OpenAI integration tests are disabled.")
 @pytest.mark.parametrize("case", TEST_CASES, ids=[c.name for c in TEST_CASES])
 def test_return_direct_integration_matrix(case: TestCase) -> None:
-    poll_tool = _make_tool(case.return_direct)
+    poll_tool = _make_tool(return_direct=case.return_direct)
 
     model = ChatOpenAI(
         model="gpt-4o",
@@ -74,14 +85,14 @@ def test_return_direct_integration_matrix(case: TestCase) -> None:
         agent = create_agent(
             model,
             tools=[poll_tool["tool"]],
-            prompt=AGENT_PROMPT,
+            system_prompt=AGENT_PROMPT,
             response_format=ToolStrategy(case.response_format),
         )
     else:
         agent = create_agent(
             model,
             tools=[poll_tool["tool"]],
-            prompt=AGENT_PROMPT,
+            system_prompt=AGENT_PROMPT,
         )
 
     result = agent.invoke(

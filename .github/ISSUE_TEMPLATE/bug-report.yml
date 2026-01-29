@@ -1,5 +1,5 @@
 name: "\U0001F41B Bug Report"
-description: Report a bug in LangChain. To report a security issue, please instead use the security option below. For questions, please use the LangChain forum.
+description: Report a bug in LangChain. To report a security issue, please instead use the security option (below). For questions, please use the LangChain forum (below).
 labels: ["bug"]
 type: bug
 body:
@@ -53,7 +53,6 @@ body:
         - label: langchain-anthropic
         - label: langchain-classic
         - label: langchain-core
-        - label: langchain-cli
         - label: langchain-model-profiles
         - label: langchain-tests
         - label: langchain-text-splitters
@@ -72,11 +71,21 @@ body:
         - label: langchain-xai
         - label: Other / not sure / general
   - type: textarea
+    id: related
+    validations:
+      required: false
+    attributes:
+      label: Related Issues / PRs
+      description: |
+        If this bug is related to any existing issues or pull requests, please link them here.
+      placeholder: |
+        * e.g. #123, #456
+  - type: textarea
     id: reproduction
     validations:
       required: true
     attributes:
-      label: Example Code (Python)
+      label: Reproduction Steps / Example Code (Python)
       description: |
         Please add a self-contained, [minimal, reproducible, example](https://stackoverflow.com/help/minimal-reproducible-example) with your use case.
 

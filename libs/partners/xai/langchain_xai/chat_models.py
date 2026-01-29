@@ -15,6 +15,8 @@ from typing_extensions import Self
 from langchain_xai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Iterator
+
     from langchain_core.language_models import (
         ModelProfile,
         ModelProfileRegistry,
@@ -461,7 +463,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     def _get_ls_params(
         self,
         stop: list[str] | None = None,
-        **kwargs: Any,  # noqa: ANN401
+        **kwargs: Any,
     ) -> LangSmithParams:
         """Get the parameters used to invoke the model."""
         params = super()._get_ls_params(stop=stop, **kwargs)
@@ -526,6 +528,11 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 **client_params,
                 **async_specific,
             )
+
+        # Enable streaming usage metadata by default
+        if self.stream_usage is not False:
+            self.stream_usage = True
+
         return self
 
     @model_validator(mode="after")
@@ -541,6 +548,23 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         # Do not add search_parameters to extra_body. Live Search deprecated;
         # xAI errors if sent. Use Agent Tools API instead.
         return super()._default_params
+
+    def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
+        """Route to Chat Completions or Responses API."""
+        if self._use_responses_api({**kwargs, **self.model_kwargs}):
+            return super()._stream_responses(*args, **kwargs)
+        return super()._stream(*args, **kwargs)
+
+    async def _astream(
+        self, *args: Any, **kwargs: Any
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        """Route to Chat Completions or Responses API."""
+        if self._use_responses_api({**kwargs, **self.model_kwargs}):
+            async for chunk in super()._astream_responses(*args, **kwargs):
+                yield chunk
+        else:
+            async for chunk in super()._astream(*args, **kwargs):
+                yield chunk
 
     def _create_chat_result(
         self,
@@ -563,6 +587,21 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         if hasattr(response, "citations"):
             rtn.generations[0].message.additional_kwargs["citations"] = (
                 response.citations
+            )
+
+        # Unlike OpenAI, xAI reports reasoning tokens < completion tokens. So we assume
+        # they are not counted in output tokens, and we add them here.
+        if (
+            (not self._use_responses_api({}))
+            and (usage_metadata := rtn.generations[0].message.usage_metadata)  # type: ignore[attr-defined]
+            and (
+                reasoning_tokens := usage_metadata.get("output_token_details", {}).get(
+                    "reasoning"
+                )
+            )
+        ):
+            rtn.generations[0].message.usage_metadata["output_tokens"] += (  # type: ignore[attr-defined]
+                reasoning_tokens
             )
 
         return rtn
@@ -595,9 +634,23 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             (citations := chunk.get("citations"))
             and generation_chunk
             and isinstance(generation_chunk.message, AIMessageChunk)
+            and not chunk.get("usage")  # citations are repeated in final usage chunk
         ):
             generation_chunk.message.additional_kwargs["citations"] = citations
 
+        # Unlike OpenAI, xAI reports reasoning tokens < completion tokens. So we assume
+        # they are not counted in output tokens, and we add them here.
+        if (
+            generation_chunk
+            and (not self._use_responses_api({}))
+            and (usage_metadata := generation_chunk.message.usage_metadata)  # type: ignore[attr-defined]
+            and (
+                reasoning_tokens := usage_metadata.get("output_token_details", {}).get(
+                    "reasoning"
+                )
+            )
+        ):
+            generation_chunk.message.usage_metadata["output_tokens"] += reasoning_tokens  # type: ignore[attr-defined]
         return generation_chunk
 
     def with_structured_output(
@@ -609,7 +662,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         ] = "function_calling",
         include_raw: bool = False,
         strict: bool | None = None,
-        **kwargs: Any,  # noqa: ANN401
+        **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
 

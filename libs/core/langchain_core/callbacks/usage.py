@@ -1,4 +1,4 @@
-"""Callback Handler that tracks AIMessage.usage_metadata."""
+"""Callback Handler that tracks `AIMessage.usage_metadata`."""
 
 import threading
 from collections.abc import Generator
@@ -16,7 +16,7 @@ from langchain_core.tracers.context import register_configure_hook
 
 
 class UsageMetadataCallbackHandler(BaseCallbackHandler):
-    """Callback Handler that tracks AIMessage.usage_metadata.
+    """Callback Handler that tracks `AIMessage.usage_metadata`.
 
     Example:
         ```python
@@ -31,6 +31,7 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
         result_2 = llm_2.invoke("Hello", config={"callbacks": [callback]})
         callback.usage_metadata
         ```
+
         ```txt
         {'gpt-4o-mini-2024-07-18': {'input_tokens': 8,
           'output_tokens': 10,
@@ -48,7 +49,7 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
     """
 
     def __init__(self) -> None:
-        """Initialize the UsageMetadataCallbackHandler."""
+        """Initialize the `UsageMetadataCallbackHandler`."""
         super().__init__()
         self._lock = threading.Lock()
         self.usage_metadata: dict[str, UsageMetadata] = {}
@@ -95,7 +96,7 @@ def get_usage_metadata_callback(
     """Get usage metadata callback.
 
     Get context manager for tracking usage metadata across chat model calls using
-    `AIMessage.usage_metadata`.
+    [`AIMessage.usage_metadata`][langchain.messages.AIMessage.usage_metadata].
 
     Args:
         name: The name of the context variable.
@@ -116,6 +117,7 @@ def get_usage_metadata_callback(
             llm_2.invoke("Hello")
             print(cb.usage_metadata)
         ```
+
         ```txt
         {
             "gpt-4o-mini-2024-07-18": {

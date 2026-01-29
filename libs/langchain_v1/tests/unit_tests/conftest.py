@@ -1,14 +1,12 @@
 """Configuration for unit tests."""
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from importlib import util
 from typing import Any
 
 import pytest
-from langchain_tests.conftest import CustomPersister, CustomSerializer
-from langchain_tests.conftest import (
-    _base_vcr_config as _base_vcr_config,
-)
+from blockbuster import BlockBuster, blockbuster_ctx
+from langchain_tests.conftest import CustomPersister, CustomSerializer, base_vcr_config
 from vcr import VCR
 
 _EXTRA_HEADERS = [
@@ -16,6 +14,12 @@ _EXTRA_HEADERS = [
     ("user-agent", "PLACEHOLDER"),
     ("x-openai-client-user-agent", "PLACEHOLDER"),
 ]
+
+
+@pytest.fixture(autouse=True)
+def blockbuster() -> Iterator[BlockBuster]:
+    with blockbuster_ctx() as bb:
+        yield bb
 
 
 def remove_request_headers(request: Any) -> Any:
@@ -26,7 +30,7 @@ def remove_request_headers(request: Any) -> Any:
     return request
 
 
-def remove_response_headers(response: dict) -> dict:
+def remove_response_headers(response: dict[str, Any]) -> dict[str, Any]:
     """Remove sensitive headers from the response."""
     for k in response["headers"]:
         response["headers"][k] = "**REDACTED**"
@@ -34,9 +38,9 @@ def remove_response_headers(response: dict) -> dict:
 
 
 @pytest.fixture(scope="session")
-def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
+def vcr_config() -> dict[str, Any]:
     """Extend the default configuration coming from langchain_tests."""
-    config = _base_vcr_config.copy()
+    config = base_vcr_config()
     config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
     config["before_record_request"] = remove_request_headers
     config["before_record_response"] = remove_response_headers
@@ -45,7 +49,7 @@ def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
     return config
 
 
-def pytest_recording_configure(config: dict, vcr: VCR) -> None:  # noqa: ARG001
+def pytest_recording_configure(config: dict[str, Any], vcr: VCR) -> None:  # noqa: ARG001
     vcr.register_persister(CustomPersister())
     vcr.register_serializer("yaml.gz", CustomSerializer())
 
@@ -83,8 +87,8 @@ def pytest_collection_modifyitems(config: pytest.Config, items: Sequence[pytest.
     # Used to avoid repeated calls to `util.find_spec`
     required_pkgs_info: dict[str, bool] = {}
 
-    only_extended = config.getoption("--only-extended") or False
-    only_core = config.getoption("--only-core") or False
+    only_extended = config.getoption("--only-extended", default=False)
+    only_core = config.getoption("--only-core", default=False)
 
     if only_extended and only_core:
         msg = "Cannot specify both `--only-extended` and `--only-core`."

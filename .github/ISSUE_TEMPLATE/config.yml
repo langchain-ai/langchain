@@ -1,9 +1,6 @@
 blank_issues_enabled: false
 version: 2.1
 contact_links:
-  - name: 📚 Documentation issue
-    url: https://github.com/langchain-ai/docs/issues/new?template=01-langchain.yml
-    about: Report an issue related to the LangChain documentation
   - name: 💬 LangChain Forum
     url:  https://forum.langchain.com/
     about: General community discussions and support
@@ -13,6 +10,6 @@ contact_links:
   - name: 📚 API Reference Documentation
     url: https://reference.langchain.com/python/
     about: View the official LangChain API reference documentation
-  - name: 💬 LangChain Forum
-    url: https://forum.langchain.com/
-    about: Ask questions and get help from the community
+  - name: 📚 Documentation issue
+    url: https://github.com/langchain-ai/docs/issues/new?template=01-langchain.yml
+    about: Report an issue related to the LangChain documentation

@@ -16,9 +16,10 @@ from typing import (
 from pydantic import Field, SkipValidation
 from typing_extensions import override
 
+# Cannot move to TYPE_CHECKING as _run/_arun parameter annotations are needed at runtime
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
+    AsyncCallbackManagerForToolRun,  # noqa: TC001
+    CallbackManagerForToolRun,  # noqa: TC001
 )
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
@@ -40,12 +41,15 @@ class StructuredTool(BaseTool):
     """Tool that can operate on any number of inputs."""
 
     description: str = ""
+
     args_schema: Annotated[ArgsSchema, SkipValidation()] = Field(
         ..., description="The tool schema."
     )
     """The input arguments' schema."""
+
     func: Callable[..., Any] | None = None
     """The function to run when the tool is called."""
+
     coroutine: Callable[..., Awaitable[Any]] | None = None
     """The asynchronous version of the function."""
 
@@ -148,16 +152,19 @@ class StructuredTool(BaseTool):
         Args:
             func: The function from which to create a tool.
             coroutine: The async function from which to create a tool.
-            name: The name of the tool. Defaults to the function name.
+            name: The name of the tool.
+
+                Defaults to the function name.
             description: The description of the tool.
+
                 Defaults to the function docstring.
             return_direct: Whether to return the result directly or as a callback.
             args_schema: The schema of the tool's input arguments.
             infer_schema: Whether to infer the schema from the function's signature.
             response_format: The tool response format.
 
-                If `"content"` then the output of the tool is interpreted as the
-                contents of a `ToolMessage`. If `"content_and_artifact"` then the output
+                If `'content'` then the output of the tool is interpreted as the
+                contents of a `ToolMessage`. If `'content_and_artifact'` then the output
                 is expected to be a two-tuple corresponding to the `(content, artifact)`
                 of a `ToolMessage`.
             parse_docstring: If `infer_schema` and `parse_docstring`, will attempt
