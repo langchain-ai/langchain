@@ -361,13 +361,12 @@ class PydanticToolsParser(JsonOutputToolsParser):
             except KeyError as e:
                 available = ", ".join(name_dict.keys()) or "<no_tools>"
                 msg = (
-                    f"Unknown tool type: {res['type']!r}."
-                    f"Avaibale tools: {available}"
+                    f"Unknown tool type: {res['type']!r}. Available tools: {available}"
                 )
                 raise OutputParserException(msg) from e
 
             try:
-                pydantic_objects.append(name_dict[res["type"]](**res["args"]))
+                pydantic_objects.append(tool(**res["args"]))
             except (ValidationError, ValueError):
                 if partial:
                     continue
