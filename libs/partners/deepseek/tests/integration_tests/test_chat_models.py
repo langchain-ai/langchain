@@ -1,7 +1,7 @@
 """Test ChatDeepSeek chat model."""
 
 from __future__ import annotations
-
+import os
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
@@ -12,6 +12,10 @@ from langchain_deepseek.chat_models import ChatDeepSeek
 
 MODEL_NAME = "deepseek-chat"
 
+@pytest.mark.skipif(
+    not os.environ.get("DEEPSEEK_API_KEY"),
+    reason="Requires DEEPSEEK_API_KEY environment variable",
+)
 
 class TestChatDeepSeek(ChatModelIntegrationTests):
     """Test `ChatDeepSeek` chat model."""
