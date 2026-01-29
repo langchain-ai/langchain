@@ -19,6 +19,7 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration
+from langchain_core.exceptions import OutputParserException
 
 STREAMED_MESSAGES = [
     AIMessageChunk(content=""),
@@ -1423,3 +1424,30 @@ def test_parse_tool_call_partial_mode_with_none_arguments() -> None:
 
     # In partial mode, None arguments returns None (incomplete tool call)
     assert result is None
+
+@pytest.mark.parametrize("partial", [False, True])
+def test_pydantic_tools_parser_unknown_tool_raises_output_parser_exception(
+    partial: bool,
+) -> None:
+    class KnownTool(BaseModel):
+        value: int
+
+    parser = PydanticToolsParser(tools=[KnownTool])
+    message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_unknown",
+                "name": "UnknownTool",
+                "args": {"value": 1},
+            }
+        ],
+    )
+    generation = ChatGeneration(message=message)
+
+    with pytest.raises(OutputParserException) as excinfo:
+        parser.parse_result([generation], partial=partial)
+
+    msg = str(excinfo.value)
+    assert "Unknown tool type" in msg
+    assert "UnknownTool" in msg
