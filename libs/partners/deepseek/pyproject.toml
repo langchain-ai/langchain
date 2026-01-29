@@ -46,6 +46,13 @@ langchain-openai = { path = "../openai", editable = true }
 langchain-core = { path = "../../core", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
 
+[tool.uv]
+# Exclude Python 3.13t from orjson dependency to fix installation failure
+# See: https://github.com/langchain-ai/langchain/issues/34462
+override-dependencies = [
+    "orjson; platform_python_implementation != 'PyPy' and python_full_version != '3.13.*'",
+]
+
 [tool.mypy]
 disallow_untyped_defs = "True"
 
