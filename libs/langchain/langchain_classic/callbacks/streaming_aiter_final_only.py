@@ -81,9 +81,11 @@ class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
             self.done.set()
 
     @override
-    async def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+    async def on_llm_new_token(
+        self, token: str | list[str | dict[str, Any]], **kwargs: Any
+    ) -> None:
         # Remember the last n tokens, where n = len(answer_prefix_tokens)
-        self.append_to_last_tokens(token)
+        self.append_to_last_tokens(str(token))
 
         # Check if the last n tokens match the answer_prefix_tokens list ...
         if self.check_if_answer_reached():
@@ -95,4 +97,4 @@ class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
 
         # If yes, then put tokens from now on
         if self.answer_reached:
-            self.queue.put_nowait(token)
+            self.queue.put_nowait(str(token))
