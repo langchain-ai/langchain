@@ -85,6 +85,7 @@ from langchain_core.load.mapping import (
     SERIALIZABLE_MAPPING,
 )
 from langchain_core.load.serializable import Serializable
+from langchain_core.load.validators import CLASS_INIT_VALIDATORS
 
 DEFAULT_NAMESPACES = [
     "langchain",
@@ -462,6 +463,11 @@ class Reviver:
             # as json.loads will do that for us.
             kwargs = value.get("kwargs", {})
 
+            # Run class-specific validators first
+            if mapping_key in CLASS_INIT_VALIDATORS:
+                CLASS_INIT_VALIDATORS[mapping_key](mapping_key, kwargs)
+
+            # Also run general init_validator (e.g., jinja2 blocking)
             if self.init_validator is not None:
                 self.init_validator(mapping_key, kwargs)
 

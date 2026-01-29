@@ -305,6 +305,12 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "bedrock",
         "ChatBedrock",
     ),
+    ("langchain_aws", "chat_models", "ChatBedrockConverse"): (
+        "langchain_aws",
+        "chat_models",
+        "bedrock_converse",
+        "ChatBedrockConverse",
+    ),
     ("langchain_google_genai", "chat_models", "ChatGoogleGenerativeAI"): (
         "langchain_google_genai",
         "chat_models",
@@ -359,6 +365,12 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "BaseOpenAI",
     ),
     ("langchain", "llms", "bedrock", "Bedrock"): (
+        "langchain_aws",
+        "llms",
+        "bedrock",
+        "BedrockLLM",
+    ),
+    ("langchain", "llms", "bedrock", "BedrockLLM"): (
         "langchain_aws",
         "llms",
         "bedrock",
