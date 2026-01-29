@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 import openai
@@ -336,30 +337,14 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         )
         ```
 
-    Live Search:
-        xAI supports a [Live Search](https://docs.x.ai/docs/guides/live-search)
-        feature that enables Grok to ground its answers using results from web searches.
-
-        ```python
-        from langchain_xai import ChatXAI
-
-        model = ChatXAI(
-            model="grok-4",
-            search_parameters={
-                "mode": "auto",
-                # Example optional parameters below:
-                "max_search_results": 3,
-                "from_date": "2025-05-26",
-                "to_date": "2025-05-27",
-            },
-        )
-
-        model.invoke("Provide me a digest of world news in the last 24 hours.")
-        ```
-
-        !!! note
-            [Citations](https://docs.x.ai/docs/guides/live-search#returning-citations)
-            are only available in [Grok 3](https://docs.x.ai/docs/models/grok-3).
+    Web search (Agent Tools API):
+        **Live Search** (the legacy ``search_parameters`` option) has been deprecated by xAI.
+        Use the [Agent Tools API](https://docs.x.ai/docs/guides/tools/overview) instead:
+        pass server-side tools such as ``web_search`` and ``x_search`` via the xAI SDK, or
+        use ``bind_tools`` with compatible tool definitions when using the OpenAI-compatible
+        Responses API. If you pass ``search_parameters`` to ``ChatXAI``, a
+        ``DeprecationWarning`` is emitted and the parameter is ignored; requests otherwise
+        succeed without search.
 
     Token usage:
         ```python
@@ -423,7 +408,8 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     xai_api_base: str = Field(default="https://api.x.ai/v1/")
     """Base URL path for API requests."""
     search_parameters: dict[str, Any] | None = None
-    """Parameters for search requests. Example: `{"mode": "auto"}`."""
+    """**Deprecated.** Legacy Live Search. Ignored; use Agent Tools API
+    (https://docs.x.ai/docs/guides/tools/overview). Emits DeprecationWarning."""
 
     openai_api_key: SecretStr | None = None
     openai_api_base: str | None = None
@@ -483,6 +469,20 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         return params
 
     @model_validator(mode="after")
+    def _warn_search_parameters_deprecated(self) -> Self:
+        """Emit deprecation warning if search_parameters (Live Search) is used."""
+        if self.search_parameters:
+            warnings.warn(
+                "search_parameters (Live Search) is deprecated by xAI and is ignored. "
+                "Use the Agent Tools API "
+                "(https://docs.x.ai/docs/guides/tools/overview) instead, e.g. "
+                "web_search, x_search, via the xAI SDK or bind_tools.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        return self
+
+    @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
         if self.n is not None and self.n < 1:
@@ -538,14 +538,9 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     @property
     def _default_params(self) -> dict[str, Any]:
         """Get default parameters."""
-        params = super()._default_params
-        if self.search_parameters:
-            if "extra_body" in params:
-                params["extra_body"]["search_parameters"] = self.search_parameters
-            else:
-                params["extra_body"] = {"search_parameters": self.search_parameters}
-
-        return params
+        # Do not add search_parameters to extra_body. Live Search deprecated;
+        # xAI errors if sent. Use Agent Tools API instead.
+        return super()._default_params
 
     def _create_chat_result(
         self,
