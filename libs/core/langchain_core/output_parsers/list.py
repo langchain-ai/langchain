@@ -6,6 +6,7 @@ import csv
 import re
 from abc import abstractmethod
 from collections import deque
+from functools import cached_property
 from io import StringIO
 from typing import TYPE_CHECKING, TypeVar
 
@@ -191,6 +192,11 @@ class NumberedListOutputParser(ListOutputParser):
     pattern: str = r"\d+\.\s([^\n]+)"
     """The pattern to match a numbered list item."""
 
+    @cached_property
+    def _compiled_pattern(self) -> re.Pattern[str]:
+        """Compiled regex pattern for better performance."""
+        return re.compile(self.pattern)
+
     @override
     def get_format_instructions(self) -> str:
         return (
@@ -207,11 +213,11 @@ class NumberedListOutputParser(ListOutputParser):
         Returns:
             A list of strings.
         """
-        return re.findall(self.pattern, text)
+        return self._compiled_pattern.findall(text)
 
     @override
-    def parse_iter(self, text: str) -> Iterator[re.Match]:
-        return re.finditer(self.pattern, text)
+    def parse_iter(self, text: str) -> Iterator[re.Match[str]]:
+        return self._compiled_pattern.finditer(text)
 
     @property
     def _type(self) -> str:
@@ -223,6 +229,11 @@ class MarkdownListOutputParser(ListOutputParser):
 
     pattern: str = r"^\s*[-*]\s([^\n]+)$"
     """The pattern to match a Markdown list item."""
+
+    @cached_property
+    def _compiled_pattern(self) -> re.Pattern[str]:
+        """Compiled regex pattern with MULTILINE flag for better performance."""
+        return re.compile(self.pattern, re.MULTILINE)
 
     @override
     def get_format_instructions(self) -> str:
@@ -238,11 +249,11 @@ class MarkdownListOutputParser(ListOutputParser):
         Returns:
             A list of strings.
         """
-        return re.findall(self.pattern, text, re.MULTILINE)
+        return self._compiled_pattern.findall(text)
 
     @override
-    def parse_iter(self, text: str) -> Iterator[re.Match]:
-        return re.finditer(self.pattern, text, re.MULTILINE)
+    def parse_iter(self, text: str) -> Iterator[re.Match[str]]:
+        return self._compiled_pattern.finditer(text)
 
     @property
     def _type(self) -> str:
