@@ -435,6 +435,49 @@ def test_merge_lists(
     assert right == right_copy
 
 
+def test_merge_lists_collision_with_ids() -> None:
+    """Test `merge_lists` with colliding indices but different IDs."""
+    # This scenario is common with some providers (e.g. Bedrock) where tool calls
+    # are streamed with the same index (e.g. 0) but different IDs.
+    left = [
+        {
+            "index": 0,
+            "id": "call_123",
+            "name": "tool_a",
+            "type": "function",
+            "function": {"arguments": '{"arg": "foo"}'},
+        }
+    ]
+    right = [
+        {
+            "index": 0,
+            "id": "call_456",
+            "name": "tool_b",
+            "type": "function",
+            "function": {"arguments": '{"arg": "bar"}'},
+        }
+    ]
+    # Should NOT merge, but append
+    expected = [
+        {
+            "index": 0,
+            "id": "call_123",
+            "name": "tool_a",
+            "type": "function",
+            "function": {"arguments": '{"arg": "foo"}'},
+        },
+        {
+            "index": 0,
+            "id": "call_456",
+            "name": "tool_b",
+            "type": "function",
+            "function": {"arguments": '{"arg": "bar"}'},
+        },
+    ]
+    actual = merge_lists(left, right)
+    assert actual == expected
+
+
 def test_merge_lists_multiple_others() -> None:
     """Test `merge_lists` with multiple lists."""
     result = merge_lists([1], [2], [3])
