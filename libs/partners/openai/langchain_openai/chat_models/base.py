@@ -624,6 +624,9 @@ class BaseChatOpenAI(BaseChatModel):
     max_tokens: int | None = Field(default=None)
     """Maximum number of tokens to generate."""
 
+    compact_target_tokens: int | None = None
+    """The target number of tokens after compaction."""
+
     reasoning_effort: str | None = None
     """Constrains effort on reasoning for reasoning models. For use with the Chat
     Completions API.
@@ -835,6 +838,7 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     model_config = ConfigDict(populate_by_name=True)
+    use_compact_api: bool | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -1377,6 +1381,29 @@ class BaseChatOpenAI(BaseChatModel):
                     metadata=generation_info,
                     output_version=self.output_version,
                 )
+            elif self._use_compact_api(payload):
+                # Extract compact-specific params
+                target_tokens = payload.pop(
+                    "compact_target_tokens", self.compact_target_tokens
+                )
+                if target_tokens:
+                    payload["target_tokens"] = target_tokens
+
+                # Call compact API
+                raw_response = (
+                    self.root_client.responses.compact.with_raw_response.create(
+                        **payload
+                    )
+                )
+                response = raw_response.parse()
+
+                if self.include_response_headers:
+                    generation_info = {"headers": dict(raw_response.headers)}
+
+                return self._construct_compact_result(
+                    response,
+                    metadata=generation_info,
+                )
             else:
                 raw_response = self.client.with_raw_response.create(**payload)
                 response = raw_response.parse()
@@ -1406,6 +1433,15 @@ class BaseChatOpenAI(BaseChatModel):
             return True
         return _use_responses_api(payload)
 
+    def _use_compact_api(self, payload: dict) -> bool:
+        if isinstance(self.use_compact_api, bool) and self.use_compact_api:
+            return True
+        if payload.get("use_compact_api"):
+            return True
+        if payload.get("compact_target_tokens"):
+            return True
+        return bool(payload.get("compact_target_tokens"))
+
     def _get_request_payload(
         self,
         input_: LanguageModelInput,
@@ -1420,6 +1456,16 @@ class BaseChatOpenAI(BaseChatModel):
         payload = {**self._default_params, **kwargs}
 
         if self._use_responses_api(payload):
+            if self.use_previous_response_id:
+                last_messages, previous_response_id = _get_last_messages(messages)
+                payload_to_use = last_messages if previous_response_id else messages
+                if previous_response_id:
+                    payload["previous_response_id"] = previous_response_id
+                payload = _construct_responses_api_payload(payload_to_use, payload)
+            else:
+                payload = _construct_responses_api_payload(messages, payload)
+        elif self._use_compact_api(payload):
+            # Compact API uses Responses API format
             if self.use_previous_response_id:
                 last_messages, previous_response_id = _get_last_messages(messages)
                 payload_to_use = last_messages if previous_response_id else messages
@@ -1623,6 +1669,28 @@ class BaseChatOpenAI(BaseChatModel):
                     metadata=generation_info,
                     output_version=self.output_version,
                 )
+            elif self._use_compact_api(payload):
+                target_tokens = payload.pop(
+                    "compact_target_tokens", self.compact_target_tokens
+                )
+                if target_tokens:
+                    payload["target_tokens"] = target_tokens
+
+                raw_response = await (
+                    self.root_async_client.responses.compact.with_raw_response.create(
+                        **payload
+                    )
+                )
+                response = raw_response.parse()
+
+                if self.include_response_headers:
+                    generation_info = {"headers": dict(raw_response.headers)}
+
+                return self._construct_compact_result(
+                    response,
+                    metadata=generation_info,
+                )
+
             else:
                 raw_response = await self.async_client.with_raw_response.create(
                     **payload
@@ -2209,6 +2277,83 @@ class BaseChatOpenAI(BaseChatModel):
         return ChatGenerationChunk(
             message=message, generation_info=chat_result.llm_output
         )
+
+    def _construct_compact_result(
+        self,
+        response: Any,  # CompactResponse type from OpenAI SDK
+        metadata: dict | None = None,
+    ) -> ChatResult:
+        """Construct ChatResult from /responses/compact API response.
+
+        The compact API returns:
+        - compacted_messages: The compressed conversation history
+        - usage: Token usage information
+        - Other metadata
+        """
+        if hasattr(response, "error") and response.error:
+            raise ValueError(response.error)
+
+        response_metadata = {
+            "id": response.id,
+            "model": response.model,
+            "created_at": response.created_at,
+            "compacted": True,  # Flag to indicate this is from compact API
+            "model_provider": "openai",
+        }
+
+        if metadata:
+            response_metadata.update(metadata)
+
+        # Extract compacted messages
+        compacted_messages = response.compacted_messages or []
+
+        # Convert to LangChain message format
+        # The compact API returns messages in a similar format to responses API
+        lc_messages = []
+        for msg in compacted_messages:
+            lc_msg = _convert_dict_to_message(msg)
+            lc_messages.append(lc_msg)
+
+        # Create usage metadata
+        usage_metadata = None
+        if response.usage:
+            usage_metadata = _create_usage_metadata_responses(
+                response.usage.model_dump(), response.service_tier
+            )
+
+        # For compact API, we return the compacted messages as the generation
+        # The actual "content" is the entire compacted conversation
+        if lc_messages:
+            # Use the last message as the primary generation
+            primary_message = lc_messages[-1]
+            if isinstance(primary_message, AIMessage):
+                primary_message.usage_metadata = usage_metadata
+                primary_message.response_metadata = response_metadata
+
+            generation = ChatGeneration(
+                message=primary_message,
+                generation_info={"compacted_messages": lc_messages},
+            )
+        else:
+            # Fallback: create an AIMessage with metadata
+            generation = ChatGeneration(
+                message=AIMessage(
+                    content="[Conversation compacted]",
+                    usage_metadata=usage_metadata,
+                    response_metadata=response_metadata,
+                )
+            )
+
+        llm_output = {
+            "model_name": response.model,
+            "model_provider": "openai",
+            "compacted": True,
+        }
+
+        if response.usage:
+            llm_output["token_usage"] = response.usage.model_dump()
+
+        return ChatResult(generations=[generation], llm_output=llm_output)
 
 
 class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
