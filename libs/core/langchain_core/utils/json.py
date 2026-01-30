@@ -11,7 +11,6 @@ from langchain_core.exceptions import OutputParserException
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-# Pre-compiled regex patterns for performance
 _NEWLINE_RE = re.compile(r"\n")
 _CARRIAGE_RETURN_RE = re.compile(r"\r")
 _TAB_RE = re.compile(r"\t")
