@@ -18,7 +18,7 @@ from langchain_text_splitters import (
     Tokenizer,
 )
 from langchain_text_splitters.base import split_text_on_tokens
-from langchain_text_splitters.character import CharacterTextSplitter
+from langchain_text_splitters.character import CharacterTextSplitter, WordTextSplitter
 from langchain_text_splitters.html import (
     HTMLHeaderTextSplitter,
     HTMLSectionSplitter,
@@ -236,6 +236,150 @@ def test_character_text_splitter_discard_separator_regex(
     output = splitter.split_text(text)
     expected_output = ["foo", "bar", "baz", "123"]
     assert output == expected_output
+
+
+# WordTextSplitter tests
+
+
+def test_word_text_splitter_basic() -> None:
+    """Test basic word splitting with overlap."""
+    text = "one two three four five six seven eight nine ten"
+    splitter = WordTextSplitter(chunk_size=5, chunk_overlap=2)
+    output = splitter.split_text(text)
+    # step = chunk_size - overlap = 5 - 2 = 3
+    # idx 0: words[0:5] -> "one two three four five"
+    # idx 3: words[3:8] -> "four five six seven eight"
+    # idx 6: words[6:10] -> "seven eight nine ten"
+    expected_output = [
+        "one two three four five",
+        "four five six seven eight",
+        "seven eight nine ten",
+    ]
+    assert output == expected_output
+
+
+def test_word_text_splitter_no_overlap() -> None:
+    """Test word splitting with no overlap."""
+    text = "a b c d e f"
+    splitter = WordTextSplitter(chunk_size=2, chunk_overlap=0)
+    output = splitter.split_text(text)
+    expected_output = ["a b", "c d", "e f"]
+    assert output == expected_output
+
+
+def test_word_text_splitter_empty_text() -> None:
+    """Test with empty input."""
+    splitter = WordTextSplitter(chunk_size=5, chunk_overlap=1)
+    assert splitter.split_text("") == []
+
+
+def test_word_text_splitter_whitespace_only() -> None:
+    """Test with whitespace-only input."""
+    splitter = WordTextSplitter(chunk_size=5, chunk_overlap=1)
+    assert splitter.split_text("   \n\t  ") == []
+
+
+def test_word_text_splitter_short_text() -> None:
+    """Test when text has fewer words than chunk_size."""
+    text = "hello world"
+    splitter = WordTextSplitter(chunk_size=10, chunk_overlap=2)
+    output = splitter.split_text(text)
+    assert output == ["hello world"]
+
+
+def test_word_text_splitter_exact_chunk_size() -> None:
+    """Test when text has exactly chunk_size words."""
+    text = "one two three"
+    splitter = WordTextSplitter(chunk_size=3, chunk_overlap=1)
+    output = splitter.split_text(text)
+    assert output == ["one two three"]
+
+
+def test_word_text_splitter_single_word() -> None:
+    """Test with single word."""
+    splitter = WordTextSplitter(chunk_size=5, chunk_overlap=1)
+    assert splitter.split_text("hello") == ["hello"]
+
+
+def test_word_text_splitter_preserves_punctuation() -> None:
+    """Test that punctuation attached to words is preserved."""
+    text = "Hello, world! How are you?"
+    splitter = WordTextSplitter(chunk_size=3, chunk_overlap=0)
+    output = splitter.split_text(text)
+    assert output == ["Hello, world! How", "are you?"]
+
+
+def test_word_text_splitter_custom_pattern() -> None:
+    """Test with custom word pattern (alphanumeric only)."""
+    text = "hello, world! test123"
+    splitter = WordTextSplitter(chunk_size=2, chunk_overlap=0, word_pattern=r"\w+")
+    output = splitter.split_text(text)
+    assert output == ["hello world", "test123"]
+
+
+def test_word_text_splitter_custom_separator() -> None:
+    """Test with custom separator for joining words."""
+    text = "one two three four"
+    splitter = WordTextSplitter(chunk_size=2, chunk_overlap=0, separator="-")
+    output = splitter.split_text(text)
+    assert output == ["one-two", "three-four"]
+
+
+def test_word_text_splitter_invalid_chunk_size() -> None:
+    """Test that invalid chunk_size raises ValueError."""
+    with pytest.raises(ValueError, match="chunk_size must be > 0"):
+        WordTextSplitter(chunk_size=0)
+
+
+def test_word_text_splitter_invalid_chunk_overlap() -> None:
+    """Test that overlap > chunk_size raises ValueError."""
+    with pytest.raises(ValueError, match="larger chunk overlap"):
+        WordTextSplitter(chunk_size=5, chunk_overlap=6)
+
+
+def test_word_text_splitter_negative_overlap() -> None:
+    """Test that negative overlap raises ValueError."""
+    with pytest.raises(ValueError, match="chunk_overlap must be >= 0"):
+        WordTextSplitter(chunk_size=5, chunk_overlap=-1)
+
+
+def test_word_text_splitter_create_documents() -> None:
+    """Test create_documents integration."""
+    text = "one two three four five six"
+    splitter = WordTextSplitter(chunk_size=3, chunk_overlap=1)
+    docs = splitter.create_documents([text])
+    # step = 3 - 1 = 2
+    # idx 0: "one two three"
+    # idx 2: "three four five"
+    # idx 4: "five six"
+    assert len(docs) == 3
+    assert docs[0].page_content == "one two three"
+    assert docs[1].page_content == "three four five"
+    assert docs[2].page_content == "five six"
+
+
+def test_word_text_splitter_deterministic() -> None:
+    """Test that output is deterministic."""
+    text = "the quick brown fox jumps over the lazy dog"
+    splitter = WordTextSplitter(chunk_size=4, chunk_overlap=1)
+    results = [splitter.split_text(text) for _ in range(10)]
+    assert all(r == results[0] for r in results)
+
+
+def test_word_text_splitter_multiline_text() -> None:
+    """Test with text containing newlines."""
+    text = "hello\nworld\nfoo\nbar"
+    splitter = WordTextSplitter(chunk_size=2, chunk_overlap=0)
+    output = splitter.split_text(text)
+    assert output == ["hello world", "foo bar"]
+
+
+def test_word_text_splitter_multiple_spaces() -> None:
+    """Test with multiple spaces between words."""
+    text = "hello    world   foo"
+    splitter = WordTextSplitter(chunk_size=2, chunk_overlap=0)
+    output = splitter.split_text(text)
+    assert output == ["hello world", "foo"]
 
 
 def test_recursive_character_text_splitter_keep_separators() -> None:

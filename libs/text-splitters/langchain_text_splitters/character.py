@@ -801,3 +801,96 @@ class RecursiveCharacterTextSplitter(TextSplitter):
             f"Language {language} is not supported! Please choose from {list(Language)}"
         )
         raise ValueError(msg)
+
+
+class WordTextSplitter(TextSplitter):
+    """Split text by word count while preserving word boundaries.
+
+    This splitter divides text into chunks based on a target number of words,
+    rather than characters or tokens. It uses Unicode-aware word boundary
+    detection and handles overlap by including trailing words from the
+    previous chunk.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_text_splitters import WordTextSplitter
+
+            splitter = WordTextSplitter(chunk_size=100, chunk_overlap=20)
+            chunks = splitter.split_text("Your long text here...")
+
+            # With documents
+            from langchain_core.documents import Document
+
+            docs = [Document(page_content="Text", metadata={"source": "file.txt"})]
+            split_docs = splitter.split_documents(docs)
+    """
+
+    _DEFAULT_WORD_PATTERN = r"[^\s]+"
+
+    def __init__(
+        self,
+        chunk_size: int = 200,
+        chunk_overlap: int = 20,
+        separator: str = " ",
+        word_pattern: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Create a new WordTextSplitter.
+
+        Args:
+            chunk_size: Target number of words per chunk.
+            chunk_overlap: Number of words to overlap between consecutive chunks.
+            separator: String used to join words back together.
+            word_pattern: Regex pattern to identify words. Defaults to matching
+                any sequence of non-whitespace characters, which handles most
+                languages including punctuation attached to words.
+
+        Raises:
+            ValueError: If chunk_size <= 0, chunk_overlap < 0, or
+                chunk_overlap >= chunk_size.
+        """
+        super().__init__(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            length_function=len,
+            **kwargs,
+        )
+        self._separator = separator
+        self._word_pattern = re.compile(word_pattern or self._DEFAULT_WORD_PATTERN)
+
+    def split_text(self, text: str) -> list[str]:
+        """Split text into chunks of approximately chunk_size words.
+
+        Args:
+            text: The text to split.
+
+        Returns:
+            A list of text chunks, each containing up to chunk_size words.
+        """
+        if not text:
+            return []
+
+        words = self._word_pattern.findall(text)
+        if not words:
+            return []
+
+        chunks: list[str] = []
+        start_idx = 0
+        step = self._chunk_size - self._chunk_overlap
+
+        while start_idx < len(words):
+            end_idx = min(start_idx + self._chunk_size, len(words))
+            chunk_words = words[start_idx:end_idx]
+
+            chunk_text = self._separator.join(chunk_words)
+            if self._strip_whitespace:
+                chunk_text = chunk_text.strip()
+            if chunk_text:
+                chunks.append(chunk_text)
+
+            if end_idx >= len(words):
+                break
+            start_idx += step
+
+        return chunks

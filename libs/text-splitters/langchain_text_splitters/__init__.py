@@ -16,6 +16,7 @@ from langchain_text_splitters.base import (
 from langchain_text_splitters.character import (
     CharacterTextSplitter,
     RecursiveCharacterTextSplitter,
+    WordTextSplitter,
 )
 from langchain_text_splitters.html import (
     ElementType,
@@ -65,5 +66,6 @@ __all__ = [
     "TextSplitter",
     "TokenTextSplitter",
     "Tokenizer",
+    "WordTextSplitter",
     "split_text_on_tokens",
 ]
