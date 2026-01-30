@@ -6,6 +6,13 @@ from langchain.agents.middleware.human_in_the_loop import (
     HumanInTheLoopMiddleware,
     InterruptOnConfig,
 )
+from langchain.agents.middleware.prompt_injection_defense import (
+    CheckToolStrategy,
+    CombinedStrategy,
+    DefenseStrategy,
+    ParseDataStrategy,
+    PromptInjectionDefenseMiddleware,
+)
 from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddleware
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
@@ -42,9 +49,12 @@ from langchain.agents.middleware.types import (
 __all__ = [
     "AgentMiddleware",
     "AgentState",
+    "CheckToolStrategy",
     "ClearToolUsesEdit",
     "CodexSandboxExecutionPolicy",
+    "CombinedStrategy",
     "ContextEditingMiddleware",
+    "DefenseStrategy",
     "DockerExecutionPolicy",
     "FilesystemFileSearchMiddleware",
     "HostExecutionPolicy",
@@ -59,6 +69,8 @@ __all__ = [
     "ModelRetryMiddleware",
     "PIIDetectionError",
     "PIIMiddleware",
+    "ParseDataStrategy",
+    "PromptInjectionDefenseMiddleware",
     "RedactionRule",
     "ShellToolMiddleware",
     "SummarizationMiddleware",
