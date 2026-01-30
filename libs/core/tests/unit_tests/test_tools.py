@@ -2138,10 +2138,15 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
         class ModelA(BaseModelV1, Generic[A], extra="allow"):
             a: A
 
+        class EmptyModel(BaseModelV1, Generic[A], extra="allow"):
+            pass
     else:
 
         class ModelA(BaseModel, Generic[A]):  # type: ignore[no-redef]
             a: A
+            model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
+
+        class EmptyModel(BaseModel, Generic[A]):  # type: ignore[no-redef]
             model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
     class ModelB(ModelA[str]):
@@ -2191,6 +2196,10 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
         "d": int | None,
     }
     actual = get_all_basemodel_annotations(ModelD[int])
+    assert actual == expected
+
+    expected = {}
+    actual = get_all_basemodel_annotations(EmptyModel)
     assert actual == expected
 
 
