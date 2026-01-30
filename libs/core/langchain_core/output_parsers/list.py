@@ -194,7 +194,7 @@ class NumberedListOutputParser(ListOutputParser):
 
     @cached_property
     def _compiled_pattern(self) -> re.Pattern[str]:
-        """Compiled regex pattern for better performance."""
+        """Compile a regex pattern & cache."""
         return re.compile(self.pattern)
 
     @override
