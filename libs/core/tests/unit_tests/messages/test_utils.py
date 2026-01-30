@@ -2785,14 +2785,20 @@ def test_count_tokens_approximately_ai_tool_calls_skipped_for_list_content() -> 
     # Case 2: content is a list (e.g. Anthropic-style blocks) -> tool_calls are
     # already represented in the content and should NOT be counted again.
     ai_with_list_content = AIMessage(
-        content=[{"type": "text", "text": "do something"}],
+        content=[
+            {"type": "text", "text": "do something"},
+            {
+                "type": "tool_use",
+                "name": "foo",
+                "input": {"x": 1},
+                "id": "call_1",
+            },
+        ],
         tool_calls=tool_calls,
     )
     count_list = count_tokens_approximately([ai_with_list_content])
 
-    # The message where tool_calls are added on top of string content should
-    # be more expensive than the list-based variant.
-    assert count_text > count_list
+    assert count_text - 1 <= count_list <= count_text + 1
 
 
 def test_count_tokens_approximately_respects_count_name_flag() -> None:
