@@ -6,6 +6,7 @@ import pydantic
 import pytest
 from pydantic import BaseModel, Field, ValidationError
 
+from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -19,7 +20,6 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration
-from langchain_core.exceptions import OutputParserException
 
 STREAMED_MESSAGES = [
     AIMessageChunk(content=""),
@@ -1425,9 +1425,10 @@ def test_parse_tool_call_partial_mode_with_none_arguments() -> None:
     # In partial mode, None arguments returns None (incomplete tool call)
     assert result is None
 
+
 @pytest.mark.parametrize("partial", [False, True])
 def test_pydantic_tools_parser_unknown_tool_raises_output_parser_exception(
-    partial: bool,
+    partial: bool,  # noqa: FBT001
 ) -> None:
     class KnownTool(BaseModel):
         value: int
