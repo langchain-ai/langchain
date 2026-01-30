@@ -2661,3 +2661,152 @@ def test_get_buffer_string_xml_all_custom_prefixes() -> None:
     assert '<message type="assistant">AI message</message>' in result
     assert '<message type="fn">Function message</message>' in result
     assert '<message type="t">Tool message</message>' in result
+
+
+def test_count_tokens_approximately_with_image_content() -> None:
+    """Test approximate token counting with image content blocks."""
+    message_with_image = HumanMessage(
+        content=[
+            {"type": "text", "text": "What's in this image?"},
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/jpeg;base64," + "A" * 100000},
+            },
+        ]
+    )
+
+    token_count = count_tokens_approximately([message_with_image])
+
+    # Should be ~85 (image) + ~5 (text) + 3 (extra) = ~93 tokens, NOT 25,000+
+    assert token_count < 200, f"Expected <200 tokens, got {token_count}"
+    assert token_count > 80, f"Expected >80 tokens, got {token_count}"
+
+
+def test_count_tokens_approximately_with_multiple_images() -> None:
+    """Test token counting with multiple images."""
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": "Compare these images"},
+            {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,AAA"}},
+            {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,BBB"}},
+        ]
+    )
+
+    token_count = count_tokens_approximately([message])
+
+    # Should be ~85 * 2 (images) + ~6 (text) + 3 (extra) = ~179 tokens
+    assert 170 < token_count < 190
+
+
+def test_count_tokens_approximately_text_only_backward_compatible() -> None:
+    """Test that text-only messages still work correctly."""
+    messages = [
+        HumanMessage(content="Hello world"),
+        AIMessage(content="Hi there!"),
+    ]
+
+    token_count = count_tokens_approximately(messages)
+
+    # Should be ~15 tokens
+    # (11 chars + 9 chars + roles + 2*3 extra)
+    assert 13 <= token_count <= 17
+
+
+def test_count_tokens_approximately_with_custom_image_penalty() -> None:
+    """Test custom tokens_per_image parameter."""
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": "test"},
+            {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,XYZ"}},
+        ]
+    )
+
+    # Using custom image penalty (e.g., for Anthropic models)
+    token_count = count_tokens_approximately([message], tokens_per_image=1600)
+
+    # Should be ~1600 (image) + ~1 (text) + 3 (extra) = ~1604 tokens
+    assert 1600 < token_count < 1610
+
+
+def test_count_tokens_approximately_with_image_only_message() -> None:
+    """Test token counting for a message that only contains an image."""
+    message = HumanMessage(
+        content=[
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/jpeg;base64,AAA"},
+            }
+        ]
+    )
+
+    token_count = count_tokens_approximately([message])
+
+    # Should be roughly tokens_per_image + role + extra per message.
+    # Default tokens_per_image is 85 and extra_tokens_per_message is 3,
+    # so we expect something in the ~90-110 range.
+    assert 80 < token_count < 120
+
+
+def test_count_tokens_approximately_with_unknown_block_type() -> None:
+    """Test that unknown multimodal block types still contribute to token count."""
+    text_only = count_tokens_approximately([HumanMessage(content="hello")])
+
+    message_with_unknown_block = HumanMessage(
+        content=[
+            {"type": "text", "text": "hello"},
+            {"type": "foo", "bar": "baz"},  # unknown type, falls back to repr(block)
+        ]
+    )
+
+    mixed = count_tokens_approximately([message_with_unknown_block])
+
+    # The message with an extra unknown block should be counted as more expensive
+    # than the text-only version.
+    assert mixed > text_only
+
+
+def test_count_tokens_approximately_ai_tool_calls_skipped_for_list_content() -> None:
+    """Test that tool_calls aren't double-counted for list (Anthropic-style) content."""
+    tool_calls = [
+        {
+            "id": "call_1",
+            "name": "foo",
+            "args": {"x": 1},
+        }
+    ]
+
+    # Case 1: content is a string -> tool_calls should be added to the char count.
+    ai_with_text_content = AIMessage(
+        content="do something",
+        tool_calls=tool_calls,
+    )
+    count_text = count_tokens_approximately([ai_with_text_content])
+
+    # Case 2: content is a list (e.g. Anthropic-style blocks) -> tool_calls are
+    # already represented in the content and should NOT be counted again.
+    ai_with_list_content = AIMessage(
+        content=[
+            {"type": "text", "text": "do something"},
+            {
+                "type": "tool_use",
+                "name": "foo",
+                "input": {"x": 1},
+                "id": "call_1",
+            },
+        ],
+        tool_calls=tool_calls,
+    )
+    count_list = count_tokens_approximately([ai_with_list_content])
+
+    assert count_text - 1 <= count_list <= count_text + 1
+
+
+def test_count_tokens_approximately_respects_count_name_flag() -> None:
+    """Test that the count_name flag controls whether names are included."""
+    message = HumanMessage(content="hello", name="user-name")
+
+    with_name = count_tokens_approximately([message], count_name=True)
+    without_name = count_tokens_approximately([message], count_name=False)
+
+    # When count_name is True, the name should contribute to the token count.
+    assert with_name > without_name
