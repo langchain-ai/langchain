@@ -30,7 +30,7 @@ class BlobLoader(ABC):
         """A lazy loader for raw data represented by LangChain's `Blob` object.
 
         Returns:
-            A generator over blobs
+            A generator over `Blob` objects.
         """
 
 
