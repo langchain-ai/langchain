@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import warnings
 from pathlib import Path
 from typing import Any
@@ -17,6 +18,7 @@ from langchain_classic.chains.llm import LLMChain
 from langchain_classic.chains.sequential import SequentialChain
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
+logger = logging.getLogger(__name__)
 
 CREATE_ASSERTIONS_PROMPT = PromptTemplate.from_file(PROMPTS_DIR / "create_facts.txt")
 CHECK_ASSERTIONS_PROMPT = PromptTemplate.from_file(PROMPTS_DIR / "check_facts.txt")
@@ -164,7 +166,7 @@ class LLMSummarizationCheckerChain(Chain):
                 break
 
             if self.verbose:
-                print(output["revised_summary"])  # noqa: T201
+                logger.info(output["revised_summary"])
 
             chain_input = output["revised_summary"]
 
