@@ -339,13 +339,11 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         )
         ```
 
-    Web search (Agent Tools API):
-        **Live Search** (the legacy ``search_parameters`` option) has been deprecated by xAI.
-        Use the [Agent Tools API](https://docs.x.ai/docs/guides/tools/overview) instead:
-        pass server-side tools such as ``web_search`` and ``x_search`` via the xAI SDK, or
-        use ``bind_tools`` with compatible tool definitions when using the OpenAI-compatible
-        Responses API. If you pass ``search_parameters`` to ``ChatXAI``, a
-        ``DeprecationWarning`` is emitted and the parameter is ignored; requests otherwise
+    Web search:
+        **Live Search** (the legacy `search_parameters` option) has been deprecated by xAI.
+        Use `bind_tools` with compatible tool definitions when using the OpenAI-compatible
+        Responses API instead. If you pass `search_parameters` to `ChatXAI`, a
+        `DeprecationWarning` is emitted and the parameter is ignored; requests otherwise
         succeed without search.
 
     Token usage:
@@ -410,8 +408,12 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     xai_api_base: str = Field(default="https://api.x.ai/v1/")
     """Base URL path for API requests."""
     search_parameters: dict[str, Any] | None = None
-    """**Deprecated.** Legacy Live Search. Ignored; use Agent Tools API
-    (https://docs.x.ai/docs/guides/tools/overview). Emits DeprecationWarning."""
+    """**Deprecated.** Use web search tools instead:
+
+    ```python
+    ChatXAI(model="...").bind_tools([{"type": "web_search"}])
+    ```
+    """
 
     openai_api_key: SecretStr | None = None
     openai_api_base: str | None = None
@@ -476,9 +478,8 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         if self.search_parameters:
             warnings.warn(
                 "search_parameters (Live Search) is deprecated by xAI and is ignored. "
-                "Use the Agent Tools API "
-                "(https://docs.x.ai/docs/guides/tools/overview) instead, e.g. "
-                "web_search, x_search, via the xAI SDK or bind_tools.",
+                'Use `ChatXAI(model="...").bind_tools([{"type": "web_search"}])` '
+                "instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -541,13 +542,6 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         if self.profile is None:
             self.profile = _get_default_model_profile(self.model_name)
         return self
-
-    @property
-    def _default_params(self) -> dict[str, Any]:
-        """Get default parameters."""
-        # Do not add search_parameters to extra_body. Live Search deprecated;
-        # xAI errors if sent. Use Agent Tools API instead.
-        return super()._default_params
 
     def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
         """Route to Chat Completions or Responses API."""
