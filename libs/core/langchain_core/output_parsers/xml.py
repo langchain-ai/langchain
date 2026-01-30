@@ -23,7 +23,6 @@ try:
 except ImportError:
     _HAS_DEFUSEDXML = False
 
-# Pre-compiled regex patterns for performance
 _XML_BACKTICK_RE = re.compile(r"```(xml)?(.*)```", re.DOTALL)
 _WHITESPACE_RE = re.compile(r"\S")
 
