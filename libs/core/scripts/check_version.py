@@ -1,8 +1,8 @@
 """Check version consistency between `pyproject.toml` and `version.py`.
 
 This script validates that the version defined in pyproject.toml matches the `VERSION`
-variable in `langchain_core/version.py`. Intended for use as a pre-commit hook to prevent
-version mismatches.
+variable in `langchain_core/version.py`. Intended for use as a pre-commit hook to
+prevent version mismatches.
 """
 
 import re

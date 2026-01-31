@@ -14,7 +14,7 @@ from langchain_core.messages import AIMessageChunk
 from langchain_core.messages import content as types
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterator
 
     from langchain_core.messages import AIMessage
 
@@ -607,7 +607,7 @@ def _convert_annotation_to_v1(annotation: dict[str, Any]) -> types.Annotation:
     return non_standard_annotation
 
 
-def _explode_reasoning(block: dict[str, Any]) -> Iterable[types.ReasoningContentBlock]:
+def _explode_reasoning(block: dict[str, Any]) -> Iterator[types.ReasoningContentBlock]:
     if "summary" not in block:
         yield cast("types.ReasoningContentBlock", block)
         return
@@ -652,7 +652,7 @@ def _explode_reasoning(block: dict[str, Any]) -> Iterable[types.ReasoningContent
 def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock]:
     """Convert a Responses message to v1 format."""
 
-    def _iter_blocks() -> Iterable[types.ContentBlock]:
+    def _iter_blocks() -> Iterator[types.ContentBlock]:
         for raw_block in message.content:
             if not isinstance(raw_block, dict):
                 continue
