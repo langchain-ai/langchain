@@ -9,7 +9,7 @@ from pydantic import SecretStr
 
 from langchain.chat_models import __all__, init_chat_model
 from langchain.chat_models.base import _SUPPORTED_PROVIDERS, _attempt_infer_model_provider
-
+from langchain_ollama.chat_models import ChatOllama
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
 
@@ -226,7 +226,26 @@ def test_configurable() -> None:
         "custom_input_type": None,
         "custom_output_type": None,
     }
+@pytest.mark.asyncio
+async def test_ollama_empty_async_stream_raises_clear_error(mocker):
+    """
+    Regression test for Ollama async stream returning no data.
+    Ensures a ValueError is raised with a clear message.
+    """
+    llm = ChatOllama(model="test-model")
 
+    async def empty_stream(*args, **kwargs):
+        if False:
+            yield None
+
+    mocker.patch.object(
+        llm,
+        "_acreate_chat_stream",
+        empty_stream
+    )
+
+    with pytest.raises(ValueError, match="No data received from Ollama stream"):
+        await llm.ainvoke("hello")
 
 @pytest.mark.requires("langchain_openai", "langchain_anthropic")
 @mock.patch.dict(
