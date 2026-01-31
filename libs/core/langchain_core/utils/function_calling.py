@@ -20,8 +20,7 @@ from typing import (
     get_type_hints,
 )
 
-import typing_extensions
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as Field_v1
 from pydantic.v1 import create_model as create_model_v1
@@ -229,13 +228,9 @@ def _convert_python_function_to_openai_function(
 
 
 def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescription:
-    visited: dict = {}
-
-    model = cast(
-        "type[BaseModel]",
-        _convert_any_typed_dicts_to_pydantic(typed_dict, visited=visited),
-    )
-    return _convert_pydantic_to_openai_function(model)
+    adapter: TypeAdapter[Any] = TypeAdapter(typed_dict)
+    schema = adapter.json_schema()
+    return _convert_json_schema_to_openai_function(schema)
 
 
 _MAX_TYPED_DICT_RECURSION = 25
@@ -267,7 +262,7 @@ def _convert_any_typed_dicts_to_pydantic(
         )
         fields: dict = {}
         for arg, arg_type in annotations_.items():
-            if get_origin(arg_type) in {Annotated, typing_extensions.Annotated}:
+            if get_origin(arg_type) is Annotated:
                 annotated_args = get_args(arg_type)
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     annotated_args[0], depth=depth + 1, visited=visited
