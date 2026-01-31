@@ -977,8 +977,14 @@ class ChatOllama(BaseChatModel):
                     verbose=verbose,
                 )
         if final_chunk is None:
-            msg = "No data received from Ollama stream."
-            raise ValueError(msg)
+            # Ollama may occasionally return an empty stream; return an empty chunk instead of raising ValueError
+            log.warning("Ollama returned an empty stream; no content was generated")
+            final_chunk = ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content="",
+                    ),
+                    generation_info={"ollama_empty_stream": True},
+                )
 
         return final_chunk
 
@@ -1003,9 +1009,15 @@ class ChatOllama(BaseChatModel):
                     verbose=verbose,
                 )
         if final_chunk is None:
-            msg = "No data received from Ollama stream."
-            raise ValueError(msg)
-
+            # Ollama may occasionally return an empty stream; return an empty chunk instead of raising ValueError
+            log.warning("Ollama returned an empty stream; no content was generated")
+            final_chunk = ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content="",
+                    ),
+                    generation_info={"ollama_empty_stream": True},
+                )
+            
         return final_chunk
 
     def _get_ls_params(
