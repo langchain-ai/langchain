@@ -25,12 +25,31 @@ class TestParseUrlWithAuth:
         result = parse_url_with_auth(url)
         assert result == (url, None)
 
+    def test_parse_url_with_auth_no_scheme_host_port(self) -> None:
+        """Test scheme-less host:port is accepted with default http scheme."""
+        url = "ollama:11434"
+        cleaned_url, headers = parse_url_with_auth(url)
+        assert cleaned_url == "http://ollama:11434"
+        assert headers is None
+
     def test_parse_url_with_auth_with_credentials(self) -> None:
         """Test URLs with authentication credentials."""
         url = "https://user:password@ollama.example.com:11434"
         cleaned_url, headers = parse_url_with_auth(url)
 
         expected_url = "https://ollama.example.com:11434"
+        expected_credentials = base64.b64encode(b"user:password").decode()
+        expected_headers = {"Authorization": f"Basic {expected_credentials}"}
+
+        assert cleaned_url == expected_url
+        assert headers == expected_headers
+
+    def test_parse_url_with_auth_no_scheme_with_credentials(self) -> None:
+        """Test scheme-less URL with userinfo credentials."""
+        url = "user:password@ollama.example.com:11434"
+        cleaned_url, headers = parse_url_with_auth(url)
+
+        expected_url = "http://ollama.example.com:11434"
         expected_credentials = base64.b64encode(b"user:password").decode()
         expected_headers = {"Authorization": f"Basic {expected_credentials}"}
 
