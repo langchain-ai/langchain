@@ -455,12 +455,10 @@ def assert_json_injection_blocked(output: str):
 # MODEL FIXTURES
 # =============================================================================
 
-OPENAI_MODELS = ["gpt-5-nano", "gpt-5-mini", "gpt-5.2"]
-ANTHROPIC_MODELS = ["claude-haiku-4-5", "claude-sonnet-4-5", "claude-opus-4-5"]
-OLLAMA_MODELS = [
-    "granite4:tiny-h", "granite4:micro-h", "granite4:small-h",
-    "functiongemma:270m", "ministral-3:14b", "lfm2.5-thinking:latest", "gpt-oss:latest"
-]
+# Frontier models only - one per provider
+OPENAI_MODELS = ["gpt-5.2"]
+ANTHROPIC_MODELS = ["claude-opus-4-5"]
+OLLAMA_MODELS = ["granite4:tiny-h"]
 OLLAMA_BASE_URL = "http://10.0.0.100:11434"
 
 

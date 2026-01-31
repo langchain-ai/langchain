@@ -3,7 +3,9 @@
 SECURITY TESTS: These tests verify defenses against indirect prompt injection attacks,
 where malicious instructions embedded in tool results attempt to hijack agent behavior.
 
-See also: test_prompt_injection_defense_extended.py for tests with real LLMs.
+These tests use mocks and run in CI. For tests with real LLMs, see:
+- test_prompt_injection_baseline_vs_protected.py - E2E tests comparing baseline vs protected
+- test_prompt_injection_token_benchmark.py - Token usage benchmarks
 """
 
 from unittest.mock import AsyncMock, MagicMock, patch
