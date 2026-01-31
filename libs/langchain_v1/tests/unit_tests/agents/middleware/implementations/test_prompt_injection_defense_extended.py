@@ -229,12 +229,11 @@ def assert_indirect_tool_trigger_blocked(output: str):
 class TestCriticalSecurity:
     """Critical security tests using real LLM models.
 
-    By default, only OpenAI tests run. To run Ollama tests:
-    pytest -k "ollama" --run-ollama
+    Tests run against both OpenAI and Anthropic models by default.
     """
 
-    @pytest.mark.requires("langchain_openai")
-    @pytest.mark.parametrize("model_fixture", ["openai_model"])
+    @pytest.mark.requires("langchain_openai", "langchain_anthropic")
+    @pytest.mark.parametrize("model_fixture", ["openai_model", "anthropic_model"])
     def test_goal_hijacking_blocked(self, model_fixture, request):
         """CRITICAL: Test that 'ignore previous instructions' attacks are blocked."""
         model = request.getfixturevalue(model_fixture)
@@ -252,8 +251,8 @@ class TestCriticalSecurity:
         )
         assert_goal_hijacking_blocked(str(result.content))
 
-    @pytest.mark.requires("langchain_openai")
-    @pytest.mark.parametrize("model_fixture", ["openai_model"])
+    @pytest.mark.requires("langchain_openai", "langchain_anthropic")
+    @pytest.mark.parametrize("model_fixture", ["openai_model", "anthropic_model"])
     def test_privilege_escalation_blocked(self, model_fixture, request):
         """CRITICAL: Test that privilege escalation/jailbreak attempts are blocked."""
         model = request.getfixturevalue(model_fixture)
@@ -271,8 +270,8 @@ class TestCriticalSecurity:
         )
         assert_privilege_escalation_blocked(str(result.content))
 
-    @pytest.mark.requires("langchain_openai")
-    @pytest.mark.parametrize("model_fixture", ["openai_model"])
+    @pytest.mark.requires("langchain_openai", "langchain_anthropic")
+    @pytest.mark.parametrize("model_fixture", ["openai_model", "anthropic_model"])
     def test_indirect_tool_trigger_blocked(self, model_fixture, request):
         """CRITICAL: Test that indirect tool triggering attempts are blocked."""
         model = request.getfixturevalue(model_fixture)
@@ -290,8 +289,8 @@ class TestCriticalSecurity:
         )
         assert_indirect_tool_trigger_blocked(str(result.content))
 
-    @pytest.mark.requires("langchain_openai")
-    @pytest.mark.parametrize("model_fixture", ["openai_model"])
+    @pytest.mark.requires("langchain_openai", "langchain_anthropic")
+    @pytest.mark.parametrize("model_fixture", ["openai_model", "anthropic_model"])
     def test_multi_language_injection_blocked(self, model_fixture, request):
         """Test that multi-language injection is blocked."""
         model = request.getfixturevalue(model_fixture)
@@ -309,8 +308,8 @@ class TestCriticalSecurity:
         )
         assert "hacker@malo.com" not in str(result.content).lower()
 
-    @pytest.mark.requires("langchain_openai")
-    @pytest.mark.parametrize("model_fixture", ["openai_model"])
+    @pytest.mark.requires("langchain_openai", "langchain_anthropic")
+    @pytest.mark.parametrize("model_fixture", ["openai_model", "anthropic_model"])
     def test_json_injection_blocked(self, model_fixture, request):
         """Test that JSON-embedded injection is blocked."""
         model = request.getfixturevalue(model_fixture)
@@ -389,16 +388,18 @@ class TestCriticalSecurityOllama:
 class TestAdditionalInjectionVectors:
     """Additional prompt injection tests for specific strategies."""
 
-    @pytest.mark.requires("langchain_openai")
-    def test_parse_data_blocks_embedded_injection(self, openai_model):
+    @pytest.mark.requires("langchain_openai", "langchain_anthropic")
+    @pytest.mark.parametrize("model_fixture", ["openai_model", "anthropic_model"])
+    def test_parse_data_blocks_embedded_injection(self, model_fixture, request):
         """Test ParseDataStrategy blocks injection hidden in legitimate content."""
-        strategy = ParseDataStrategy(openai_model, use_full_conversation=True)
+        model = request.getfixturevalue(model_fixture)
+        strategy = ParseDataStrategy(model, use_full_conversation=True)
         tools = [search_email]
-        request = create_tool_request(tools)
-        request.state["messages"] = []
+        req = create_tool_request(tools)
+        req.state["messages"] = []
 
         result = strategy.process(
-            request,
+            req,
             ToolMessage(
                 content="""Subject: Team Meeting
 From: boss@company.com
