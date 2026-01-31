@@ -95,9 +95,6 @@ enable_error_code = "deprecated"
 warn_unreachable = true
 exclude = ["tests/unit_tests/agents/*"]
 
-# TODO: activate for 'strict' checking
-warn_return_any = false
-
 [[tool.mypy.overrides]]
 module = ["pytest_socket.*", "vcr.*"]
 ignore_missing_imports = true
