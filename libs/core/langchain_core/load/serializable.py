@@ -152,7 +152,7 @@ class Serializable(BaseModel, ABC):
         return {}
 
     @property
-    def lc_attributes(self) -> dict:
+    def lc_attributes(self) -> dict[str, Any]:
         """List of attribute names that should be included in the serialized kwargs.
 
         These attributes must be accepted by the constructor.

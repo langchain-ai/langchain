@@ -88,7 +88,7 @@ class PromptTemplate(StringPromptTemplate):
 
     @model_validator(mode="before")
     @classmethod
-    def pre_init_validation(cls, values: dict) -> Any:
+    def pre_init_validation(cls, values: dict[str, Any]) -> Any:
         """Check that template and input variables are consistent."""
         if values.get("template") is None:
             # Will let pydantic fail with a ValidationError if template

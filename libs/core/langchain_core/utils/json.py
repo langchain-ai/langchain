@@ -191,7 +191,9 @@ def _parse_json(
     return parser(json_str)
 
 
-def parse_and_check_json_markdown(text: str, expected_keys: list[str]) -> dict:
+def parse_and_check_json_markdown(
+    text: str, expected_keys: list[str]
+) -> dict[str, Any]:
     """Parse and check a JSON string from a Markdown string.
 
     Checks that it contains the expected keys.

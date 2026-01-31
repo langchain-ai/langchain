@@ -1,5 +1,7 @@
 """Chat result schema."""
 
+from typing import Any
+
 from pydantic import BaseModel
 
 from langchain_core.outputs.chat_generation import ChatGeneration
@@ -25,7 +27,7 @@ class ChatResult(BaseModel):
     input prompt.
     """
 
-    llm_output: dict | None = None
+    llm_output: dict[str, Any] | None = None
     """For arbitrary LLM provider specific output.
 
     This dictionary is a free-form dictionary that can contain any information that the

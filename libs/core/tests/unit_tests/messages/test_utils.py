@@ -757,7 +757,8 @@ class FakeTokenCountingModel(FakeChatModel):
     def get_num_tokens_from_messages(
         self,
         messages: list[BaseMessage],
-        tools: Sequence[dict[str, Any] | type | Callable | BaseTool] | None = None,
+        tools: Sequence[dict[str, Any] | type | Callable[..., Any] | BaseTool]
+        | None = None,
     ) -> int:
         return dummy_token_counter(messages)
 
@@ -1287,7 +1288,7 @@ def test_convert_to_openai_messages_invalid_block() -> None:
 
 
 def test_handle_openai_responses_blocks() -> None:
-    blocks: str | list[str | dict] = [
+    blocks: str | list[str | dict[str, Any]] = [
         {"type": "reasoning", "id": "1"},
         {
             "type": "function_call",

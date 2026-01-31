@@ -293,7 +293,7 @@ def deprecated(
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
-            _name = _name or cast("type | Callable", obj.fget).__qualname__
+            _name = _name or cast("type", obj.fget).__qualname__
             old_doc = obj.__doc__
 
             class _DeprecatedProperty(property):
@@ -348,7 +348,7 @@ def deprecated(
                 return cast("T", prop)
 
         else:
-            _name = _name or cast("type | Callable", obj).__qualname__
+            _name = _name or cast("type", obj).__qualname__
             if not _obj_type:
                 # edge case: when a function is within another function
                 # within a test, this will call it a "method" not a "function"
