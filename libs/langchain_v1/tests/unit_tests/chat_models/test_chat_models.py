@@ -196,6 +196,7 @@ def test_configurable() -> None:
             "top_p": None,
             "truncation": None,
             "max_tokens": None,
+            "compact_target_tokens": None,
             "tiktoken_model_name": None,
             "default_headers": None,
             "default_query": None,
@@ -206,6 +207,7 @@ def test_configurable() -> None:
             "stream_usage": True,
             "use_previous_response_id": False,
             "use_responses_api": None,
+            "use_compact_api": None,
         },
         "kwargs": {
             "tools": [
