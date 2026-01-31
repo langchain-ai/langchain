@@ -12,8 +12,10 @@ from langchain_core._api import suppress_langchain_beta_warning
 from langchain_core.documents import Document
 
 from langchain_text_splitters import (
+    BaseMetadataHydrator,
     Language,
     RecursiveCharacterTextSplitter,
+    SplitterContext,
     TextSplitter,
     Tokenizer,
 )
@@ -276,6 +278,232 @@ def test_character_text_splitting_args() -> None:
             CharacterTextSplitter(chunk_size=invalid_size)
     with pytest.raises(ValueError, match="chunk_overlap must be >= 0, got -1"):
         CharacterTextSplitter(chunk_size=2, chunk_overlap=-1)
+
+
+# =============================================================================
+# Metadata Hydrator Tests (Issue #33898)
+# =============================================================================
+
+
+class ChunkNumberHydrator(BaseMetadataHydrator):
+    """Test hydrator that adds chunk numbering."""
+
+    def hydrate(
+        self, metadata: dict[Any, Any], context: SplitterContext
+    ) -> dict[Any, Any]:
+        metadata["chunk_number"] = context.chunk_index + 1
+        metadata["total_chunks"] = context.total_chunks
+        return metadata
+
+
+class ComprehensiveHydrator(BaseMetadataHydrator):
+    """Test hydrator that adds all available context info."""
+
+    def __init__(self, prefix: str = "test"):
+        self.prefix = prefix
+
+    def hydrate(
+        self, metadata: dict[Any, Any], context: SplitterContext
+    ) -> dict[Any, Any]:
+        metadata[f"{self.prefix}_chunk_index"] = context.chunk_index
+        metadata[f"{self.prefix}_total_chunks"] = context.total_chunks
+        metadata[f"{self.prefix}_chunk_len"] = len(context.chunk_content)
+        metadata[f"{self.prefix}_source_len"] = context.source_text_length
+        if context.start_index is not None:
+            metadata[f"{self.prefix}_start_index"] = context.start_index
+        return metadata
+
+
+def test_metadata_hydrator_none_preserves_behavior() -> None:
+    """Test that None (default) preserves existing behavior."""
+    text = "foo bar baz"
+    splitter = CharacterTextSplitter(
+        separator=" ",
+        chunk_size=3,
+        chunk_overlap=0,
+        metadata_hydrator=None,  # Explicit None
+    )
+    docs = splitter.create_documents([text])
+    # Should have no extra metadata added
+    for doc in docs:
+        assert doc.metadata == {}
+
+
+def test_metadata_hydrator_adds_chunk_number() -> None:
+    """Test that hydrator adds chunk numbering to metadata."""
+    text = "foo bar baz"
+    splitter = CharacterTextSplitter(
+        separator=" ",
+        chunk_size=3,
+        chunk_overlap=0,
+        metadata_hydrator=ChunkNumberHydrator(),
+    )
+    docs = splitter.create_documents([text])
+
+    assert len(docs) == 3
+    assert docs[0].metadata == {"chunk_number": 1, "total_chunks": 3}
+    assert docs[1].metadata == {"chunk_number": 2, "total_chunks": 3}
+    assert docs[2].metadata == {"chunk_number": 3, "total_chunks": 3}
+
+
+def test_metadata_hydrator_receives_correct_context() -> None:
+    """Test that hydrator receives correct SplitterContext values."""
+    text = "hello world test"
+    received_contexts: list[SplitterContext] = []
+
+    class ContextCapturingHydrator(BaseMetadataHydrator):
+        def hydrate(
+            self, metadata: dict[Any, Any], context: SplitterContext
+        ) -> dict[Any, Any]:
+            received_contexts.append(context)
+            return metadata
+
+    splitter = CharacterTextSplitter(
+        separator=" ",
+        chunk_size=5,
+        chunk_overlap=0,
+        metadata_hydrator=ContextCapturingHydrator(),
+    )
+    _docs = splitter.create_documents([text])
+
+    assert len(received_contexts) == 3
+    # First chunk
+    assert received_contexts[0].chunk_index == 0
+    assert received_contexts[0].total_chunks == 3
+    assert received_contexts[0].chunk_content == "hello"
+    assert received_contexts[0].source_text_length == len(text)
+    # Second chunk
+    assert received_contexts[1].chunk_index == 1
+    assert received_contexts[1].chunk_content == "world"
+    # Third chunk
+    assert received_contexts[2].chunk_index == 2
+    assert received_contexts[2].chunk_content == "test"
+
+
+def test_metadata_hydrator_with_add_start_index() -> None:
+    """Test hydrator works alongside add_start_index."""
+    text = "foo bar baz"
+    splitter = CharacterTextSplitter(
+        separator=" ",
+        chunk_size=3,
+        chunk_overlap=0,
+        add_start_index=True,
+        metadata_hydrator=ChunkNumberHydrator(),
+    )
+    docs = splitter.create_documents([text])
+
+    # Both start_index and hydrator metadata should be present
+    assert docs[0].metadata == {"start_index": 0, "chunk_number": 1, "total_chunks": 3}
+    assert docs[1].metadata == {"start_index": 4, "chunk_number": 2, "total_chunks": 3}
+    assert docs[2].metadata == {"start_index": 8, "chunk_number": 3, "total_chunks": 3}
+
+
+def test_metadata_hydrator_preserves_existing_metadata() -> None:
+    """Test that hydrator preserves and extends existing metadata."""
+    text = "foo bar"
+    splitter = CharacterTextSplitter(
+        separator=" ",
+        chunk_size=3,
+        chunk_overlap=0,
+        metadata_hydrator=ChunkNumberHydrator(),
+    )
+    docs = splitter.create_documents([text], metadatas=[{"source": "test.txt"}])
+
+    assert docs[0].metadata == {
+        "source": "test.txt",
+        "chunk_number": 1,
+        "total_chunks": 2,
+    }
+    assert docs[1].metadata == {
+        "source": "test.txt",
+        "chunk_number": 2,
+        "total_chunks": 2,
+    }
+
+
+def test_metadata_hydrator_with_recursive_splitter() -> None:
+    """Test hydrator with RecursiveCharacterTextSplitter."""
+    text = "Hello world. How are you today?"
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=15,
+        chunk_overlap=0,
+        metadata_hydrator=ChunkNumberHydrator(),
+    )
+    docs = splitter.create_documents([text])
+
+    assert len(docs) >= 2
+    for i, doc in enumerate(docs):
+        assert doc.metadata["chunk_number"] == i + 1
+        assert doc.metadata["total_chunks"] == len(docs)
+
+
+def test_metadata_hydrator_with_custom_prefix() -> None:
+    """Test hydrator with custom configuration."""
+    text = "foo bar baz"
+    splitter = CharacterTextSplitter(
+        separator=" ",
+        chunk_size=3,
+        chunk_overlap=0,
+        metadata_hydrator=ComprehensiveHydrator(prefix="doc"),
+    )
+    docs = splitter.create_documents([text])
+
+    assert "doc_chunk_index" in docs[0].metadata
+    assert "doc_total_chunks" in docs[0].metadata
+    assert "doc_chunk_len" in docs[0].metadata
+    assert "doc_source_len" in docs[0].metadata
+    assert docs[0].metadata["doc_chunk_index"] == 0
+    assert docs[0].metadata["doc_chunk_len"] == 3  # "foo"
+
+
+def test_metadata_hydrator_with_split_documents() -> None:
+    """Test hydrator works with split_documents method."""
+    docs_input = [
+        Document(page_content="foo bar", metadata={"source": "1"}),
+        Document(page_content="baz qux", metadata={"source": "2"}),
+    ]
+    splitter = CharacterTextSplitter(
+        separator=" ",
+        chunk_size=3,
+        chunk_overlap=0,
+        metadata_hydrator=ChunkNumberHydrator(),
+    )
+    docs = splitter.split_documents(docs_input)
+
+    # First document splits into 2 chunks
+    assert docs[0].metadata == {"source": "1", "chunk_number": 1, "total_chunks": 2}
+    assert docs[1].metadata == {"source": "1", "chunk_number": 2, "total_chunks": 2}
+    # Second document splits into 2 chunks
+    assert docs[2].metadata == {"source": "2", "chunk_number": 1, "total_chunks": 2}
+    assert docs[3].metadata == {"source": "2", "chunk_number": 2, "total_chunks": 2}
+
+
+def test_splitter_context_dataclass_fields() -> None:
+    """Test SplitterContext dataclass structure."""
+    context = SplitterContext(
+        chunk_index=0,
+        total_chunks=5,
+        chunk_content="hello",
+        source_text_length=100,
+        start_index=10,
+    )
+    assert context.chunk_index == 0
+    assert context.total_chunks == 5
+    assert context.chunk_content == "hello"
+    assert context.source_text_length == 100
+    assert context.start_index == 10
+
+
+def test_splitter_context_with_none_start_index() -> None:
+    """Test SplitterContext with None start_index."""
+    context = SplitterContext(
+        chunk_index=0,
+        total_chunks=3,
+        chunk_content="test",
+        source_text_length=50,
+        start_index=None,
+    )
+    assert context.start_index is None
 
 
 def test_merge_splits() -> None:

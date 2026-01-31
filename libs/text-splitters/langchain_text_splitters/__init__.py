@@ -7,7 +7,9 @@
 """
 
 from langchain_text_splitters.base import (
+    BaseMetadataHydrator,
     Language,
+    SplitterContext,
     TextSplitter,
     Tokenizer,
     TokenTextSplitter,
@@ -42,6 +44,7 @@ from langchain_text_splitters.sentence_transformers import (
 from langchain_text_splitters.spacy import SpacyTextSplitter
 
 __all__ = [
+    "BaseMetadataHydrator",
     "CharacterTextSplitter",
     "ElementType",
     "ExperimentalMarkdownSyntaxTextSplitter",
@@ -62,6 +65,7 @@ __all__ = [
     "RecursiveJsonSplitter",
     "SentenceTransformersTokenTextSplitter",
     "SpacyTextSplitter",
+    "SplitterContext",
     "TextSplitter",
     "TokenTextSplitter",
     "Tokenizer",

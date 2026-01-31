@@ -41,6 +41,75 @@ logger = logging.getLogger(__name__)
 TS = TypeVar("TS", bound="TextSplitter")
 
 
+@dataclass
+class SplitterContext:
+    """Context information provided to metadata hydrators during splitting.
+
+    This dataclass contains contextual information about each chunk being
+    processed, enabling metadata hydrators to make informed decisions about
+    what metadata to add.
+
+    Attributes:
+        chunk_index: Zero-based index of the current chunk within the document.
+        total_chunks: Total number of chunks (may be None if unknown).
+        chunk_content: The text content of the current chunk.
+        source_text_length: Total character length of the source text.
+        start_index: Character start index of chunk in source text (if available).
+    """
+
+    chunk_index: int
+    """Zero-based index of the current chunk within the document."""
+
+    total_chunks: int | None
+    """Total number of chunks (None if unknown during streaming)."""
+
+    chunk_content: str
+    """The text content of the current chunk."""
+
+    source_text_length: int
+    """Total length of the source text being split."""
+
+    start_index: int | None
+    """Character start index of chunk in source text (if available)."""
+
+
+class BaseMetadataHydrator(ABC):
+    """Abstract base class for custom metadata hydrators.
+
+    Subclass this to create custom metadata enrichment logic that runs
+    during the text splitting process. This allows you to dynamically
+    add context-aware metadata to each chunk.
+
+    Example:
+        >>> class ChunkNumberHydrator(BaseMetadataHydrator):
+        ...     def hydrate(self, metadata, context):
+        ...         metadata["chunk_number"] = context.chunk_index + 1
+        ...         metadata["total_chunks"] = context.total_chunks
+        ...         return metadata
+        >>> splitter = CharacterTextSplitter(
+        ...     chunk_size=100, metadata_hydrator=ChunkNumberHydrator()
+        ... )
+    """
+
+    @abstractmethod
+    def hydrate(
+        self, metadata: dict[Any, Any], context: SplitterContext
+    ) -> dict[Any, Any]:
+        """Enrich metadata with custom fields.
+
+        This method is called for each chunk during the splitting process.
+        You can modify the metadata dict in place and return it, or create
+        a new dict with additional fields.
+
+        Args:
+            metadata: The existing metadata dict (may be modified in place).
+            context: Context information about the current chunk.
+
+        Returns:
+            The enriched metadata dict.
+        """
+
+
 class TextSplitter(BaseDocumentTransformer, ABC):
     """Interface for splitting text into chunks."""
 
@@ -52,6 +121,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         keep_separator: bool | Literal["start", "end"] = False,  # noqa: FBT001,FBT002
         add_start_index: bool = False,  # noqa: FBT001,FBT002
         strip_whitespace: bool = True,  # noqa: FBT001,FBT002
+        metadata_hydrator: BaseMetadataHydrator | None = None,
     ) -> None:
         """Create a new `TextSplitter`.
 
@@ -64,6 +134,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             add_start_index: If `True`, includes chunk's start index in metadata
             strip_whitespace: If `True`, strips whitespace from the start and end of
                 every document
+            metadata_hydrator: Optional hydrator to enrich chunk metadata during
+                splitting. See `BaseMetadataHydrator` for details.
 
         Raises:
             ValueError: If `chunk_size` is less than or equal to 0
@@ -88,6 +160,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._keep_separator = keep_separator
         self._add_start_index = add_start_index
         self._strip_whitespace = strip_whitespace
+        self._metadata_hydrator = metadata_hydrator
 
     @abstractmethod
     def split_text(self, text: str) -> list[str]:
@@ -117,13 +190,28 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         for i, text in enumerate(texts):
             index = 0
             previous_chunk_len = 0
-            for chunk in self.split_text(text):
+            # Split text into chunks first so we know the total count
+            chunks = self.split_text(text)
+            total_chunks = len(chunks)
+            for chunk_idx, chunk in enumerate(chunks):
                 metadata = copy.deepcopy(metadatas_[i])
                 if self._add_start_index:
                     offset = index + previous_chunk_len - self._chunk_overlap
                     index = text.find(chunk, max(0, offset))
                     metadata["start_index"] = index
                     previous_chunk_len = len(chunk)
+
+                # Apply metadata hydrator if configured
+                if self._metadata_hydrator is not None:
+                    context = SplitterContext(
+                        chunk_index=chunk_idx,
+                        total_chunks=total_chunks,
+                        chunk_content=chunk,
+                        source_text_length=len(text),
+                        start_index=metadata.get("start_index"),
+                    )
+                    metadata = self._metadata_hydrator.hydrate(metadata, context)
+
                 new_doc = Document(page_content=chunk, metadata=metadata)
                 documents.append(new_doc)
         return documents
