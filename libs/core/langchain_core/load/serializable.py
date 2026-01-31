@@ -209,7 +209,17 @@ class Serializable(BaseModel, ABC):
         secrets = {}
         # Get latest values for kwargs if there is an attribute with same name
         lc_kwargs = {}
-        for k, v in self:
+        # NOTE:
+        # Pydantic BaseModel.__iter__ ultimately iterates over self.__dict__.items().
+        # In highly concurrent execution (e.g., multiple threads serializing the same
+        # instance while other threads populate cached properties), self.__dict__ can
+        # be mutated during iteration, raising:
+        #   RuntimeError: dictionary changed size during iteration
+        #
+        # Use a snapshot of __dict__ to avoid iterating a mutating dictionary.
+        for k, v in self.__dict__.copy().items():
+            if k.startswith("_"):
+                continue
             if not _is_field_useful(self, k, v):
                 continue
             # Do nothing if the field is excluded
