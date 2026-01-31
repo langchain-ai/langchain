@@ -253,3 +253,10 @@ def test_fake_messages_list_chat_model_sleep_delay() -> None:
     elapsed = time.time() - start
 
     assert elapsed >= sleep_time
+
+
+def test_parrot_fake_chat_model_empty_messages() -> None:
+    model = ParrotFakeChatModel()
+    result = model.invoke([])
+    assert isinstance(result, AIMessage)
+    assert result.content == ""
