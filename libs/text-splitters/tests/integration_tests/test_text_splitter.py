@@ -2,6 +2,7 @@
 
 import pytest
 from transformers import GPT2TokenizerFast
+from transformers.models.gpt2 import GPT2Tokenizer
 
 from langchain_text_splitters import (
     TokenTextSplitter,
@@ -23,9 +24,19 @@ def test_huggingface_type_check() -> None:
 
 def test_huggingface_tokenizer() -> None:
     """Test text splitter that uses a HuggingFace tokenizer."""
-    tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
     text_splitter = CharacterTextSplitter.from_huggingface_tokenizer(
         tokenizer, separator=" ", chunk_size=1, chunk_overlap=0
+    )
+    output = text_splitter.split_text("foo bar")
+    assert output == ["foo", "bar"]
+
+
+def test_huggingface_tokenizer_fast() -> None:
+    """Test text splitter that uses a fast HuggingFace tokenizer with batched=True."""
+    tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+    text_splitter = CharacterTextSplitter.from_huggingface_tokenizer(
+        tokenizer, batched=True, separator=" ", chunk_size=1, chunk_overlap=0
     )
     output = text_splitter.split_text("foo bar")
     assert output == ["foo", "bar"]

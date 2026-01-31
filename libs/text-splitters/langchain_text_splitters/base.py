@@ -31,6 +31,7 @@ except ImportError:
 
 try:
     from transformers.tokenization_utils_base import PreTrainedTokenizerBase
+    from transformers.tokenization_utils_fast import PreTrainedTokenizerFast
 
     _HAS_TRANSFORMERS = True
 except ImportError:
@@ -50,6 +51,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
         keep_separator: bool | Literal["start", "end"] = False,  # noqa: FBT001,FBT002
+        batched_length_function: Callable[[list[str]], list[int]] | None = None,
         add_start_index: bool = False,  # noqa: FBT001,FBT002
         strip_whitespace: bool = True,  # noqa: FBT001,FBT002
     ) -> None:
@@ -59,6 +61,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             chunk_size: Maximum size of chunks to return
             chunk_overlap: Overlap in characters between chunks
             length_function: Function that measures the length of given chunks
+            batched_length_function: Function that measures chunk lengths in batches
             keep_separator: Whether to keep the separator and where to place it
                 in each corresponding chunk `(True='start')`
             add_start_index: If `True`, includes chunk's start index in metadata
@@ -85,6 +88,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
         self._length_function = length_function
+        self._batched_length_function = batched_length_function
         self._keep_separator = keep_separator
         self._add_start_index = add_start_index
         self._strip_whitespace = strip_whitespace
@@ -149,16 +153,32 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             text = text.strip()
         return text or None
 
-    def _merge_splits(self, splits: Iterable[str], separator: str) -> list[str]:
+    def _iter_text_lengths(self, texts: Iterable[str]) -> Iterable[int]:
+        if self._batched_length_function:
+            if not isinstance(texts, list):
+                texts = list(texts)
+            lengths = self._batched_length_function(texts)
+            yield from lengths
+        else:
+            for text in texts:
+                yield self._length_function(text)
+
+    def _merge_splits(
+        self,
+        splits: Iterable[str],
+        separator: str,
+        lengths: Iterable[int] | None = None,
+    ) -> list[str]:
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
-        separator_len = self._length_function(separator)
+        separator_len = self._text_length(separator)
 
         docs = []
         current_doc: list[str] = []
+        current_doc_lengths: list[int] = []
         total = 0
-        for d in splits:
-            len_ = self._length_function(d)
+        split_lengths = lengths or self._iter_text_lengths(splits)
+        for d, len_ in zip(splits, split_lengths, strict=True):
             if (
                 total + len_ + (separator_len if len(current_doc) > 0 else 0)
                 > self._chunk_size
@@ -182,25 +202,36 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                         > self._chunk_size
                         and total > 0
                     ):
-                        total -= self._length_function(current_doc[0]) + (
+                        total -= current_doc_lengths[0] + (
                             separator_len if len(current_doc) > 1 else 0
                         )
                         current_doc = current_doc[1:]
+                        current_doc_lengths = current_doc_lengths[1:]
             current_doc.append(d)
+            current_doc_lengths.append(len_)
             total += len_ + (separator_len if len(current_doc) > 1 else 0)
         doc = self._join_docs(current_doc, separator)
         if doc is not None:
             docs.append(doc)
         return docs
 
+    def _text_length(self, text: str) -> int:
+        if self._batched_length_function:
+            return self._batched_length_function([text])[0]
+        return self._length_function(text)
+
     @classmethod
     def from_huggingface_tokenizer(
-        cls, tokenizer: PreTrainedTokenizerBase, **kwargs: Any
+        cls,
+        tokenizer: PreTrainedTokenizerBase,
+        batched: bool = False,  # noqa: FBT001,FBT002
+        **kwargs: Any,
     ) -> TextSplitter:
         """Text splitter that uses Hugging Face tokenizer to count length.
 
         Args:
             tokenizer: The Hugging Face tokenizer to use.
+            batched: Whether to use batched tokenization.
 
         Returns:
             An instance of `TextSplitter` using the Hugging Face tokenizer for length
@@ -217,10 +248,24 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             msg = "Tokenizer received was not an instance of PreTrainedTokenizerBase"  # type: ignore[unreachable]
             raise ValueError(msg)  # noqa: TRY004
 
+        if batched is False and isinstance(tokenizer, PreTrainedTokenizerFast):
+            # Take advantage of huggingface's fast tokenizers
+            # by batching tokenization of splits
+            batched = True
+
         def _huggingface_tokenizer_length(text: str) -> int:
             return len(tokenizer.tokenize(text))
 
-        return cls(length_function=_huggingface_tokenizer_length, **kwargs)
+        def _huggingface_tokenizer_batched_length(texts: list[str]) -> list[int]:
+            return tokenizer(texts, truncation=False, return_length=True).length  # type: ignore[no-any-return]
+
+        return cls(
+            length_function=_huggingface_tokenizer_length,
+            batched_length_function=_huggingface_tokenizer_batched_length
+            if batched
+            else None,
+            **kwargs,
+        )
 
     @classmethod
     def from_tiktoken_encoder(
