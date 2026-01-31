@@ -10,7 +10,6 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from collections.abc import Awaitable, Callable
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -33,6 +32,8 @@ from langchain.agents.middleware.types import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from langchain_core.messages import ToolMessage
     from langgraph.prebuilt.tool_node import ToolCallRequest
     from langgraph.runtime import Runtime
@@ -45,11 +46,12 @@ if TYPE_CHECKING:
 
 
 try:
-    from opentelemetry import trace as otel_trace
+    from opentelemetry import trace as otel_trace  # type: ignore[import-not-found]
+
     _HAS_OPENTELEMETRY = True
 except ImportError:
     _HAS_OPENTELEMETRY = False
-    otel_trace = None  # type: ignore[assignment]
+    otel_trace = None
 
 
 class _TokenUsage(NamedTuple):
@@ -632,32 +634,28 @@ class MetricsMiddleware(AgentMiddleware[MetricsState[ResponseT], Any], Generic[R
         """
         return self.before_agent(state, runtime)
 
-    def _store_model_metrics(
-        self, state: AgentState[Any], metrics: ModelCallMetrics
-    ) -> None:
+    def _store_model_metrics(self, state: AgentState[Any], metrics: ModelCallMetrics) -> None:
         """Store model call metrics in state.
 
         Args:
             state: The agent state to store metrics in.
             metrics: The model call metrics to store.
         """
-        model_calls = state.get(_KEY_MODEL_CALLS)
+        model_calls = cast("list[ModelCallMetrics] | None", state.get(_KEY_MODEL_CALLS))
         if model_calls is None:
             # State not initialized - before_agent wasn't called.
             # This shouldn't happen in normal operation.
             return
         model_calls.append(metrics)
 
-    def _store_tool_metrics(
-        self, state: AgentState[Any], metrics: ToolCallMetrics
-    ) -> None:
+    def _store_tool_metrics(self, state: AgentState[Any], metrics: ToolCallMetrics) -> None:
         """Store tool call metrics in state.
 
         Args:
             state: The agent state to store metrics in.
             metrics: The tool call metrics to store.
         """
-        tool_calls = state.get(_KEY_TOOL_CALLS)
+        tool_calls = cast("list[ToolCallMetrics] | None", state.get(_KEY_TOOL_CALLS))
         if tool_calls is None:
             # State not initialized - before_agent wasn't called.
             # This shouldn't happen in normal operation.
@@ -845,8 +843,8 @@ class MetricsMiddleware(AgentMiddleware[MetricsState[ResponseT], Any], Generic[R
         Returns:
             AgentRunMetrics instance, or None if state not initialized.
         """
-        run_id = state.get(_KEY_RUN_ID)
-        run_start = state.get(_KEY_RUN_START)
+        run_id = cast("str | None", state.get(_KEY_RUN_ID))
+        run_start = cast("float | None", state.get(_KEY_RUN_START))
 
         if not run_id or run_start is None:
             return None
@@ -858,12 +856,15 @@ class MetricsMiddleware(AgentMiddleware[MetricsState[ResponseT], Any], Generic[R
             % 1_000_000
         )
 
+        model_calls = cast("list[ModelCallMetrics]", state.get(_KEY_MODEL_CALLS) or [])
+        tool_calls = cast("list[ToolCallMetrics]", state.get(_KEY_TOOL_CALLS) or [])
+
         return AgentRunMetrics(
             run_id=run_id,
             start_time=start_datetime,
             end_time=datetime.now(tz=timezone.utc),
-            model_calls=list(state.get(_KEY_MODEL_CALLS) or []),
-            tool_calls=list(state.get(_KEY_TOOL_CALLS) or []),
+            model_calls=list(model_calls),
+            tool_calls=list(tool_calls),
         )
 
     @override
@@ -1040,7 +1041,9 @@ class MetricsMiddleware(AgentMiddleware[MetricsState[ResponseT], Any], Generic[R
         return None
 
     async def aafter_agent(
-        self, state: MetricsState[ResponseT], runtime: Runtime
+        self,
+        state: MetricsState[ResponseT],
+        runtime: Runtime,  # noqa: ARG002
     ) -> dict[str, Any] | None:
         """Export aggregated run metrics when agent completes (async).
 

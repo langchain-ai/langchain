@@ -22,6 +22,7 @@ from langchain.agents.middleware.metrics import (
     MetricsMultiExporter,
     ModelCallMetrics,
     ToolCallMetrics,
+    _TraceContext,
 )
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
@@ -139,7 +140,9 @@ class TestInMemoryMetricsExporterSync:
             ModelCallMetrics(timestamp=datetime.now(tz=timezone.utc), latency_ms=100.0)
         )
         exporter.export_tool_call(
-            ToolCallMetrics(timestamp=datetime.now(tz=timezone.utc), tool_name="tool", latency_ms=50.0)
+            ToolCallMetrics(
+                timestamp=datetime.now(tz=timezone.utc), tool_name="tool", latency_ms=50.0
+            )
         )
         exporter.export_run_complete(AgentRunMetrics("id", datetime.now(tz=timezone.utc)))
         exporter.clear()
@@ -152,13 +155,19 @@ class TestInMemoryMetricsExporterSync:
         """Test total_tokens aggregation property."""
         exporter = InMemoryMetricsExporter()
         exporter.export_model_call(
-            ModelCallMetrics(timestamp=datetime.now(tz=timezone.utc), latency_ms=100.0, total_tokens=50)
+            ModelCallMetrics(
+                timestamp=datetime.now(tz=timezone.utc), latency_ms=100.0, total_tokens=50
+            )
         )
         exporter.export_model_call(
-            ModelCallMetrics(timestamp=datetime.now(tz=timezone.utc), latency_ms=100.0, total_tokens=100)
+            ModelCallMetrics(
+                timestamp=datetime.now(tz=timezone.utc), latency_ms=100.0, total_tokens=100
+            )
         )
         exporter.export_model_call(
-            ModelCallMetrics(timestamp=datetime.now(tz=timezone.utc), latency_ms=100.0, total_tokens=None)
+            ModelCallMetrics(
+                timestamp=datetime.now(tz=timezone.utc), latency_ms=100.0, total_tokens=None
+            )
         )
 
         assert exporter.total_tokens == 150
@@ -173,10 +182,14 @@ class TestInMemoryMetricsExporterSync:
             ModelCallMetrics(timestamp=datetime.now(tz=timezone.utc), latency_ms=200.0)
         )
         exporter.export_tool_call(
-            ToolCallMetrics(timestamp=datetime.now(tz=timezone.utc), tool_name="tool1", latency_ms=50.0)
+            ToolCallMetrics(
+                timestamp=datetime.now(tz=timezone.utc), tool_name="tool1", latency_ms=50.0
+            )
         )
         exporter.export_tool_call(
-            ToolCallMetrics(timestamp=datetime.now(tz=timezone.utc), tool_name="tool2", latency_ms=150.0)
+            ToolCallMetrics(
+                timestamp=datetime.now(tz=timezone.utc), tool_name="tool2", latency_ms=150.0
+            )
         )
 
         assert exporter.average_model_latency_ms == 150.0
@@ -269,7 +282,9 @@ class TestCallbackMetricsExporterSync:
 
         exporter = CallbackMetricsExporter(on_tool_call=on_tool_call)
 
-        metrics = ToolCallMetrics(timestamp=datetime.now(tz=timezone.utc), tool_name="my_tool", latency_ms=50.0)
+        metrics = ToolCallMetrics(
+            timestamp=datetime.now(tz=timezone.utc), tool_name="my_tool", latency_ms=50.0
+        )
         exporter.export_tool_call(metrics)
 
         assert len(tool_calls) == 1
@@ -298,7 +313,9 @@ class TestCallbackMetricsExporterSync:
             ModelCallMetrics(timestamp=datetime.now(tz=timezone.utc), latency_ms=100.0)
         )
         exporter.export_tool_call(
-            ToolCallMetrics(timestamp=datetime.now(tz=timezone.utc), tool_name="tool", latency_ms=50.0)
+            ToolCallMetrics(
+                timestamp=datetime.now(tz=timezone.utc), tool_name="tool", latency_ms=50.0
+            )
         )
         exporter.export_run_complete(AgentRunMetrics("id", datetime.now(tz=timezone.utc)))
 
@@ -332,7 +349,9 @@ class TestCallbackMetricsExporterAsync:
 
         exporter = CallbackMetricsExporter(aon_tool_call=aon_tool_call)
 
-        metrics = ToolCallMetrics(timestamp=datetime.now(tz=timezone.utc), tool_name="my_tool", latency_ms=50.0)
+        metrics = ToolCallMetrics(
+            timestamp=datetime.now(tz=timezone.utc), tool_name="my_tool", latency_ms=50.0
+        )
         await exporter.aexport_tool_call(metrics)
 
         assert len(tool_calls) == 1
@@ -378,7 +397,9 @@ class TestCallbackMetricsExporterAsync:
             ModelCallMetrics(timestamp=datetime.now(tz=timezone.utc), latency_ms=100.0)
         )
         await exporter.aexport_tool_call(
-            ToolCallMetrics(timestamp=datetime.now(tz=timezone.utc), tool_name="tool", latency_ms=50.0)
+            ToolCallMetrics(
+                timestamp=datetime.now(tz=timezone.utc), tool_name="tool", latency_ms=50.0
+            )
         )
         await exporter.aexport_run_complete(AgentRunMetrics("id", datetime.now(tz=timezone.utc)))
 
@@ -397,7 +418,9 @@ class TestMetricsMultiExporterSync:
             ModelCallMetrics(timestamp=datetime.now(tz=timezone.utc), latency_ms=100.0)
         )
         exporters.export_tool_call(
-            ToolCallMetrics(timestamp=datetime.now(tz=timezone.utc), tool_name="tool", latency_ms=50.0)
+            ToolCallMetrics(
+                timestamp=datetime.now(tz=timezone.utc), tool_name="tool", latency_ms=50.0
+            )
         )
         exporters.export_run_complete(AgentRunMetrics("id", datetime.now(tz=timezone.utc)))
 
@@ -432,7 +455,9 @@ class TestMetricsMultiExporterAsync:
             ModelCallMetrics(timestamp=datetime.now(tz=timezone.utc), latency_ms=100.0)
         )
         await exporters.aexport_tool_call(
-            ToolCallMetrics(timestamp=datetime.now(tz=timezone.utc), tool_name="tool", latency_ms=50.0)
+            ToolCallMetrics(
+                timestamp=datetime.now(tz=timezone.utc), tool_name="tool", latency_ms=50.0
+            )
         )
         await exporters.aexport_run_complete(AgentRunMetrics("id", datetime.now(tz=timezone.utc)))
 
@@ -496,8 +521,12 @@ class TestAgentRunMetrics:
             run_id="test",
             start_time=now,
             model_calls=[
-                ModelCallMetrics(timestamp=now, latency_ms=100.0, input_tokens=80, output_tokens=20),
-                ModelCallMetrics(timestamp=now, latency_ms=100.0, input_tokens=60, output_tokens=40),
+                ModelCallMetrics(
+                    timestamp=now, latency_ms=100.0, input_tokens=80, output_tokens=20
+                ),
+                ModelCallMetrics(
+                    timestamp=now, latency_ms=100.0, input_tokens=60, output_tokens=40
+                ),
             ],
         )
 
@@ -536,7 +565,9 @@ class TestAgentRunMetrics:
             tool_calls=[
                 ToolCallMetrics(timestamp=now, tool_name="tool1", latency_ms=50.0),
                 ToolCallMetrics(timestamp=now, tool_name="tool2", latency_ms=50.0),
-                ToolCallMetrics(timestamp=now, tool_name="tool3", latency_ms=50.0, error=test_error),
+                ToolCallMetrics(
+                    timestamp=now, tool_name="tool3", latency_ms=50.0, error=test_error
+                ),
             ],
         )
 
@@ -1044,7 +1075,8 @@ class TestTraceCorrelation:
         assert middleware._get_run_id(NoConfigRequest()) is None
 
         class DirectRunIdRequest:
-            config = {"run_id": "direct-run-123"}
+            def __init__(self) -> None:
+                self.config = {"run_id": "direct-run-123"}
 
         assert middleware._get_run_id(DirectRunIdRequest()) == "direct-run-123"
 
@@ -1052,7 +1084,8 @@ class TestTraceCorrelation:
             run_id = "callback-run-456"
 
         class CallbackRequest:
-            config = {"callbacks": [MockCallback()]}
+            def __init__(self) -> None:
+                self.config: dict[str, Any] = {"callbacks": [MockCallback()]}
 
         assert middleware._get_run_id(CallbackRequest()) == "callback-run-456"
 
@@ -1061,12 +1094,14 @@ class TestTraceCorrelation:
             parent_run_id = "parent-run-789"
 
         class ParentCallbackRequest:
-            config = {"callbacks": [MockParentCallback()]}
+            def __init__(self) -> None:
+                self.config: dict[str, Any] = {"callbacks": [MockParentCallback()]}
 
         assert middleware._get_run_id(ParentCallbackRequest()) == "parent-run-789"
 
         class EmptyCallbacksRequest:
-            config = {"callbacks": []}
+            def __init__(self) -> None:
+                self.config: dict[str, Any] = {"callbacks": []}
 
         assert middleware._get_run_id(EmptyCallbacksRequest()) is None
 
@@ -1089,7 +1124,8 @@ class TestTraceCorrelation:
         middleware = MetricsMiddleware()
 
         class RequestWithRunId:
-            config = {"run_id": "combined-123"}
+            def __init__(self) -> None:
+                self.config = {"run_id": "combined-123"}
 
         ctx = middleware._build_trace_context(RequestWithRunId())
 
@@ -1099,8 +1135,6 @@ class TestTraceCorrelation:
 
     def test_trace_context_namedtuple_fields(self) -> None:
         """Test that _TraceContext has expected fields."""
-        from langchain.agents.middleware.metrics import _TraceContext
-
         ctx = _TraceContext(
             trace_id="trace123",
             span_id="span456",
