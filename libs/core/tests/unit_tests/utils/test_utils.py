@@ -117,27 +117,6 @@ def test_check_package_version(
             {"a": [{"idx": 0, "b": "f"}]},
             {"a": [{"idx": 0, "b": "{"}, {"idx": 0, "b": "f"}]},
         ),
-    ],
-)
-def test_merge_dicts(
-    left: dict, right: dict, expected: dict | AbstractContextManager
-) -> None:
-    err = expected if isinstance(expected, AbstractContextManager) else nullcontext()
-
-    left_copy = deepcopy(left)
-    right_copy = deepcopy(right)
-    with err:
-        actual = merge_dicts(left, right)
-        assert actual == expected
-        # no mutation
-        assert left == left_copy
-        assert right == right_copy
-
-
-@pytest.mark.parametrize(
-    ("left", "right", "expected"),
-    [
-        # 'type' special key handling
         ({"type": "foo"}, {"type": "foo"}, {"type": "foo"}),
         (
             {"type": "foo"},
@@ -146,8 +125,7 @@ def test_merge_dicts(
         ),
     ],
 )
-@pytest.mark.xfail(reason="Refactors to make in 0.3")
-def test_merge_dicts_0_3(
+def test_merge_dicts(
     left: dict, right: dict, expected: dict | AbstractContextManager
 ) -> None:
     err = expected if isinstance(expected, AbstractContextManager) else nullcontext()

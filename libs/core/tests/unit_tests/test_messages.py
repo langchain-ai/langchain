@@ -1,3 +1,4 @@
+import re
 import uuid
 from typing import get_args
 
@@ -281,16 +282,18 @@ def test_complex_ai_message_chunks() -> None:
         "should merge"
     )
 
-    assert AIMessageChunk(
-        content=[{"index": 0, "text": "I am", "type": "text_block"}]
-    ) + AIMessageChunk(
-        content=[{"index": 0, "text": " indeed.", "type": "text_block_delta"}]
-    ) == AIMessageChunk(
-        content=[{"index": 0, "text": "I am indeed.", "type": "text_block"}]
-    ), (
-        "Concatenating when both content arrays are dicts with the same index "
-        "and different types should merge without updating type"
-    )
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Unable to merge. Two different values seen for special key 'type': "
+            "text_block and text_block_delta"
+        ),
+    ):
+        AIMessageChunk(
+            content=[{"index": 0, "text": "I am", "type": "text_block"}]
+        ) + AIMessageChunk(
+            content=[{"index": 0, "text": " indeed.", "type": "text_block_delta"}]
+        )
 
     assert AIMessageChunk(
         content=[{"index": 0, "text": "I am", "type": "text_block"}]
