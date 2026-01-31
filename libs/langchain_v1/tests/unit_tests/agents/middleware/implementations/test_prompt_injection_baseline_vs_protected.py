@@ -70,8 +70,10 @@ def _run_baseline_vs_protected(model, payload, tools, tool_name, target_tools):
     # Print comparison
     baseline = "VULN" if baseline_vulnerable else "safe"
     protected = "SAFE" if protected_safe else "FAIL"
-    print(f"\n{model_name}: baseline={baseline} triggered={baseline_triggered} -> "
-          f"protected={protected} triggered={protected_triggered}")
+    print(
+        f"\n{model_name}: baseline={baseline} triggered={baseline_triggered} -> "
+        f"protected={protected} triggered={protected_triggered}"
+    )
 
     return protected_safe, model_name
 
@@ -96,6 +98,18 @@ class TestAnthropic:
     def test_injection(self, anthropic_model, payload, tools, tool_name, target_tools):
         protected_safe, model_name = _run_baseline_vs_protected(
             anthropic_model, payload, tools, tool_name, target_tools
+        )
+        assert protected_safe, f"Protection failed for {model_name}"
+
+
+class TestGoogle:
+    """Baseline vs protected tests for Google models (gemini-3-flash-preview)."""
+
+    @pytest.mark.requires("langchain_google_genai")
+    @pytest.mark.parametrize("payload,tools,tool_name,target_tools", INJECTION_TEST_CASES)
+    def test_injection(self, google_model, payload, tools, tool_name, target_tools):
+        protected_safe, model_name = _run_baseline_vs_protected(
+            google_model, payload, tools, tool_name, target_tools
         )
         assert protected_safe, f"Protection failed for {model_name}"
 
