@@ -1,4 +1,6 @@
 import json
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import pytest
@@ -891,3 +893,151 @@ class TestJinja2SecurityBlocking:
         # jinja2 should be blocked by default
         with pytest.raises(ValueError, match="Jinja2 templates are not allowed"):
             load(serialized_jinja2, allowed_objects=[PromptTemplate])
+
+
+class TestThreadSafeSerialization:
+    """Tests for thread-safe serialization (GitHub issue #34887).
+
+    This tests the fix for RuntimeError: dictionary keys changed during iteration
+    that occurs when concurrent threads serialize and invoke Serializable objects.
+    """
+
+    def test_concurrent_serialization_no_race_condition(self) -> None:
+        """Test that concurrent dumpd() and __dict__ mutation doesn't crash.
+
+        This reproduces the race condition from issue #34887 where:
+        - Thread A: dumpd(obj) -> to_json() -> iterates self.__dict__.items()
+        - Thread B: mutates obj.__dict__ (e.g., via cached_property write)
+
+        The fix ensures iteration takes a snapshot of __dict__ to prevent
+        RuntimeError during concurrent access.
+        """
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", "You are a helpful assistant."),
+                ("human", "{q}"),
+            ]
+        )
+
+        iterations = 1000
+        num_threads = 4
+        errors: list[BaseException] = []
+        stop_event = threading.Event()
+
+        def serialization_worker() -> None:
+            """Worker that repeatedly serializes the prompt."""
+            try:
+                for _ in range(iterations):
+                    if stop_event.is_set():
+                        return
+                    dumpd(prompt)
+            except BaseException as e:
+                errors.append(e)
+                stop_event.set()
+
+        def mutation_worker() -> None:
+            """Worker that repeatedly mutates __dict__ via cached_property reset."""
+            try:
+                for _ in range(iterations):
+                    if stop_event.is_set():
+                        return
+                    # Pop _serialized to force re-computation on next access
+                    # This simulates what happens during invoke() when
+                    # cached_property writes to __dict__
+                    prompt.__dict__.pop("_serialized", None)
+                    # Access _serialized to trigger cached_property write
+                    _ = prompt._serialized
+            except BaseException as e:
+                errors.append(e)
+                stop_event.set()
+
+        # Run serialization and mutation workers concurrently
+        with ThreadPoolExecutor(max_workers=num_threads * 2) as executor:
+            futures = []
+            for _ in range(num_threads):
+                futures.append(executor.submit(serialization_worker))
+                futures.append(executor.submit(mutation_worker))
+
+            # Wait for all workers to complete
+            for future in futures:
+                future.result()
+
+        # Assert no errors occurred
+        if errors:
+            raise errors[0]
+
+    def test_serializable_iter_returns_snapshot(self) -> None:
+        """Test that Serializable.__iter__ returns a snapshot, not live view."""
+
+        class TestSerializable(Serializable):
+            field1: str = "value1"
+            field2: str = "value2"
+
+            @classmethod
+            def is_lc_serializable(cls) -> bool:
+                return True
+
+        obj = TestSerializable()
+
+        # Get iterator
+        iterator = iter(obj)
+
+        # Mutate __dict__ during iteration (simulates cached_property write)
+        obj.__dict__["_new_key"] = "new_value"
+
+        # Iteration should complete without error because we took a snapshot
+        items = list(iterator)
+
+        # Should have gotten original fields (new key starts with _ so excluded)
+        field_names = [k for k, v in items]
+        assert "field1" in field_names
+        assert "field2" in field_names
+        # The new key starts with "_" so it's excluded by the filter
+        assert "_new_key" not in field_names
+
+    def test_to_json_thread_safe(self) -> None:
+        """Test that to_json() is thread-safe with concurrent __dict__ mutation."""
+
+        class ConcurrentSerializable(Serializable):
+            value: int = 42
+
+            @classmethod
+            def is_lc_serializable(cls) -> bool:
+                return True
+
+        obj = ConcurrentSerializable()
+        errors: list[BaseException] = []
+        stop_event = threading.Event()
+
+        def serialize_worker() -> None:
+            try:
+                for _ in range(500):
+                    if stop_event.is_set():
+                        return
+                    obj.to_json()
+            except BaseException as e:
+                errors.append(e)
+                stop_event.set()
+
+        def mutate_worker() -> None:
+            try:
+                for i in range(500):
+                    if stop_event.is_set():
+                        return
+                    # Simulate cached_property behavior by adding/removing keys
+                    obj.__dict__["_temp_key"] = i
+                    obj.__dict__.pop("_temp_key", None)
+            except BaseException as e:
+                errors.append(e)
+                stop_event.set()
+
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            futures = [executor.submit(serialize_worker) for _ in range(4)] + [
+                executor.submit(mutate_worker) for _ in range(4)
+            ]
+
+            for future in futures:
+                future.result()
+
+        if errors:
+            raise errors[0]
