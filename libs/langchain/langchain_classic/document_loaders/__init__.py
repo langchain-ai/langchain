@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 from langchain_classic._api import create_importer
 
 if TYPE_CHECKING:
+    from langchain_classic.document_loaders.docling import DoclingLoader
     from langchain_community.document_loaders import (
         AcreomLoader,
         AirbyteCDKLoader,
@@ -364,6 +365,9 @@ _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_L
 
 def __getattr__(name: str) -> Any:
     """Look up attributes dynamically."""
+    if name == "DoclingLoader":
+        from langchain_classic.document_loaders.docling import DoclingLoader
+        return DoclingLoader
     return _import_attribute(name)
 
 
@@ -416,6 +420,7 @@ __all__ = [
     "DirectoryLoader",
     "DiscordChatLoader",
     "DocugamiLoader",
+    "DoclingLoader",
     "DocusaurusLoader",
     "Docx2txtLoader",
     "DropboxLoader",

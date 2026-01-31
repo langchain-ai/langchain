@@ -1,0 +1,30 @@
+# Docling Loader
+
+The Docling loader enables high-quality PDF parsing using the
+[Docling](https://github.com/DS4SD/docling) library.
+
+## Features
+- Layout-aware text extraction
+- Table extraction (Markdown)
+- Page-level metadata
+
+## Installation
+
+```bash
+pip install docling
+```
+
+## Usage
+
+```python
+from langchain_classic.document_loaders import DoclingLoader
+
+loader = DoclingLoader("report.pdf", extract_tables=True)
+documents = loader.load()
+```
+
+## When to Use Docling
+
+- Complex PDFs
+- Reports with tables
+- Enterprise documents
