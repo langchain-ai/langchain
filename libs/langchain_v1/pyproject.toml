@@ -69,7 +69,7 @@ typing = [
 ]
 
 test_integration = [
-    "vcrpy>=7.0.0,<8.0.0",
+    "vcrpy>=8.0.0,<9.0.0",
     "wrapt>=1.15.0,<2.0.0",
     "python-dotenv>=1.0.0,<2.0.0",
     "langchainhub>=0.1.16,<1.0.0",
@@ -79,6 +79,7 @@ test_integration = [
 
 [tool.uv]
 prerelease = "allow"
+constraint-dependencies = ["urllib3>=2.6.3"]
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
