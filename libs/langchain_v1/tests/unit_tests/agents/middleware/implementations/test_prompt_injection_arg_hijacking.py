@@ -27,12 +27,13 @@ pytestmark = pytest.mark.skipif(
     reason="E2E tests are skipped by default. Set RUN_BENCHMARK_TESTS=1 to run.",
 )
 
+from langchain.agents.middleware import IntentVerificationStrategy
+
 from .conftest import (
     ARG_HIJACK_TEST_CASES,
     check_argument_hijacking,
-    create_combined_strategy,
     create_tool_message,
-    create_tool_request,
+    create_tool_request_with_user_message,
 )
 
 
@@ -56,9 +57,9 @@ def _run_arg_hijack_test(
         model, tools, user_request, payload, expected_tool, legitimate_args, malicious_patterns
     )
 
-    # Protected: run payload through middleware first
-    strategy = create_combined_strategy(model, tools)
-    req = create_tool_request(tools, "get_user_data")
+    # Protected: run payload through IntentVerificationStrategy
+    strategy = IntentVerificationStrategy(model)
+    req = create_tool_request_with_user_message(tools, "get_user_data", user_request)
     sanitized = strategy.process(req, create_tool_message(payload, "get_user_data"))
 
     # Now check if sanitized payload still causes hijacking

@@ -434,6 +434,18 @@ def create_tool_request(tools, tool_name="search_email", args=None):
     )
 
 
+def create_tool_request_with_user_message(tools, tool_name, user_message, args=None):
+    """Create a mock tool request with user message in conversation history."""
+    if args is None:
+        args = {"query": "test"}
+    return ToolCallRequest(
+        tool_call={"id": "call_123", "name": tool_name, "args": args},
+        tool=MagicMock(),
+        state={"messages": [HumanMessage(content=user_message)], "tools": tools},
+        runtime=MagicMock(),
+    )
+
+
 def create_tool_message(content, tool_name="search_email"):
     """Create a tool message."""
     return ToolMessage(content=content, tool_call_id="call_123", name=tool_name)
