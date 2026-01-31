@@ -1244,6 +1244,21 @@ def test_tool_arg_descriptions() -> None:
     assert args_schema["description"] == expected["description"]
     assert args_schema["properties"] == expected["properties"]
 
+    # Test parsing with runtime does not raise error
+    def foo3_runtime(bar: str, baz: int, runtime: Any) -> str:  # noqa: D417
+        """The foo.
+
+        Args:
+            bar: The bar.
+            baz: The baz.
+        """
+        return bar
+
+    as_tool = tool(foo3_runtime, parse_docstring=True)
+    args_schema = _schema(as_tool.args_schema)
+    assert args_schema["description"] == expected["description"]
+    assert args_schema["properties"] == expected["properties"]
+
     # Test parameterless tool does not raise error for missing Args section
     # in docstring.
     def foo4() -> str:
