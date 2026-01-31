@@ -1943,6 +1943,8 @@ lint = [
 ]
 test = [
     { name = "blockbuster" },
+    { name = "langchain-anthropic" },
+    { name = "langchain-ollama" },
     { name = "langchain-openai" },
     { name = "langchain-tests" },
     { name = "pytest" },
@@ -1996,6 +1998,8 @@ provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-verte
 lint = [{ name = "ruff", specifier = ">=0.14.11,<0.15.0" }]
 test = [
     { name = "blockbuster", specifier = ">=1.5.26,<1.6.0" },
+    { name = "langchain-anthropic", specifier = ">=1.0.3" },
+    { name = "langchain-ollama", specifier = ">=1.0.0" },
     { name = "langchain-openai", editable = "../partners/openai" },
     { name = "langchain-tests", editable = "../standard-tests" },
     { name = "pytest", specifier = ">=8.0.0,<9.0.0" },

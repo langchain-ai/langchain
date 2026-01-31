@@ -28,11 +28,11 @@ def search_emails(query: str) -> str:
 
 
 agent_protected = create_agent(
-    "openai:gpt-4o",
+    "anthropic:claude-haiku-4-5",
     tools=[search_emails],
     middleware=[
         # This is the recommended configuration from the paper
-        PromptInjectionDefenseMiddleware.check_then_parse("openai:gpt-4o"),
+        PromptInjectionDefenseMiddleware.check_then_parse("anthropic:claude-haiku-4-5"),
     ],
 )
 
@@ -48,12 +48,12 @@ from langchain.agents.middleware import (
 )
 
 custom_strategy = CombinedStrategy([
-    CheckToolStrategy("openai:gpt-4o"),
-    ParseDataStrategy("openai:gpt-4o", use_full_conversation=True),
+    CheckToolStrategy("anthropic:claude-haiku-4-5"),
+    ParseDataStrategy("anthropic:claude-haiku-4-5", use_full_conversation=True),
 ])
 
 agent_custom = create_agent(
-    "openai:gpt-4o",
+    "anthropic:claude-haiku-4-5",
     tools=[search_emails],
     middleware=[PromptInjectionDefenseMiddleware(custom_strategy)],
 )
@@ -97,7 +97,7 @@ my_strategy = MyCustomStrategy(
 )
 
 agent_with_custom = create_agent(
-    "openai:gpt-4o",
+    "anthropic:claude-haiku-4-5",
     tools=[search_emails],
     middleware=[PromptInjectionDefenseMiddleware(my_strategy)],
 )
@@ -106,28 +106,28 @@ agent_with_custom = create_agent(
 # Example 4: Different pre-built configurations
 # Parse only (ASR: 0.77-1.74%)
 agent_parse_only = create_agent(
-    "openai:gpt-4o",
+    "anthropic:claude-haiku-4-5",
     tools=[search_emails],
     middleware=[
-        PromptInjectionDefenseMiddleware.parse_only("openai:gpt-4o"),
+        PromptInjectionDefenseMiddleware.parse_only("anthropic:claude-haiku-4-5"),
     ],
 )
 
 # Check only (ASR: 0.87-1.16%)
 agent_check_only = create_agent(
-    "openai:gpt-4o",
+    "anthropic:claude-haiku-4-5",
     tools=[search_emails],
     middleware=[
-        PromptInjectionDefenseMiddleware.check_only("openai:gpt-4o"),
+        PromptInjectionDefenseMiddleware.check_only("anthropic:claude-haiku-4-5"),
     ],
 )
 
 # Parse then check (ASR: 0.16-0.34%)
 agent_parse_then_check = create_agent(
-    "openai:gpt-4o",
+    "anthropic:claude-haiku-4-5",
     tools=[search_emails],
     middleware=[
-        PromptInjectionDefenseMiddleware.parse_then_check("openai:gpt-4o"),
+        PromptInjectionDefenseMiddleware.parse_then_check("anthropic:claude-haiku-4-5"),
     ],
 )
 
