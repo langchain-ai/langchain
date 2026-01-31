@@ -6,6 +6,16 @@ from langchain.agents.middleware.human_in_the_loop import (
     HumanInTheLoopMiddleware,
     InterruptOnConfig,
 )
+from langchain.agents.middleware.metrics import (
+    AgentRunMetrics,
+    CallbackMetricsExporter,
+    InMemoryMetricsExporter,
+    MetricsExporter,
+    MetricsMiddleware,
+    MetricsMultiExporter,
+    ModelCallMetrics,
+    ToolCallMetrics,
+)
 from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddleware
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
@@ -41,7 +51,9 @@ from langchain.agents.middleware.types import (
 
 __all__ = [
     "AgentMiddleware",
+    "AgentRunMetrics",
     "AgentState",
+    "CallbackMetricsExporter",
     "ClearToolUsesEdit",
     "CodexSandboxExecutionPolicy",
     "ContextEditingMiddleware",
@@ -49,10 +61,15 @@ __all__ = [
     "FilesystemFileSearchMiddleware",
     "HostExecutionPolicy",
     "HumanInTheLoopMiddleware",
+    "InMemoryMetricsExporter",
     "InterruptOnConfig",
     "LLMToolEmulator",
     "LLMToolSelectorMiddleware",
+    "MetricsExporter",
+    "MetricsMiddleware",
+    "MetricsMultiExporter",
     "ModelCallLimitMiddleware",
+    "ModelCallMetrics",
     "ModelFallbackMiddleware",
     "ModelRequest",
     "ModelResponse",
@@ -64,6 +81,7 @@ __all__ = [
     "SummarizationMiddleware",
     "TodoListMiddleware",
     "ToolCallLimitMiddleware",
+    "ToolCallMetrics",
     "ToolCallRequest",
     "ToolRetryMiddleware",
     "after_agent",
