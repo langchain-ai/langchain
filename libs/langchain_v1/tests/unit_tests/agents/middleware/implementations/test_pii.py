@@ -1,5 +1,7 @@
 """Tests for PII detection middleware."""
 
+import asyncio
+import re
 from typing import Any
 
 import pytest
@@ -9,6 +11,7 @@ from langgraph.runtime import Runtime
 from langchain.agents import AgentState
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.pii import (
+    AsyncAnonymizerMiddleware,
     PIIDetectionError,
     PIIMatch,
     PIIMiddleware,
@@ -19,10 +22,6 @@ from langchain.agents.middleware.pii import (
     detect_url,
 )
 from tests.unit_tests.agents.model import FakeToolCallingModel
-
-# ============================================================================
-# Detection Function Tests
-# ============================================================================
 
 
 class TestEmailDetection:
@@ -644,3 +643,268 @@ class TestMultipleMiddleware:
         content = result["messages"][0].content
         assert "test@example.com" not in content
         assert "10.0.0.1" not in content
+
+
+class TestAsyncAnonymizerMiddleware:
+    """Test AsyncAnonymizerMiddleware."""
+
+    @pytest.fixture
+    def simple_anonymizer(self):
+        async def anonymize(content: str) -> str:
+            return content.replace("secret", "[REDACTED]")
+
+        return anonymize
+
+    @pytest.fixture
+    def email_anonymizer(self):
+        async def anonymize(content: str) -> str:
+            return re.sub(r"\S+@\S+\.\S+", "[EMAIL]", content)
+
+        return anonymize
+
+    @pytest.mark.asyncio
+    async def test_anonymize_string_content(self, simple_anonymizer) -> None:
+        middleware = AsyncAnonymizerMiddleware(simple_anonymizer)
+        state = AgentState[Any](messages=[HumanMessage("This is a secret message")])
+
+        result = await middleware.abefore_model(state, Runtime())
+
+        assert result is not None
+        assert result["messages"][0].content == "This is a [REDACTED] message"
+
+    @pytest.mark.asyncio
+    async def test_anonymize_list_string_content(self, simple_anonymizer) -> None:
+        middleware = AsyncAnonymizerMiddleware(simple_anonymizer)
+        state = AgentState[Any](
+            messages=[HumanMessage(content=["First secret", "Second secret here"])]
+        )
+
+        result = await middleware.abefore_model(state, Runtime())
+
+        assert result is not None
+        content = result["messages"][0].content
+        assert isinstance(content, list)
+        assert content == ["First [REDACTED]", "Second [REDACTED] here"]
+
+    @pytest.mark.asyncio
+    async def test_anonymize_list_dict_content(self, simple_anonymizer) -> None:
+        middleware = AsyncAnonymizerMiddleware(simple_anonymizer)
+        state = AgentState[Any](
+            messages=[
+                HumanMessage(
+                    content=[
+                        {"type": "text", "text": "This is secret"},
+                        {"type": "image_url", "image_url": "https://example.com/img.png"},
+                    ]
+                )
+            ]
+        )
+
+        result = await middleware.abefore_model(state, Runtime())
+
+        assert result is not None
+        content = result["messages"][0].content
+        assert isinstance(content, list)
+        assert content[0]["text"] == "This is [REDACTED]"
+        assert content[1]["image_url"] == "https://example.com/img.png"
+
+    @pytest.mark.asyncio
+    async def test_no_changes_returns_none(self, simple_anonymizer) -> None:
+        middleware = AsyncAnonymizerMiddleware(simple_anonymizer)
+        state = AgentState[Any](messages=[HumanMessage("No sensitive data here")])
+
+        result = await middleware.abefore_model(state, Runtime())
+
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_empty_messages(self, simple_anonymizer) -> None:
+        middleware = AsyncAnonymizerMiddleware(simple_anonymizer)
+        state = AgentState[Any](messages=[])
+
+        result = await middleware.abefore_model(state, Runtime())
+
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_filter_by_message_types_human(self, simple_anonymizer) -> None:
+        middleware = AsyncAnonymizerMiddleware(simple_anonymizer, message_types=["human"])
+        state = AgentState[Any](
+            messages=[
+                HumanMessage("secret from human"),
+                AIMessage("secret from ai"),
+            ]
+        )
+
+        result = await middleware.abefore_model(state, Runtime())
+
+        assert result is not None
+        assert result["messages"][0].content == "[REDACTED] from human"
+        assert result["messages"][1].content == "secret from ai"
+
+    @pytest.mark.asyncio
+    async def test_filter_by_message_types_ai(self, simple_anonymizer) -> None:
+        middleware = AsyncAnonymizerMiddleware(simple_anonymizer, message_types=["ai"])
+        state = AgentState[Any](
+            messages=[
+                HumanMessage("secret from human"),
+                AIMessage("secret from ai"),
+            ]
+        )
+
+        result = await middleware.abefore_model(state, Runtime())
+
+        assert result is not None
+        assert result["messages"][0].content == "secret from human"
+        assert result["messages"][1].content == "[REDACTED] from ai"
+
+    @pytest.mark.asyncio
+    async def test_filter_by_message_types_tool(self, simple_anonymizer) -> None:
+        middleware = AsyncAnonymizerMiddleware(simple_anonymizer, message_types=["tool"])
+        state = AgentState[Any](
+            messages=[
+                HumanMessage("secret from human"),
+                AIMessage(
+                    content="",
+                    tool_calls=[ToolCall(name="test", args={}, id="call_1", type="tool_call")],
+                ),
+                ToolMessage(content="secret from tool", tool_call_id="call_1"),
+            ]
+        )
+
+        result = await middleware.abefore_model(state, Runtime())
+
+        assert result is not None
+        assert result["messages"][0].content == "secret from human"
+        assert result["messages"][2].content == "[REDACTED] from tool"
+
+    @pytest.mark.asyncio
+    async def test_all_message_types_when_none(self, simple_anonymizer) -> None:
+        middleware = AsyncAnonymizerMiddleware(simple_anonymizer, message_types=None)
+        state = AgentState[Any](
+            messages=[
+                HumanMessage("secret human"),
+                AIMessage("secret ai"),
+            ]
+        )
+
+        result = await middleware.abefore_model(state, Runtime())
+
+        assert result is not None
+        assert result["messages"][0].content == "[REDACTED] human"
+        assert result["messages"][1].content == "[REDACTED] ai"
+
+    def test_before_model_raises_runtime_error(self, simple_anonymizer) -> None:
+        middleware = AsyncAnonymizerMiddleware(simple_anonymizer)
+        state = AgentState[Any](messages=[HumanMessage("test")])
+
+        with pytest.raises(RuntimeError, match="requires async execution"):
+            middleware.before_model(state, Runtime())
+
+    def test_after_model_raises_runtime_error(self, simple_anonymizer) -> None:
+        middleware = AsyncAnonymizerMiddleware(simple_anonymizer)
+        state = AgentState[Any](messages=[HumanMessage("test")])
+
+        with pytest.raises(RuntimeError, match="requires async execution"):
+            middleware.after_model(state, Runtime())
+
+    @pytest.mark.asyncio
+    async def test_exception_propagation(self) -> None:
+        async def failing_anonymizer(content: str) -> str:
+            msg = "Anonymization failed"
+            raise ValueError(msg)
+
+        middleware = AsyncAnonymizerMiddleware(failing_anonymizer)
+        state = AgentState[Any](messages=[HumanMessage("test content")])
+
+        with pytest.raises(ValueError, match="Anonymization failed"):
+            await middleware.abefore_model(state, Runtime())
+
+    @pytest.mark.asyncio
+    async def test_partial_failure_raises_first_exception(self) -> None:
+        call_count = 0
+
+        async def sometimes_failing_anonymizer(content: str) -> str:
+            nonlocal call_count
+            call_count += 1
+            if call_count == 2:
+                msg = "Second call failed"
+                raise ValueError(msg)
+            return content.replace("x", "y")
+
+        middleware = AsyncAnonymizerMiddleware(sometimes_failing_anonymizer)
+        state = AgentState[Any](
+            messages=[
+                HumanMessage("x one"),
+                HumanMessage("x two"),
+                HumanMessage("x three"),
+            ]
+        )
+
+        with pytest.raises(ValueError, match="Second call failed"):
+            await middleware.abefore_model(state, Runtime())
+
+    @pytest.mark.asyncio
+    async def test_aafter_model_anonymizes(self, simple_anonymizer) -> None:
+        middleware = AsyncAnonymizerMiddleware(simple_anonymizer)
+        state = AgentState[Any](messages=[AIMessage("This is secret")])
+
+        result = await middleware.aafter_model(state, Runtime())
+
+        assert result is not None
+        assert result["messages"][0].content == "This is [REDACTED]"
+
+    @pytest.mark.asyncio
+    async def test_custom_message_keys(self, simple_anonymizer) -> None:
+        middleware = AsyncAnonymizerMiddleware(
+            simple_anonymizer, message_keys=["messages", "history"]
+        )
+        state = {
+            "messages": [HumanMessage("secret in messages")],
+            "history": [HumanMessage("secret in history")],
+        }
+
+        result = await middleware.abefore_model(state, Runtime())
+
+        assert result is not None
+        assert result["messages"][0].content == "[REDACTED] in messages"
+        assert result["history"][0].content == "[REDACTED] in history"
+
+    @pytest.mark.asyncio
+    async def test_missing_message_key_is_skipped(self, simple_anonymizer) -> None:
+        middleware = AsyncAnonymizerMiddleware(
+            simple_anonymizer, message_keys=["messages", "nonexistent"]
+        )
+        state = AgentState[Any](messages=[HumanMessage("secret message")])
+
+        result = await middleware.abefore_model(state, Runtime())
+
+        assert result is not None
+        assert result["messages"][0].content == "[REDACTED] message"
+
+    @pytest.mark.asyncio
+    async def test_parallel_execution(self) -> None:
+        execution_order: list[int] = []
+
+        async def tracking_anonymizer(content: str) -> str:
+            idx = int(content.split()[-1])
+            execution_order.append(idx)
+            await asyncio.sleep(0.01 * (3 - idx))
+            return content.replace("secret", "[REDACTED]")
+
+        middleware = AsyncAnonymizerMiddleware(tracking_anonymizer)
+        state = AgentState[Any](
+            messages=[
+                HumanMessage("secret 1"),
+                HumanMessage("secret 2"),
+                HumanMessage("secret 3"),
+            ]
+        )
+
+        result = await middleware.abefore_model(state, Runtime())
+
+        assert result is not None
+        assert result["messages"][0].content == "[REDACTED] 1"
+        assert result["messages"][1].content == "[REDACTED] 2"
+        assert result["messages"][2].content == "[REDACTED] 3"
+        assert sorted(execution_order) == [1, 2, 3]

@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+import asyncio
+from typing import TYPE_CHECKING, Any, Literal, cast
 
-from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    AnyMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from typing_extensions import override
 
 from langchain.agents.middleware._redaction import (
@@ -22,7 +29,7 @@ from langchain.agents.middleware._redaction import (
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, hook_config
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Awaitable, Callable
 
     from langgraph.runtime import Runtime
 
@@ -358,7 +365,295 @@ class PIIMiddleware(AgentMiddleware):
         return self.after_model(state, runtime)
 
 
+class AsyncAnonymizerMiddleware(AgentMiddleware):
+    """Anonymize PII in conversations using an external async anonymizer.
+
+    This middleware delegates PII detection and anonymization to an external async
+    function. Unlike `PIIMiddleware` which uses built-in regex-based detection and
+    strategies, this middleware allows integration with external PII services that
+    handle both detection and transformation.
+
+    !!! warning "Async-only"
+        This middleware requires async execution. Use it with async agent invocation
+        methods. The sync hooks (`before_model`, `after_model`) will raise
+        `RuntimeError` if called.
+
+    Example:
+        ```python
+        from langchain.agents.middleware import AsyncAnonymizerMiddleware
+        from langchain.agents import create_agent
+
+
+        async def custom_anonymizer(content: str) -> str:
+            # Custom anonymization logic here
+            ...
+
+
+        agent = create_agent(
+            "my-model-id",
+            middleware=[
+                AsyncAnonymizerMiddleware(custom_anonymizer),
+            ],
+        )
+        ```
+    """
+
+    def __init__(
+        self,
+        anonymizer: Callable[[str], Awaitable[str]],
+        *,
+        message_keys: str | list[str] = "messages",
+        message_types: list[Literal["system", "human", "ai", "tool"]] | None = None,
+    ) -> None:
+        """Initialize the anonymizer middleware.
+
+        Args:
+            anonymizer: Async function that anonymizes content.
+
+                An async callable that takes a content string and returns the
+                anonymized string. The function is responsible for both detecting
+                and transforming PII in a single pass.
+
+                This is useful for integrating with external PII services
+                and custom solutions.
+            message_keys: The keys of the messages to anonymize.
+            message_types: The types of messages to anonymize. If `None`, all
+                message kinds are anonymized.
+
+        Example:
+            ```python
+            async def custom_anonymizer(content: str) -> str:
+                # Custom anonymization logic here
+                ...
+
+
+            middleware = AsyncAnonymizerMiddleware(custom_anonymizer)
+
+            agent = create_agent(
+                "my-model-id",
+                middleware=[
+                    AsyncAnonymizerMiddleware(custom_anonymizer),
+                ],
+            )
+            ```
+        """
+        super().__init__()
+
+        self.anonymizer = anonymizer
+        self.message_types = message_types
+        self.apply_to_all_message_types = message_types is None
+        self.message_keys: list[str] = (
+            message_keys if isinstance(message_keys, list) else [message_keys]
+        )
+
+    @property
+    def name(self) -> str:
+        """Name of the middleware."""
+        return self.__class__.__name__
+
+    @hook_config(can_jump_to=["end"])
+    @override
+    def before_model(
+        self,
+        state: AgentState[Any],
+        runtime: Runtime,
+    ) -> dict[str, Any] | None:
+        """Sync hook is not supported for async anonymizer.
+
+        Raises:
+            RuntimeError: Always raised since this middleware requires async execution.
+        """
+        msg = (
+            f"{type(self).__name__} requires async execution. "
+            "Use the async agent invocation methods instead."
+        )
+        raise RuntimeError(msg)
+
+    @override
+    def after_model(
+        self,
+        state: AgentState[Any],
+        runtime: Runtime,
+    ) -> dict[str, Any] | None:
+        """Sync hook is not supported for async anonymizer.
+
+        Raises:
+            RuntimeError: Always raised since this middleware requires async execution.
+        """
+        msg = (
+            f"{type(self).__name__} requires async execution. "
+            "Use the async agent invocation methods instead."
+        )
+        raise RuntimeError(msg)
+
+    @hook_config(can_jump_to=["end"])
+    async def abefore_model(
+        self,
+        state: AgentState[Any],
+        _runtime: Runtime,
+    ) -> dict[str, Any] | None:
+        """Anonymize messages before model invocation.
+
+        Args:
+            state: The current agent state.
+            _runtime: The langgraph runtime.
+
+        Returns:
+            Updated state with anonymized content, or `None` if no changes made.
+
+        Raises:
+            Exception: Re-raises any exception from the anonymizer coroutines.
+        """
+        state_update: dict[str, Any] = {}
+        for message_key in self.message_keys:
+            messages = state.get(message_key)
+            if messages is None:
+                continue
+            anonymized_messages = await self._aanonymize_messages(
+                cast("list[AnyMessage]", messages)
+            )
+            if anonymized_messages:
+                state_update[message_key] = anonymized_messages
+        return state_update or None
+
+    async def aafter_model(
+        self,
+        state: AgentState[Any],
+        _runtime: Runtime,
+    ) -> dict[str, Any] | None:
+        """Anonymize messages after model invocation.
+
+        Args:
+            state: The current agent state.
+            _runtime: The langgraph runtime.
+
+        Returns:
+            Updated state with anonymized content, or `None` if no changes made.
+
+        Raises:
+            Exception: Re-raises any exception from the anonymizer coroutines.
+        """
+        state_update: dict[str, Any] = {}
+        for message_key in self.message_keys:
+            messages = state.get(message_key)
+            if messages is None:
+                continue
+            anonymized_messages = await self._aanonymize_messages(
+                cast("list[AnyMessage]", messages)
+            )
+            if anonymized_messages:
+                state_update[message_key] = anonymized_messages
+        return state_update or None
+
+    def _should_anonymize_message(self, message: AnyMessage) -> bool:
+        """Check if a message should be anonymized based on message types."""
+        if self.apply_to_all_message_types:
+            return True
+
+        kind_map: dict[str, type] = {
+            "system": SystemMessage,
+            "human": HumanMessage,
+            "ai": AIMessage,
+            "tool": ToolMessage,
+        }
+        return any(isinstance(message, kind_map[kind]) for kind in self.message_types or [])
+
+    async def _aanonymize_content(
+        self, content: str | list[str | dict[str, Any]]
+    ) -> tuple[str | list[str | dict[str, Any]], bool]:
+        """Anonymize content, handling str or list[str | dict].
+
+        Returns:
+            A tuple of (new_content, was_modified).
+        """
+        if isinstance(content, str):
+            new_content = await self.anonymizer(content)
+            return new_content, new_content != content
+
+        new_list: list[str | dict[str, Any]] = []
+        any_modified = False
+        for item in content:
+            if isinstance(item, str):
+                new_item = await self.anonymizer(item)
+                new_list.append(new_item)
+                if new_item != item:
+                    any_modified = True
+            elif item.get("type") == "text":
+                new_dict: dict[str, Any] = {}
+                for key, value in item.items():
+                    if key == "text":
+                        new_value = await self.anonymizer(value)
+                        new_dict[key] = new_value
+                        if new_value != value:
+                            any_modified = True
+                    else:
+                        new_dict[key] = value
+                new_list.append(new_dict)
+            else:
+                new_list.append(item)
+
+        return new_list, any_modified
+
+    async def _aanonymize_message(
+        self,
+        message: AnyMessage,
+        index: int,
+    ) -> tuple[int, AnyMessage | None]:
+        """Anonymize a single message.
+
+        Args:
+            message: The message to anonymize.
+            index: The index of the message in the list of messages.
+
+        Returns:
+            A tuple of the index and the anonymized message, or `None` if no changes made.
+        """
+        if not message.content:
+            return index, None
+
+        new_content, was_modified = await self._aanonymize_content(message.content)
+        if was_modified:
+            return index, message.model_copy(update={"content": new_content})
+        return index, None
+
+    async def _aanonymize_messages(self, messages: list[AnyMessage]) -> list[AnyMessage] | None:
+        """Anonymize a list of messages in parallel.
+
+        Args:
+            messages: The messages to anonymize.
+
+        Returns:
+            Updated messages with anonymized content, or `None` if no changes made.
+
+        Raises:
+            Exception: Re-raises any exception from the anonymizer coroutines.
+        """
+        coros = [
+            self._aanonymize_message(message, index)
+            for index, message in enumerate(messages)
+            if self._should_anonymize_message(message)
+        ]
+        if not coros:
+            return None
+
+        results = await asyncio.gather(*coros, return_exceptions=True)
+        exceptions = [result for result in results if isinstance(result, BaseException)]
+        if exceptions:
+            raise exceptions[0]
+
+        new_messages = list(messages)
+        any_modified = False
+        for result in results:
+            if not isinstance(result, BaseException):
+                index, anonymized_message = result
+                if anonymized_message:
+                    new_messages[index] = anonymized_message
+                    any_modified = True
+        return new_messages if any_modified else None
+
+
 __all__ = [
+    "AsyncAnonymizerMiddleware",
     "PIIDetectionError",
     "PIIMatch",
     "PIIMiddleware",
