@@ -705,7 +705,7 @@ def tool_example_to_messages(
     return messages
 
 
-_MIN_DOCSTRING_BLOCKS = 1
+_MIN_DOCSTRING_BLOCKS = 2
 
 
 def _parse_google_docstring(
@@ -733,16 +733,11 @@ def _parse_google_docstring(
             filtered_annotations = {
                 arg
                 for arg in args
-                if arg not in {"run_manager", "callbacks", "return", "runtime"}
+                if arg not in {"run_manager", "callbacks", "runtime", "return"}
             }
             if filtered_annotations and (
                 len(docstring_blocks) < _MIN_DOCSTRING_BLOCKS
-                or (
-                    len(filtered_annotations) > 0
-                    and not any(
-                        block.startswith("Args:") for block in docstring_blocks[1:]
-                    )
-                )
+                or not any(block.startswith("Args:") for block in docstring_blocks[1:])
             ):
                 msg = "Found invalid Google-Style docstring."
                 raise ValueError(msg)

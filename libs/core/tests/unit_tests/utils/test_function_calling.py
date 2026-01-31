@@ -1,4 +1,3 @@
-import textwrap
 import typing
 from collections.abc import Callable, Iterable, Mapping, MutableMapping, Sequence
 from typing import Annotated as ExtensionsAnnotated
@@ -30,7 +29,6 @@ from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.tools import BaseTool, StructuredTool, Tool, tool
 from langchain_core.utils.function_calling import (
     _convert_typed_dict_to_openai_function,
-    _parse_google_docstring,
     convert_to_json_schema,
     convert_to_openai_function,
     tool_example_to_messages,
@@ -1211,65 +1209,3 @@ def test_convert_to_openai_function_json_schema_missing_title_includes_schema() 
     }
     with pytest.raises(ValueError, match="my_field"):
         convert_to_openai_function(schema_without_title)
-
-
-def test__parse_google_docstring_nominal() -> None:
-    """Test parsing of a Google-style docstring nominally."""
-    mock_docstring = textwrap.dedent("""
-    Test docstring description.
-
-    Args:
-        arg1: foo
-        arg2: one of 'bar', 'baz'
-
-    Returns:
-        list: A list of results.
-    """)
-    expected_args_desc = {
-        "arg1": "foo",
-        "arg2": "one of 'bar', 'baz'",
-    }
-    desc, args_desc = _parse_google_docstring(
-        docstring=mock_docstring, args=["arg1", "arg2", "return"]
-    )
-    assert args_desc == expected_args_desc
-    assert desc == "Test docstring description."
-
-
-def test__parse_google_docstring_no_arguments() -> None:
-    """Test parsing of a Google-style docstring for functions without arguments."""
-    mock_docstring = textwrap.dedent("Test docstring")
-    expected_args_desc: dict[str, str] = {}
-    _, args_desc = _parse_google_docstring(docstring=mock_docstring, args=["return"])
-    assert args_desc == expected_args_desc
-
-
-def test__parse_google_docstring_injected_arguments() -> None:
-    """Test parsing of a Google-style docstring for function with only injected args."""
-    mock_docstring = "Test docstring"
-    expected_args_desc: dict[str, str] = {}
-    _, args_desc = _parse_google_docstring(
-        docstring=mock_docstring,
-        args=["runtime", "return"],  # Tool with runtime argument in signature
-        error_on_invalid_docstring=True,
-    )
-    assert args_desc == expected_args_desc
-
-
-def test__parse_google_docstring_invalid() -> None:
-    """Test parsing of a Google-style docstring fails on invalid docstrings."""
-    mock_docstring = "Test docstring"
-    with pytest.raises(ValueError, match="Found invalid Google-Style docstring"):
-        _parse_google_docstring(
-            docstring=mock_docstring,
-            args=["arg", "return"],  # `arg` doc missing in docstring
-            error_on_invalid_docstring=True,
-        )
-
-    mock_docstring = "Args:\n    arg1: foo"  # Missing description block
-    with pytest.raises(ValueError, match="Found invalid Google-Style docstring"):
-        _parse_google_docstring(
-            docstring=mock_docstring,
-            args=["arg", "return"],
-            error_on_invalid_docstring=True,
-        )
