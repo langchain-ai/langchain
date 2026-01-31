@@ -21,7 +21,7 @@ dependencies = [
     "pytest-benchmark",
     "pytest-codspeed",
     "pytest-recording",
-    "vcrpy>=7.0.0,<8.0.0",
+    "vcrpy>=8.0.0,<9.0.0",
     "numpy>=1.26.2; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
 ]
@@ -47,6 +47,9 @@ typing = [
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
+
+[tool.uv]
+constraint-dependencies = ["urllib3>=2.6.3"]
 
 [tool.mypy]
 plugins = ["pydantic.mypy"]
