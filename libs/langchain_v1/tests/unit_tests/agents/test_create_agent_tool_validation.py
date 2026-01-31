@@ -37,7 +37,8 @@ def test_tool_invocation_error_excludes_injected_state() -> None:
         state: Annotated[TestState, InjectedState],
     ) -> str:
         """Tool that uses injected state."""
-        return f"some_val: {some_val}"
+        _ = (some_val, state)
+        return "ok"
 
     # Create a fake model that makes an incorrect tool call (missing 'some_val')
     # Then returns no tool calls on the second iteration to end the loop
@@ -104,7 +105,8 @@ async def test_tool_invocation_error_excludes_injected_state_async() -> None:
         state: Annotated[TestState, InjectedState],
     ) -> str:
         """Async tool that uses injected state."""
-        return f"query: {query}, max_results: {max_results}"
+        _ = (query, max_results, state)
+        return "ok"
 
     # Create a fake model that makes an incorrect tool call
     # - query has wrong type (int instead of str)
@@ -215,9 +217,8 @@ def test_create_agent_error_content_with_multiple_params() -> None:
             store: The persistent store (injected).
             runtime: The tool runtime context (injected).
         """
-        # Access injected params to verify they work in normal execution
-        user = state.get("user_id", "unknown")
-        return f"Results for '{query}' (limit={limit}, user={user})"
+        _ = (query, limit, state, store, runtime)
+        return "ok"
 
     # Create a model that makes an incorrect tool call with multiple errors:
     # - query is wrong type (int instead of str)
@@ -325,6 +326,7 @@ def test_create_agent_error_only_model_controllable_params() -> None:
             email: The email address.
             state: State with password (system-injected).
         """
+        _ = state
         return f"Validated {username} with email {email}"
 
     # LLM provides invalid username (too short) and invalid email
