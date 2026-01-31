@@ -136,6 +136,7 @@ class ToolRetryMiddleware(AgentMiddleware):
         initial_delay: float = 1.0,
         max_delay: float = 60.0,
         jitter: bool = True,
+        depends_on: tuple[type[AgentMiddleware] | AgentMiddleware, ...] = (),
     ) -> None:
         """Initialize `ToolRetryMiddleware`.
 
@@ -178,6 +179,8 @@ class ToolRetryMiddleware(AgentMiddleware):
 
                 Caps exponential backoff growth.
             jitter: Whether to add random jitter (`±25%`) to delay to avoid thundering herd.
+            depends_on: Optional tuple of middleware classes or instances that must be
+                executed before this middleware.
 
         Raises:
             ValueError: If `max_retries < 0` or delays are negative.
@@ -219,6 +222,7 @@ class ToolRetryMiddleware(AgentMiddleware):
         self.initial_delay = initial_delay
         self.max_delay = max_delay
         self.jitter = jitter
+        self.depends_on = depends_on
 
     def _should_retry_tool(self, tool_name: str) -> bool:
         """Check if retry logic should apply to this tool.

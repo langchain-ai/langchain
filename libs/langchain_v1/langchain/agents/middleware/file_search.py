@@ -115,6 +115,7 @@ class FilesystemFileSearchMiddleware(AgentMiddleware):
         root_path: str,
         use_ripgrep: bool = True,
         max_file_size_mb: int = 10,
+        depends_on: tuple[type[AgentMiddleware] | AgentMiddleware, ...] = (),
     ) -> None:
         """Initialize the search middleware.
 
@@ -124,10 +125,14 @@ class FilesystemFileSearchMiddleware(AgentMiddleware):
 
                 Falls back to Python if `ripgrep` unavailable.
             max_file_size_mb: Maximum file size to search in MB.
+            depends_on: Optional tuple of middleware classes or instances that must be
+                executed before this middleware.
         """
+        super().__init__()
         self.root_path = Path(root_path).resolve()
         self.use_ripgrep = use_ripgrep
         self.max_file_size_bytes = max_file_size_mb * 1024 * 1024
+        self.depends_on = depends_on
 
         # Create tool instances as closures that capture self
         @tool
