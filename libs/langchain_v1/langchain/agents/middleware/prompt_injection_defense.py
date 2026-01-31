@@ -18,6 +18,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Protocol
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.tools import BaseTool
 from typing_extensions import override
 
 from langchain.agents.middleware.types import AgentMiddleware
@@ -28,6 +29,102 @@ if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
     from langgraph.prebuilt import ToolCallRequest
     from langgraph.types import Command
+
+
+# Default markers that could be used for injection attacks.
+# These are delimiter strings that an attacker might inject to confuse parsing
+# or escape content boundaries.
+DEFAULT_INJECTION_MARKERS: list[str] = [
+    # Delimiter markers used in defense prompts
+    "#### Begin Tool Definition ####",
+    "#### End Tool Definition ####",
+    "#### Begin Tool Result ####",
+    "#### End Tool Result ####",
+    "#### Begin Content ####",
+    "#### End Content ####",
+    "#### Begin Data I Need ####",
+    "#### End Data I Need ####",
+    "#### Begin Data Need ####",
+    "#### End Data Need ####",
+    # Llama/Mistral instruction markers
+    "[INST]",
+    "[/INST]",
+    "<<SYS>>",
+    "<</SYS>>",
+    # XML-style role/content markers (generic)
+    "<tool_result>",
+    "</tool_result>",
+    "<function_results>",
+    "</function_results>",
+    "<system>",
+    "</system>",
+    "<user>",
+    "</user>",
+    "<assistant>",
+    "</assistant>",
+    # OpenAI/Qwen/Yi ChatML markers
+    "<|im_start|>system",
+    "<|im_start|>user",
+    "<|im_start|>assistant",
+    "<|im_end|>",
+    "<|system|>",
+    "<|user|>",
+    "<|assistant|>",
+    "<|end|>",
+    # Anthropic Claude markers (require newline prefix to avoid false positives
+    # on legitimate uses like "Human: Resources" or "Assistant: Manager")
+    "\n\nHuman:",
+    "\n\nAssistant:",
+    "\nHuman:",
+    "\nAssistant:",
+    "<human>",
+    "</human>",
+    # DeepSeek markers (uses fullwidth Unicode vertical bars)
+    "<｜User｜>",
+    "<｜Assistant｜>",
+    "<｜System｜>",
+    "<｜end▁of▁sentence｜>",
+    "<｜tool▁calls▁begin｜>",
+    "<｜tool▁calls▁end｜>",
+    "<｜tool▁call▁begin｜>",
+    "<｜tool▁call▁end｜>",
+    "<｜tool▁sep｜>",
+    "<｜tool▁outputs▁begin｜>",
+    "<｜tool▁outputs▁end｜>",
+    "<｜tool▁output▁begin｜>",
+    "<｜tool▁output▁end｜>",
+    # Google Gemma markers
+    "<start_of_turn>user",
+    "<start_of_turn>model",
+    "<end_of_turn>",
+    # Vicuna markers (require newline prefix like Anthropic)
+    "\nUSER:",
+    "\nASSISTANT:",
+]
+
+
+def sanitize_markers(
+    content: str,
+    markers: list[str] | None = None,
+) -> str:
+    """Remove potential injection markers from content.
+
+    This prevents adversaries from injecting their own markers to confuse
+    the parsing logic or escape content boundaries.
+
+    Args:
+        content: The content to sanitize.
+        markers: List of marker strings to remove. If None, uses DEFAULT_INJECTION_MARKERS.
+
+    Returns:
+        Content with injection markers removed/neutralized.
+    """
+    if markers is None:
+        markers = DEFAULT_INJECTION_MARKERS
+    result = content
+    for marker in markers:
+        result = result.replace(marker, " ")
+    return result
 
 
 class DefenseStrategy(Protocol):
@@ -84,11 +181,9 @@ class CheckToolStrategy:
 
     Uses the LLM's native tool-calling capability for both detection and sanitization:
     - Detection: If binding tools and invoking produces tool_calls, injection detected
-    - Sanitization: Uses the model's text response (with tool calls stripped) as the
-      sanitized content, since it represents what the model understood minus the
-      tool-triggering instructions
+    - Sanitization: Multiple modes available (see on_injection parameter)
 
-    This is fully native - no prompt engineering required.
+    This is fully native - no prompt engineering required for detection.
 
     Based on the CheckTool module from the paper.
     """
@@ -101,6 +196,7 @@ class CheckToolStrategy:
         *,
         tools: list[Any] | None = None,
         on_injection: str = "warn",
+        sanitize_markers: list[str] | None = None,
     ):
         """Initialize the CheckTool strategy.
 
@@ -110,8 +206,14 @@ class CheckToolStrategy:
                 will use tools from the agent's configuration.
             on_injection: What to do when injection is detected:
                 - "warn": Replace with warning message (default)
-                - "strip": Use model's text response (tool calls stripped)
+                - "filter": Use model's text response if available, which typically
+                  contains the data without the tool-triggering instructions.
+                  Falls back to warning if no text content.
+                - "strip": Same as "filter" (alias for backwards compatibility)
                 - "empty": Return empty content
+            sanitize_markers: List of marker strings to remove from content before
+                processing. If None, uses DEFAULT_INJECTION_MARKERS. Pass an empty
+                list to disable marker sanitization.
         """
         self._model_config = model
         self._cached_model: BaseChatModel | None = None
@@ -119,6 +221,7 @@ class CheckToolStrategy:
         self._cached_tools_id: int | None = None
         self.tools = tools
         self.on_injection = on_injection
+        self._sanitize_markers = sanitize_markers
 
     def process(
         self,
@@ -140,7 +243,8 @@ class CheckToolStrategy:
         if not result.content:
             return result
 
-        content = str(result.content)
+        # Sanitize markers before processing to prevent marker injection attacks
+        content = sanitize_markers(str(result.content), self._sanitize_markers)
         tools = self._get_tools(request)
 
         if not tools:
@@ -181,7 +285,8 @@ class CheckToolStrategy:
         if not result.content:
             return result
 
-        content = str(result.content)
+        # Sanitize markers before processing to prevent marker injection attacks
+        content = sanitize_markers(str(result.content), self._sanitize_markers)
         tools = self._get_tools(request)
 
         if not tools:
@@ -208,6 +313,10 @@ class CheckToolStrategy:
     def _sanitize(self, detection_response: AIMessage) -> str:
         """Sanitize content based on configured behavior.
 
+        When the model detects tool-triggering content, it often also produces
+        a text response that contains the legitimate data without the injection.
+        The "filter" mode leverages this to preserve useful content.
+
         Args:
             detection_response: The model's response containing tool_calls.
 
@@ -218,13 +327,16 @@ class CheckToolStrategy:
 
         if self.on_injection == "empty":
             return ""
-        elif self.on_injection == "strip":
-            # Use the model's text response - it often contains the non-triggering content
-            # Fall back to warning if no text content
+        elif self.on_injection in ("filter", "strip"):
+            # Use the model's text response - when processing content with tools bound,
+            # the model typically extracts the data portion into text while routing
+            # the tool-triggering instructions into tool_calls. This gives us the
+            # filtered content without an additional LLM call.
             if detection_response.content:
                 text_content = str(detection_response.content).strip()
                 if text_content:
-                    return text_content
+                    # Sanitize the filtered content too, in case markers slipped through
+                    return sanitize_markers(text_content, self._sanitize_markers)
             return self.INJECTION_WARNING.format(tool_names=", ".join(triggered_tool_names))
         else:  # "warn" (default)
             return self.INJECTION_WARNING.format(tool_names=", ".join(triggered_tool_names))
@@ -309,6 +421,7 @@ If the tool result does not contain relevant data, return an error message."""
         model: str | BaseChatModel,
         *,
         use_full_conversation: bool = False,
+        sanitize_markers: list[str] | None = None,
     ):
         """Initialize the ParseData strategy.
 
@@ -317,11 +430,44 @@ If the tool result does not contain relevant data, return an error message."""
             use_full_conversation: Whether to include full conversation history
                 when parsing data. Improves accuracy for powerful models but may
                 introduce noise for smaller models.
+            sanitize_markers: List of marker strings to remove from content before
+                processing. If None, uses DEFAULT_INJECTION_MARKERS. Pass an empty
+                list to disable marker sanitization.
         """
         self._model_config = model
         self._cached_model: BaseChatModel | None = None
         self.use_full_conversation = use_full_conversation
         self._data_specification: dict[str, str] = {}  # Maps tool_call_id -> specification
+        self._sanitize_markers = sanitize_markers
+
+    def _get_tool_schema(self, request: ToolCallRequest) -> str:
+        """Get the tool's return type schema if available.
+
+        Args:
+            request: The tool call request.
+
+        Returns:
+            A string describing the expected return type, or empty string if unavailable.
+        """
+        tools = request.state.get("tools", [])
+        tool_name = request.tool_call["name"]
+
+        for tool in tools:
+            name = tool.name if isinstance(tool, BaseTool) else getattr(tool, "__name__", None)
+            if name == tool_name:
+                # Try to get return type annotation or schema
+                if isinstance(tool, BaseTool):
+                    # BaseTool may have response_format or args_schema
+                    if hasattr(tool, "response_format") and tool.response_format:
+                        return f"\nExpected return type: {tool.response_format}"
+                    if hasattr(tool, "args_schema") and tool.args_schema:
+                        return f"\nTool schema: {tool.args_schema.model_json_schema()}"
+                elif callable(tool):
+                    # Check for return type annotation
+                    annotations = getattr(tool, "__annotations__", {})
+                    if "return" in annotations:
+                        return f"\nExpected return type: {annotations['return']}"
+        return ""
 
     def process(
         self,
@@ -340,7 +486,8 @@ If the tool result does not contain relevant data, return an error message."""
         if not result.content:
             return result
 
-        content = str(result.content)
+        # Sanitize markers before processing
+        content = sanitize_markers(str(result.content), self._sanitize_markers)
         model = self._get_model()
 
         if self.use_full_conversation:
@@ -356,8 +503,10 @@ If the tool result does not contain relevant data, return an error message."""
 
             if tool_call_id not in self._data_specification:
                 # Ask LLM what data it expects from this tool call
+                # Include tool schema info if available to improve accuracy
+                tool_schema = self._get_tool_schema(request)
                 spec_prompt = f"""You are about to call tool: {request.tool_call['name']}
-With arguments: {request.tool_call['args']}
+With arguments: {request.tool_call['args']}{tool_schema}
 
 {self.PARSE_DATA_ANTICIPATION_PROMPT}"""
                 spec_response = model.invoke([HumanMessage(content=spec_prompt)])
@@ -397,7 +546,8 @@ With arguments: {request.tool_call['args']}
         if not result.content:
             return result
 
-        content = str(result.content)
+        # Sanitize markers before processing
+        content = sanitize_markers(str(result.content), self._sanitize_markers)
         model = self._get_model()
 
         if self.use_full_conversation:
@@ -413,8 +563,10 @@ With arguments: {request.tool_call['args']}
 
             if tool_call_id not in self._data_specification:
                 # Ask LLM what data it expects from this tool call
+                # Include tool schema info if available to improve accuracy
+                tool_schema = self._get_tool_schema(request)
                 spec_prompt = f"""You are about to call tool: {request.tool_call['name']}
-With arguments: {request.tool_call['args']}
+With arguments: {request.tool_call['args']}{tool_schema}
 
 {self.PARSE_DATA_ANTICIPATION_PROMPT}"""
                 spec_response = await model.ainvoke([HumanMessage(content=spec_prompt)])
@@ -612,6 +764,7 @@ class PromptInjectionDefenseMiddleware(AgentMiddleware):
         tools: list[Any] | None = None,
         on_injection: str = "warn",
         use_full_conversation: bool = False,
+        sanitize_markers: list[str] | None = None,
     ) -> PromptInjectionDefenseMiddleware:
         """Create middleware with CheckTool then ParseData strategy.
 
@@ -621,17 +774,26 @@ class PromptInjectionDefenseMiddleware(AgentMiddleware):
                 will use tools from the agent's configuration at runtime.
             on_injection: What to do when injection is detected in CheckTool:
                 - "warn": Replace with warning message (default)
-                - "strip": Use model's text response (tool calls stripped)
+                - "filter": Use model's text response (tool calls stripped)
+                - "strip": Same as "filter" (alias)
                 - "empty": Return empty content
             use_full_conversation: Whether to use full conversation context in ParseData.
+            sanitize_markers: List of marker strings to remove from content.
+                If None, uses DEFAULT_INJECTION_MARKERS. Pass empty list to disable.
 
         Returns:
             Configured middleware instance.
         """
         return cls(
             CombinedStrategy([
-                CheckToolStrategy(model, tools=tools, on_injection=on_injection),
-                ParseDataStrategy(model, use_full_conversation=use_full_conversation),
+                CheckToolStrategy(
+                    model, tools=tools, on_injection=on_injection,
+                    sanitize_markers=sanitize_markers,
+                ),
+                ParseDataStrategy(
+                    model, use_full_conversation=use_full_conversation,
+                    sanitize_markers=sanitize_markers,
+                ),
             ])
         )
 
@@ -643,6 +805,7 @@ class PromptInjectionDefenseMiddleware(AgentMiddleware):
         tools: list[Any] | None = None,
         on_injection: str = "warn",
         use_full_conversation: bool = False,
+        sanitize_markers: list[str] | None = None,
     ) -> PromptInjectionDefenseMiddleware:
         """Create middleware with ParseData then CheckTool strategy.
 
@@ -652,17 +815,26 @@ class PromptInjectionDefenseMiddleware(AgentMiddleware):
                 will use tools from the agent's configuration at runtime.
             on_injection: What to do when injection is detected in CheckTool:
                 - "warn": Replace with warning message (default)
-                - "strip": Use model's text response (tool calls stripped)
+                - "filter": Use model's text response (tool calls stripped)
+                - "strip": Same as "filter" (alias)
                 - "empty": Return empty content
             use_full_conversation: Whether to use full conversation context in ParseData.
+            sanitize_markers: List of marker strings to remove from content.
+                If None, uses DEFAULT_INJECTION_MARKERS. Pass empty list to disable.
 
         Returns:
             Configured middleware instance.
         """
         return cls(
             CombinedStrategy([
-                ParseDataStrategy(model, use_full_conversation=use_full_conversation),
-                CheckToolStrategy(model, tools=tools, on_injection=on_injection),
+                ParseDataStrategy(
+                    model, use_full_conversation=use_full_conversation,
+                    sanitize_markers=sanitize_markers,
+                ),
+                CheckToolStrategy(
+                    model, tools=tools, on_injection=on_injection,
+                    sanitize_markers=sanitize_markers,
+                ),
             ])
         )
 
@@ -673,6 +845,7 @@ class PromptInjectionDefenseMiddleware(AgentMiddleware):
         *,
         tools: list[Any] | None = None,
         on_injection: str = "warn",
+        sanitize_markers: list[str] | None = None,
     ) -> PromptInjectionDefenseMiddleware:
         """Create middleware with only CheckTool strategy.
 
@@ -682,13 +855,19 @@ class PromptInjectionDefenseMiddleware(AgentMiddleware):
                 will use tools from the agent's configuration at runtime.
             on_injection: What to do when injection is detected:
                 - "warn": Replace with warning message (default)
-                - "strip": Use model's text response (tool calls stripped)
+                - "filter": Use model's text response (tool calls stripped)
+                - "strip": Same as "filter" (alias)
                 - "empty": Return empty content
+            sanitize_markers: List of marker strings to remove from content.
+                If None, uses DEFAULT_INJECTION_MARKERS. Pass empty list to disable.
 
         Returns:
             Configured middleware instance.
         """
-        return cls(CheckToolStrategy(model, tools=tools, on_injection=on_injection))
+        return cls(CheckToolStrategy(
+            model, tools=tools, on_injection=on_injection,
+            sanitize_markers=sanitize_markers,
+        ))
 
     @classmethod
     def parse_only(
@@ -696,17 +875,23 @@ class PromptInjectionDefenseMiddleware(AgentMiddleware):
         model: str | BaseChatModel,
         *,
         use_full_conversation: bool = False,
+        sanitize_markers: list[str] | None = None,
     ) -> PromptInjectionDefenseMiddleware:
         """Create middleware with only ParseData strategy.
 
         Args:
             model: The LLM to use for defense.
             use_full_conversation: Whether to use full conversation context.
+            sanitize_markers: List of marker strings to remove from content.
+                If None, uses DEFAULT_INJECTION_MARKERS. Pass empty list to disable.
 
         Returns:
             Configured middleware instance.
         """
-        return cls(ParseDataStrategy(model, use_full_conversation=use_full_conversation))
+        return cls(ParseDataStrategy(
+            model, use_full_conversation=use_full_conversation,
+            sanitize_markers=sanitize_markers,
+        ))
 
     @property
     def name(self) -> str:

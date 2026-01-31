@@ -7,11 +7,13 @@ from langchain.agents.middleware.human_in_the_loop import (
     InterruptOnConfig,
 )
 from langchain.agents.middleware.prompt_injection_defense import (
+    DEFAULT_INJECTION_MARKERS,
     CheckToolStrategy,
     CombinedStrategy,
     DefenseStrategy,
     ParseDataStrategy,
     PromptInjectionDefenseMiddleware,
+    sanitize_markers,
 )
 from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddleware
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
@@ -54,6 +56,7 @@ __all__ = [
     "CodexSandboxExecutionPolicy",
     "CombinedStrategy",
     "ContextEditingMiddleware",
+    "DEFAULT_INJECTION_MARKERS",
     "DefenseStrategy",
     "DockerExecutionPolicy",
     "FilesystemFileSearchMiddleware",
@@ -84,6 +87,7 @@ __all__ = [
     "before_model",
     "dynamic_prompt",
     "hook_config",
+    "sanitize_markers",
     "wrap_model_call",
     "wrap_tool_call",
 ]
