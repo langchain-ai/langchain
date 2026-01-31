@@ -100,7 +100,7 @@ class BaseMessage(Serializable):
     [`SystemMessage`][langchain.messages.SystemMessage].
     """
 
-    content: str | list[str | dict]
+    content: str | list[str | dict] | None
     """The contents of the message."""
 
     additional_kwargs: dict = Field(default_factory=dict)
@@ -332,9 +332,9 @@ class BaseMessage(Serializable):
 
 
 def merge_content(
-    first_content: str | list[str | dict],
-    *contents: str | list[str | dict],
-) -> str | list[str | dict]:
+    first_content: str | list[str | dict] | None,
+    *contents: str | list[str | dict] | None,
+) -> str | list[str | dict] | None:
     """Merge multiple message contents.
 
     Args:
@@ -345,10 +345,16 @@ def merge_content(
         The merged content.
 
     """
-    merged: str | list[str | dict]
-    merged = "" if first_content is None else first_content
+    merged: str | list[str | dict] | None
+    merged = first_content
 
     for content in contents:
+        if content is None:
+            continue
+        if merged is None:
+            merged = content
+            continue
+
         # If current is a string
         if isinstance(merged, str):
             # If the next chunk is also a string, then merge them naively
