@@ -226,7 +226,7 @@ def check_valid_template(
         template: The template string.
         template_format: The template format.
 
-            Should be one of `'f-string'` or `'jinja2'`.
+            Should be one of `'f-string'`, `'mustache'` or `'jinja2'`.
         input_variables: The input variables.
 
     Raises:
@@ -258,7 +258,7 @@ def get_template_variables(template: str, template_format: str) -> list[str]:
         template: The template string.
         template_format: The template format.
 
-            Should be one of `'f-string'` or `'jinja2'`.
+            Should be one of `'f-string'`, `'mustache'` or `'jinja2'`.
 
     Returns:
         The variables from the template.
