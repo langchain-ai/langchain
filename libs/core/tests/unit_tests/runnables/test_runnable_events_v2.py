@@ -30,6 +30,7 @@ from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
     SystemMessage,
+    ToolCall,
 )
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -152,7 +153,7 @@ async def test_event_stream_with_simple_function_tool() -> None:
                 "parent_ids": [],
                 "tags": ["seq:step:2"],
                 "metadata": {},
-                "data": {"input": {"x": 5}},
+                "data": {"input": {"x": 5}, "tool_call_id": None},
             },
             {
                 "event": "on_tool_end",
@@ -161,7 +162,11 @@ async def test_event_stream_with_simple_function_tool() -> None:
                 "parent_ids": [],
                 "tags": ["seq:step:2"],
                 "metadata": {},
-                "data": {"input": {"x": 5}, "output": [Document(page_content="hello")]},
+                "data": {
+                    "input": {"x": 5},
+                    "output": [Document(page_content="hello")],
+                    "tool_call_id": None,
+                },
             },
             {
                 "event": "on_chain_stream",
@@ -1112,7 +1117,7 @@ async def test_event_streaming_with_tools() -> None:
         events,
         [
             {
-                "data": {"input": {}},
+                "data": {"input": {}, "tool_call_id": None},
                 "event": "on_tool_start",
                 "metadata": {},
                 "name": "parameterless",
@@ -1121,7 +1126,7 @@ async def test_event_streaming_with_tools() -> None:
                 "tags": [],
             },
             {
-                "data": {"output": "hello"},
+                "data": {"output": "hello", "tool_call_id": None},
                 "event": "on_tool_end",
                 "metadata": {},
                 "name": "parameterless",
@@ -1136,7 +1141,7 @@ async def test_event_streaming_with_tools() -> None:
         events,
         [
             {
-                "data": {"input": {}},
+                "data": {"input": {}, "tool_call_id": None},
                 "event": "on_tool_start",
                 "metadata": {},
                 "name": "with_callbacks",
@@ -1145,7 +1150,7 @@ async def test_event_streaming_with_tools() -> None:
                 "tags": [],
             },
             {
-                "data": {"output": "world"},
+                "data": {"output": "world", "tool_call_id": None},
                 "event": "on_tool_end",
                 "metadata": {},
                 "name": "with_callbacks",
@@ -1162,7 +1167,7 @@ async def test_event_streaming_with_tools() -> None:
         events,
         [
             {
-                "data": {"input": {"x": 1, "y": "2"}},
+                "data": {"input": {"x": 1, "y": "2"}, "tool_call_id": None},
                 "event": "on_tool_start",
                 "metadata": {},
                 "name": "with_parameters",
@@ -1171,7 +1176,7 @@ async def test_event_streaming_with_tools() -> None:
                 "tags": [],
             },
             {
-                "data": {"output": {"x": 1, "y": "2"}},
+                "data": {"output": {"x": 1, "y": "2"}, "tool_call_id": None},
                 "event": "on_tool_end",
                 "metadata": {},
                 "name": "with_parameters",
@@ -1189,7 +1194,7 @@ async def test_event_streaming_with_tools() -> None:
         events,
         [
             {
-                "data": {"input": {"x": 1, "y": "2"}},
+                "data": {"input": {"x": 1, "y": "2"}, "tool_call_id": None},
                 "event": "on_tool_start",
                 "metadata": {},
                 "name": "with_parameters_and_callbacks",
@@ -1198,7 +1203,7 @@ async def test_event_streaming_with_tools() -> None:
                 "tags": [],
             },
             {
-                "data": {"output": {"x": 1, "y": "2"}},
+                "data": {"output": {"x": 1, "y": "2"}, "tool_call_id": None},
                 "event": "on_tool_end",
                 "metadata": {},
                 "name": "with_parameters_and_callbacks",
@@ -1417,7 +1422,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
                 "tags": [],
             },
             {
-                "data": {"input": {"a": "hello", "b": "world"}},
+                "data": {"input": {"a": "hello", "b": "world"}, "tool_call_id": None},
                 "event": "on_tool_start",
                 "metadata": {},
                 "name": "concat",
@@ -1426,7 +1431,11 @@ async def test_event_stream_on_chain_with_tool() -> None:
                 "tags": ["seq:step:1"],
             },
             {
-                "data": {"input": {"a": "hello", "b": "world"}, "output": "helloworld"},
+                "data": {
+                    "input": {"a": "hello", "b": "world"},
+                    "output": "helloworld",
+                    "tool_call_id": None,
+                },
                 "event": "on_tool_end",
                 "metadata": {},
                 "name": "concat",
@@ -2803,7 +2812,7 @@ async def test_custom_event_root_dispatch_with_in_tool() -> None:
         events,
         [
             {
-                "data": {"input": {"x": 2}},
+                "data": {"input": {"x": 2}, "tool_call_id": None},
                 "event": "on_tool_start",
                 "metadata": {},
                 "name": "foo",
@@ -2821,7 +2830,7 @@ async def test_custom_event_root_dispatch_with_in_tool() -> None:
                 "tags": [],
             },
             {
-                "data": {"output": 3},
+                "data": {"output": 3, "tool_call_id": None},
                 "event": "on_tool_end",
                 "metadata": {},
                 "name": "foo",
@@ -2908,3 +2917,75 @@ async def test_tool_error_event_tool_call_id_is_none_when_not_provided() -> None
     assert error_event["name"] == "failing_tool_no_id"
     assert "tool_call_id" in error_event["data"]
     assert error_event["data"]["tool_call_id"] is None
+
+
+async def test_tool_start_and_end_events_include_tool_call_id() -> None:
+    """Test that on_tool_start and on_tool_end events include tool_call_id.
+
+    This addresses issue #34849 where tool_call_id was not forwarded to
+    on_tool_start callback, making it impossible to correlate tool executions
+    with the original LLM tool calls.
+    """
+
+    @tool
+    def simple_tool(query: str) -> str:
+        """A simple tool for testing."""
+        return f"Result: {query}"
+
+    tool_call_id = "test_tool_call_id_stream_events"
+
+    tool_call: ToolCall = {
+        "name": "simple_tool",
+        "args": {"query": "hello"},
+        "id": tool_call_id,
+        "type": "tool_call",
+    }
+
+    events = await _collect_events(
+        simple_tool.astream_events(tool_call, version="v2"), with_nulled_ids=False
+    )
+
+    # Find the on_tool_start event
+    start_events = [e for e in events if e["event"] == "on_tool_start"]
+    assert len(start_events) == 1
+    start_event = start_events[0]
+    assert start_event["name"] == "simple_tool"
+    assert "tool_call_id" in start_event["data"]
+    assert start_event["data"]["tool_call_id"] == tool_call_id
+
+    # Find the on_tool_end event
+    end_events = [e for e in events if e["event"] == "on_tool_end"]
+    assert len(end_events) == 1
+    end_event = end_events[0]
+    assert end_event["name"] == "simple_tool"
+    assert "tool_call_id" in end_event["data"]
+    assert end_event["data"]["tool_call_id"] == tool_call_id
+
+
+async def test_tool_start_and_end_events_tool_call_id_none_when_not_provided() -> None:
+    """Test that tool_call_id is None in events when tool invoked without ToolCall."""
+
+    @tool
+    def simple_tool_no_id(x: int) -> str:
+        """A simple tool for testing."""
+        return f"Result: {x}"
+
+    events = await _collect_events(
+        simple_tool_no_id.astream_events({"x": 42}, version="v2"), with_nulled_ids=False
+    )
+
+    # Find the on_tool_start event
+    start_events = [e for e in events if e["event"] == "on_tool_start"]
+    assert len(start_events) == 1
+    start_event = start_events[0]
+    assert start_event["name"] == "simple_tool_no_id"
+    assert "tool_call_id" in start_event["data"]
+    assert start_event["data"]["tool_call_id"] is None
+
+    # Find the on_tool_end event
+    end_events = [e for e in events if e["event"] == "on_tool_end"]
+    assert len(end_events) == 1
+    end_event = end_events[0]
+    assert end_event["name"] == "simple_tool_no_id"
+    assert "tool_call_id" in end_event["data"]
+    assert end_event["data"]["tool_call_id"] is None
