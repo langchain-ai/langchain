@@ -96,7 +96,12 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
             values: The model arguments.
 
         """
-        content = values["content"]
+        content = values.get("content")
+        if content is None:
+            # Preserve None as empty string to avoid "NoneNone" when merging chunks
+            values["content"] = ""
+            return values
+
         if isinstance(content, tuple):
             content = list(content)
 
