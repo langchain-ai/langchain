@@ -52,6 +52,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         keep_separator: bool | Literal["start", "end"] = False,  # noqa: FBT001,FBT002
         add_start_index: bool = False,  # noqa: FBT001,FBT002
         strip_whitespace: bool = True,  # noqa: FBT001,FBT002
+        metadata_hydrator: Callable[[Document, int], dict] | None = None
     ) -> None:
         """Create a new `TextSplitter`.
 
@@ -64,6 +65,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             add_start_index: If `True`, includes chunk's start index in metadata
             strip_whitespace: If `True`, strips whitespace from the start and end of
                 every document
+            metadata_hydrator: Optional function to enrich chunk metadata.
+                Takes (Document, chunk_index) and returns a dict of metadata to add.
 
         Raises:
             ValueError: If `chunk_size` is less than or equal to 0
@@ -88,6 +91,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._keep_separator = keep_separator
         self._add_start_index = add_start_index
         self._strip_whitespace = strip_whitespace
+        self._metadata_hydrator = metadata_hydrator
 
     @abstractmethod
     def split_text(self, text: str) -> list[str]:
@@ -117,7 +121,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         for i, text in enumerate(texts):
             index = 0
             previous_chunk_len = 0
-            for chunk in self.split_text(text):
+            for chunk_index, chunk in enumerate(self.split_text(text)):
                 metadata = copy.deepcopy(metadatas_[i])
                 if self._add_start_index:
                     offset = index + previous_chunk_len - self._chunk_overlap
@@ -125,6 +129,10 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                     metadata["start_index"] = index
                     previous_chunk_len = len(chunk)
                 new_doc = Document(page_content=chunk, metadata=metadata)
+                if self._metadata_hydrator is not None:
+                    hydrated_metadata = self._metadata_hydrator(new_doc, chunk_index)
+                    if hydrated_metadata:
+                        new_doc.metadata.update(hydrated_metadata)
                 documents.append(new_doc)
         return documents
 
