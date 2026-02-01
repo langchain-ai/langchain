@@ -94,9 +94,10 @@ def tool(
     unless disabled.
 
     !!! note "Requirements"
+
         - Functions should have type hints for proper schema inference.
         - Functions may accept multiple arguments and return types are flexible;
-        outputs will be serialized if needed.
+            outputs will be serialized if needed.
         - When using with `Runnable`, a string name must be provided.
 
     Args:
