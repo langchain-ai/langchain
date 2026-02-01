@@ -1358,3 +1358,189 @@ def test_text_accessor() -> None:
     assert empty_msg.text == ""
     assert empty_msg.text == ""
     assert str(empty_msg.text) == str(empty_msg.text)
+
+
+def test_pretty_repr_string_content() -> None:
+    """Test pretty_repr with string content."""
+    msg = AIMessage(content="Hello, world!")
+    result = msg.pretty_repr()
+    assert "Ai Message" in result
+    assert "Hello, world!" in result
+
+
+def test_pretty_repr_content_blocks() -> None:
+    """Test pretty_repr with content blocks."""
+    msg = AIMessage(
+        content=[
+            {"type": "text", "text": "I'll search for information..."},
+            {
+                "type": "server_tool_call",
+                "id": "toolu_123",
+                "name": "web_search",
+                "args": {"query": "search query"},
+            },
+            {
+                "type": "server_tool_result",
+                "tool_call_id": "toolu_123",
+                "status": "success",
+                "output": {
+                    "content": [
+                        {
+                            "type": "web_search_result",
+                            "title": "Page Title",
+                            "url": "https://example.com",
+                        }
+                    ]
+                },
+            },
+            {"type": "text", "text": "Here is the answer..."},
+        ]
+    )
+    result = msg.pretty_repr()
+    assert "I'll search for information..." in result
+    assert "Server Tool Call: web_search" in result
+    assert "toolu_123" in result
+    assert "query: search query" in result
+    assert "Server Tool Result" in result
+    assert "Here is the answer..." in result
+
+
+def test_pretty_repr_server_tool_call() -> None:
+    """Test pretty_repr with server tool call blocks."""
+    msg = AIMessage(
+        content=[
+            {
+                "type": "server_tool_call",
+                "id": "call_123",
+                "name": "my_tool",
+                "args": {"key": "value", "number": 42},
+            }
+        ]
+    )
+    result = msg.pretty_repr()
+    assert "Server Tool Call: my_tool" in result
+    assert "call_123" in result
+    assert "key: value" in result
+    assert "number: 42" in result
+
+
+def test_pretty_repr_server_tool_result() -> None:
+    """Test pretty_repr with server tool result blocks."""
+    msg = AIMessage(
+        content=[
+            {
+                "type": "server_tool_result",
+                "tool_call_id": "call_123",
+                "status": "success",
+                "output": {
+                    "content": [
+                        {"title": "Result 1", "url": "https://example.com/1"},
+                        {"title": "Result 2", "url": "https://example.com/2"},
+                    ]
+                },
+            }
+        ]
+    )
+    result = msg.pretty_repr()
+    assert "Server Tool Result" in result
+    assert "call_123" in result
+    assert "Status: success" in result
+    assert "Result 1" in result or "https://example.com/1" in result
+
+
+def test_pretty_repr_reasoning_block() -> None:
+    """Test pretty_repr with reasoning blocks."""
+    msg = AIMessage(
+        content=[{"type": "reasoning", "reasoning": "Let me think about this..."}]
+    )
+    result = msg.pretty_repr()
+    assert "[Reasoning]" in result
+    assert "Let me think about this..." in result
+
+
+def test_pretty_repr_text_with_citations() -> None:
+    """Test pretty_repr with text blocks containing citations."""
+    msg = AIMessage(
+        content=[
+            {
+                "type": "text",
+                "text": "Here is some information.",
+                "annotations": [
+                    {
+                        "type": "citation",
+                        "url": "https://example.com",
+                        "title": "Example Source",
+                    }
+                ],
+            }
+        ]
+    )
+    result = msg.pretty_repr(verbose=True)
+    assert "Here is some information." in result
+    # Citations should appear in verbose mode
+    assert "Citations:" in result or "Example Source" in result
+
+
+def test_pretty_repr_tool_call_block() -> None:
+    """Test pretty_repr with tool call blocks."""
+    msg = AIMessage(
+        content=[
+            {
+                "type": "tool_call",
+                "id": "call_456",
+                "name": "calculator",
+                "args": {"operation": "add", "a": 1, "b": 2},
+            }
+        ]
+    )
+    result = msg.pretty_repr()
+    assert "Tool Call: calculator" in result
+    assert "call_456" in result
+    assert "operation: add" in result
+    assert "a: 1" in result
+    assert "b: 2" in result
+
+
+def test_pretty_repr_multimodal_blocks() -> None:
+    """Test pretty_repr with multimodal content blocks."""
+    msg = AIMessage(
+        content=[
+            {"type": "image", "url": "https://example.com/image.png"},
+            {"type": "text-plain", "text": "Some plain text", "title": "Document"},
+        ]
+    )
+    result = msg.pretty_repr()
+    assert "[Image]" in result
+    assert "https://example.com/image.png" in result
+    assert "[Text Plain]" in result or "[Text-plain]" in result
+
+
+def test_pretty_repr_mixed_content() -> None:
+    """Test pretty_repr with mixed string and block content."""
+    # This shouldn't happen in practice, but test the fallback
+    msg = BaseMessage(type="test", content="simple string")
+    result = msg.pretty_repr()
+    assert "Test Message" in result
+    assert "simple string" in result
+
+
+def test_pretty_repr_verbose_mode() -> None:
+    """Test pretty_repr with verbose mode enabled."""
+    msg = AIMessage(
+        content=[
+            {
+                "type": "server_tool_result",
+                "tool_call_id": "call_123",
+                "status": "success",
+                "output": {"data": "detailed information", "count": 5},
+            }
+        ]
+    )
+    result_verbose = msg.pretty_repr(verbose=True)
+    result_normal = msg.pretty_repr(verbose=False)
+    # Verbose mode should include more details
+    assert (
+        "data: detailed information" in result_verbose or "count: 5" in result_verbose
+    )
+    # Normal mode should be more concise
+    assert "Server Tool Result" in result_normal

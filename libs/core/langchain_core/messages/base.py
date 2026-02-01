@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any, cast, overload
 
 from pydantic import ConfigDict, Field
@@ -42,6 +43,172 @@ def _extract_reasoning_from_additional_kwargs(
         return {"type": "reasoning", "reasoning": reasoning_content}
 
     return None
+
+
+# Maximum length for truncated output in non-verbose mode
+_MAX_OUTPUT_LENGTH = 200
+
+
+def _format_content_block(
+    block: str | dict,
+    *,
+    verbose: bool = False,
+) -> str:
+    """Format a content block for pretty printing.
+
+    Args:
+        block: The content block to format. Can be a string or a dict.
+        verbose: Whether to include verbose details.
+
+    Returns:
+        A formatted string representation of the content block.
+    """
+    # Handle string blocks
+    if isinstance(block, str):
+        return block
+
+    # Handle dict blocks
+    if not isinstance(block, dict):
+        return str(block)
+
+    block_type = block.get("type", "unknown")
+
+    # Text blocks
+    if block_type == "text":
+        text = block.get("text", "")
+        annotations = block.get("annotations", [])
+        if annotations and verbose:
+            # Format citations/annotations
+            citation_lines = []
+            for ann in annotations:
+                if ann.get("type") == "citation":
+                    url = ann.get("url", "")
+                    title = ann.get("title", "")
+                    if title or url:
+                        citation_lines.append(f"  - {title or url}")
+            if citation_lines:
+                text += "\n\nCitations:\n" + "\n".join(citation_lines)
+        return text
+
+    # Reasoning blocks
+    if block_type == "reasoning":
+        reasoning = block.get("reasoning", "")
+        return f"[Reasoning]\n{reasoning}"
+
+    # Tool call blocks
+    if block_type == "tool_call":
+        name = block.get("name", "Unknown Tool")
+        call_id = block.get("id", "")
+        args = block.get("args", {})
+        lines = [f"Tool Call: {name}"]
+        if call_id:
+            lines.append(f"  ID: {call_id}")
+        if args:
+            lines.append("  Args:")
+            for key, value in args.items():
+                lines.append(f"    {key}: {value}")
+        return "\n".join(lines)
+
+    # Invalid tool call blocks
+    if block_type == "invalid_tool_call":
+        name = block.get("name", "Unknown Tool")
+        call_id = block.get("id", "")
+        error = block.get("error", "")
+        lines = [f"Invalid Tool Call: {name}"]
+        if call_id:
+            lines.append(f"  ID: {call_id}")
+        if error:
+            lines.append(f"  Error: {error}")
+        return "\n".join(lines)
+
+    # Server tool call blocks
+    if block_type == "server_tool_call":
+        name = block.get("name", "Unknown Tool")
+        call_id = block.get("id", "")
+        args = block.get("args", {})
+        lines = [f"Server Tool Call: {name}"]
+        if call_id:
+            lines.append(f"  ID: {call_id}")
+        if args:
+            lines.append("  Args:")
+            if isinstance(args, dict):
+                for key, value in args.items():
+                    lines.append(f"    {key}: {value}")
+            else:
+                lines.append(f"    {args}")
+        return "\n".join(lines)
+
+    # Server tool result blocks
+    if block_type == "server_tool_result":
+        tool_call_id = block.get("tool_call_id", "")
+        status = block.get("status", "unknown")
+        output = block.get("output", {})
+        lines = ["[Server Tool Result]"]
+        if tool_call_id:
+            lines.append(f"  Tool Call ID: {tool_call_id}")
+        lines.append(f"  Status: {status}")
+        if output:
+            if isinstance(output, dict):
+                # Try to extract meaningful information without dumping everything
+                if "content" in output and isinstance(output["content"], list):
+                    # Handle structured output like web search results
+                    result_lines = []
+                    for item in output["content"]:
+                        if isinstance(item, dict):
+                            title = item.get("title", "")
+                            url = item.get("url", "")
+                            if title or url:
+                                result_lines.append(f"    - {title or url}")
+                    if result_lines:
+                        lines.append("  Results:")
+                        lines.extend(result_lines)
+                elif verbose:
+                    # In verbose mode, show more details
+                    lines.append("  Output:")
+                    for key, value in output.items():
+                        # Skip encrypted/binary data
+                        if key in ("encrypted_content", "encrypted_index"):
+                            lines.append(f"    {key}: [encrypted data]")
+                        else:
+                            lines.append(f"    {key}: {value}")
+            else:
+                # For non-dict output, show a summary
+                output_str = str(output)
+                if len(output_str) > _MAX_OUTPUT_LENGTH and not verbose:
+                    lines.append(f"  Output: {output_str[:_MAX_OUTPUT_LENGTH]}...")
+                else:
+                    lines.append(f"  Output: {output_str}")
+        return "\n".join(lines)
+
+    # Multimodal blocks
+    if block_type in ("image", "video", "audio", "file", "text-plain"):
+        block_type_name = block_type.replace("-", " ").title()
+        lines = [f"[{block_type_name}]"]
+        if "url" in block:
+            lines.append(f"  URL: {block['url']}")
+        if "file_id" in block:
+            lines.append(f"  File ID: {block['file_id']}")
+        if "title" in block:
+            lines.append(f"  Title: {block['title']}")
+        if block_type == "text-plain" and "text" in block:
+            text = block["text"]
+            if len(text) > _MAX_OUTPUT_LENGTH and not verbose:
+                lines.append(f"  Text: {text[:_MAX_OUTPUT_LENGTH]}...")
+            else:
+                lines.append(f"  Text: {text}")
+        return "\n".join(lines)
+
+    # Non-standard blocks
+    if block_type == "non_standard":
+        value = block.get("value", {})
+        if verbose:
+            return f"[Non-Standard Block]\n{json.dumps(value, indent=2)}"
+        return "[Non-Standard Block]"
+
+    # Unknown block type - fallback
+    if verbose:
+        return f"[{block_type}]\n{json.dumps(block, indent=2, default=str)}"
+    return f"[{block_type}]"
 
 
 class TextAccessor(str):
@@ -309,21 +476,39 @@ class BaseMessage(Serializable):
     def pretty_repr(
         self,
         html: bool = False,  # noqa: FBT001,FBT002
+        verbose: bool = False,  # noqa: FBT001,FBT002
     ) -> str:
         """Get a pretty representation of the message.
 
         Args:
             html: Whether to format the message as HTML. If `True`, the message will be
                 formatted with HTML tags.
+            verbose: Whether to include verbose details for content blocks. If `True`,
+                includes more detailed information about tool results and other blocks.
 
         Returns:
             A pretty representation of the message.
 
         """
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
-        # TODO: handle non-string content.
         if self.name is not None:
             title += f"\nName: {self.name}"
+
+        # Handle string content
+        if isinstance(self.content, str):
+            return f"{title}\n\n{self.content}"
+
+        # Handle list content (content blocks)
+        if isinstance(self.content, list):
+            content_lines = []
+            for block in self.content:
+                formatted = _format_content_block(block, verbose=verbose)
+                if formatted:
+                    content_lines.append(formatted)
+            content_str = "\n\n".join(content_lines) if content_lines else ""
+            return f"{title}\n\n{content_str}"
+
+        # Fallback for other types
         return f"{title}\n\n{self.content}"
 
     def pretty_print(self) -> None:
