@@ -93,7 +93,7 @@ def create_message(*, message: str, error_code: ErrorCode) -> str:
             message="Failed to parse output",
             error_code=ErrorCode.OUTPUT_PARSING_FAILURE,
         )
-        'Failed to parse output. For troubleshooting, visit: ...'
+        "Failed to parse output. For troubleshooting, visit: ..."
         ```
     """
     return (
