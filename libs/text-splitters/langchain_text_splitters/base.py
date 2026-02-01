@@ -52,7 +52,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         keep_separator: bool | Literal["start", "end"] = False,  # noqa: FBT001,FBT002
         add_start_index: bool = False,  # noqa: FBT001,FBT002
         strip_whitespace: bool = True,  # noqa: FBT001,FBT002
-        metadata_hydrator: Callable[[Document, int], dict] | None = None,
+        metadata_hydrator: Callable[[Document, int], dict[str, Any]] | None = None,
     ) -> None:
         """Create a new `TextSplitter`.
 
