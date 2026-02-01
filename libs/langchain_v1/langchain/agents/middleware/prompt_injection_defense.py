@@ -27,7 +27,8 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
     from langchain_core.language_models import BaseChatModel
-    from langgraph.prebuilt import ToolCallRequest
+    from langchain_core.runnables import Runnable
+    from langgraph.prebuilt.tool_node import ToolCallRequest
     from langgraph.types import Command
 
 
@@ -220,7 +221,7 @@ class CheckToolStrategy:
         """
         self._model_config = model
         self._cached_model: BaseChatModel | None = None
-        self._cached_model_with_tools: BaseChatModel | None = None
+        self._cached_model_with_tools: Runnable[Any, AIMessage] | None = None
         self._cached_tools_id: int | None = None
         self.tools = tools
         self.on_injection = on_injection
@@ -356,7 +357,7 @@ class CheckToolStrategy:
             return self._cached_model
         return self._model_config
 
-    def _get_model_with_tools(self, tools: list[Any]) -> BaseChatModel:
+    def _get_model_with_tools(self, tools: list[Any]) -> Runnable[Any, AIMessage]:
         """Get the model with tools bound, caching when tools unchanged."""
         tools_id = id(tools)
         if self._cached_model_with_tools is not None and self._cached_tools_id == tools_id:
@@ -476,7 +477,10 @@ If the tool result does not contain relevant data, return an error message."""
                     if hasattr(tool, "response_format") and tool.response_format:
                         return f"\nExpected return type: {tool.response_format}"
                     if hasattr(tool, "args_schema") and tool.args_schema:
-                        return f"\nTool schema: {tool.args_schema.model_json_schema()}"
+                        schema = tool.args_schema
+                        if hasattr(schema, "model_json_schema"):
+                            return f"\nTool schema: {schema.model_json_schema()}"
+                        return f"\nTool schema: {schema}"
                 elif callable(tool):
                     # Check for return type annotation
                     annotations = getattr(tool, "__annotations__", {})
