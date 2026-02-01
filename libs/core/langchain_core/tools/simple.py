@@ -32,8 +32,10 @@ class Tool(BaseTool):
     """Tool that takes in function or coroutine directly."""
 
     description: str = ""
+
     func: Callable[..., str] | None
     """The function to run when the tool is called."""
+
     coroutine: Callable[..., Awaitable[str]] | None = None
     """The asynchronous version of the function."""
 
