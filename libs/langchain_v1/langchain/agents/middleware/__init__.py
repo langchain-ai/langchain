@@ -6,6 +6,10 @@ from langchain.agents.middleware.human_in_the_loop import (
     HumanInTheLoopMiddleware,
     InterruptOnConfig,
 )
+from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddleware
+from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
+from langchain.agents.middleware.model_retry import ModelRetryMiddleware
+from langchain.agents.middleware.pii import PIIDetectionError, PIIMiddleware
 from langchain.agents.middleware.prompt_injection_defense import (
     DEFAULT_INJECTION_MARKERS,
     CheckToolStrategy,
@@ -16,10 +20,6 @@ from langchain.agents.middleware.prompt_injection_defense import (
     PromptInjectionDefenseMiddleware,
     sanitize_markers,
 )
-from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddleware
-from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
-from langchain.agents.middleware.model_retry import ModelRetryMiddleware
-from langchain.agents.middleware.pii import PIIDetectionError, PIIMiddleware
 from langchain.agents.middleware.shell_tool import (
     CodexSandboxExecutionPolicy,
     DockerExecutionPolicy,
@@ -50,6 +50,7 @@ from langchain.agents.middleware.types import (
 )
 
 __all__ = [
+    "DEFAULT_INJECTION_MARKERS",
     "AgentMiddleware",
     "AgentState",
     "CheckToolStrategy",
@@ -57,7 +58,6 @@ __all__ = [
     "CodexSandboxExecutionPolicy",
     "CombinedStrategy",
     "ContextEditingMiddleware",
-    "DEFAULT_INJECTION_MARKERS",
     "DefenseStrategy",
     "DockerExecutionPolicy",
     "FilesystemFileSearchMiddleware",

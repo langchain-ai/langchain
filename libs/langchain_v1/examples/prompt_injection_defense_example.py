@@ -7,9 +7,10 @@ Based on: "Defense Against Indirect Prompt Injection via Tool Result Parsing"
 https://arxiv.org/html/2601.04795v1
 """
 
+from langchain_core.tools import tool
+
 from langchain.agents import create_agent
 from langchain.agents.middleware import PromptInjectionDefenseMiddleware
-from langchain_core.tools import tool
 
 
 # Example 1: Basic usage with check_then_parse (recommended - lowest ASR)
@@ -17,7 +18,7 @@ from langchain_core.tools import tool
 def search_emails(query: str) -> str:
     """Search emails for information."""
     # Simulated email content with injection attack
-    return f"""
+    return """
     Subject: Meeting Schedule
     From: colleague@company.com
     
@@ -47,10 +48,12 @@ from langchain.agents.middleware import (
     ParseDataStrategy,
 )
 
-custom_strategy = CombinedStrategy([
-    CheckToolStrategy("anthropic:claude-haiku-4-5"),
-    ParseDataStrategy("anthropic:claude-haiku-4-5", use_full_conversation=True),
-])
+custom_strategy = CombinedStrategy(
+    [
+        CheckToolStrategy("anthropic:claude-haiku-4-5"),
+        ParseDataStrategy("anthropic:claude-haiku-4-5", use_full_conversation=True),
+    ]
+)
 
 agent_custom = create_agent(
     "anthropic:claude-haiku-4-5",
@@ -134,9 +137,9 @@ agent_parse_then_check = create_agent(
 
 if __name__ == "__main__":
     # Test the protected agent
-    response = agent_protected.invoke({
-        "messages": [{"role": "user", "content": "When is my next meeting?"}]
-    })
+    response = agent_protected.invoke(
+        {"messages": [{"role": "user", "content": "When is my next meeting?"}]}
+    )
 
     print("Agent response:", response["messages"][-1].content)
     # The agent will respond with meeting time, but the injection attack will be filtered out

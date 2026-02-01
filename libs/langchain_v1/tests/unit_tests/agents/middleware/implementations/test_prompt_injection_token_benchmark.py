@@ -418,7 +418,5 @@ class TestTokenBenchmarkOllama:
 
         model_name = OLLAMA_MODELS[0]
         callback = TokenCountingCallback()
-        model = ChatOllama(
-            model=model_name, base_url=OLLAMA_BASE_URL, callbacks=[callback]
-        )
+        model = ChatOllama(model=model_name, base_url=OLLAMA_BASE_URL, callbacks=[callback])
         _run_token_benchmark(model, model_name, callback)

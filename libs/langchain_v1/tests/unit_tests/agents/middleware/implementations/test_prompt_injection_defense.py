@@ -27,18 +27,26 @@ from langchain.agents.middleware import (
 # --- Helper functions ---
 
 
-def make_tool_message(content: str = "Test content", tool_call_id: str = "call_123", name: str = "search_email") -> ToolMessage:
+def make_tool_message(
+    content: str = "Test content", tool_call_id: str = "call_123", name: str = "search_email"
+) -> ToolMessage:
     """Create a ToolMessage with sensible defaults."""
     return ToolMessage(content=content, tool_call_id=tool_call_id, name=name)
 
 
-def make_tool_request(mock_tools=None, messages=None, tool_call_id: str = "call_123") -> ToolCallRequest:
+def make_tool_request(
+    mock_tools=None, messages=None, tool_call_id: str = "call_123"
+) -> ToolCallRequest:
     """Create a ToolCallRequest with sensible defaults."""
     state = {"messages": messages or []}
     if mock_tools is not None:
         state["tools"] = mock_tools
     return ToolCallRequest(
-        tool_call={"id": tool_call_id, "name": "search_email", "args": {"query": "meeting schedule"}},
+        tool_call={
+            "id": tool_call_id,
+            "name": "search_email",
+            "args": {"query": "meeting schedule"},
+        },
         tool=MagicMock(),
         state=state,
         runtime=MagicMock(),
@@ -141,12 +149,22 @@ class TestCheckToolStrategy:
     @pytest.mark.parametrize(
         "on_injection,expected_content_check",
         [
-            pytest.param("warn", lambda c: "prompt injection detected" in c and "send_email" in c, id="warn_mode"),
+            pytest.param(
+                "warn",
+                lambda c: "prompt injection detected" in c and "send_email" in c,
+                id="warn_mode",
+            ),
             pytest.param("empty", lambda c: c == "", id="empty_mode"),
         ],
     )
     def test_triggered_content_sanitized(
-        self, mock_model, mock_tool_request, injected_tool_result, mock_tools, on_injection, expected_content_check
+        self,
+        mock_model,
+        mock_tool_request,
+        injected_tool_result,
+        mock_tools,
+        on_injection,
+        expected_content_check,
     ):
         """Test that content with triggers gets sanitized based on mode."""
         setup_model_with_response(mock_model, make_triggered_response())
@@ -162,7 +180,9 @@ class TestCheckToolStrategy:
         self, mock_model, mock_tool_request, injected_tool_result, mock_tools
     ):
         """Test that strip mode uses model's text response."""
-        setup_model_with_response(mock_model, make_triggered_response(content="Meeting scheduled for tomorrow."))
+        setup_model_with_response(
+            mock_model, make_triggered_response(content="Meeting scheduled for tomorrow.")
+        )
 
         strategy = CheckToolStrategy(mock_model, tools=mock_tools, on_injection="strip")
         result = strategy.process(mock_tool_request, injected_tool_result)
@@ -349,10 +369,16 @@ class TestPromptInjectionDefenseMiddleware:
         "factory_method,expected_strategy,expected_order",
         [
             pytest.param(
-                "check_then_parse", CombinedStrategy, [CheckToolStrategy, ParseDataStrategy], id="check_then_parse"
+                "check_then_parse",
+                CombinedStrategy,
+                [CheckToolStrategy, ParseDataStrategy],
+                id="check_then_parse",
             ),
             pytest.param(
-                "parse_then_check", CombinedStrategy, [ParseDataStrategy, CheckToolStrategy], id="parse_then_check"
+                "parse_then_check",
+                CombinedStrategy,
+                [ParseDataStrategy, CheckToolStrategy],
+                id="parse_then_check",
             ),
             pytest.param("check_only", CheckToolStrategy, None, id="check_only"),
             pytest.param("parse_only", ParseDataStrategy, None, id="parse_only"),
@@ -444,10 +470,14 @@ class TestModelCaching:
         "strategy_class,strategy_kwargs",
         [
             pytest.param(CheckToolStrategy, {"tools": [send_email]}, id="check_tool_strategy"),
-            pytest.param(ParseDataStrategy, {"use_full_conversation": True}, id="parse_data_strategy"),
+            pytest.param(
+                ParseDataStrategy, {"use_full_conversation": True}, id="parse_data_strategy"
+            ),
         ],
     )
-    def test_strategy_caches_model_from_string(self, patched_init_chat_model, strategy_class, strategy_kwargs):
+    def test_strategy_caches_model_from_string(
+        self, patched_init_chat_model, strategy_class, strategy_kwargs
+    ):
         """Test that strategies cache model when initialized from string."""
         strategy = strategy_class("anthropic:claude-haiku-4-5", **strategy_kwargs)
         request = make_tool_request(mock_tools=[send_email])
@@ -488,7 +518,9 @@ class TestEdgeCases:
         "strategy_class,strategy_kwargs,model_method",
         [
             pytest.param(CheckToolStrategy, {"tools": [send_email]}, "bind_tools", id="check_tool"),
-            pytest.param(ParseDataStrategy, {"use_full_conversation": True}, "invoke", id="parse_data"),
+            pytest.param(
+                ParseDataStrategy, {"use_full_conversation": True}, "invoke", id="parse_data"
+            ),
         ],
     )
     def test_whitespace_only_content_processed(
@@ -507,7 +539,9 @@ class TestEdgeCases:
         middleware = PromptInjectionDefenseMiddleware(CheckToolStrategy(mock_model))
         command_result = Command(goto="some_node")
 
-        result = middleware.wrap_tool_call(mock_tool_request, MagicMock(return_value=command_result))
+        result = middleware.wrap_tool_call(
+            mock_tool_request, MagicMock(return_value=command_result)
+        )
 
         assert result is command_result
         assert isinstance(result, Command)
@@ -518,7 +552,9 @@ class TestEdgeCases:
         middleware = PromptInjectionDefenseMiddleware(CheckToolStrategy(mock_model))
         command_result = Command(goto="some_node")
 
-        result = await middleware.awrap_tool_call(mock_tool_request, AsyncMock(return_value=command_result))
+        result = await middleware.awrap_tool_call(
+            mock_tool_request, AsyncMock(return_value=command_result)
+        )
 
         assert result is command_result
         assert isinstance(result, Command)
@@ -547,11 +583,13 @@ class TestConversationContext:
     def test_get_conversation_context_formats_messages(self, mock_model):
         """Test that conversation context is formatted correctly."""
         strategy = ParseDataStrategy(mock_model, use_full_conversation=True)
-        request = make_tool_request(messages=[
-            HumanMessage(content="Find my meeting schedule"),
-            AIMessage(content="I'll search for that"),
-            ToolMessage(content="Meeting at 10am", tool_call_id="prev_call", name="calendar"),
-        ])
+        request = make_tool_request(
+            messages=[
+                HumanMessage(content="Find my meeting schedule"),
+                AIMessage(content="I'll search for that"),
+                ToolMessage(content="Meeting at 10am", tool_call_id="prev_call", name="calendar"),
+            ]
+        )
 
         context = strategy._get_conversation_context(request)
 
@@ -704,7 +742,9 @@ class TestMarkerSanitization:
     ):
         """Test strategies with configurable markers."""
         strategy = strategy_class(mock_model, sanitize_markers=["[CUSTOM]"], **strategy_kwargs)
-        processed = strategy.process(mock_tool_request, make_tool_message(content="Data [CUSTOM] more"))
+        processed = strategy.process(
+            mock_tool_request, make_tool_message(content="Data [CUSTOM] more")
+        )
         assert processed.tool_call_id == "call_123"
 
     @pytest.mark.asyncio
@@ -720,7 +760,9 @@ class TestMarkerSanitization:
     ):
         """Test strategies async with configurable markers."""
         strategy = strategy_class(mock_model, sanitize_markers=["[CUSTOM]"], **strategy_kwargs)
-        processed = await strategy.aprocess(mock_tool_request, make_tool_message(content="Data [CUSTOM] more"))
+        processed = await strategy.aprocess(
+            mock_tool_request, make_tool_message(content="Data [CUSTOM] more")
+        )
         assert processed.tool_call_id == "call_123"
 
     @pytest.mark.parametrize(
@@ -753,7 +795,9 @@ class TestFilterMode:
     @pytest.fixture
     def triggered_model(self, mock_model):
         """Create a model that returns tool_calls with text content."""
-        setup_model_with_response(mock_model, make_triggered_response(content="Extracted data without injection"))
+        setup_model_with_response(
+            mock_model, make_triggered_response(content="Extracted data without injection")
+        )
         return mock_model
 
     @pytest.fixture
@@ -768,7 +812,9 @@ class TestFilterMode:
     ):
         """Test that filter/strip mode uses the model's text response."""
         strategy = CheckToolStrategy(triggered_model, tools=mock_tools, on_injection=on_injection)
-        processed = strategy.process(mock_tool_request, make_tool_message(content="Malicious content"))
+        processed = strategy.process(
+            mock_tool_request, make_tool_message(content="Malicious content")
+        )
         assert processed.content == "Extracted data without injection"
 
     @pytest.mark.asyncio
@@ -778,15 +824,21 @@ class TestFilterMode:
     ):
         """Test that filter/strip mode uses the model's text response (async)."""
         strategy = CheckToolStrategy(triggered_model, tools=mock_tools, on_injection=on_injection)
-        processed = await strategy.aprocess(mock_tool_request, make_tool_message(content="Malicious content"))
+        processed = await strategy.aprocess(
+            mock_tool_request, make_tool_message(content="Malicious content")
+        )
         assert processed.content == "Extracted data without injection"
 
     def test_filter_mode_falls_back_to_warning(
         self, triggered_model_empty_content, mock_tools, mock_tool_request
     ):
         """Test that filter mode falls back to warning when no text content."""
-        strategy = CheckToolStrategy(triggered_model_empty_content, tools=mock_tools, on_injection="filter")
-        processed = strategy.process(mock_tool_request, make_tool_message(content="Malicious content"))
+        strategy = CheckToolStrategy(
+            triggered_model_empty_content, tools=mock_tools, on_injection="filter"
+        )
+        processed = strategy.process(
+            mock_tool_request, make_tool_message(content="Malicious content")
+        )
         assert "Content removed" in str(processed.content)
         assert "send_email" in str(processed.content)
 
@@ -795,7 +847,11 @@ class TestFilterMode:
         self, triggered_model_empty_content, mock_tools, mock_tool_request
     ):
         """Test that filter mode falls back to warning when no text content (async)."""
-        strategy = CheckToolStrategy(triggered_model_empty_content, tools=mock_tools, on_injection="filter")
-        processed = await strategy.aprocess(mock_tool_request, make_tool_message(content="Malicious content"))
+        strategy = CheckToolStrategy(
+            triggered_model_empty_content, tools=mock_tools, on_injection="filter"
+        )
+        processed = await strategy.aprocess(
+            mock_tool_request, make_tool_message(content="Malicious content")
+        )
         assert "Content removed" in str(processed.content)
         assert "send_email" in str(processed.content)
