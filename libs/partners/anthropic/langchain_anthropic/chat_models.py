@@ -250,16 +250,30 @@ def _merge_messages(
             ):
                 curr = HumanMessage(curr.content)  # type: ignore[misc]
             else:
-                curr = HumanMessage(  # type: ignore[misc]
-                    [
-                        {
-                            "type": "tool_result",
-                            "content": curr.content,
-                            "tool_use_id": curr.tool_call_id,
-                            "is_error": curr.status == "error",
-                        },
-                    ],
-                )
+                curr_content = curr.content
+                cache_control = curr.additional_kwargs.get("cache_control")
+                if isinstance(curr_content, list):
+                    updated_content: list = []
+                    for block in curr_content:
+                        if isinstance(block, dict) and "cache_control" in block:
+                            cache_control = cache_control or block.get("cache_control")
+                            updated_content.append(
+                                {k: v for k, v in block.items() if k != "cache_control"}
+                            )
+                        else:
+                            updated_content.append(block)
+                    curr_content = updated_content
+
+                tool_result: dict[str, Any] = {
+                    "type": "tool_result",
+                    "content": curr_content,
+                    "tool_use_id": curr.tool_call_id,
+                    "is_error": curr.status == "error",
+                }
+                if cache_control:
+                    tool_result["cache_control"] = cache_control
+                curr = HumanMessage([tool_result])  # type: ignore[misc]
+
         last = merged[-1] if merged else None
         if any(
             all(isinstance(m, c) for m in (curr, last))
