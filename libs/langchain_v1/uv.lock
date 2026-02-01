@@ -1944,6 +1944,7 @@ lint = [
 test = [
     { name = "blockbuster" },
     { name = "langchain-anthropic" },
+    { name = "langchain-google-genai" },
     { name = "langchain-ollama" },
     { name = "langchain-openai" },
     { name = "langchain-tests" },
@@ -1999,6 +2000,7 @@ lint = [{ name = "ruff", specifier = ">=0.14.11,<0.15.0" }]
 test = [
     { name = "blockbuster", specifier = ">=1.5.26,<1.6.0" },
     { name = "langchain-anthropic", specifier = ">=1.0.3" },
+    { name = "langchain-google-genai" },
     { name = "langchain-ollama", specifier = ">=1.0.0" },
     { name = "langchain-openai", editable = "../partners/openai" },
     { name = "langchain-tests", editable = "../standard-tests" },
