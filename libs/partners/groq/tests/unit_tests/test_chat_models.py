@@ -996,40 +996,6 @@ def test_format_message_content_langchain_image_url() -> None:
     assert expected == _format_message_content([content])
 
 
-def test_format_message_content_anthropic_image_base64() -> None:
-    """Test that Anthropic-style image blocks with source are converted."""
-    content = {
-        "type": "image",
-        "source": {
-            "type": "base64",
-            "media_type": "image/jpeg",
-            "data": "<base64 data>",
-        },
-    }
-    expected = [
-        {
-            "type": "image_url",
-            "image_url": {"url": "data:image/jpeg;base64,<base64 data>"},
-        }
-    ]
-    assert expected == _format_message_content([content])
-
-
-def test_format_message_content_anthropic_image_url() -> None:
-    """Test that Anthropic-style image blocks with URL source are converted."""
-    content = {
-        "type": "image",
-        "source": {
-            "type": "url",
-            "url": "https://example.com/image.png",
-        },
-    }
-    expected = [
-        {"type": "image_url", "image_url": {"url": "https://example.com/image.png"}}
-    ]
-    assert expected == _format_message_content([content])
-
-
 def test_format_message_content_mixed() -> None:
     """Test that mixed content with text and image is handled correctly."""
     content = [

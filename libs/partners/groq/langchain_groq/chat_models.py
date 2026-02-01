@@ -1284,31 +1284,6 @@ def _format_message_content(content: Any) -> Any:
             # Handle LangChain standard data content blocks (image, audio, file)
             if isinstance(block, dict) and is_data_content_block(block):
                 formatted.append(convert_to_openai_data_block(block))
-            # Handle Anthropic-style image blocks
-            elif (
-                isinstance(block, dict)
-                and block.get("type") == "image"
-                and (source := block.get("source"))
-                and isinstance(source, dict)
-            ):
-                if source.get("type") == "base64":
-                    media_type = source.get("media_type")
-                    data = source.get("data")
-                    if media_type and data:
-                        formatted.append(
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:{media_type};base64,{data}"
-                                },
-                            }
-                        )
-                    else:
-                        formatted.append(block)
-                elif source.get("type") == "url" and (url := source.get("url")):
-                    formatted.append({"type": "image_url", "image_url": {"url": url}})
-                else:
-                    formatted.append(block)
             else:
                 formatted.append(block)
         return formatted
