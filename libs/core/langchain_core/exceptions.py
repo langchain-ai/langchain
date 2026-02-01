@@ -52,7 +52,7 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
             error = create_message(
                 message=error, error_code=ErrorCode.OUTPUT_PARSING_FAILURE
             )
-            
+
         super().__init__(error)
         if send_to_llm and (observation is None or llm_output is None):
             msg = (
@@ -86,13 +86,15 @@ def create_message(*, message: str, error_code: ErrorCode) -> str:
 
     Returns:
         The full message with the troubleshooting link.
-        
+
     Example:
-        >>> create_message(
-        ...     message="Failed to parse output",
-        ...     error_code=ErrorCode.OUTPUT_PARSING_FAILURE
-        ... )
-        'Failed to parse output\\nFor troubleshooting, visit: ...'
+        ```python
+        create_message(
+            message="Failed to parse output",
+            error_code=ErrorCode.OUTPUT_PARSING_FAILURE,
+        )
+        'Failed to parse output. For troubleshooting, visit: ...'
+        ```
     """
     return (
         f"{message}\n"
