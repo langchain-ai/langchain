@@ -102,7 +102,6 @@ Note how `feat(langchain)` includes a scope even though it is the main package a
 ### Maintain stable public interfaces
 
 CRITICAL: Always attempt to preserve function signatures, argument positions, and names for exported/public methods. Do not make breaking changes.
-
 You should warn the developer for any function signature changes, regardless of whether they look breaking or not.
 
 **Before making ANY changes to public APIs:**
