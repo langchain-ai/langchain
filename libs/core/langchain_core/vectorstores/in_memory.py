@@ -44,7 +44,8 @@ class InMemoryVectorStore(VectorStore):
         ```
 
     Key init args — indexing params:
-        embedding_function: Embeddings
+
+        * embedding_function: Embeddings
             Embedding function to use.
 
     Instantiate:
@@ -293,7 +294,7 @@ class InMemoryVectorStore(VectorStore):
         k: int = 4,
         filter: Callable[[Document], bool] | None = None,  # noqa: A002
     ) -> list[tuple[Document, float, list[float]]]:
-        # get all docs with fixed order in list
+        # Get all docs with fixed order in list
         docs = list(self.store.values())
 
         if filter is not None:
@@ -312,7 +313,7 @@ class InMemoryVectorStore(VectorStore):
 
         similarity = cosine_similarity([embedding], [doc["vector"] for doc in docs])[0]
 
-        # get the indices ordered by similarity score
+        # Get the indices ordered by similarity score
         top_k_idx = similarity.argsort()[::-1][:k]
 
         return [
@@ -345,7 +346,7 @@ class InMemoryVectorStore(VectorStore):
             filter: A function to filter the documents.
 
         Returns:
-            A list of tuples of Document objects and their similarity scores.
+            A list of tuples of `Document` objects and their similarity scores.
         """
         return [
             (doc, similarity)
@@ -524,7 +525,7 @@ class InMemoryVectorStore(VectorStore):
             **kwargs: Additional arguments to pass to the constructor.
 
         Returns:
-            A VectorStore object.
+            A `VectorStore` object.
         """
         path_: Path = Path(path)
         with path_.open("r", encoding="utf-8") as f:

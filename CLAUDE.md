@@ -43,6 +43,14 @@ langchain/
 This monorepo uses `uv` for dependency management. Local development uses editable installs: `[tool.uv.sources]`
 
 Each package in `libs/` has its own `pyproject.toml` and `uv.lock`.
+Before running your tests, setup all packages by
+```bash
+# For all groups
+uv sync --all-groups
+
+# or, to install a specific group only:
+uv sync --group test
+```
 
 ```bash
 # Run unit tests (no network)

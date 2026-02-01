@@ -123,13 +123,15 @@ def _chain_model_call_handlers(
     ]
     | None
 ):
-    """Compose multiple wrap_model_call handlers into single middleware stack.
+    """Compose multiple `wrap_model_call` handlers into single middleware stack.
 
-    Composes handlers so first in list becomes outermost layer. Each handler
-    receives a handler callback to execute inner layers.
+    Composes handlers so first in list becomes outermost layer. Each handler receives a
+    handler callback to execute inner layers.
 
     Args:
-        handlers: List of handlers. First handler wraps all others.
+        handlers: List of handlers.
+
+            First handler wraps all others.
 
     Returns:
         Composed handler, or `None` if handlers empty.
@@ -238,7 +240,9 @@ def _chain_async_model_call_handlers(
     """Compose multiple async `wrap_model_call` handlers into single middleware stack.
 
     Args:
-        handlers: List of async handlers. First handler wraps all others.
+        handlers: List of async handlers.
+
+            First handler wraps all others.
 
     Returns:
         Composed async handler, or `None` if handlers empty.
@@ -341,7 +345,7 @@ def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None 
 
 
 def _extract_metadata(type_: type) -> list[Any]:
-    """Extract metadata from a field type, handling Required/NotRequired and Annotated wrappers."""
+    """Extract metadata from a field type, handling `Required`/`NotRequired` and `Annotated` wrappers."""  # noqa: E501
     # Handle Required[Annotated[...]] or NotRequired[Annotated[...]]
     if get_origin(type_) in {Required, NotRequired}:
         inner_type = get_args(type_)[0]
@@ -397,8 +401,9 @@ def _supports_provider_strategy(
 
     Args:
         model: Model name string or `BaseChatModel` instance.
-        tools: Optional list of tools provided to the agent. Needed because some models
-            don't support structured output together with tool calling.
+        tools: Optional list of tools provided to the agent.
+
+            Needed because some models don't support structured output together with tool calling.
 
     Returns:
         `True` if the model supports provider-specific structured output, `False` otherwise.
@@ -433,7 +438,10 @@ def _handle_structured_output_error(
     exception: Exception,
     response_format: ResponseFormat[Any],
 ) -> tuple[bool, str]:
-    """Handle structured output error. Returns `(should_retry, retry_tool_message)`."""
+    """Handle structured output error.
+
+    Returns `(should_retry, retry_tool_message)`.
+    """
     if not isinstance(response_format, ToolStrategy):
         return False, ""
 
@@ -468,9 +476,11 @@ def _chain_tool_call_wrappers(
         Composed wrapper, or `None` if empty.
 
     Example:
+        ```python
         wrapper = _chain_tool_call_wrappers([auth, cache, retry])
         # Request flows: auth -> cache -> retry -> tool
         # Response flows: tool -> retry -> cache -> auth
+        ```
     """
     if not wrappers:
         return None
@@ -907,8 +917,8 @@ def create_agent(
 
         Args:
             output: The AI message output from the model.
-            effective_response_format: The actual strategy used
-                (may differ from initial if auto-detected).
+            effective_response_format: The actual strategy used (may differ from initial
+                if auto-detected).
         """
         # Handle structured output with provider strategy
         if isinstance(effective_response_format, ProviderStrategy):
@@ -1060,8 +1070,14 @@ def create_agent(
             if _supports_provider_strategy(request.model, tools=request.tools):
                 # Model supports provider strategy - use it
                 effective_response_format = ProviderStrategy(schema=request.response_format.schema)
-            else:
+            elif (
+                request.response_format is initial_response_format
+                and tool_strategy_for_setup is not None
+            ):
                 # Model doesn't support provider strategy - use ToolStrategy
+                # Reuse the strategy from setup if possible to preserve tool names
+                effective_response_format = tool_strategy_for_setup
+            else:
                 effective_response_format = ToolStrategy(schema=request.response_format.schema)
         else:
             # User explicitly specified a strategy - preserve it
@@ -1126,6 +1142,7 @@ def create_agent(
         """Execute model and return response.
 
         This is the core model execution logic wrapped by `wrap_model_call` handlers.
+
         Raises any exceptions that occur during model invocation.
         """
         # Get the bound model (with auto-detection if needed)
@@ -1562,7 +1579,7 @@ def _make_model_to_tools_edge(
     def model_to_tools(
         state: dict[str, Any],
     ) -> str | list[Send] | None:
-        # 1. if there's an explicit jump_to in the state, use it
+        # 1. If there's an explicit jump_to in the state, use it
         if jump_to := state.get("jump_to"):
             return _resolve_jump(
                 jump_to,
@@ -1573,7 +1590,7 @@ def _make_model_to_tools_edge(
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
         tool_message_ids = [m.tool_call_id for m in tool_messages]
 
-        # 2. if the model hasn't called any tools, exit the loop
+        # 2. If the model hasn't called any tools, exit the loop
         # this is the classic exit condition for an agent loop
         if len(last_ai_message.tool_calls) == 0:
             return end_destination
@@ -1584,7 +1601,7 @@ def _make_model_to_tools_edge(
             if c["id"] not in tool_message_ids and c["name"] not in structured_output_tools
         ]
 
-        # 3. if there are pending tool calls, jump to the tool node
+        # 3. If there are pending tool calls, jump to the tool node
         if pending_tool_calls:
             return [
                 Send(
@@ -1598,12 +1615,12 @@ def _make_model_to_tools_edge(
                 for tool_call in pending_tool_calls
             ]
 
-        # 4. if there is a structured response, exit the loop
+        # 4. If there is a structured response, exit the loop
         if "structured_response" in state:
             return end_destination
 
-        # 5. AIMessage has tool calls, but there are no pending tool calls
-        # which suggests the injection of artificial tool messages. jump to the model node
+        # 5. AIMessage has tool calls, but there are no pending tool calls which suggests
+        # the injection of artificial tool messages. Jump to the model node
         return model_destination
 
     return model_to_tools
@@ -1629,8 +1646,8 @@ def _make_model_to_model_edge(
         if "structured_response" in state:
             return end_destination
 
-        # 3. Default: Continue the loop, there may have been an issue
-        #     with structured output generation, so we need to retry
+        # 3. Default: Continue the loop, there may have been an issue with structured
+        # output generation, so we need to retry
         return model_destination
 
     return model_to_model
