@@ -10,12 +10,13 @@ from langchain_core.language_models._utils import (
     _parse_data_uri,
     is_openai_data_block,
 )
+from langchain_core.messages import AIMessageChunk
 from langchain_core.messages import content as types
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterator
 
-    from langchain_core.messages import AIMessage, AIMessageChunk
+    from langchain_core.messages import AIMessage
 
 
 def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
@@ -192,8 +193,6 @@ def _convert_to_v1_from_chat_completions_input(
     Returns:
         Updated list with OpenAI blocks converted to v1 format.
     """
-    from langchain_core.messages import content as types  # noqa: PLC0415
-
     converted_blocks = []
     unpacked_blocks: list[dict[str, Any]] = [
         cast("dict[str, Any]", block)
@@ -288,8 +287,6 @@ _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
 
 def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
     """Convert v0 AIMessage into `output_version="responses/v1"` format."""
-    from langchain_core.messages import AIMessageChunk  # noqa: PLC0415
-
     # Only update ChatOpenAI v0.3 AIMessages
     is_chatopenai_v03 = (
         isinstance(message.content, list)
@@ -610,7 +607,7 @@ def _convert_annotation_to_v1(annotation: dict[str, Any]) -> types.Annotation:
     return non_standard_annotation
 
 
-def _explode_reasoning(block: dict[str, Any]) -> Iterable[types.ReasoningContentBlock]:
+def _explode_reasoning(block: dict[str, Any]) -> Iterator[types.ReasoningContentBlock]:
     if "summary" not in block:
         yield cast("types.ReasoningContentBlock", block)
         return
@@ -655,7 +652,7 @@ def _explode_reasoning(block: dict[str, Any]) -> Iterable[types.ReasoningContent
 def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock]:
     """Convert a Responses message to v1 format."""
 
-    def _iter_blocks() -> Iterable[types.ContentBlock]:
+    def _iter_blocks() -> Iterator[types.ContentBlock]:
         for raw_block in message.content:
             if not isinstance(raw_block, dict):
                 continue
@@ -705,8 +702,6 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                     types.ToolCall | types.InvalidToolCall | types.ToolCallChunk | None
                 ) = None
                 call_id = block.get("call_id", "")
-
-                from langchain_core.messages import AIMessageChunk  # noqa: PLC0415
 
                 if (
                     isinstance(message, AIMessageChunk)

@@ -8,7 +8,7 @@
 #
 # Examples:
 #     feat(core): add multi‐tenant support
-#     fix(cli): resolve flag parsing error
+#     fix(langchain): resolve error
 #     docs: update API usage examples
 #     docs(openai): update API usage examples
 #
@@ -27,12 +27,18 @@
 #   * release    — prepare a new release
 #
 # Allowed Scope(s) (optional):
-#   core, cli, langchain, langchain_v1, langchain-classic, model-profiles,
+#   core, langchain, langchain-classic, model-profiles,
 #   standard-tests, text-splitters, docs, anthropic, chroma, deepseek, exa,
 #   fireworks, groq, huggingface, mistralai, nomic, ollama, openai,
 #   perplexity, prompty, qdrant, xai, infra, deps
 #
-# Multiple scopes can be used by separating them with a comma.
+# Multiple scopes can be used by separating them with a comma. For example:
+#
+#   feat(core,langchain): add multi‐tenant support to core and langchain
+#
+# Note: PRs touching the langchain package should use the 'langchain' scope. It is not
+#   acceptable to omit the scope for changes to the langchain package, despite it being
+#   the main package & name of the repo.
 #
 # Rules:
 #   1. The 'Type' must start with a lowercase letter.
@@ -79,7 +85,6 @@ jobs:
             release
           scopes: |
             core
-            cli
             langchain
             langchain-classic
             model-profiles

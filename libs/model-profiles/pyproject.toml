@@ -7,7 +7,19 @@ name = "langchain-model-profiles"
 description = "CLI tool for updating model profile data in LangChain integration packages."
 readme = "README.md"
 license = { text = "MIT" }
-authors = []
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
 version = "0.0.5"
 requires-python = ">=3.10.0,<4.0.0"
@@ -23,8 +35,9 @@ langchain-profiles = "langchain_model_profiles.cli:main"
 [project.urls]
 Homepage = "https://docs.langchain.com/"
 Documentation = "https://reference.langchain.com/python/langchain_model_profiles/"
-Source = "https://github.com/langchain-ai/langchain/tree/master/libs/model-profiles"
-Twitter = "https://x.com/LangChainAI"
+Repository = "https://github.com/langchain-ai/langchain"
+Issues = "https://github.com/langchain-ai/langchain/issues"
+Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
@@ -92,6 +105,9 @@ flake8-annotations.allow-star-arg-any = true
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.coverage.run]
 omit = ["tests/*"]

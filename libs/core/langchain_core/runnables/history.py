@@ -1,4 +1,4 @@
-"""Runnable that manages chat message history for another Runnable."""
+"""`Runnable` that manages chat message history for another `Runnable`."""
 
 from __future__ import annotations
 
@@ -320,7 +320,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
                 `RunnableBindingBase` init.
 
         """
-        history_chain: Runnable = RunnableLambda(
+        history_chain: Runnable[Any, Any] = RunnableLambda(
             self._enter_history, self._aenter_history
         ).with_config(run_name="load_history")
         messages_key = history_messages_key or input_messages_key
@@ -329,16 +329,16 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
                 **{messages_key: history_chain}
             ).with_config(run_name="insert_history")
 
-        runnable_sync: Runnable = runnable.with_listeners(on_end=self._exit_history)
-        runnable_async: Runnable = runnable.with_alisteners(on_end=self._aexit_history)
+        runnable_sync = runnable.with_listeners(on_end=self._exit_history)
+        runnable_async = runnable.with_alisteners(on_end=self._aexit_history)
 
-        def _call_runnable_sync(_input: Any) -> Runnable:
+        def _call_runnable_sync(_input: Any) -> Runnable[Any, Any]:
             return runnable_sync
 
-        async def _call_runnable_async(_input: Any) -> Runnable:
+        async def _call_runnable_async(_input: Any) -> Runnable[Any, Any]:
             return runnable_async
 
-        bound: Runnable = (
+        bound = (
             history_chain
             | RunnableLambda(
                 _call_runnable_sync,
