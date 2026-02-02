@@ -15,7 +15,7 @@ import uuid
 import weakref
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal, cast
+from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
 
 from langchain_core.messages import ToolMessage
 from langchain_core.runnables import run_in_executor
@@ -481,7 +481,7 @@ class _ShellToolInput(BaseModel):
         return self
 
 
-class ShellToolMiddleware(AgentMiddleware[ShellToolState, ContextT], Generic[ContextT]):
+class ShellToolMiddleware(AgentMiddleware[ShellToolState, ContextT]):
     """Middleware that registers a persistent shell tool for agents.
 
     The middleware exposes a single long-lived shell session. Use the execution policy

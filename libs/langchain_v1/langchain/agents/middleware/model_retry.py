@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import TYPE_CHECKING, Any, Generic
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage
 
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
 
-class ModelRetryMiddleware(AgentMiddleware[AgentState[Any], ContextT], Generic[ContextT]):
+class ModelRetryMiddleware(AgentMiddleware[AgentState[Any], ContextT]):
     """Middleware that automatically retries failed model calls with configurable backoff.
 
     Supports retrying on specific exceptions and exponential backoff.

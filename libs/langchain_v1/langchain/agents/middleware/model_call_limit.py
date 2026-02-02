@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal
 
 from langchain_core.messages import AIMessage
 from langgraph.channels.untracked_value import UntrackedValue
@@ -87,7 +87,7 @@ class ModelCallLimitExceededError(Exception):
         super().__init__(msg)
 
 
-class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, ContextT], Generic[ContextT]):
+class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, ContextT]):
     """Tracks model call counts and enforces limits.
 
     This middleware monitors the number of model calls made during agent execution

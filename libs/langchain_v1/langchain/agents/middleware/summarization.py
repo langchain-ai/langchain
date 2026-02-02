@@ -4,7 +4,7 @@ import uuid
 import warnings
 from collections.abc import Callable, Iterable, Mapping
 from functools import partial
-from typing import Any, Generic, Literal, cast
+from typing import Any, Literal, cast
 
 from langchain_core.messages import (
     AIMessage,
@@ -148,7 +148,7 @@ def _get_approximate_token_counter(model: BaseChatModel) -> TokenCounter:
     return count_tokens_approximately
 
 
-class SummarizationMiddleware(AgentMiddleware[AgentState[Any], ContextT], Generic[ContextT]):
+class SummarizationMiddleware(AgentMiddleware[AgentState[Any], ContextT]):
     """Summarizes conversation history when token limits are approached.
 
     This middleware monitors message token counts and automatically summarizes older

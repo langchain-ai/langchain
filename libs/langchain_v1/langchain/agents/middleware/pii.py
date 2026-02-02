@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Generic, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage
 from typing_extensions import override
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from langgraph.runtime import Runtime
 
 
-class PIIMiddleware(AgentMiddleware[AgentState[Any], ContextT], Generic[ContextT]):
+class PIIMiddleware(AgentMiddleware[AgentState[Any], ContextT]):
     """Detect and handle Personally Identifiable Information (PII) in conversations.
 
     This middleware detects common PII types and applies configurable strategies

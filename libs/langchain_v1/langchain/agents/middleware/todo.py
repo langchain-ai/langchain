@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal, cast
+from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -131,7 +131,7 @@ def write_todos(
     )
 
 
-class TodoListMiddleware(AgentMiddleware[PlanningState, ContextT], Generic[ContextT]):
+class TodoListMiddleware(AgentMiddleware[PlanningState, ContextT]):
     """Middleware that provides todo list management capabilities to agents.
 
     This middleware adds a `write_todos` tool that allows agents to create and manage

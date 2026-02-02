@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 from langgraph.channels.untracked_value import UntrackedValue
@@ -13,7 +13,6 @@ from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     PrivateStateAttr,
-    ResponseT,
     hook_config,
 )
 
@@ -32,7 +31,7 @@ ExitBehavior = Literal["continue", "error", "end"]
 """
 
 
-class ToolCallLimitState(AgentState[ResponseT], Generic[ResponseT]):
+class ToolCallLimitState(AgentState[Any]):
     """State schema for `ToolCallLimitMiddleware`.
 
     Extends `AgentState` with tool call tracking fields.
@@ -134,10 +133,7 @@ class ToolCallLimitExceededError(Exception):
         super().__init__(msg)
 
 
-class ToolCallLimitMiddleware(
-    AgentMiddleware[ToolCallLimitState[ResponseT], ContextT],
-    Generic[ResponseT, ContextT],
-):
+class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState, ContextT]):
     """Track tool call counts and enforces limits during agent execution.
 
     This middleware monitors the number of tool calls made and can terminate or
@@ -196,7 +192,7 @@ class ToolCallLimitMiddleware(
 
     """
 
-    state_schema = ToolCallLimitState  # type: ignore[assignment]
+    state_schema = ToolCallLimitState
 
     def __init__(
         self,
@@ -325,7 +321,7 @@ class ToolCallLimitMiddleware(
     @override
     def after_model(
         self,
-        state: ToolCallLimitState[ResponseT],
+        state: ToolCallLimitState,
         runtime: Runtime[ContextT],
     ) -> dict[str, Any] | None:
         """Increment tool call counts after a model call and check limits.
@@ -465,7 +461,7 @@ class ToolCallLimitMiddleware(
     @hook_config(can_jump_to=["end"])
     async def aafter_model(
         self,
-        state: ToolCallLimitState[ResponseT],
+        state: ToolCallLimitState,
         runtime: Runtime[ContextT],
     ) -> dict[str, Any] | None:
         """Async increment tool call counts after a model call and check limits.

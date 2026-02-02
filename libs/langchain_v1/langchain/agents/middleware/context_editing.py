@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable, Iterable, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Generic, Literal
+from typing import Any, Literal
 
 from langchain_core.messages import (
     AIMessage,
@@ -184,7 +184,7 @@ class ClearToolUsesEdit(ContextEdit):
         )
 
 
-class ContextEditingMiddleware(AgentMiddleware[AgentState[Any], ContextT], Generic[ContextT]):
+class ContextEditingMiddleware(AgentMiddleware[AgentState[Any], ContextT]):
     """Automatically prune tool results to manage context size.
 
     The middleware applies a sequence of edits when the total input token count exceeds

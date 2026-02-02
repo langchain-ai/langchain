@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal, Union
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Union
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
@@ -90,7 +90,7 @@ def _render_tool_list(tools: list[BaseTool]) -> str:
     return "\n".join(f"- {tool.name}: {tool.description}" for tool in tools)
 
 
-class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[Any], ContextT], Generic[ContextT]):
+class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[Any], ContextT]):
     """Uses an LLM to select relevant tools before calling the main model.
 
     When an agent has many tools available, this middleware filters them down
