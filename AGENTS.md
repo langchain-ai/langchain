@@ -44,6 +44,16 @@ This monorepo uses `uv` for dependency management. Local development uses editab
 
 Each package in `libs/` has its own `pyproject.toml` and `uv.lock`.
 
+Before running your tests, setup all packages by running:
+
+```bash
+# For all groups
+uv sync --all-groups
+
+# or, to install a specific group only:
+uv sync --group test
+```
+
 ```bash
 # Run unit tests (no network)
 make test
@@ -118,7 +128,7 @@ def filter_unknown_users(users: list[str], known_users: set[str]) -> list[str]:
         known_users: Set of known/valid user identifiers.
 
     Returns:
-        List of users that are not in the known_users set.
+        List of users that are not in the `known_users` set.
     """
 ```
 
