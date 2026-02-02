@@ -13,6 +13,7 @@ from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     PrivateStateAttr,
+    ResponseT,
     hook_config,
 )
 
@@ -31,7 +32,7 @@ ExitBehavior = Literal["continue", "error", "end"]
 """
 
 
-class ToolCallLimitState(AgentState[Any]):
+class ToolCallLimitState(AgentState[ResponseT]):
     """State schema for `ToolCallLimitMiddleware`.
 
     Extends `AgentState` with tool call tracking fields.
@@ -39,6 +40,9 @@ class ToolCallLimitState(AgentState[Any]):
     The count fields are dictionaries mapping tool names to execution counts. This
     allows multiple middleware instances to track different tools independently. The
     special key `'__all__'` is used for tracking all tool calls globally.
+
+    Type Parameters:
+        ResponseT: The type of the structured response. Defaults to `Any`.
     """
 
     thread_tool_call_count: NotRequired[Annotated[dict[str, int], PrivateStateAttr]]
@@ -133,7 +137,7 @@ class ToolCallLimitExceededError(Exception):
         super().__init__(msg)
 
 
-class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState, ContextT]):
+class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], ContextT, ResponseT]):
     """Track tool call counts and enforces limits during agent execution.
 
     This middleware monitors the number of tool calls made and can terminate or
@@ -192,7 +196,7 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState, ContextT]):
 
     """
 
-    state_schema = ToolCallLimitState
+    state_schema = ToolCallLimitState  # type: ignore[assignment]
 
     def __init__(
         self,
@@ -321,7 +325,7 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState, ContextT]):
     @override
     def after_model(
         self,
-        state: ToolCallLimitState,
+        state: ToolCallLimitState[ResponseT],
         runtime: Runtime[ContextT],
     ) -> dict[str, Any] | None:
         """Increment tool call counts after a model call and check limits.
@@ -461,7 +465,7 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState, ContextT]):
     @hook_config(can_jump_to=["end"])
     async def aafter_model(
         self,
-        state: ToolCallLimitState,
+        state: ToolCallLimitState[ResponseT],
         runtime: Runtime[ContextT],
     ) -> dict[str, Any] | None:
         """Async increment tool call counts after a model call and check limits.

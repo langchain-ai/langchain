@@ -43,6 +43,7 @@ from langchain.agents.middleware.types import (
     AgentState,
     ContextT,
     PrivateStateAttr,
+    ResponseT,
 )
 from langchain.tools import ToolRuntime, tool
 
@@ -96,8 +97,12 @@ class _SessionResources:
         )
 
 
-class ShellToolState(AgentState[Any]):
-    """Agent state extension for tracking shell session resources."""
+class ShellToolState(AgentState[ResponseT]):
+    """Agent state extension for tracking shell session resources.
+
+    Type Parameters:
+        ResponseT: The type of the structured response. Defaults to `Any`.
+    """
 
     shell_session_resources: NotRequired[
         Annotated[_SessionResources | None, UntrackedValue, PrivateStateAttr]
@@ -481,7 +486,7 @@ class _ShellToolInput(BaseModel):
         return self
 
 
-class ShellToolMiddleware(AgentMiddleware[ShellToolState, ContextT]):
+class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, ResponseT]):
     """Middleware that registers a persistent shell tool for agents.
 
     The middleware exposes a single long-lived shell session. Use the execution policy
@@ -498,7 +503,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, ContextT]):
     When no policy is provided the middleware defaults to `HostExecutionPolicy`.
     """
 
-    state_schema = ShellToolState
+    state_schema = ShellToolState  # type: ignore[assignment]
 
     def __init__(
         self,
@@ -621,7 +626,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, ContextT]):
 
     @override
     def before_agent(
-        self, state: ShellToolState, runtime: Runtime[ContextT]
+        self, state: ShellToolState[ResponseT], runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
         """Start the shell session and run startup commands.
 
@@ -636,7 +641,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, ContextT]):
         return {"shell_session_resources": resources}
 
     async def abefore_agent(
-        self, state: ShellToolState, runtime: Runtime[ContextT]
+        self, state: ShellToolState[ResponseT], runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
         """Async start the shell session and run startup commands.
 
@@ -650,7 +655,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, ContextT]):
         return await run_in_executor(None, self.before_agent, state, runtime)
 
     @override
-    def after_agent(self, state: ShellToolState, runtime: Runtime[ContextT]) -> None:
+    def after_agent(self, state: ShellToolState[ResponseT], runtime: Runtime[ContextT]) -> None:
         """Run shutdown commands and release resources when an agent completes."""
         resources = state.get("shell_session_resources")
         if not isinstance(resources, _SessionResources):
@@ -661,11 +666,13 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, ContextT]):
         finally:
             resources.finalizer()
 
-    async def aafter_agent(self, state: ShellToolState, runtime: Runtime[ContextT]) -> None:
+    async def aafter_agent(
+        self, state: ShellToolState[ResponseT], runtime: Runtime[ContextT]
+    ) -> None:
         """Async run shutdown commands and release resources when an agent completes."""
         return self.after_agent(state, runtime)
 
-    def _get_or_create_resources(self, state: ShellToolState) -> _SessionResources:
+    def _get_or_create_resources(self, state: ShellToolState[ResponseT]) -> _SessionResources:
         """Get existing resources from state or create new ones if they don't exist.
 
         This method enables resumability by checking if resources already exist in the state

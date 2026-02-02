@@ -18,10 +18,10 @@ from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ContextT,
-    ModelCallResult,
     ModelRequest,
     ModelResponse,
     OmitFromInput,
+    ResponseT,
 )
 from langchain.tools import InjectedToolCallId
 
@@ -36,8 +36,12 @@ class Todo(TypedDict):
     """The current status of the todo item."""
 
 
-class PlanningState(AgentState[Any]):
-    """State schema for the todo middleware."""
+class PlanningState(AgentState[ResponseT]):
+    """State schema for the todo middleware.
+
+    Type Parameters:
+        ResponseT: The type of the structured response. Defaults to `Any`.
+    """
 
     todos: Annotated[NotRequired[list[Todo]], OmitFromInput]
     """List of todo items for tracking task progress."""
@@ -131,7 +135,7 @@ def write_todos(
     )
 
 
-class TodoListMiddleware(AgentMiddleware[PlanningState, ContextT]):
+class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, ResponseT]):
     """Middleware that provides todo list management capabilities to agents.
 
     This middleware adds a `write_todos` tool that allows agents to create and manage
@@ -158,7 +162,7 @@ class TodoListMiddleware(AgentMiddleware[PlanningState, ContextT]):
         ```
     """
 
-    state_schema = PlanningState
+    state_schema = PlanningState  # type: ignore[assignment]
 
     def __init__(
         self,
@@ -197,8 +201,8 @@ class TodoListMiddleware(AgentMiddleware[PlanningState, ContextT]):
     def wrap_model_call(
         self,
         request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], ModelResponse],
-    ) -> ModelCallResult:
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
         """Update the system message to include the todo system prompt.
 
         Args:
@@ -224,8 +228,8 @@ class TodoListMiddleware(AgentMiddleware[PlanningState, ContextT]):
     async def awrap_model_call(
         self,
         request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
-    ) -> ModelCallResult:
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
         """Update the system message to include the todo system prompt.
 
         Args:
@@ -250,7 +254,7 @@ class TodoListMiddleware(AgentMiddleware[PlanningState, ContextT]):
 
     @override
     def after_model(
-        self, state: AgentState[Any], runtime: Runtime[ContextT]
+        self, state: PlanningState[ResponseT], runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
         """Check for parallel write_todos tool calls and return errors if detected.
 
@@ -302,7 +306,7 @@ class TodoListMiddleware(AgentMiddleware[PlanningState, ContextT]):
 
     @override
     async def aafter_model(
-        self, state: AgentState[Any], runtime: Runtime[ContextT]
+        self, state: PlanningState[ResponseT], runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
         """Check for parallel write_todos tool calls and return errors if detected.
 

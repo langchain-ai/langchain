@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Any, Literal, Union
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import Field, TypeAdapter
 from typing_extensions import TypedDict
 
@@ -15,9 +15,9 @@ from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ContextT,
-    ModelCallResult,
     ModelRequest,
     ModelResponse,
+    ResponseT,
 )
 from langchain.chat_models.base import init_chat_model
 
@@ -90,7 +90,7 @@ def _render_tool_list(tools: list[BaseTool]) -> str:
     return "\n".join(f"- {tool.name}: {tool.description}" for tool in tools)
 
 
-class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[Any], ContextT]):
+class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
     """Uses an LLM to select relevant tools before calling the main model.
 
     When an agent has many tools available, this middleware filters them down
@@ -274,8 +274,8 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[Any], ContextT]):
     def wrap_model_call(
         self,
         request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], ModelResponse],
-    ) -> ModelCallResult:
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
         """Filter tools based on LLM selection before invoking the model via handler.
 
         Args:
@@ -317,8 +317,8 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[Any], ContextT]):
     async def awrap_model_call(
         self,
         request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
-    ) -> ModelCallResult:
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
         """Filter tools based on LLM selection before invoking the model via handler.
 
         Args:

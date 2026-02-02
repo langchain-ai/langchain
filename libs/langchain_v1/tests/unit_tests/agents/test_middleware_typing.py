@@ -1,15 +1,15 @@
-"""Test file to verify ContextT type safety in middleware.
+"""Test file to verify type safety in middleware (ContextT and ResponseT).
 
 This file demonstrates:
-1. Backwards compatible middlewares (no ContextT specified) - works with no context_schema
-2. Correctly typed middlewares (ContextT matches context_schema) - full type safety
-3. Type errors that are caught when ContextT doesn't match
+1. Backwards compatible middlewares (no type params specified) - works with defaults
+2. Correctly typed middlewares (ContextT/ResponseT match) - full type safety
+3. Type errors that are caught when types don't match
 
-Run type check: uv run --group lint mypy tests/unit_tests/agents/test_context_t_typing.py
-Run tests: uv run --group test pytest tests/unit_tests/agents/test_context_t_typing.py -v
+Run type check: uv run --group lint mypy tests/unit_tests/agents/test_middleware_typing.py
+Run tests: uv run --group test pytest tests/unit_tests/agents/test_middleware_typing.py -v
 
 To see type errors being caught, run:
-  uv run --group lint mypy tests/unit_tests/agents/test_context_t_type_errors.py
+  uv run --group lint mypy tests/unit_tests/agents/test_middleware_type_errors.py
 """
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
+from pydantic import BaseModel
 from typing_extensions import TypedDict
 
 from langchain.agents import create_agent
@@ -28,6 +29,7 @@ from langchain.agents.middleware.types import (
     ContextT,
     ModelRequest,
     ModelResponse,
+    ResponseT,
     before_model,
 )
 
@@ -39,7 +41,7 @@ if TYPE_CHECKING:
 
 
 # =============================================================================
-# Context schemas for testing
+# Context and Response schemas for testing
 # =============================================================================
 class UserContext(TypedDict):
     """Context with user information."""
@@ -55,9 +57,23 @@ class SessionContext(TypedDict):
     expires_at: int
 
 
+class AnalysisResult(BaseModel):
+    """Structured response schema."""
+
+    sentiment: str
+    confidence: float
+
+
+class SummaryResult(BaseModel):
+    """Different structured response schema."""
+
+    summary: str
+    key_points: list[str]
+
+
 # =============================================================================
-# 1. BACKWARDS COMPATIBLE: Middlewares without ContextT
-#    These work when create_agent has NO context_schema specified
+# 1. BACKWARDS COMPATIBLE: Middlewares without type parameters
+#    These work when create_agent has NO context_schema or response_format
 # =============================================================================
 class BackwardsCompatibleMiddleware(AgentMiddleware):
     """Middleware that doesn't specify type parameters - backwards compatible."""
@@ -89,7 +105,7 @@ class BackwardsCompatibleMiddleware2(AgentMiddleware):
 def backwards_compatible_decorator(
     state: AgentState[Any], runtime: Runtime[None]
 ) -> dict[str, Any] | None:
-    """Decorator middleware without explicit ContextT."""
+    """Decorator middleware without explicit type parameters."""
     return None
 
 
@@ -97,7 +113,7 @@ def backwards_compatible_decorator(
 # 2. CORRECTLY TYPED: Middlewares with explicit ContextT
 #    These work when create_agent has MATCHING context_schema
 # =============================================================================
-class UserContextMiddleware(AgentMiddleware[AgentState[Any], UserContext]):
+class UserContextMiddleware(AgentMiddleware[AgentState[Any], UserContext, Any]):
     """Middleware with correctly specified UserContext."""
 
     def before_model(
@@ -111,45 +127,108 @@ class UserContextMiddleware(AgentMiddleware[AgentState[Any], UserContext]):
     def wrap_model_call(
         self,
         request: ModelRequest[UserContext],  # Correctly parameterized!
-        handler: Callable[[ModelRequest[UserContext]], ModelResponse],
-    ) -> ModelResponse:
+        handler: Callable[[ModelRequest[UserContext]], ModelResponse[Any]],
+    ) -> ModelResponse[Any]:
         # request.runtime.context is UserContext - fully typed!
         _user_id: str = request.runtime.context["user_id"]
         return handler(request)
 
 
-class SessionContextMiddleware(AgentMiddleware[AgentState[Any], SessionContext]):
+class SessionContextMiddleware(AgentMiddleware[AgentState[Any], SessionContext, Any]):
     """Middleware with correctly specified SessionContext."""
 
     def wrap_model_call(
         self,
         request: ModelRequest[SessionContext],
-        handler: Callable[[ModelRequest[SessionContext]], ModelResponse],
-    ) -> ModelResponse:
+        handler: Callable[[ModelRequest[SessionContext]], ModelResponse[Any]],
+    ) -> ModelResponse[Any]:
         _session_id: str = request.runtime.context["session_id"]
         _expires: int = request.runtime.context["expires_at"]
         return handler(request)
 
 
 # =============================================================================
-# 3. FLEXIBLE MIDDLEWARE: Works with any ContextT using Generic parameter
-#    Use this pattern when middleware needs to work with different contexts
+# 3. CORRECTLY TYPED: Middlewares with explicit ResponseT
+#    These work when create_agent has MATCHING response_format
 # =============================================================================
-class FlexibleMiddleware(AgentMiddleware[AgentState[Any], ContextT]):
-    """Middleware that works with any ContextT - uses the class's type parameter."""
+class AnalysisResponseMiddleware(
+    AgentMiddleware[AgentState[AnalysisResult], ContextT, AnalysisResult]
+):
+    """Middleware with correctly specified AnalysisResult response type."""
 
     def wrap_model_call(
         self,
         request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], ModelResponse],
-    ) -> ModelResponse:
-        # Can't access specific context fields, but works with any context_schema
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[AnalysisResult]],
+    ) -> ModelResponse[AnalysisResult]:
+        response = handler(request)
+        # Full type safety on structured_response
+        if response.structured_response is not None:
+            _sentiment: str = response.structured_response.sentiment
+            _confidence: float = response.structured_response.confidence
+        return response
+
+
+class SummaryResponseMiddleware(
+    AgentMiddleware[AgentState[SummaryResult], ContextT, SummaryResult]
+):
+    """Middleware with correctly specified SummaryResult response type."""
+
+    def wrap_model_call(
+        self,
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[SummaryResult]],
+    ) -> ModelResponse[SummaryResult]:
+        response = handler(request)
+        if response.structured_response is not None:
+            _summary: str = response.structured_response.summary
+            _points: list[str] = response.structured_response.key_points
+        return response
+
+
+# =============================================================================
+# 4. FULLY TYPED: Middlewares with both ContextT and ResponseT
+# =============================================================================
+class FullyTypedMiddleware(
+    AgentMiddleware[AgentState[AnalysisResult], UserContext, AnalysisResult]
+):
+    """Middleware with both ContextT and ResponseT fully specified."""
+
+    def wrap_model_call(
+        self,
+        request: ModelRequest[UserContext],
+        handler: Callable[[ModelRequest[UserContext]], ModelResponse[AnalysisResult]],
+    ) -> ModelResponse[AnalysisResult]:
+        # Access context with full type safety
+        _user_id: str = request.runtime.context["user_id"]
+
+        response = handler(request)
+
+        # Access structured response with full type safety
+        if response.structured_response is not None:
+            _sentiment: str = response.structured_response.sentiment
+
+        return response
+
+
+# =============================================================================
+# 5. FLEXIBLE MIDDLEWARE: Works with any ContextT/ResponseT using Generic
+# =============================================================================
+class FlexibleMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
+    """Middleware that works with any ContextT and ResponseT."""
+
+    def wrap_model_call(
+        self,
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT]:
+        # Can't access specific fields, but works with any schemas
         _ = request.runtime
         return handler(request)
 
 
 # =============================================================================
-# 4. CREATE_AGENT INTEGRATION TESTS
+# 6. CREATE_AGENT INTEGRATION TESTS
 # =============================================================================
 @pytest.fixture
 def fake_model() -> GenericFakeChatModel:
@@ -196,7 +275,7 @@ def test_create_agent_with_flexible_middleware(fake_model: GenericFakeChatModel)
     # With UserContext
     agent1: CompiledStateGraph[Any, UserContext, Any, Any] = create_agent(
         model=fake_model,
-        middleware=[FlexibleMiddleware[UserContext]()],
+        middleware=[FlexibleMiddleware[UserContext, Any]()],
         context_schema=UserContext,
     )
     assert agent1 is not None
@@ -204,16 +283,37 @@ def test_create_agent_with_flexible_middleware(fake_model: GenericFakeChatModel)
     # With SessionContext
     agent2: CompiledStateGraph[Any, SessionContext, Any, Any] = create_agent(
         model=fake_model,
-        middleware=[FlexibleMiddleware[SessionContext]()],
+        middleware=[FlexibleMiddleware[SessionContext, Any]()],
         context_schema=SessionContext,
     )
     assert agent2 is not None
 
 
+def test_create_agent_with_response_middleware(fake_model: GenericFakeChatModel) -> None:
+    """Middleware with ResponseT works with response_format."""
+    agent = create_agent(
+        model=fake_model,
+        middleware=[AnalysisResponseMiddleware()],
+        response_format=AnalysisResult,
+    )
+    assert agent is not None
+
+
+def test_create_agent_fully_typed(fake_model: GenericFakeChatModel) -> None:
+    """Fully typed middleware with both ContextT and ResponseT."""
+    agent = create_agent(
+        model=fake_model,
+        middleware=[FullyTypedMiddleware()],
+        context_schema=UserContext,
+        response_format=AnalysisResult,
+    )
+    assert agent is not None
+
+
 # =============================================================================
-# 5. ASYNC VARIANTS
+# 7. ASYNC VARIANTS
 # =============================================================================
-class AsyncUserContextMiddleware(AgentMiddleware[AgentState[Any], UserContext]):
+class AsyncUserContextMiddleware(AgentMiddleware[AgentState[Any], UserContext, Any]):
     """Async middleware with correctly typed ContextT."""
 
     async def abefore_model(
@@ -225,10 +325,26 @@ class AsyncUserContextMiddleware(AgentMiddleware[AgentState[Any], UserContext]):
     async def awrap_model_call(
         self,
         request: ModelRequest[UserContext],
-        handler: Callable[[ModelRequest[UserContext]], Awaitable[ModelResponse]],
-    ) -> ModelResponse:
+        handler: Callable[[ModelRequest[UserContext]], Awaitable[ModelResponse[Any]]],
+    ) -> ModelResponse[Any]:
         _user_id: str = request.runtime.context["user_id"]
         return await handler(request)
+
+
+class AsyncResponseMiddleware(
+    AgentMiddleware[AgentState[AnalysisResult], ContextT, AnalysisResult]
+):
+    """Async middleware with correctly typed ResponseT."""
+
+    async def awrap_model_call(
+        self,
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[AnalysisResult]]],
+    ) -> ModelResponse[AnalysisResult]:
+        response = await handler(request)
+        if response.structured_response is not None:
+            _sentiment: str = response.structured_response.sentiment
+        return response
 
 
 def test_async_middleware_with_context(fake_model: GenericFakeChatModel) -> None:
@@ -241,12 +357,21 @@ def test_async_middleware_with_context(fake_model: GenericFakeChatModel) -> None
     assert agent is not None
 
 
+def test_async_middleware_with_response(fake_model: GenericFakeChatModel) -> None:
+    """Async middleware with typed response."""
+    agent = create_agent(
+        model=fake_model,
+        middleware=[AsyncResponseMiddleware()],
+        response_format=AnalysisResult,
+    )
+    assert agent is not None
+
+
 # =============================================================================
-# 6. MODEL_REQUEST TESTS
+# 8. MODEL_REQUEST AND MODEL_RESPONSE TESTS
 # =============================================================================
 def test_model_request_preserves_context_type() -> None:
     """Test that ModelRequest.override() preserves ContextT."""
-    # Create a request with explicit type
     request: ModelRequest[UserContext] = ModelRequest(
         model=None,  # type: ignore[arg-type]
         messages=[HumanMessage(content="test")],
@@ -263,29 +388,56 @@ def test_model_request_preserves_context_type() -> None:
 
 def test_model_request_backwards_compatible() -> None:
     """Test that ModelRequest can be instantiated without type params."""
-    # This is the backwards compatible way - no type parameter
     request = ModelRequest(
         model=None,  # type: ignore[arg-type]
         messages=[HumanMessage(content="test")],
     )
 
-    # The type is ModelRequest[None] due to ContextT default
     assert request.messages[0].content == "test"
 
 
 def test_model_request_explicit_none() -> None:
     """Test ModelRequest[None] is same as unparameterized ModelRequest."""
-    # Explicit None
     request1: ModelRequest[None] = ModelRequest(
         model=None,  # type: ignore[arg-type]
         messages=[HumanMessage(content="test")],
     )
 
-    # Unparameterized (defaults to None)
     request2: ModelRequest = ModelRequest(
         model=None,  # type: ignore[arg-type]
         messages=[HumanMessage(content="test")],
     )
 
-    # Both are the same type at runtime
     assert type(request1) is type(request2)
+
+
+def test_model_response_with_response_type() -> None:
+    """Test that ModelResponse preserves ResponseT."""
+    response: ModelResponse[AnalysisResult] = ModelResponse(
+        result=[AIMessage(content="test")],
+        structured_response=AnalysisResult(sentiment="positive", confidence=0.9),
+    )
+
+    # Type checker knows structured_response is AnalysisResult | None
+    if response.structured_response is not None:
+        _sentiment: str = response.structured_response.sentiment
+        _confidence: float = response.structured_response.confidence
+
+
+def test_model_response_without_structured() -> None:
+    """Test ModelResponse without structured response."""
+    response: ModelResponse[Any] = ModelResponse(
+        result=[AIMessage(content="test")],
+        structured_response=None,
+    )
+
+    assert response.structured_response is None
+
+
+def test_model_response_backwards_compatible() -> None:
+    """Test that ModelResponse can be instantiated without type params."""
+    response = ModelResponse(
+        result=[AIMessage(content="test")],
+    )
+
+    assert response.structured_response is None

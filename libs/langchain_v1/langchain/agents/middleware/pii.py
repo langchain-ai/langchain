@@ -19,7 +19,13 @@ from langchain.agents.middleware._redaction import (
     detect_mac_address,
     detect_url,
 )
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, hook_config
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ContextT,
+    ResponseT,
+    hook_config,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -27,7 +33,7 @@ if TYPE_CHECKING:
     from langgraph.runtime import Runtime
 
 
-class PIIMiddleware(AgentMiddleware[AgentState[Any], ContextT]):
+class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
     """Detect and handle Personally Identifiable Information (PII) in conversations.
 
     This middleware detects common PII types and applies configurable strategies

@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable, Iterable, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Literal
 
 from langchain_core.messages import (
     AIMessage,
@@ -27,9 +27,9 @@ from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ContextT,
-    ModelCallResult,
     ModelRequest,
     ModelResponse,
+    ResponseT,
 )
 
 DEFAULT_TOOL_PLACEHOLDER = "[cleared]"
@@ -184,7 +184,7 @@ class ClearToolUsesEdit(ContextEdit):
         )
 
 
-class ContextEditingMiddleware(AgentMiddleware[AgentState[Any], ContextT]):
+class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
     """Automatically prune tool results to manage context size.
 
     The middleware applies a sequence of edits when the total input token count exceeds
@@ -220,8 +220,8 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[Any], ContextT]):
     def wrap_model_call(
         self,
         request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], ModelResponse],
-    ) -> ModelCallResult:
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
         """Apply context edits before invoking the model via handler.
 
         Args:
@@ -257,8 +257,8 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[Any], ContextT]):
     async def awrap_model_call(
         self,
         request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
-    ) -> ModelCallResult:
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
         """Apply context edits before invoking the model via handler.
 
         Args:

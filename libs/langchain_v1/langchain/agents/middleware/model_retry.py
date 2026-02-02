@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from langchain_core.messages import AIMessage
 
@@ -21,13 +21,14 @@ from langchain.agents.middleware.types import (
     ContextT,
     ModelRequest,
     ModelResponse,
+    ResponseT,
 )
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
 
-class ModelRetryMiddleware(AgentMiddleware[AgentState[Any], ContextT]):
+class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
     """Middleware that automatically retries failed model calls with configurable backoff.
 
     Supports retrying on specific exceptions and exponential backoff.
@@ -186,7 +187,7 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[Any], ContextT]):
         )
         return AIMessage(content=content)
 
-    def _handle_failure(self, exc: Exception, attempts_made: int) -> ModelResponse:
+    def _handle_failure(self, exc: Exception, attempts_made: int) -> ModelResponse[ResponseT]:
         """Handle failure when all retries are exhausted.
 
         Args:
@@ -213,8 +214,8 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[Any], ContextT]):
     def wrap_model_call(
         self,
         request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], ModelResponse],
-    ) -> ModelResponse | AIMessage:
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
         """Intercept model execution and retry on failure.
 
         Args:
@@ -263,8 +264,8 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[Any], ContextT]):
     async def awrap_model_call(
         self,
         request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
-    ) -> ModelResponse | AIMessage:
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
         """Intercept and control async model execution with retry logic.
 
         Args:
