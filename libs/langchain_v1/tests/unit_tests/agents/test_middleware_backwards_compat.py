@@ -157,7 +157,9 @@ def test_old_pattern_1_unparameterized(fake_model: GenericFakeChatModel) -> None
         model=fake_model,
         middleware=[OldStyleMiddleware1()],
     )
-    assert agent is not None
+    result = agent.invoke({"messages": [HumanMessage(content="hi")]})
+    assert "messages" in result
+    assert len(result["messages"]) >= 1
 
 
 def test_old_pattern_2_two_params(fake_model: GenericFakeChatModel) -> None:
@@ -166,7 +168,9 @@ def test_old_pattern_2_two_params(fake_model: GenericFakeChatModel) -> None:
         model=fake_model,
         middleware=[OldStyleMiddleware2()],
     )
-    assert agent is not None
+    result = agent.invoke({"messages": [HumanMessage(content="hi")]})
+    assert "messages" in result
+    assert len(result["messages"]) >= 1
 
 
 def test_old_pattern_3_explicit_none(fake_model: GenericFakeChatModel) -> None:
@@ -175,7 +179,9 @@ def test_old_pattern_3_explicit_none(fake_model: GenericFakeChatModel) -> None:
         model=fake_model,
         middleware=[OldStyleMiddleware3()],
     )
-    assert agent is not None
+    result = agent.invoke({"messages": [HumanMessage(content="hi")]})
+    assert "messages" in result
+    assert len(result["messages"]) >= 1
 
 
 def test_old_pattern_4_specific_context(fake_model: GenericFakeChatModel) -> None:
@@ -185,7 +191,12 @@ def test_old_pattern_4_specific_context(fake_model: GenericFakeChatModel) -> Non
         middleware=[OldStyleMiddleware4()],
         context_schema=MyContext,
     )
-    assert agent is not None
+    result = agent.invoke(
+        {"messages": [HumanMessage(content="hi")]},
+        context={"user_id": "test-user"},
+    )
+    assert "messages" in result
+    assert len(result["messages"]) >= 1
 
 
 def test_old_pattern_5_decorator(fake_model: GenericFakeChatModel) -> None:
@@ -194,16 +205,20 @@ def test_old_pattern_5_decorator(fake_model: GenericFakeChatModel) -> None:
         model=fake_model,
         middleware=[old_style_decorator],
     )
-    assert agent is not None
+    result = agent.invoke({"messages": [HumanMessage(content="hi")]})
+    assert "messages" in result
+    assert len(result["messages"]) >= 1
 
 
-def test_old_pattern_6_async(fake_model: GenericFakeChatModel) -> None:
+async def test_old_pattern_6_async(fake_model: GenericFakeChatModel) -> None:
     """Old pattern 6: Async middleware with 2 params."""
     agent = create_agent(
         model=fake_model,
         middleware=[OldStyleAsyncMiddleware()],
     )
-    assert agent is not None
+    result = await agent.ainvoke({"messages": [HumanMessage(content="hi")]})
+    assert "messages" in result
+    assert len(result["messages"]) >= 1
 
 
 def test_old_pattern_7_model_response_unparameterized(
@@ -214,7 +229,9 @@ def test_old_pattern_7_model_response_unparameterized(
         model=fake_model,
         middleware=[OldStyleModelResponseMiddleware()],
     )
-    assert agent is not None
+    result = agent.invoke({"messages": [HumanMessage(content="hi")]})
+    assert "messages" in result
+    assert len(result["messages"]) >= 1
 
 
 def test_multiple_old_style_middlewares(fake_model: GenericFakeChatModel) -> None:
@@ -229,7 +246,9 @@ def test_multiple_old_style_middlewares(fake_model: GenericFakeChatModel) -> Non
             OldStyleModelResponseMiddleware(),
         ],
     )
-    assert agent is not None
+    result = agent.invoke({"messages": [HumanMessage(content="hi")]})
+    assert "messages" in result
+    assert len(result["messages"]) >= 1
 
 
 def test_model_response_backwards_compat() -> None:
