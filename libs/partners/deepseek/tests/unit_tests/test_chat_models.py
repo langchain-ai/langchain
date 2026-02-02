@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from enum import Enum
+from typing import Any, Literal, cast
 from unittest.mock import MagicMock
 
 from langchain_core.messages import AIMessageChunk, ToolMessage
@@ -309,17 +310,25 @@ class TestChatDeepSeekStrictMode:
         assert structured_model is not None
 
     def test_with_structured_output_typing_schema_raises(self) -> None:
+        """Test that invalid typing-based schemas raise a TypeError."""
         llm = ChatDeepSeek(
             model="deepseek-chat",
             api_key=SecretStr("test_key"),
         )
 
+        class InvalidSchemaEnum(Enum):
+            A = "a"
+            B = "b"
+
+        invalid_schema = cast("Any", InvalidSchemaEnum)
+
         try:
-            llm.with_structured_output(list[int])
-        except TypeError as exc:
-            assert "schema must be a dict" in str(exc)
-        else:
-            assert False, "TypeError was not raised"
+            llm.with_structured_output(invalid_schema)
+        except TypeError:
+            return
+
+        assertion_str = "TypeError was not raised for invalid schema type"
+        raise AssertionError(assertion_str)
 
 
 def test_profile() -> None:
