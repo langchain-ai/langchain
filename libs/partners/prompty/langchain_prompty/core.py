@@ -4,6 +4,7 @@ import abc
 import json
 import os
 import re
+import threading
 from pathlib import Path
 from typing import Any, Generic, Literal, TypeVar
 
@@ -200,22 +201,31 @@ class NoOpParser(Invoker):
 
 
 class InvokerFactory:
-    """Factory for creating invokers."""
+    """Factory for creating invokers.
+
+    This class implements a thread-safe singleton pattern using double-checked
+    locking to ensure only one instance is created even under concurrent access.
+    """
 
     _instance = None
+    _lock = threading.Lock()
     _renderers: dict[str, type[Invoker]] = {}
     _parsers: dict[str, type[Invoker]] = {}
     _executors: dict[str, type[Invoker]] = {}
     _processors: dict[str, type[Invoker]] = {}
 
     def __new__(cls) -> InvokerFactory:
+        # First check (fast path, no lock needed)
         if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            # Add NOOP invokers
-            cls._renderers["NOOP"] = NoOpParser
-            cls._parsers["NOOP"] = NoOpParser
-            cls._executors["NOOP"] = NoOpParser
-            cls._processors["NOOP"] = NoOpParser
+            with cls._lock:
+                # Double-check after acquiring lock
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+                    # Add NOOP invokers
+                    cls._renderers["NOOP"] = NoOpParser
+                    cls._parsers["NOOP"] = NoOpParser
+                    cls._executors["NOOP"] = NoOpParser
+                    cls._processors["NOOP"] = NoOpParser
         return cls._instance
 
     def register(
