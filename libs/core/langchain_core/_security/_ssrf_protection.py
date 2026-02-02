@@ -1,4 +1,4 @@
-"""SSRF Protection utility for validating URLs against Server-Side Request Forgery attacks.
+"""SSRF Protection for validating URLs against Server-Side Request Forgery attacks.
 
 This module provides utilities to validate user-provided URLs and prevent SSRF attacks
 by blocking requests to:
@@ -99,7 +99,7 @@ def is_cloud_metadata(hostname: str, ip_str: str | None = None) -> bool:
         return True
 
     # Check IP
-    if ip_str and ip_str in CLOUD_METADATA_IPS:
+    if ip_str and ip_str in CLOUD_METADATA_IPS:  # noqa: SIM103
         return True
 
     return False
@@ -127,7 +127,7 @@ def is_localhost(hostname: str, ip_str: str | None = None) -> bool:
             if ip.is_loopback:
                 return True
             # Also check common localhost IPs
-            if ip_str in ("127.0.0.1", "::1", "0.0.0.0"):
+            if ip_str in ("127.0.0.1", "::1", "0.0.0.0"):  # noqa: S104
                 return True
         except ValueError:
             pass
@@ -179,33 +179,38 @@ def validate_safe_url(
 
     # Validate URL scheme
     if not allow_http and parsed.scheme != "https":
-        raise ValueError("Only HTTPS URLs are allowed")
+        msg = "Only HTTPS URLs are allowed"
+        raise ValueError(msg)
 
     if parsed.scheme not in ("http", "https"):
-        raise ValueError(
-            f"Only HTTP/HTTPS URLs are allowed, got scheme: {parsed.scheme}"
-        )
+        msg = f"Only HTTP/HTTPS URLs are allowed, got scheme: {parsed.scheme}"
+        raise ValueError(msg)
 
     # Extract hostname
     hostname = parsed.hostname
     if not hostname:
-        raise ValueError("URL must have a valid hostname")
+        msg = "URL must have a valid hostname"
+        raise ValueError(msg)
 
     # Special handling for test environments - allow test server hostnames
     # testserver is used by FastAPI/Starlette test clients and doesn't resolve via DNS
     # Only enabled when LANGCHAIN_ENV=local_test (set in conftest.py)
-    if os.environ.get("LANGCHAIN_ENV") == "local_test":
-        if hostname.startswith("test") and "server" in hostname:
-            return url_str
+    if (
+        os.environ.get("LANGCHAIN_ENV") == "local_test"
+        and hostname.startswith("test")
+        and "server" in hostname
+    ):
+        return url_str
 
     # ALWAYS block cloud metadata endpoints (even with allow_private=True)
     if is_cloud_metadata(hostname):
-        raise ValueError(f"Cloud metadata endpoints are not allowed: {hostname}")
+        msg = f"Cloud metadata endpoints are not allowed: {hostname}"
+        raise ValueError(msg)
 
     # Check for localhost
-    if is_localhost(hostname):
-        if not allow_private:
-            raise ValueError(f"Localhost URLs are not allowed: {hostname}")
+    if is_localhost(hostname) and not allow_private:
+        msg = f"Localhost URLs are not allowed: {hostname}"
+        raise ValueError(msg)
 
     # Resolve hostname to IP addresses and validate each one.
     # Note: DNS resolution results are cached by the OS, so repeated calls are fast.
@@ -223,29 +228,34 @@ def validate_safe_url(
 
             # ALWAYS block cloud metadata IPs
             if is_cloud_metadata(hostname, ip_str):
-                raise ValueError(f"URL resolves to cloud metadata IP: {ip_str}")
+                msg = f"URL resolves to cloud metadata IP: {ip_str}"
+                raise ValueError(msg)
 
             # Check for localhost IPs
-            if is_localhost(hostname, ip_str):
-                if not allow_private:
-                    raise ValueError(f"URL resolves to localhost IP: {ip_str}")
+            if is_localhost(hostname, ip_str) and not allow_private:
+                msg = f"URL resolves to localhost IP: {ip_str}"
+                raise ValueError(msg)
 
             # Check for private IPs
             if not allow_private and is_private_ip(ip_str):
-                raise ValueError(f"URL resolves to private IP address: {ip_str}")
+                msg = f"URL resolves to private IP address: {ip_str}"
+                raise ValueError(msg)
 
     except socket.gaierror as e:
         # DNS resolution failed - fail closed for security
-        raise ValueError(f"Failed to resolve hostname '{hostname}': {e}")
+        msg = f"Failed to resolve hostname '{hostname}': {e}"
+        raise ValueError(msg) from e
     except OSError as e:
         # Other network errors - fail closed
-        raise ValueError(f"Network error while validating URL: {e}")
+        msg = f"Network error while validating URL: {e}"
+        raise ValueError(msg) from e
 
     return url_str
 
 
 def is_safe_url(
     url: str | AnyHttpUrl,
+    *,
     allow_private: bool = False,
     allow_http: bool = True,
 ) -> bool:
@@ -271,9 +281,10 @@ def is_safe_url(
     """
     try:
         validate_safe_url(url, allow_private=allow_private, allow_http=allow_http)
-        return True
     except ValueError:
         return False
+    else:
+        return True
 
 
 def _validate_url_ssrf_strict(v: Any) -> Any:
@@ -348,4 +359,3 @@ Example:
         async with httpx.AsyncClient() as client:
             resp = await client.get(url)
 """
-
