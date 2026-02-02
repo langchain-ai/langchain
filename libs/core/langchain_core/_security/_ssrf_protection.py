@@ -224,7 +224,7 @@ def validate_safe_url(
         )
 
         for result in addr_info:
-            ip_str = result[4][0]
+            ip_str: str = result[4][0]  # type: ignore[assignment]
 
             # ALWAYS block cloud metadata IPs
             if is_cloud_metadata(hostname, ip_str):
