@@ -35,6 +35,22 @@ class TestPathValidation:
         with pytest.raises(ValueError, match="Path traversal not allowed"):
             _validate_path("~/.ssh/id_rsa")
 
+    def test_nextjs_catchall_route_paths_allowed(self) -> None:
+        """Test that NextJS catch-all route paths with [...] are not blocked.
+
+        NextJS uses [...slug].ts syntax for catch-all dynamic routes.
+        The "..." should not trigger path traversal detection.
+        Fixes: https://github.com/langchain-ai/langchain/issues/34961
+        """
+        # NextJS catch-all route file
+        assert _validate_path("/pages/api/auth/[...nextauth].ts") == (
+            "/pages/api/auth/[...nextauth].ts"
+        )
+        # Triple dots in filename
+        assert _validate_path("/src/spread...example.ts") == "/src/spread...example.ts"
+        # Triple dots in directory name
+        assert _validate_path("/...special/file.txt") == "/...special/file.txt"
+
     def test_allowed_prefixes(self) -> None:
         """Test path prefix validation."""
         # Should pass

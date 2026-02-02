@@ -296,6 +296,51 @@ class TestPathTraversalSecurity:
         assert result == "No matches found"
         assert "secret" not in result
 
+    def test_nextjs_catchall_route_files_allowed(self, tmp_path: Path) -> None:
+        """Test that NextJS catch-all route files with [...] are not blocked.
+
+        NextJS uses [...slug].ts syntax for catch-all dynamic routes.
+        The "..." should not trigger path traversal detection.
+        Fixes: https://github.com/langchain-ai/langchain/issues/34961
+        """
+        pages_dir = tmp_path / "pages" / "api" / "auth"
+        pages_dir.mkdir(parents=True)
+        (pages_dir / "[...nextauth].ts").write_text("export default NextAuth")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
+
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
+        result = middleware.glob_search.func(pattern="**/*.ts")
+
+        assert "[...nextauth].ts" in result
+
+    def test_triple_dots_in_filename_allowed(self, tmp_path: Path) -> None:
+        """Test that files with triple dots are not blocked as path traversal."""
+        (tmp_path / "spread...example.ts").write_text("content", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
+
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
+        result = middleware.glob_search.func(pattern="*.ts")
+
+        assert "spread...example.ts" in result
+
+    def test_triple_dots_in_path_allowed(self, tmp_path: Path) -> None:
+        """Test that directories with triple dots are accessible."""
+        special_dir = tmp_path / "...special"
+        special_dir.mkdir()
+        (special_dir / "file.txt").write_text("content", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
+
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
+        result = middleware.glob_search.func(pattern="*.txt", path="/...special")
+
+        assert "file.txt" in result
+
 
 class TestExpandIncludePatterns:
     """Tests for _expand_include_patterns helper function."""
