@@ -22,6 +22,7 @@ from langchain.agents.middleware.types import (
     ModelRequest,
     ModelResponse,
 )
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -74,8 +75,9 @@ class SessionContextMiddleware(AgentMiddleware[AgentState[Any], SessionContext])
 def test_mismatched_context_schema() -> None:
     # TYPE ERROR: SessionContextMiddleware expects SessionContext,
     # but context_schema is UserContext
+    fake_model = FakeToolCallingModel()
     _agent = create_agent(
-        model="openai:gpt-4",
+        model=fake_model,
         middleware=[SessionContextMiddleware()],
         context_schema=UserContext,
     )
@@ -94,8 +96,9 @@ class BackwardsCompatibleMiddleware(AgentMiddleware):
 def test_backwards_compat_with_context_schema() -> None:
     # TYPE ERROR: BackwardsCompatibleMiddleware is AgentMiddleware[..., None]
     # but context_schema=UserContext expects AgentMiddleware[..., UserContext]
+    fake_model = FakeToolCallingModel()
     _agent = create_agent(
-        model="openai:gpt-4",
+        model=fake_model,
         middleware=[BackwardsCompatibleMiddleware()],
         context_schema=UserContext,
     )
