@@ -59,6 +59,9 @@ typing = [
 langchain-core = { path = "../../core", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
 
+[tool.uv]
+constraint-dependencies = ["urllib3>=2.6.3"]
+
 [tool.mypy]
 disallow_untyped_defs = true
 
