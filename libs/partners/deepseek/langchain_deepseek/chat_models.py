@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable, Iterator, Sequence
+from inspect import isclass
 from json import JSONDecodeError
 from typing import Any, Literal, TypeAlias, cast
 
@@ -516,6 +517,26 @@ class ChatDeepSeek(BaseChatOpenAI):
                     depends on the `schema` as described above.
                 - `'parsing_error'`: `BaseException | None`
         """
+        if schema is not None and not (
+            isinstance(schema, dict)
+            or (
+                isclass(schema)
+                and (
+                    issubclass(schema, BaseModel)
+                    or (
+                        hasattr(schema, "__annotations__")
+                        and hasattr(schema, "__total__")
+                    )
+                )
+            )
+        ):
+            error_str = (
+                "schema must be a dict, TypedDict class, or "
+                "Pydantic BaseModel subclass; "
+                f"got {schema!r} ({type(schema).__name__})"
+            )
+            raise TypeError(error_str)
+
         # Some applications require that incompatible parameters (e.g., unsupported
         # methods) be handled.
         if method == "json_schema":
