@@ -11,7 +11,7 @@ Expected errors:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import TypedDict
 
@@ -79,9 +79,6 @@ def test_mismatched_context_schema() -> None:
         middleware=[SessionContextMiddleware()],
         context_schema=UserContext,
     )
-
-
-ContextT = TypeVar("ContextT", default=Any)
 
 
 # ERROR 4: Backwards compatible middleware with typed context_schema
