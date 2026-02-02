@@ -28,6 +28,7 @@ from typing import (
     cast,
     overload,
 )
+from xml.sax.saxutils import escape, quoteattr
 
 from pydantic import Discriminator, Field, Tag
 
@@ -98,11 +99,199 @@ AnyMessage = Annotated[
 """A type representing any defined `Message` or `MessageChunk` type."""
 
 
+def _has_base64_data(block: dict) -> bool:
+    """Check if a content block contains base64 encoded data.
+
+    Args:
+        block: A content block dictionary.
+
+    Returns:
+        Whether the block contains base64 data.
+    """
+    # Check for explicit base64 field (standard content blocks)
+    if block.get("base64"):
+        return True
+
+    # Check for data: URL in url field
+    url = block.get("url", "")
+    if isinstance(url, str) and url.startswith("data:"):
+        return True
+
+    # Check for OpenAI-style image_url with data: URL
+    image_url = block.get("image_url", {})
+    if isinstance(image_url, dict):
+        url = image_url.get("url", "")
+        if isinstance(url, str) and url.startswith("data:"):
+            return True
+
+    return False
+
+
+_XML_CONTENT_BLOCK_MAX_LEN = 500
+
+
+def _truncate(text: str, max_len: int = _XML_CONTENT_BLOCK_MAX_LEN) -> str:
+    """Truncate text to `max_len` characters, adding ellipsis if truncated."""
+    if len(text) <= max_len:
+        return text
+    return text[:max_len] + "..."
+
+
+def _format_content_block_xml(block: dict) -> str | None:
+    """Format a content block as XML.
+
+    Args:
+        block: A LangChain content block.
+
+    Returns:
+        XML string representation of the block, or `None` if the block should be
+            skipped.
+
+    Note:
+        Plain text document content, server tool call arguments, and server tool
+        result outputs are truncated to 500 characters.
+    """
+    block_type = block.get("type", "")
+
+    # Skip blocks with base64 encoded data
+    if _has_base64_data(block):
+        return None
+
+    # Text blocks
+    if block_type == "text":
+        text = block.get("text", "")
+        return escape(text) if text else None
+
+    # Reasoning blocks
+    if block_type == "reasoning":
+        reasoning = block.get("reasoning", "")
+        if reasoning:
+            return f"<reasoning>{escape(reasoning)}</reasoning>"
+        return None
+
+    # Image blocks (URL only, base64 already filtered)
+    if block_type == "image":
+        url = block.get("url")
+        file_id = block.get("file_id")
+        if url:
+            return f"<image url={quoteattr(url)} />"
+        if file_id:
+            return f"<image file_id={quoteattr(file_id)} />"
+        return None
+
+    # OpenAI-style image_url blocks
+    if block_type == "image_url":
+        image_url = block.get("image_url", {})
+        if isinstance(image_url, dict):
+            url = image_url.get("url", "")
+            if url and not url.startswith("data:"):
+                return f"<image url={quoteattr(url)} />"
+        return None
+
+    # Audio blocks (URL only)
+    if block_type == "audio":
+        url = block.get("url")
+        file_id = block.get("file_id")
+        if url:
+            return f"<audio url={quoteattr(url)} />"
+        if file_id:
+            return f"<audio file_id={quoteattr(file_id)} />"
+        return None
+
+    # Video blocks (URL only)
+    if block_type == "video":
+        url = block.get("url")
+        file_id = block.get("file_id")
+        if url:
+            return f"<video url={quoteattr(url)} />"
+        if file_id:
+            return f"<video file_id={quoteattr(file_id)} />"
+        return None
+
+    # Plain text document blocks
+    if block_type == "text-plain":
+        text = block.get("text", "")
+        return escape(_truncate(text)) if text else None
+
+    # Server tool call blocks (from AI messages)
+    if block_type == "server_tool_call":
+        tc_id = quoteattr(str(block.get("id") or ""))
+        tc_name = quoteattr(str(block.get("name") or ""))
+        tc_args_json = json.dumps(block.get("args", {}), ensure_ascii=False)
+        tc_args = escape(_truncate(tc_args_json))
+        return (
+            f"<server_tool_call id={tc_id} name={tc_name}>{tc_args}</server_tool_call>"
+        )
+
+    # Server tool result blocks
+    if block_type == "server_tool_result":
+        tool_call_id = quoteattr(str(block.get("tool_call_id") or ""))
+        status = quoteattr(str(block.get("status") or ""))
+        output = block.get("output")
+        if output:
+            output_json = json.dumps(output, ensure_ascii=False)
+            output_str = escape(_truncate(output_json))
+        else:
+            output_str = ""
+        return (
+            f"<server_tool_result tool_call_id={tool_call_id} status={status}>"
+            f"{output_str}</server_tool_result>"
+        )
+
+    # Unknown block type - skip silently
+    return None
+
+
+def _get_message_type_str(
+    m: BaseMessage,
+    human_prefix: str,
+    ai_prefix: str,
+    system_prefix: str,
+    function_prefix: str,
+    tool_prefix: str,
+) -> str:
+    """Get the type string for XML message element.
+
+    Args:
+        m: The message to get the type string for.
+        human_prefix: The prefix to use for `HumanMessage`.
+        ai_prefix: The prefix to use for `AIMessage`.
+        system_prefix: The prefix to use for `SystemMessage`.
+        function_prefix: The prefix to use for `FunctionMessage`.
+        tool_prefix: The prefix to use for `ToolMessage`.
+
+    Returns:
+        The type string for the message element.
+
+    Raises:
+        ValueError: If an unsupported message type is encountered.
+    """
+    if isinstance(m, HumanMessage):
+        return human_prefix.lower()
+    if isinstance(m, AIMessage):
+        return ai_prefix.lower()
+    if isinstance(m, SystemMessage):
+        return system_prefix.lower()
+    if isinstance(m, FunctionMessage):
+        return function_prefix.lower()
+    if isinstance(m, ToolMessage):
+        return tool_prefix.lower()
+    if isinstance(m, ChatMessage):
+        return m.role
+    msg = f"Got unsupported message type: {m}"
+    raise ValueError(msg)
+
+
 def get_buffer_string(
     messages: Sequence[BaseMessage],
     human_prefix: str = "Human",
     ai_prefix: str = "AI",
+    *,
+    system_prefix: str = "System",
+    function_prefix: str = "Function",
+    tool_prefix: str = "Tool",
     message_separator: str = "\n",
+    format: Literal["prefix", "xml"] = "prefix",  # noqa: A002
 ) -> str:
     r"""Convert a sequence of messages to strings and concatenate them into one string.
 
@@ -110,7 +299,15 @@ def get_buffer_string(
         messages: Messages to be converted to strings.
         human_prefix: The prefix to prepend to contents of `HumanMessage`s.
         ai_prefix: The prefix to prepend to contents of `AIMessage`.
+        system_prefix: The prefix to prepend to contents of `SystemMessage`s.
+        function_prefix: The prefix to prepend to contents of `FunctionMessage`s.
+        tool_prefix: The prefix to prepend to contents of `ToolMessage`s.
         message_separator: The separator to use between messages.
+        format: The output format. `'prefix'` uses `Role: content` format (default).
+
+            `'xml'` uses XML-style `<message type='role'>` format with proper character
+            escaping, which is useful when message content may contain role-like
+            prefixes that could cause ambiguity.
 
     Returns:
         A single string concatenation of all input messages.
@@ -118,14 +315,41 @@ def get_buffer_string(
     Raises:
         ValueError: If an unsupported message type is encountered.
 
-    Note:
+    !!! warning
+
         If a message is an `AIMessage` and contains both tool calls under `tool_calls`
         and a function call under `additional_kwargs["function_call"]`, only the tool
         calls will be appended to the string representation.
 
+    !!! note "XML format"
+
+        When using `format='xml'`:
+
+        - All messages use uniform `<message type="role">content</message>` format.
+        - The `type` attribute uses `human_prefix` (lowercased) for `HumanMessage`,
+            `ai_prefix` (lowercased) for `AIMessage`, `system_prefix` (lowercased)
+            for `SystemMessage`, `function_prefix` (lowercased) for `FunctionMessage`,
+            `tool_prefix` (lowercased) for `ToolMessage`, and the original role
+            (unchanged) for `ChatMessage`.
+        - Message content is escaped using `xml.sax.saxutils.escape()`.
+        - Attribute values are escaped using `xml.sax.saxutils.quoteattr()`.
+        - AI messages with tool calls use nested structure with `<content>` and
+            `<tool_call>` elements.
+        - For multi-modal content (list of content blocks), supported block types
+            are: `text`, `reasoning`, `image` (URL/file_id only), `image_url`
+            (OpenAI-style, URL only), `audio` (URL/file_id only), `video` (URL/file_id
+            only), `text-plain`, `server_tool_call`, and `server_tool_result`.
+        - Content blocks with base64-encoded data are skipped (including blocks
+            with `base64` field or `data:` URLs).
+        - Unknown block types are skipped.
+        - Plain text document content (`text-plain`), server tool call arguments,
+            and server tool result outputs are truncated to 500 characters.
+
     Example:
+        Default prefix format:
+
         ```python
-        from langchain_core import AIMessage, HumanMessage
+        from langchain_core.messages import AIMessage, HumanMessage, get_buffer_string
 
         messages = [
             HumanMessage(content="Hi, how are you?"),
@@ -134,7 +358,54 @@ def get_buffer_string(
         get_buffer_string(messages)
         # -> "Human: Hi, how are you?\nAI: Good, how are you?"
         ```
+
+        XML format (useful when content contains role-like prefixes):
+
+        ```python
+        messages = [
+            HumanMessage(content="Example: Human: some text"),
+            AIMessage(content="I see the example."),
+        ]
+        get_buffer_string(messages, format="xml")
+        # -> '<message type="human">Example: Human: some text</message>\\n'
+        # -> '<message type="ai">I see the example.</message>'
+        ```
+
+        XML format with special characters (automatically escaped):
+
+        ```python
+        messages = [
+            HumanMessage(content="Is 5 < 10 & 10 > 5?"),
+        ]
+        get_buffer_string(messages, format="xml")
+        # -> '<message type="human">Is 5 &lt; 10 &amp; 10 &gt; 5?</message>'
+        ```
+
+        XML format with tool calls:
+
+        ```python
+        messages = [
+            AIMessage(
+                content="I'll search for that.",
+                tool_calls=[
+                    {"id": "call_123", "name": "search", "args": {"query": "weather"}}
+                ],
+            ),
+        ]
+        get_buffer_string(messages, format="xml")
+        # -> '<message type="ai">\\n'
+        # -> '  <content>I\\'ll search for that.</content>\\n'
+        # -> '  <tool_call id="call_123" name="search">'
+        # -> '{"query": "weather"}</tool_call>\\n'
+        # -> '</message>'
+        ```
     """
+    if format not in ("prefix", "xml"):
+        msg = (
+            f"Unrecognized format={format!r}. Supported formats are 'prefix' and 'xml'."
+        )
+        raise ValueError(msg)
+
     string_messages = []
     for m in messages:
         if isinstance(m, HumanMessage):
@@ -142,25 +413,92 @@ def get_buffer_string(
         elif isinstance(m, AIMessage):
             role = ai_prefix
         elif isinstance(m, SystemMessage):
-            role = "System"
+            role = system_prefix
         elif isinstance(m, FunctionMessage):
-            role = "Function"
+            role = function_prefix
         elif isinstance(m, ToolMessage):
-            role = "Tool"
+            role = tool_prefix
         elif isinstance(m, ChatMessage):
             role = m.role
         else:
             msg = f"Got unsupported message type: {m}"
             raise ValueError(msg)  # noqa: TRY004
 
-        message = f"{role}: {m.text}"
+        if format == "xml":
+            msg_type = _get_message_type_str(
+                m, human_prefix, ai_prefix, system_prefix, function_prefix, tool_prefix
+            )
 
-        if isinstance(m, AIMessage):
-            if m.tool_calls:
-                message += f"{m.tool_calls}"
-            elif "function_call" in m.additional_kwargs:
-                # Legacy behavior assumes only one function call per message
-                message += f"{m.additional_kwargs['function_call']}"
+            # Format content blocks
+            if isinstance(m.content, str):
+                content_parts = [escape(m.content)] if m.content else []
+            else:
+                # List of content blocks
+                content_parts = []
+                for block in m.content:
+                    if isinstance(block, str):
+                        if block:
+                            content_parts.append(escape(block))
+                    else:
+                        formatted = _format_content_block_xml(block)
+                        if formatted:
+                            content_parts.append(formatted)
+
+            # Check if this is an AIMessage with tool calls
+            has_tool_calls = isinstance(m, AIMessage) and m.tool_calls
+            has_function_call = (
+                isinstance(m, AIMessage)
+                and not m.tool_calls
+                and "function_call" in m.additional_kwargs
+            )
+
+            if has_tool_calls or has_function_call:
+                # Use nested structure for AI messages with tool calls
+                # Type narrowing: at this point m is AIMessage (verified above)
+                ai_msg = cast("AIMessage", m)
+                parts = [f"<message type={quoteattr(msg_type)}>"]
+                if content_parts:
+                    parts.append(f"  <content>{' '.join(content_parts)}</content>")
+
+                if has_tool_calls:
+                    for tc in ai_msg.tool_calls:
+                        tc_id = quoteattr(str(tc.get("id") or ""))
+                        tc_name = quoteattr(str(tc.get("name") or ""))
+                        tc_args = escape(
+                            json.dumps(tc.get("args", {}), ensure_ascii=False)
+                        )
+                        parts.append(
+                            f"  <tool_call id={tc_id} name={tc_name}>"
+                            f"{tc_args}</tool_call>"
+                        )
+                elif has_function_call:
+                    fc = ai_msg.additional_kwargs["function_call"]
+                    fc_name = quoteattr(str(fc.get("name") or ""))
+                    fc_args = escape(str(fc.get("arguments") or "{}"))
+                    parts.append(
+                        f"  <function_call name={fc_name}>{fc_args}</function_call>"
+                    )
+
+                parts.append("</message>")
+                message = "\n".join(parts)
+            else:
+                # Simple structure for messages without tool calls
+                joined_content = " ".join(content_parts)
+                message = (
+                    f"<message type={quoteattr(msg_type)}>{joined_content}</message>"
+                )
+        else:  # format == "prefix"
+            content = m.text
+            message = f"{role}: {content}"
+            tool_info = ""
+            if isinstance(m, AIMessage):
+                if m.tool_calls:
+                    tool_info = str(m.tool_calls)
+                elif "function_call" in m.additional_kwargs:
+                    # Legacy behavior assumes only one function call per message
+                    tool_info = str(m.additional_kwargs["function_call"])
+            if tool_info:
+                message += tool_info  # Preserve original behavior
 
         string_messages.append(message)
 
@@ -1849,6 +2187,7 @@ def count_tokens_approximately(
     chars_per_token: float = 4.0,
     extra_tokens_per_message: float = 3.0,
     count_name: bool = True,
+    tokens_per_image: int = 85,
 ) -> int:
     """Approximate the total number of tokens in messages.
 
@@ -1856,21 +2195,22 @@ def count_tokens_approximately(
 
     - For AI messages, the token count also includes stringified tool calls.
     - For tool messages, the token count also includes the tool call ID.
+    - For multimodal messages with images, applies a fixed token penalty per image
+      instead of counting base64-encoded characters.
 
     Args:
         messages: List of messages to count tokens for.
         chars_per_token: Number of characters per token to use for the approximation.
-
             One token corresponds to ~4 chars for common English text.
-
             You can also specify `float` values for more fine-grained control.
             [See more here](https://platform.openai.com/tokenizer).
         extra_tokens_per_message: Number of extra tokens to add per message, e.g.
             special tokens, including beginning/end of message.
-
             You can also specify `float` values for more fine-grained control.
             [See more here](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb).
         count_name: Whether to include message names in the count.
+        tokens_per_image: Fixed token cost per image (default: 85, aligned with
+            OpenAI's low-resolution image token cost).
 
     Returns:
         Approximate number of tokens in the messages.
@@ -1879,19 +2219,42 @@ def count_tokens_approximately(
         This is a simple approximation that may not match the exact token count used by
         specific models. For accurate counts, use model-specific tokenizers.
 
-    Warning:
-        This function does not currently support counting image tokens.
+        For multimodal messages containing images, a fixed token penalty is applied
+        per image instead of counting base64-encoded characters, which provides a
+        more realistic approximation.
 
     !!! version-added "Added in `langchain-core` 0.3.46"
     """
     token_count = 0.0
     for message in convert_to_messages(messages):
         message_chars = 0
+
         if isinstance(message.content, str):
             message_chars += len(message.content)
+        # Handle multimodal content (list of content blocks)
+        elif isinstance(message.content, list):
+            for block in message.content:
+                if isinstance(block, str):
+                    # String block
+                    message_chars += len(block)
+                elif isinstance(block, dict):
+                    block_type = block.get("type", "")
 
-        # TODO: add support for approximate counting for image blocks
+                    # Apply fixed penalty for image blocks
+                    if block_type in ("image", "image_url"):
+                        token_count += tokens_per_image
+                    # Count text blocks normally
+                    elif block_type == "text":
+                        text = block.get("text", "")
+                        message_chars += len(text)
+                    # Conservative estimate for unknown block types
+                    else:
+                        message_chars += len(repr(block))
+                else:
+                    # Fallback for unexpected block types
+                    message_chars += len(repr(block))
         else:
+            # Fallback for other content types
             content = repr(message.content)
             message_chars += len(content)
 

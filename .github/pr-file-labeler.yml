@@ -17,11 +17,6 @@ langchain:
       - any-glob-to-any-file:
           - "libs/langchain_v1/**/*"
 
-cli:
-  - changed-files:
-      - any-glob-to-any-file:
-          - "libs/cli/**/*"
-
 standard-tests:
   - changed-files:
       - any-glob-to-any-file:

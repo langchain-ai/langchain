@@ -1,4 +1,4 @@
-"""LLMResult class."""
+"""`LLMResult` class."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from langchain_core.outputs.run_info import RunInfo
 class LLMResult(BaseModel):
     """A container for results of an LLM call.
 
-    Both chat models and LLMs generate an LLMResult object. This object contains the
+    Both chat models and LLMs generate an `LLMResult` object. This object contains the
     generated outputs and any additional information that the model provider wants to
     return.
     """
@@ -33,9 +33,10 @@ class LLMResult(BaseModel):
     - When returned from **an LLM**, the type is `list[list[Generation]]`.
     - When returned from a **chat model**, the type is `list[list[ChatGeneration]]`.
 
-    ChatGeneration is a subclass of Generation that has a field for a structured chat
-    message.
+    `ChatGeneration` is a subclass of `Generation` that has a field for a structured
+    chat message.
     """
+
     llm_output: dict | None = None
     """For arbitrary LLM provider specific output.
 
@@ -45,6 +46,7 @@ class LLMResult(BaseModel):
     Users should generally avoid relying on this field and instead rely on accessing
     relevant information from standardized fields present in AIMessage.
     """
+
     run: list[RunInfo] | None = None
     """List of metadata info for model call for each input.
 
@@ -57,14 +59,14 @@ class LLMResult(BaseModel):
     def flatten(self) -> list[LLMResult]:
         """Flatten generations into a single list.
 
-        Unpack list[list[Generation]] -> list[LLMResult] where each returned LLMResult
-        contains only a single Generation. If token usage information is available,
-        it is kept only for the LLMResult corresponding to the top-choice
-        Generation, to avoid over-counting of token usage downstream.
+        Unpack `list[list[Generation]] -> list[LLMResult]` where each returned
+        `LLMResult` contains only a single `Generation`. If token usage information is
+        available, it is kept only for the `LLMResult` corresponding to the top-choice
+        `Generation`, to avoid over-counting of token usage downstream.
 
         Returns:
-            List of LLMResults where each returned LLMResult contains a single
-                Generation.
+            List of `LLMResult` objects where each returned `LLMResult` contains a
+                single `Generation`.
         """
         llm_results = []
         for i, gen_list in enumerate(self.generations):
