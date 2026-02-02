@@ -9,6 +9,7 @@ from langchain.agents.middleware.human_in_the_loop import (
 from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddleware
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
+from langchain.agents.middleware.noma_guardrails import NomaGuardrailMiddleware
 from langchain.agents.middleware.pii import PIIDetectionError, PIIMiddleware
 from langchain.agents.middleware.shell_tool import (
     CodexSandboxExecutionPolicy,
@@ -57,6 +58,7 @@ __all__ = [
     "ModelRequest",
     "ModelResponse",
     "ModelRetryMiddleware",
+    "NomaGuardrailMiddleware",
     "PIIDetectionError",
     "PIIMiddleware",
     "RedactionRule",
