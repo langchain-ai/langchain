@@ -15,6 +15,7 @@ from pydantic import Field, SecretStr
 
 from langchain_deepseek.chat_models import DEFAULT_API_BASE, ChatDeepSeek
 
+DEEPSEEK_API_KEY = "abc"
 MODEL_NAME = "deepseek-chat"
 
 
