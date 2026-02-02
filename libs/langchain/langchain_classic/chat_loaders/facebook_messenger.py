@@ -26,7 +26,14 @@ import_lookup = create_importer(
 
 
 def __getattr__(name: str) -> Any:
+    if name not in module_lookup:
+        raise AttributeError(
+            f"module '{__name__}' has no attribute '{name}'. "
+            f"Available: {list(module_lookup.keys())}"
+        )
     return import_lookup(name)
+
+# ...existing code...
 
 
 __all__ = ["FolderFacebookMessengerChatLoader", "SingleFileFacebookMessengerChatLoader"]
