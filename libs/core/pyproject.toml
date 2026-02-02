@@ -7,7 +7,19 @@ name = "langchain-core"
 description = "Building applications with LLMs through composability"
 license = {text = "MIT"}
 readme = "README.md"
-authors = []
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
 version = "1.2.8"
 requires-python = ">=3.10.0,<4.0.0"
@@ -25,7 +37,8 @@ dependencies = [
 [project.urls]
 Homepage = "https://docs.langchain.com/"
 Documentation = "https://reference.langchain.com/python/langchain_core/"
-Source = "https://github.com/langchain-ai/langchain/tree/master/libs/core"
+Repository = "https://github.com/langchain-ai/langchain"
+Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-core%3D%3D1%22"
 Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
