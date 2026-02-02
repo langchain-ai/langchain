@@ -315,10 +315,13 @@ def get_buffer_string(
     Raises:
         ValueError: If an unsupported message type is encountered.
 
-    Note:
+    !!! warning
+
         If a message is an `AIMessage` and contains both tool calls under `tool_calls`
         and a function call under `additional_kwargs["function_call"]`, only the tool
         calls will be appended to the string representation.
+
+    !!! note "XML format"
 
         When using `format='xml'`:
 
