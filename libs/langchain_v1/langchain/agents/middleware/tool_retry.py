@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import time
 import warnings
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generic
 
 from langchain_core.messages import ToolMessage
 
@@ -16,7 +16,7 @@ from langchain.agents.middleware._retry import (
     should_retry_exception,
     validate_retry_params,
 )
-from langchain.agents.middleware.types import AgentMiddleware
+from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from langchain.tools import BaseTool
 
 
-class ToolRetryMiddleware(AgentMiddleware):
+class ToolRetryMiddleware(AgentMiddleware[AgentState[Any], ContextT], Generic[ContextT]):
     """Middleware that automatically retries failed tool calls with configurable backoff.
 
     Supports retrying on specific exceptions and exponential backoff.

@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Generic
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
+    AgentState,
+    ContextT,
     ModelCallResult,
     ModelRequest,
     ModelResponse,
@@ -18,7 +20,7 @@ if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
 
 
-class ModelFallbackMiddleware(AgentMiddleware):
+class ModelFallbackMiddleware(AgentMiddleware[AgentState[Any], ContextT], Generic[ContextT]):
     """Automatic fallback to alternative models on errors.
 
     Retries failed model calls with alternative models in sequence until
@@ -68,8 +70,8 @@ class ModelFallbackMiddleware(AgentMiddleware):
 
     def wrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse],
     ) -> ModelCallResult:
         """Try fallback models in sequence on errors.
 
@@ -102,8 +104,8 @@ class ModelFallbackMiddleware(AgentMiddleware):
 
     async def awrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
         """Try fallback models in sequence on errors (async version).
 

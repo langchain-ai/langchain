@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Generic
 
 from langchain_core.messages import AIMessage
 
@@ -15,15 +15,19 @@ from langchain.agents.middleware._retry import (
     should_retry_exception,
     validate_retry_params,
 )
-from langchain.agents.middleware.types import AgentMiddleware, ModelResponse
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ContextT,
+    ModelRequest,
+    ModelResponse,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-    from langchain.agents.middleware.types import ModelRequest
 
-
-class ModelRetryMiddleware(AgentMiddleware):
+class ModelRetryMiddleware(AgentMiddleware[AgentState[Any], ContextT], Generic[ContextT]):
     """Middleware that automatically retries failed model calls with configurable backoff.
 
     Supports retrying on specific exceptions and exponential backoff.
@@ -208,8 +212,8 @@ class ModelRetryMiddleware(AgentMiddleware):
 
     def wrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse],
     ) -> ModelResponse | AIMessage:
         """Intercept model execution and retry on failure.
 
@@ -258,8 +262,8 @@ class ModelRetryMiddleware(AgentMiddleware):
 
     async def awrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
     ) -> ModelResponse | AIMessage:
         """Intercept and control async model execution with retry logic.
 

@@ -13,11 +13,11 @@ import subprocess
 from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Literal
+from typing import Any, Generic, Literal
 
 from langchain_core.tools import tool
 
-from langchain.agents.middleware.types import AgentMiddleware
+from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT
 
 
 def _expand_include_patterns(pattern: str) -> list[str] | None:
@@ -84,7 +84,7 @@ def _match_include_pattern(basename: str, pattern: str) -> bool:
     return any(fnmatch.fnmatch(basename, candidate) for candidate in expanded)
 
 
-class FilesystemFileSearchMiddleware(AgentMiddleware):
+class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[Any], ContextT], Generic[ContextT]):
     """Provides Glob and Grep search over filesystem files.
 
     This middleware adds two tools that search through local filesystem:

@@ -85,8 +85,12 @@ class _ModelRequestOverrides(TypedDict, total=False):
 
 
 @dataclass(init=False)
-class ModelRequest:
-    """Model request information for the agent."""
+class ModelRequest(Generic[ContextT]):
+    """Model request information for the agent.
+
+    Type Parameters:
+        ContextT: The type of the runtime context. Defaults to `None` if not specified.
+    """
 
     model: BaseChatModel
     messages: list[AnyMessage]  # excluding system message
@@ -95,7 +99,7 @@ class ModelRequest:
     tools: list[BaseTool | dict[str, Any]]
     response_format: ResponseFormat[Any] | None
     state: AgentState[Any]
-    runtime: Runtime[ContextT]  # type: ignore[valid-type]
+    runtime: Runtime[ContextT]
     model_settings: dict[str, Any] = field(default_factory=dict)
 
     def __init__(
@@ -194,7 +198,7 @@ class ModelRequest:
         )
         object.__setattr__(self, name, value)
 
-    def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest:
+    def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest[ContextT]:
         """Replace the request with a new request with the given overrides.
 
         Returns a new `ModelRequest` instance with the specified attributes replaced.
@@ -435,8 +439,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
     def wrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse],
     ) -> ModelCallResult:
         """Intercept and control model execution via handler callback.
 
@@ -530,8 +534,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
     async def awrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
         """Intercept and control async model execution via handler callback.
 
@@ -770,7 +774,7 @@ class _CallableReturningSystemMessage(Protocol[StateT_contra, ContextT]):  # typ
     """Callable that returns a prompt string or SystemMessage given `ModelRequest`."""
 
     def __call__(
-        self, request: ModelRequest
+        self, request: ModelRequest[ContextT]
     ) -> str | SystemMessage | Awaitable[str | SystemMessage]:
         """Generate a system prompt string or SystemMessage based on the request."""
         ...
@@ -785,8 +789,8 @@ class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):  # typ
 
     def __call__(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse],
     ) -> ModelCallResult:
         """Intercept model execution via handler callback."""
         ...
@@ -1626,8 +1630,8 @@ def dynamic_prompt(
 
             async def async_wrapped(
                 _self: AgentMiddleware[StateT, ContextT],
-                request: ModelRequest,
-                handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+                request: ModelRequest[ContextT],
+                handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
             ) -> ModelCallResult:
                 prompt = await func(request)  # type: ignore[misc]
                 if isinstance(prompt, SystemMessage):
@@ -1650,10 +1654,10 @@ def dynamic_prompt(
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
+            request: ModelRequest[ContextT],
+            handler: Callable[[ModelRequest[ContextT]], ModelResponse],
         ) -> ModelCallResult:
-            prompt = cast("Callable[[ModelRequest], SystemMessage | str]", func)(request)
+            prompt = cast("Callable[[ModelRequest[ContextT]], SystemMessage | str]", func)(request)
             if isinstance(prompt, SystemMessage):
                 request = request.override(system_message=prompt)
             else:
@@ -1662,11 +1666,11 @@ def dynamic_prompt(
 
         async def async_wrapped_from_sync(
             _self: AgentMiddleware[StateT, ContextT],
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+            request: ModelRequest[ContextT],
+            handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
         ) -> ModelCallResult:
             # Delegate to sync function
-            prompt = cast("Callable[[ModelRequest], SystemMessage | str]", func)(request)
+            prompt = cast("Callable[[ModelRequest[ContextT]], SystemMessage | str]", func)(request)
             if isinstance(prompt, SystemMessage):
                 request = request.override(system_message=prompt)
             else:
@@ -1807,8 +1811,8 @@ def wrap_model_call(
 
             async def async_wrapped(
                 _self: AgentMiddleware[StateT, ContextT],
-                request: ModelRequest,
-                handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+                request: ModelRequest[ContextT],
+                handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
             ) -> ModelCallResult:
                 return await func(request, handler)  # type: ignore[misc, arg-type]
 
@@ -1828,8 +1832,8 @@ def wrap_model_call(
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
+            request: ModelRequest[ContextT],
+            handler: Callable[[ModelRequest[ContextT]], ModelResponse],
         ) -> ModelCallResult:
             return func(request, handler)
 

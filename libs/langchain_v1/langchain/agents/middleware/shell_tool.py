@@ -15,7 +15,7 @@ import uuid
 import weakref
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
+from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal, cast
 
 from langchain_core.messages import ToolMessage
 from langchain_core.runnables import run_in_executor
@@ -38,7 +38,12 @@ from langchain.agents.middleware._redaction import (
     RedactionRule,
     ResolvedRedactionRule,
 )
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, PrivateStateAttr
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ContextT,
+    PrivateStateAttr,
+)
 from langchain.tools import ToolRuntime, tool
 
 if TYPE_CHECKING:
@@ -476,7 +481,7 @@ class _ShellToolInput(BaseModel):
         return self
 
 
-class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
+class ShellToolMiddleware(AgentMiddleware[ShellToolState, ContextT], Generic[ContextT]):
     """Middleware that registers a persistent shell tool for agents.
 
     The middleware exposes a single long-lived shell session. Use the execution policy
@@ -615,7 +620,9 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         return normalized
 
     @override
-    def before_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:
+    def before_agent(
+        self, state: ShellToolState, runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
         """Start the shell session and run startup commands.
 
         Args:
@@ -628,7 +635,9 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         resources = self._get_or_create_resources(state)
         return {"shell_session_resources": resources}
 
-    async def abefore_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:
+    async def abefore_agent(
+        self, state: ShellToolState, runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
         """Async start the shell session and run startup commands.
 
         Args:
@@ -641,7 +650,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         return await run_in_executor(None, self.before_agent, state, runtime)
 
     @override
-    def after_agent(self, state: ShellToolState, runtime: Runtime) -> None:
+    def after_agent(self, state: ShellToolState, runtime: Runtime[ContextT]) -> None:
         """Run shutdown commands and release resources when an agent completes."""
         resources = state.get("shell_session_resources")
         if not isinstance(resources, _SessionResources):
@@ -652,7 +661,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         finally:
             resources.finalizer()
 
-    async def aafter_agent(self, state: ShellToolState, runtime: Runtime) -> None:
+    async def aafter_agent(self, state: ShellToolState, runtime: Runtime[ContextT]) -> None:
         """Async run shutdown commands and release resources when an agent completes."""
         return self.after_agent(state, runtime)
 

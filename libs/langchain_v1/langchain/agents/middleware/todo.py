@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
+from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal, cast
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -17,6 +17,7 @@ from typing_extensions import NotRequired, TypedDict, override
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
+    ContextT,
     ModelCallResult,
     ModelRequest,
     ModelResponse,
@@ -130,7 +131,7 @@ def write_todos(
     )
 
 
-class TodoListMiddleware(AgentMiddleware):
+class TodoListMiddleware(AgentMiddleware[PlanningState, ContextT], Generic[ContextT]):
     """Middleware that provides todo list management capabilities to agents.
 
     This middleware adds a `write_todos` tool that allows agents to create and manage
@@ -195,8 +196,8 @@ class TodoListMiddleware(AgentMiddleware):
 
     def wrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse],
     ) -> ModelCallResult:
         """Update the system message to include the todo system prompt.
 
@@ -222,8 +223,8 @@ class TodoListMiddleware(AgentMiddleware):
 
     async def awrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
         """Update the system message to include the todo system prompt.
 
@@ -248,7 +249,9 @@ class TodoListMiddleware(AgentMiddleware):
         return await handler(request.override(system_message=new_system_message))
 
     @override
-    def after_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any] | None:
+    def after_model(
+        self, state: AgentState[Any], runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
         """Check for parallel write_todos tool calls and return errors if detected.
 
         The todo list is designed to be updated at most once per model turn. Since
@@ -298,7 +301,9 @@ class TodoListMiddleware(AgentMiddleware):
         return None
 
     @override
-    async def aafter_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any] | None:
+    async def aafter_model(
+        self, state: AgentState[Any], runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
         """Check for parallel write_todos tool calls and return errors if detected.
 
         Async version of `after_model`. The todo list is designed to be updated at

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Generic, Literal
 
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage
 from typing_extensions import override
@@ -19,7 +19,7 @@ from langchain.agents.middleware._redaction import (
     detect_mac_address,
     detect_url,
 )
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, hook_config
+from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, hook_config
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from langgraph.runtime import Runtime
 
 
-class PIIMiddleware(AgentMiddleware):
+class PIIMiddleware(AgentMiddleware[AgentState[Any], ContextT], Generic[ContextT]):
     """Detect and handle Personally Identifiable Information (PII) in conversations.
 
     This middleware detects common PII types and applies configurable strategies
@@ -165,7 +165,7 @@ class PIIMiddleware(AgentMiddleware):
     def before_model(
         self,
         state: AgentState[Any],
-        runtime: Runtime,
+        runtime: Runtime[ContextT],
     ) -> dict[str, Any] | None:
         """Check user messages and tool results for PII before model invocation.
 
@@ -260,7 +260,7 @@ class PIIMiddleware(AgentMiddleware):
     async def abefore_model(
         self,
         state: AgentState[Any],
-        runtime: Runtime,
+        runtime: Runtime[ContextT],
     ) -> dict[str, Any] | None:
         """Async check user messages and tool results for PII before model invocation.
 
@@ -281,7 +281,7 @@ class PIIMiddleware(AgentMiddleware):
     def after_model(
         self,
         state: AgentState[Any],
-        runtime: Runtime,
+        runtime: Runtime[ContextT],
     ) -> dict[str, Any] | None:
         """Check AI messages for PII after model invocation.
 
@@ -340,7 +340,7 @@ class PIIMiddleware(AgentMiddleware):
     async def aafter_model(
         self,
         state: AgentState[Any],
-        runtime: Runtime,
+        runtime: Runtime[ContextT],
     ) -> dict[str, Any] | None:
         """Async check AI messages for PII after model invocation.
 
