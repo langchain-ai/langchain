@@ -7,12 +7,24 @@ name = "langchain-tests"
 description = "Standard tests for LangChain implementations"
 license = { text = "MIT" }
 readme = "README.md"
-authors = []
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
-version = "1.1.2"
+version = "1.1.3"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.2,<2.0.0",
+    "langchain-core>=1.2.7,<2.0.0",
     "pytest>=7.0.0,<9.0.0",
     "pytest-asyncio>=0.20.0,<2.0.0",
     "httpx>=0.28.1,<1.0.0",
@@ -21,7 +33,7 @@ dependencies = [
     "pytest-benchmark",
     "pytest-codspeed",
     "pytest-recording",
-    "vcrpy>=7.0.0,<8.0.0",
+    "vcrpy>=8.0.0,<9.0.0",
     "numpy>=1.26.2; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
 ]
@@ -29,7 +41,8 @@ dependencies = [
 [project.urls]
 Homepage = "https://docs.langchain.com/"
 Documentation = "https://docs.langchain.com/"
-Source = "https://github.com/langchain-ai/langchain/tree/master/libs/standard-tests"
+Repository = "https://github.com/langchain-ai/langchain"
+Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-tests%3D%3D1%22"
 Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
@@ -47,6 +60,9 @@ typing = [
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
+
+[tool.uv]
+constraint-dependencies = ["urllib3>=2.6.3"]
 
 [tool.mypy]
 plugins = ["pydantic.mypy"]
