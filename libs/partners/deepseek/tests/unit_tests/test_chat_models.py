@@ -308,6 +308,19 @@ class TestChatDeepSeekStrictMode:
         # The structured model should work with beta endpoint
         assert structured_model is not None
 
+    def test_with_structured_output_typing_schema_raises(self) -> None:
+        llm = ChatDeepSeek(
+            model="deepseek-chat",
+            api_key=SecretStr("test_key"),
+        )
+
+        try:
+            llm.with_structured_output(list[int])
+        except TypeError as exc:
+            assert "schema must be a dict" in str(exc)
+        else:
+            assert False, "TypeError was not raised"
+
 
 def test_profile() -> None:
     """Test that model profile is loaded correctly."""
