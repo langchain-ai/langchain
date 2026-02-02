@@ -411,6 +411,145 @@ def test__merge_messages_mutation() -> None:
     assert messages == original_messages
 
 
+def test__merge_messages_tool_message_cache_control() -> None:
+    """Test that cache_control is migrated from content blocks to tool_result level."""
+    # Test cache_control in content block
+    messages = [
+        ToolMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": "tool output",
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+            tool_call_id="1",
+        ),  # type: ignore[misc]
+    ]
+    expected = [
+        HumanMessage(  # type: ignore[misc]
+            [
+                {
+                    "type": "tool_result",
+                    "content": [{"type": "text", "text": "tool output"}],
+                    "tool_use_id": "1",
+                    "is_error": False,
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+        ),
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
+
+    # Test cache_control in additional_kwargs
+    messages = [
+        ToolMessage(
+            content="tool output",
+            tool_call_id="2",
+            additional_kwargs={"cache_control": {"type": "ephemeral"}},
+        ),  # type: ignore[misc]
+    ]
+    expected = [
+        HumanMessage(  # type: ignore[misc]
+            [
+                {
+                    "type": "tool_result",
+                    "content": "tool output",
+                    "tool_use_id": "2",
+                    "is_error": False,
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+        ),
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
+
+    # Test cache_control in both additional_kwargs and content block
+    # additional_kwargs should take priority
+    messages = [
+        ToolMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": "tool output",
+                    "cache_control": {"type": "ephemeral", "ttl": "5m"},
+                },
+            ],
+            tool_call_id="3",
+            additional_kwargs={"cache_control": {"type": "ephemeral", "ttl": "1h"}},
+        ),  # type: ignore[misc]
+    ]
+    expected = [
+        HumanMessage(  # type: ignore[misc]
+            [
+                {
+                    "type": "tool_result",
+                    "content": [{"type": "text", "text": "tool output"}],
+                    "tool_use_id": "3",
+                    "is_error": False,
+                    "cache_control": {"type": "ephemeral", "ttl": "1h"},
+                },
+            ],
+        ),
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
+
+    # Test multiple content blocks with cache_control only on one
+    messages = [
+        ToolMessage(
+            content=[
+                {"type": "text", "text": "first output"},
+                {
+                    "type": "text",
+                    "text": "second output",
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+            tool_call_id="4",
+        ),  # type: ignore[misc]
+    ]
+    expected = [
+        HumanMessage(  # type: ignore[misc]
+            [
+                {
+                    "type": "tool_result",
+                    "content": [
+                        {"type": "text", "text": "first output"},
+                        {"type": "text", "text": "second output"},
+                    ],
+                    "tool_use_id": "4",
+                    "is_error": False,
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+        ),
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
+
+    # Test ToolMessage without cache_control (should have no cache_control in result)
+    messages = [
+        ToolMessage(content="simple output", tool_call_id="5"),  # type: ignore[misc]
+    ]
+    expected = [
+        HumanMessage(  # type: ignore[misc]
+            [
+                {
+                    "type": "tool_result",
+                    "content": "simple output",
+                    "tool_use_id": "5",
+                    "is_error": False,
+                },
+            ],
+        ),
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
+
+
 def test__format_image() -> None:
     url = "dummyimage.com/600x400/000/fff"
     with pytest.raises(ValueError):
