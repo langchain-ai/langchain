@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import inspect
+from enum import Enum
+
 import asyncio
 import inspect
 import json
@@ -1691,6 +1694,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if type(self).bind_tools is BaseChatModel.bind_tools:
             msg = "with_structured_output is not implemented for this model."
             raise NotImplementedError(msg)
+
+        if inspect.isclass(schema) and issubclass(schema, Enum):
+            raise ValueError(
+                "Enum is not a valid schema for with_structured_output. "
+                "Wrap the Enum inside a Pydantic BaseModel instead."
+            )
 
         llm = self.bind_tools(
             [schema],
