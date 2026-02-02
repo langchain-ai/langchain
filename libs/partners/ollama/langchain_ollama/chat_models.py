@@ -1017,7 +1017,7 @@ class ChatOllama(BaseChatModel):
                     ),
                     generation_info={"ollama_empty_stream": True},
                 )
-            
+
         return final_chunk
 
     def _get_ls_params(

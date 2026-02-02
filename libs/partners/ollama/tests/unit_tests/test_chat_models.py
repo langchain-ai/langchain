@@ -4,7 +4,7 @@ import json
 import logging
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any
+from typing import AsyncIterator , Iterator , Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -473,3 +473,47 @@ def test_chat_ollama_ignores_strict_arg() -> None:
         # Check that 'strict' was NOT passed to the client
         call_kwargs = mock_client.chat.call_args[1]
         assert "strict" not in call_kwargs
+
+
+async def _empty_async_stream(
+    *_args: Any, **_kwargs: Any
+) -> AsyncIterator[Any]:
+    if False:
+        yield None
+
+
+@pytest.mark.asyncio
+async def test_ollama_empty_async_stream_returns_empty_chunk(mocker) -> None:
+    llm = ChatOllama(model="test-model")
+
+    mocker.patch.object(
+        llm,
+        "_acreate_chat_stream",
+        _empty_async_stream,
+    )
+
+    result = await llm.ainvoke("hello")
+
+    assert result.content == ""
+    assert result.response_metadata["ollama_empty_stream"] is True
+
+
+def _empty_sync_stream(
+    *_args: Any, **_kwargs: Any
+) -> Iterator[Any]:
+    if False:
+        yield None
+
+def test_ollama_empty_sync_stream_returns_empty_chunk(mocker) -> None:
+    llm = ChatOllama(model="test-model")
+
+    mocker.patch.object(
+        llm,
+        "_create_chat_stream",
+        _empty_sync_stream,
+    )
+
+    result = llm.invoke("hello")
+
+    assert result.content == ""
+    assert result.response_metadata["ollama_empty_stream"] is True
