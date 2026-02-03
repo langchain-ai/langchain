@@ -19,6 +19,11 @@ from langchain_core.tools import tool
 
 from langchain.agents.middleware.types import AgentMiddleware
 
+# Pattern matches ".." as a path segment only (not within filenames like [...nextauth].ts)
+# Matches: "..", "../", "/..", "/foo/../bar", "..\", "\.."
+# Does NOT match: "...", "[...nextauth].ts", "file...name"
+_PATH_TRAVERSAL_PATTERN = re.compile(r"(^|[/\\])\.\.([/\\]|$)")
+
 
 def _expand_include_patterns(pattern: str) -> list[str] | None:
     """Expand brace patterns like `*.{py,pyi}` into a list of globs."""
@@ -238,8 +243,8 @@ class FilesystemFileSearchMiddleware(AgentMiddleware):
         if not path.startswith("/"):
             path = "/" + path
 
-        # Check for path traversal
-        if ".." in path or "~" in path:
+        # Check for path traversal (only match ".." as a path segment, not in filenames)
+        if _PATH_TRAVERSAL_PATTERN.search(path) or "~" in path:
             msg = "Path traversal not allowed"
             raise ValueError(msg)
 

@@ -7,6 +7,7 @@ memory tools using schema-less tool definitions and tool call interception.
 from __future__ import annotations
 
 import os
+import re
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
@@ -33,6 +34,12 @@ TEXT_EDITOR_TOOL_TYPE = "text_editor_20250728"
 TEXT_EDITOR_TOOL_NAME = "str_replace_based_edit_tool"
 MEMORY_TOOL_TYPE = "memory_20250818"
 MEMORY_TOOL_NAME = "memory"
+
+# Pattern matches ".." as a path segment only
+# (not within filenames like [...nextauth].ts)
+# Matches: "..", "../", "/..", "/foo/../bar", "..\", "\.."
+# Does NOT match: "...", "[...nextauth].ts", "file...name"
+_PATH_TRAVERSAL_PATTERN = re.compile(r"(^|[/\\])\.\.([/\\]|$)")
 
 MEMORY_SYSTEM_PROMPT = """IMPORTANT: ALWAYS VIEW YOUR MEMORY DIRECTORY BEFORE \
 DOING ANYTHING ELSE.
@@ -106,8 +113,8 @@ def _validate_path(path: str, *, allowed_prefixes: Sequence[str] | None = None) 
     Raises:
         ValueError: If path contains traversal sequences or violates prefix rules.
     """
-    # Reject paths with traversal attempts
-    if ".." in path or path.startswith("~"):
+    # Reject paths with traversal attempts (only match ".." as a path segment)
+    if _PATH_TRAVERSAL_PATTERN.search(path) or path.startswith("~"):
         msg = f"Path traversal not allowed: {path}"
         raise ValueError(msg)
 
