@@ -19,6 +19,7 @@ from langchain_core.messages import (
     RemoveMessage,
     SystemMessage,
     ToolMessage,
+    ToolMessageChunk,
     convert_to_messages,
     convert_to_openai_image_block,
     get_buffer_string,
@@ -1021,9 +1022,24 @@ def test_tool_message_str() -> None:
             [[{"index": 0, "text": "bar"}]],
             [{"text": "foo"}, {"index": 0, "text": "bar"}],
         ),
+        # None handling test cases
+        (None, [None], None),
+        (None, [""], ""),
+        ("", [None], ""),
+        (None, ["foo"], "foo"),
+        ("foo", [None], "foo"),
+        (None, [[]], []),
+        ([], [None], []),
+        (None, [["foo"]], ["foo"]),
+        (["foo"], [None], ["foo"]),
+        (None, [None, "foo"], "foo"),
+        ("foo", [None, "bar"], "foobar"),
+        (None, ["foo", None, "bar"], "foobar"),
     ],
 )
-def test_merge_content(first: list | str, others: list, expected: list | str) -> None:
+def test_merge_content(
+    first: list | str | None, others: list, expected: list | str | None
+) -> None:
     actual = merge_content(first, *others)
     assert actual == expected
 
@@ -1048,6 +1064,42 @@ def test_tool_message_tool_call_id() -> None:
     ToolMessage("foo", tool_call_id=uuid.uuid4())
     ToolMessage("foo", tool_call_id=1)
     ToolMessage("foo", tool_call_id=1.0)
+
+
+def test_tool_message_chunk_none_content_merge() -> None:
+    """Test that merging ToolMessageChunk with None content works correctly.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/34909
+    """
+    # None + None = None
+    chunk1 = ToolMessageChunk(content=None, tool_call_id="1")
+    chunk2 = ToolMessageChunk(content=None, tool_call_id="1")
+    result = chunk1 + chunk2
+    assert result.content is None
+
+    # None + str = str
+    chunk1 = ToolMessageChunk(content=None, tool_call_id="1")
+    chunk2 = ToolMessageChunk(content="hello", tool_call_id="1")
+    result = chunk1 + chunk2
+    assert result.content == "hello"
+
+    # str + None = str
+    chunk1 = ToolMessageChunk(content="hello", tool_call_id="1")
+    chunk2 = ToolMessageChunk(content=None, tool_call_id="1")
+    result = chunk1 + chunk2
+    assert result.content == "hello"
+
+    # None + list = list
+    chunk1 = ToolMessageChunk(content=None, tool_call_id="1")
+    chunk2 = ToolMessageChunk(content=["hello"], tool_call_id="1")
+    result = chunk1 + chunk2
+    assert result.content == ["hello"]
+
+    # list + None = list
+    chunk1 = ToolMessageChunk(content=["hello"], tool_call_id="1")
+    chunk2 = ToolMessageChunk(content=None, tool_call_id="1")
+    result = chunk1 + chunk2
+    assert result.content == ["hello"]
 
 
 def test_message_text() -> None:

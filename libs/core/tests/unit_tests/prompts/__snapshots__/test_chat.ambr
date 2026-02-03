@@ -1241,7 +1241,11 @@
                 }),
                 'type': 'array',
               }),
+              dict({
+                'type': 'null',
+              }),
             ]),
+            'default': None,
             'title': 'Content',
           }),
           'id': dict({
@@ -1288,7 +1292,6 @@
           }),
         }),
         'required': list([
-          'content',
           'tool_call_id',
         ]),
         'title': 'ToolMessageChunk',
@@ -2656,7 +2659,11 @@
                 }),
                 'type': 'array',
               }),
+              dict({
+                'type': 'null',
+              }),
             ]),
+            'default': None,
             'title': 'Content',
           }),
           'id': dict({
@@ -2703,7 +2710,6 @@
           }),
         }),
         'required': list([
-          'content',
           'tool_call_id',
         ]),
         'title': 'ToolMessageChunk',
