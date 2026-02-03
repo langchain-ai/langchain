@@ -144,10 +144,8 @@ def _get_approximate_token_counter(model: BaseChatModel) -> TokenCounter:
     if model._llm_type == "anthropic-chat":  # noqa: SLF001
         # 3.3 was estimated in an offline experiment, comparing with Claude's token-counting
         # API: https://platform.claude.com/docs/en/build-with-claude/token-counting
-        return partial(
-            count_tokens_approximately, chars_per_token=3.3, use_usage_metadata_scaling=True
-        )
-    return partial(count_tokens_approximately, use_usage_metadata_scaling=True)
+        return partial(count_tokens_approximately, chars_per_token=3.3)
+    return count_tokens_approximately
 
 
 class SummarizationMiddleware(AgentMiddleware):
