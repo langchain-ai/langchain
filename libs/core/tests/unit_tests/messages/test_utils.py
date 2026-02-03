@@ -1,5 +1,6 @@
 import base64
 import json
+import math
 import re
 from collections.abc import Callable, Sequence
 from typing import Any, TypedDict
@@ -1594,17 +1595,82 @@ def test_count_tokens_approximately_mixed_content_types() -> None:
     assert sum(count_tokens_approximately([m]) for m in messages) == token_count
 
 
-def test_count_tokens_approximately_usage_metadata() -> None:
+def test_count_tokens_approximately_usage_metadata_scaling() -> None:
+    messages = [
+        HumanMessage("text"),
+        AIMessage(
+            "text",
+            response_metadata={"model_provider": "openai"},
+            usage_metadata={"input_tokens": 0, "output_tokens": 0, "total_tokens": 100},
+        ),
+        HumanMessage("text"),
+        AIMessage(
+            "text",
+            response_metadata={"model_provider": "openai"},
+            usage_metadata={"input_tokens": 0, "output_tokens": 0, "total_tokens": 200},
+        ),
+    ]
+
+    unscaled = count_tokens_approximately(messages)
+    scaled = count_tokens_approximately(messages, use_usage_metadata_scaling=True)
+
+    assert scaled == 200
+    assert unscaled < 100
+
+    messages.extend([ToolMessage("text", tool_call_id="abc123")] * 3)
+
+    unscaled_extended = count_tokens_approximately(messages)
+    scaled_extended = count_tokens_approximately(
+        messages, use_usage_metadata_scaling=True
+    )
+
+    # scaling should still be based on the most recent AIMessage with total_tokens=200
+    assert unscaled_extended > unscaled
+    assert scaled_extended > scaled
+
+    # And the scaled total should be the unscaled total multiplied by the same ratio.
+    # ratio = 200 / unscaled (as of last AI message)
+    expected_scaled_extended = math.ceil(unscaled_extended * (200 / unscaled))
+    assert scaled_extended == expected_scaled_extended
+
+
+def test_count_tokens_approximately_usage_metadata_scaling_model_provider() -> None:
     messages = [
         HumanMessage("Hello"),
         AIMessage(
-            [],
-            usage_metadata={"input_tokens": 6, "output_tokens": 50, "total_tokens": 56},
+            "Hi",
+            response_metadata={"model_provider": "openai"},
+            usage_metadata={"input_tokens": 0, "output_tokens": 0, "total_tokens": 100},
         ),
-        AIMessage("Hello"),
+        HumanMessage("More text"),
+        AIMessage(
+            "More response",
+            response_metadata={"model_provider": "anthropic"},
+            usage_metadata={"input_tokens": 0, "output_tokens": 0, "total_tokens": 200},
+        ),
     ]
-    min_expected = 60
-    assert count_tokens_approximately(messages) > min_expected
+
+    unscaled = count_tokens_approximately(messages)
+    scaled = count_tokens_approximately(messages, use_usage_metadata_scaling=True)
+    assert scaled == unscaled
+
+
+def test_count_tokens_approximately_usage_metadata_scaling_total_tokens() -> None:
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage(
+            "Hi",
+            response_metadata={"model_provider": "openai"},
+            # no usage metadata -> skip
+        ),
+    ]
+
+    unscaled = count_tokens_approximately(messages, chars_per_token=5)
+    scaled = count_tokens_approximately(
+        messages, chars_per_token=5, use_usage_metadata_scaling=True
+    )
+
+    assert scaled == unscaled
 
 
 def test_get_buffer_string_with_structured_content() -> None:
