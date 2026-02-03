@@ -5,11 +5,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 
 from langchain_core.messages import (
     AIMessage,
-    AnyMessage,
     BaseMessage,
     HumanMessage,
     get_buffer_string,
@@ -206,8 +205,12 @@ class InMemoryChatMessageHistory(BaseChatMessageHistory, BaseModel):
     Stores messages in a memory list.
     """
 
-    messages: list[AnyMessage] = Field(default_factory=list)
+    messages: list[BaseMessage] = Field(default_factory=list)
     """A list of messages stored in memory."""
+
+    @field_serializer("messages", when_used="json")
+    def _serialize_messages(self, messages: list[BaseMessage]) -> list[dict]:
+        return [m.model_dump() for m in messages]
 
     async def aget_messages(self) -> list[BaseMessage]:
         """Async version of getting messages.
