@@ -2101,7 +2101,11 @@ class BaseChatOpenAI(BaseChatModel):
                 }
             )
 
-            llm = self.bind_tools([schema], **bind_kwargs)
+            tools_to_bind = [schema]
+            if tools:
+                tools_to_bind.extend(tools)
+
+            llm = self.bind_tools(tools_to_bind, **bind_kwargs)
             if is_pydantic_schema:
                 output_parser: Runnable = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
