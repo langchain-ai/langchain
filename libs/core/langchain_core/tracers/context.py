@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import (
@@ -132,7 +133,34 @@ def _get_trace_callbacks(
 def _tracing_v2_is_enabled() -> bool | Literal["local"]:
     if tracing_v2_callback_var.get() is not None:
         return True
-    return ls_utils.tracing_is_enabled()
+
+    # Check if tracing is enabled in the tracing context
+    # This logic mimics langsmith.utils.tracing_is_enabled but
+    # avoids the cached environment variable check.
+    tracing_context = ls_rh.get_tracing_context()
+    # print(f"DEBUG: tracing_context: {tracing_context}")
+    if tracing_context["enabled"] is not None:
+        return cast("bool | Literal['local']", tracing_context["enabled"])
+
+    # Next check if we're mid-trace
+    if ls_rh.get_current_run_tree():
+        return True
+
+    # Finally check environment variables directly
+    # logic from langsmith.utils.get_env_var but without lru_cache
+    for name in ("LANGSMITH_TRACING_V2", "LANGCHAIN_TRACING_V2"):
+        value = os.environ.get(name)
+        # print(f"DEBUG: checking {name} = {value}")
+        if value is not None:
+            return value.lower() in ("true", "1")
+
+    # Legacy env var support
+    for name in ("LANGSMITH_TRACING", "LANGCHAIN_TRACING"):
+        value = os.environ.get(name)
+        if value is not None:
+            return value.lower() in ("true", "1")
+
+    return False
 
 
 def _get_tracer_project() -> str:
