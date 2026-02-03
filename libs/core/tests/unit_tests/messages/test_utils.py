@@ -10,6 +10,7 @@ from typing_extensions import NotRequired, override
 from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
     ChatMessage,
     FunctionMessage,
@@ -18,6 +19,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.messages.content import ToolCallChunk
 from langchain_core.messages.utils import (
     MessageLikeRepresentation,
     convert_to_messages,
@@ -2726,3 +2728,33 @@ def test_count_tokens_approximately_with_custom_image_penalty() -> None:
 
     # Should be ~1600 (image) + ~1 (text) + 3 (extra) = ~1604 tokens
     assert 1600 < token_count < 1610
+
+def test_streaming_tool_call_chunks_are_preserved_across_multiple_merges():
+    chunks = [
+        AIMessageChunk(
+                content="",
+                tool_call_chunks=[
+                    ToolCallChunk(name="foo", args="{", id="1", index=0)
+                ],
+            ),
+        AIMessageChunk(
+                content="",
+                tool_call_chunks=[
+                    ToolCallChunk(name=None, args='"x":', id=None, index=0)
+                ],
+            ),
+        AIMessageChunk(
+                content="",
+                tool_call_chunks=[
+                    ToolCallChunk(name=None, args="1}", id=None, index=0)
+                ],
+            ),
+    ]
+
+    merged = merge_message_runs(chunks)
+
+    assert len(merged) == 1
+
+    tool_calls = merged[0].tool_calls
+    assert len(tool_calls) == 1
+    assert tool_calls[0]["args"] == {"x": 1}

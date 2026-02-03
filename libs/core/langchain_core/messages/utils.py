@@ -1048,27 +1048,36 @@ def merge_message_runs(
     if not messages:
         return []
     messages = convert_to_messages(messages)
-    merged: list[BaseMessage] = []
+    merged_chunks: list[BaseMessageChunk] = []
     for msg in messages:
-        last = merged.pop() if merged else None
-        if not last:
-            merged.append(msg)
-        elif isinstance(msg, ToolMessage) or not isinstance(msg, last.__class__):
-            merged.extend([last, msg])
-        else:
-            last_chunk = _msg_to_chunk(last)
-            curr_chunk = _msg_to_chunk(msg)
-            if curr_chunk.response_metadata:
-                curr_chunk.response_metadata.clear()
-            if (
-                isinstance(last_chunk.content, str)
-                and isinstance(curr_chunk.content, str)
-                and last_chunk.content
-                and curr_chunk.content
-            ):
-                last_chunk.content += chunk_separator
-            merged.append(_chunk_to_msg(last_chunk + curr_chunk))
-    return merged
+        chunk = _msg_to_chunk(msg)
+
+        if not merged_chunks:
+            merged_chunks.append(chunk)
+            continue
+
+        last_chunk = merged_chunks[-1]
+
+        if (
+            isinstance(msg, ToolMessage)
+            or not isinstance(chunk, last_chunk.__class__)
+        ):
+            merged_chunks.append(chunk)
+            continue
+
+        # merge safely at chunk level
+        if (
+            isinstance(last_chunk.content, str)
+            and isinstance(chunk.content, str)
+            and last_chunk.content
+            and chunk.content
+        ):
+            last_chunk.content += chunk_separator
+
+        merged_chunks[-1] = last_chunk + chunk
+
+    # convert ONCE at the end
+    return [_chunk_to_msg(chunk) for chunk in merged_chunks]
 
 
 # TODO: Update so validation errors (for token_counter, for example) are raised on
