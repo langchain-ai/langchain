@@ -2319,7 +2319,8 @@ def count_tokens_approximately(
         and approx_at_last_ai
         and approx_at_last_ai > 0
     ):
-        token_count *= last_ai_total_tokens / approx_at_last_ai
+        scale_factor = last_ai_total_tokens / approx_at_last_ai
+        token_count *= max(1.0, scale_factor)
 
     # round up once more time in case extra_tokens_per_message is a float
     return math.ceil(token_count)

@@ -1673,6 +1673,25 @@ def test_count_tokens_approximately_usage_metadata_scaling_total_tokens() -> Non
     assert scaled == unscaled
 
 
+def test_count_tokens_approximately_usage_metadata_scaling_floor_at_one() -> None:
+    messages = [
+        HumanMessage("text"),
+        AIMessage(
+            "text",
+            response_metadata={"model_provider": "openai"},
+            # Set total_tokens lower than the approximate count up through this message.
+            usage_metadata={"input_tokens": 0, "output_tokens": 0, "total_tokens": 1},
+        ),
+        HumanMessage("text"),
+    ]
+
+    unscaled = count_tokens_approximately(messages)
+    scaled = count_tokens_approximately(messages, use_usage_metadata_scaling=True)
+
+    # scale factor would be < 1, but we floor it at 1.0 to avoid decreasing counts
+    assert scaled == unscaled
+
+
 def test_get_buffer_string_with_structured_content() -> None:
     """Test get_buffer_string with structured content in messages."""
     messages = [
