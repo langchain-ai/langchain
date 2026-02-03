@@ -1,6 +1,9 @@
 from collections.abc import Sequence
 
-from langchain_core.chat_history import BaseChatMessageHistory, InMemoryChatMessageHistory
+from langchain_core.chat_history import (
+    BaseChatMessageHistory,
+    InMemoryChatMessageHistory,
+)
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.messages.tool import ToolCall
 
