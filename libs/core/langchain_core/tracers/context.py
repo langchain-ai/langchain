@@ -138,9 +138,8 @@ def _tracing_v2_is_enabled() -> bool | Literal["local"]:
     # This logic mimics langsmith.utils.tracing_is_enabled but
     # avoids the cached environment variable check.
     tracing_context = ls_rh.get_tracing_context()
-    # print(f"DEBUG: tracing_context: {tracing_context}")
     if tracing_context["enabled"] is not None:
-        return cast("bool | Literal['local']", tracing_context["enabled"])
+        return tracing_context["enabled"]  # type: ignore[no-any-return]
 
     # Next check if we're mid-trace
     if ls_rh.get_current_run_tree():
@@ -148,17 +147,25 @@ def _tracing_v2_is_enabled() -> bool | Literal["local"]:
 
     # Finally check environment variables directly
     # logic from langsmith.utils.get_env_var but without lru_cache
-    for name in ("LANGSMITH_TRACING_V2", "LANGCHAIN_TRACING_V2"):
-        value = os.environ.get(name)
-        # print(f"DEBUG: checking {name} = {value}")
-        if value is not None:
-            return value.lower() in ("true", "1")
+    # Unrolled for performance
+    env = os.environ
 
-    # Legacy env var support
-    for name in ("LANGSMITH_TRACING", "LANGCHAIN_TRACING"):
-        value = os.environ.get(name)
-        if value is not None:
-            return value.lower() in ("true", "1")
+    # Check most common usage first
+    v = env.get("LANGCHAIN_TRACING_V2")
+    if v is not None:
+        return v.lower() in ("true", "1")
+
+    v = env.get("LANGSMITH_TRACING_V2")
+    if v is not None:
+        return v.lower() in ("true", "1")
+
+    v = env.get("LANGCHAIN_TRACING")
+    if v is not None:
+        return v.lower() in ("true", "1")
+
+    v = env.get("LANGSMITH_TRACING")
+    if v is not None:
+        return v.lower() in ("true", "1")
 
     return False
 
