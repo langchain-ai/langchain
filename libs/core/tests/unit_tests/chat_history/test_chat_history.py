@@ -1,7 +1,8 @@
 from collections.abc import Sequence
 
-from langchain_core.chat_history import BaseChatMessageHistory
-from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.chat_history import BaseChatMessageHistory, InMemoryChatMessageHistory
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages.tool import ToolCall
 
 
 def test_add_message_implementation_only() -> None:
@@ -108,3 +109,55 @@ async def test_async_interface() -> None:
     ]
     await chat_history.aclear()
     assert await chat_history.aget_messages() == []
+
+
+def test_inmemory_chat_history_serialization_preserves_tool_calls() -> None:
+    """Test that AIMessage.tool_calls is preserved during serialization.
+
+    This is a regression test for:
+    https://github.com/langchain-ai/langchain/issues/34925
+
+    The issue was that when using `model_dump_json()` on InMemoryChatMessageHistory,
+    subclass-specific fields like `tool_calls` on AIMessage were silently dropped
+    because the `messages` field was typed as `list[BaseMessage]` without
+    `SerializeAsAny`.
+    """
+    tool_call = ToolCall(name="test_tool", args={"arg1": "value1"}, id="call_123")
+    ai_message = AIMessage(content="Using a tool", tool_calls=[tool_call])
+
+    chat_history = InMemoryChatMessageHistory()
+    chat_history.add_message(ai_message)
+
+    # Serialize and deserialize
+    json_data = chat_history.model_dump_json()
+    restored = InMemoryChatMessageHistory.model_validate_json(json_data)
+
+    # Verify the message is restored correctly
+    assert len(restored.messages) == 1
+    restored_msg = restored.messages[0]
+    assert isinstance(restored_msg, AIMessage)
+    assert restored_msg.content == "Using a tool"
+
+    # The key assertion: tool_calls should be preserved
+    assert len(restored_msg.tool_calls) == 1
+    assert restored_msg.tool_calls[0]["name"] == "test_tool"
+    assert restored_msg.tool_calls[0]["args"] == {"arg1": "value1"}
+    assert restored_msg.tool_calls[0]["id"] == "call_123"
+
+
+def test_inmemory_chat_history_serialization_preserves_response_metadata() -> None:
+    """Test that AIMessage.response_metadata is preserved during serialization."""
+    ai_message = AIMessage(
+        content="Hello",
+        response_metadata={"model": "gpt-4", "finish_reason": "stop"},
+    )
+
+    chat_history = InMemoryChatMessageHistory()
+    chat_history.add_message(ai_message)
+
+    json_data = chat_history.model_dump_json()
+    restored = InMemoryChatMessageHistory.model_validate_json(json_data)
+
+    restored_msg = restored.messages[0]
+    assert isinstance(restored_msg, AIMessage)
+    assert restored_msg.response_metadata == {"model": "gpt-4", "finish_reason": "stop"}
