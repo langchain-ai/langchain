@@ -5,7 +5,7 @@
 # Runs daily with the option to trigger manually.
 
 name: "⏰ Integration Tests"
-run-name: "Run Integration Tests - ${{ inputs.working-directory-override || (inputs.working-directory != 'all' && inputs.working-directory) || 'all libs' }} (Python ${{ inputs.python-version-override || '3.10, 3.13' }})"
+run-name: "Run Integration Tests - ${{ inputs.working-directory-override || (inputs.working-directory != 'all' && inputs.working-directory) || 'all libs' }} (Python ${{ inputs.python-version-override || '3.10, 3.14' }})"
 
 on:
   workflow_dispatch:
@@ -42,7 +42,7 @@ on:
         description: "Manual override — takes precedence over dropdown (e.g. libs/partners/partner-xyz)"
       python-version-override:
         type: string
-        description: "Python version override — defaults to 3.10 and 3.13 in matrix (e.g. 3.11)"
+        description: "Python version override — defaults to 3.10 and 3.14 in matrix (e.g. 3.11)"
   schedule:
     - cron: "0 13 * * *" # Runs daily at 1PM UTC (9AM EDT/6AM PDT)
 
@@ -86,8 +86,8 @@ jobs:
           # echo "matrix=..." where matrix is a json formatted str with keys python-version and working-directory
           # python-version defaults to 3.10 and 3.13, overridden to [PYTHON_VERSION_OVERRIDE] if set
           # working-directory priority: override string > dropdown choice > DEFAULT_LIBS
-          python_version='["3.10", "3.13"]'
-          python_version_min_3_11='["3.11", "3.13"]'
+          python_version='["3.10", "3.14"]'
+          python_version_min_3_11='["3.11", "3.14"]'
           working_directory="$DEFAULT_LIBS"
           if [ -n "$PYTHON_VERSION_OVERRIDE" ]; then
             python_version="[\"$PYTHON_VERSION_OVERRIDE\"]"
