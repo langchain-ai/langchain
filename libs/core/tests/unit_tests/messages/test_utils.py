@@ -1594,6 +1594,19 @@ def test_count_tokens_approximately_mixed_content_types() -> None:
     assert sum(count_tokens_approximately([m]) for m in messages) == token_count
 
 
+def test_count_tokens_approximately_usage_metadata() -> None:
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage(
+            [],
+            usage_metadata={"input_tokens": 6, "output_tokens": 50, "total_tokens": 56},
+        ),
+        AIMessage("Hello"),
+    ]
+    min_expected = 60
+    assert count_tokens_approximately(messages) > min_expected
+
+
 def test_get_buffer_string_with_structured_content() -> None:
     """Test get_buffer_string with structured content in messages."""
     messages = [

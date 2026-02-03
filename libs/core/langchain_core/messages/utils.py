@@ -2227,6 +2227,13 @@ def count_tokens_approximately(
     """
     token_count = 0.0
     for message in convert_to_messages(messages):
+        if (
+            isinstance(message, AIMessage)
+            and message.usage_metadata
+            and (output_tokens := message.usage_metadata.get("output_tokens"))
+        ):
+            token_count += output_tokens
+            continue
         message_chars = 0
 
         if isinstance(message.content, str):
