@@ -1,4 +1,4 @@
-"""Base classes and utilities for `Runnable`s."""
+"""Base classes and utilities for `Runnable` objects."""
 
 from __future__ import annotations
 
@@ -138,7 +138,7 @@ class Runnable(ABC, Generic[Input, Output]):
     - **Batch**: By default, batch runs invoke() in parallel using a thread pool
         executor. Override to optimize batching.
 
-    - **Async**: Methods with `'a'` suffix are asynchronous. By default, they execute
+    - **Async**: Methods with `'a'` prefix are asynchronous. By default, they execute
         the sync counterpart using asyncio's thread pool.
         Override for native async.
 

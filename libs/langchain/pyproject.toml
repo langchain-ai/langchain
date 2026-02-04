@@ -7,7 +7,18 @@ name = "langchain-classic"
 description = "Building applications with LLMs through composability"
 license = { text = "MIT" }
 readme = "README.md"
-authors = []
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
 version = "1.0.1"
 requires-python = ">=3.10.0,<4.0.0"
@@ -44,7 +55,8 @@ perplexity = ["langchain-perplexity"]
 [project.urls]
 Homepage = "https://docs.langchain.com/"
 Documentation = "https://reference.langchain.com/python/langchain_classic/"
-Source = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"
+Repository = "https://github.com/langchain-ai/langchain"
+Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-classic%3D%3D1%22"
 Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
@@ -78,8 +90,7 @@ test = [
     "langchain-openai",
 ]
 test_integration = [
-    "vcrpy>=7.0.0,<8.0.0",
-    "urllib3<2.0.0; python_version < \"3.10\"",
+    "vcrpy>=8.0.0,<9.0.0",
     "wrapt>=1.15.0,<2.0.0",
     "python-dotenv>=1.0.0,<2.0.0",
     "cassio>=0.1.0,<1.0.0",
@@ -110,7 +121,7 @@ typing = [
 dev = [
     "jupyter>=1.0.0,<2.0.0",
     "playwright>=1.28.0,<2.0.0",
-    "setuptools>=67.6.1,<68.0.0",
+    "setuptools>=67.6.1,<81.0.0",
     "langchain-core",
     "langchain-text-splitters",
 ]
@@ -121,6 +132,9 @@ langchain-core = { path = "../core", editable = true }
 langchain-tests = { path = "../standard-tests", editable = true }
 langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
+
+[tool.uv]
+constraint-dependencies = ["urllib3>=2.6.3"]
 
 [tool.ruff]
 exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]

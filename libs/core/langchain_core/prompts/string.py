@@ -1,4 +1,4 @@
-"""BasePrompt schema definition."""
+"""`BasePrompt` schema definition."""
 
 from __future__ import annotations
 
@@ -33,14 +33,16 @@ PromptTemplateFormat = Literal["f-string", "mustache", "jinja2"]
 def jinja2_formatter(template: str, /, **kwargs: Any) -> str:
     """Format a template using jinja2.
 
-    *Security warning*:
-        As of LangChain 0.0.329, this method uses Jinja2's
-        SandboxedEnvironment by default. However, this sand-boxing should
-        be treated as a best-effort approach rather than a guarantee of security.
+    !!! warning "Security"
+
+        As of LangChain 0.0.329, this method uses Jinja2's `SandboxedEnvironment` by
+        default. However, this sandboxing should be treated as a best-effort approach
+        rather than a guarantee of security.
+
         Do not accept jinja2 templates from untrusted sources as they may lead
         to arbitrary Python code execution.
 
-        https://jinja.palletsprojects.com/en/3.1.x/sandbox/
+        [More information.](https://jinja.palletsprojects.com/en/3.1.x/sandbox/)
 
     Args:
         template: The template string.
@@ -123,14 +125,14 @@ def mustache_template_vars(
 ) -> set[str]:
     """Get the top-level variables from a mustache template.
 
-    For nested variables like `{{person.name}}`, only the top-level
-    key (`person`) is returned.
+    For nested variables like `{{person.name}}`, only the top-level key (`person`) is
+    returned.
 
     Args:
         template: The template string.
 
     Returns:
-       The top-level variables from the template.
+        The top-level variables from the template.
     """
     variables: set[str] = set()
     section_depth = 0
@@ -222,7 +224,9 @@ def check_valid_template(
 
     Args:
         template: The template string.
-        template_format: The template format. Should be one of "f-string" or "jinja2".
+        template_format: The template format.
+
+            Should be one of `'f-string'` or `'jinja2'`.
         input_variables: The input variables.
 
     Raises:
@@ -252,7 +256,9 @@ def get_template_variables(template: str, template_format: str) -> list[str]:
 
     Args:
         template: The template string.
-        template_format: The template format. Should be one of "f-string" or "jinja2".
+        template_format: The template format.
+
+            Should be one of `'f-string'`, `'mustache'` or `'jinja2'`.
 
     Returns:
         The variables from the template.
@@ -366,7 +372,7 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
 
 
 def is_subsequence(child: Sequence, parent: Sequence) -> bool:
-    """Return True if child is subsequence of parent."""
+    """Return `True` if child is subsequence of parent."""
     if len(child) == 0 or len(parent) == 0:
         return False
     if len(parent) < len(child):
