@@ -14,13 +14,12 @@ class Generation(Serializable):
     Generation represents the response from an "old-fashioned" LLM (string-in,
     string-out) that generates regular text (not chat messages).
 
-    This model is used internally by chat model and will eventually
-    be mapped to a more general `LLMResult` object, and then projected into
-    an `AIMessage` object.
+    This model is used internally by chat model and will eventually be mapped to a more
+    general `LLMResult` object, and then projected into an `AIMessage` object.
 
     LangChain users working with chat models will usually access information via
-    `AIMessage` (returned from runnable interfaces) or `LLMResult` (available
-    via callbacks). Please refer to `AIMessage` and `LLMResult` for more information.
+    `AIMessage` (returned from runnable interfaces) or `LLMResult` (available via
+    callbacks). Please refer to `AIMessage` and `LLMResult` for more information.
     """
 
     text: str
@@ -31,10 +30,11 @@ class Generation(Serializable):
 
     May include things like the reason for finishing or token log probabilities.
     """
+
     type: Literal["Generation"] = "Generation"
     """Type is used exclusively for serialization purposes.
 
-    Set to "Generation" for this class.
+    Set to `'Generation'` for this class.
     """
 
     @classmethod
@@ -53,10 +53,10 @@ class Generation(Serializable):
 
 
 class GenerationChunk(Generation):
-    """`GenerationChunk`, which can be concatenated with other Generation chunks."""
+    """`GenerationChunk`, which can be concatenated with other `Generation` chunks."""
 
     def __add__(self, other: GenerationChunk) -> GenerationChunk:
-        """Concatenate two `GenerationChunk`s.
+        """Concatenate two `GenerationChunk` objects.
 
         Args:
             other: Another `GenerationChunk` to concatenate with.
