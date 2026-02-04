@@ -5,11 +5,11 @@ This file demonstrates:
 2. Correctly typed middlewares (ContextT/ResponseT match) - full type safety
 3. Type errors that are caught when types don't match
 
-Run type check: uv run --group lint mypy tests/unit_tests/agents/test_middleware_typing.py
-Run tests: uv run --group test pytest tests/unit_tests/agents/test_middleware_typing.py -v
+Run type check: uv run --group typing mypy <this file>
+Run tests: uv run --group test pytest <this file> -v
 
 To see type errors being caught, run:
-  uv run --group lint mypy tests/unit_tests/agents/test_middleware_type_errors.py
+  uv run --group typing mypy .../test_middleware_type_errors.py
 """
 
 from __future__ import annotations

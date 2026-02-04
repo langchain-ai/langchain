@@ -1,7 +1,7 @@
 """Demonstrate type errors that mypy catches for ContextT and ResponseT mismatches.
 
 This file contains intentional type errors to demonstrate that mypy catches them.
-Run: uv run --group lint mypy tests/unit_tests/agents/test_middleware_type_errors.py
+Run: uv run --group typing mypy <this file>
 
 Expected errors:
 1. TypedDict "UserContext" has no key "session_id" - accessing wrong context field
@@ -65,7 +65,7 @@ class WrongContextFieldsMiddleware(AgentMiddleware[AgentState[Any], UserContext,
         handler: Callable[[ModelRequest[UserContext]], ModelResponse[Any]],
     ) -> ModelResponse[Any]:
         # TYPE ERROR: 'session_id' doesn't exist on UserContext
-        session_id: str = request.runtime.context["session_id"]
+        session_id: str = request.runtime.context["session_id"]  # type: ignore[typeddict-item]
         _ = session_id
         return handler(request)
 
@@ -74,7 +74,7 @@ class WrongContextFieldsMiddleware(AgentMiddleware[AgentState[Any], UserContext,
 # ERROR 2: Mismatched ModelRequest type parameter in method signature
 # =============================================================================
 class MismatchedRequestMiddleware(AgentMiddleware[AgentState[Any], UserContext, Any]):
-    def wrap_model_call(
+    def wrap_model_call(  # type: ignore[override]
         self,
         # TYPE ERROR: Should be ModelRequest[UserContext], not SessionContext
         request: ModelRequest[SessionContext],
@@ -99,7 +99,7 @@ def test_mismatched_context_schema() -> None:
     # TYPE ERROR: SessionContextMiddleware expects SessionContext,
     # but context_schema is UserContext
     fake_model = FakeToolCallingModel()
-    _agent = create_agent(
+    _agent = create_agent(  # type: ignore[misc]
         model=fake_model,
         middleware=[SessionContextMiddleware()],
         context_schema=UserContext,
@@ -122,7 +122,7 @@ def test_backwards_compat_with_context_schema() -> None:
     # TYPE ERROR: BackwardsCompatibleMiddleware is AgentMiddleware[..., None]
     # but context_schema=UserContext expects AgentMiddleware[..., UserContext]
     fake_model = FakeToolCallingModel()
-    _agent = create_agent(
+    _agent = create_agent(  # type: ignore[misc]
         model=fake_model,
         middleware=[BackwardsCompatibleMiddleware()],
         context_schema=UserContext,
@@ -143,7 +143,7 @@ class WrongResponseFieldsMiddleware(
         response = handler(request)
         if response.structured_response is not None:
             # TYPE ERROR: 'summary' doesn't exist on AnalysisResult
-            summary: str = response.structured_response.summary
+            summary: str = response.structured_response.summary  # type: ignore[attr-defined]
             _ = summary
         return response
 
@@ -154,7 +154,7 @@ class WrongResponseFieldsMiddleware(
 class MismatchedResponseMiddleware(
     AgentMiddleware[AgentState[AnalysisResult], ContextT, AnalysisResult]
 ):
-    def wrap_model_call(
+    def wrap_model_call(  # type: ignore[override]
         self,
         request: ModelRequest[ContextT],
         # TYPE ERROR: Handler should return ModelResponse[AnalysisResult], not SummaryResult
@@ -177,8 +177,8 @@ class AnalysisMiddleware(AgentMiddleware[AgentState[AnalysisResult], ContextT, A
 
 
 def test_mismatched_response_format() -> None:
-    # TYPE ERROR: AnalysisMiddleware expects AnalysisResult,
-    # but response_format is SummaryResult
+    # TODO: TYPE ERROR not yet detected by mypy - AnalysisMiddleware expects AnalysisResult,
+    # but response_format is SummaryResult. This requires more sophisticated typing.
     fake_model = FakeToolCallingModel()
     _agent = create_agent(
         model=fake_model,
@@ -193,7 +193,7 @@ def test_mismatched_response_format() -> None:
 class WrongReturnTypeMiddleware(
     AgentMiddleware[AgentState[AnalysisResult], ContextT, AnalysisResult]
 ):
-    def wrap_model_call(
+    def wrap_model_call(  # type: ignore[override]
         self,
         request: ModelRequest[ContextT],
         handler: Callable[[ModelRequest[ContextT]], ModelResponse[AnalysisResult]],

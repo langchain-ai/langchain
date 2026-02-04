@@ -3,8 +3,8 @@
 This file verifies that middlewares written BEFORE the ResponseT change still work.
 All patterns that were valid before should remain valid.
 
-Run type check: uv run --group lint mypy tests/unit_tests/agents/test_middleware_backwards_compat.py
-Run tests: uv run --group test pytest tests/unit_tests/agents/test_middleware_backwards_compat.py -v
+Run type check: uv run --group typing mypy <this file>
+Run tests: uv run --group test pytest <this file> -v
 """
 
 from __future__ import annotations
