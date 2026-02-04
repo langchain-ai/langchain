@@ -315,10 +315,13 @@ def get_buffer_string(
     Raises:
         ValueError: If an unsupported message type is encountered.
 
-    Note:
+    !!! warning
+
         If a message is an `AIMessage` and contains both tool calls under `tool_calls`
         and a function call under `additional_kwargs["function_call"]`, only the tool
         calls will be appended to the string representation.
+
+    !!! note "XML format"
 
         When using `format='xml'`:
 
@@ -2184,6 +2187,8 @@ def count_tokens_approximately(
     chars_per_token: float = 4.0,
     extra_tokens_per_message: float = 3.0,
     count_name: bool = True,
+    tokens_per_image: int = 85,
+    use_usage_metadata_scaling: bool = False,
 ) -> int:
     """Approximate the total number of tokens in messages.
 
@@ -2191,21 +2196,27 @@ def count_tokens_approximately(
 
     - For AI messages, the token count also includes stringified tool calls.
     - For tool messages, the token count also includes the tool call ID.
+    - For multimodal messages with images, applies a fixed token penalty per image
+      instead of counting base64-encoded characters.
 
     Args:
         messages: List of messages to count tokens for.
         chars_per_token: Number of characters per token to use for the approximation.
-
             One token corresponds to ~4 chars for common English text.
-
             You can also specify `float` values for more fine-grained control.
             [See more here](https://platform.openai.com/tokenizer).
         extra_tokens_per_message: Number of extra tokens to add per message, e.g.
             special tokens, including beginning/end of message.
-
             You can also specify `float` values for more fine-grained control.
             [See more here](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb).
         count_name: Whether to include message names in the count.
+        tokens_per_image: Fixed token cost per image (default: 85, aligned with
+            OpenAI's low-resolution image token cost).
+        use_usage_metadata_scaling: If True, and all AI messages have consistent
+            `response_metadata['model_provider']`, scale the approximate token count
+            using the **most recent** AI message that has
+            `usage_metadata['total_tokens']`. The scaling factor is:
+            `AI_total_tokens / approx_tokens_up_to_that_AI_message`
 
     Returns:
         Approximate number of tokens in the messages.
@@ -2214,19 +2225,50 @@ def count_tokens_approximately(
         This is a simple approximation that may not match the exact token count used by
         specific models. For accurate counts, use model-specific tokenizers.
 
-    Warning:
-        This function does not currently support counting image tokens.
+        For multimodal messages containing images, a fixed token penalty is applied
+        per image instead of counting base64-encoded characters, which provides a
+        more realistic approximation.
 
     !!! version-added "Added in `langchain-core` 0.3.46"
     """
+    converted_messages = convert_to_messages(messages)
+
     token_count = 0.0
-    for message in convert_to_messages(messages):
+
+    ai_model_provider: str | None = None
+    invalid_model_provider = False
+    last_ai_total_tokens: int | None = None
+    approx_at_last_ai: float | None = None
+
+    for message in converted_messages:
         message_chars = 0
+
         if isinstance(message.content, str):
             message_chars += len(message.content)
+        # Handle multimodal content (list of content blocks)
+        elif isinstance(message.content, list):
+            for block in message.content:
+                if isinstance(block, str):
+                    # String block
+                    message_chars += len(block)
+                elif isinstance(block, dict):
+                    block_type = block.get("type", "")
 
-        # TODO: add support for approximate counting for image blocks
+                    # Apply fixed penalty for image blocks
+                    if block_type in ("image", "image_url"):
+                        token_count += tokens_per_image
+                    # Count text blocks normally
+                    elif block_type == "text":
+                        text = block.get("text", "")
+                        message_chars += len(text)
+                    # Conservative estimate for unknown block types
+                    else:
+                        message_chars += len(repr(block))
+                else:
+                    # Fallback for unexpected block types
+                    message_chars += len(repr(block))
         else:
+            # Fallback for other content types
             content = repr(message.content)
             message_chars += len(content)
 
@@ -2255,6 +2297,30 @@ def count_tokens_approximately(
 
         # add extra tokens per message
         token_count += extra_tokens_per_message
+
+        if use_usage_metadata_scaling and isinstance(message, AIMessage):
+            model_provider = message.response_metadata.get("model_provider")
+            if ai_model_provider is None:
+                ai_model_provider = model_provider
+            elif model_provider != ai_model_provider:
+                invalid_model_provider = True
+
+            if message.usage_metadata and isinstance(
+                (total_tokens := message.usage_metadata.get("total_tokens")), int
+            ):
+                last_ai_total_tokens = total_tokens
+                approx_at_last_ai = token_count
+
+    if (
+        use_usage_metadata_scaling
+        and not invalid_model_provider
+        and ai_model_provider is not None
+        and last_ai_total_tokens is not None
+        and approx_at_last_ai
+        and approx_at_last_ai > 0
+    ):
+        scale_factor = last_ai_total_tokens / approx_at_last_ai
+        token_count *= min(1.5, max(1.0, scale_factor))
 
     # round up once more time in case extra_tokens_per_message is a float
     return math.ceil(token_count)

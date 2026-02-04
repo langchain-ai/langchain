@@ -1244,6 +1244,18 @@ def test_tool_arg_descriptions() -> None:
     assert args_schema["description"] == expected["description"]
     assert args_schema["properties"] == expected["properties"]
 
+    # Test parsing with runtime does not raise error
+    def foo3_runtime(bar: str, baz: int, runtime: Any) -> str:  # noqa: D417
+        """The foo.
+
+        Args:
+            bar: The bar.
+            baz: The baz.
+        """
+        return bar
+
+    _ = tool(foo3_runtime, parse_docstring=True)
+
     # Test parameterless tool does not raise error for missing Args section
     # in docstring.
     def foo4() -> str:
@@ -2138,10 +2150,15 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
         class ModelA(BaseModelV1, Generic[A], extra="allow"):
             a: A
 
+        class EmptyModel(BaseModelV1, Generic[A], extra="allow"):
+            pass
     else:
 
         class ModelA(BaseModel, Generic[A]):  # type: ignore[no-redef]
             a: A
+            model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
+
+        class EmptyModel(BaseModel, Generic[A]):  # type: ignore[no-redef]
             model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
     class ModelB(ModelA[str]):
@@ -2191,6 +2208,10 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
         "d": int | None,
     }
     actual = get_all_basemodel_annotations(ModelD[int])
+    assert actual == expected
+
+    expected = {}
+    actual = get_all_basemodel_annotations(EmptyModel)
     assert actual == expected
 
 
