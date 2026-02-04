@@ -1,15 +1,30 @@
 """Defense against indirect prompt injection from external/untrusted data sources.
 
-Based on the paper: "Defense Against Indirect Prompt Injection via Tool Result Parsing"
-https://arxiv.org/html/2601.04795v1
+**Protection Category: OUTPUT PROTECTION (Tool Results)**
 
-This module provides a pluggable middleware architecture for defending against indirect
-prompt injection attacks that originate from external data sources (tool results, web
-fetches, file reads, API responses, etc.). New defense strategies can be easily added
-by implementing the `DefenseStrategy` protocol.
+This middleware secures the tool→agent boundary by sanitizing tool outputs
+AFTER tool execution but BEFORE the agent processes them. It prevents attacks
+where malicious instructions are embedded in external data (web pages, emails,
+API responses, etc.).
 
-The middleware applies defenses specifically to tool results by default, which is the
-primary attack vector identified in the paper.
+Based on the papers:
+- "Defense Against Indirect Prompt Injection via Tool Result Parsing" (arXiv:2601.04795)
+- "Indirect Prompt Injections: Are Firewalls All You Need?" (arXiv:2510.05244)
+
+Defense Stack Position::
+
+    User Input → Agent → [Input Minimizer] → Tool → [THIS: Output Sanitizer] → Agent
+
+What it defends against:
+- Malicious instructions hidden in tool outputs (indirect prompt injection)
+- Goal hijacking via external content
+- Unauthorized tool triggering from external data
+
+This module provides a pluggable middleware architecture with multiple strategies:
+- `CheckToolStrategy`: Detects tool-triggering content via native tool-calling
+- `ParseDataStrategy`: Extracts only expected data, filtering injected content
+- `IntentVerificationStrategy`: Verifies tool arguments match user intent
+- `CombinedStrategy`: Chains multiple strategies for defense in depth
 """
 
 from __future__ import annotations
