@@ -1,4 +1,4 @@
-.PHONY: all format lint typing test tests integration_tests help extended_tests
+.PHONY: all format lint test tests integration_tests help extended_tests
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -46,9 +46,7 @@ lint_tests: MYPY_CACHE=.mypy_cache_test
 lint lint_diff lint_package lint_tests:
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES) --diff
-
-typing:
-	mkdir -p $(MYPY_CACHE) && uv run --all-groups mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && uv run --all-groups mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES)
@@ -66,7 +64,6 @@ help:
 	@echo 'check_imports				- check imports'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
-	@echo 'typing                       - run type checking'
 	@echo 'test                         - run unit tests'
 	@echo 'tests                        - run unit tests'
 	@echo 'test TEST_FILE=<test_file>   - run all tests in file'
