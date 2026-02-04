@@ -1,4 +1,4 @@
-.PHONY: all coverage test tests extended_tests test_watch test_watch_extended integration_tests check_imports lint format typing lint_diff format_diff lint_package lint_tests help
+.PHONY: all coverage test tests extended_tests test_watch test_watch_extended integration_tests check_imports lint format type lint_diff format_diff lint_package lint_tests help
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -56,8 +56,9 @@ lint lint_diff lint_package lint_tests:
 	./scripts/lint_imports.sh
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES) --diff
+	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && uv run --all-groups mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
-typing:
+type:
 	mkdir -p $(MYPY_CACHE) && uv run --all-groups mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
@@ -73,7 +74,7 @@ help:
 	@echo '-- LINTING --'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
-	@echo 'typing                       - run type checking'
+	@echo 'type                         - run type checking'
 	@echo '-- TESTS --'
 	@echo 'coverage                     - run unit tests and generate coverage report'
 	@echo 'test                         - run unit tests'
