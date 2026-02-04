@@ -9,8 +9,8 @@ from unittest.mock import MagicMock, patch
 
 from langchain_huggingface.llms import HuggingFaceEndpoint
 
-# Placeholder for tests only; not a real secret (avoids S106 hardcoded-password lint).
-_TEST_HF_TOKEN = "test-token-placeholder"
+# Placeholder for tests only; not a real secret (noqa: S105/S106).
+_TEST_HF_TOKEN = "test-token-placeholder"  # noqa: S105
 
 
 @patch("huggingface_hub.AsyncInferenceClient")
