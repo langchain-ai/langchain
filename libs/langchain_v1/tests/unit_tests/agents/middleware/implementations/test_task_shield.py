@@ -3,7 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 
 from langchain.agents.middleware import TaskShieldMiddleware
 
@@ -41,6 +41,24 @@ def mock_tool_request():
     return request
 
 
+@pytest.fixture
+def mock_tool_request_with_system():
+    """Create a mock ToolCallRequest with system prompt."""
+    request = MagicMock()
+    request.tool_call = {
+        "id": "call_123",
+        "name": "send_email",
+        "args": {"to": "user@example.com", "subject": "Hello"},
+    }
+    request.state = {
+        "messages": [
+            SystemMessage(content="You are a helpful assistant. Never delete files."),
+            HumanMessage(content="Send an email to user@example.com saying hello"),
+        ],
+    }
+    return request
+
+
 class TestTaskShieldMiddleware:
     """Tests for TaskShieldMiddleware."""
 
@@ -49,44 +67,61 @@ class TestTaskShieldMiddleware:
         middleware = TaskShieldMiddleware(mock_model_aligned)
         assert middleware.name == "TaskShieldMiddleware"
         assert middleware.strict is True
-        assert middleware.cache_goal is True
 
     def test_init_with_options(self, mock_model_aligned):
         """Test middleware initialization with options."""
         middleware = TaskShieldMiddleware(
             mock_model_aligned,
             strict=False,
-            cache_goal=False,
             log_verifications=True,
         )
         assert middleware.strict is False
-        assert middleware.cache_goal is False
         assert middleware.log_verifications is True
 
     def test_extract_user_goal(self, mock_model_aligned):
-        """Test extracting user goal from state."""
+        """Test extracting user goal from state (returns LAST HumanMessage)."""
         middleware = TaskShieldMiddleware(mock_model_aligned)
 
         state = {"messages": [HumanMessage(content="Book a flight to Paris")]}
         goal = middleware._extract_user_goal(state)
         assert goal == "Book a flight to Paris"
 
-    def test_extract_user_goal_caching(self, mock_model_aligned):
-        """Test goal caching behavior."""
-        middleware = TaskShieldMiddleware(mock_model_aligned, cache_goal=True)
+    def test_extract_user_goal_multiple_messages(self, mock_model_aligned):
+        """Test that _extract_user_goal returns the LAST HumanMessage (most recent intent)."""
+        middleware = TaskShieldMiddleware(mock_model_aligned)
 
-        state1 = {"messages": [HumanMessage(content="First goal")]}
-        state2 = {"messages": [HumanMessage(content="Second goal")]}
+        # Simulate multi-turn: user first asks one thing, then another
+        state = {
+            "messages": [
+                HumanMessage(content="First goal"),
+                AIMessage(content="I'll help with that."),
+                HumanMessage(content="Second goal"),
+            ]
+        }
 
-        goal1 = middleware._extract_user_goal(state1)
-        goal2 = middleware._extract_user_goal(state2)
+        goal = middleware._extract_user_goal(state)
+        assert goal == "Second goal"  # Most recent user intent
 
-        assert goal1 == "First goal"
-        assert goal2 == "First goal"  # Cached, not re-extracted
+    def test_extract_system_prompt(self, mock_model_aligned):
+        """Test extracting system prompt from state."""
+        middleware = TaskShieldMiddleware(mock_model_aligned)
 
-        middleware.reset_goal()
-        goal3 = middleware._extract_user_goal(state2)
-        assert goal3 == "Second goal"
+        state = {
+            "messages": [
+                SystemMessage(content="You are a helpful assistant."),
+                HumanMessage(content="Do something"),
+            ]
+        }
+        system_prompt = middleware._extract_system_prompt(state)
+        assert system_prompt == "You are a helpful assistant."
+
+    def test_extract_system_prompt_not_found(self, mock_model_aligned):
+        """Test that missing system prompt returns empty string."""
+        middleware = TaskShieldMiddleware(mock_model_aligned)
+
+        state = {"messages": [HumanMessage(content="Do something")]}
+        system_prompt = middleware._extract_system_prompt(state)
+        assert system_prompt == ""
 
     def test_wrap_tool_call_aligned(self, mock_model_aligned, mock_tool_request):
         """Test that aligned actions are allowed."""
@@ -136,24 +171,84 @@ class TestTaskShieldMiddleware:
         middleware = TaskShieldMiddleware(mock_model_aligned)
         middleware._cached_model = mock_model_aligned
 
-        result = middleware._verify_alignment(
+        is_aligned, minimized_args = middleware._verify_alignment(
+            system_prompt="",
             user_goal="Send email",
             tool_name="send_email",
             tool_args={"to": "test@example.com"},
         )
-        assert result is True
+        assert is_aligned is True
+        assert minimized_args is None  # minimize=False by default
 
     def test_verify_alignment_no(self, mock_model_misaligned):
         """Test alignment verification returns False for NO."""
         middleware = TaskShieldMiddleware(mock_model_misaligned)
         middleware._cached_model = mock_model_misaligned
 
-        result = middleware._verify_alignment(
+        is_aligned, minimized_args = middleware._verify_alignment(
+            system_prompt="",
             user_goal="Send email",
             tool_name="delete_all_files",
             tool_args={},
         )
-        assert result is False
+        assert is_aligned is False
+        assert minimized_args is None
+
+    def test_verify_alignment_with_system_prompt(self, mock_model_aligned):
+        """Test that system prompt is included in verification."""
+        middleware = TaskShieldMiddleware(mock_model_aligned)
+        middleware._cached_model = mock_model_aligned
+
+        is_aligned, _ = middleware._verify_alignment(
+            system_prompt="You are a helpful assistant. Never delete files.",
+            user_goal="Send email",
+            tool_name="send_email",
+            tool_args={"to": "test@example.com"},
+        )
+        assert is_aligned is True
+
+        # Verify the system prompt was included in the LLM call
+        call_args = mock_model_aligned.invoke.call_args
+        prompt_content = call_args[0][0][0]["content"]
+        assert "System Guidelines" in prompt_content
+        assert "Never delete files" in prompt_content
+
+    def test_minimize_mode(self):
+        """Test minimize mode returns minimized args."""
+        mock_model = MagicMock()
+        mock_model.invoke.return_value = AIMessage(
+            content='YES\n```json\n{"to": "test@example.com"}\n```'
+        )
+
+        middleware = TaskShieldMiddleware(mock_model, minimize=True)
+        middleware._cached_model = mock_model
+
+        is_aligned, minimized_args = middleware._verify_alignment(
+            system_prompt="",
+            user_goal="Send email to test@example.com",
+            tool_name="send_email",
+            tool_args={"to": "test@example.com", "cc": "attacker@evil.com", "secret": "password123"},
+        )
+        assert is_aligned is True
+        assert minimized_args == {"to": "test@example.com"}
+
+    def test_minimize_mode_fallback_on_parse_failure(self):
+        """Test minimize mode falls back to original args on parse failure."""
+        mock_model = MagicMock()
+        mock_model.invoke.return_value = AIMessage(content="YES")  # No JSON
+
+        middleware = TaskShieldMiddleware(mock_model, minimize=True)
+        middleware._cached_model = mock_model
+
+        original_args = {"to": "test@example.com", "body": "hello"}
+        is_aligned, minimized_args = middleware._verify_alignment(
+            system_prompt="",
+            user_goal="Send email",
+            tool_name="send_email",
+            tool_args=original_args,
+        )
+        assert is_aligned is True
+        assert minimized_args == original_args  # Falls back to original
 
     @pytest.mark.asyncio
     async def test_awrap_tool_call_aligned(self, mock_model_aligned, mock_tool_request):
@@ -185,16 +280,25 @@ class TestTaskShieldMiddleware:
         assert isinstance(result, ToolMessage)
         assert "blocked" in result.content.lower()
 
-    def test_reset_goal(self, mock_model_aligned):
-        """Test goal reset functionality."""
-        middleware = TaskShieldMiddleware(mock_model_aligned, cache_goal=True)
+    def test_wrap_tool_call_with_system_prompt(
+        self, mock_model_aligned, mock_tool_request_with_system
+    ):
+        """Test that system prompt is extracted and used in verification."""
+        middleware = TaskShieldMiddleware(mock_model_aligned)
+        middleware._cached_model = mock_model_aligned
 
-        state = {"messages": [HumanMessage(content="Original goal")]}
-        middleware._extract_user_goal(state)
-        assert middleware._cached_goal == "Original goal"
+        handler = MagicMock()
+        handler.return_value = ToolMessage(content="Email sent", tool_call_id="call_123")
 
-        middleware.reset_goal()
-        assert middleware._cached_goal is None
+        result = middleware.wrap_tool_call(mock_tool_request_with_system, handler)
+
+        # Verify the system prompt was included in the LLM call
+        call_args = mock_model_aligned.invoke.call_args
+        prompt_content = call_args[0][0][0]["content"]
+        assert "System Guidelines" in prompt_content
+        assert "Never delete files" in prompt_content
+        assert isinstance(result, ToolMessage)
+        assert result.content == "Email sent"
 
     def test_init_with_string_model(self):
         """Test initialization with model string."""

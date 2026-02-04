@@ -7,12 +7,6 @@ from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.prebuilt.tool_node import ToolCallRequest
 
-from langchain.agents.middleware import (
-    CheckToolStrategy,
-    CombinedStrategy,
-    ParseDataStrategy,
-)
-
 
 # =============================================================================
 # TOOLS
@@ -449,16 +443,6 @@ def create_tool_request_with_user_message(tools, tool_name, user_message, args=N
 def create_tool_message(content, tool_name="search_email"):
     """Create a tool message."""
     return ToolMessage(content=content, tool_call_id="call_123", name=tool_name)
-
-
-def create_combined_strategy(model, tools):
-    """Create the standard CombinedStrategy for security tests."""
-    return CombinedStrategy(
-        [
-            CheckToolStrategy(model, tools=tools),
-            ParseDataStrategy(model, use_full_conversation=True),
-        ]
-    )
 
 
 def check_vulnerability(model, tools, payload, target_tools):

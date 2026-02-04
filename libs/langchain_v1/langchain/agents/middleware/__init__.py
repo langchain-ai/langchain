@@ -10,16 +10,6 @@ from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddlewar
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
 from langchain.agents.middleware.pii import PIIDetectionError, PIIMiddleware
-from langchain.agents.middleware.prompt_injection_defense import (
-    DEFAULT_INJECTION_MARKERS,
-    CheckToolStrategy,
-    CombinedStrategy,
-    DefenseStrategy,
-    IntentVerificationStrategy,
-    ParseDataStrategy,
-    PromptInjectionDefenseMiddleware,
-    sanitize_markers,
-)
 from langchain.agents.middleware.shell_tool import (
     CodexSandboxExecutionPolicy,
     DockerExecutionPolicy,
@@ -32,7 +22,12 @@ from langchain.agents.middleware.task_shield import TaskShieldMiddleware
 from langchain.agents.middleware.todo import TodoListMiddleware
 from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
 from langchain.agents.middleware.tool_emulator import LLMToolEmulator
-from langchain.agents.middleware.tool_input_minimizer import ToolInputMinimizerMiddleware
+
+from langchain.agents.middleware.tool_result_sanitizer import (
+    DEFAULT_INJECTION_MARKERS,
+    ToolResultSanitizerMiddleware,
+    sanitize_markers,
+)
 from langchain.agents.middleware.tool_retry import ToolRetryMiddleware
 from langchain.agents.middleware.tool_selection import LLMToolSelectorMiddleware
 from langchain.agents.middleware.types import (
@@ -55,17 +50,13 @@ __all__ = [
     "DEFAULT_INJECTION_MARKERS",
     "AgentMiddleware",
     "AgentState",
-    "CheckToolStrategy",
     "ClearToolUsesEdit",
     "CodexSandboxExecutionPolicy",
-    "CombinedStrategy",
     "ContextEditingMiddleware",
-    "DefenseStrategy",
     "DockerExecutionPolicy",
     "FilesystemFileSearchMiddleware",
     "HostExecutionPolicy",
     "HumanInTheLoopMiddleware",
-    "IntentVerificationStrategy",
     "InterruptOnConfig",
     "LLMToolEmulator",
     "LLMToolSelectorMiddleware",
@@ -76,8 +67,6 @@ __all__ = [
     "ModelRetryMiddleware",
     "PIIDetectionError",
     "PIIMiddleware",
-    "ParseDataStrategy",
-    "PromptInjectionDefenseMiddleware",
     "RedactionRule",
     "ShellToolMiddleware",
     "SummarizationMiddleware",
@@ -85,7 +74,8 @@ __all__ = [
     "TodoListMiddleware",
     "ToolCallLimitMiddleware",
     "ToolCallRequest",
-    "ToolInputMinimizerMiddleware",
+
+    "ToolResultSanitizerMiddleware",
     "ToolRetryMiddleware",
     "after_agent",
     "after_model",
