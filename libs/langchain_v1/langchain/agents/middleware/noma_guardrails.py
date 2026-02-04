@@ -1,10 +1,8 @@
 """Noma guardrail middleware for agents."""
 
-import asyncio
+import enum
 import json
-import logging
 import os
-import threading
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, cast
 from urllib.error import HTTPError, URLError
@@ -23,15 +21,19 @@ if TYPE_CHECKING:
     from langgraph.runtime import Runtime
 
 
-_ANONYMIZABLE_DETECTORS = {"sensitiveData", "dataDetector"}
 _BLOCK_MESSAGE_PREFIX = "Request blocked"
 _HTTP_SUCCESS_LIMIT = 300
 _ALLOWED_URL_SCHEMES = {"http", "https"}
-logger = logging.getLogger(__name__)
 
 
 class _NomaAPIError(RuntimeError):
     """Raised when the Noma API request fails."""
+
+
+class _Action(str, enum.Enum):
+    ALLOW = "allow"
+    BLOCK = "block"
+    MASK = "mask"
 
 
 class _NomaClient:
@@ -43,18 +45,14 @@ class _NomaClient:
     def __init__(
         self,
         *,
-        api_base: str | None = None,
         client_id: str | None = None,
         client_secret: str | None = None,
-        token_url: str | None = None,
         timeout: float | None = None,
     ) -> None:
-        self.api_base = (
-            api_base or os.environ.get("NOMA_API_BASE") or self.DEFAULT_API_BASE
-        ).rstrip("/")
+        self.api_base = (os.environ.get("NOMA_API_BASE") or self.DEFAULT_API_BASE).rstrip("/")
         self.client_id = client_id or os.environ.get("NOMA_CLIENT_ID")
         self.client_secret = client_secret or os.environ.get("NOMA_CLIENT_SECRET")
-        self.token_url = token_url or os.environ.get("NOMA_TOKEN_URL") or self.DEFAULT_TOKEN_URL
+        self.token_url = os.environ.get("NOMA_TOKEN_URL") or self.DEFAULT_TOKEN_URL
         self.timeout = timeout or self.DEFAULT_TIMEOUT
 
         if not self.client_id or not self.client_secret:
@@ -118,10 +116,7 @@ class NomaGuardrailMiddleware(AgentMiddleware):
         *,
         client_id: str | None = None,
         client_secret: str | None = None,
-        token_url: str | None = None,
-        api_base: str | None = None,
         application_id: str | None = None,
-        monitor_mode: bool = False,
         block_failures: bool = False,
     ) -> None:
         """Initialize the Noma guardrail middleware.
@@ -129,38 +124,40 @@ class NomaGuardrailMiddleware(AgentMiddleware):
         Args:
             client_id: Noma client ID. Defaults to env NOMA_CLIENT_ID.
             client_secret: Noma client secret. Defaults to env NOMA_CLIENT_SECRET.
-            token_url: Authentication endpoint. Defaults to env NOMA_TOKEN_URL or
-                https://api.noma.security/auth.
-            api_base: Noma API base URL. Defaults to env NOMA_API_BASE or
-                https://api.noma.security.
             application_id: Application identifier for Noma context. Defaults to
                 env NOMA_APPLICATION_ID or "langchain".
-            monitor_mode: If True, run checks in the background and do not block
-                or anonymize. Defaults to False.
             block_failures: If True, block on Noma errors. Defaults to False (fail-open).
         """
         super().__init__()
         self._client = _NomaClient(
-            api_base=api_base,
             client_id=client_id,
             client_secret=client_secret,
-            token_url=token_url,
         )
         self.application_id = application_id or os.environ.get("NOMA_APPLICATION_ID") or "langchain"
-        self.monitor_mode = monitor_mode
         self.block_failures = block_failures
-        self._monitor_tasks: set[asyncio.Task[None]] = set()
 
     def _build_default_context(self, runtime: "Runtime") -> dict[str, Any]:
         context: dict[str, Any] = {"applicationId": self.application_id}
 
+        def _get_dict_value(data: dict[str, Any], *keys: str) -> Any | None:
+            for key in keys:
+                if key in data:
+                    return data[key]
+            return None
+
+        def _get_attr_value(obj: object, *attrs: str) -> Any | None:
+            for attr in attrs:
+                if hasattr(obj, attr):
+                    return getattr(obj, attr)
+            return None
+
         runtime_context = getattr(runtime, "context", None)
         if isinstance(runtime_context, dict):
-            session_id = runtime_context.get("sessionId") or runtime_context.get("session_id")
-            request_id = runtime_context.get("requestId") or runtime_context.get("request_id")
-            labels = runtime_context.get("labels")
-            user_id = runtime_context.get("userId") or runtime_context.get("user_id")
-            ip_address = runtime_context.get("ipAddress") or runtime_context.get("ip_address")
+            session_id = _get_dict_value(runtime_context, "sessionId", "session_id")
+            request_id = _get_dict_value(runtime_context, "requestId", "request_id")
+            labels = _get_dict_value(runtime_context, "labels")
+            user_id = _get_dict_value(runtime_context, "userId", "user_id")
+            ip_address = _get_dict_value(runtime_context, "ipAddress", "ip_address")
             if session_id:
                 context["sessionId"] = session_id
             if request_id:
@@ -172,11 +169,11 @@ class NomaGuardrailMiddleware(AgentMiddleware):
             if ip_address:
                 context["ipAddress"] = ip_address
         elif runtime_context:
-            session_id = getattr(runtime_context, "session_id", None)
-            request_id = getattr(runtime_context, "request_id", None)
-            labels = getattr(runtime_context, "labels", None)
-            user_id = getattr(runtime_context, "user_id", None)
-            ip_address = getattr(runtime_context, "ip_address", None)
+            session_id = _get_attr_value(runtime_context, "session_id", "sessionId")
+            request_id = _get_attr_value(runtime_context, "request_id", "requestId")
+            labels = _get_attr_value(runtime_context, "labels")
+            user_id = _get_attr_value(runtime_context, "user_id", "userId")
+            ip_address = _get_attr_value(runtime_context, "ip_address", "ipAddress")
             if session_id:
                 context["sessionId"] = session_id
             if request_id:
@@ -215,34 +212,6 @@ class NomaGuardrailMiddleware(AgentMiddleware):
 
         return payload
 
-    @staticmethod
-    def _is_positive_result(result_obj: Any) -> bool:
-        return isinstance(result_obj, dict) and result_obj.get("result") is True
-
-    def _only_anonymizable_detectors_triggered(self, results: dict[str, Any]) -> bool:
-        has_sensitive = False
-        has_blocking = False
-
-        for key, value in results.items():
-            if key in {"anonymizedContent", "metadata"}:
-                continue
-            if not isinstance(value, dict):
-                continue
-
-            if key in _ANONYMIZABLE_DETECTORS:
-                for detector_result in value.values():
-                    if self._is_positive_result(detector_result):
-                        has_sensitive = True
-            elif value.get("result") is not None:
-                if self._is_positive_result(value):
-                    has_blocking = True
-            else:
-                for nested_result in value.values():
-                    if self._is_positive_result(nested_result):
-                        has_blocking = True
-
-        return has_sensitive and not has_blocking
-
     def _extract_anonymized_content(self, response: dict[str, Any], role: str) -> str | None:
         scan_result = response.get("scanResult", [])
         if not isinstance(scan_result, list):
@@ -257,21 +226,6 @@ class NomaGuardrailMiddleware(AgentMiddleware):
             if isinstance(anonymized, dict):
                 return anonymized.get("anonymized")
         return None
-
-    def _should_anonymize(self, response: dict[str, Any], role: str) -> bool:
-        if self.monitor_mode:
-            return False
-
-        scan_result = response.get("scanResult", [])
-        if not isinstance(scan_result, list):
-            return False
-        for item in scan_result:
-            if not isinstance(item, dict) or item.get("role") != role:
-                continue
-            results = item.get("results", {})
-            if isinstance(results, dict):
-                return self._only_anonymizable_detectors_triggered(results)
-        return False
 
     def _apply_anonymization(
         self,
@@ -310,7 +264,7 @@ class NomaGuardrailMiddleware(AgentMiddleware):
         }
 
     def _handle_api_failure(self, phase: str) -> dict[str, Any] | None:
-        if self.monitor_mode or not self.block_failures:
+        if not self.block_failures:
             return None
         return {
             "messages": [AIMessage(content=f"Request blocked: Noma guardrail failed ({phase})")],
@@ -335,43 +289,22 @@ class NomaGuardrailMiddleware(AgentMiddleware):
         role: str,
         messages: list[AnyMessage],
     ) -> dict[str, Any] | None:
-        if self.monitor_mode:
-            return None
+        aggregated_action = response.get("aggregatedAction")
+        if isinstance(aggregated_action, str):
+            action = aggregated_action.lower()
+            if action == _Action.ALLOW:
+                return None
+            if action == _Action.MASK:
+                anonymized = self._extract_anonymized_content(response, role)
+                if anonymized:
+                    return self._apply_anonymization(messages, role, anonymized)
+                return self._build_block_response("unsafe content detected")
+            if action == _Action.BLOCK:
+                if self._last_message_is_block(messages):
+                    return {"jump_to": "end"}
+                return self._build_block_response("unsafe content detected")
 
-        if not response.get("aggregatedScanResult"):
-            return None
-
-        if self._should_anonymize(response, role):
-            anonymized = self._extract_anonymized_content(response, role)
-            if anonymized:
-                return self._apply_anonymization(messages, role, anonymized)
-
-        if self._last_message_is_block(messages):
-            return {"jump_to": "end"}
-
-        return self._build_block_response("unsafe content detected")
-
-    def _log_monitor_result(self, phase: str, role: str, response: dict[str, Any] | None) -> None:
-        if not isinstance(response, dict):
-            logger.info("Noma monitor scan result: phase=%s role=%s response=invalid", phase, role)
-            return
-
-        aggregated = response.get("aggregatedScanResult")
-        scan_result = response.get("scanResult", [])
-        scan_items = scan_result if isinstance(scan_result, list) else []
-        roles = [
-            item.get("role")
-            for item in scan_items
-            if isinstance(item, dict) and isinstance(item.get("role"), str)
-        ]
-        logger.info(
-            "Noma monitor scan result: phase=%s role=%s aggregated=%s scan_items=%d roles=%s",
-            phase,
-            role,
-            aggregated,
-            len(scan_items),
-            roles,
-        )
+        return None
 
     def _run_scan(
         self,
@@ -390,24 +323,6 @@ class NomaGuardrailMiddleware(AgentMiddleware):
             return None
 
         payload = self._build_payload(state, runtime, phase)
-        if self.monitor_mode:
-
-            def run_monitor_scan() -> None:
-                try:
-                    response = scan(payload)
-                except Exception as exc:
-                    logger.warning(
-                        "Noma monitor scan failed: phase=%s role=%s error=%s",
-                        phase,
-                        role,
-                        exc,
-                    )
-                    return
-                self._log_monitor_result(phase, role, response)
-
-            threading.Thread(target=run_monitor_scan, daemon=True).start()
-            return None
-
         try:
             response = scan(payload)
         except Exception:
@@ -434,26 +349,6 @@ class NomaGuardrailMiddleware(AgentMiddleware):
             return None
 
         payload = self._build_payload(state, runtime, phase)
-        if self.monitor_mode:
-
-            async def run_monitor_scan() -> None:
-                try:
-                    response = await scan(payload)
-                except Exception as exc:
-                    logger.warning(
-                        "Noma monitor scan failed: phase=%s role=%s error=%s",
-                        phase,
-                        role,
-                        exc,
-                    )
-                    return
-                self._log_monitor_result(phase, role, response)
-
-            task = asyncio.create_task(run_monitor_scan())
-            self._monitor_tasks.add(task)
-            task.add_done_callback(self._monitor_tasks.discard)
-            return None
-
         try:
             response = await scan(payload)
         except Exception:
