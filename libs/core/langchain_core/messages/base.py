@@ -345,10 +345,15 @@ def merge_content(
         The merged content.
 
     """
-    merged: str | list[str | dict]
-    merged = "" if first_content is None else first_content
+    merged = first_content
 
     for content in contents:
+        if content is None or content == "":
+            continue
+        if merged is None or merged == "":
+            merged = content
+            continue
+
         # If current is a string
         if isinstance(merged, str):
             # If the next chunk is also a string, then merge them naively
@@ -363,14 +368,17 @@ def merge_content(
         # If the first content is a list, and the second content is a string
         # If the last element of the first content is a string
         # Add the second content to the last element
-        elif merged and isinstance(merged[-1], str):
+        elif isinstance(merged, list) and merged and isinstance(merged[-1], str):
             merged[-1] += content
-        # If second content is an empty string, treat as a no-op
-        elif content == "":
-            pass
         # Otherwise, add the second content as a new element of the list
-        elif merged:
-            merged.append(content)
+        else:
+            if isinstance(merged, list):
+                merged.append(content)
+            else:
+                merged = [merged, content]
+    
+    if merged is None:
+        return ""
     return merged
 
 
