@@ -1,4 +1,4 @@
-.PHONY: all start_services stop_services coverage coverage_agents test test_fast extended_tests test_watch test_watch_extended integration_tests check_imports check_version lint format lint_diff format_diff lint_package lint_tests help
+.PHONY: all start_services stop_services coverage coverage_agents test test_fast extended_tests test_watch test_watch_extended integration_tests check_imports check_version lint format typing lint_diff format_diff lint_package lint_tests help
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -88,7 +88,9 @@ lint_tests: MYPY_CACHE=.mypy_cache_test
 lint lint_diff lint_package lint_tests:
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES) --diff
-	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && uv run --all-groups mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+
+typing:
+	mkdir -p $(MYPY_CACHE) && uv run --all-groups mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES)
@@ -103,6 +105,7 @@ help:
 	@echo '-- LINTING --'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
+	@echo 'typing                       - run type checking'
 	@echo 'check_version                - validate version consistency'
 	@echo '-- TESTS --'
 	@echo 'coverage                     - run unit tests and generate coverage report'
