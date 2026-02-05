@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import itertools
+from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    Generic,
     cast,
     get_args,
     get_origin,
@@ -61,6 +63,43 @@ if TYPE_CHECKING:
     from langgraph.types import Checkpointer
 
     from langchain.agents.middleware.types import ToolCallRequest, ToolCallWrapper
+
+    _ModelCallHandler = Callable[
+        [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
+        ModelResponse | AIMessage | WrapModelCallResult,
+    ]
+
+    _ComposedModelCallHandler = Callable[
+        [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
+        _ComposedWrapModelCallResult,
+    ]
+
+    _AsyncModelCallHandler = Callable[
+        [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
+        Awaitable[ModelResponse | AIMessage | WrapModelCallResult],
+    ]
+
+    _ComposedAsyncModelCallHandler = Callable[
+        [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
+        Awaitable[_ComposedWrapModelCallResult],
+    ]
+
+
+@dataclass
+class _ComposedWrapModelCallResult(Generic[ResponseT]):
+    """Internal result from composed ``wrap_model_call`` middleware.
+
+    Unlike ``WrapModelCallResult`` (user-facing, single command), this holds the
+    full list of commands accumulated across all middleware layers during
+    composition.
+    """
+
+    model_response: ModelResponse[ResponseT]
+    """The underlying model response."""
+
+    commands: list[Command] = field(default_factory=list)
+    """Commands accumulated from all middleware layers (inner-first, then outer)."""
+
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
@@ -119,64 +158,61 @@ def _normalize_to_model_response(
     return result
 
 
-def _normalize_to_wrap_model_call_result(
-    result: ModelResponse | AIMessage | WrapModelCallResult,
-) -> WrapModelCallResult:
-    """Normalize middleware return value to WrapModelCallResult.
+def _build_commands(
+    model_response: ModelResponse,
+    middleware_commands: list[Command] | None = None,
+) -> list[Command]:
+    """Build a list of Commands from a model response and middleware commands.
 
-    At the outermost composition boundary, ensures the result is always a
-    ``WrapModelCallResult`` so the model node has a single code path.
-    """
-    if isinstance(result, WrapModelCallResult):
-        return result
-    return WrapModelCallResult(
-        model_response=_normalize_to_model_response(result),
-        state_update={},
-    )
+    The first Command contains the model response state (messages and optional
+    structured_response) plus any non-``messages`` updates from middleware.
+    Additional Commands are emitted for each middleware ``messages`` update so
+    the ``add_messages`` reducer makes them additive alongside model response
+    messages.
 
-
-def _build_state_updates_from_wrap_result(response: WrapModelCallResult) -> dict[str, Any]:
-    """Build state updates from a ``WrapModelCallResult``.
-
-    Starts with model response defaults (messages, structured_response), then
-    overlays the middleware's ``state_update``. If ``state_update`` contains a key
-    that conflicts with defaults, the ``state_update`` value wins.
+    Non-reducer state fields (e.g. ``structured_response``, custom keys) are
+    merged into the base Command. Since middleware commands are ordered
+    inner-first then outer, the outermost middleware's value wins for
+    conflicting keys (later values overwrite earlier ones in the dict merge).
 
     Args:
-        response: The wrap model call result containing model response and state updates.
+        model_response: The model response containing messages and optional
+            structured output.
+        middleware_commands: Commands accumulated from middleware layers during
+            composition (inner-first ordering).
 
     Returns:
-        State updates dict ready to be returned from a model node.
+        List of ``Command`` objects ready to be returned from a model node.
     """
-    state_updates: dict[str, Any] = {"messages": response.model_response.result}
+    state: dict[str, Any] = {"messages": model_response.result}
 
-    if response.model_response.structured_response is not None:
-        state_updates["structured_response"] = response.model_response.structured_response
+    if model_response.structured_response is not None:
+        state["structured_response"] = model_response.structured_response
 
-    state_updates.update(response.state_update)
+    # Merge non-messages fields into base state; collect messages for separate Commands
+    extra_message_commands: list[Command] = []
+    for cmd in middleware_commands or []:
+        update = cmd.update or {}
+        if "messages" in update:
+            extra_message_commands.append(Command(update={"messages": update["messages"]}))
+        for key, value in update.items():
+            if key != "messages":
+                state[key] = value
 
-    return state_updates
+    commands = [Command(update=state)]
+    commands.extend(extra_message_commands)
+
+    return commands
 
 
 def _chain_model_call_handlers(
-    handlers: Sequence[
-        Callable[
-            [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
-            ModelResponse | AIMessage | WrapModelCallResult,
-        ]
-    ],
-) -> (
-    Callable[
-        [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
-        WrapModelCallResult,
-    ]
-    | None
-):
-    """Compose multiple `wrap_model_call` handlers into single middleware stack.
+    handlers: Sequence[_ModelCallHandler[ContextT]],
+) -> _ComposedModelCallHandler[ContextT] | None:
+    """Compose multiple ``wrap_model_call`` handlers into single middleware stack.
 
     Composes handlers so first in list becomes outermost layer. Each handler receives a
-    handler callback to execute inner layers. The outermost result is always normalized
-    to ``WrapModelCallResult`` so callers have a single code path.
+    handler callback to execute inner layers. Commands from each layer are accumulated
+    into a list (inner-first, then outer) without merging.
 
     Args:
         handlers: List of handlers.
@@ -184,34 +220,26 @@ def _chain_model_call_handlers(
             First handler wraps all others.
 
     Returns:
-        Composed handler, or `None` if handlers empty.
-
-    Example:
-        ```python
-        # handlers=[auth, retry] means: auth wraps retry
-        # Flow: auth calls retry, retry calls base handler
-        def auth(req, state, runtime, handler):
-            try:
-                return handler(req)
-            except UnauthorizedError:
-                refresh_token()
-                return handler(req)
-
-
-        def retry(req, state, runtime, handler):
-            for attempt in range(3):
-                try:
-                    return handler(req)
-                except Exception:
-                    if attempt == 2:
-                        raise
-
-
-        handler = _chain_model_call_handlers([auth, retry])
-        ```
+        Composed handler returning ``_ComposedWrapModelCallResult``,
+        or ``None`` if handlers empty.
     """
     if not handlers:
         return None
+
+    def _to_composed_result(
+        result: ModelResponse | AIMessage | WrapModelCallResult,
+        extra_commands: list[Command] | None = None,
+    ) -> _ComposedWrapModelCallResult:
+        """Normalize any handler result to _ComposedWrapModelCallResult."""
+        commands: list[Command] = list(extra_commands or [])
+        if isinstance(result, WrapModelCallResult):
+            model_response = result.model_response
+            if result.command is not None:
+                commands.append(result.command)
+        else:
+            model_response = _normalize_to_model_response(result)
+
+        return _ComposedWrapModelCallResult(model_response=model_response, commands=commands)
 
     if len(handlers) == 1:
         single_handler = handlers[0]
@@ -219,59 +247,46 @@ def _chain_model_call_handlers(
         def normalized_single(
             request: ModelRequest[ContextT],
             handler: Callable[[ModelRequest[ContextT]], ModelResponse],
-        ) -> WrapModelCallResult:
-            return _normalize_to_wrap_model_call_result(single_handler(request, handler))
+        ) -> _ComposedWrapModelCallResult:
+            return _to_composed_result(single_handler(request, handler))
 
         return normalized_single
 
     def compose_two(
-        outer: Callable[
-            [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
-            ModelResponse | AIMessage | WrapModelCallResult,
-        ],
-        inner: Callable[
-            [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
-            ModelResponse | AIMessage | WrapModelCallResult,
-        ],
-    ) -> Callable[
-        [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
-        WrapModelCallResult,
-    ]:
+        outer: _ModelCallHandler[ContextT] | _ComposedModelCallHandler[ContextT],
+        inner: _ModelCallHandler[ContextT] | _ComposedModelCallHandler[ContextT],
+    ) -> _ComposedModelCallHandler[ContextT]:
         """Compose two handlers where outer wraps inner."""
 
         def composed(
             request: ModelRequest[ContextT],
             handler: Callable[[ModelRequest[ContextT]], ModelResponse],
-        ) -> WrapModelCallResult:
-            # Closure variable to capture inner's state_update before normalizing
-            accumulated_inner_state: list[dict[str, Any]] = []
+        ) -> _ComposedWrapModelCallResult:
+            # Closure variable to capture inner's commands before normalizing
+            accumulated_commands: list[Command] = []
 
-            # Create a wrapper that calls inner with the base handler and normalizes
-            # Inner boundaries always normalize to ModelResponse
             def inner_handler(req: ModelRequest[ContextT]) -> ModelResponse:
-                # Clear on each call for retry safety — only the last call's
-                # state updates survive
-                accumulated_inner_state.clear()
+                # Clear on each call for retry safety
+                accumulated_commands.clear()
                 inner_result = inner(req, handler)
+                if isinstance(inner_result, _ComposedWrapModelCallResult):
+                    accumulated_commands.extend(inner_result.commands)
+                    return inner_result.model_response
                 if isinstance(inner_result, WrapModelCallResult):
-                    accumulated_inner_state.append(inner_result.state_update)
+                    if inner_result.command is not None:
+                        accumulated_commands.append(inner_result.command)
+                    return inner_result.model_response
                 return _normalize_to_model_response(inner_result)
 
-            # Call outer with the wrapped inner as its handler
             outer_result = outer(request, inner_handler)
-
-            # Normalize outer result then merge inner state under outer (outer wins)
-            inner_state = accumulated_inner_state[0] if accumulated_inner_state else {}
-            outer_wrapped = _normalize_to_wrap_model_call_result(outer_result)
-            return WrapModelCallResult(
-                model_response=outer_wrapped.model_response,
-                state_update={**inner_state, **outer_wrapped.state_update},
+            return _to_composed_result(
+                outer_result,
+                extra_commands=accumulated_commands or None,
             )
 
         return composed
 
     # Compose right-to-left: outer(inner(innermost(handler)))
-    # Seed with the innermost pair so the variable is typed as WrapModelCallResult
     composed_handler = compose_two(handlers[-2], handlers[-1])
     for h in reversed(handlers[:-2]):
         composed_handler = compose_two(h, composed_handler)
@@ -280,23 +295,12 @@ def _chain_model_call_handlers(
 
 
 def _chain_async_model_call_handlers(
-    handlers: Sequence[
-        Callable[
-            [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
-            Awaitable[ModelResponse | AIMessage | WrapModelCallResult],
-        ]
-    ],
-) -> (
-    Callable[
-        [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
-        Awaitable[WrapModelCallResult],
-    ]
-    | None
-):
-    """Compose multiple async `wrap_model_call` handlers into single middleware stack.
+    handlers: Sequence[_AsyncModelCallHandler[ContextT]],
+) -> _ComposedAsyncModelCallHandler[ContextT] | None:
+    """Compose multiple async ``wrap_model_call`` handlers into single middleware stack.
 
-    The outermost result is always normalized to ``WrapModelCallResult`` so callers
-    have a single code path.
+    Commands from each layer are accumulated into a list (inner-first, then outer)
+    without merging.
 
     Args:
         handlers: List of async handlers.
@@ -304,10 +308,26 @@ def _chain_async_model_call_handlers(
             First handler wraps all others.
 
     Returns:
-        Composed async handler, or `None` if handlers empty.
+        Composed async handler returning ``_ComposedWrapModelCallResult``,
+        or ``None`` if handlers empty.
     """
     if not handlers:
         return None
+
+    def _to_composed_result(
+        result: ModelResponse | AIMessage | WrapModelCallResult,
+        extra_commands: list[Command] | None = None,
+    ) -> _ComposedWrapModelCallResult:
+        """Normalize any handler result to _ComposedWrapModelCallResult."""
+        commands: list[Command] = list(extra_commands or [])
+        if isinstance(result, WrapModelCallResult):
+            model_response = result.model_response
+            if result.command is not None:
+                commands.append(result.command)
+        else:
+            model_response = _normalize_to_model_response(result)
+
+        return _ComposedWrapModelCallResult(model_response=model_response, commands=commands)
 
     if len(handlers) == 1:
         single_handler = handlers[0]
@@ -315,59 +335,46 @@ def _chain_async_model_call_handlers(
         async def normalized_single(
             request: ModelRequest[ContextT],
             handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
-        ) -> WrapModelCallResult:
-            return _normalize_to_wrap_model_call_result(await single_handler(request, handler))
+        ) -> _ComposedWrapModelCallResult:
+            return _to_composed_result(await single_handler(request, handler))
 
         return normalized_single
 
     def compose_two(
-        outer: Callable[
-            [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
-            Awaitable[ModelResponse | AIMessage | WrapModelCallResult],
-        ],
-        inner: Callable[
-            [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
-            Awaitable[ModelResponse | AIMessage | WrapModelCallResult],
-        ],
-    ) -> Callable[
-        [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
-        Awaitable[WrapModelCallResult],
-    ]:
+        outer: _AsyncModelCallHandler[ContextT] | _ComposedAsyncModelCallHandler[ContextT],
+        inner: _AsyncModelCallHandler[ContextT] | _ComposedAsyncModelCallHandler[ContextT],
+    ) -> _ComposedAsyncModelCallHandler[ContextT]:
         """Compose two async handlers where outer wraps inner."""
 
         async def composed(
             request: ModelRequest[ContextT],
             handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
-        ) -> WrapModelCallResult:
-            # Closure variable to capture inner's state_update before normalizing
-            accumulated_inner_state: list[dict[str, Any]] = []
+        ) -> _ComposedWrapModelCallResult:
+            # Closure variable to capture inner's commands before normalizing
+            accumulated_commands: list[Command] = []
 
-            # Create a wrapper that calls inner with the base handler and normalizes
-            # Inner boundaries always normalize to ModelResponse
             async def inner_handler(req: ModelRequest[ContextT]) -> ModelResponse:
-                # Clear on each call for retry safety — only the last call's
-                # state updates survive
-                accumulated_inner_state.clear()
+                # Clear on each call for retry safety
+                accumulated_commands.clear()
                 inner_result = await inner(req, handler)
+                if isinstance(inner_result, _ComposedWrapModelCallResult):
+                    accumulated_commands.extend(inner_result.commands)
+                    return inner_result.model_response
                 if isinstance(inner_result, WrapModelCallResult):
-                    accumulated_inner_state.append(inner_result.state_update)
+                    if inner_result.command is not None:
+                        accumulated_commands.append(inner_result.command)
+                    return inner_result.model_response
                 return _normalize_to_model_response(inner_result)
 
-            # Call outer with the wrapped inner as its handler
             outer_result = await outer(request, inner_handler)
-
-            # Normalize outer result then merge inner state under outer (outer wins)
-            inner_state = accumulated_inner_state[0] if accumulated_inner_state else {}
-            outer_wrapped = _normalize_to_wrap_model_call_result(outer_result)
-            return WrapModelCallResult(
-                model_response=outer_wrapped.model_response,
-                state_update={**inner_state, **outer_wrapped.state_update},
+            return _to_composed_result(
+                outer_result,
+                extra_commands=accumulated_commands or None,
             )
 
         return composed
 
     # Compose right-to-left: outer(inner(innermost(handler)))
-    # Seed with the innermost pair so the variable is typed as WrapModelCallResult
     composed_handler = compose_two(handlers[-2], handlers[-1])
     for h in reversed(handlers[:-2]):
         composed_handler = compose_two(h, composed_handler)
@@ -1230,7 +1237,7 @@ def create_agent(
             structured_response=structured_response,
         )
 
-    def model_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> dict[str, Any]:
+    def model_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> list[Command]:
         """Sync model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
@@ -1244,11 +1251,11 @@ def create_agent(
         )
 
         if wrap_model_call_handler is None:
-            response = _normalize_to_wrap_model_call_result(_execute_model_sync(request))
-        else:
-            response = wrap_model_call_handler(request, _execute_model_sync)
+            model_response = _execute_model_sync(request)
+            return _build_commands(model_response)
 
-        return _build_state_updates_from_wrap_result(response)
+        result = wrap_model_call_handler(request, _execute_model_sync)
+        return _build_commands(result.model_response, result.commands)
 
     async def _execute_model_async(request: ModelRequest[ContextT]) -> ModelResponse:
         """Execute model asynchronously and return response.
@@ -1278,7 +1285,7 @@ def create_agent(
             structured_response=structured_response,
         )
 
-    async def amodel_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> dict[str, Any]:
+    async def amodel_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> list[Command]:
         """Async model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
@@ -1292,11 +1299,11 @@ def create_agent(
         )
 
         if awrap_model_call_handler is None:
-            response = _normalize_to_wrap_model_call_result(await _execute_model_async(request))
-        else:
-            response = await awrap_model_call_handler(request, _execute_model_async)
+            model_response = await _execute_model_async(request)
+            return _build_commands(model_response)
 
-        return _build_state_updates_from_wrap_result(response)
+        result = await awrap_model_call_handler(request, _execute_model_async)
+        return _build_commands(result.model_response, result.commands)
 
     # Use sync or async based on model capabilities
     graph.add_node("model", RunnableCallable(model_node, amodel_node, trace=False))

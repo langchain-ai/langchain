@@ -19,8 +19,6 @@ from typing import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
-    from langgraph.types import Command
-
 # Needed as top level import for Pydantic schema generation on AgentState
 import warnings
 from typing import TypeAlias
@@ -35,6 +33,7 @@ from langchain_core.messages import (
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
+from langgraph.types import Command
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
@@ -287,19 +286,17 @@ class ModelResponse(Generic[ResponseT]):
 
 @dataclass
 class WrapModelCallResult(Generic[ResponseT]):
-    """Model response with additional state updates from ``wrap_model_call`` middleware.
+    """Model response with an optional ``Command`` from ``wrap_model_call`` middleware.
 
-    Use this to return state updates alongside the model response from a
-    ``wrap_model_call`` handler. State updates are merged into the agent state
-    after the model node completes.
+    Use this to return a ``Command`` alongside the model response from a
+    ``wrap_model_call`` handler. The command is applied as an additional state
+    update after the model node completes, using the graph's reducers (e.g.
+    ``add_messages`` for the ``messages`` key).
 
-    The ``state_update`` dict overwrites the default model response state updates.
-    For example, if ``state_update`` contains a ``"messages"`` key, those messages
-    replace the model response messages entirely. If you want to include both custom
-    messages and the model response, include them explicitly in your state update.
-
-    When multiple middleware return ``WrapModelCallResult``, the outermost
-    middleware's ``state_update`` wins on key conflicts.
+    Because each ``Command`` is applied through the reducer, messages in the
+    command are **added alongside** the model response messages rather than
+    replacing them. For non-reducer state fields, later commands overwrite
+    earlier ones (outermost middleware wins over inner).
 
     Type Parameters:
         ResponseT: The type of the structured response. Defaults to `Any` if not specified.
@@ -308,8 +305,8 @@ class WrapModelCallResult(Generic[ResponseT]):
     model_response: ModelResponse[ResponseT]
     """The underlying model response."""
 
-    state_update: dict[str, Any]
-    """Additional state updates to merge into the agent state."""
+    command: Command | None = None
+    """Optional command to apply as an additional state update."""
 
 
 # Type alias for middleware return type - allows returning either full response or just AIMessage
@@ -320,7 +317,7 @@ Middleware can return either:
 
 - `ModelResponse`: Full response with messages and optional structured output
 - `AIMessage`: Simplified return for simple use cases
-- `WrapModelCallResult`: Response with additional state updates
+- `WrapModelCallResult`: Response with an optional ``Command`` for additional state updates
 """
 
 

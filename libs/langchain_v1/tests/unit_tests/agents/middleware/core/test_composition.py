@@ -5,9 +5,10 @@ from typing import Any, TypedDict, cast
 
 from langchain_core.messages import AIMessage
 from langgraph.runtime import Runtime
+from langgraph.types import Command
 
 from langchain.agents import AgentState
-from langchain.agents.factory import _chain_model_call_handlers
+from langchain.agents.factory import _chain_model_call_handlers, _ComposedWrapModelCallResult
 from langchain.agents.middleware.types import ModelRequest, ModelResponse, WrapModelCallResult
 
 
@@ -88,9 +89,41 @@ class TestChainModelCallHandlers:
             "inner-after",
             "outer-after",
         ]
-        # Outermost result is always WrapModelCallResult
-        assert isinstance(result, WrapModelCallResult)
+        # Outermost result is always _ComposedWrapModelCallResult
+        assert isinstance(result, _ComposedWrapModelCallResult)
         assert result.model_response.result[0].content == "test"
+
+    def test_two_handlers_with_commands(self) -> None:
+        """Test that commands from inner and outer are collected correctly."""
+
+        def outer(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> WrapModelCallResult:
+            response = handler(request)
+            return WrapModelCallResult(
+                model_response=response,
+                command=Command(update={"outer_key": "outer_val"}),
+            )
+
+        def inner(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> WrapModelCallResult:
+            response = handler(request)
+            return WrapModelCallResult(
+                model_response=response,
+                command=Command(update={"inner_key": "inner_val"}),
+            )
+
+        composed = _chain_model_call_handlers([outer, inner])
+        assert composed is not None
+
+        result = composed(create_test_request(), create_mock_base_handler())
+
+        assert isinstance(result, _ComposedWrapModelCallResult)
+        # Commands are collected: inner first, then outer
+        assert len(result.commands) == 2
+        assert result.commands[0].update == {"inner_key": "inner_val"}
+        assert result.commands[1].update == {"outer_key": "outer_val"}
 
     def test_three_handlers_composition(self) -> None:
         """Test composition of three handlers."""
@@ -134,7 +167,7 @@ class TestChainModelCallHandlers:
             "second-after",
             "first-after",
         ]
-        assert isinstance(result, WrapModelCallResult)
+        assert isinstance(result, _ComposedWrapModelCallResult)
         assert result.model_response.result[0].content == "test"
 
     def test_inner_handler_retry(self) -> None:
@@ -173,7 +206,7 @@ class TestChainModelCallHandlers:
         result = composed(create_test_request(), mock_base_handler)
 
         assert inner_attempts == [0, 1, 2]
-        assert isinstance(result, WrapModelCallResult)
+        assert isinstance(result, _ComposedWrapModelCallResult)
         assert result.model_response.result[0].content == "success"
 
     def test_error_to_success_conversion(self) -> None:
@@ -203,7 +236,7 @@ class TestChainModelCallHandlers:
         result = composed(create_test_request(), mock_base_handler)
 
         # AIMessage was automatically normalized into WrapModelCallResult
-        assert isinstance(result, WrapModelCallResult)
+        assert isinstance(result, _ComposedWrapModelCallResult)
         assert result.model_response.result[0].content == "Fallback response"
         assert result.model_response.structured_response is None
 
@@ -231,7 +264,7 @@ class TestChainModelCallHandlers:
         result = composed(create_test_request(), create_mock_base_handler(content="response"))
 
         assert requests_seen == ["Added by outer"]
-        assert isinstance(result, WrapModelCallResult)
+        assert isinstance(result, _ComposedWrapModelCallResult)
         assert result.model_response.result[0].content == "response"
 
     def test_composition_preserves_state_and_runtime(self) -> None:
@@ -273,7 +306,7 @@ class TestChainModelCallHandlers:
         # Both handlers should see same state and runtime
         assert state_values == [("outer", test_state), ("inner", test_state)]
         assert runtime_values == [("outer", test_runtime), ("inner", test_runtime)]
-        assert isinstance(result, WrapModelCallResult)
+        assert isinstance(result, _ComposedWrapModelCallResult)
         assert result.model_response.result[0].content == "test"
 
     def test_multiple_yields_in_retry_loop(self) -> None:
@@ -312,5 +345,5 @@ class TestChainModelCallHandlers:
         # Outer called once, inner retried so base handler called twice
         assert call_count["value"] == 1
         assert attempt["value"] == 2
-        assert isinstance(result, WrapModelCallResult)
+        assert isinstance(result, _ComposedWrapModelCallResult)
         assert result.model_response.result[0].content == "ok"
