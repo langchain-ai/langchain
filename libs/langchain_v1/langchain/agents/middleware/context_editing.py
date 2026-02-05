@@ -25,9 +25,11 @@ from typing_extensions import Protocol
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
+    ContextT,
     ModelCallResult,
     ModelRequest,
     ModelResponse,
+    StateT,
 )
 
 DEFAULT_TOOL_PLACEHOLDER = "[cleared]"
@@ -182,7 +184,7 @@ class ClearToolUsesEdit(ContextEdit):
         )
 
 
-class ContextEditingMiddleware(AgentMiddleware):
+class ContextEditingMiddleware(AgentMiddleware[StateT, ContextT]):
     """Automatically prune tool results to manage context size.
 
     The middleware applies a sequence of edits when the total input token count exceeds

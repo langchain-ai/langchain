@@ -15,7 +15,7 @@ from langchain.agents.middleware._retry import (
     should_retry_exception,
     validate_retry_params,
 )
-from langchain.agents.middleware.types import AgentMiddleware, ModelResponse
+from langchain.agents.middleware.types import AgentMiddleware, ContextT, ModelResponse, StateT
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from langchain.agents.middleware.types import ModelRequest
 
 
-class ModelRetryMiddleware(AgentMiddleware):
+class ModelRetryMiddleware(AgentMiddleware[StateT, ContextT]):
     """Middleware that automatically retries failed model calls with configurable backoff.
 
     Supports retrying on specific exceptions and exponential backoff.
