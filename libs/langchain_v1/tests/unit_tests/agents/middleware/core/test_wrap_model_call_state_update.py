@@ -7,8 +7,10 @@ updates through graph reducers (e.g. add_messages for messages).
 
 from collections.abc import Awaitable, Callable
 
+import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
+from langgraph.errors import InvalidUpdateError
 from langgraph.types import Command
 
 from langchain.agents import AgentState, create_agent
@@ -79,8 +81,8 @@ class TestBasicCommand:
         assert messages[1].content == "Hello!"
         assert messages[2].content == "Summary"
 
-    def test_command_structured_response_overwrites_model_response(self) -> None:
-        """Command structured_response overwrites model response structured_response."""
+    def test_command_structured_response_conflicts_with_model_response(self) -> None:
+        """Command and model response both setting structured_response raises."""
 
         class OverrideMiddleware(AgentMiddleware):
             def wrap_model_call(
@@ -105,14 +107,10 @@ class TestBasicCommand:
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Model msg")]))
         agent = create_agent(model=model, middleware=[OverrideMiddleware()])
 
-        result = agent.invoke({"messages": [HumanMessage("Hi")]})
-
-        # Command structured_response wins (later Command overwrites)
-        assert result["structured_response"] == {"from": "command"}
-
-        # Model messages still present (from first Command)
-        messages = result["messages"]
-        assert any(m.content == "Model msg" for m in messages)
+        # Two Commands both setting structured_response (a LastValue channel)
+        # in the same step raises InvalidUpdateError
+        with pytest.raises(InvalidUpdateError):
+            agent.invoke({"messages": [HumanMessage("Hi")]})
 
     def test_command_with_custom_state_field(self) -> None:
         """When command updates a custom field, model response messages are preserved."""
@@ -426,11 +424,11 @@ class TestComposition:
         assert messages[1].content == "Hello"
         assert messages[2].content == "Inner msg"
 
-    def test_outer_command_wins_on_non_reducer_key_conflicts(self) -> None:
-        """Outer's command wins on non-reducer fields (later Command overwrites).
+    def test_non_reducer_key_conflict_raises(self) -> None:
+        """Multiple Commands setting the same non-reducer key raises.
 
-        For 'messages', all Commands are additive via add_messages reducer.
-        For non-reducer fields like 'custom_key', later Command (outer) wins.
+        LastValue channels (like custom_key) can only receive one value per
+        step. Inner and outer both setting the same key is an error.
         """
 
         class MyState(AgentState):
@@ -480,18 +478,10 @@ class TestComposition:
             middleware=[OuterMiddleware(), InnerMiddleware()],
         )
 
-        result = agent.invoke({"messages": [HumanMessage("Hi")]})
-
-        # Messages are additive: model + inner + outer
-        messages = result["messages"]
-        assert len(messages) == 4
-        assert messages[0].content == "Hi"
-        assert messages[1].content == "Hello"
-        assert messages[2].content == "Inner msg"
-        assert messages[3].content == "Outer msg"
-
-        # Non-reducer field: outer wins (later Command overwrites)
-        assert result["custom_key"] == "outer_value"
+        # Two Commands both setting custom_key (a LastValue channel)
+        # in the same step raises InvalidUpdateError
+        with pytest.raises(InvalidUpdateError):
+            agent.invoke({"messages": [HumanMessage("Hi")]})
 
     def test_inner_state_preserved_when_outer_has_no_conflict(self) -> None:
         """Inner's command keys are preserved when outer doesn't conflict."""
@@ -787,3 +777,49 @@ class TestAsyncComposition:
 
         messages = result["messages"]
         assert any(m.content == "Second" for m in messages)
+
+
+class TestCommandGotoDisallowed:
+    """Test that Command goto raises NotImplementedError in wrap_model_call."""
+
+    def test_command_goto_raises_not_implemented(self) -> None:
+        """Command with goto in wrap_model_call raises NotImplementedError."""
+
+        class GotoMiddleware(AgentMiddleware):
+            def wrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], ModelResponse],
+            ) -> WrapModelCallResult:
+                response = handler(request)
+                return WrapModelCallResult(
+                    model_response=response,
+                    command=Command(goto="__end__"),
+                )
+
+        model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello!")]))
+        agent = create_agent(model=model, middleware=[GotoMiddleware()])
+
+        with pytest.raises(NotImplementedError, match="Command goto is not yet supported"):
+            agent.invoke({"messages": [HumanMessage(content="Hi")]})
+
+    async def test_async_command_goto_raises_not_implemented(self) -> None:
+        """Async: Command with goto in wrap_model_call raises NotImplementedError."""
+
+        class AsyncGotoMiddleware(AgentMiddleware):
+            async def awrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+            ) -> WrapModelCallResult:
+                response = await handler(request)
+                return WrapModelCallResult(
+                    model_response=response,
+                    command=Command(goto="tools"),
+                )
+
+        model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello!")]))
+        agent = create_agent(model=model, middleware=[AsyncGotoMiddleware()])
+
+        with pytest.raises(NotImplementedError, match="Command goto is not yet supported"):
+            await agent.ainvoke({"messages": [HumanMessage(content="Hi")]})

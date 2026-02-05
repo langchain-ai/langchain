@@ -166,15 +166,7 @@ def _build_commands(
     """Build a list of Commands from a model response and middleware commands.
 
     The first Command contains the model response state (messages and optional
-    structured_response) plus any non-``messages`` updates from middleware.
-    Additional Commands are emitted for each middleware ``messages`` update so
-    the ``add_messages`` reducer makes them additive alongside model response
-    messages.
-
-    Non-reducer state fields (e.g. ``structured_response``, custom keys) are
-    merged into the base Command. Since middleware commands are ordered
-    inner-first then outer, the outermost middleware's value wins for
-    conflicting keys (later values overwrite earlier ones in the dict merge).
+    structured_response). Middleware commands are appended as-is.
 
     Args:
         model_response: The model response containing messages and optional
@@ -190,17 +182,16 @@ def _build_commands(
     if model_response.structured_response is not None:
         state["structured_response"] = model_response.structured_response
 
-    # Merge non-messages fields into base state; collect messages for separate Commands
-    extra_message_commands: list[Command[Any]] = []
     for cmd in middleware_commands or []:
-        update = cmd.update or {}
-        if "messages" in update:
-            extra_message_commands.append(Command(update={"messages": update["messages"]}))
-        state.update({key: value for key, value in update.items() if key != "messages"})
+        if cmd.goto:
+            msg = (
+                "Command goto is not yet supported in wrap_model_call middleware. "
+                "Use the jump_to state field with before_model/after_model hooks instead."
+            )
+            raise NotImplementedError(msg)
 
     commands: list[Command[Any]] = [Command(update=state)]
-    commands.extend(extra_message_commands)
-
+    commands.extend(middleware_commands or [])
     return commands
 
 
