@@ -117,19 +117,6 @@ Writing todos takes time and tokens, use it when it is helpful for managing comp
 - Don't be afraid to revise the To-Do list as you go. New information may reveal new tasks that need to be done, or old tasks that are irrelevant."""  # noqa: E501
 
 
-@tool(description=WRITE_TODOS_TOOL_DESCRIPTION)
-def write_todos(
-    todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCallId]
-) -> Command[Any]:
-    """Create and manage a structured task list for your current work session."""
-    return Command(
-        update={
-            "todos": todos,
-            "messages": [ToolMessage(f"Updated todo list to {todos}", tool_call_id=tool_call_id)],
-        }
-    )
-
-
 class TodoListMiddleware(AgentMiddleware):
     """Middleware that provides todo list management capabilities to agents.
 
