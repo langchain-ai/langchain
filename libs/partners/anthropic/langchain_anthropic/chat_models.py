@@ -849,7 +849,8 @@ class ChatAnthropic(BaseChatModel):
 
     e.g., `#!python {"type": "enabled", "budget_tokens": 10_000}`
 
-    For Claude Opus 4.6, `budget_tokens` is deprecated in favor of `{type: "adaptive"}`.
+    For Claude Opus 4.6, `budget_tokens` is deprecated in favor of
+    `#!python {"type": "adaptive"}`
     """
 
     effort: Literal["high", "medium", "low"] | None = None
@@ -1884,10 +1885,7 @@ def _documents_in_params(params: dict) -> bool:
 
 def _compact_in_params(params: dict) -> bool:
     edits = params.get("context_management", {}).get("edits", [])
-    for edit in edits:
-        if "compact" in edit.get("type", ""):
-            return True
-    return False
+    return any("compact" in edit.get("type", "") for edit in edits)
 
 
 class _AnthropicToolUse(TypedDict):

@@ -6,7 +6,6 @@ import asyncio
 import json
 import os
 from base64 import b64encode
-from pathlib import Path
 from typing import Literal, cast
 
 import httpx
@@ -2432,7 +2431,7 @@ def test_compaction() -> None:
 
     input_message = {
         "role": "user",
-        "content": f"Generate a one-sentence summary of this:\n\n{'a'*100000}",
+        "content": f"Generate a one-sentence summary of this:\n\n{'a' * 100000}",
     }
     messages: list = [input_message]
 
@@ -2441,7 +2440,7 @@ def test_compaction() -> None:
 
     second_message = {
         "role": "user",
-        "content": f"Generate a one-sentence summary of this:\n\n{'b'*100000}",
+        "content": f"Generate a one-sentence summary of this:\n\n{'b' * 100000}",
     }
     messages.append(second_message)
 
@@ -2487,7 +2486,7 @@ def test_compaction_streaming() -> None:
 
     input_message = {
         "role": "user",
-        "content": f"Generate a one-sentence summary of this:\n\n{'a'*100000}",
+        "content": f"Generate a one-sentence summary of this:\n\n{'a' * 100000}",
     }
     messages: list = [input_message]
 
@@ -2496,7 +2495,7 @@ def test_compaction_streaming() -> None:
 
     second_message = {
         "role": "user",
-        "content": f"Generate a one-sentence summary of this:\n\n{'b'*100000}",
+        "content": f"Generate a one-sentence summary of this:\n\n{'b' * 100000}",
     }
     messages.append(second_message)
 
