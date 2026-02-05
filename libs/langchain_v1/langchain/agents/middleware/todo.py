@@ -205,27 +205,10 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
 
     def wrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
-    ) -> ModelCallResult:
-        """Update the system message and optionally prune duplicate todo history.
-
-        Args:
-            request: Model request to execute (includes state and runtime).
-            handler: Callback that executes the model request and returns `ModelResponse`.
-
-        Returns:
-            The model call result.
-        """
-        prepared_request = self._prepare_request(request)
-        return handler(prepared_request)
-
-    async def awrap_model_call(
-        self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-    ) -> ModelCallResult:
-        """Update the system message and optionally prune duplicate todo history.
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
+        """Update the system message to include the todo system prompt.
 
         Args:
             request: Model request to execute (includes state and runtime).
@@ -235,8 +218,44 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
         Returns:
             The model call result.
         """
-        prepared_request = self._prepare_request(request)
-        return await handler(prepared_request)
+        if request.system_message is not None:
+            new_system_content = [
+                *request.system_message.content_blocks,
+                {"type": "text", "text": f"\n\n{self.system_prompt}"},
+            ]
+        else:
+            new_system_content = [{"type": "text", "text": self.system_prompt}]
+        new_system_message = SystemMessage(
+            content=cast("list[str | dict[str, str]]", new_system_content)
+        )
+        return handler(request.override(system_message=new_system_message))
+
+    async def awrap_model_call(
+        self,
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
+        """Update the system message to include the todo system prompt.
+
+        Args:
+            request: Model request to execute (includes state and runtime).
+            handler: Async callback that executes the model request and returns
+                `ModelResponse`.
+
+        Returns:
+            The model call result.
+        """
+        if request.system_message is not None:
+            new_system_content = [
+                *request.system_message.content_blocks,
+                {"type": "text", "text": f"\n\n{self.system_prompt}"},
+            ]
+        else:
+            new_system_content = [{"type": "text", "text": self.system_prompt}]
+        new_system_message = SystemMessage(
+            content=cast("list[str | dict[str, str]]", new_system_content)
+        )
+        return await handler(request.override(system_message=new_system_message))
 
     def _prepare_request(self, request: ModelRequest) -> ModelRequest:
         """Construct the request with system prompt and optional todo filtering."""
