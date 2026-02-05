@@ -26,6 +26,7 @@ from typing_extensions import NotRequired, Required, TypedDict
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
+    ContextT,
     JumpTo,
     ModelRequest,
     ModelResponse,
@@ -57,7 +58,6 @@ if TYPE_CHECKING:
     from langgraph.runtime import Runtime
     from langgraph.store.base import BaseStore
     from langgraph.types import Checkpointer
-    from langgraph.typing import ContextT
 
     from langchain.agents.middleware.types import ToolCallRequest, ToolCallWrapper
 
@@ -112,13 +112,13 @@ def _normalize_to_model_response(result: ModelResponse | AIMessage) -> ModelResp
 def _chain_model_call_handlers(
     handlers: Sequence[
         Callable[
-            [ModelRequest, Callable[[ModelRequest], ModelResponse]],
+            [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
             ModelResponse | AIMessage,
         ]
     ],
 ) -> (
     Callable[
-        [ModelRequest, Callable[[ModelRequest], ModelResponse]],
+        [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
         ModelResponse,
     ]
     | None
@@ -168,8 +168,8 @@ def _chain_model_call_handlers(
         single_handler = handlers[0]
 
         def normalized_single(
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
+            request: ModelRequest[ContextT],
+            handler: Callable[[ModelRequest[ContextT]], ModelResponse],
         ) -> ModelResponse:
             result = single_handler(request, handler)
             return _normalize_to_model_response(result)
@@ -178,25 +178,25 @@ def _chain_model_call_handlers(
 
     def compose_two(
         outer: Callable[
-            [ModelRequest, Callable[[ModelRequest], ModelResponse]],
+            [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
             ModelResponse | AIMessage,
         ],
         inner: Callable[
-            [ModelRequest, Callable[[ModelRequest], ModelResponse]],
+            [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
             ModelResponse | AIMessage,
         ],
     ) -> Callable[
-        [ModelRequest, Callable[[ModelRequest], ModelResponse]],
+        [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
         ModelResponse,
     ]:
         """Compose two handlers where outer wraps inner."""
 
         def composed(
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
+            request: ModelRequest[ContextT],
+            handler: Callable[[ModelRequest[ContextT]], ModelResponse],
         ) -> ModelResponse:
             # Create a wrapper that calls inner with the base handler and normalizes
-            def inner_handler(req: ModelRequest) -> ModelResponse:
+            def inner_handler(req: ModelRequest[ContextT]) -> ModelResponse:
                 inner_result = inner(req, handler)
                 return _normalize_to_model_response(inner_result)
 
@@ -213,8 +213,8 @@ def _chain_model_call_handlers(
 
     # Wrap to ensure final return type is exactly ModelResponse
     def final_normalized(
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse],
     ) -> ModelResponse:
         # result here is typed as returning ModelResponse | AIMessage but compose_two normalizes
         final_result = result(request, handler)
@@ -226,13 +226,13 @@ def _chain_model_call_handlers(
 def _chain_async_model_call_handlers(
     handlers: Sequence[
         Callable[
-            [ModelRequest, Callable[[ModelRequest], Awaitable[ModelResponse]]],
+            [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
             Awaitable[ModelResponse | AIMessage],
         ]
     ],
 ) -> (
     Callable[
-        [ModelRequest, Callable[[ModelRequest], Awaitable[ModelResponse]]],
+        [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
         Awaitable[ModelResponse],
     ]
     | None
@@ -255,8 +255,8 @@ def _chain_async_model_call_handlers(
         single_handler = handlers[0]
 
         async def normalized_single(
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+            request: ModelRequest[ContextT],
+            handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
         ) -> ModelResponse:
             result = await single_handler(request, handler)
             return _normalize_to_model_response(result)
@@ -265,25 +265,25 @@ def _chain_async_model_call_handlers(
 
     def compose_two(
         outer: Callable[
-            [ModelRequest, Callable[[ModelRequest], Awaitable[ModelResponse]]],
+            [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
             Awaitable[ModelResponse | AIMessage],
         ],
         inner: Callable[
-            [ModelRequest, Callable[[ModelRequest], Awaitable[ModelResponse]]],
+            [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
             Awaitable[ModelResponse | AIMessage],
         ],
     ) -> Callable[
-        [ModelRequest, Callable[[ModelRequest], Awaitable[ModelResponse]]],
+        [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
         Awaitable[ModelResponse],
     ]:
         """Compose two async handlers where outer wraps inner."""
 
         async def composed(
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+            request: ModelRequest[ContextT],
+            handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
         ) -> ModelResponse:
             # Create a wrapper that calls inner with the base handler and normalizes
-            async def inner_handler(req: ModelRequest) -> ModelResponse:
+            async def inner_handler(req: ModelRequest[ContextT]) -> ModelResponse:
                 inner_result = await inner(req, handler)
                 return _normalize_to_model_response(inner_result)
 
@@ -300,8 +300,8 @@ def _chain_async_model_call_handlers(
 
     # Wrap to ensure final return type is exactly ModelResponse
     async def final_normalized(
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
     ) -> ModelResponse:
         # result here is typed as returning ModelResponse | AIMessage but compose_two normalizes
         final_result = await result(request, handler)
@@ -1015,7 +1015,7 @@ def create_agent(
         return {"messages": [output]}
 
     def _get_bound_model(
-        request: ModelRequest,
+        request: ModelRequest[ContextT],
     ) -> tuple[Runnable[Any, Any], ResponseFormat[Any] | None]:
         """Get the model with appropriate tool bindings.
 
@@ -1138,7 +1138,7 @@ def create_agent(
             )
         return request.model.bind(**request.model_settings), None
 
-    def _execute_model_sync(request: ModelRequest) -> ModelResponse:
+    def _execute_model_sync(request: ModelRequest[ContextT]) -> ModelResponse:
         """Execute model and return response.
 
         This is the core model execution logic wrapped by `wrap_model_call` handlers.
@@ -1192,7 +1192,7 @@ def create_agent(
 
         return state_updates
 
-    async def _execute_model_async(request: ModelRequest) -> ModelResponse:
+    async def _execute_model_async(request: ModelRequest[ContextT]) -> ModelResponse:
         """Execute model asynchronously and return response.
 
         This is the core async model execution logic wrapped by `wrap_model_call`
@@ -1556,18 +1556,23 @@ def _resolve_jump(
 
 def _fetch_last_ai_and_tool_messages(
     messages: list[AnyMessage],
-) -> tuple[AIMessage, list[ToolMessage]]:
-    last_ai_index: int
-    last_ai_message: AIMessage
+) -> tuple[AIMessage | None, list[ToolMessage]]:
+    """Return the last AI message and any subsequent tool messages.
 
+    Args:
+        messages: List of messages to search through.
+
+    Returns:
+        A tuple of (last_ai_message, tool_messages). If no AIMessage is found,
+        returns (None, []). Callers must handle the None case appropriately.
+    """
     for i in range(len(messages) - 1, -1, -1):
         if isinstance(messages[i], AIMessage):
-            last_ai_index = i
             last_ai_message = cast("AIMessage", messages[i])
-            break
+            tool_messages = [m for m in messages[i + 1 :] if isinstance(m, ToolMessage)]
+            return last_ai_message, tool_messages
 
-    tool_messages = [m for m in messages[last_ai_index + 1 :] if isinstance(m, ToolMessage)]
-    return last_ai_message, tool_messages
+    return None, []
 
 
 def _make_model_to_tools_edge(
@@ -1588,9 +1593,14 @@ def _make_model_to_tools_edge(
             )
 
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
+
+        # 2. if no AIMessage exists (e.g., messages were cleared), exit the loop
+        if last_ai_message is None:
+            return end_destination
+
         tool_message_ids = [m.tool_call_id for m in tool_messages]
 
-        # 2. If the model hasn't called any tools, exit the loop
+        # 3. If the model hasn't called any tools, exit the loop
         # this is the classic exit condition for an agent loop
         if len(last_ai_message.tool_calls) == 0:
             return end_destination
@@ -1601,7 +1611,7 @@ def _make_model_to_tools_edge(
             if c["id"] not in tool_message_ids and c["name"] not in structured_output_tools
         ]
 
-        # 3. If there are pending tool calls, jump to the tool node
+        # 4. If there are pending tool calls, jump to the tool node
         if pending_tool_calls:
             return [
                 Send(
@@ -1615,11 +1625,11 @@ def _make_model_to_tools_edge(
                 for tool_call in pending_tool_calls
             ]
 
-        # 4. If there is a structured response, exit the loop
+        # 5. If there is a structured response, exit the loop
         if "structured_response" in state:
             return end_destination
 
-        # 5. AIMessage has tool calls, but there are no pending tool calls which suggests
+        # 6. AIMessage has tool calls, but there are no pending tool calls which suggests
         # the injection of artificial tool messages. Jump to the model node
         return model_destination
 
@@ -1663,7 +1673,11 @@ def _make_tools_to_model_edge(
     def tools_to_model(state: dict[str, Any]) -> str | None:
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
 
-        # 1. Exit condition: All executed tools have return_direct=True
+        # 1. If no AIMessage exists (e.g., messages were cleared), route to model
+        if last_ai_message is None:
+            return model_destination
+
+        # 2. Exit condition: All executed tools have return_direct=True
         # Filter to only client-side tools (provider tools are not in tool_node)
         client_side_tool_calls = [
             c for c in last_ai_message.tool_calls if c["name"] in tool_node.tools_by_name
@@ -1673,11 +1687,11 @@ def _make_tools_to_model_edge(
         ):
             return end_destination
 
-        # 2. Exit condition: A structured output tool was executed
+        # 3. Exit condition: A structured output tool was executed
         if any(t.name in structured_output_tools for t in tool_messages):
             return end_destination
 
-        # 3. Default: Continue the loop
+        # 4. Default: Continue the loop
         #    Tool execution completed successfully, route back to the model
         #    so it can process the tool results and decide the next action.
         return model_destination
