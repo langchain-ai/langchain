@@ -193,9 +193,7 @@ def _build_commands(
             msg = "Command resume is not yet supported in wrap_model_call middleware."
             raise NotImplementedError(msg)
         if cmd.graph:
-            msg = (
-                "Command graph is not yet supported in wrap_model_call middleware."
-            )
+            msg = "Command graph is not yet supported in wrap_model_call middleware."
             raise NotImplementedError(msg)
 
     commands: list[Command[Any]] = [Command(update=state)]

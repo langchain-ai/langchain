@@ -846,9 +846,7 @@ class TestCommandResumeDisallowed:
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello!")]))
         agent = create_agent(model=model, middleware=[ResumeMiddleware()])
 
-        with pytest.raises(
-            NotImplementedError, match="Command resume is not yet supported"
-        ):
+        with pytest.raises(NotImplementedError, match="Command resume is not yet supported"):
             agent.invoke({"messages": [HumanMessage(content="Hi")]})
 
     async def test_async_command_resume_raises_not_implemented(self) -> None:
@@ -869,9 +867,7 @@ class TestCommandResumeDisallowed:
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello!")]))
         agent = create_agent(model=model, middleware=[AsyncResumeMiddleware()])
 
-        with pytest.raises(
-            NotImplementedError, match="Command resume is not yet supported"
-        ):
+        with pytest.raises(NotImplementedError, match="Command resume is not yet supported"):
             await agent.ainvoke({"messages": [HumanMessage(content="Hi")]})
 
 
@@ -890,17 +886,13 @@ class TestCommandGraphDisallowed:
                 response = handler(request)
                 return WrapModelCallResult(
                     model_response=response,
-                    command=Command(
-                        graph=Command.PARENT, update={"messages": []}
-                    ),
+                    command=Command(graph=Command.PARENT, update={"messages": []}),
                 )
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello!")]))
         agent = create_agent(model=model, middleware=[GraphMiddleware()])
 
-        with pytest.raises(
-            NotImplementedError, match="Command graph is not yet supported"
-        ):
+        with pytest.raises(NotImplementedError, match="Command graph is not yet supported"):
             agent.invoke({"messages": [HumanMessage(content="Hi")]})
 
     async def test_async_command_graph_raises_not_implemented(self) -> None:
@@ -915,15 +907,11 @@ class TestCommandGraphDisallowed:
                 response = await handler(request)
                 return WrapModelCallResult(
                     model_response=response,
-                    command=Command(
-                        graph=Command.PARENT, update={"messages": []}
-                    ),
+                    command=Command(graph=Command.PARENT, update={"messages": []}),
                 )
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello!")]))
         agent = create_agent(model=model, middleware=[AsyncGraphMiddleware()])
 
-        with pytest.raises(
-            NotImplementedError, match="Command graph is not yet supported"
-        ):
+        with pytest.raises(NotImplementedError, match="Command graph is not yet supported"):
             await agent.ainvoke({"messages": [HumanMessage(content="Hi")]})
