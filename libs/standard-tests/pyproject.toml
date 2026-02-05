@@ -78,6 +78,10 @@ ignore_missing_imports = true
 module = ["deepagents", "deepagents.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["tests.unit_tests.test_in_memory_sandbox_provider"]
+ignore_errors = true
+
 [tool.ruff.format]
 docstring-code-format = true
 
