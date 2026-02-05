@@ -218,17 +218,8 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
         Returns:
             The model call result.
         """
-        if request.system_message is not None:
-            new_system_content = [
-                *request.system_message.content_blocks,
-                {"type": "text", "text": f"\n\n{self.system_prompt}"},
-            ]
-        else:
-            new_system_content = [{"type": "text", "text": self.system_prompt}]
-        new_system_message = SystemMessage(
-            content=cast("list[str | dict[str, str]]", new_system_content)
-        )
-        return handler(request.override(system_message=new_system_message))
+        prepared_request = self._prepare_request(request)
+        return handler(prepared_request)
 
     async def awrap_model_call(
         self,
@@ -245,19 +236,10 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
         Returns:
             The model call result.
         """
-        if request.system_message is not None:
-            new_system_content = [
-                *request.system_message.content_blocks,
-                {"type": "text", "text": f"\n\n{self.system_prompt}"},
-            ]
-        else:
-            new_system_content = [{"type": "text", "text": self.system_prompt}]
-        new_system_message = SystemMessage(
-            content=cast("list[str | dict[str, str]]", new_system_content)
-        )
-        return await handler(request.override(system_message=new_system_message))
+        prepared_request = self._prepare_request(request)
+        return await handler(prepared_request)
 
-    def _prepare_request(self, request: ModelRequest) -> ModelRequest:
+    def _prepare_request(self, request: ModelRequest[ContextT]) -> ModelRequest[ContextT]:
         """Construct the request with system prompt and optional todo filtering."""
         if request.system_message is not None:
             new_system_content = [
