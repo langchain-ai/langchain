@@ -1,21 +1,30 @@
 from __future__ import annotations
 
-# ruff: noqa: E402
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
-deepagents = pytest.importorskip("deepagents")
-
-from deepagents.backends.protocol import ExecuteResponse
-from deepagents.backends.sandbox import (
-    BaseSandbox,
-    SandboxListResponse,
-    SandboxNotFoundError,
-    SandboxProvider,
-)
-
 from langchain_tests.integration_tests.sandboxes import SandboxProviderIntegrationTests
+
+if TYPE_CHECKING:
+    from deepagents.backends.protocol import ExecuteResponse
+    from deepagents.backends.sandbox import (
+        BaseSandbox,
+        SandboxListResponse,
+        SandboxNotFoundError,
+        SandboxProvider,
+    )
+
+else:
+    pytest.importorskip("deepagents")
+
+    from deepagents.backends.protocol import ExecuteResponse
+    from deepagents.backends.sandbox import (
+        BaseSandbox,
+        SandboxListResponse,
+        SandboxNotFoundError,
+        SandboxProvider,
+    )
 
 
 class _InMemorySandboxBackend(BaseSandbox):
