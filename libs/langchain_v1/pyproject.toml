@@ -107,7 +107,12 @@ line-length = 100
 strict = true
 enable_error_code = "deprecated"
 warn_unreachable = true
-exclude = ["tests/unit_tests/agents/*"]
+exclude = [
+    # Exclude agents tests except middleware_typing/ which has type-checked tests
+    "tests/unit_tests/agents/middleware/",
+    "tests/unit_tests/agents/specifications/",
+    "tests/unit_tests/agents/test_.*\\.py",
+]
 
 # TODO: activate for 'strict' checking
 warn_return_any = false
