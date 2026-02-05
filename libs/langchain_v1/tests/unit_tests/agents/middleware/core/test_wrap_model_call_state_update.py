@@ -1,13 +1,14 @@
 """Unit tests for WrapModelCallResult state update support in wrap_model_call.
 
 Tests that wrap_model_call middleware can return WrapModelCallResult to provide
-state updates alongside the model response.
+state updates alongside the model response, with outermost middleware winning
+on key conflicts.
 """
 
 from collections.abc import Awaitable, Callable
 
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, HumanMessage, RemoveMessage
+from langchain_core.messages import AIMessage, HumanMessage
 
 from langchain.agents import AgentState, create_agent
 from langchain.agents.middleware.types import (
@@ -22,69 +23,97 @@ from langchain.agents.middleware.types import (
 class TestBasicStateUpdate:
     """Test basic WrapModelCallResult functionality."""
 
-    def test_state_update_with_messages(self) -> None:
-        """Middleware returns WrapModelCallResult with extra messages in state_update.
+    def test_state_update_overwrites_model_messages(self) -> None:
+        """state_update with 'messages' key overwrites model response messages."""
 
-        The state_update messages should be prepended before the model response messages.
-        """
-
-        class PrependMessageMiddleware(AgentMiddleware):
+        class OverwriteMessagesMiddleware(AgentMiddleware):
             def wrap_model_call(
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
             ) -> WrapModelCallResult:
                 response = handler(request)
-                # Add a RemoveMessage + summary before the AI response
-                summary = HumanMessage(content="Summary of prior conversation", id="summary")
+                custom_msg = HumanMessage(content="Custom message", id="custom")
                 return WrapModelCallResult(
                     model_response=response,
-                    state_update={
-                        "messages": [summary],
-                    },
+                    state_update={"messages": [custom_msg]},
                 )
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello!")]))
-        agent = create_agent(model=model, middleware=[PrependMessageMiddleware()])
+        agent = create_agent(model=model, middleware=[OverwriteMessagesMiddleware()])
 
         result = agent.invoke({"messages": [HumanMessage(content="Hi")]})
 
-        # Should have: original HumanMessage, summary message, AI response
+        # Model response messages are overwritten — only custom message survives
         messages = result["messages"]
-        assert len(messages) == 3
-        # The summary is prepended before model response via add_messages reducer
-        assert messages[1].content == "Summary of prior conversation"
-        assert messages[2].content == "Hello!"
+        assert len(messages) == 2
+        assert messages[0].content == "Hi"
+        assert messages[1].content == "Custom message"
 
-    def test_state_update_with_remove_and_new_messages(self) -> None:
-        """Middleware uses RemoveMessage in state_update to clear history."""
+    def test_state_update_includes_model_messages_explicitly(self) -> None:
+        """Middleware can include model messages alongside custom ones explicitly."""
 
-        class ClearHistoryMiddleware(AgentMiddleware):
+        class ExplicitMessagesMiddleware(AgentMiddleware):
             def wrap_model_call(
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
             ) -> WrapModelCallResult:
                 response = handler(request)
-                # Remove the original human message, add a summary before the AI response
-                remove_ops = [RemoveMessage(id=m.id) for m in request.state["messages"] if m.id]
+                summary = HumanMessage(content="Summary", id="summary")
                 return WrapModelCallResult(
                     model_response=response,
+                    state_update={"messages": [summary, *response.result]},
+                )
+
+        model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello!")]))
+        agent = create_agent(model=model, middleware=[ExplicitMessagesMiddleware()])
+
+        result = agent.invoke({"messages": [HumanMessage(content="Hi")]})
+
+        messages = result["messages"]
+        assert len(messages) == 3
+        assert messages[0].content == "Hi"
+        assert messages[1].content == "Summary"
+        assert messages[2].content == "Hello!"
+
+    def test_state_update_takes_priority_over_model_response(self) -> None:
+        """state_update messages and structured_response take priority over model response."""
+
+        class OverrideMiddleware(AgentMiddleware):
+            def wrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], ModelResponse],
+            ) -> WrapModelCallResult:
+                response = handler(request)
+                # Model response has its own messages and structured_response,
+                # but state_update should win for both.
+                response_with_structured = ModelResponse(
+                    result=response.result,
+                    structured_response={"from": "model"},
+                )
+                return WrapModelCallResult(
+                    model_response=response_with_structured,
                     state_update={
-                        "messages": remove_ops,
+                        "messages": [HumanMessage(content="From state_update", id="override")],
+                        "structured_response": {"from": "state_update"},
                     },
                 )
 
-        model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
-        agent = create_agent(model=model, middleware=[ClearHistoryMiddleware()])
+        model = GenericFakeChatModel(messages=iter([AIMessage(content="Model msg")]))
+        agent = create_agent(model=model, middleware=[OverrideMiddleware()])
 
-        result = agent.invoke({"messages": [HumanMessage(content="Hi", id="msg1")]})
+        result = agent.invoke({"messages": [HumanMessage("Hi")]})
 
-        # After RemoveMessage(id="msg1"), then AI response added
+        # state_update messages win over model response messages
         messages = result["messages"]
-        # The original message was removed, only AI response remains
-        assert len(messages) == 1
-        assert messages[0].content == "Response"
+        assert len(messages) == 2
+        assert messages[0].content == "Hi"
+        assert messages[1].content == "From state_update"
+
+        # state_update structured_response wins over model response structured_response
+        assert result["structured_response"] == {"from": "state_update"}
 
     def test_state_update_without_messages_key(self) -> None:
         """When state_update doesn't include 'messages', model response messages are used."""
@@ -225,31 +254,31 @@ class TestBackwardsCompatibility:
 class TestAsyncWrapModelCallResult:
     """Test async variant of WrapModelCallResult."""
 
-    async def test_async_state_update(self) -> None:
-        """awrap_model_call returns WrapModelCallResult with state updates."""
+    async def test_async_state_update_overwrites(self) -> None:
+        """awrap_model_call state_update overwrites model response messages."""
 
-        class AsyncStateUpdateMiddleware(AgentMiddleware):
+        class AsyncOverwriteMiddleware(AgentMiddleware):
             async def awrap_model_call(
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
             ) -> WrapModelCallResult:
                 response = await handler(request)
-                summary = HumanMessage(content="Async summary", id="async-summary")
+                custom = HumanMessage(content="Async custom", id="async-custom")
                 return WrapModelCallResult(
                     model_response=response,
-                    state_update={"messages": [summary]},
+                    state_update={"messages": [custom]},
                 )
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Async hello!")]))
-        agent = create_agent(model=model, middleware=[AsyncStateUpdateMiddleware()])
+        agent = create_agent(model=model, middleware=[AsyncOverwriteMiddleware()])
 
         result = await agent.ainvoke({"messages": [HumanMessage(content="Hi")]})
 
         messages = result["messages"]
-        assert len(messages) == 3
-        assert messages[1].content == "Async summary"
-        assert messages[2].content == "Async hello!"
+        assert len(messages) == 2
+        assert messages[0].content == "Hi"
+        assert messages[1].content == "Async custom"
 
     async def test_async_decorator_state_update(self) -> None:
         """@wrap_model_call async decorator returns WrapModelCallResult."""
@@ -262,7 +291,12 @@ class TestAsyncWrapModelCallResult:
             response = await handler(request)
             return WrapModelCallResult(
                 model_response=response,
-                state_update={"messages": [HumanMessage(content="Decorator summary", id="dec")]},
+                state_update={
+                    "messages": [
+                        HumanMessage(content="Decorator msg", id="dec"),
+                        *response.result,
+                    ]
+                },
             )
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Async response")]))
@@ -272,18 +306,18 @@ class TestAsyncWrapModelCallResult:
 
         messages = result["messages"]
         assert len(messages) == 3
-        assert messages[1].content == "Decorator summary"
+        assert messages[1].content == "Decorator msg"
         assert messages[2].content == "Async response"
 
 
 class TestComposition:
-    """Test WrapModelCallResult with composed middleware."""
+    """Test WrapModelCallResult with composed middleware.
 
-    def test_outer_wrap_result_inner_model_response(self) -> None:
-        """Outer middleware returns WrapModelCallResult, inner returns ModelResponse.
+    Key semantics: outermost middleware's state_update wins on key conflicts.
+    """
 
-        The outer's state_update should be applied and inner should work normally.
-        """
+    def test_outer_wrap_result_overwrites_model_messages(self) -> None:
+        """Outer middleware's state_update overwrites model response messages."""
         execution_order: list[str] = []
 
         class OuterMiddleware(AgentMiddleware):
@@ -297,9 +331,7 @@ class TestComposition:
                 execution_order.append("outer-after")
                 return WrapModelCallResult(
                     model_response=response,
-                    state_update={
-                        "messages": [HumanMessage(content="Outer state msg", id="outer-msg")]
-                    },
+                    state_update={"messages": [HumanMessage(content="Outer msg", id="outer-msg")]},
                 )
 
         class InnerMiddleware(AgentMiddleware):
@@ -329,11 +361,11 @@ class TestComposition:
             "outer-after",
         ]
 
-        # Outer's state_update messages prepend before model response
+        # Outer's state_update overwrites model messages
         messages = result["messages"]
-        assert len(messages) == 3
-        assert messages[1].content == "Outer state msg"
-        assert messages[2].content == "Composed"
+        assert len(messages) == 2
+        assert messages[0].content == "Hi"
+        assert messages[1].content == "Outer msg"
 
     def test_inner_wrap_result_propagated_through_composition(self) -> None:
         """Inner middleware's WrapModelCallResult state_update is propagated.
@@ -364,7 +396,12 @@ class TestComposition:
                 response = handler(request)
                 return WrapModelCallResult(
                     model_response=response,
-                    state_update={"messages": [HumanMessage(content="Inner msg", id="inner")]},
+                    state_update={
+                        "messages": [
+                            HumanMessage(content="Inner msg", id="inner"),
+                            *response.result,
+                        ]
+                    },
                 )
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
@@ -375,17 +412,15 @@ class TestComposition:
 
         result = agent.invoke({"messages": [HumanMessage("Hi")]})
 
-        # Inner's state_update is now propagated through the composition boundary
         messages = result["messages"]
         assert len(messages) == 3
         assert messages[1].content == "Inner msg"
         assert messages[2].content == "Hello"
 
-    def test_both_outer_and_inner_wrap_result_merged(self) -> None:
-        """Both outer and inner return WrapModelCallResult, state updates merged.
+    def test_outer_state_update_wins_on_all_key_conflicts(self) -> None:
+        """Outer's state_update fully overwrites inner's on all conflicting keys.
 
-        Inner's messages come first, then outer's messages are appended.
-        For non-messages keys, outer overwrites inner.
+        This applies to all keys including 'messages' — no special casing.
         """
 
         class MyState(AgentState):
@@ -433,16 +468,65 @@ class TestComposition:
 
         result = agent.invoke({"messages": [HumanMessage("Hi")]})
 
-        # Messages: inner first, then outer, then model response
+        # Outer wins on all keys — inner's messages and custom_key are overwritten
         messages = result["messages"]
-        assert len(messages) == 4
-        assert messages[1].content == "Inner msg"
-        assert messages[2].content == "Outer msg"
-        assert messages[3].content == "Hello"
+        assert len(messages) == 2
+        assert messages[0].content == "Hi"
+        assert messages[1].content == "Outer msg"
+
+    def test_inner_state_preserved_when_outer_has_no_conflict(self) -> None:
+        """Inner's state_update keys are preserved when outer doesn't conflict."""
+
+        class MyState(AgentState):
+            inner_key: str
+            outer_key: str
+
+        class OuterMiddleware(AgentMiddleware):
+            state_schema = MyState  # type: ignore[assignment]
+
+            def wrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], ModelResponse],
+            ) -> WrapModelCallResult:
+                response = handler(request)
+                return WrapModelCallResult(
+                    model_response=response,
+                    state_update={"outer_key": "from_outer"},
+                )
+
+        class InnerMiddleware(AgentMiddleware):
+            state_schema = MyState  # type: ignore[assignment]
+
+            def wrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], ModelResponse],
+            ) -> WrapModelCallResult:
+                response = handler(request)
+                return WrapModelCallResult(
+                    model_response=response,
+                    state_update={"inner_key": "from_inner"},
+                )
+
+        model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
+        agent = create_agent(
+            model=model,
+            middleware=[OuterMiddleware(), InnerMiddleware()],
+        )
+
+        result = agent.invoke({"messages": [HumanMessage("Hi")]})
+
+        # Both keys survive since there's no conflict
+        messages = result["messages"]
+        assert messages[-1].content == "Hello"
 
     def test_inner_state_update_retry_safe(self) -> None:
         """When outer retries, only the last inner state update is used."""
         call_count = 0
+
+        class MyState(AgentState):
+            attempt: str
 
         class OuterMiddleware(AgentMiddleware):
             def wrap_model_call(
@@ -455,6 +539,8 @@ class TestComposition:
                 return handler(request)
 
         class InnerMiddleware(AgentMiddleware):
+            state_schema = MyState  # type: ignore[assignment]
+
             def wrap_model_call(
                 self,
                 request: ModelRequest,
@@ -465,11 +551,7 @@ class TestComposition:
                 response = handler(request)
                 return WrapModelCallResult(
                     model_response=response,
-                    state_update={
-                        "messages": [
-                            HumanMessage(content=f"Attempt {call_count}", id=f"a{call_count}")
-                        ]
-                    },
+                    state_update={"attempt": f"attempt_{call_count}"},
                 )
 
         model = GenericFakeChatModel(
@@ -484,55 +566,7 @@ class TestComposition:
 
         # Only the last retry's inner state should survive
         messages = result["messages"]
-        assert any(m.content == "Attempt 2" for m in messages)
-        assert not any(m.content == "Attempt 1" for m in messages)
-
-    def test_outer_state_update_wins_on_conflict(self) -> None:
-        """Outer's non-messages state update overwrites inner's on same key."""
-
-        class MyState(AgentState):
-            priority: str
-
-        class OuterMiddleware(AgentMiddleware):
-            state_schema = MyState  # type: ignore[assignment]
-
-            def wrap_model_call(
-                self,
-                request: ModelRequest,
-                handler: Callable[[ModelRequest], ModelResponse],
-            ) -> WrapModelCallResult:
-                response = handler(request)
-                return WrapModelCallResult(
-                    model_response=response,
-                    state_update={"priority": "outer_wins"},
-                )
-
-        class InnerMiddleware(AgentMiddleware):
-            state_schema = MyState  # type: ignore[assignment]
-
-            def wrap_model_call(
-                self,
-                request: ModelRequest,
-                handler: Callable[[ModelRequest], ModelResponse],
-            ) -> WrapModelCallResult:
-                response = handler(request)
-                return WrapModelCallResult(
-                    model_response=response,
-                    state_update={"priority": "inner_value"},
-                )
-
-        model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
-        agent = create_agent(
-            model=model,
-            middleware=[OuterMiddleware(), InnerMiddleware()],
-        )
-
-        result = agent.invoke({"messages": [HumanMessage("Hi")]})
-
-        # Outer wins on non-messages key conflicts
-        # (state value verified indirectly since custom keys go through graph state)
-        messages = result["messages"]
-        assert messages[-1].content == "Hello"
+        assert messages[-1].content == "Second"
 
     def test_decorator_returns_wrap_result(self) -> None:
         """@wrap_model_call decorator can return WrapModelCallResult."""
@@ -545,7 +579,12 @@ class TestComposition:
             response = handler(request)
             return WrapModelCallResult(
                 model_response=response,
-                state_update={"messages": [HumanMessage(content="From decorator", id="dec")]},
+                state_update={
+                    "messages": [
+                        HumanMessage(content="From decorator", id="dec"),
+                        *response.result,
+                    ]
+                },
             )
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Model response")]))
@@ -568,14 +607,13 @@ class TestComposition:
                 handler: Callable[[ModelRequest], ModelResponse],
             ) -> WrapModelCallResult:
                 response = handler(request)
-                # Simulate a structured response being set
                 response_with_structured = ModelResponse(
                     result=response.result,
                     structured_response={"key": "value"},
                 )
                 return WrapModelCallResult(
                     model_response=response_with_structured,
-                    state_update={"messages": [HumanMessage(content="Extra", id="extra")]},
+                    state_update={},
                 )
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
@@ -585,9 +623,8 @@ class TestComposition:
 
         assert result.get("structured_response") == {"key": "value"}
         messages = result["messages"]
-        assert len(messages) == 3
-        assert messages[1].content == "Extra"
-        assert messages[2].content == "Hello"
+        assert len(messages) == 2
+        assert messages[1].content == "Hello"
 
 
 class TestAsyncComposition:
@@ -615,7 +652,12 @@ class TestAsyncComposition:
                 response = await handler(request)
                 return WrapModelCallResult(
                     model_response=response,
-                    state_update={"messages": [HumanMessage(content="Inner msg", id="inner")]},
+                    state_update={
+                        "messages": [
+                            HumanMessage(content="Inner msg", id="inner"),
+                            *response.result,
+                        ]
+                    },
                 )
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
@@ -631,8 +673,8 @@ class TestAsyncComposition:
         assert messages[1].content == "Inner msg"
         assert messages[2].content == "Hello"
 
-    async def test_async_both_outer_and_inner_merged(self) -> None:
-        """Async: both outer and inner WrapModelCallResult state updates are merged."""
+    async def test_async_outer_wins_on_conflict(self) -> None:
+        """Async: outer's state_update fully overwrites inner's on conflicts."""
 
         class OuterMiddleware(AgentMiddleware):
             async def awrap_model_call(
@@ -670,15 +712,18 @@ class TestAsyncComposition:
 
         result = await agent.ainvoke({"messages": [HumanMessage("Hi")]})
 
+        # Outer wins — inner's messages overwritten
         messages = result["messages"]
-        assert len(messages) == 4
-        assert messages[1].content == "Inner msg"
-        assert messages[2].content == "Outer msg"
-        assert messages[3].content == "Hello"
+        assert len(messages) == 2
+        assert messages[0].content == "Hi"
+        assert messages[1].content == "Outer msg"
 
     async def test_async_inner_state_update_retry_safe(self) -> None:
         """Async: when outer retries, only last inner state update is used."""
         call_count = 0
+
+        class MyState(AgentState):
+            attempt: str
 
         class OuterMiddleware(AgentMiddleware):
             async def awrap_model_call(
@@ -691,6 +736,8 @@ class TestAsyncComposition:
                 return await handler(request)
 
         class InnerMiddleware(AgentMiddleware):
+            state_schema = MyState  # type: ignore[assignment]
+
             async def awrap_model_call(
                 self,
                 request: ModelRequest,
@@ -701,11 +748,7 @@ class TestAsyncComposition:
                 response = await handler(request)
                 return WrapModelCallResult(
                     model_response=response,
-                    state_update={
-                        "messages": [
-                            HumanMessage(content=f"Attempt {call_count}", id=f"a{call_count}")
-                        ]
-                    },
+                    state_update={"attempt": f"attempt_{call_count}"},
                 )
 
         model = GenericFakeChatModel(
@@ -719,5 +762,4 @@ class TestAsyncComposition:
         result = await agent.ainvoke({"messages": [HumanMessage("Hi")]})
 
         messages = result["messages"]
-        assert any(m.content == "Attempt 2" for m in messages)
-        assert not any(m.content == "Attempt 1" for m in messages)
+        assert any(m.content == "Second" for m in messages)

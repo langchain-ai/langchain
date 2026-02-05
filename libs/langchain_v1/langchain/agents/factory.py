@@ -122,53 +122,24 @@ def _normalize_to_model_response(
 def _build_state_updates_from_wrap_result(response: WrapModelCallResult) -> dict[str, Any]:
     """Build state updates from a ``WrapModelCallResult``.
 
-    Merges the model response messages with additional state updates. If
-    ``state_update`` contains a ``"messages"`` key, those messages are prepended
-    before the model response messages (useful for e.g. ``RemoveMessage`` ops).
+    Starts with model response defaults (messages, structured_response), then
+    overlays the middleware's ``state_update``. If ``state_update`` contains a key
+    that conflicts with defaults, the ``state_update`` value wins.
 
     Args:
         response: The wrap model call result containing model response and state updates.
 
     Returns:
-        Merged state updates dict ready to be returned from a model node.
+        State updates dict ready to be returned from a model node.
     """
-    state_updates: dict[str, Any] = {}
-    model_messages = response.model_response.result
+    state_updates: dict[str, Any] = {"messages": response.model_response.result}
 
     if response.model_response.structured_response is not None:
         state_updates["structured_response"] = response.model_response.structured_response
 
-    for key, value in response.state_update.items():
-        if key == "messages":
-            state_updates["messages"] = [*value, *model_messages]
-        else:
-            state_updates[key] = value
-
-    if "messages" not in state_updates:
-        state_updates["messages"] = model_messages
+    state_updates.update(response.state_update)
 
     return state_updates
-
-
-def _merge_state_updates(
-    inner: dict[str, Any], outer: dict[str, Any]
-) -> dict[str, Any]:
-    """Merge inner and outer middleware state updates.
-
-    For the ``"messages"`` key, lists are concatenated (inner first, then outer).
-    For all other keys, outer overwrites inner.
-
-    Args:
-        inner: State updates from inner middleware.
-        outer: State updates from outer middleware.
-
-    Returns:
-        Merged state updates dict.
-    """
-    merged = {**inner, **outer}
-    if "messages" in inner and "messages" in outer:
-        merged["messages"] = [*inner["messages"], *outer["messages"]]
-    return merged
 
 
 def _chain_model_call_handlers(
@@ -281,10 +252,9 @@ def _chain_model_call_handlers(
 
             if isinstance(outer_result, WrapModelCallResult):
                 if inner_state:
-                    merged = _merge_state_updates(inner_state, outer_result.state_update)
                     return WrapModelCallResult(
                         model_response=outer_result.model_response,
-                        state_update=merged,
+                        state_update={**inner_state, **outer_result.state_update},
                     )
                 return outer_result
 
@@ -399,10 +369,9 @@ def _chain_async_model_call_handlers(
 
             if isinstance(outer_result, WrapModelCallResult):
                 if inner_state:
-                    merged = _merge_state_updates(inner_state, outer_result.state_update)
                     return WrapModelCallResult(
                         model_response=outer_result.model_response,
-                        state_update=merged,
+                        state_update={**inner_state, **outer_result.state_update},
                     )
                 return outer_result
 
@@ -1309,7 +1278,8 @@ def create_agent(
             # Call composed handler with base handler
             response = wrap_model_call_handler(request, _execute_model_sync)
 
-        # Handle WrapModelCallResult with state updates
+        # Handle WrapModelCallResult with state updates.
+        # state_update takes priority over model response messages/structured_response.
         if isinstance(response, WrapModelCallResult):
             return _build_state_updates_from_wrap_result(response)
 
@@ -1368,7 +1338,8 @@ def create_agent(
             # Call composed async handler with base handler
             response = await awrap_model_call_handler(request, _execute_model_async)
 
-        # Handle WrapModelCallResult with state updates
+        # Handle WrapModelCallResult with state updates.
+        # state_update takes priority over model response messages/structured_response.
         if isinstance(response, WrapModelCallResult):
             return _build_state_updates_from_wrap_result(response)
 

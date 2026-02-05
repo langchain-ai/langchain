@@ -293,9 +293,13 @@ class WrapModelCallResult(Generic[ResponseT]):
     ``wrap_model_call`` handler. State updates are merged into the agent state
     after the model node completes.
 
-    If ``state_update`` contains a ``"messages"`` key, those messages are prepended
-    before the model response messages. This is useful for operations like clearing
-    message history before adding the new response.
+    The ``state_update`` dict overwrites the default model response state updates.
+    For example, if ``state_update`` contains a ``"messages"`` key, those messages
+    replace the model response messages entirely. If you want to include both custom
+    messages and the model response, include them explicitly in your state update.
+
+    When multiple middleware return ``WrapModelCallResult``, the outermost
+    middleware's ``state_update`` wins on key conflicts.
 
     Type Parameters:
         ResponseT: The type of the structured response. Defaults to `Any` if not specified.
