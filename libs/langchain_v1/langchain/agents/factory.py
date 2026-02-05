@@ -1063,25 +1063,30 @@ def create_agent(
                 )
                 raise ValueError(msg)
 
+        # Normalize raw schemas to AutoStrategy
+        # (handles middleware override with raw Pydantic classes)
+        response_format: ResponseFormat[Any] | Any | None = request.response_format
+        if response_format is not None and not isinstance(
+            response_format, (AutoStrategy, ToolStrategy, ProviderStrategy)
+        ):
+            response_format = AutoStrategy(schema=response_format)
+
         # Determine effective response format (auto-detect if needed)
         effective_response_format: ResponseFormat[Any] | None
-        if isinstance(request.response_format, AutoStrategy):
+        if isinstance(response_format, AutoStrategy):
             # User provided raw schema via AutoStrategy - auto-detect best strategy based on model
             if _supports_provider_strategy(request.model, tools=request.tools):
                 # Model supports provider strategy - use it
-                effective_response_format = ProviderStrategy(schema=request.response_format.schema)
-            elif (
-                request.response_format is initial_response_format
-                and tool_strategy_for_setup is not None
-            ):
+                effective_response_format = ProviderStrategy(schema=response_format.schema)
+            elif response_format is initial_response_format and tool_strategy_for_setup is not None:
                 # Model doesn't support provider strategy - use ToolStrategy
                 # Reuse the strategy from setup if possible to preserve tool names
                 effective_response_format = tool_strategy_for_setup
             else:
-                effective_response_format = ToolStrategy(schema=request.response_format.schema)
+                effective_response_format = ToolStrategy(schema=response_format.schema)
         else:
             # User explicitly specified a strategy - preserve it
-            effective_response_format = request.response_format
+            effective_response_format = response_format
 
         # Build final tools list including structured output tools
         # request.tools now only contains BaseTool instances (converted from callables)
