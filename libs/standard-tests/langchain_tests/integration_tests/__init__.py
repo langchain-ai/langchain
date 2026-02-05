@@ -60,4 +60,4 @@ __all__ = [
 ]
 
 if SandboxProviderIntegrationTests is not None:
-    __all__.append("SandboxProviderIntegrationTests")
+    __all__ += ["SandboxProviderIntegrationTests"]
