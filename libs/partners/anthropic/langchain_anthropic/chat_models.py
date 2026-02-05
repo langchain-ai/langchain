@@ -1899,7 +1899,7 @@ def _lc_tool_calls_to_anthropic_tool_use_blocks(
 
 
 def _convert_to_anthropic_output_config_format(schema: dict | type) -> dict[str, Any]:
-    """Convert JSON schema, Pydantic model, or `TypedDict` into Claude `output_config.format`.
+    """Convert JSON schema, Pydantic model, or `TypedDict` into `output_config.format`.
 
     See Claude docs on [structured outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs).
 
