@@ -178,6 +178,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         additional_kwargs: dict = {}
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
+        if reasoning_content := _dict.get("reasoning_content"):
+            additional_kwargs["reasoning_content"] = reasoning_content
         tool_calls = []
         invalid_tool_calls = []
         if raw_tool_calls := _dict.get("tool_calls"):
@@ -347,6 +349,8 @@ def _convert_message_to_dict(
             )
         if audio:
             message_dict["audio"] = audio
+        if reasoning_content := message.additional_kwargs.get("reasoning_content"):
+            message_dict["reasoning_content"] = reasoning_content
     elif isinstance(message, SystemMessage):
         message_dict["role"] = message.additional_kwargs.get(
             "__openai_role__", "system"
@@ -378,6 +382,8 @@ def _convert_delta_to_message_chunk(
         if "name" in function_call and function_call["name"] is None:
             function_call["name"] = ""
         additional_kwargs["function_call"] = function_call
+    if reasoning_content := _dict.get("reasoning_content"):
+        additional_kwargs["reasoning_content"] = reasoning_content
     tool_call_chunks = []
     if raw_tool_calls := _dict.get("tool_calls"):
         try:
