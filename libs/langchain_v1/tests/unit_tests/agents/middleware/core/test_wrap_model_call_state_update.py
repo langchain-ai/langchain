@@ -5,12 +5,9 @@ state updates alongside the model response.
 """
 
 from collections.abc import Awaitable, Callable
-from typing import Any
 
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, RemoveMessage
-from langgraph.graph.message import add_messages
-from typing_extensions import Annotated, Required, TypedDict
+from langchain_core.messages import AIMessage, HumanMessage, RemoveMessage
 
 from langchain.agents import AgentState, create_agent
 from langchain.agents.middleware.types import (
@@ -70,9 +67,7 @@ class TestBasicStateUpdate:
             ) -> WrapModelCallResult:
                 response = handler(request)
                 # Remove the original human message, add a summary before the AI response
-                remove_ops = [
-                    RemoveMessage(id=m.id) for m in request.state["messages"] if m.id
-                ]
+                remove_ops = [RemoveMessage(id=m.id) for m in request.state["messages"] if m.id]
                 return WrapModelCallResult(
                     model_response=response,
                     state_update={
@@ -92,7 +87,7 @@ class TestBasicStateUpdate:
         assert messages[0].content == "Response"
 
     def test_state_update_without_messages_key(self) -> None:
-        """When state_update doesn't include 'messages', model response messages are used directly."""
+        """When state_update doesn't include 'messages', model response messages are used."""
 
         class CustomFieldMiddleware(AgentMiddleware):
             def wrap_model_call(
@@ -303,9 +298,7 @@ class TestComposition:
                 return WrapModelCallResult(
                     model_response=response,
                     state_update={
-                        "messages": [
-                            HumanMessage(content="Outer state msg", id="outer-msg")
-                        ]
+                        "messages": [HumanMessage(content="Outer state msg", id="outer-msg")]
                     },
                 )
 
@@ -371,9 +364,7 @@ class TestComposition:
                 response = handler(request)
                 return WrapModelCallResult(
                     model_response=response,
-                    state_update={
-                        "messages": [HumanMessage(content="Inner msg", id="inner")]
-                    },
+                    state_update={"messages": [HumanMessage(content="Inner msg", id="inner")]},
                 )
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
