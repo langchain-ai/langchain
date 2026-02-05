@@ -1,22 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
 import pytest
-
-deepagents = pytest.importorskip("deepagents")
-
-from deepagents.backends.protocol import (
-    EditResult,
-    ExecuteResponse,
-    FileDownloadResponse,
-    FileInfo,
-    FileUploadResponse,
-    GrepMatch,
-    WriteResult,
-)
+from deepagents.backends.protocol import ExecuteResponse
 from deepagents.backends.sandbox import (
+    BaseSandbox,
     SandboxListResponse,
     SandboxNotFoundError,
     SandboxProvider,
@@ -25,42 +14,17 @@ from deepagents.backends.sandbox import (
 from langchain_tests.integration_tests.sandboxes import SandboxProviderIntegrationTests
 
 
-@dataclass(frozen=True, slots=True)
-class _InMemorySandboxBackend:
-    sandbox_id: str
+class _InMemorySandboxBackend(BaseSandbox):
+    def __init__(self, sandbox_id: str) -> None:
+        self._id = sandbox_id
 
     @property
     def id(self) -> str:
-        return self.sandbox_id
+        return self._id
 
     def execute(self, command: str) -> ExecuteResponse:
-        return ExecuteResponse(output=f"executed: {command}")
-
-    def glob(self, *, path: str, pattern: str) -> list[FileInfo]:
-        _ = (path, pattern)
-        return []
-
-    def write_file(self, *, path: str, content: str) -> WriteResult:
-        _ = (path, content)
-        msg = "in-memory backend does not persist files"
-        raise NotImplementedError(msg)
-
-    def edit_file(self, *, path: str, old: str, new: str) -> EditResult:
-        _ = (path, old, new)
-        msg = "in-memory backend does not persist files"
-        raise NotImplementedError(msg)
-
-    def grep(self, *, path: str, pattern: str) -> list[GrepMatch]:
-        _ = (path, pattern)
-        return []
-
-    def upload_files(self, files: list[tuple[str, bytes]]) -> list[FileUploadResponse]:
-        _ = files
-        return []
-
-    def download_files(self, paths: list[str]) -> list[FileDownloadResponse]:
-        _ = paths
-        return []
+        _ = command
+        return ExecuteResponse(output="foo")
 
 
 class _InMemorySandboxProvider(SandboxProvider[dict[str, Any]]):

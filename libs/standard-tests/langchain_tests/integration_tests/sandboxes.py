@@ -18,9 +18,7 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-deepagents = pytest.importorskip("deepagents")
-
-from deepagents.backends.sandbox import SandboxNotFoundError, SandboxProvider
+from deepagents.backends.sandbox import SandboxProvider
 from langchain_tests.integration_tests import SandboxProviderIntegrationTests
 
 from langchain_acme_sandbox import AcmeSandboxProvider
@@ -36,7 +34,10 @@ class TestAcmeSandboxProviderStandard(SandboxProviderIntegrationTests):
     def has_async(self) -> bool:
         return True
 ```
+
 """
+
+# ruff: noqa: E402
 
 from __future__ import annotations
 
@@ -71,12 +72,14 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
         return True
 
     def test_list_is_empty(self, sandbox_provider: SandboxProvider[Any]) -> None:
+        """Test that the `SandboxProvider` starts from a blank slate."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
         assert sandbox_provider.list()["items"] == []
 
     def test_list_schema_empty(self, sandbox_provider: SandboxProvider[Any]) -> None:
+        """Test the return schema of `list()` on an empty provider."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
@@ -90,6 +93,7 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
         self,
         sandbox_provider: SandboxProvider[Any],
     ) -> None:
+        """Test create is visible in list, and delete returns provider to empty."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
@@ -114,6 +118,7 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
         self,
         sandbox_provider: SandboxProvider[Any],
     ) -> None:
+        """Test reconnecting to an existing sandbox does not create a new one."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
@@ -136,6 +141,7 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
         self,
         sandbox_provider: SandboxProvider[Any],
     ) -> None:
+        """Test missing sandbox_id raises a `SandboxNotFoundError`."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
@@ -148,6 +154,7 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
         assert sandbox_provider.list()["items"] == []
 
     def test_delete_is_idempotent(self, sandbox_provider: SandboxProvider[Any]) -> None:
+        """Test `delete()` is idempotent and safe to call for missing IDs."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
@@ -165,6 +172,7 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
     async def test_async_list_is_empty(
         self, sandbox_provider: SandboxProvider[Any]
     ) -> None:
+        """Async: test that the `SandboxProvider` starts from a blank slate."""
         if not self.has_async:
             pytest.skip("Async tests not supported.")
 
@@ -173,6 +181,7 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
     async def test_async_list_schema_empty(
         self, sandbox_provider: SandboxProvider[Any]
     ) -> None:
+        """Async: test the return schema of `list()` on an empty provider."""
         if not self.has_async:
             pytest.skip("Async tests not supported.")
 
@@ -186,6 +195,7 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
         self,
         sandbox_provider: SandboxProvider[Any],
     ) -> None:
+        """Async: test create is visible in list, and delete restores empty."""
         if not self.has_async:
             pytest.skip("Async tests not supported.")
 
@@ -210,6 +220,7 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
         self,
         sandbox_provider: SandboxProvider[Any],
     ) -> None:
+        """Async: test reconnecting to an existing sandbox does not create a new one."""
         if not self.has_async:
             pytest.skip("Async tests not supported.")
 
@@ -232,6 +243,7 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
         self,
         sandbox_provider: SandboxProvider[Any],
     ) -> None:
+        """Async: test missing sandbox_id raises a `SandboxNotFoundError`."""
         if not self.has_async:
             pytest.skip("Async tests not supported.")
 
@@ -247,6 +259,7 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
         self,
         sandbox_provider: SandboxProvider[Any],
     ) -> None:
+        """Async: test `delete()` is idempotent and safe to call for missing IDs."""
         if not self.has_async:
             pytest.skip("Async tests not supported.")
 
