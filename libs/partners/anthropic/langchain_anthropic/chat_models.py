@@ -1884,8 +1884,9 @@ def _documents_in_params(params: dict) -> bool:
 
 
 def _compact_in_params(params: dict) -> bool:
-    edits = params.get("context_management", {}).get("edits", [])
-    return any("compact" in edit.get("type", "") for edit in edits)
+    edits = params.get("context_management", {}).get("edits") or []
+
+    return any("compact" in (edit.get("type") or "") for edit in edits)
 
 
 class _AnthropicToolUse(TypedDict):
