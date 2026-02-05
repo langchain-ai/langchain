@@ -21,10 +21,10 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.2.8"
+version = "1.2.9"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.8,<2.0.0",
+    "langchain-core>=1.2.9,<2.0.0",
     "langgraph>=1.0.7,<1.1.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
@@ -107,7 +107,12 @@ line-length = 100
 strict = true
 enable_error_code = "deprecated"
 warn_unreachable = true
-exclude = ["tests/unit_tests/agents/*"]
+exclude = [
+    # Exclude agents tests except middleware_typing/ which has type-checked tests
+    "tests/unit_tests/agents/middleware/",
+    "tests/unit_tests/agents/specifications/",
+    "tests/unit_tests/agents/test_.*\\.py",
+]
 
 # TODO: activate for 'strict' checking
 warn_return_any = false

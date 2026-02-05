@@ -26,6 +26,7 @@ from typing_extensions import NotRequired, Required, TypedDict
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
+    ContextT,
     JumpTo,
     ModelRequest,
     ModelResponse,
@@ -57,7 +58,6 @@ if TYPE_CHECKING:
     from langgraph.runtime import Runtime
     from langgraph.store.base import BaseStore
     from langgraph.types import Checkpointer
-    from langgraph.typing import ContextT
 
     from langchain.agents.middleware.types import ToolCallRequest, ToolCallWrapper
 
@@ -112,13 +112,13 @@ def _normalize_to_model_response(result: ModelResponse | AIMessage) -> ModelResp
 def _chain_model_call_handlers(
     handlers: Sequence[
         Callable[
-            [ModelRequest, Callable[[ModelRequest], ModelResponse]],
+            [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
             ModelResponse | AIMessage,
         ]
     ],
 ) -> (
     Callable[
-        [ModelRequest, Callable[[ModelRequest], ModelResponse]],
+        [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
         ModelResponse,
     ]
     | None
@@ -168,8 +168,8 @@ def _chain_model_call_handlers(
         single_handler = handlers[0]
 
         def normalized_single(
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
+            request: ModelRequest[ContextT],
+            handler: Callable[[ModelRequest[ContextT]], ModelResponse],
         ) -> ModelResponse:
             result = single_handler(request, handler)
             return _normalize_to_model_response(result)
@@ -178,25 +178,25 @@ def _chain_model_call_handlers(
 
     def compose_two(
         outer: Callable[
-            [ModelRequest, Callable[[ModelRequest], ModelResponse]],
+            [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
             ModelResponse | AIMessage,
         ],
         inner: Callable[
-            [ModelRequest, Callable[[ModelRequest], ModelResponse]],
+            [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
             ModelResponse | AIMessage,
         ],
     ) -> Callable[
-        [ModelRequest, Callable[[ModelRequest], ModelResponse]],
+        [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
         ModelResponse,
     ]:
         """Compose two handlers where outer wraps inner."""
 
         def composed(
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
+            request: ModelRequest[ContextT],
+            handler: Callable[[ModelRequest[ContextT]], ModelResponse],
         ) -> ModelResponse:
             # Create a wrapper that calls inner with the base handler and normalizes
-            def inner_handler(req: ModelRequest) -> ModelResponse:
+            def inner_handler(req: ModelRequest[ContextT]) -> ModelResponse:
                 inner_result = inner(req, handler)
                 return _normalize_to_model_response(inner_result)
 
@@ -213,8 +213,8 @@ def _chain_model_call_handlers(
 
     # Wrap to ensure final return type is exactly ModelResponse
     def final_normalized(
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse],
     ) -> ModelResponse:
         # result here is typed as returning ModelResponse | AIMessage but compose_two normalizes
         final_result = result(request, handler)
@@ -226,13 +226,13 @@ def _chain_model_call_handlers(
 def _chain_async_model_call_handlers(
     handlers: Sequence[
         Callable[
-            [ModelRequest, Callable[[ModelRequest], Awaitable[ModelResponse]]],
+            [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
             Awaitable[ModelResponse | AIMessage],
         ]
     ],
 ) -> (
     Callable[
-        [ModelRequest, Callable[[ModelRequest], Awaitable[ModelResponse]]],
+        [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
         Awaitable[ModelResponse],
     ]
     | None
@@ -255,8 +255,8 @@ def _chain_async_model_call_handlers(
         single_handler = handlers[0]
 
         async def normalized_single(
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+            request: ModelRequest[ContextT],
+            handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
         ) -> ModelResponse:
             result = await single_handler(request, handler)
             return _normalize_to_model_response(result)
@@ -265,25 +265,25 @@ def _chain_async_model_call_handlers(
 
     def compose_two(
         outer: Callable[
-            [ModelRequest, Callable[[ModelRequest], Awaitable[ModelResponse]]],
+            [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
             Awaitable[ModelResponse | AIMessage],
         ],
         inner: Callable[
-            [ModelRequest, Callable[[ModelRequest], Awaitable[ModelResponse]]],
+            [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
             Awaitable[ModelResponse | AIMessage],
         ],
     ) -> Callable[
-        [ModelRequest, Callable[[ModelRequest], Awaitable[ModelResponse]]],
+        [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
         Awaitable[ModelResponse],
     ]:
         """Compose two async handlers where outer wraps inner."""
 
         async def composed(
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+            request: ModelRequest[ContextT],
+            handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
         ) -> ModelResponse:
             # Create a wrapper that calls inner with the base handler and normalizes
-            async def inner_handler(req: ModelRequest) -> ModelResponse:
+            async def inner_handler(req: ModelRequest[ContextT]) -> ModelResponse:
                 inner_result = await inner(req, handler)
                 return _normalize_to_model_response(inner_result)
 
@@ -300,8 +300,8 @@ def _chain_async_model_call_handlers(
 
     # Wrap to ensure final return type is exactly ModelResponse
     async def final_normalized(
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
     ) -> ModelResponse:
         # result here is typed as returning ModelResponse | AIMessage but compose_two normalizes
         final_result = await result(request, handler)
@@ -1015,7 +1015,7 @@ def create_agent(
         return {"messages": [output]}
 
     def _get_bound_model(
-        request: ModelRequest,
+        request: ModelRequest[ContextT],
     ) -> tuple[Runnable[Any, Any], ResponseFormat[Any] | None]:
         """Get the model with appropriate tool bindings.
 
@@ -1138,7 +1138,7 @@ def create_agent(
             )
         return request.model.bind(**request.model_settings), None
 
-    def _execute_model_sync(request: ModelRequest) -> ModelResponse:
+    def _execute_model_sync(request: ModelRequest[ContextT]) -> ModelResponse:
         """Execute model and return response.
 
         This is the core model execution logic wrapped by `wrap_model_call` handlers.
@@ -1192,7 +1192,7 @@ def create_agent(
 
         return state_updates
 
-    async def _execute_model_async(request: ModelRequest) -> ModelResponse:
+    async def _execute_model_async(request: ModelRequest[ContextT]) -> ModelResponse:
         """Execute model asynchronously and return response.
 
         This is the core async model execution logic wrapped by `wrap_model_call`
