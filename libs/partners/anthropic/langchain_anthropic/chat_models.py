@@ -848,6 +848,8 @@ class ChatAnthropic(BaseChatModel):
     """Parameters for Claude reasoning,
 
     e.g., `#!python {"type": "enabled", "budget_tokens": 10_000}`
+
+    For Claude Opus 4.6, `budget_tokens` is deprecated in favor of `{type: "adaptive"}`.
     """
 
     effort: Literal["high", "medium", "low"] | None = None
@@ -894,6 +896,12 @@ class ChatAnthropic(BaseChatModel):
     model responses will include container metadata. Set `reuse_last_container=True`
     to automatically reuse the container from the most recent response for subsequent
     invocations.
+    """
+
+    inference_geo: str | None = None
+    """Controls where model inference runs. See Anthropic's
+    [data residency](https://platform.claude.com/docs/en/build-with-claude/data-residency)
+    docs for more information.
     """
 
     @property
@@ -1122,6 +1130,8 @@ class ChatAnthropic(BaseChatModel):
         }
         if self.thinking is not None:
             payload["thinking"] = self.thinking
+        if self.inference_geo is not None:
+            payload["inference_geo"] = self.inference_geo
 
         # Handle output_config and effort parameter
         # Priority: self.effort > payload output_config
