@@ -56,6 +56,7 @@ __all__ = [
     "StateT_co",
     "ToolCallRequest",
     "ToolCallWrapper",
+    "WrapModelCallResult",
     "after_agent",
     "after_model",
     "before_agent",
@@ -285,14 +286,38 @@ class ModelResponse(Generic[ResponseT]):
     """Parsed structured output if `response_format` was specified, `None` otherwise."""
 
 
+@dataclass
+class WrapModelCallResult(Generic[ResponseT]):
+    """Model response with additional state updates from ``wrap_model_call`` middleware.
+
+    Use this to return state updates alongside the model response from a
+    ``wrap_model_call`` handler. State updates are merged into the agent state
+    after the model node completes.
+
+    If ``state_update`` contains a ``"messages"`` key, those messages are prepended
+    before the model response messages. This is useful for operations like clearing
+    message history before adding the new response.
+
+    Type Parameters:
+        ResponseT: The type of the structured response. Defaults to `Any` if not specified.
+    """
+
+    model_response: ModelResponse[ResponseT]
+    """The underlying model response."""
+
+    state_update: dict[str, Any]
+    """Additional state updates to merge into the agent state."""
+
+
 # Type alias for middleware return type - allows returning either full response or just AIMessage
-ModelCallResult: TypeAlias = "ModelResponse[ResponseT] | AIMessage"
+ModelCallResult: TypeAlias = "ModelResponse[ResponseT] | AIMessage | WrapModelCallResult[ResponseT]"
 """`TypeAlias` for model call handler return value.
 
 Middleware can return either:
 
 - `ModelResponse`: Full response with messages and optional structured output
 - `AIMessage`: Simplified return for simple use cases
+- `WrapModelCallResult`: Response with additional state updates
 """
 
 

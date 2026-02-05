@@ -33,6 +33,7 @@ from langchain.agents.middleware.types import (
     OmitFromSchema,
     ResponseT,
     StateT_co,
+    WrapModelCallResult,
     _InputAgentState,
     _OutputAgentState,
 )
@@ -102,24 +103,64 @@ FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
 ]
 
 
-def _normalize_to_model_response(result: ModelResponse | AIMessage) -> ModelResponse:
-    """Normalize middleware return value to ModelResponse."""
+def _normalize_to_model_response(
+    result: ModelResponse | AIMessage | WrapModelCallResult,
+) -> ModelResponse:
+    """Normalize middleware return value to ModelResponse.
+
+    At inner composition boundaries, ``WrapModelCallResult`` is unwrapped to its
+    underlying ``ModelResponse`` so that inner middleware always sees ``ModelResponse``
+    from the handler.
+    """
     if isinstance(result, AIMessage):
         return ModelResponse(result=[result], structured_response=None)
+    if isinstance(result, WrapModelCallResult):
+        return result.model_response
     return result
+
+
+def _build_state_updates_from_wrap_result(response: WrapModelCallResult) -> dict[str, Any]:
+    """Build state updates from a ``WrapModelCallResult``.
+
+    Merges the model response messages with additional state updates. If
+    ``state_update`` contains a ``"messages"`` key, those messages are prepended
+    before the model response messages (useful for e.g. ``RemoveMessage`` ops).
+
+    Args:
+        response: The wrap model call result containing model response and state updates.
+
+    Returns:
+        Merged state updates dict ready to be returned from a model node.
+    """
+    state_updates: dict[str, Any] = {}
+    model_messages = response.model_response.result
+
+    if response.model_response.structured_response is not None:
+        state_updates["structured_response"] = response.model_response.structured_response
+
+    for key, value in response.state_update.items():
+        if key == "messages":
+            state_updates["messages"] = [*value, *model_messages]
+        else:
+            state_updates[key] = value
+
+    if "messages" not in state_updates:
+        state_updates["messages"] = model_messages
+
+    return state_updates
 
 
 def _chain_model_call_handlers(
     handlers: Sequence[
         Callable[
             [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
-            ModelResponse | AIMessage,
+            ModelResponse | AIMessage | WrapModelCallResult,
         ]
     ],
 ) -> (
     Callable[
         [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
-        ModelResponse,
+        ModelResponse | WrapModelCallResult,
     ]
     | None
 ):
@@ -164,14 +205,16 @@ def _chain_model_call_handlers(
         return None
 
     if len(handlers) == 1:
-        # Single handler - wrap to normalize output
+        # Single handler - normalize AIMessage but preserve WrapModelCallResult
         single_handler = handlers[0]
 
         def normalized_single(
             request: ModelRequest[ContextT],
             handler: Callable[[ModelRequest[ContextT]], ModelResponse],
-        ) -> ModelResponse:
+        ) -> ModelResponse | WrapModelCallResult:
             result = single_handler(request, handler)
+            if isinstance(result, WrapModelCallResult):
+                return result
             return _normalize_to_model_response(result)
 
         return normalized_single
@@ -179,29 +222,33 @@ def _chain_model_call_handlers(
     def compose_two(
         outer: Callable[
             [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
-            ModelResponse | AIMessage,
+            ModelResponse | AIMessage | WrapModelCallResult,
         ],
         inner: Callable[
             [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
-            ModelResponse | AIMessage,
+            ModelResponse | AIMessage | WrapModelCallResult,
         ],
     ) -> Callable[
         [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
-        ModelResponse,
+        ModelResponse | WrapModelCallResult,
     ]:
         """Compose two handlers where outer wraps inner."""
 
         def composed(
             request: ModelRequest[ContextT],
             handler: Callable[[ModelRequest[ContextT]], ModelResponse],
-        ) -> ModelResponse:
+        ) -> ModelResponse | WrapModelCallResult:
             # Create a wrapper that calls inner with the base handler and normalizes
+            # Inner boundaries always normalize to ModelResponse
             def inner_handler(req: ModelRequest[ContextT]) -> ModelResponse:
                 inner_result = inner(req, handler)
                 return _normalize_to_model_response(inner_result)
 
-            # Call outer with the wrapped inner as its handler and normalize
+            # Call outer with the wrapped inner as its handler
+            # Preserve WrapModelCallResult from outer
             outer_result = outer(request, inner_handler)
+            if isinstance(outer_result, WrapModelCallResult):
+                return outer_result
             return _normalize_to_model_response(outer_result)
 
         return composed
@@ -211,13 +258,14 @@ def _chain_model_call_handlers(
     for handler in reversed(handlers[:-1]):
         result = compose_two(handler, result)
 
-    # Wrap to ensure final return type is exactly ModelResponse
+    # Wrap to preserve WrapModelCallResult from outermost middleware
     def final_normalized(
         request: ModelRequest[ContextT],
         handler: Callable[[ModelRequest[ContextT]], ModelResponse],
-    ) -> ModelResponse:
-        # result here is typed as returning ModelResponse | AIMessage but compose_two normalizes
+    ) -> ModelResponse | WrapModelCallResult:
         final_result = result(request, handler)
+        if isinstance(final_result, WrapModelCallResult):
+            return final_result
         return _normalize_to_model_response(final_result)
 
     return final_normalized
@@ -227,13 +275,13 @@ def _chain_async_model_call_handlers(
     handlers: Sequence[
         Callable[
             [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
-            Awaitable[ModelResponse | AIMessage],
+            Awaitable[ModelResponse | AIMessage | WrapModelCallResult],
         ]
     ],
 ) -> (
     Callable[
         [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
-        Awaitable[ModelResponse],
+        Awaitable[ModelResponse | WrapModelCallResult],
     ]
     | None
 ):
@@ -251,14 +299,16 @@ def _chain_async_model_call_handlers(
         return None
 
     if len(handlers) == 1:
-        # Single handler - wrap to normalize output
+        # Single handler - normalize AIMessage but preserve WrapModelCallResult
         single_handler = handlers[0]
 
         async def normalized_single(
             request: ModelRequest[ContextT],
             handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
-        ) -> ModelResponse:
+        ) -> ModelResponse | WrapModelCallResult:
             result = await single_handler(request, handler)
+            if isinstance(result, WrapModelCallResult):
+                return result
             return _normalize_to_model_response(result)
 
         return normalized_single
@@ -266,29 +316,33 @@ def _chain_async_model_call_handlers(
     def compose_two(
         outer: Callable[
             [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
-            Awaitable[ModelResponse | AIMessage],
+            Awaitable[ModelResponse | AIMessage | WrapModelCallResult],
         ],
         inner: Callable[
             [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
-            Awaitable[ModelResponse | AIMessage],
+            Awaitable[ModelResponse | AIMessage | WrapModelCallResult],
         ],
     ) -> Callable[
         [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
-        Awaitable[ModelResponse],
+        Awaitable[ModelResponse | WrapModelCallResult],
     ]:
         """Compose two async handlers where outer wraps inner."""
 
         async def composed(
             request: ModelRequest[ContextT],
             handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
-        ) -> ModelResponse:
+        ) -> ModelResponse | WrapModelCallResult:
             # Create a wrapper that calls inner with the base handler and normalizes
+            # Inner boundaries always normalize to ModelResponse
             async def inner_handler(req: ModelRequest[ContextT]) -> ModelResponse:
                 inner_result = await inner(req, handler)
                 return _normalize_to_model_response(inner_result)
 
-            # Call outer with the wrapped inner as its handler and normalize
+            # Call outer with the wrapped inner as its handler
+            # Preserve WrapModelCallResult from outer
             outer_result = await outer(request, inner_handler)
+            if isinstance(outer_result, WrapModelCallResult):
+                return outer_result
             return _normalize_to_model_response(outer_result)
 
         return composed
@@ -298,13 +352,14 @@ def _chain_async_model_call_handlers(
     for handler in reversed(handlers[:-1]):
         result = compose_two(handler, result)
 
-    # Wrap to ensure final return type is exactly ModelResponse
+    # Wrap to preserve WrapModelCallResult from outermost middleware
     async def final_normalized(
         request: ModelRequest[ContextT],
         handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
-    ) -> ModelResponse:
-        # result here is typed as returning ModelResponse | AIMessage but compose_two normalizes
+    ) -> ModelResponse | WrapModelCallResult:
         final_result = await result(request, handler)
+        if isinstance(final_result, WrapModelCallResult):
+            return final_result
         return _normalize_to_model_response(final_result)
 
     return final_normalized
@@ -1180,10 +1235,14 @@ def create_agent(
 
         if wrap_model_call_handler is None:
             # No handlers - execute directly
-            response = _execute_model_sync(request)
+            response: ModelResponse | WrapModelCallResult = _execute_model_sync(request)
         else:
             # Call composed handler with base handler
             response = wrap_model_call_handler(request, _execute_model_sync)
+
+        # Handle WrapModelCallResult with state updates
+        if isinstance(response, WrapModelCallResult):
+            return _build_state_updates_from_wrap_result(response)
 
         # Extract state updates from ModelResponse
         state_updates = {"messages": response.result}
@@ -1235,10 +1294,14 @@ def create_agent(
 
         if awrap_model_call_handler is None:
             # No async handlers - execute directly
-            response = await _execute_model_async(request)
+            response: ModelResponse | WrapModelCallResult = await _execute_model_async(request)
         else:
             # Call composed async handler with base handler
             response = await awrap_model_call_handler(request, _execute_model_async)
+
+        # Handle WrapModelCallResult with state updates
+        if isinstance(response, WrapModelCallResult):
+            return _build_state_updates_from_wrap_result(response)
 
         # Extract state updates from ModelResponse
         state_updates = {"messages": response.result}
