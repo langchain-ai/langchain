@@ -345,13 +345,10 @@ def merge_content(
         The merged content.
 
     """
-    merged = first_content
+    merged = "" if first_content is None else first_content
 
     for content in contents:
         if content is None or content == "":
-            continue
-        if merged is None or merged == "":
-            merged = content
             continue
 
         # If current is a string
@@ -361,7 +358,7 @@ def merge_content(
                 merged += content
             # If the next chunk is a list, add the current to the start of the list
             else:
-                merged = [merged, *content]
+                merged = [merged, *content] if merged or not content else content
         elif isinstance(content, list):
             # If both are lists
             merged = merge_lists(cast("list", merged), content)  # type: ignore[assignment]
@@ -371,14 +368,11 @@ def merge_content(
         elif isinstance(merged, list) and merged and isinstance(merged[-1], str):
             merged[-1] += content
         # Otherwise, add the second content as a new element of the list
+        elif isinstance(merged, list):
+            merged.append(content)
         else:
-            if isinstance(merged, list):
-                merged.append(content)
-            else:
-                merged = [merged, content]
-    
-    if merged is None:
-        return ""
+            merged = [merged, content]
+
     return merged
 
 
