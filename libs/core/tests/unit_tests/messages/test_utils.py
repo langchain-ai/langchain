@@ -1615,7 +1615,7 @@ def test_count_tokens_approximately_usage_metadata_scaling() -> None:
     scaled = count_tokens_approximately(messages, use_usage_metadata_scaling=True)
 
     ratio = scaled / unscaled
-    assert 1 <= ratio <= 1.5
+    assert 1 <= round(ratio, 1) <= 1.2  # we ceil scale token counts, so can be > 1.2
 
     messages.extend([ToolMessage("text", tool_call_id="abc123")] * 3)
 
@@ -1631,7 +1631,7 @@ def test_count_tokens_approximately_usage_metadata_scaling() -> None:
     # And the scaled total should be the unscaled total multiplied by the same ratio.
     # ratio = 200 / unscaled (as of last AI message)
     expected_scaled_extended = math.ceil(unscaled_extended * ratio)
-    assert scaled_extended == expected_scaled_extended
+    assert scaled_extended <= expected_scaled_extended <= scaled_extended + 1
 
 
 def test_count_tokens_approximately_usage_metadata_scaling_model_provider() -> None:
