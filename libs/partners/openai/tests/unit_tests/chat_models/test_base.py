@@ -33,6 +33,7 @@ from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables.base import RunnableBinding, RunnableSequence
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
+from openai import APIResponse
 from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
 from openai.types.responses.response import IncompleteDetails, Response
 from openai.types.responses.response_error import ResponseError
@@ -53,7 +54,7 @@ from openai.types.responses.response_usage import (
     OutputTokensDetails,
     ResponseUsage,
 )
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr, ValidationError
 from typing_extensions import Self, TypedDict
 
 from langchain_openai import ChatOpenAI
@@ -3226,3 +3227,68 @@ def test_openai_structured_output_refusal_handling_responses_api() -> None:
         pass
     except ValueError as e:
         pytest.fail(f"This is a wrong behavior. Error details: {e}")
+
+
+def test_with_structured_output_validation_error() -> None:
+    """Test that ValidationError from OpenAI SDK populates parsing_error when using
+    with_structured_output with method='json_schema' and include_raw=True.
+
+    When using the OpenAI SDK's .parse() method with a Pydantic schema, a
+    pydantic.ValidationError can be raised during the LLM invocation if the response
+    doesn't match the schema. This error should be caught and stored in
+    `parsing_error` rather than being raised, when `include_raw=True`.
+    """
+    llm = ChatOpenAI(
+        model="gpt-4o-mini",
+        api_key=SecretStr(
+            "test-api-key"
+        ),  # Set a fake API key to avoid validation error
+    )
+    structured_llm = llm.with_structured_output(
+        Foo, method="json_schema", include_raw=True, strict=True
+    )
+
+    # Mock API call + ValidationError from OpenAI SDK
+    response_json = {
+        "id": "chatcmpl-123",
+        "object": "chat.completion",
+        "model": "gpt-4o-mini",
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": '{"bar": "invalid_not_an_int"}',
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+    }
+    mock_api_response = MagicMock(spec=APIResponse)
+    mock_api_response.http_response = MagicMock(spec=Response)
+    mock_api_response.http_response.json.return_value = response_json
+    mock_api_response.parse.side_effect = ValidationError.from_exception_data(
+        title="Foo",
+        line_errors=[
+            {
+                "type": "missing",
+                "loc": ("bar",),
+                "input": {"name": "test"},
+            }
+        ],
+    )
+
+    mock_root_client = MagicMock()
+    mock_root_client.chat.completions.with_raw_response.parse.return_value = (
+        mock_api_response
+    )
+
+    with patch.object(llm, "root_client", mock_root_client):
+        result = structured_llm.invoke("Foo bar")
+
+    assert isinstance(result, dict)
+    assert isinstance(result["raw"], AIMessage)
+    assert result["parsed"] is None
+    assert "parsing_error" in result
+    assert result["parsing_error"] is not None
