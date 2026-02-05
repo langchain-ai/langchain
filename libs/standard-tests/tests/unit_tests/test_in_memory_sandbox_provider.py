@@ -16,7 +16,11 @@ from deepagents.backends.protocol import (
     GrepMatch,
     WriteResult,
 )
-from deepagents.backends.sandbox import SandboxListResponse, SandboxProvider
+from deepagents.backends.sandbox import (
+    SandboxListResponse,
+    SandboxNotFoundError,
+    SandboxProvider,
+)
 
 from langchain_tests.integration_tests.sandboxes import SandboxProviderIntegrationTests
 
@@ -88,7 +92,7 @@ class _InMemorySandboxProvider(SandboxProvider[dict[str, Any]]):
 
         if sandbox_id not in self._sandboxes:
             msg = f"Sandbox {sandbox_id} not found"
-            raise ValueError(msg)
+            raise SandboxNotFoundError(msg)
 
         return _InMemorySandboxBackend(sandbox_id=sandbox_id)
 

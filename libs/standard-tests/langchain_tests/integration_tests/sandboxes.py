@@ -18,7 +18,9 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-from deepagents.backends.sandbox import SandboxProvider
+deepagents = pytest.importorskip("deepagents")
+
+from deepagents.backends.sandbox import SandboxNotFoundError, SandboxProvider
 from langchain_tests.integration_tests import SandboxProviderIntegrationTests
 
 from langchain_acme_sandbox import AcmeSandboxProvider
@@ -42,7 +44,10 @@ from abc import abstractmethod
 from typing import Any
 
 import pytest
-from deepagents.backends.sandbox import SandboxProvider
+
+deepagents = pytest.importorskip("deepagents")
+
+from deepagents.backends.sandbox import SandboxNotFoundError, SandboxProvider
 
 from langchain_tests.base import BaseStandardTests
 
@@ -65,7 +70,13 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
         """Configurable property to enable or disable async tests."""
         return True
 
-    def test_list_schema(self, sandbox_provider: SandboxProvider[Any]) -> None:
+    def test_list_is_empty(self, sandbox_provider: SandboxProvider[Any]) -> None:
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
+        assert sandbox_provider.list()["items"] == []
+
+    def test_list_schema_empty(self, sandbox_provider: SandboxProvider[Any]) -> None:
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
@@ -73,11 +84,9 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
         assert set(result) == {"items", "cursor"}
         assert isinstance(result["items"], list)
         assert isinstance(result["cursor"], str | type(None))
+        assert result["items"] == []
 
-        for item in result["items"]:
-            assert isinstance(item["sandbox_id"], str)
-
-    def test_create_visible_in_list_and_reconnect_does_not_create(
+    def test_create_then_list_schema_then_delete_restores_empty(
         self,
         sandbox_provider: SandboxProvider[Any],
     ) -> None:
@@ -85,27 +94,64 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
             pytest.skip("Sync tests not supported.")
 
         before = sandbox_provider.list()
-        before_ids = {item["sandbox_id"] for item in before["items"]}
+        assert before["items"] == []
 
         backend = sandbox_provider.get_or_create(sandbox_id=None)
         assert isinstance(backend.id, str)
         created_id = backend.id
 
         after_create = sandbox_provider.list()
-        after_create_ids = {item["sandbox_id"] for item in after_create["items"]}
-        assert created_id in after_create_ids
-        assert len(after_create_ids) == len(before_ids) + 1
+        assert len(after_create["items"]) == 1
+        assert {item["sandbox_id"] for item in after_create["items"]} == {created_id}
+        assert isinstance(after_create["items"][0]["sandbox_id"], str)
+
+        sandbox_provider.delete(sandbox_id=created_id)
+
+        after_delete = sandbox_provider.list()
+        assert after_delete["items"] == []
+
+    def test_get_or_create_existing_does_not_create_new(
+        self,
+        sandbox_provider: SandboxProvider[Any],
+    ) -> None:
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
+        assert sandbox_provider.list()["items"] == []
+
+        backend = sandbox_provider.get_or_create(sandbox_id=None)
+        created_id = backend.id
+
+        after_create = sandbox_provider.list()
+        assert {item["sandbox_id"] for item in after_create["items"]} == {created_id}
 
         _reconnected = sandbox_provider.get_or_create(sandbox_id=created_id)
         after_reconnect = sandbox_provider.list()
-        after_reconnect_ids = {item["sandbox_id"] for item in after_reconnect["items"]}
-        assert after_reconnect_ids == after_create_ids
+        assert {item["sandbox_id"] for item in after_reconnect["items"]} == {created_id}
 
         sandbox_provider.delete(sandbox_id=created_id)
+        assert sandbox_provider.list()["items"] == []
+
+    def test_get_or_create_missing_id_raises(
+        self,
+        sandbox_provider: SandboxProvider[Any],
+    ) -> None:
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
+        assert sandbox_provider.list()["items"] == []
+
+        missing_id = "definitely-not-a-real-sandbox-id"
+        with pytest.raises(SandboxNotFoundError):
+            sandbox_provider.get_or_create(sandbox_id=missing_id)
+
+        assert sandbox_provider.list()["items"] == []
 
     def test_delete_is_idempotent(self, sandbox_provider: SandboxProvider[Any]) -> None:
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
+
+        assert sandbox_provider.list()["items"] == []
 
         backend = sandbox_provider.get_or_create(sandbox_id=None)
         created_id = backend.id
@@ -114,7 +160,17 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
         sandbox_provider.delete(sandbox_id=created_id)
         sandbox_provider.delete(sandbox_id="definitely-not-a-real-sandbox-id")
 
-    async def test_async_list_schema(
+        assert sandbox_provider.list()["items"] == []
+
+    async def test_async_list_is_empty(
+        self, sandbox_provider: SandboxProvider[Any]
+    ) -> None:
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
+        assert (await sandbox_provider.alist())["items"] == []
+
+    async def test_async_list_schema_empty(
         self, sandbox_provider: SandboxProvider[Any]
     ) -> None:
         if not self.has_async:
@@ -124,11 +180,9 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
         assert set(result) == {"items", "cursor"}
         assert isinstance(result["items"], list)
         assert isinstance(result["cursor"], str | type(None))
+        assert result["items"] == []
 
-        for item in result["items"]:
-            assert isinstance(item["sandbox_id"], str)
-
-    async def test_async_create_visible_in_list_and_reconnect_does_not_create(
+    async def test_async_create_then_list_schema_then_delete_restores_empty(
         self,
         sandbox_provider: SandboxProvider[Any],
     ) -> None:
@@ -136,23 +190,58 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
             pytest.skip("Async tests not supported.")
 
         before = await sandbox_provider.alist()
-        before_ids = {item["sandbox_id"] for item in before["items"]}
+        assert before["items"] == []
 
         backend = await sandbox_provider.aget_or_create(sandbox_id=None)
         assert isinstance(backend.id, str)
         created_id = backend.id
 
         after_create = await sandbox_provider.alist()
-        after_create_ids = {item["sandbox_id"] for item in after_create["items"]}
-        assert created_id in after_create_ids
-        assert len(after_create_ids) == len(before_ids) + 1
+        assert len(after_create["items"]) == 1
+        assert {item["sandbox_id"] for item in after_create["items"]} == {created_id}
+        assert isinstance(after_create["items"][0]["sandbox_id"], str)
+
+        await sandbox_provider.adelete(sandbox_id=created_id)
+
+        after_delete = await sandbox_provider.alist()
+        assert after_delete["items"] == []
+
+    async def test_async_get_or_create_existing_does_not_create_new(
+        self,
+        sandbox_provider: SandboxProvider[Any],
+    ) -> None:
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
+        assert (await sandbox_provider.alist())["items"] == []
+
+        backend = await sandbox_provider.aget_or_create(sandbox_id=None)
+        created_id = backend.id
+
+        after_create = await sandbox_provider.alist()
+        assert {item["sandbox_id"] for item in after_create["items"]} == {created_id}
 
         _reconnected = await sandbox_provider.aget_or_create(sandbox_id=created_id)
         after_reconnect = await sandbox_provider.alist()
-        after_reconnect_ids = {item["sandbox_id"] for item in after_reconnect["items"]}
-        assert after_reconnect_ids == after_create_ids
+        assert {item["sandbox_id"] for item in after_reconnect["items"]} == {created_id}
 
         await sandbox_provider.adelete(sandbox_id=created_id)
+        assert (await sandbox_provider.alist())["items"] == []
+
+    async def test_async_get_or_create_missing_id_raises(
+        self,
+        sandbox_provider: SandboxProvider[Any],
+    ) -> None:
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
+        assert (await sandbox_provider.alist())["items"] == []
+
+        missing_id = "definitely-not-a-real-sandbox-id"
+        with pytest.raises(SandboxNotFoundError):
+            await sandbox_provider.aget_or_create(sandbox_id=missing_id)
+
+        assert (await sandbox_provider.alist())["items"] == []
 
     async def test_async_delete_is_idempotent(
         self,
@@ -161,9 +250,13 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
         if not self.has_async:
             pytest.skip("Async tests not supported.")
 
+        assert (await sandbox_provider.alist())["items"] == []
+
         backend = await sandbox_provider.aget_or_create(sandbox_id=None)
         created_id = backend.id
 
         await sandbox_provider.adelete(sandbox_id=created_id)
         await sandbox_provider.adelete(sandbox_id=created_id)
         await sandbox_provider.adelete(sandbox_id="definitely-not-a-real-sandbox-id")
+
+        assert (await sandbox_provider.alist())["items"] == []
