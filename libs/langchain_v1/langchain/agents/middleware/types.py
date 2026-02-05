@@ -56,7 +56,6 @@ __all__ = [
     "StateT_co",
     "ToolCallRequest",
     "ToolCallWrapper",
-    "WrapModelCallResult",
     "after_agent",
     "after_model",
     "before_agent",
@@ -474,7 +473,7 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
         self,
         request: ModelRequest[ContextT],
         handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
-    ) -> ModelResponse[ResponseT] | AIMessage:
+    ) -> ModelResponse[ResponseT] | AIMessage | WrapModelCallResult[ResponseT]:
         """Intercept and control model execution via handler callback.
 
         Async version is `awrap_model_call`
@@ -569,7 +568,7 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
         self,
         request: ModelRequest[ContextT],
         handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
-    ) -> ModelResponse[ResponseT] | AIMessage:
+    ) -> ModelResponse[ResponseT] | AIMessage | WrapModelCallResult[ResponseT]:
         """Intercept and control async model execution via handler callback.
 
         The handler callback executes the model request and returns a `ModelResponse`.

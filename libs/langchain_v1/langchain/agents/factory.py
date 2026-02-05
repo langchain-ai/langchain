@@ -150,6 +150,27 @@ def _build_state_updates_from_wrap_result(response: WrapModelCallResult) -> dict
     return state_updates
 
 
+def _merge_state_updates(
+    inner: dict[str, Any], outer: dict[str, Any]
+) -> dict[str, Any]:
+    """Merge inner and outer middleware state updates.
+
+    For the ``"messages"`` key, lists are concatenated (inner first, then outer).
+    For all other keys, outer overwrites inner.
+
+    Args:
+        inner: State updates from inner middleware.
+        outer: State updates from outer middleware.
+
+    Returns:
+        Merged state updates dict.
+    """
+    merged = {**inner, **outer}
+    if "messages" in inner and "messages" in outer:
+        merged["messages"] = [*inner["messages"], *outer["messages"]]
+    return merged
+
+
 def _chain_model_call_handlers(
     handlers: Sequence[
         Callable[
@@ -238,18 +259,42 @@ def _chain_model_call_handlers(
             request: ModelRequest[ContextT],
             handler: Callable[[ModelRequest[ContextT]], ModelResponse],
         ) -> ModelResponse | WrapModelCallResult:
+            # Closure variable to capture inner's state_update before normalizing
+            accumulated_inner_state: list[dict[str, Any]] = []
+
             # Create a wrapper that calls inner with the base handler and normalizes
             # Inner boundaries always normalize to ModelResponse
             def inner_handler(req: ModelRequest[ContextT]) -> ModelResponse:
+                # Clear on each call for retry safety — only the last call's
+                # state updates survive
+                accumulated_inner_state.clear()
                 inner_result = inner(req, handler)
+                if isinstance(inner_result, WrapModelCallResult):
+                    accumulated_inner_state.append(inner_result.state_update)
                 return _normalize_to_model_response(inner_result)
 
             # Call outer with the wrapped inner as its handler
-            # Preserve WrapModelCallResult from outer
             outer_result = outer(request, inner_handler)
+
+            # Merge inner's accumulated state into the final result
+            inner_state = accumulated_inner_state[0] if accumulated_inner_state else {}
+
             if isinstance(outer_result, WrapModelCallResult):
+                if inner_state:
+                    merged = _merge_state_updates(inner_state, outer_result.state_update)
+                    return WrapModelCallResult(
+                        model_response=outer_result.model_response,
+                        state_update=merged,
+                    )
                 return outer_result
-            return _normalize_to_model_response(outer_result)
+
+            normalized = _normalize_to_model_response(outer_result)
+            if inner_state:
+                return WrapModelCallResult(
+                    model_response=normalized,
+                    state_update=inner_state,
+                )
+            return normalized
 
         return composed
 
@@ -332,18 +377,42 @@ def _chain_async_model_call_handlers(
             request: ModelRequest[ContextT],
             handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
         ) -> ModelResponse | WrapModelCallResult:
+            # Closure variable to capture inner's state_update before normalizing
+            accumulated_inner_state: list[dict[str, Any]] = []
+
             # Create a wrapper that calls inner with the base handler and normalizes
             # Inner boundaries always normalize to ModelResponse
             async def inner_handler(req: ModelRequest[ContextT]) -> ModelResponse:
+                # Clear on each call for retry safety — only the last call's
+                # state updates survive
+                accumulated_inner_state.clear()
                 inner_result = await inner(req, handler)
+                if isinstance(inner_result, WrapModelCallResult):
+                    accumulated_inner_state.append(inner_result.state_update)
                 return _normalize_to_model_response(inner_result)
 
             # Call outer with the wrapped inner as its handler
-            # Preserve WrapModelCallResult from outer
             outer_result = await outer(request, inner_handler)
+
+            # Merge inner's accumulated state into the final result
+            inner_state = accumulated_inner_state[0] if accumulated_inner_state else {}
+
             if isinstance(outer_result, WrapModelCallResult):
+                if inner_state:
+                    merged = _merge_state_updates(inner_state, outer_result.state_update)
+                    return WrapModelCallResult(
+                        model_response=outer_result.model_response,
+                        state_update=merged,
+                    )
                 return outer_result
-            return _normalize_to_model_response(outer_result)
+
+            normalized = _normalize_to_model_response(outer_result)
+            if inner_state:
+                return WrapModelCallResult(
+                    model_response=normalized,
+                    state_update=inner_state,
+                )
+            return normalized
 
         return composed
 
