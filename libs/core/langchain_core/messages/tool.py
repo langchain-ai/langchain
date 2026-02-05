@@ -96,7 +96,9 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
             values: The model arguments.
 
         """
-        content = values["content"]
+        content = values.get("content")
+        if content is None:
+            return values
         if isinstance(content, tuple):
             content = list(content)
 
