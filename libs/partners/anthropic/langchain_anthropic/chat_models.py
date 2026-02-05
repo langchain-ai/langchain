@@ -1167,22 +1167,22 @@ class ChatAnthropic(BaseChatModel):
                 and "schema" in response_format.get("json_schema", {})
             ):
                 response_format = cast(dict, response_format["json_schema"]["schema"])
-            # Convert OpenAI-style response_format to Anthropic's output_format
-            payload["output_format"] = _convert_to_anthropic_output_format(
+            # Convert OpenAI-style response_format to Anthropic's output_config.format
+            output_config = payload.setdefault("output_config", {})
+            output_config["format"] = _convert_to_anthropic_output_config_format(
                 response_format
             )
 
+        # Handle deprecated output_format parameter for backward compatibility
         if "output_format" in payload:
-            # Native structured output requires the structured outputs beta
-            if payload["betas"]:
-                if "structured-outputs-2025-11-13" not in payload["betas"]:
-                    # Merge with existing betas
-                    payload["betas"] = [
-                        *payload["betas"],
-                        "structured-outputs-2025-11-13",
-                    ]
-            else:
-                payload["betas"] = ["structured-outputs-2025-11-13"]
+            warnings.warn(
+                "The 'output_format' parameter is deprecated and will be removed in a "
+                "future version. Use 'output_config={\"format\": ...}' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            output_config = payload.setdefault("output_config", {})
+            output_config["format"] = payload.pop("output_format")
 
         if self.reuse_last_container:
             # Check for most recent AIMessage with container set in response_metadata
@@ -1197,24 +1197,9 @@ class ChatAnthropic(BaseChatModel):
                     payload["container"] = container_id
                     break
 
-        # Check if any tools have strict mode enabled
+        # Note: Beta headers are no longer required for structured outputs
+        # (output_config.format or strict tool use) as they are now generally available
         if "tools" in payload and isinstance(payload["tools"], list):
-            has_strict_tool = any(
-                isinstance(tool, dict) and tool.get("strict") is True
-                for tool in payload["tools"]
-            )
-            if has_strict_tool:
-                # Strict tool use requires the structured outputs beta
-                if payload["betas"]:
-                    if "structured-outputs-2025-11-13" not in payload["betas"]:
-                        # Merge with existing betas
-                        payload["betas"] = [
-                            *payload["betas"],
-                            "structured-outputs-2025-11-13",
-                        ]
-                else:
-                    payload["betas"] = ["structured-outputs-2025-11-13"]
-
             # Auto-append required betas for specific tool types and input_examples
             has_input_examples = False
             for tool in payload["tools"]:
@@ -1684,7 +1669,9 @@ class ChatAnthropic(BaseChatModel):
                 )
         elif method == "json_schema":
             llm = self.bind(
-                output_format=_convert_to_anthropic_output_format(schema),
+                output_config={
+                    "format": _convert_to_anthropic_output_config_format(schema)
+                },
                 ls_structured_output_format={
                     "kwargs": {"method": "json_schema"},
                     "schema": convert_to_openai_tool(schema),
@@ -1911,10 +1898,16 @@ def _lc_tool_calls_to_anthropic_tool_use_blocks(
     ]
 
 
-def _convert_to_anthropic_output_format(schema: dict | type) -> dict[str, Any]:
-    """Convert JSON schema, Pydantic model, or `TypedDict` into Claude `output_format`.
+def _convert_to_anthropic_output_config_format(schema: dict | type) -> dict[str, Any]:
+    """Convert JSON schema, Pydantic model, or `TypedDict` into Claude `output_config.format`.
 
     See Claude docs on [structured outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs).
+
+    Args:
+        schema: A JSON schema dict, Pydantic model class, or TypedDict.
+
+    Returns:
+        A dict with `type` and `schema` keys suitable for `output_config.format`.
     """
     from anthropic import transform_schema
 
