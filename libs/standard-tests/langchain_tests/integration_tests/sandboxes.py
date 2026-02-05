@@ -114,6 +114,23 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
         after_delete = sandbox_provider.list()
         assert after_delete["items"] == []
 
+    def test_execute_smoke(self, sandbox_provider: SandboxProvider[Any]) -> None:
+        """Test that a created sandbox can execute a basic command."""
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
+        assert sandbox_provider.list()["items"] == []
+
+        backend = sandbox_provider.get_or_create(sandbox_id=None)
+        created_id = backend.id
+
+        try:
+            result = backend.execute("echo hello")
+            assert "hello" in result.output
+        finally:
+            sandbox_provider.delete(sandbox_id=created_id)
+            assert sandbox_provider.list()["items"] == []
+
     def test_get_or_create_existing_does_not_create_new(
         self,
         sandbox_provider: SandboxProvider[Any],
@@ -215,6 +232,26 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
 
         after_delete = await sandbox_provider.alist()
         assert after_delete["items"] == []
+
+    async def test_async_execute_smoke(
+        self,
+        sandbox_provider: SandboxProvider[Any],
+    ) -> None:
+        """Async: test that a created sandbox can execute a basic command."""
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
+        assert (await sandbox_provider.alist())["items"] == []
+
+        backend = await sandbox_provider.aget_or_create(sandbox_id=None)
+        created_id = backend.id
+
+        try:
+            result = await backend.aexecute("echo hello")
+            assert "hello" in result.output
+        finally:
+            await sandbox_provider.adelete(sandbox_id=created_id)
+            assert (await sandbox_provider.alist())["items"] == []
 
     async def test_async_get_or_create_existing_does_not_create_new(
         self,
