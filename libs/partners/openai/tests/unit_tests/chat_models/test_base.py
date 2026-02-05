@@ -3266,7 +3266,7 @@ def test_with_structured_output_validation_error() -> None:
         "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
     }
     mock_api_response = MagicMock(spec=APIResponse)
-    mock_api_response.http_response = MagicMock(spec=Response)
+    mock_api_response.http_response = MagicMock(spec=httpx.Response)
     mock_api_response.http_response.json.return_value = response_json
     mock_api_response.parse.side_effect = ValidationError.from_exception_data(
         title="Foo",

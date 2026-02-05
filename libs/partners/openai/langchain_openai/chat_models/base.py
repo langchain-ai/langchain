@@ -89,6 +89,7 @@ from langchain_core.output_parsers.openai_tools import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import (
     Runnable,
+    RunnableBranch,
     RunnableLambda,
     RunnableMap,
     RunnablePassthrough,
@@ -2215,8 +2216,12 @@ class BaseChatOpenAI(BaseChatModel):
         parser_with_fallback = parser_assign.with_fallbacks(
             [parser_error_fallback], exception_key="parsing_error"
         )
+        branch = RunnableBranch[dict, dict](
+            (lambda x: x.get("parsing_error") is not None, RunnablePassthrough()),
+            parser_with_fallback,
+        )
 
-        return wrap_input | llm_with_fallback | parser_with_fallback
+        return wrap_input | llm_with_fallback | branch
 
     def _get_message_from_error_response(
         self, error: Exception
