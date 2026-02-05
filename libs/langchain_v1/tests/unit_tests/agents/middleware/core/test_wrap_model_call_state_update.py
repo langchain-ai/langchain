@@ -823,3 +823,107 @@ class TestCommandGotoDisallowed:
 
         with pytest.raises(NotImplementedError, match="Command goto is not yet supported"):
             await agent.ainvoke({"messages": [HumanMessage(content="Hi")]})
+
+
+class TestCommandResumeDisallowed:
+    """Test that Command resume raises NotImplementedError in wrap_model_call."""
+
+    def test_command_resume_raises_not_implemented(self) -> None:
+        """Command with resume in wrap_model_call raises NotImplementedError."""
+
+        class ResumeMiddleware(AgentMiddleware):
+            def wrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], ModelResponse],
+            ) -> WrapModelCallResult:
+                response = handler(request)
+                return WrapModelCallResult(
+                    model_response=response,
+                    command=Command(resume="some_value"),
+                )
+
+        model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello!")]))
+        agent = create_agent(model=model, middleware=[ResumeMiddleware()])
+
+        with pytest.raises(
+            NotImplementedError, match="Command resume is not yet supported"
+        ):
+            agent.invoke({"messages": [HumanMessage(content="Hi")]})
+
+    async def test_async_command_resume_raises_not_implemented(self) -> None:
+        """Async: Command with resume in wrap_model_call raises NotImplementedError."""
+
+        class AsyncResumeMiddleware(AgentMiddleware):
+            async def awrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+            ) -> WrapModelCallResult:
+                response = await handler(request)
+                return WrapModelCallResult(
+                    model_response=response,
+                    command=Command(resume="some_value"),
+                )
+
+        model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello!")]))
+        agent = create_agent(model=model, middleware=[AsyncResumeMiddleware()])
+
+        with pytest.raises(
+            NotImplementedError, match="Command resume is not yet supported"
+        ):
+            await agent.ainvoke({"messages": [HumanMessage(content="Hi")]})
+
+
+class TestCommandGraphDisallowed:
+    """Test that Command graph raises NotImplementedError in wrap_model_call."""
+
+    def test_command_graph_raises_not_implemented(self) -> None:
+        """Command with graph in wrap_model_call raises NotImplementedError."""
+
+        class GraphMiddleware(AgentMiddleware):
+            def wrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], ModelResponse],
+            ) -> WrapModelCallResult:
+                response = handler(request)
+                return WrapModelCallResult(
+                    model_response=response,
+                    command=Command(
+                        graph=Command.PARENT, update={"messages": []}
+                    ),
+                )
+
+        model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello!")]))
+        agent = create_agent(model=model, middleware=[GraphMiddleware()])
+
+        with pytest.raises(
+            NotImplementedError, match="Command graph is not yet supported"
+        ):
+            agent.invoke({"messages": [HumanMessage(content="Hi")]})
+
+    async def test_async_command_graph_raises_not_implemented(self) -> None:
+        """Async: Command with graph in wrap_model_call raises NotImplementedError."""
+
+        class AsyncGraphMiddleware(AgentMiddleware):
+            async def awrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+            ) -> WrapModelCallResult:
+                response = await handler(request)
+                return WrapModelCallResult(
+                    model_response=response,
+                    command=Command(
+                        graph=Command.PARENT, update={"messages": []}
+                    ),
+                )
+
+        model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello!")]))
+        agent = create_agent(model=model, middleware=[AsyncGraphMiddleware()])
+
+        with pytest.raises(
+            NotImplementedError, match="Command graph is not yet supported"
+        ):
+            await agent.ainvoke({"messages": [HumanMessage(content="Hi")]})

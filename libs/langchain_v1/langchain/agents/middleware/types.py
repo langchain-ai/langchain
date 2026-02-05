@@ -286,20 +286,20 @@ class ModelResponse(Generic[ResponseT]):
 
 @dataclass
 class WrapModelCallResult(Generic[ResponseT]):
-    """Model response with an optional ``Command`` from ``wrap_model_call`` middleware.
+    """Model response with an optional 'Command' from 'wrap_model_call' middleware.
 
-    Use this to return a ``Command`` alongside the model response from a
-    ``wrap_model_call`` handler. The command is applied as an additional state
+    Use this to return a 'Command' alongside the model response from a
+    'wrap_model_call' handler. The command is applied as an additional state
     update after the model node completes, using the graph's reducers (e.g.
-    ``add_messages`` for the ``messages`` key).
+    'add_messages' for the 'messages' key).
 
-    Because each ``Command`` is applied through the reducer, messages in the
+    Because each 'Command' is applied through the reducer, messages in the
     command are **added alongside** the model response messages rather than
     replacing them. For non-reducer state fields, later commands overwrite
     earlier ones (outermost middleware wins over inner).
 
     Type Parameters:
-        ResponseT: The type of the structured response. Defaults to `Any` if not specified.
+        ResponseT: The type of the structured response. Defaults to 'Any' if not specified.
     """
 
     model_response: ModelResponse[ResponseT]
@@ -309,7 +309,6 @@ class WrapModelCallResult(Generic[ResponseT]):
     """Optional command to apply as an additional state update."""
 
 
-# Type alias for middleware return type - allows returning either full response or just AIMessage
 ModelCallResult: TypeAlias = "ModelResponse[ResponseT] | AIMessage | WrapModelCallResult[ResponseT]"
 """`TypeAlias` for model call handler return value.
 
@@ -317,7 +316,9 @@ Middleware can return either:
 
 - `ModelResponse`: Full response with messages and optional structured output
 - `AIMessage`: Simplified return for simple use cases
-- `WrapModelCallResult`: Response with an optional ``Command`` for additional state updates
+- `WrapModelCallResult`: Response with an optional `Command` for additional state updates
+    `goto`, `resume`, and `graph` are not yet supported on these commands.
+    A `NotImplementedError` will be raised if you try to use them.
 """
 
 

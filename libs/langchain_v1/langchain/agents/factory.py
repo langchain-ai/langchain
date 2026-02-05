@@ -189,6 +189,14 @@ def _build_commands(
                 "Use the jump_to state field with before_model/after_model hooks instead."
             )
             raise NotImplementedError(msg)
+        if cmd.resume:
+            msg = "Command resume is not yet supported in wrap_model_call middleware."
+            raise NotImplementedError(msg)
+        if cmd.graph:
+            msg = (
+                "Command graph is not yet supported in wrap_model_call middleware."
+            )
+            raise NotImplementedError(msg)
 
     commands: list[Command[Any]] = [Command(update=state)]
     commands.extend(middleware_commands or [])
