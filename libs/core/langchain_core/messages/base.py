@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Any, cast, overload
 
 from pydantic import ConfigDict, Field
 
+from json import dumps
+
 from langchain_core._api.deprecation import warn_deprecated
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import content as types
@@ -306,6 +308,24 @@ class BaseMessage(Serializable):
         prompt = ChatPromptTemplate(messages=[self])
         return prompt.__add__(other)
 
+    def _normalize_content(self) -> str:
+        """
+        Normalize BaseMessage content to a readable string.
+        """
+        if self.content is None:
+            return ""
+        if isinstance(self.content, str):
+            return self.content
+        if isinstance(self.content, list):
+            parts = []
+            for item in self.content:
+                if isinstance(item, str):
+                    parts.append(item)
+                else:
+                    parts.append(dumps(item, indent=2))
+            return "\n".join(parts)
+        return str(self.content)
+
     def pretty_repr(
         self,
         html: bool = False,  # noqa: FBT001,FBT002
@@ -321,10 +341,10 @@ class BaseMessage(Serializable):
 
         """
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
-        # TODO: handle non-string content.
         if self.name is not None:
             title += f"\nName: {self.name}"
-        return f"{title}\n\n{self.content}"
+        content = self._normalize_content()
+        return f"{title}\n\n{content}"
 
     def pretty_print(self) -> None:
         """Print a pretty representation of the message."""
