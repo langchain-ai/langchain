@@ -3226,3 +3226,25 @@ def test_openai_structured_output_refusal_handling_responses_api() -> None:
         pass
     except ValueError as e:
         pytest.fail(f"This is a wrong behavior. Error details: {e}")
+
+
+def test_empty_tools_excluded_from_payload() -> None:
+    """Test that empty tools list is not included in API payload.
+
+    Some OpenAI-compatible providers (e.g., Qwen-Plus via DashScope) reject
+    empty tools arrays with validation errors like '[] is too short - tools'.
+    This test ensures empty tools lists are properly excluded from the payload.
+
+    Fixes: https://github.com/langchain-ai/langchain/issues/34907
+    """
+    llm = ChatOpenAI(model="gpt-4o")
+
+    # Test 1: Explicitly passing tools=[] via kwargs should be excluded
+    payload_empty = llm._get_request_payload([HumanMessage("test")], tools=[])
+    assert "tools" not in payload_empty, "Empty tools list should be excluded"
+
+    # Test 2: Non-empty tools via kwargs should still be included
+    tools = [{"type": "function", "function": {"name": "test", "parameters": {}}}]
+    payload_with_tools = llm._get_request_payload([HumanMessage("test")], tools=tools)
+    assert "tools" in payload_with_tools, "Non-empty tools should be included"
+    assert payload_with_tools["tools"] == tools

@@ -1419,6 +1419,10 @@ class BaseChatOpenAI(BaseChatModel):
 
         payload = {**self._default_params, **kwargs}
 
+        # Exclude empty tools list to prevent errors with strict OpenAI-compatible APIs
+        if "tools" in payload and not payload["tools"]:
+            del payload["tools"]
+
         if self._use_responses_api(payload):
             if self.use_previous_response_id:
                 last_messages, previous_response_id = _get_last_messages(messages)
@@ -3800,7 +3804,8 @@ def _construct_responses_api_payload(
 
                 new_tools.append(tool)
 
-        payload["tools"] = new_tools
+        if new_tools:
+            payload["tools"] = new_tools
     if tool_choice := payload.pop("tool_choice", None):
         # chat api: {"type": "function", "function": {"name": "..."}}
         # responses api: {"type": "function", "name": "..."}
