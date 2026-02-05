@@ -1273,6 +1273,7 @@ class ChatAnthropic(BaseChatModel):
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
                 and not _thinking_in_params(payload)
+                and not _compact_in_params(payload)
             )
             block_start_event = None
             for event in stream:
@@ -1309,6 +1310,7 @@ class ChatAnthropic(BaseChatModel):
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
                 and not _thinking_in_params(payload)
+                and not _compact_in_params(payload)
             )
             block_start_event = None
             async for event in stream:
@@ -1870,6 +1872,14 @@ def _documents_in_params(params: dict) -> bool:
     return False
 
 
+def _compact_in_params(params: dict) -> bool:
+    edits = params.get("context_management", {}).get("edits", [])
+    for edit in edits:
+        if "compact" in edit.get("type", ""):
+            return True
+    return False
+
+
 class _AnthropicToolUse(TypedDict):
     type: Literal["tool_use"]
     name: str
@@ -2048,6 +2058,13 @@ def _make_message_chunk_from_anthropic_event(
                 content=[content_block],
                 tool_call_chunks=tool_call_chunks,
             )
+
+        # Compaction block
+        elif event.delta.type == "compaction_delta":
+            content_block = event.delta.model_dump()
+            content_block["index"] = event.index
+            content_block["type"] = "compaction"
+            message_chunk = AIMessageChunk(content=[content_block])
 
     # Process final usage metadata and completion info
     elif event.type == "message_delta" and stream_usage:
