@@ -19,11 +19,13 @@ modules = [
 for module in modules:
     pytest.register_assert_rewrite(f"langchain_tests.integration_tests.{module}")
 
+_HAS_DEEPAGENTS = False
 try:
     import deepagents  # noqa: F401
 except ImportError:
-    pass
+    _HAS_DEEPAGENTS = False
 else:
+    _HAS_DEEPAGENTS = True
     pytest.register_assert_rewrite("langchain_tests.integration_tests.sandboxes")
 
 from langchain_tests.integration_tests.base_store import (
@@ -40,12 +42,10 @@ from langchain_tests.integration_tests.retrievers import RetrieversIntegrationTe
 from langchain_tests.integration_tests.tools import ToolsIntegrationTests
 from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
 
-try:
+if _HAS_DEEPAGENTS:
     from langchain_tests.integration_tests.sandboxes import (
         SandboxProviderIntegrationTests,
     )
-except ImportError:
-    SandboxProviderIntegrationTests = None  # type: ignore[assignment]
 
 __all__ = [
     "AsyncCacheTestSuite",
@@ -59,5 +59,5 @@ __all__ = [
     "VectorStoreIntegrationTests",
 ]
 
-if SandboxProviderIntegrationTests is not None:
+if _HAS_DEEPAGENTS:
     __all__ += ["SandboxProviderIntegrationTests"]

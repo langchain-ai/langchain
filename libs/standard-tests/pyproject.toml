@@ -74,6 +74,10 @@ warn_unreachable = true
 module = ["vcr.*",]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["deepagents", "deepagents.*"]
+ignore_missing_imports = true
+
 [tool.ruff.format]
 docstring-code-format = true
 
