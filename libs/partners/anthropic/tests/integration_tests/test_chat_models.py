@@ -2409,3 +2409,112 @@ def test_fine_grained_tool_streaming() -> None:
     assert write_doc_block is not None
     assert write_doc_block["name"] == "write_document"
     assert "args" in write_doc_block
+
+
+@pytest.mark.vcr
+def test_compaction() -> None:
+    """Test the compation beta feature."""
+    llm = ChatAnthropic(
+        model="claude-opus-4-6",  # type: ignore[call-arg]
+        betas=["compact-2026-01-12"],
+        max_tokens=4096,
+        context_management={
+            "edits": [
+                {
+                    "type": "compact_20260112",
+                    "trigger": {"type": "input_tokens", "value": 50000},
+                    "pause_after_compaction": True,
+                }
+            ]
+        },
+    )
+
+    input_message = {
+        "role": "user",
+        "content": f"Generate a one-sentence summary of this:\n\n{'a' * 100000}",
+    }
+    messages: list = [input_message]
+
+    first_response = llm.invoke(messages)
+    messages.append(first_response)
+
+    second_message = {
+        "role": "user",
+        "content": f"Generate a one-sentence summary of this:\n\n{'b' * 100000}",
+    }
+    messages.append(second_message)
+
+    second_response = llm.invoke(messages)
+    messages.append(second_response)
+
+    content_blocks = second_response.content_blocks
+    compaction_block = next(
+        (block for block in content_blocks if block["type"] == "non_standard"),
+        None,
+    )
+    assert compaction_block
+    assert compaction_block["value"].get("type") == "compaction"
+
+    third_message = {
+        "role": "user",
+        "content": "What are we talking about?",
+    }
+    messages.append(third_message)
+    third_response = llm.invoke(messages)
+    content_blocks = third_response.content_blocks
+    assert [block["type"] for block in content_blocks] == ["text"]
+
+
+@pytest.mark.vcr
+def test_compaction_streaming() -> None:
+    """Test the compation beta feature."""
+    llm = ChatAnthropic(
+        model="claude-opus-4-6",  # type: ignore[call-arg]
+        betas=["compact-2026-01-12"],
+        max_tokens=4096,
+        context_management={
+            "edits": [
+                {
+                    "type": "compact_20260112",
+                    "trigger": {"type": "input_tokens", "value": 50000},
+                    "pause_after_compaction": False,
+                }
+            ]
+        },
+        streaming=True,
+    )
+
+    input_message = {
+        "role": "user",
+        "content": f"Generate a one-sentence summary of this:\n\n{'a' * 100000}",
+    }
+    messages: list = [input_message]
+
+    first_response = llm.invoke(messages)
+    messages.append(first_response)
+
+    second_message = {
+        "role": "user",
+        "content": f"Generate a one-sentence summary of this:\n\n{'b' * 100000}",
+    }
+    messages.append(second_message)
+
+    second_response = llm.invoke(messages)
+    messages.append(second_response)
+
+    content_blocks = second_response.content_blocks
+    compaction_block = next(
+        (block for block in content_blocks if block["type"] == "non_standard"),
+        None,
+    )
+    assert compaction_block
+    assert compaction_block["value"].get("type") == "compaction"
+
+    third_message = {
+        "role": "user",
+        "content": "What are we talking about?",
+    }
+    messages.append(third_message)
+    third_response = llm.invoke(messages)
+    content_blocks = third_response.content_blocks
+    assert [block["type"] for block in content_blocks] == ["text"]

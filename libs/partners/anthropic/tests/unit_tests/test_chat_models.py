@@ -1564,6 +1564,13 @@ def test_context_management_in_payload() -> None:
     }
 
 
+def test_inference_geo_in_payload() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME, inference_geo="us")
+    input_message = HumanMessage("Hello, world!")
+    payload = llm._get_request_payload([input_message])
+    assert payload["inference_geo"] == "us"
+
+
 def test_anthropic_model_params() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
