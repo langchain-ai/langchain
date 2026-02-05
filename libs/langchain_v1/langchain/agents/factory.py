@@ -52,6 +52,23 @@ from langchain.agents.structured_output import (
 )
 from langchain.chat_models import init_chat_model
 
+
+@dataclass
+class _ComposedWrapModelCallResult(Generic[ResponseT]):
+    """Internal result from composed ``wrap_model_call`` middleware.
+
+    Unlike ``WrapModelCallResult`` (user-facing, single command), this holds the
+    full list of commands accumulated across all middleware layers during
+    composition.
+    """
+
+    model_response: ModelResponse[ResponseT]
+    """The underlying model response."""
+
+    commands: list[Command[Any]] = field(default_factory=list)
+    """Commands accumulated from all middleware layers (inner-first, then outer)."""
+
+
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
 
@@ -83,22 +100,6 @@ if TYPE_CHECKING:
         [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]]],
         Awaitable[_ComposedWrapModelCallResult],
     ]
-
-
-@dataclass
-class _ComposedWrapModelCallResult(Generic[ResponseT]):
-    """Internal result from composed ``wrap_model_call`` middleware.
-
-    Unlike ``WrapModelCallResult`` (user-facing, single command), this holds the
-    full list of commands accumulated across all middleware layers during
-    composition.
-    """
-
-    model_response: ModelResponse[ResponseT]
-    """The underlying model response."""
-
-    commands: list[Command] = field(default_factory=list)
-    """Commands accumulated from all middleware layers (inner-first, then outer)."""
 
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
@@ -160,8 +161,8 @@ def _normalize_to_model_response(
 
 def _build_commands(
     model_response: ModelResponse,
-    middleware_commands: list[Command] | None = None,
-) -> list[Command]:
+    middleware_commands: list[Command[Any]] | None = None,
+) -> list[Command[Any]]:
     """Build a list of Commands from a model response and middleware commands.
 
     The first Command contains the model response state (messages and optional
@@ -190,16 +191,14 @@ def _build_commands(
         state["structured_response"] = model_response.structured_response
 
     # Merge non-messages fields into base state; collect messages for separate Commands
-    extra_message_commands: list[Command] = []
+    extra_message_commands: list[Command[Any]] = []
     for cmd in middleware_commands or []:
         update = cmd.update or {}
         if "messages" in update:
             extra_message_commands.append(Command(update={"messages": update["messages"]}))
-        for key, value in update.items():
-            if key != "messages":
-                state[key] = value
+        state.update({key: value for key, value in update.items() if key != "messages"})
 
-    commands = [Command(update=state)]
+    commands: list[Command[Any]] = [Command(update=state)]
     commands.extend(extra_message_commands)
 
     return commands
@@ -227,12 +226,15 @@ def _chain_model_call_handlers(
         return None
 
     def _to_composed_result(
-        result: ModelResponse | AIMessage | WrapModelCallResult,
-        extra_commands: list[Command] | None = None,
+        result: ModelResponse | AIMessage | WrapModelCallResult | _ComposedWrapModelCallResult,
+        extra_commands: list[Command[Any]] | None = None,
     ) -> _ComposedWrapModelCallResult:
         """Normalize any handler result to _ComposedWrapModelCallResult."""
-        commands: list[Command] = list(extra_commands or [])
-        if isinstance(result, WrapModelCallResult):
+        commands: list[Command[Any]] = list(extra_commands or [])
+        if isinstance(result, _ComposedWrapModelCallResult):
+            commands.extend(result.commands)
+            model_response = result.model_response
+        elif isinstance(result, WrapModelCallResult):
             model_response = result.model_response
             if result.command is not None:
                 commands.append(result.command)
@@ -263,7 +265,7 @@ def _chain_model_call_handlers(
             handler: Callable[[ModelRequest[ContextT]], ModelResponse],
         ) -> _ComposedWrapModelCallResult:
             # Closure variable to capture inner's commands before normalizing
-            accumulated_commands: list[Command] = []
+            accumulated_commands: list[Command[Any]] = []
 
             def inner_handler(req: ModelRequest[ContextT]) -> ModelResponse:
                 # Clear on each call for retry safety
@@ -315,12 +317,15 @@ def _chain_async_model_call_handlers(
         return None
 
     def _to_composed_result(
-        result: ModelResponse | AIMessage | WrapModelCallResult,
-        extra_commands: list[Command] | None = None,
+        result: ModelResponse | AIMessage | WrapModelCallResult | _ComposedWrapModelCallResult,
+        extra_commands: list[Command[Any]] | None = None,
     ) -> _ComposedWrapModelCallResult:
         """Normalize any handler result to _ComposedWrapModelCallResult."""
-        commands: list[Command] = list(extra_commands or [])
-        if isinstance(result, WrapModelCallResult):
+        commands: list[Command[Any]] = list(extra_commands or [])
+        if isinstance(result, _ComposedWrapModelCallResult):
+            commands.extend(result.commands)
+            model_response = result.model_response
+        elif isinstance(result, WrapModelCallResult):
             model_response = result.model_response
             if result.command is not None:
                 commands.append(result.command)
@@ -351,7 +356,7 @@ def _chain_async_model_call_handlers(
             handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse]],
         ) -> _ComposedWrapModelCallResult:
             # Closure variable to capture inner's commands before normalizing
-            accumulated_commands: list[Command] = []
+            accumulated_commands: list[Command[Any]] = []
 
             async def inner_handler(req: ModelRequest[ContextT]) -> ModelResponse:
                 # Clear on each call for retry safety
@@ -1237,7 +1242,7 @@ def create_agent(
             structured_response=structured_response,
         )
 
-    def model_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> list[Command]:
+    def model_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> list[Command[Any]]:
         """Sync model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
@@ -1285,7 +1290,7 @@ def create_agent(
             structured_response=structured_response,
         )
 
-    async def amodel_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> list[Command]:
+    async def amodel_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> list[Command[Any]]:
         """Async model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,

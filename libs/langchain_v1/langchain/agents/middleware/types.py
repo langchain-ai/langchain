@@ -33,7 +33,6 @@ from langchain_core.messages import (
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
-from langgraph.types import Command
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
@@ -41,6 +40,7 @@ if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
+    from langgraph.types import Command
 
     from langchain.agents.structured_output import ResponseFormat
 
@@ -305,7 +305,7 @@ class WrapModelCallResult(Generic[ResponseT]):
     model_response: ModelResponse[ResponseT]
     """The underlying model response."""
 
-    command: Command | None = None
+    command: Command[Any] | None = None
     """Optional command to apply as an additional state update."""
 
 
