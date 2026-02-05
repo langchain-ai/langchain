@@ -41,7 +41,9 @@ from langchain_tests.integration_tests.tools import ToolsIntegrationTests
 from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
 
 try:
-    from langchain_tests.integration_tests.sandboxes import SandboxProviderIntegrationTests
+    from langchain_tests.integration_tests.sandboxes import (
+        SandboxProviderIntegrationTests,
+    )
 except ImportError:
     SandboxProviderIntegrationTests = None  # type: ignore[assignment]
 
