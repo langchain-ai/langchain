@@ -605,11 +605,11 @@ def test_end_behavior_creates_artificial_messages() -> None:
     ]
     assert len(ai_limit_messages) == 1, "Should have exactly one AI message explaining the limit"
 
-    assert isinstance(ai_limit_messages[0].content, str)
-    ai_msg_content = ai_limit_messages[0].content.lower()
-    assert "thread limit exceeded" in ai_msg_content or "run limit exceeded" in ai_msg_content, (
-        "AI message should include thread/run limit details for the user"
-    )
+    ai_msg_content = ai_limit_messages[0].content
+    assert isinstance(ai_msg_content, str)
+    assert "thread limit exceeded" in ai_msg_content.lower() or (
+        "run limit exceeded" in ai_msg_content.lower()
+    ), "AI message should include thread/run limit details for the user"
 
     # Verify tool message counts
     tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
@@ -749,11 +749,11 @@ def test_parallel_tool_calls_with_limit_end_mode() -> None:
     ]
     assert len(ai_limit_messages) == 1, "Should have exactly one AI message explaining the limit"
 
-    assert isinstance(ai_limit_messages[0].content, str)
-    ai_msg_content = ai_limit_messages[0].content.lower()
-    assert "thread limit exceeded" in ai_msg_content or "run limit exceeded" in ai_msg_content, (
-        "AI message should include thread/run limit details for the user"
-    )
+    ai_msg_content = ai_limit_messages[0].content
+    assert isinstance(ai_msg_content, str)
+    assert "thread limit exceeded" in ai_msg_content.lower() or (
+        "run limit exceeded" in ai_msg_content.lower()
+    ), "AI message should include thread/run limit details for the user"
 
 
 def test_parallel_mixed_tool_calls_with_specific_tool_limit() -> None:
