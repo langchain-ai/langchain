@@ -9,6 +9,9 @@
     "**/.*",
   ],
   "python.analysis.autoImportCompletions": true,
+  "python.analysis.extraPaths": [
+    "./libs/core"
+  ],
   "python.analysis.typeCheckingMode": "basic",
   "python.testing.cwd": "${workspaceFolder}",
   "python.linting.enabled": true,
@@ -69,7 +72,7 @@
     "editor.insertSpaces": true
   },
   "python.terminal.activateEnvironment": false,
-  "python.defaultInterpreterPath": "./.venv/bin/python",
+  "python.defaultInterpreterPath": "./libs/core/.venv/bin/python",
   "github.copilot.chat.commitMessageGeneration.instructions": [
     {
       "file": ".github/workflows/pr_lint.yml"
