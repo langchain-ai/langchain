@@ -1,0 +1,24 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "langchain-agentmesh"
+version = "0.1.0"
+description = "AgentMesh trust layer integration for LangChain"
+authors = ["AgentMesh Contributors"]
+readme = "README.md"
+repository = "https://github.com/langchain-ai/langchain"
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+langchain-core = ">=0.3.0,<1.0"
+cryptography = ">=41.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=7.0.0"
+pytest-asyncio = ">=0.21.0"
+
+[tool.poetry.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/agentmesh"
