@@ -3631,3 +3631,53 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
+
+
+def test_tool_invoke_with_self_keyword_in_input() -> None:
+    """Tool invocation should not fail when input contains a key named 'self'.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/34900.
+    """
+
+    def func(**kwargs: Any) -> str:
+        return repr(kwargs)
+
+    structured = StructuredTool(
+        name="test_tool",
+        func=func,
+        args_schema={
+            "type": "object",
+            "properties": {},
+        },
+    )
+
+    tool_input = {"self": 2, "other": 3}
+
+    # Should not raise TypeError about multiple values for 'self'
+    result = structured.invoke(tool_input)
+    assert result == repr(tool_input)
+
+
+async def test_tool_ainvoke_with_self_keyword_in_input() -> None:
+    """Async tool invocation should not fail when input contains a key named 'self'.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/34900.
+    """
+
+    async def async_func(**kwargs: Any) -> str:
+        return repr(kwargs)
+
+    structured = StructuredTool(
+        name="test_tool",
+        coroutine=async_func,
+        args_schema={
+            "type": "object",
+            "properties": {},
+        },
+    )
+
+    tool_input = {"self": 2, "other": 3}
+
+    # Should not raise TypeError about multiple values for 'self'
+    result = await structured.ainvoke(tool_input)
+    assert result == repr(tool_input)
