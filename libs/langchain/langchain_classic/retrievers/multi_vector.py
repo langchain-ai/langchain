@@ -41,9 +41,6 @@ class MultiVectorRetriever(BaseRetriever):
     This pattern is commonly used in RAG pipelines to improve answer grounding
     while preserving full document context.
     """
-
-
-
     vectorstore: VectorStore
     """The underlying `VectorStore` to use to store small chunks
     and their embedding vectors"""
