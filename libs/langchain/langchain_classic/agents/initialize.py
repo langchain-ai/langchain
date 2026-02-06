@@ -36,7 +36,7 @@ def initialize_agent(
 
     !!! warning
 
-        This function is no longer recommended in favor of
+        This function is no deprecated in favor of
         [`create_agent`][langchain.agents.create_agent] from the `langchain`
         package, which provides a more flexible agent factory with middleware
         support, structured output, and integration with LangGraph.
