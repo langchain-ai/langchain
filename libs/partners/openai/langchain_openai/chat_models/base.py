@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 import logging
@@ -1244,6 +1245,8 @@ class BaseChatOpenAI(BaseChatModel):
                     if "reasoning" in generation_chunk.message.additional_kwargs:
                         has_reasoning = True
                     yield generation_chunk
+                    # Ensure event loop can process other tasks in Python 3.10
+                    await asyncio.sleep(0)
 
     def _should_stream_usage(
         self, stream_usage: bool | None = None, **kwargs: Any
@@ -3025,9 +3028,11 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         if self._use_responses_api({**kwargs, **self.model_kwargs}):
             async for chunk in super()._astream_responses(*args, **kwargs):
                 yield chunk
+                await asyncio.sleep(0)
         else:
             async for chunk in super()._astream(*args, **kwargs):
                 yield chunk
+                await asyncio.sleep(0)
 
     def with_structured_output(
         self,
