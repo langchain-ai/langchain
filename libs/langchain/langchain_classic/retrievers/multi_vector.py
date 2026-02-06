@@ -27,7 +27,6 @@ class SearchType(str, Enum):
 
 
 class MultiVectorRetriever(BaseRetriever):
-  class MultiVectorRetriever(BaseRetriever):
     """Retriever that supports multiple embeddings per parent document.
 
     This retriever is designed for scenarios where documents are split into
