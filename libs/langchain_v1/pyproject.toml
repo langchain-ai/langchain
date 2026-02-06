@@ -103,6 +103,7 @@ langchain-anthropic = { path = "../partners/anthropic", editable = true }
 
 [tool.ruff]
 line-length = 100
+output-format = "concise"
 
 [tool.mypy]
 strict = true
@@ -160,7 +161,6 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/unit_tests/agents/*" = [
     "ANN", # Annotations, needs to fix
-    "ARG", # Arguments, needs to fix
 ]
 "tests/unit_tests/agents/test_responses_spec.py" = ["F821"]
 "tests/unit_tests/agents/test_return_direct_spec.py" = ["F821"]

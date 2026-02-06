@@ -26,6 +26,7 @@ class FakeToolCallingModel(BaseChatModel):
     index: int = 0
     tool_style: Literal["openai", "anthropic"] = "openai"
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
