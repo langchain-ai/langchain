@@ -63,7 +63,6 @@ body:
         - label: langchain-nomic
         - label: langchain-ollama
         - label: langchain-perplexity
-        - label: langchain-prompty
         - label: langchain-qdrant
         - label: langchain-xai
         - label: Other / not sure / general
