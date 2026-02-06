@@ -173,7 +173,7 @@ wheels = [
 
 [[package]]
 name = "anthropic"
-version = "0.72.1"
+version = "0.78.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -185,9 +185,9 @@ dependencies = [
     { name = "sniffio" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/dd/f3/feb750a21461090ecf48bbebcaa261cd09003cc1d14e2fa9643ad59edd4d/anthropic-0.72.1.tar.gz", hash = "sha256:a6d1d660e1f4af91dddc732f340786d19acaffa1ae8e69442e56be5fa6539d51", size = 415395, upload-time = "2025-11-11T16:53:29.001Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ec/51/32849a48f9b1cfe80a508fd269b20bd8f0b1357c70ba092890fde5a6a10b/anthropic-0.78.0.tar.gz", hash = "sha256:55fd978ab9b049c61857463f4c4e9e092b24f892519c6d8078cee1713d8af06e", size = 509136, upload-time = "2026-02-05T17:52:04.986Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/51/05/d9d45edad1aa28330cea09a3b35e1590f7279f91bb5ab5237c70a0884ea3/anthropic-0.72.1-py3-none-any.whl", hash = "sha256:81e73cca55e8924776c8c4418003defe6bf9eaf0cd92beb94c8dbf537b95316f", size = 357373, upload-time = "2025-11-11T16:53:27.438Z" },
+    { url = "https://files.pythonhosted.org/packages/3b/03/2f50931a942e5e13f80e24d83406714672c57964be593fc046d81369335b/anthropic-0.78.0-py3-none-any.whl", hash = "sha256:2a9887d2e99d1b0f9fe08857a1e9fe5d2d4030455dbf9ac65aab052e2efaeac4", size = 405485, upload-time = "2026-02-05T17:52:03.674Z" },
 ]
 
 [[package]]
@@ -1975,7 +1975,7 @@ typing = [
 
 [package.metadata]
 requires-dist = [
-    { name = "langchain-anthropic", marker = "extra == 'anthropic'" },
+    { name = "langchain-anthropic", marker = "extra == 'anthropic'", editable = "../partners/anthropic" },
     { name = "langchain-aws", marker = "extra == 'aws'" },
     { name = "langchain-azure-ai", marker = "extra == 'azure-ai'" },
     { name = "langchain-community", marker = "extra == 'community'" },
@@ -2028,16 +2028,51 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.0.3"
-source = { registry = "https://pypi.org/simple" }
+version = "1.3.1"
+source = { editable = "../partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
     { name = "langchain-core" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/92/6b/aaa770beea6f4ed4c3f5c75fd6d80ed5c82708aec15318c06d9379dd3543/langchain_anthropic-1.0.3.tar.gz", hash = "sha256:91083c5df82634602f6772989918108d9448fa0b7499a11434687198f5bf9aef", size = 680336, upload-time = "2025-11-12T15:58:58.54Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/1e/3d/0499eeb10d333ea79e1c156b84d075e96cfde2fbc6a9ec9cbfa50ac3e47e/langchain_anthropic-1.0.3-py3-none-any.whl", hash = "sha256:0d4106111d57e19988e2976fb6c6e59b0c47ca7afb0f6a2f888362006f871871", size = 46608, upload-time = "2025-11-12T15:58:57.28Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "anthropic", specifier = ">=0.75.0,<1.0.0" },
+    { name = "langchain-core", editable = "../core" },
+    { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "langchain-core", editable = "../core" }]
+lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
+test = [
+    { name = "blockbuster", specifier = ">=1.5.5,<1.6" },
+    { name = "defusedxml", specifier = ">=0.7.1,<1.0.0" },
+    { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
+    { name = "langchain", editable = "." },
+    { name = "langchain-core", editable = "../core" },
+    { name = "langchain-tests", editable = "../standard-tests" },
+    { name = "langgraph-prebuilt", specifier = ">=0.7.0a2" },
+    { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
+    { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
+    { name = "pytest-retry", specifier = ">=1.7.0,<1.8.0" },
+    { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
+    { name = "pytest-timeout", specifier = ">=2.3.1,<3.0.0" },
+    { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
+    { name = "pytest-xdist", specifier = ">=3.8.0,<4.0.0" },
+    { name = "syrupy", specifier = ">=4.0.2,<5.0.0" },
+    { name = "vcrpy", specifier = ">=8.0.0,<9.0.0" },
+]
+test-integration = [
+    { name = "langchain-core", editable = "../core" },
+    { name = "requests", specifier = ">=2.32.3,<3.0.0" },
+]
+typing = [
+    { name = "langchain-core", editable = "../core" },
+    { name = "mypy", specifier = ">=1.17.1,<2.0.0" },
+    { name = "types-requests", specifier = ">=2.31.0,<3.0.0" },
 ]
 
 [[package]]
