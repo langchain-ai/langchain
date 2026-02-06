@@ -848,6 +848,9 @@ class ChatAnthropic(BaseChatModel):
     """Parameters for Claude reasoning,
 
     e.g., `#!python {"type": "enabled", "budget_tokens": 10_000}`
+
+    For Claude Opus 4.6, `budget_tokens` is deprecated in favor of
+    `#!python {"type": "adaptive"}`
     """
 
     effort: Literal["high", "medium", "low"] | None = None
@@ -894,6 +897,12 @@ class ChatAnthropic(BaseChatModel):
     model responses will include container metadata. Set `reuse_last_container=True`
     to automatically reuse the container from the most recent response for subsequent
     invocations.
+    """
+
+    inference_geo: str | None = None
+    """Controls where model inference runs. See Anthropic's
+    [data residency](https://platform.claude.com/docs/en/build-with-claude/data-residency)
+    docs for more information.
     """
 
     @property
@@ -1122,6 +1131,8 @@ class ChatAnthropic(BaseChatModel):
         }
         if self.thinking is not None:
             payload["thinking"] = self.thinking
+        if self.inference_geo is not None:
+            payload["inference_geo"] = self.inference_geo
 
         # Handle output_config and effort parameter
         # Priority: self.effort > payload output_config
@@ -1273,6 +1284,7 @@ class ChatAnthropic(BaseChatModel):
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
                 and not _thinking_in_params(payload)
+                and not _compact_in_params(payload)
             )
             block_start_event = None
             for event in stream:
@@ -1309,6 +1321,7 @@ class ChatAnthropic(BaseChatModel):
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
                 and not _thinking_in_params(payload)
+                and not _compact_in_params(payload)
             )
             block_start_event = None
             async for event in stream:
@@ -1870,6 +1883,12 @@ def _documents_in_params(params: dict) -> bool:
     return False
 
 
+def _compact_in_params(params: dict) -> bool:
+    edits = params.get("context_management", {}).get("edits") or []
+
+    return any("compact" in (edit.get("type") or "") for edit in edits)
+
+
 class _AnthropicToolUse(TypedDict):
     type: Literal["tool_use"]
     name: str
@@ -2048,6 +2067,13 @@ def _make_message_chunk_from_anthropic_event(
                 content=[content_block],
                 tool_call_chunks=tool_call_chunks,
             )
+
+        # Compaction block
+        elif event.delta.type == "compaction_delta":
+            content_block = event.delta.model_dump()
+            content_block["index"] = event.index
+            content_block["type"] = "compaction"
+            message_chunk = AIMessageChunk(content=[content_block])
 
     # Process final usage metadata and completion info
     elif event.type == "message_delta" and stream_usage:
