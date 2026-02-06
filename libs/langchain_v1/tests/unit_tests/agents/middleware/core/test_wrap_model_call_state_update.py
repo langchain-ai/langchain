@@ -16,9 +16,9 @@ from langgraph.types import Command
 from langchain.agents import AgentState, create_agent
 from langchain.agents.middleware.types import (
     AgentMiddleware,
+    ExtendedModelResponse,
     ModelRequest,
     ModelResponse,
-    ExtendedModelResponse,
     wrap_model_call,
 )
 

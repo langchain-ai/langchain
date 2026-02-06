@@ -9,7 +9,7 @@ from langgraph.types import Command
 
 from langchain.agents import AgentState
 from langchain.agents.factory import _chain_model_call_handlers, _ComposedExtendedModelResponse
-from langchain.agents.middleware.types import ModelRequest, ModelResponse, ExtendedModelResponse
+from langchain.agents.middleware.types import ExtendedModelResponse, ModelRequest, ModelResponse
 
 
 def create_test_request(**kwargs: Any) -> ModelRequest:

@@ -311,7 +311,9 @@ class ExtendedModelResponse(Generic[ResponseT]):
     """Optional command to apply as an additional state update."""
 
 
-ModelCallResult: TypeAlias = "ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]"
+ModelCallResult: TypeAlias = (
+    "ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]"
+)
 """`TypeAlias` for model call handler return value.
 
 Middleware can return either:
