@@ -27,7 +27,22 @@ class SearchType(str, Enum):
 
 
 class MultiVectorRetriever(BaseRetriever):
-    """Retrieve from a set of multiple embeddings for the same document."""
+    """
+Retriever that supports multiple embeddings per parent document.
+
+This retriever is designed for scenarios where documents are split into
+smaller chunks for embedding and vector search, but retrieval should return
+the original parent documents rather than individual chunks.
+
+It works by:
+- Performing similarity (or MMR) search over embedded child chunks
+- Collecting unique parent document IDs from chunk metadata
+- Fetching and returning the corresponding parent documents from the docstore
+
+This pattern is commonly used in RAG pipelines to improve answer grounding
+while preserving full document context.
+"""
+
 
     vectorstore: VectorStore
     """The underlying `VectorStore` to use to store small chunks
