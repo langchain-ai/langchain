@@ -727,7 +727,6 @@ class PersonDict(TypedDict):
 def test_response_format(schema: dict | type) -> None:
     model = ChatAnthropic(
         model="claude-sonnet-4-5",  # type: ignore[call-arg]
-        betas=["structured-outputs-2025-11-13"],
     )
     query = "Chester (a.k.a. Chet) is 100 years old."
 
@@ -779,7 +778,6 @@ def test_response_format_in_agent() -> None:
 def test_strict_tool_use() -> None:
     model = ChatAnthropic(
         model="claude-sonnet-4-5",  # type: ignore[call-arg]
-        betas=["structured-outputs-2025-11-13"],
     )
 
     def get_weather(location: str, unit: Literal["C", "F"]) -> str:
