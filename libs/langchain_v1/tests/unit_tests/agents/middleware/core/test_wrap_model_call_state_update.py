@@ -1,6 +1,6 @@
-"""Unit tests for WrapModelCallResult command support in wrap_model_call.
+"""Unit tests for ExtendedModelResponse command support in wrap_model_call.
 
-Tests that wrap_model_call middleware can return WrapModelCallResult to provide
+Tests that wrap_model_call middleware can return ExtendedModelResponse to provide
 a Command alongside the model response. Commands are applied as separate state
 updates through graph reducers (e.g. add_messages for messages).
 """
@@ -18,13 +18,13 @@ from langchain.agents.middleware.types import (
     AgentMiddleware,
     ModelRequest,
     ModelResponse,
-    WrapModelCallResult,
+    ExtendedModelResponse,
     wrap_model_call,
 )
 
 
 class TestBasicCommand:
-    """Test basic WrapModelCallResult functionality with Command."""
+    """Test basic ExtendedModelResponse functionality with Command."""
 
     def test_command_messages_added_alongside_model_messages(self) -> None:
         """Command messages are added alongside model response messages (additive)."""
@@ -34,10 +34,10 @@ class TestBasicCommand:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = handler(request)
                 custom_msg = HumanMessage(content="Custom message", id="custom")
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(update={"messages": [custom_msg]}),
                 )
@@ -62,10 +62,10 @@ class TestBasicCommand:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = handler(request)
                 summary = HumanMessage(content="Summary", id="summary")
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(update={"messages": [summary]}),
                 )
@@ -89,13 +89,13 @@ class TestBasicCommand:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = handler(request)
                 response_with_structured = ModelResponse(
                     result=response.result,
                     structured_response={"from": "model"},
                 )
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response_with_structured,
                     command=Command(
                         update={
@@ -120,9 +120,9 @@ class TestBasicCommand:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = handler(request)
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(update={"custom_key": "custom_value"}),
                 )
@@ -143,10 +143,10 @@ class TestBasicCommand:
 
 
 class TestCustomStateField:
-    """Test WrapModelCallResult with custom state fields defined via state_schema."""
+    """Test ExtendedModelResponse with custom state fields defined via state_schema."""
 
     def test_custom_field_via_state_schema(self) -> None:
-        """Middleware updates a custom state field via WrapModelCallResult."""
+        """Middleware updates a custom state field via ExtendedModelResponse."""
 
         class MyState(AgentState):
             summary: str
@@ -158,9 +158,9 @@ class TestCustomStateField:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = handler(request)
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(update={"summary": "conversation summarized"}),
                 )
@@ -173,16 +173,16 @@ class TestCustomStateField:
         assert result["messages"][-1].content == "Hello"
 
     def test_no_command(self) -> None:
-        """WrapModelCallResult with no command works like ModelResponse."""
+        """ExtendedModelResponse with no command works like ModelResponse."""
 
         class NoCommandMiddleware(AgentMiddleware):
             def wrap_model_call(
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = handler(request)
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                 )
 
@@ -247,8 +247,8 @@ class TestBackwardsCompatibility:
         assert result["messages"][1].content == "Hello"
 
 
-class TestAsyncWrapModelCallResult:
-    """Test async variant of WrapModelCallResult."""
+class TestAsyncExtendedModelResponse:
+    """Test async variant of ExtendedModelResponse."""
 
     async def test_async_command_adds_messages(self) -> None:
         """awrap_model_call command adds messages alongside model response."""
@@ -258,10 +258,10 @@ class TestAsyncWrapModelCallResult:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = await handler(request)
                 custom = HumanMessage(content="Async custom", id="async-custom")
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(update={"messages": [custom]}),
                 )
@@ -279,15 +279,15 @@ class TestAsyncWrapModelCallResult:
         assert messages[2].content == "Async custom"
 
     async def test_async_decorator_command(self) -> None:
-        """@wrap_model_call async decorator returns WrapModelCallResult with command."""
+        """@wrap_model_call async decorator returns ExtendedModelResponse with command."""
 
         @wrap_model_call
         async def command_middleware(
             request: ModelRequest,
             handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-        ) -> WrapModelCallResult:
+        ) -> ExtendedModelResponse:
             response = await handler(request)
-            return WrapModelCallResult(
+            return ExtendedModelResponse(
                 model_response=response,
                 command=Command(
                     update={
@@ -310,7 +310,7 @@ class TestAsyncWrapModelCallResult:
 
 
 class TestComposition:
-    """Test WrapModelCallResult with composed middleware.
+    """Test ExtendedModelResponse with composed middleware.
 
     Key semantics: Commands are collected inner-first, then outer.
     For non-reducer fields, later Commands overwrite (outer wins).
@@ -326,11 +326,11 @@ class TestComposition:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 execution_order.append("outer-before")
                 response = handler(request)
                 execution_order.append("outer-after")
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(
                         update={"messages": [HumanMessage(content="Outer msg", id="outer-msg")]}
@@ -372,9 +372,9 @@ class TestComposition:
         assert messages[2].content == "Outer msg"
 
     def test_inner_command_propagated_through_composition(self) -> None:
-        """Inner middleware's WrapModelCallResult command is propagated.
+        """Inner middleware's ExtendedModelResponse command is propagated.
 
-        When inner middleware returns WrapModelCallResult, its command is
+        When inner middleware returns ExtendedModelResponse, its command is
         captured before normalizing to ModelResponse at the composition boundary
         and collected into the final result.
         """
@@ -385,7 +385,7 @@ class TestComposition:
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
             ) -> ModelResponse:
-                # Outer sees a ModelResponse from handler (inner's WrapModelCallResult
+                # Outer sees a ModelResponse from handler (inner's ExtendedModelResponse
                 # was normalized at the composition boundary)
                 response = handler(request)
                 assert isinstance(response, ModelResponse)
@@ -396,9 +396,9 @@ class TestComposition:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = handler(request)
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(
                         update={
@@ -441,9 +441,9 @@ class TestComposition:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = handler(request)
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(
                         update={
@@ -460,9 +460,9 @@ class TestComposition:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = handler(request)
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(
                         update={
@@ -497,9 +497,9 @@ class TestComposition:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = handler(request)
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(update={"outer_key": "from_outer"}),
                 )
@@ -511,9 +511,9 @@ class TestComposition:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = handler(request)
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(update={"inner_key": "from_inner"}),
                 )
@@ -554,11 +554,11 @@ class TestComposition:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 nonlocal call_count
                 call_count += 1
                 response = handler(request)
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(update={"attempt": f"attempt_{call_count}"}),
                 )
@@ -578,15 +578,15 @@ class TestComposition:
         assert messages[-1].content == "Second"
 
     def test_decorator_returns_wrap_result(self) -> None:
-        """@wrap_model_call decorator can return WrapModelCallResult with command."""
+        """@wrap_model_call decorator can return ExtendedModelResponse with command."""
 
         @wrap_model_call
         def command_middleware(
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
-        ) -> WrapModelCallResult:
+        ) -> ExtendedModelResponse:
             response = handler(request)
-            return WrapModelCallResult(
+            return ExtendedModelResponse(
                 model_response=response,
                 command=Command(
                     update={
@@ -608,20 +608,20 @@ class TestComposition:
         assert messages[2].content == "From decorator"
 
     def test_structured_response_preserved(self) -> None:
-        """WrapModelCallResult preserves structured_response from ModelResponse."""
+        """ExtendedModelResponse preserves structured_response from ModelResponse."""
 
         class StructuredMiddleware(AgentMiddleware):
             def wrap_model_call(
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = handler(request)
                 response_with_structured = ModelResponse(
                     result=response.result,
                     structured_response={"key": "value"},
                 )
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response_with_structured,
                 )
 
@@ -637,10 +637,10 @@ class TestComposition:
 
 
 class TestAsyncComposition:
-    """Test async WrapModelCallResult propagation through composed middleware."""
+    """Test async ExtendedModelResponse propagation through composed middleware."""
 
     async def test_async_inner_command_propagated(self) -> None:
-        """Async: inner middleware's WrapModelCallResult command is propagated."""
+        """Async: inner middleware's ExtendedModelResponse command is propagated."""
 
         class OuterMiddleware(AgentMiddleware):
             async def awrap_model_call(
@@ -657,9 +657,9 @@ class TestAsyncComposition:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = await handler(request)
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(
                         update={
@@ -693,9 +693,9 @@ class TestAsyncComposition:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = await handler(request)
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(
                         update={"messages": [HumanMessage(content="Outer msg", id="outer")]}
@@ -707,9 +707,9 @@ class TestAsyncComposition:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = await handler(request)
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(
                         update={"messages": [HumanMessage(content="Inner msg", id="inner")]}
@@ -756,11 +756,11 @@ class TestAsyncComposition:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 nonlocal call_count
                 call_count += 1
                 response = await handler(request)
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(update={"attempt": f"attempt_{call_count}"}),
                 )
@@ -790,9 +790,9 @@ class TestCommandGotoDisallowed:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = handler(request)
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(goto="__end__"),
                 )
@@ -811,9 +811,9 @@ class TestCommandGotoDisallowed:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = await handler(request)
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(goto="tools"),
                 )
@@ -836,9 +836,9 @@ class TestCommandResumeDisallowed:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = handler(request)
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(resume="some_value"),
                 )
@@ -857,9 +857,9 @@ class TestCommandResumeDisallowed:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = await handler(request)
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(resume="some_value"),
                 )
@@ -882,9 +882,9 @@ class TestCommandGraphDisallowed:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], ModelResponse],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = handler(request)
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(graph=Command.PARENT, update={"messages": []}),
                 )
@@ -903,9 +903,9 @@ class TestCommandGraphDisallowed:
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-            ) -> WrapModelCallResult:
+            ) -> ExtendedModelResponse:
                 response = await handler(request)
-                return WrapModelCallResult(
+                return ExtendedModelResponse(
                     model_response=response,
                     command=Command(graph=Command.PARENT, update={"messages": []}),
                 )

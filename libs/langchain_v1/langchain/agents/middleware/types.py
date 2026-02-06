@@ -48,6 +48,8 @@ __all__ = [
     "AgentMiddleware",
     "AgentState",
     "ContextT",
+    "ExtendedModelResponse",
+    "ModelCallResult",
     "ModelRequest",
     "ModelResponse",
     "OmitFromSchema",
@@ -285,7 +287,7 @@ class ModelResponse(Generic[ResponseT]):
 
 
 @dataclass
-class WrapModelCallResult(Generic[ResponseT]):
+class ExtendedModelResponse(Generic[ResponseT]):
     """Model response with an optional 'Command' from 'wrap_model_call' middleware.
 
     Use this to return a 'Command' alongside the model response from a
@@ -309,14 +311,14 @@ class WrapModelCallResult(Generic[ResponseT]):
     """Optional command to apply as an additional state update."""
 
 
-ModelCallResult: TypeAlias = "ModelResponse[ResponseT] | AIMessage | WrapModelCallResult[ResponseT]"
+ModelCallResult: TypeAlias = "ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]"
 """`TypeAlias` for model call handler return value.
 
 Middleware can return either:
 
 - `ModelResponse`: Full response with messages and optional structured output
 - `AIMessage`: Simplified return for simple use cases
-- `WrapModelCallResult`: Response with an optional `Command` for additional state updates
+- `ExtendedModelResponse`: Response with an optional `Command` for additional state updates
     `goto`, `resume`, and `graph` are not yet supported on these commands.
     A `NotImplementedError` will be raised if you try to use them.
 """
@@ -475,7 +477,7 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
         self,
         request: ModelRequest[ContextT],
         handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
-    ) -> ModelResponse[ResponseT] | AIMessage | WrapModelCallResult[ResponseT]:
+    ) -> ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]:
         """Intercept and control model execution via handler callback.
 
         Async version is `awrap_model_call`
@@ -570,7 +572,7 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
         self,
         request: ModelRequest[ContextT],
         handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
-    ) -> ModelResponse[ResponseT] | AIMessage | WrapModelCallResult[ResponseT]:
+    ) -> ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]:
         """Intercept and control async model execution via handler callback.
 
         The handler callback executes the model request and returns a `ModelResponse`.
