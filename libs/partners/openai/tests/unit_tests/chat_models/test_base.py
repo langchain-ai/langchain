@@ -3228,23 +3228,100 @@ def test_openai_structured_output_refusal_handling_responses_api() -> None:
         pytest.fail(f"This is a wrong behavior. Error details: {e}")
 
 
-def test_empty_tools_excluded_from_payload() -> None:
-    """Test that empty tools list is not included in API payload.
+def test_empty_tools_excluded_from_payload(mock_client: MagicMock) -> None:
+    """Test that empty tools list is not sent to the Chat Completions API.
 
     Some OpenAI-compatible providers (e.g., Qwen-Plus via DashScope) reject
     empty tools arrays with validation errors like '[] is too short - tools'.
-    This test ensures empty tools lists are properly excluded from the payload.
+    This verifies the actual request sent to the API excludes empty tools.
 
     Fixes: https://github.com/langchain-ai/langchain/issues/34907
     """
     llm = ChatOpenAI(model="gpt-4o")
 
-    # Test 1: Explicitly passing tools=[] via kwargs should be excluded
-    payload_empty = llm._get_request_payload([HumanMessage("test")], tools=[])
-    assert "tools" not in payload_empty, "Empty tools list should be excluded"
+    # Empty tools should NOT appear in the API call
+    with patch.object(llm, "client", mock_client):
+        llm.invoke("test", tools=[])
+        _, call_kwargs = mock_client.with_raw_response.create.call_args
+        assert "tools" not in call_kwargs, (
+            "Empty tools list should not be sent to the API"
+        )
 
-    # Test 2: Non-empty tools via kwargs should still be included
-    tools = [{"type": "function", "function": {"name": "test", "parameters": {}}}]
-    payload_with_tools = llm._get_request_payload([HumanMessage("test")], tools=tools)
-    assert "tools" in payload_with_tools, "Non-empty tools should be included"
-    assert payload_with_tools["tools"] == tools
+    # Non-empty tools SHOULD appear in the API call
+    tools = [{"type": "function", "function": {"name": "test_fn", "parameters": {}}}]
+    with patch.object(llm, "client", mock_client):
+        llm.invoke("test", tools=tools)
+        _, call_kwargs = mock_client.with_raw_response.create.call_args
+        assert "tools" in call_kwargs, "Non-empty tools should be sent to the API"
+        assert call_kwargs["tools"] == tools
+
+    # No tools at all should not include tools key
+    with patch.object(llm, "client", mock_client):
+        llm.invoke("test")
+        _, call_kwargs = mock_client.with_raw_response.create.call_args
+        assert "tools" not in call_kwargs, (
+            "No tools key should be present when none are specified"
+        )
+
+
+def test_empty_tools_excluded_from_responses_api_payload() -> None:
+    """Test that empty tools list is not sent to the Responses API.
+
+    Fixes: https://github.com/langchain-ai/langchain/issues/34907
+    """
+    llm = ChatOpenAI(
+        model="o4-mini", use_responses_api=True, output_version="responses/v1"
+    )
+
+    mock_root_client = MagicMock()
+    mock_create = MagicMock()
+    mock_raw_response = MagicMock()
+    mock_raw_response.parse.return_value = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="o4-mini",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(
+                        type="output_text", text="Test response", annotations=[]
+                    )
+                ],
+                role="assistant",
+                status="completed",
+            )
+        ],
+    )
+    mock_create.return_value = mock_raw_response
+    mock_root_client.responses.with_raw_response.create = mock_create
+
+    # Empty tools should NOT appear in the API call
+    with patch.object(llm, "root_client", mock_root_client):
+        llm.invoke("test", tools=[])
+        _, call_kwargs = mock_create.call_args
+        assert "tools" not in call_kwargs, (
+            "Empty tools list should not be sent to the Responses API"
+        )
+
+    # Non-empty tools SHOULD appear in the API call
+    tools = [{"type": "function", "function": {"name": "test_fn", "parameters": {}}}]
+    with patch.object(llm, "root_client", mock_root_client):
+        llm.invoke("test", tools=tools)
+        _, call_kwargs = mock_create.call_args
+        assert "tools" in call_kwargs, (
+            "Non-empty tools should be sent to the Responses API"
+        )
+
+    # No tools at all should not include tools key
+    with patch.object(llm, "root_client", mock_root_client):
+        llm.invoke("test")
+        _, call_kwargs = mock_create.call_args
+        assert "tools" not in call_kwargs, (
+            "No tools key should be present when none are specified"
+        )
