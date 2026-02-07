@@ -83,7 +83,6 @@ def test_check_package_version(
         ({"a": 1, "b": 2}, {"c": None}, {"a": 1, "b": 2, "c": None}),
         #
         # Invalid inputs.
-        #
         (
             {"a": 1},
             {"a": "1"},
@@ -117,6 +116,14 @@ def test_check_package_version(
             {"a": [{"idx": 0, "b": "f"}]},
             {"a": [{"idx": 0, "b": "{"}, {"idx": 0, "b": "f"}]},
         ),
+        # Don't concatenate tool call identifier fields (#34807).
+        ({"name": "read_file"}, {"name": "read_file"}, {"name": "read_file"}),
+        ({"type": "tool_use"}, {"type": "tool_use"}, {"type": "tool_use"}),
+        (
+            {"name": "search", "args": '{"q": '},
+            {"name": "search", "args": '"test"}'},
+            {"name": "search", "args": '{"q": "test"}'},
+        ),
     ],
 )
 def test_merge_dicts(
@@ -132,6 +139,33 @@ def test_merge_dicts(
         # no mutation
         assert left == left_copy
         assert right == right_copy
+
+
+def test_merge_dicts_tool_call_streaming_chunks() -> None:
+    """Test that tool call identifier fields are not concatenated during streaming.
+
+    Fixes #34807: merge_dicts() concatenates name/type fields when merging
+    streaming chunks for the same tool call.
+    """
+    chunk1 = {
+        "name": "read_file",
+        "id": "call_123",
+        "type": "function",
+        "args": '{"path":',
+    }
+    chunk2 = {
+        "name": "read_file",
+        "id": "call_123",
+        "type": "function",
+        "args": ': "config.yaml"}',
+    }
+
+    result = merge_dicts(chunk1, chunk2)
+
+    assert result["name"] == "read_file"
+    assert result["id"] == "call_123"
+    assert result["type"] == "function"
+    assert result["args"] == '{"path": "config.yaml"}'
 
 
 @pytest.mark.parametrize(
