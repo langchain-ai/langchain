@@ -33,6 +33,7 @@ from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables.base import RunnableBinding, RunnableSequence
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
+from openai import BaseModel as OpenAIBaseModel
 from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
 from openai.types.responses.response import IncompleteDetails, Response
 from openai.types.responses.response_error import ResponseError
@@ -356,7 +357,52 @@ def test__convert_delta_to_message_chunk_with_reasoning_openrouter() -> None:
     assert result.additional_kwargs["reasoning_content"] == "openrouter reasoning"
 
 
-def test__create_chat_result_with_reasoning_content() -> None:
+def test__convert_delta_to_message_chunk_without_reasoning() -> None:
+    delta = {"role": "assistant", "content": "content"}
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    assert "reasoning_content" not in result.additional_kwargs
+
+
+class MockOpenAIResponseForReasoning(OpenAIBaseModel):
+    """Mock OpenAI response for testing reasoning_content extraction."""
+
+    choices: list
+    error: None = None
+
+    def model_dump(  # type: ignore[override]
+        self,
+        *,
+        mode: Literal["json", "python"] | str = "python",  # noqa: PYI051
+        include: Any = None,
+        exclude: Any = None,
+        by_alias: bool = False,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
+        round_trip: bool = False,
+        warnings: Literal["none", "warn", "error"] | bool = True,
+        context: dict[str, Any] | None = None,
+        serialize_as_any: bool = False,
+    ) -> dict[str, Any]:
+        choices_list = []
+        for choice in self.choices:
+            message_dict = {
+                "role": "assistant",
+                "content": choice.message.content,
+            }
+            if hasattr(choice.message, "reasoning_content"):
+                message_dict["reasoning_content"] = choice.message.reasoning_content
+            if hasattr(choice.message, "model_extra") and isinstance(
+                choice.message.model_extra, dict
+            ):
+                message_dict.update(choice.message.model_extra)
+            choices_list.append({"message": message_dict})
+        return {"choices": choices_list, "error": self.error}
+
+
+def test__create_chat_result_with_reasoning_content_dict() -> None:
+    """Test reasoning_content extraction from dict response."""
     llm = ChatOpenAI(model="test-model", api_key=SecretStr("test"))
     response = {
         "choices": [
@@ -381,6 +427,132 @@ def test__create_chat_result_with_reasoning_content() -> None:
         result.generations[0].message.additional_kwargs.get("reasoning_content")
         == "This is reasoning"
     )
+
+
+def test__create_chat_result_with_reasoning_content_basemodel() -> None:
+    """Test reasoning_content extraction from openai.BaseModel response."""
+    llm = ChatOpenAI(model="test-model", api_key=SecretStr("test"))
+    mock_message = MagicMock()
+    mock_message.content = "Main content"
+    mock_message.reasoning_content = "This is the reasoning content"
+    mock_message.role = "assistant"
+    mock_response = MockOpenAIResponseForReasoning(
+        choices=[MagicMock(message=mock_message)],
+        error=None,
+    )
+
+    result = llm._create_chat_result(mock_response)
+    assert (
+        result.generations[0].message.additional_kwargs.get("reasoning_content")
+        == "This is the reasoning content"
+    )
+
+
+def test__create_chat_result_with_model_extra_reasoning() -> None:
+    """Test reasoning extraction from model_extra dict (OpenRouter path)."""
+    llm = ChatOpenAI(model="test-model", api_key=SecretStr("test"))
+    mock_message = MagicMock()
+    mock_message.content = "Main content"
+    mock_message.role = "assistant"
+    del mock_message.reasoning_content
+    mock_message.model_extra = {"reasoning": "This is the reasoning"}
+    mock_response = MockOpenAIResponseForReasoning(
+        choices=[MagicMock(message=mock_message)],
+        error=None,
+    )
+
+    result = llm._create_chat_result(mock_response)
+    assert (
+        result.generations[0].message.additional_kwargs.get("reasoning_content")
+        == "This is the reasoning"
+    )
+
+
+def test__create_chat_result_without_reasoning_content() -> None:
+    """Test that reasoning_content is not added when absent."""
+    llm = ChatOpenAI(model="test-model", api_key=SecretStr("test"))
+    response = {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": "Main content",
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 10,
+            "completion_tokens": 20,
+            "total_tokens": 30,
+        },
+        "model": "test-model",
+    }
+    result = llm._create_chat_result(response)
+    assert "reasoning_content" not in result.generations[0].message.additional_kwargs
+
+
+def test__convert_chunk_to_generation_chunk_with_reasoning_content() -> None:
+    """Test reasoning_content extraction from streaming chunks."""
+    llm = ChatOpenAI(model="test-model", api_key=SecretStr("test"))
+    chunk: dict = {
+        "choices": [
+            {
+                "delta": {
+                    "content": "Main content",
+                    "reasoning_content": "Streaming reasoning content",
+                },
+            },
+        ],
+    }
+    chunk_result = llm._convert_chunk_to_generation_chunk(
+        chunk,
+        AIMessageChunk,
+        None,
+    )
+    assert chunk_result is not None
+    assert (
+        chunk_result.message.additional_kwargs.get("reasoning_content")
+        == "Streaming reasoning content"
+    )
+
+
+def test__convert_chunk_to_generation_chunk_with_reasoning() -> None:
+    """Test reasoning field extraction from streaming chunks (OpenRouter)."""
+    llm = ChatOpenAI(model="test-model", api_key=SecretStr("test"))
+    chunk: dict = {
+        "choices": [
+            {
+                "delta": {
+                    "content": "Main content",
+                    "reasoning": "Streaming reasoning",
+                },
+            },
+        ],
+    }
+    chunk_result = llm._convert_chunk_to_generation_chunk(
+        chunk,
+        AIMessageChunk,
+        None,
+    )
+    assert chunk_result is not None
+    assert (
+        chunk_result.message.additional_kwargs.get("reasoning_content")
+        == "Streaming reasoning"
+    )
+
+
+def test__convert_chunk_to_generation_chunk_without_reasoning() -> None:
+    """Test that chunks without reasoning fields work correctly."""
+    llm = ChatOpenAI(model="test-model", api_key=SecretStr("test"))
+    chunk: dict = {"choices": [{"delta": {"content": "Main content"}}]}
+    chunk_result = llm._convert_chunk_to_generation_chunk(
+        chunk,
+        AIMessageChunk,
+        None,
+    )
+    assert chunk_result is not None
+    assert chunk_result.message.additional_kwargs.get("reasoning_content") is None
 
 
 class MockAsyncContextManager:
