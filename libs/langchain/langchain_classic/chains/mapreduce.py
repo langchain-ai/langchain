@@ -32,9 +32,8 @@ from langchain_classic.chains.llm import LLMChain
     removal="1.0",
     message=(
         "Refer to migration guide here for a recommended implementation using "
-        "LangGraph: https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain/"
-        ". See also LangGraph guides for map-reduce: "
-        "https://langchain-ai.github.io/langgraph/how-tos/map-reduce/."
+        "LangGraph: https://docs.langchain.com/oss/python/langgraph/graph-api#map-reduce-and-the-send-api"
+        "."
     ),
 )
 class MapReduceChain(Chain):
