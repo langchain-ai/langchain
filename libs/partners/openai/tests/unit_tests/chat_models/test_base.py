@@ -67,6 +67,7 @@ from langchain_openai.chat_models.base import (
     OpenAIRefusalError,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
+    _convert_delta_to_message_chunk,
     _convert_dict_to_message,
     _convert_message_to_dict,
     _convert_to_openai_response_format,
@@ -310,6 +311,76 @@ def test__convert_dict_to_message_tool_call() -> None:
         reverted_message_dict["tool_calls"], key=lambda x: x["id"]
     )
     assert reverted_message_dict == message
+
+
+def test__convert_dict_to_message_ai_with_reasoning_content() -> None:
+    message = {
+        "role": "assistant",
+        "content": "The answer is 42.",
+        "reasoning_content": "Let me think step by step...",
+    }
+    result = _convert_dict_to_message(message)
+    assert isinstance(result, AIMessage)
+    assert result.content == "The answer is 42."
+    assert (
+        result.additional_kwargs["reasoning_content"] == "Let me think step by step..."
+    )
+
+
+def test__convert_dict_to_message_ai_without_reasoning_content() -> None:
+    message = {"role": "assistant", "content": "Hello"}
+    result = _convert_dict_to_message(message)
+    assert isinstance(result, AIMessage)
+    assert "reasoning_content" not in result.additional_kwargs
+
+
+def test__convert_delta_to_message_chunk_with_reasoning_content() -> None:
+    delta = {
+        "role": "assistant",
+        "content": "content",
+        "reasoning_content": "streaming reasoning",
+    }
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    assert result.additional_kwargs["reasoning_content"] == "streaming reasoning"
+
+
+def test__convert_delta_to_message_chunk_with_reasoning_openrouter() -> None:
+    delta = {
+        "role": "assistant",
+        "content": "content",
+        "reasoning": "openrouter reasoning",
+    }
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    assert result.additional_kwargs["reasoning_content"] == "openrouter reasoning"
+
+
+def test__create_chat_result_with_reasoning_content() -> None:
+    llm = ChatOpenAI(model="test-model", api_key=SecretStr("test"))
+    response = {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": "Main content",
+                    "reasoning_content": "This is reasoning",
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 10,
+            "completion_tokens": 20,
+            "total_tokens": 30,
+        },
+        "model": "test-model",
+    }
+    result = llm._create_chat_result(response)
+    assert (
+        result.generations[0].message.additional_kwargs.get("reasoning_content")
+        == "This is reasoning"
+    )
 
 
 class MockAsyncContextManager:
