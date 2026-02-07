@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import functools
+import inspect
 import textwrap
 from collections.abc import Awaitable, Callable
 from inspect import signature
@@ -231,8 +232,11 @@ class StructuredTool(BaseTool):
                 )
                 raise TypeError(msg)
         if description_ is None:
-            msg = "Function must have a docstring if description not provided."
-            raise ValueError(msg)
+            if inspect.isclass(source_function):
+                description_ = ""
+            else:
+                msg = "Function must have a docstring if description not provided."
+                raise ValueError(msg)
         if description is None:
             # Only apply if using the function's docstring
             description_ = textwrap.dedent(description_).strip()

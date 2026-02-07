@@ -733,6 +733,32 @@ def test_missing_docstring() -> None:
     assert not MyTool.description  # type: ignore[attr-defined]
 
 
+def test_docstring_no_inheritance_from_parent() -> None:
+    """Test that child classes do not inherit docstrings from parents."""
+
+    class ParentModel(BaseModel):
+        """Parent docstring."""
+
+        foo: str
+
+    @tool
+    class ChildTool(ParentModel):
+        bar: str
+
+    # Child should not inherit parent's docstring
+    assert ChildTool.description != "Parent docstring."  # type: ignore[attr-defined]
+    assert not ChildTool.description  # type: ignore[attr-defined]
+
+    @tool
+    class ChildWithOwnDoc(ParentModel):
+        """Child's own docstring."""
+
+        bar: str
+
+    # Child with own docstring should use it
+    assert ChildWithOwnDoc.description == "Child's own docstring."  # type: ignore[attr-defined]
+
+
 def test_create_tool_positional_args() -> None:
     """Test that positional arguments are allowed."""
     test_tool = Tool("test_name", lambda x: x, "test_description")

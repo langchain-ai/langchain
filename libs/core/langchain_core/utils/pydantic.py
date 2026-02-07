@@ -224,7 +224,8 @@ def _create_subset_model_v1(
         fields[field_name] = (t, field.field_info)
 
     rtn = cast("type[BaseModelV1]", create_model_v1(name, **fields))  # type: ignore[call-overload]
-    rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
+    doc = fn_description if fn_description is not None else (model.__doc__ or "")
+    rtn.__doc__ = textwrap.dedent(doc)
     return rtn
 
 
@@ -265,7 +266,8 @@ def _create_subset_model_v2(
     ]
 
     rtn.__annotations__ = dict(selected_annotations)
-    rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
+    doc = fn_description if fn_description is not None else (model.__doc__ or "")
+    rtn.__doc__ = textwrap.dedent(doc)
     return rtn
 
 

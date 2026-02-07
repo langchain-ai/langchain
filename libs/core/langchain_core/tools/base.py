@@ -167,7 +167,7 @@ def _parse_python_function_docstring(
     Returns:
         A tuple containing the function description and argument descriptions.
     """
-    docstring = inspect.getdoc(function)
+    docstring = inspect.cleandoc(function.__doc__) if function.__doc__ else None
     return _parse_google_docstring(
         docstring,
         list(annotations),
@@ -215,7 +215,7 @@ def _infer_arg_descriptions(
             fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
         )
     else:
-        description = inspect.getdoc(fn) or ""
+        description = inspect.cleandoc(fn.__doc__) if fn.__doc__ else ""
         arg_descriptions = {}
     if parse_docstring:
         _validate_docstring_args_against_annotations(arg_descriptions, annotations)
