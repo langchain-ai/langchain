@@ -157,7 +157,7 @@ def test_merge_dicts_tool_call_streaming_chunks() -> None:
         "name": "read_file",
         "id": "call_123",
         "type": "function",
-        "args": ': "config.yaml"}',
+        "args": ' "config.yaml"}',
     }
 
     result = merge_dicts(chunk1, chunk2)
