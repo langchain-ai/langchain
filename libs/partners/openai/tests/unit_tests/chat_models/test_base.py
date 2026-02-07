@@ -325,8 +325,7 @@ def test__convert_dict_to_message_ai_with_reasoning_content() -> None:
     assert result.content == "The answer is 42."
     assert "reasoning_content" in result.additional_kwargs
     assert (
-        result.additional_kwargs["reasoning_content"]
-        == "Let me think step by step..."
+        result.additional_kwargs["reasoning_content"] == "Let me think step by step..."
     )
 
 
