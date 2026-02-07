@@ -1094,11 +1094,11 @@ typing = [
 
 [package.metadata]
 requires-dist = [
-    { name = "huggingface-hub", specifier = ">=0.33.4,<1.0.0" },
+    { name = "huggingface-hub", specifier = ">=0.33.4,<2.0.0" },
     { name = "langchain-core", editable = "../../core" },
     { name = "sentence-transformers", marker = "extra == 'full'", specifier = ">=2.6.0,<3.0.0" },
     { name = "tokenizers", specifier = ">=0.19.1,<1.0.0" },
-    { name = "transformers", marker = "extra == 'full'", specifier = ">=4.39.0,<5.0.0" },
+    { name = "transformers", marker = "extra == 'full'", specifier = ">=4.39.0,<6.0.0" },
 ]
 provides-extras = ["full"]
 
@@ -1121,7 +1121,7 @@ test = [
     { name = "scipy", marker = "python_full_version == '3.12.*'", specifier = ">=1.7.0,<2.0.0" },
     { name = "scipy", marker = "python_full_version >= '3.13'", specifier = ">=1.14.1,<2.0.0" },
     { name = "sentence-transformers", specifier = ">=2.6.0,<3.0.0" },
-    { name = "transformers", specifier = ">=4.39.0,<5.0.0" },
+    { name = "transformers", specifier = ">=4.39.0,<6.0.0" },
 ]
 test-integration = []
 typing = [
