@@ -67,6 +67,7 @@ from langchain_openai.chat_models.base import (
     OpenAIRefusalError,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
+    _convert_delta_to_message_chunk,
     _convert_dict_to_message,
     _convert_message_to_dict,
     _convert_to_openai_response_format,
@@ -310,6 +311,55 @@ def test__convert_dict_to_message_tool_call() -> None:
         reverted_message_dict["tool_calls"], key=lambda x: x["id"]
     )
     assert reverted_message_dict == message
+
+
+def test__convert_dict_to_message_ai_with_reasoning_content() -> None:
+    """Test that reasoning_content is preserved in additional_kwargs."""
+    message = {
+        "role": "assistant",
+        "content": "The answer is 42.",
+        "reasoning_content": "Let me think step by step...",
+    }
+    result = _convert_dict_to_message(message)
+    assert isinstance(result, AIMessage)
+    assert result.content == "The answer is 42."
+    assert "reasoning_content" in result.additional_kwargs
+    assert (
+        result.additional_kwargs["reasoning_content"]
+        == "Let me think step by step..."
+    )
+
+
+def test__convert_dict_to_message_ai_without_reasoning_content() -> None:
+    """Test that messages without reasoning_content work correctly."""
+    message = {"role": "assistant", "content": "Hello!"}
+    result = _convert_dict_to_message(message)
+    assert isinstance(result, AIMessage)
+    assert result.content == "Hello!"
+    assert "reasoning_content" not in result.additional_kwargs
+
+
+def test__convert_delta_to_message_chunk_with_reasoning_content() -> None:
+    """Test that reasoning_content is preserved in streaming chunks."""
+    delta = {
+        "role": "assistant",
+        "content": "partial answer",
+        "reasoning_content": "thinking...",
+    }
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    assert result.content == "partial answer"
+    assert "reasoning_content" in result.additional_kwargs
+    assert result.additional_kwargs["reasoning_content"] == "thinking..."
+
+
+def test__convert_delta_to_message_chunk_without_reasoning_content() -> None:
+    """Test that streaming chunks without reasoning_content work correctly."""
+    delta = {"role": "assistant", "content": "hello"}
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    assert result.content == "hello"
+    assert "reasoning_content" not in result.additional_kwargs
 
 
 class MockAsyncContextManager:
