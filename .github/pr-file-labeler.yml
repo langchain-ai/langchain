@@ -98,11 +98,6 @@ perplexity:
       - any-glob-to-any-file:
           - "libs/partners/perplexity/**/*"
 
-prompty:
-  - changed-files:
-      - any-glob-to-any-file:
-          - "libs/partners/prompty/**/*"
-
 qdrant:
   - changed-files:
       - any-glob-to-any-file:
