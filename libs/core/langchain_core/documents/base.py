@@ -234,7 +234,7 @@ class Blob(BaseMedia):
             `Blob` instance
         """
         if mime_type is None and guess_type:
-            mimetype = mimetypes.guess_type(path)[0] if guess_type else None
+            mimetype = mimetypes.guess_type(path)[0]
         else:
             mimetype = mime_type
         # We do not load the data immediately, instead we treat the blob as a
