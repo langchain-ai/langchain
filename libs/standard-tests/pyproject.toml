@@ -21,7 +21,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.1.3"
+version = "1.1.4"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.2.7,<2.0.0",
@@ -73,6 +73,14 @@ warn_unreachable = true
 [[tool.mypy.overrides]]
 module = ["vcr.*",]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["deepagents", "deepagents.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["tests.unit_tests.test_in_memory_sandbox_provider"]
+ignore_errors = true
 
 [tool.ruff.format]
 docstring-code-format = true
