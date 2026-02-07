@@ -192,6 +192,7 @@ def send_email(to: str, msg: str, *, priority: str = "normal") -> bool:
 - Document all parameters, return values, and exceptions
 - Keep descriptions concise but clear
 - Ensure American English spelling (e.g., "behavior", not "behaviour")
+- Do NOT use Sphinx-style double backtick formatting (` ``code`` `). Use single backticks (`` `code` ``) for inline code references in docstrings and comments.
 
 ## Additional resources
 
