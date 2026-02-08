@@ -301,13 +301,13 @@ def _convert_to_v1_from_chat_completions_input(
     """
     converted_blocks = []
     unpacked_blocks: list[dict[str, Any]] = [
-            (
-                cast("dict[str, Any]", block)
-                if block.get("type") != "non_standard"
-                else block["value"]  # type: ignore[typeddict-item]
-            )
-            for block in content
-        ]
+        (
+            cast("dict[str, Any]", block)
+            if block.get("type") != "non_standard"
+            else block["value"]  # type: ignore[typeddict-item]
+        )
+        for block in content
+    ]
     for block in unpacked_blocks:
         if block.get("type") in {
             "image_url",
