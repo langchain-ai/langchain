@@ -112,3 +112,19 @@ def test_sentence_transformers_multiple_tokens() -> None:
         - splitter.maximum_tokens_per_chunk
     )
     assert expected == actual
+
+
+def test_sentence_transformers_with_model_kwargs() -> None:
+    """Test that model_kwargs are passed to SentenceTransformer."""
+    splitter = SentenceTransformersTokenTextSplitter(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        model_kwargs={"device": "cpu"},
+        tokens_per_chunk=100,
+    )
+
+    text = "This is a test sentence. " * 10
+    chunks = splitter.split_text(text)
+    assert len(chunks) > 0
+
+    token_count = splitter.count_tokens(text=text)
+    assert token_count > 0
