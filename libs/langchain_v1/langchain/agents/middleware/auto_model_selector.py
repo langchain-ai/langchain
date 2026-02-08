@@ -72,20 +72,20 @@ class LLMAutoModelSelector(AgentMiddleware[AgentState[ResponseT], ContextT]):  #
         """
         super().__init__()
         self.models = {}
-        self.classifier_model = classifier_model  # type: ignore[assignment]
+        if isinstance(classifier_model, str):
+            self.classifier_model = init_chat_model(classifier_model)
+        else:
+            self.classifier_model = classifier_model
+
         self.last_k_messages = last_k_messages
         self.system_prompt = system_prompt
         self.tools = []  # No tools registered by this middleware
 
-        # Initialize chat model instances if strings are provided
-        if isinstance(self.classifier_model, str):
-            self.classifier_model = init_chat_model(self.classifier_model)
-
         for level, model in models.items():
             if isinstance(model, str):
-                self.models[cast(ComplexityLevel, level)] = init_chat_model(model)  # noqa: TC006
+                self.models[level] = init_chat_model(model)
             else:
-                self.models[cast(ComplexityLevel, level)] = model  # noqa: TC006
+                self.models[level] = model
 
     def _prepare_classification_messages(
         self, request: ModelRequest
@@ -140,12 +140,14 @@ class LLMAutoModelSelector(AgentMiddleware[AgentState[ResponseT], ContextT]):  #
             # 2. Call classifier
             # We assume classifier_model is a BaseChatModel which has invoke
             response = self.classifier_model.invoke(messages)
-            complexity = response.content
-            if isinstance(complexity, list):
-                complexity = complexity[0] if complexity else "medium"
+            response_content = response.content
+            if isinstance(response_content, list):
+                complexity_str = str(response_content[0]) if response_content else "medium"
+            else:
+                complexity_str = str(response_content)
 
             # 3. Select model
-            selected_model = self._select_model(str(complexity))
+            selected_model = self._select_model(complexity_str)
 
             # 4. Override request
             new_request = request.override(model=selected_model)
@@ -172,12 +174,14 @@ class LLMAutoModelSelector(AgentMiddleware[AgentState[ResponseT], ContextT]):  #
 
             # 2. Call classifier
             response = await self.classifier_model.ainvoke(messages)
-            complexity = response.content
-            if isinstance(complexity, list):
-                complexity = complexity[0] if complexity else "medium"
+            response_content = response.content
+            if isinstance(response_content, list):
+                complexity_str = str(response_content[0]) if response_content else "medium"
+            else:
+                complexity_str = str(response_content)
 
             # 3. Select model
-            selected_model = self._select_model(str(complexity))
+            selected_model = self._select_model(complexity_str)
 
             # 4. Override request
             new_request = request.override(model=selected_model)

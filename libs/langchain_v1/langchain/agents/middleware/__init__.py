@@ -1,5 +1,6 @@
 """Entrypoint to using [middleware](https://docs.langchain.com/oss/python/langchain/middleware) plugins with [Agents](https://docs.langchain.com/oss/python/langchain/agents)."""  # noqa: E501
 
+from langchain.agents.middleware.auto_model_selector import LLMAutoModelSelector
 from langchain.agents.middleware.context_editing import ClearToolUsesEdit, ContextEditingMiddleware
 from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
 from langchain.agents.middleware.human_in_the_loop import (
@@ -40,7 +41,6 @@ from langchain.agents.middleware.types import (
     wrap_model_call,
     wrap_tool_call,
 )
-from langchain.agents.middleware.auto_model_selector import LLMAutoModelSelector
 
 __all__ = [
     "AgentMiddleware",
@@ -54,9 +54,9 @@ __all__ = [
     "HostExecutionPolicy",
     "HumanInTheLoopMiddleware",
     "InterruptOnConfig",
+    "LLMAutoModelSelector",
     "LLMToolEmulator",
     "LLMToolSelectorMiddleware",
-    "LLMAutoModelSelector",
     "ModelCallLimitMiddleware",
     "ModelCallResult",
     "ModelFallbackMiddleware",
