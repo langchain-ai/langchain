@@ -59,21 +59,21 @@ def _extract_filename(block: dict, mime_type: str) -> str | None:
     """Extract filename from block or infer from mime_type."""
     # Check direct filename field
     if block.get("filename"):
-        return block["filename"]
+        return cast("str", block["filename"])
 
     # Check extras.filename
     extras = block.get("extras")
     if extras and isinstance(extras, dict) and extras.get("filename"):
-        return extras["filename"]
+        return cast("str", extras["filename"])
 
     # Check metadata.filename (backward compat)
     metadata = block.get("metadata")
     if metadata and isinstance(metadata, dict) and metadata.get("filename"):
-        return metadata["filename"]
+        return cast("str", metadata["filename"])
 
     # Check name field
     if block.get("name"):
-        return block["name"]
+        return cast("str", block["name"])
 
     # Infer from mime_type
     mime_to_filename = {
