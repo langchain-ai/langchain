@@ -381,6 +381,9 @@ def merge_content(
     merged = "" if first_content is None else first_content
 
     for content in contents:
+        # Skip None content to avoid converting it to string "None"
+        if content is None:
+            continue
         # If current is a string
         if isinstance(merged, str):
             # If the next chunk is also a string, then merge them naively

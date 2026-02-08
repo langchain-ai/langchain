@@ -100,7 +100,10 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
         if isinstance(content, tuple):
             content = list(content)
 
-        if not isinstance(content, (str, list)):
+        # Handle None content by converting to empty string instead of "None"
+        if content is None:
+            values["content"] = ""
+        elif not isinstance(content, (str, list)):
             try:
                 values["content"] = str(content)
             except ValueError as e:
