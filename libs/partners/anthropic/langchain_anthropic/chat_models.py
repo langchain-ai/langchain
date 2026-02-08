@@ -662,6 +662,18 @@ def _format_messages(
             # non-empty content except for the optional final assistant message
             continue
         formatted_messages.append({"role": role, "content": content})
+
+    if formatted_messages and formatted_messages[-1]["role"] == "assistant":
+        last_message = formatted_messages[-1]
+        if isinstance(last_message["content"], str):
+            last_message["content"] = last_message["content"].rstrip()
+        elif isinstance(last_message["content"], list) and last_message["content"]:
+            last_block = last_message["content"][-1]
+            if isinstance(last_block, dict) and last_block.get("type") == "text":
+                last_block["text"] = last_block["text"].rstrip()
+                if not last_block["text"]:
+                    last_message["content"].pop()
+
     return system, formatted_messages
 
 
