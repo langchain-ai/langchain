@@ -25,6 +25,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         chunk_overlap: int = 50,
         model_name: str = "sentence-transformers/all-mpnet-base-v2",
         tokens_per_chunk: int | None = None,
+        model_kwargs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         """Create a new `TextSplitter`.
@@ -35,6 +36,9 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             tokens_per_chunk: The number of tokens per chunk.
 
                 If `None`, uses the maximum tokens allowed by the model.
+            model_kwargs: Additional keyword arguments to pass to the
+                SentenceTransformer constructor. For example, use
+                `{"trust_remote_code": True}` for models that require it.
 
         Raises:
             ImportError: If the `sentence_transformers` package is not installed.
@@ -50,7 +54,8 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             raise ImportError(msg)
 
         self.model_name = model_name
-        self._model = SentenceTransformer(self.model_name)
+        _model_kwargs = model_kwargs or {}
+        self._model = SentenceTransformer(self.model_name, **_model_kwargs)
         self.tokenizer = self._model.tokenizer
         self._initialize_chunk_configuration(tokens_per_chunk=tokens_per_chunk)
 
