@@ -3,17 +3,15 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from langchain_core.messages import AIMessage, SystemMessage
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
-    ContextT,
     ModelRequest,
     ModelResponse,
-    ResponseT,
 )
 from langchain.chat_models import init_chat_model
 
@@ -40,7 +38,7 @@ DEFAULT_CLASSIFIER_PROMPT = (
 )
 
 
-class LLMAutoModelSelector(AgentMiddleware[AgentState[ResponseT], ContextT]):  # type: ignore[type-arg]
+class LLMAutoModelSelector(AgentMiddleware[AgentState[Any], Any, Any]):
     """Middleware that dynamically selects an LLM based on task complexity.
 
     It uses a classifier model to evaluate the conversation history and pick
@@ -125,9 +123,9 @@ class LLMAutoModelSelector(AgentMiddleware[AgentState[ResponseT], ContextT]):  #
 
     def wrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
-    ) -> ModelResponse | AIMessage:
+        request: ModelRequest[Any],
+        handler: Callable[[ModelRequest[Any]], ModelResponse[Any]],
+    ) -> ModelResponse[Any] | AIMessage:
         """Intercept model calls to swap in the optimal model (sync version)."""
         if not request.messages:
             # No messages to analyze, use default model from request (or fall back to medium)
@@ -161,9 +159,9 @@ class LLMAutoModelSelector(AgentMiddleware[AgentState[ResponseT], ContextT]):  #
 
     async def awrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-    ) -> ModelResponse | AIMessage:
+        request: ModelRequest[Any],
+        handler: Callable[[ModelRequest[Any]], Awaitable[ModelResponse[Any]]],
+    ) -> ModelResponse[Any] | AIMessage:
         """Intercept model calls to swap in the optimal model (async version)."""
         if not request.messages:
             return await handler(request)
