@@ -1447,7 +1447,7 @@ def test_convert_to_openai_messages_multimodal() -> None:
                 {
                     "type": "file",
                     "base64": "<base64 string>",
-                    "mime_type": "application/pdf",
+                    "mime_type": "application/octet-stream",
                 },
             ]
         )
