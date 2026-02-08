@@ -56,18 +56,7 @@ def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
 
 
 def _extract_filename(block: dict, mime_type: str) -> str | None:
-    """Extract filename from block or infer from mime_type.
-
-    Checks multiple possible locations for filename and falls back
-    to inferring from mime_type if not found.
-
-    Args:
-        block: Content block dictionary.
-        mime_type: MIME type of the file for inference.
-
-    Returns:
-        Filename if found or inferred, None otherwise.
-    """
+    """Extract filename from block or infer from mime_type."""
     # Check direct filename field
     if block.get("filename"):
         return block["filename"]
@@ -88,24 +77,24 @@ def _extract_filename(block: dict, mime_type: str) -> str | None:
 
     # Infer from mime_type
     mime_to_filename = {
-            "application/pdf": "document.pdf",
-            "application/msword": "document.doc",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": (
-                "document.docx"
-            ),
-            "application/vnd.ms-excel": "spreadsheet.xls",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": (
-                "spreadsheet.xlsx"
-            ),
-            "application/vnd.ms-powerpoint": "presentation.ppt",
-            "text/plain": "file.txt",
-            "text/csv": "data.csv",
-            "text/html": "page.html",
-            "text/markdown": "document.md",
-            "application/json": "data.json",
-            "application/xml": "data.xml",
-            "application/zip": "archive.zip",
-        }
+        "application/pdf": "document.pdf",
+        "application/msword": "document.doc",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": (
+            "document.docx"
+        ),
+        "application/vnd.ms-excel": "spreadsheet.xls",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": (
+            "spreadsheet.xlsx"
+        ),
+        "application/vnd.ms-powerpoint": "presentation.ppt",
+        "text/plain": "file.txt",
+        "text/csv": "data.csv",
+        "text/html": "page.html",
+        "text/markdown": "document.md",
+        "application/json": "data.json",
+        "application/xml": "data.xml",
+        "application/zip": "archive.zip",
+    }
 
     return mime_to_filename.get(mime_type)
 
