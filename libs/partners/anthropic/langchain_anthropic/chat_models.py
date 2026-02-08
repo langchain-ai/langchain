@@ -9,6 +9,7 @@ import re
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
+from importlib.metadata import version
 from operator import itemgetter
 from typing import Any, Final, Literal, cast
 
@@ -73,6 +74,12 @@ _message_type_lookups = {
 }
 
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
+
+try:
+    _LANGCHAIN_ANTHROPIC_VERSION = version("langchain-anthropic")
+except Exception:
+    _LANGCHAIN_ANTHROPIC_VERSION = "unknown"
+_USER_AGENT: Final[str] = f"langchain-anthropic/{_LANGCHAIN_ANTHROPIC_VERSION}"
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
@@ -1006,11 +1013,16 @@ class ChatAnthropic(BaseChatModel):
 
     @cached_property
     def _client_params(self) -> dict[str, Any]:
+        # Merge User-Agent with user-provided headers (user headers take precedence)
+        default_headers = {"User-Agent": _USER_AGENT}
+        if self.default_headers:
+            default_headers.update(self.default_headers)
+
         client_params: dict[str, Any] = {
             "api_key": self.anthropic_api_key.get_secret_value(),
             "base_url": self.anthropic_api_url,
             "max_retries": self.max_retries,
-            "default_headers": (self.default_headers or None),
+            "default_headers": default_headers,
         }
         # value <= 0 indicates the param should be ignored. None is a meaningful value
         # for Anthropic client and treated differently than not specifying the param at
