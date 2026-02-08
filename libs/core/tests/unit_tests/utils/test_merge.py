@@ -3,7 +3,7 @@
 from langchain_core.utils._merge import merge_dicts
 
 
-def test_merge_dicts_tool_calls_not_concatenated():
+def test_merge_dicts_tool_calls_not_concatenated() -> None:
     """Test that tool call fields are not concatenated during merge."""
     # Simulate streaming chunks for parallel tool calls
     left = {
@@ -37,22 +37,21 @@ def test_merge_dicts_tool_calls_not_concatenated():
     # The id, name, and type should remain as they were in left dict
     # Only arguments should be concatenated
     assert merged["tool_calls"][0]["id"] == "call_abc", "id should not be concatenated"
+    assert merged["tool_calls"][0]["name"] == "read_file", (
+        "name should not be concatenated"
+    )
+    assert merged["tool_calls"][0]["type"] == "function", (
+        "type should not be concatenated"
+    )
+    assert merged["tool_calls"][0]["function"]["name"] == "read_file", (
+        "function name should not be concatenated"
+    )
     assert (
-        merged["tool_calls"][0]["name"] == "read_file"
-    ), "name should not be concatenated"
-    assert (
-        merged["tool_calls"][0]["type"] == "function"
-    ), "type should not be concatenated"
-    assert (
-        merged["tool_calls"][0]["function"]["name"] == "read_file"
-    ), "function name should not be concatenated"
-    assert (
-        merged["tool_calls"][0]["function"]["arguments"]
-        == '{"path":"config.yaml"}'
+        merged["tool_calls"][0]["function"]["arguments"] == '{"path":"config.yaml"}'
     ), "arguments should be concatenated"
 
 
-def test_merge_dicts_multiple_tool_calls():
+def test_merge_dicts_multiple_tool_calls() -> None:
     """Test merging with multiple tool calls in streaming."""
     left = {
         "tool_calls": [
@@ -78,7 +77,7 @@ def test_merge_dicts_multiple_tool_calls():
     assert merged["tool_calls"][1]["type"] == "function"
 
 
-def test_merge_dicts_tool_call_id_only_once():
+def test_merge_dicts_tool_call_id_only_once() -> None:
     """Test that tool_call_id is not concatenated when same in both dicts."""
     left = {"tool_call_id": "call_abc"}
     right = {"tool_call_id": "call_abc"}
@@ -88,7 +87,7 @@ def test_merge_dicts_tool_call_id_only_once():
     assert merged["tool_call_id"] == "call_abc", "tool_call_id should not be duplicated"
 
 
-def test_merge_dicts_tool_call_fields_not_concatenated():
+def test_merge_dicts_tool_call_fields_not_concatenated() -> None:
     """Test that tool call fields with empty right values are not concatenated."""
     # This is the actual bug reported in issue #34807
     # When streaming, providers send empty strings for tool call fields
@@ -102,9 +101,9 @@ def test_merge_dicts_tool_call_fields_not_concatenated():
 
     # Empty strings should not be concatenated
     assert merged["id"] == "call_abc", "id should not have empty string concatenated"
-    assert (
-        merged["name"] == "read_file"
-    ), "name should not have empty string concatenated"
-    assert (
-        merged["type"] == "function"
-    ), "type should not have empty string concatenated"
+    assert merged["name"] == "read_file", (
+        "name should not have empty string concatenated"
+    )
+    assert merged["type"] == "function", (
+        "type should not have empty string concatenated"
+    )
