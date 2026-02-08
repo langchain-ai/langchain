@@ -5,6 +5,8 @@ from __future__ import annotations
 import functools
 import textwrap
 from collections.abc import Awaitable, Callable
+import warnings
+import inspect
 from inspect import signature
 from typing import (
     TYPE_CHECKING,
@@ -22,6 +24,7 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,  # noqa: TC001
 )
 from langchain_core.runnables import RunnableConfig, run_in_executor
+from langchain_core.agents import AgentState
 from langchain_core.tools.base import (
     _EMPTY_SET,
     FILTERED_ARGS,
@@ -199,6 +202,27 @@ class StructuredTool(BaseTool):
         else:
             msg = "Function and/or coroutine must be provided"
             raise ValueError(msg)
+
+        # Warn if the the tool accepts AgentState (or a subclass), since this
+        # serializes the full agent state and may significantly increase token usage.
+        sig = inspect.signature(source_function)
+        for param in sig.parameters.values():
+            annotation = param.annotation
+            if annotation is inspect._empty:
+                continue
+            try:
+                if issubclass(annotation, AgentState):
+                    warnings.warn(
+                        "Tool accepts full AgentState; this may significantly increase token usage."
+                        "Consider passing only the required fields instead of the full state.",
+                        UserWarning,
+                        stacklevel=2,
+                    )
+                    break
+            except TypeError:
+                # annotation is not a class
+                pass
+
         name = name or source_function.__name__
         if args_schema is None and infer_schema:
             # schema name is appended within function

@@ -80,6 +80,25 @@ except ImportError:
     HAS_LANGGRAPH = False
 
 
+def test_tool_warns_when_accepting_agentstate():
+    import warnings
+    from langchain_core.agents import AgentState
+    from langchain_core.tools import tool
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        @tool
+        def my_tool(state: AgentState) -> str:
+            return "ok"
+
+        assert any(
+            "AgentState" in str(warning.message)
+            for warning in w
+        ), "Expected warning when tool accepts AgentState"
+
+
+
 def _get_tool_call_json_schema(tool: BaseTool) -> dict[str, Any]:
     tool_schema = tool.tool_call_schema
     if isinstance(tool_schema, dict):
