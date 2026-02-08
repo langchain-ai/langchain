@@ -5,8 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Literal, cast
 
-from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
-from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import AIMessage, SystemMessage
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -21,6 +20,8 @@ from langchain.chat_models import init_chat_model
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
+    from langchain_core.language_models.chat_models import BaseChatModel
+
 logger = logging.getLogger(__name__)
 
 ComplexityLevel = Literal["easy", "medium", "hard"]
@@ -31,13 +32,15 @@ DEFAULT_CLASSIFIER_PROMPT = (
     "of the required response. "
     "Respond with ONLY one of the following words: 'easy', 'medium', or 'hard'.\n\n"
     "Guidelines:\n"
-    "- 'easy': Simple factual questions, greetings, or requests requiring no tools or simple retrieval.\n"
+    "- 'easy': Simple factual questions, greetings, or requests requiring no tools "
+    "or simple retrieval.\n"
     "- 'medium': Tasks requiring some reasoning, clarification, or single tool calls.\n"
-    "- 'hard': Complex multi-step reasoning, coding tasks, or scenarios requiring multiple tool calls or deep analysis."
+    "- 'hard': Complex multi-step reasoning, coding tasks, or scenarios requiring "
+    "multiple tool calls or deep analysis."
 )
 
 
-class LLMAutoModelSelector(AgentMiddleware[AgentState[ResponseT], ContextT]):
+class LLMAutoModelSelector(AgentMiddleware[AgentState[ResponseT], ContextT]):  # type: ignore[type-arg]
     """Middleware that dynamically selects an LLM based on task complexity.
 
     It uses a classifier model to evaluate the conversation history and pick
@@ -69,7 +72,7 @@ class LLMAutoModelSelector(AgentMiddleware[AgentState[ResponseT], ContextT]):
         """
         super().__init__()
         self.models = {}
-        self.classifier_model = classifier_model
+        self.classifier_model = classifier_model  # type: ignore[assignment]
         self.last_k_messages = last_k_messages
         self.system_prompt = system_prompt
         self.tools = []  # No tools registered by this middleware
@@ -80,9 +83,9 @@ class LLMAutoModelSelector(AgentMiddleware[AgentState[ResponseT], ContextT]):
 
         for level, model in models.items():
             if isinstance(model, str):
-                self.models[cast(ComplexityLevel, level)] = init_chat_model(model)
+                self.models[cast(ComplexityLevel, level)] = init_chat_model(model)  # noqa: TC006
             else:
-                self.models[cast(ComplexityLevel, level)] = model
+                self.models[cast(ComplexityLevel, level)] = model  # noqa: TC006
 
     def _prepare_classification_messages(
         self, request: ModelRequest
@@ -110,13 +113,15 @@ class LLMAutoModelSelector(AgentMiddleware[AgentState[ResponseT], ContextT]):
 
         if complexity not in ["easy", "medium", "hard"]:
             logger.warning(
-                f"Classifier returned unknown complexity '{complexity}', defaulting to 'medium'"
+                "Classifier returned unknown complexity '%s', defaulting to 'medium'",
+                complexity,
             )
             return self.models.get("medium", next(iter(self.models.values())))
 
         # Cast to ComplexityLevel to satisfy type checker
-        level = cast(ComplexityLevel, complexity) # type: ignore
-        return self.models.get(level, self.models.get("medium", next(iter(self.models.values()))))
+        level = cast(ComplexityLevel, complexity)  # noqa: TC006
+        default_model = self.models.get("medium", next(iter(self.models.values())))
+        return self.models.get(level, default_model)
 
     def wrap_model_call(
         self,
@@ -137,7 +142,7 @@ class LLMAutoModelSelector(AgentMiddleware[AgentState[ResponseT], ContextT]):
             response = self.classifier_model.invoke(messages)
             complexity = response.content
             if isinstance(complexity, list):
-                 complexity = complexity[0] if complexity else "medium"
+                complexity = complexity[0] if complexity else "medium"
 
             # 3. Select model
             selected_model = self._select_model(str(complexity))
@@ -148,8 +153,8 @@ class LLMAutoModelSelector(AgentMiddleware[AgentState[ResponseT], ContextT]):
             # 5. Delegate to handler
             return handler(new_request)
 
-        except Exception as e:
-            logger.error(f"AutoModelSelector failed: {e}. Falling back to default model.")
+        except Exception:
+            logger.exception("AutoModelSelector failed. Falling back to default model.")
             return handler(request)
 
     async def awrap_model_call(
@@ -159,7 +164,7 @@ class LLMAutoModelSelector(AgentMiddleware[AgentState[ResponseT], ContextT]):
     ) -> ModelResponse | AIMessage:
         """Intercept model calls to swap in the optimal model (async version)."""
         if not request.messages:
-             return await handler(request)
+            return await handler(request)
 
         try:
             # 1. Prepare classification request
@@ -169,7 +174,7 @@ class LLMAutoModelSelector(AgentMiddleware[AgentState[ResponseT], ContextT]):
             response = await self.classifier_model.ainvoke(messages)
             complexity = response.content
             if isinstance(complexity, list):
-                 complexity = complexity[0] if complexity else "medium"
+                complexity = complexity[0] if complexity else "medium"
 
             # 3. Select model
             selected_model = self._select_model(str(complexity))
@@ -180,6 +185,6 @@ class LLMAutoModelSelector(AgentMiddleware[AgentState[ResponseT], ContextT]):
             # 5. Delegate to handler
             return await handler(new_request)
 
-        except Exception as e:
-            logger.error(f"AutoModelSelector failed: {e}. Falling back to default model.")
+        except Exception:
+            logger.exception("AutoModelSelector failed. Falling back to default model.")
             return await handler(request)
