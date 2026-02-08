@@ -40,6 +40,7 @@ from langchain.agents.middleware.types import (
     wrap_model_call,
     wrap_tool_call,
 )
+from langchain.agents.middleware.auto_model_selector import LLMAutoModelSelector
 
 __all__ = [
     "AgentMiddleware",
@@ -55,6 +56,7 @@ __all__ = [
     "InterruptOnConfig",
     "LLMToolEmulator",
     "LLMToolSelectorMiddleware",
+    "LLMAutoModelSelector",
     "ModelCallLimitMiddleware",
     "ModelCallResult",
     "ModelFallbackMiddleware",
