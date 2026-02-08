@@ -3,7 +3,7 @@
 from langchain_core.messages import ToolMessageChunk
 
 
-def test_tool_message_chunk_merge_none_content():
+def test_tool_message_chunk_merge_none_content() -> None:
     """Test that merging ToolMessageChunk with None content preserves None."""
     chunk1 = ToolMessageChunk(
         tool_call_id="call_123",
@@ -25,10 +25,12 @@ def test_tool_message_chunk_merge_none_content():
 
     result = chunk1 + chunk2
     # Bug: result.content becomes "NoneNone" instead of None or ""
-    assert result.content is None or result.content == "", f"Expected None or '', got: {result.content!r}"
+    assert result.content is None or result.content == "", (
+        f"Expected None or '', got: {result.content!r}"
+    )
 
 
-def test_tool_message_chunk_merge_none_with_string():
+def test_tool_message_chunk_merge_none_with_string() -> None:
     """Test merging ToolMessageChunk with None content and string content."""
     chunk1 = ToolMessageChunk(
         tool_call_id="call_123",
@@ -52,7 +54,7 @@ def test_tool_message_chunk_merge_none_with_string():
     assert result.content == "hello", f"Expected 'hello', got: {result.content!r}"
 
 
-def test_tool_message_chunk_merge_string_with_none():
+def test_tool_message_chunk_merge_string_with_none() -> None:
     """Test merging ToolMessageChunk with string content and None content."""
     chunk1 = ToolMessageChunk(
         tool_call_id="call_123",
@@ -76,7 +78,7 @@ def test_tool_message_chunk_merge_string_with_none():
     assert result.content == "hello", f"Expected 'hello', got: {result.content!r}"
 
 
-def test_tool_message_chunk_merge_strings():
+def test_tool_message_chunk_merge_strings() -> None:
     """Test merging ToolMessageChunk with string contents."""
     chunk1 = ToolMessageChunk(
         tool_call_id="call_123",
@@ -97,4 +99,5 @@ def test_tool_message_chunk_merge_strings():
     )
 
     result = chunk1 + chunk2
-    assert result.content == "hello world", f"Expected 'hello world', got: {result.content!r}"
+    expected = "hello world"
+    assert result.content == expected, f"Expected {expected!r}, got: {result.content!r}"
