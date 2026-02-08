@@ -55,6 +55,61 @@ def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
     raise ValueError(error_message)
 
 
+def _extract_filename(block: dict, mime_type: str) -> str | None:
+    """Extract filename from block or infer from mime_type.
+
+    Checks multiple possible locations for filename and falls back
+    to inferring from mime_type if not found.
+
+    Args:
+        block: Content block dictionary.
+        mime_type: MIME type of the file for inference.
+
+    Returns:
+        Filename if found or inferred, None otherwise.
+    """
+    # Check direct filename field
+    if block.get("filename"):
+        return block["filename"]
+
+    # Check extras.filename
+    extras = block.get("extras")
+    if extras and isinstance(extras, dict) and extras.get("filename"):
+        return extras["filename"]
+
+    # Check metadata.filename (backward compat)
+    metadata = block.get("metadata")
+    if metadata and isinstance(metadata, dict) and metadata.get("filename"):
+        return metadata["filename"]
+
+    # Check name field
+    if block.get("name"):
+        return block["name"]
+
+    # Infer from mime_type
+    mime_to_filename = {
+            "application/pdf": "document.pdf",
+            "application/msword": "document.doc",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": (
+                "document.docx"
+            ),
+            "application/vnd.ms-excel": "spreadsheet.xls",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": (
+                "spreadsheet.xlsx"
+            ),
+            "application/vnd.ms-powerpoint": "presentation.ppt",
+            "text/plain": "file.txt",
+            "text/csv": "data.csv",
+            "text/html": "page.html",
+            "text/markdown": "document.md",
+            "application/json": "data.json",
+            "application/xml": "data.xml",
+            "application/zip": "archive.zip",
+        }
+
+    return mime_to_filename.get(mime_type)
+
+
 def convert_to_openai_data_block(
     block: dict, api: Literal["chat/completions", "responses"] = "chat/completions"
 ) -> dict:
@@ -90,44 +145,106 @@ def convert_to_openai_data_block(
             formatted_block = chat_completions_block
 
     elif block["type"] == "file":
-        if block.get("source_type") == "base64" or "base64" in block:
+        if (
+            block.get("source_type") == "base64"
+            or "base64" in block
+            or ("data" in block and block.get("source_type") != "url")
+        ):
             # Handle v0 format (Base64CB): {"source_type": "base64", "data": "...", ...}
-            # Handle v1 format (IDCB): {"base64": "...", ...}
-            base64_data = block["data"] if "source_type" in block else block["base64"]
-            file = {"file_data": f"data:{block['mime_type']};base64,{base64_data}"}
-            if filename := block.get("filename"):
-                file["filename"] = filename
-            elif (extras := block.get("extras")) and ("filename" in extras):
-                file["filename"] = extras["filename"]
-            elif (extras := block.get("metadata")) and ("filename" in extras):
-                # Backward compat
-                file["filename"] = extras["filename"]
+            # Handle v1 format: {"base64": "...", ...}
+            # Handle alternative format: {"data": "...", ...}
+            if block.get("source_type") == "base64":
+                base64_data = block.get("data", "")
+            elif "base64" in block:
+                base64_data = block["base64"]
+            elif "data" in block:
+                base64_data = block["data"]
             else:
-                # Can't infer filename
+                base64_data = ""
+
+            if not base64_data:
+                error_msg = (
+                    "Base64 file blocks require non-empty 'data' or 'base64' field."
+                )
+                raise ValueError(error_msg)
+
+            # Get mime type with fallback
+            mime_type = block.get("mime_type", "application/octet-stream")
+
+            # Build file_data with proper data URL format
+            file = {"file_data": f"data:{mime_type};base64,{base64_data}"}
+
+            # Try multiple sources for filename (required by OpenAI for PDFs)
+            filename = _extract_filename(block, mime_type)
+
+            if filename:
+                file["filename"] = filename
+            else:
                 warnings.warn(
-                    "OpenAI may require a filename for file uploads. Specify a filename"
-                    " in the content block, e.g.: {'type': 'file', 'mime_type': "
-                    "'...', 'base64': '...', 'filename': 'my-file.pdf'}",
+                    "OpenAI requires a filename for file uploads. Specify a filename "
+                    "in the content block, e.g.: {'type': 'file', 'mime_type': "
+                    "'application/pdf', 'data': '...', 'filename': 'my-file.pdf'}. "
+                    "Proceeding without filename may cause API errors.",
                     stacklevel=1,
                 )
+
             formatted_block = {"type": "file", "file": file}
             if api == "responses":
-                formatted_block = {"type": "input_file", **formatted_block["file"]}
-        elif block.get("source_type") == "id" or "file_id" in block:
+                formatted_block = {"type": "input_file", **file}
+
+        elif (
+            block.get("source_type") == "id"
+            or "file_id" in block
+            or ("id" in block and block.get("source_type") not in ("base64", "url"))
+        ):
             # Handle v0 format (IDContentBlock): {"source_type": "id", "id": "...", ...}
-            # Handle v1 format (IDCB): {"file_id": "...", ...}
-            file_id = block["id"] if "source_type" in block else block["file_id"]
+            # Handle v1 format: {"file_id": "...", ...}
+            # Handle alternative format: {"id": "...", ...}
+            if block.get("source_type") == "id":
+                file_id = block.get("id", "")
+            elif "file_id" in block:
+                file_id = block["file_id"]
+            elif "id" in block:
+                file_id = block["id"]
+            else:
+                file_id = ""
+
+            if not file_id:
+                error_msg = (
+                    "File ID blocks require a non-empty 'file_id' or 'id' field."
+                )
+                raise ValueError(error_msg)
+
             formatted_block = {"type": "file", "file": {"file_id": file_id}}
             if api == "responses":
-                formatted_block = {"type": "input_file", **formatted_block["file"]}
-        elif "url" in block:  # Intentionally do not check for source_type="url"
-            if api == "chat/completions":
-                error_msg = "OpenAI Chat Completions does not support file URLs."
+                formatted_block = {"type": "input_file", "file_id": file_id}
+        elif "url" in block or block.get("source_type") == "url":
+            # URL-based files
+            file_url = block.get("url", "")
+
+            if not file_url:
+                error_msg = "URL file blocks require a non-empty 'url' field."
                 raise ValueError(error_msg)
-            # Only supported by Responses API; return in that format
-            formatted_block = {"type": "input_file", "file_url": block["url"]}
+
+            if api == "chat/completions":
+                # Chat Completions API doesn't support file URLs directly
+                error_msg = (
+                    "OpenAI Chat Completions API does not support file URLs directly. "
+                    "Options:\n"
+                    "1. Upload the file using OpenAI's Files API and use 'file_id'\n"
+                    "2. Fetch the file and pass as base64: {'type': 'file', "
+                    "'mime_type': '...', 'data': '<base64>', 'filename': '...'}\n"
+                    "3. Use the Responses API which supports 'file_url'"
+                )
+                raise ValueError(error_msg)
+
+            # Responses API supports file URLs
+            formatted_block = {"type": "input_file", "file_url": file_url}
         else:
-            error_msg = "Keys base64, url, or file_id required for file blocks."
+            error_msg = (
+                "File blocks require one of: 'data'/'base64' (for inline data), "
+                "'file_id'/'id' (for uploaded files), or 'url' (for Responses API)."
+            )
             raise ValueError(error_msg)
 
     elif block["type"] == "audio":
@@ -195,9 +312,11 @@ def _convert_to_v1_from_chat_completions_input(
     """
     converted_blocks = []
     unpacked_blocks: list[dict[str, Any]] = [
-        cast("dict[str, Any]", block)
-        if block.get("type") != "non_standard"
-        else block["value"]  # type: ignore[typeddict-item]  # this is only non-standard blocks
+        (
+            cast("dict[str, Any]", block)
+            if block.get("type") != "non_standard"
+            else block["value"]
+        )  # type: ignore[typeddict-item]  # this is only non-standard blocks
         for block in content
     ]
     for block in unpacked_blocks:
