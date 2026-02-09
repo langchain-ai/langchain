@@ -753,3 +753,304 @@ def test_human_in_the_loop_middleware_preserves_order_with_rejections() -> None:
         assert isinstance(tool_message, ToolMessage)
         assert tool_message.content == "Rejected tool B"
         assert tool_message.tool_call_id == "id_b"
+
+
+@pytest.mark.asyncio
+async def test_human_in_the_loop_middleware_async_approve() -> None:
+    """Test HumanInTheLoopMiddleware async aafter_model with approve response."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
+    )
+
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    async def mock_accept(_: Any) -> dict[str, Any]:
+        return {"decisions": [{"type": "approve"}]}
+
+    with patch("langchain.agents.middleware.async_interrupt.execute_interrupt_async", side_effect=mock_accept):
+        result = await middleware.aafter_model(state, Runtime())
+        assert result is not None
+        assert "messages" in result
+        assert len(result["messages"]) == 1
+        assert result["messages"][0] == ai_message
+        assert result["messages"][0].tool_calls == ai_message.tool_calls
+
+
+@pytest.mark.asyncio
+async def test_human_in_the_loop_middleware_async_edit() -> None:
+    """Test HumanInTheLoopMiddleware async aafter_model with edit response."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
+    )
+
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "test_tool", "args": {"input": "original"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    async def mock_edit(_: Any) -> dict[str, Any]:
+        return {
+            "decisions": [
+                {
+                    "type": "edit",
+                    "edited_action": Action(
+                        name="test_tool",
+                        args={"input": "edited"},
+                    ),
+                }
+            ]
+        }
+
+    with patch("langchain.agents.middleware.async_interrupt.execute_interrupt_async", side_effect=mock_edit):
+        result = await middleware.aafter_model(state, Runtime())
+        assert result is not None
+        assert "messages" in result
+        assert len(result["messages"]) == 1
+
+        updated_ai_message = result["messages"][0]
+        assert updated_ai_message.tool_calls[0]["args"] == {"input": "edited"}
+        assert updated_ai_message.tool_calls[0]["id"] == "1"  # ID preserved
+
+
+@pytest.mark.asyncio
+async def test_human_in_the_loop_middleware_async_reject() -> None:
+    """Test HumanInTheLoopMiddleware async aafter_model with reject response."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
+    )
+
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    async def mock_reject(_: Any) -> dict[str, Any]:
+        return {"decisions": [{"type": "reject", "message": "User rejected this action"}]}
+
+    with patch("langchain.agents.middleware.async_interrupt.execute_interrupt_async", side_effect=mock_reject):
+        result = await middleware.aafter_model(state, Runtime())
+        assert result is not None
+        assert "messages" in result
+        assert len(result["messages"]) == 2  # AI message + tool message
+
+        # First message is the AI message (unchanged tool calls)
+        assert isinstance(result["messages"][0], AIMessage)
+
+        # Second message is the rejection tool message
+        tool_message = result["messages"][1]
+        assert isinstance(tool_message, ToolMessage)
+        assert tool_message.content == "User rejected this action"
+        assert tool_message.tool_call_id == "1"
+
+
+@pytest.mark.asyncio
+async def test_human_in_the_loop_middleware_async_multiple_tools() -> None:
+    """Test HumanInTheLoopMiddleware async aafter_model with multiple interrupt tools."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "tool_a": {"allowed_decisions": ["approve", "edit", "reject"]},
+            "tool_b": {"allowed_decisions": ["approve", "edit", "reject"]},
+        }
+    )
+
+    ai_message = AIMessage(
+        content="I'll process multiple tools",
+        tool_calls=[
+            {"name": "tool_a", "args": {"val": 1}, "id": "1"},
+            {"name": "tool_b", "args": {"val": 2}, "id": "2"},
+        ],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Process data"), ai_message])
+
+    async def mock_responses(_: Any) -> dict[str, Any]:
+        return {
+            "decisions": [
+                {"type": "approve"},  # Approve tool_a
+                {"type": "reject", "message": "Rejected tool_b"},  # Reject tool_b
+            ]
+        }
+
+    with patch("langchain.agents.middleware.async_interrupt.execute_interrupt_async", side_effect=mock_responses):
+        result = await middleware.aafter_model(state, Runtime())
+        assert result is not None
+        assert len(result["messages"]) == 2  # AI message + rejection tool message
+
+        updated_ai_message = result["messages"][0]
+        assert len(updated_ai_message.tool_calls) == 2  # Both tools remain
+
+        # Check rejection message
+        tool_message = result["messages"][1]
+        assert isinstance(tool_message, ToolMessage)
+        assert tool_message.tool_call_id == "2"
+
+
+@pytest.mark.asyncio
+async def test_human_in_the_loop_middleware_async_mixed_auto_approved_and_interrupt() -> None:
+    """Test async middleware with mix of auto-approved and interrupt tools."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"interrupt_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
+    )
+
+    ai_message = AIMessage(
+        content="Mixed tool execution",
+        tool_calls=[
+            {"name": "auto_tool", "args": {"auto": True}, "id": "1"},
+            {"name": "interrupt_tool", "args": {"interrupt": True}, "id": "2"},
+        ],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Execute tools"), ai_message])
+
+    async def mock_approve(_: Any) -> dict[str, Any]:
+        return {"decisions": [{"type": "approve"}]}
+
+    with patch("langchain.agents.middleware.async_interrupt.execute_interrupt_async", side_effect=mock_approve):
+        result = await middleware.aafter_model(state, Runtime())
+        assert result is not None
+        assert len(result["messages"]) == 1  # Only AI message, no rejections
+
+        updated_ai_message = result["messages"][0]
+        assert len(updated_ai_message.tool_calls) == 2
+        assert updated_ai_message.tool_calls[0]["name"] == "auto_tool"
+        assert updated_ai_message.tool_calls[1]["name"] == "interrupt_tool"
+
+
+@pytest.mark.asyncio
+async def test_human_in_the_loop_middleware_async_context_preservation() -> None:
+    """Test that async execution preserves runnable context (would fail with bugged version)."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve"]}}
+    )
+
+    ai_message = AIMessage(
+        content="Test context preservation",
+        tool_calls=[{"name": "test_tool", "args": {"test": "value"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Test"), ai_message])
+
+    # This test verifies that execute_interrupt_async can be called without
+    # raising "Called get_config outside of a runnable context" error
+    async def mock_interrupt(hitl_request: Any) -> dict[str, Any]:
+        # In the bugged version, this would fail because get_config() would be called
+        # outside of runnable context. The fixed version uses asyncio.to_thread()
+        # which preserves the context.
+        return {"decisions": [{"type": "approve"}]}
+
+    with patch("langchain.agents.middleware.async_interrupt.execute_interrupt_async", side_effect=mock_interrupt):
+        # This call would raise RuntimeError in the bugged version
+        result = await middleware.aafter_model(state, Runtime())
+        assert result is not None
+        assert len(result["messages"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_async_interrupt_execution_error_handling() -> None:
+    """Test error handling in async interrupt execution."""
+    from langchain.agents.middleware.async_interrupt import execute_interrupt_async
+
+    # Test that execute_interrupt_async properly handles and propagates errors
+    async def failing_interrupt(_: Any) -> None:
+        raise ValueError("Interrupt execution failed")
+
+    with patch("langchain.agents.middleware.async_interrupt.interrupt", side_effect=failing_interrupt):
+        with pytest.raises(ValueError, match="Interrupt execution failed"):
+            await execute_interrupt_async(None)
+
+
+def test_interrupt_utils_build_hitl_request() -> None:
+    """Test building HITL request from tool calls."""
+    from langchain.agents.middleware.interrupt_utils import build_hitl_request
+
+    tool_calls = [
+        ToolCall(name="test_tool", args={"input": "test"}, id="1", type="tool_call")
+    ]
+    interrupt_configs = {"test_tool": {"allowed_decisions": ["approve", "reject"]}}
+    state = AgentState[Any](messages=[])
+    runtime = Runtime()
+
+    hitl_request = build_hitl_request(tool_calls, interrupt_configs, state, runtime)
+
+    assert hitl_request["action_requests"][0]["name"] == "test_tool"
+    assert hitl_request["action_requests"][0]["args"] == {"input": "test"}
+    assert hitl_request["review_configs"][0]["action_name"] == "test_tool"
+
+
+def test_interrupt_utils_validate_decision_count() -> None:
+    """Test decision count validation."""
+    from langchain.agents.middleware.interrupt_utils import validate_decision_count
+
+    # Should not raise
+    validate_decision_count([{"type": "approve"}], 1)
+
+    # Should raise ValueError
+    with pytest.raises(ValueError, match="Number of human decisions .* does not match"):
+        validate_decision_count([{"type": "approve"}], 2)
+
+
+def test_interrupt_utils_process_decision_approve() -> None:
+    """Test processing approve decision."""
+    from langchain.agents.middleware.interrupt_utils import _process_decision
+
+    tool_call = ToolCall(name="test_tool", args={"input": "test"}, id="1", type="tool_call")
+    config = {"allowed_decisions": ["approve", "reject"]}
+    decision = {"type": "approve"}
+
+    revised_call, message = _process_decision(decision, tool_call, config)
+
+    assert revised_call == tool_call
+    assert message is None
+
+
+def test_interrupt_utils_process_decision_reject() -> None:
+    """Test processing reject decision."""
+    from langchain.agents.middleware.interrupt_utils import _process_decision
+
+    tool_call = ToolCall(name="test_tool", args={"input": "test"}, id="1", type="tool_call")
+    config = {"allowed_decisions": ["approve", "reject"]}
+    decision = {"type": "reject", "message": "Rejected by user"}
+
+    revised_call, message = _process_decision(decision, tool_call, config)
+
+    assert revised_call == tool_call
+    assert message is not None
+    assert message.content == "Rejected by user"
+    assert message.tool_call_id == "1"
+
+
+def test_interrupt_utils_process_decision_edit() -> None:
+    """Test processing edit decision."""
+    from langchain.agents.middleware.interrupt_utils import _process_decision
+
+    tool_call = ToolCall(name="test_tool", args={"input": "original"}, id="1", type="tool_call")
+    config = {"allowed_decisions": ["approve", "edit", "reject"]}
+    decision = {
+        "type": "edit",
+        "edited_action": {
+            "name": "test_tool",
+            "args": {"input": "edited"}
+        }
+    }
+
+    revised_call, message = _process_decision(decision, tool_call, config)
+
+    assert message is None
+    assert revised_call.name == "test_tool"
+    assert revised_call.args == {"input": "edited"}
+    assert revised_call.id == "1"
+
+
+def test_interrupt_utils_process_decision_invalid() -> None:
+    """Test processing invalid decision."""
+    from langchain.agents.middleware.interrupt_utils import _process_decision
+
+    tool_call = ToolCall(name="test_tool", args={"input": "test"}, id="1", type="tool_call")
+    config = {"allowed_decisions": ["approve", "reject"]}
+    decision = {"type": "edit"}  # Not allowed
+
+    with pytest.raises(ValueError, match="Unexpected human decision"):
+        _process_decision(decision, tool_call, config)
