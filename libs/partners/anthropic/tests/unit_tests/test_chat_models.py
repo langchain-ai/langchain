@@ -16,7 +16,7 @@ from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
-from pydantic import BaseModel, Field, SecretStr, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic, ChatAnthropicBedrock
@@ -2590,8 +2590,8 @@ def test_chat_anthropic_bedrock_uses_utils() -> None:
     model = ChatAnthropicBedrock(  # type: ignore[call-arg]
         model=BEDROCK_MODEL_NAME,
         aws_region="us-east-1",
-        aws_access_key_id="test-key",  # type: ignore[arg-type]
-        aws_secret_access_key="test-secret",  # type: ignore[arg-type]
+        aws_access_key_id=SecretStr("test-key"),
+        aws_secret_access_key=SecretStr("test-secret"),
         max_retries=3,
         default_request_timeout=30.0,
     )
