@@ -112,7 +112,7 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
             ]
         }
 
-    with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_edit):
+    with patch("langgraph.types.interrupt", side_effect=mock_edit):
         result = middleware.after_model(state, Runtime())
         assert result is not None
         assert "messages" in result
@@ -137,7 +137,7 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
         return {"decisions": [{"type": "reject", "message": "Custom response message"}]}
 
     with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_response
+        "langgraph.types.interrupt", side_effect=mock_response
     ):
         result = middleware.after_model(state, Runtime())
         assert result is not None
@@ -177,7 +177,7 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
         }
 
     with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_mixed_responses
+        "langgraph.types.interrupt", side_effect=mock_mixed_responses
     ):
         result = middleware.after_model(state, Runtime())
         assert result is not None
@@ -238,7 +238,7 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
         }
 
     with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_edit_responses
+        "langgraph.types.interrupt", side_effect=mock_edit_responses
     ):
         result = middleware.after_model(state, Runtime())
         assert result is not None
@@ -278,7 +278,7 @@ def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
         }
 
     with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        "langgraph.types.interrupt",
         side_effect=mock_edit_with_args,
     ):
         result = middleware.after_model(state, Runtime())
@@ -350,7 +350,7 @@ def test_human_in_the_loop_middleware_disallowed_action() -> None:
 
     with (
         patch(
-            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            "langgraph.types.interrupt",
             side_effect=mock_disallowed_action,
         ),
         pytest.raises(
@@ -419,7 +419,7 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
         return {"decisions": [{"type": "approve"}]}
 
     with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_capture_requests
+        "langgraph.types.interrupt", side_effect=mock_capture_requests
     ):
         middleware.after_model(state, Runtime())
 
@@ -453,7 +453,7 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
 
     # Test accept
     with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        "langgraph.types.interrupt",
         return_value={"decisions": [{"type": "approve"}]},
     ):
         result = middleware.after_model(state, Runtime())
@@ -464,7 +464,7 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
 
     # Test edit
     with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        "langgraph.types.interrupt",
         return_value={
             "decisions": [
                 {
@@ -503,7 +503,7 @@ def test_human_in_the_loop_middleware_sequence_mismatch() -> None:
     # Test with too few responses
     with (
         patch(
-            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            "langgraph.types.interrupt",
             return_value={"decisions": []},  # No responses for 1 tool call
         ),
         pytest.raises(
@@ -518,7 +518,7 @@ def test_human_in_the_loop_middleware_sequence_mismatch() -> None:
     # Test with too many responses
     with (
         patch(
-            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            "langgraph.types.interrupt",
             return_value={
                 "decisions": [
                     {"type": "approve"},
@@ -575,7 +575,7 @@ def test_human_in_the_loop_middleware_description_as_callable() -> None:
         return {"decisions": [{"type": "approve"}, {"type": "approve"}]}
 
     with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_capture_requests
+        "langgraph.types.interrupt", side_effect=mock_capture_requests
     ):
         middleware.after_model(state, Runtime())
 
@@ -625,7 +625,7 @@ def test_human_in_the_loop_middleware_preserves_tool_call_order() -> None:
         return {"decisions": [{"type": "approve"}, {"type": "approve"}]}
 
     with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_approve_all
+        "langgraph.types.interrupt", side_effect=mock_approve_all
     ):
         result = middleware.after_model(state, Runtime())
         assert result is not None
@@ -680,7 +680,7 @@ def test_human_in_the_loop_middleware_preserves_order_with_edits() -> None:
         }
 
     with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_edit_responses
+        "langgraph.types.interrupt", side_effect=mock_edit_responses
     ):
         result = middleware.after_model(state, Runtime())
         assert result is not None
@@ -731,7 +731,7 @@ def test_human_in_the_loop_middleware_preserves_order_with_rejections() -> None:
         }
 
     with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_mixed_responses
+        "langgraph.types.interrupt", side_effect=mock_mixed_responses
     ):
         result = middleware.after_model(state, Runtime())
         assert result is not None
@@ -772,7 +772,7 @@ async def test_human_in_the_loop_middleware_async_approve() -> None:
         return {"decisions": [{"type": "approve"}]}
 
     with patch("langgraph.types.interrupt", side_effect=mock_accept), \
-         patch("langchain_core.runnables.config.get_config", return_value={"configurable": {}}):
+         patch("langgraph.config.get_config", return_value={"configurable": {}}):
         result = await middleware.aafter_model(state, Runtime())
         assert result is not None
         assert "messages" in result
@@ -808,7 +808,7 @@ async def test_human_in_the_loop_middleware_async_edit() -> None:
         }
 
     with patch("langgraph.types.interrupt", side_effect=mock_edit), \
-         patch("langchain_core.runnables.config.get_config", return_value={"configurable": {}}):
+         patch("langgraph.config.get_config", return_value={"configurable": {}}):
         result = await middleware.aafter_model(state, Runtime())
         assert result is not None
         assert "messages" in result
@@ -836,7 +836,7 @@ async def test_human_in_the_loop_middleware_async_reject() -> None:
         return {"decisions": [{"type": "reject", "message": "User rejected this action"}]}
 
     with patch("langgraph.types.interrupt", side_effect=mock_reject), \
-         patch("langchain_core.runnables.config.get_config", return_value={"configurable": {}}):
+         patch("langgraph.config.get_config", return_value={"configurable": {}}):
         result = await middleware.aafter_model(state, Runtime())
         assert result is not None
         assert "messages" in result
@@ -880,7 +880,7 @@ async def test_human_in_the_loop_middleware_async_multiple_tools() -> None:
         }
 
     with patch("langgraph.types.interrupt", side_effect=mock_responses), \
-         patch("langchain_core.runnables.config.get_config", return_value={"configurable": {}}):
+         patch("langgraph.config.get_config", return_value={"configurable": {}}):
         result = await middleware.aafter_model(state, Runtime())
         assert result is not None
         assert len(result["messages"]) == 2  # AI message + rejection tool message
@@ -914,7 +914,7 @@ async def test_human_in_the_loop_middleware_async_mixed_auto_approved_and_interr
         return {"decisions": [{"type": "approve"}]}
 
     with patch("langgraph.types.interrupt", side_effect=mock_approve), \
-         patch("langchain_core.runnables.config.get_config", return_value={"configurable": {}}):
+         patch("langgraph.config.get_config", return_value={"configurable": {}}):
         result = await middleware.aafter_model(state, Runtime())
         assert result is not None
         assert len(result["messages"]) == 1  # Only AI message, no rejections
@@ -947,7 +947,7 @@ async def test_human_in_the_loop_middleware_async_context_preservation() -> None
         return {"decisions": [{"type": "approve"}]}
 
     with patch("langgraph.types.interrupt", side_effect=mock_interrupt), \
-         patch("langchain_core.runnables.config.get_config", return_value={"configurable": {}}):
+         patch("langgraph.config.get_config", return_value={"configurable": {}}):
         # This call would raise RuntimeError in the bugged version
         result = await middleware.aafter_model(state, Runtime())
         assert result is not None
@@ -964,7 +964,7 @@ async def test_async_interrupt_execution_basic() -> None:
         return {"decisions": [{"type": "approve"}]}
 
     with patch("langgraph.types.interrupt", side_effect=mock_interrupt), \
-         patch("langchain_core.runnables.config.get_config", return_value={"configurable": {}}):
+         patch("langgraph.config.get_config", return_value={"configurable": {}}):
         result = await execute_interrupt_async({"action_requests": [], "review_configs": []})
         assert result == {"decisions": [{"type": "approve"}]}
 
