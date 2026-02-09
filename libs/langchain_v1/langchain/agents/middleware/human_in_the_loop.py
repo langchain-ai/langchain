@@ -190,6 +190,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             self.interrupt_on,
             state,
             runtime,
+            self.description_prefix,
         )
 
         # Execute interrupt synchronously
@@ -249,6 +250,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             self.interrupt_on,
             state,
             runtime,
+            self.description_prefix,
         )
 
         # Execute interrupt asynchronously (preserves runnable context)

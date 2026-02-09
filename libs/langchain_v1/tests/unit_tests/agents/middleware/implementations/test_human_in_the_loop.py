@@ -308,7 +308,7 @@ def test_human_in_the_loop_middleware_unknown_response_type() -> None:
         return {"decisions": [{"type": "unknown"}]}
 
     with (
-        patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_unknown),
+        patch("langgraph.types.interrupt", side_effect=mock_unknown),
         pytest.raises(
             ValueError,
             match=re.escape(

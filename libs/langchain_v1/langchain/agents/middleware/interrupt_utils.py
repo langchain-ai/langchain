@@ -161,6 +161,7 @@ def build_hitl_request(
     interrupt_configs: dict[str, InterruptOnConfig],
     state: AgentState[Any],
     runtime: Any,
+    description_prefix: str = "Tool execution requires approval",
 ) -> HITLRequest:
     """Build a HITLRequest from tool calls that require interruption.
 
@@ -169,6 +170,7 @@ def build_hitl_request(
         interrupt_configs: Mapping of tool names to their interrupt configurations.
         state: Current agent state.
         runtime: Runtime context.
+        description_prefix: Prefix for default descriptions when tool config doesn't specify one.
 
     Returns:
         A HITLRequest containing action requests and review configs for tools that need approval.
@@ -179,7 +181,7 @@ def build_hitl_request(
     for tool_call in tool_calls:
         if (config := interrupt_configs.get(tool_call["name"])) is not None:
             action_request, review_config = _create_action_and_config(
-                tool_call, config, state, runtime
+                tool_call, config, state, runtime, description_prefix
             )
             action_requests.append(action_request)
             review_configs.append(review_config)
@@ -195,6 +197,7 @@ def _create_action_and_config(
     config: InterruptOnConfig,
     state: AgentState[Any],
     runtime: Any,
+    description_prefix: str,
 ) -> tuple[ActionRequest, ReviewConfig]:
     """Create an ActionRequest and ReviewConfig for a tool call."""
     tool_name = tool_call["name"]
@@ -207,8 +210,7 @@ def _create_action_and_config(
     elif description_value is not None:
         description = description_value
     else:
-        # Use default description format from middleware
-        description_prefix = "Tool execution requires approval"
+        # Use default description format with provided prefix
         description = f"{description_prefix}\n\nTool: {tool_name}\nArgs: {tool_args}"
 
     # Create ActionRequest with description
