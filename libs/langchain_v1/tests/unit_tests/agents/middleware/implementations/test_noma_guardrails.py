@@ -159,3 +159,36 @@ async def test_abefore_agent_anonymizes_on_mask_action() -> None:
     messages = result.get("messages")
     assert messages is not None
     assert messages[-1].content == "[REDACTED]"
+
+
+def test_before_agent_fail_open_on_scan_error() -> None:
+    """Should not block when Noma scan fails."""
+    middleware = NomaGuardrailMiddleware(client_id="test", client_secret=_fake_secret())
+
+    def fake_scan(_: dict[str, Any]) -> dict[str, Any]:
+        msg = "aidr unavailable"
+        raise RuntimeError(msg)
+
+    middleware._client.scan = fake_scan
+    state = _make_state([HumanMessage(content="hello")])
+
+    result = middleware.before_agent(state, _fake_runtime())
+
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_abefore_agent_fail_open_on_scan_error() -> None:
+    """Async path should not block when Noma scan fails."""
+    middleware = NomaGuardrailMiddleware(client_id="test", client_secret=_fake_secret())
+
+    async def fake_ascan(_: dict[str, Any]) -> dict[str, Any]:
+        msg = "aidr unavailable"
+        raise RuntimeError(msg)
+
+    middleware._client.ascan = fake_ascan
+    state = _make_state([HumanMessage(content="hello")])
+
+    result = await middleware.abefore_agent(state, _fake_runtime())
+
+    assert result is None

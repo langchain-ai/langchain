@@ -117,7 +117,6 @@ class NomaGuardrailMiddleware(AgentMiddleware):
         client_id: str | None = None,
         client_secret: str | None = None,
         application_id: str | None = None,
-        block_failures: bool = False,
     ) -> None:
         """Initialize the Noma guardrail middleware.
 
@@ -126,7 +125,6 @@ class NomaGuardrailMiddleware(AgentMiddleware):
             client_secret: Noma client secret. Defaults to env NOMA_CLIENT_SECRET.
             application_id: Application identifier for Noma context. Defaults to
                 env NOMA_APPLICATION_ID or "langchain".
-            block_failures: If True, block on Noma errors. Defaults to False (fail-open).
         """
         super().__init__()
         self._client = _NomaClient(
@@ -134,7 +132,6 @@ class NomaGuardrailMiddleware(AgentMiddleware):
             client_secret=client_secret,
         )
         self.application_id = application_id or os.environ.get("NOMA_APPLICATION_ID") or "langchain"
-        self.block_failures = block_failures
 
     def _build_default_context(self, runtime: "Runtime") -> dict[str, Any]:
         context: dict[str, Any] = {"applicationId": self.application_id}
@@ -263,14 +260,6 @@ class NomaGuardrailMiddleware(AgentMiddleware):
             "jump_to": "end",
         }
 
-    def _handle_api_failure(self, phase: str) -> dict[str, Any] | None:
-        if not self.block_failures:
-            return None
-        return {
-            "messages": [AIMessage(content=f"Request blocked: Noma guardrail failed ({phase})")],
-            "jump_to": "end",
-        }
-
     def _is_block_message(self, message: AnyMessage) -> bool:
         return (
             isinstance(message, AIMessage)
@@ -328,7 +317,7 @@ class NomaGuardrailMiddleware(AgentMiddleware):
         except Exception:
             if self._last_message_is_block(messages):
                 return {"jump_to": "end"}
-            return self._handle_api_failure(phase)
+            return None
 
         return self._handle_scan_response(response, role, messages)
 
@@ -354,7 +343,7 @@ class NomaGuardrailMiddleware(AgentMiddleware):
         except Exception:
             if self._last_message_is_block(messages):
                 return {"jump_to": "end"}
-            return self._handle_api_failure(phase)
+            return None
 
         return self._handle_scan_response(response, role, messages)
 
