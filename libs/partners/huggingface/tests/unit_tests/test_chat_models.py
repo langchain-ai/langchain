@@ -547,7 +547,13 @@ async def test_chat_huggingface_astream_with_endpoint_uses_async_client(
     mock_llm.async_client.chat_completion = mock_chat_completion
 
     messages = [HumanMessage(content="Hello")]
-    mock_run_manager = MagicMock()
+    # Create a simple mock run manager with async on_llm_new_token
+    # Use a simple class to avoid MagicMock attribute conflicts
+    class MockRunManager:
+        async def on_llm_new_token(self, *args, **kwargs):
+            pass
+
+    mock_run_manager = MockRunManager()
 
     with patch(
         "langchain_huggingface.chat_models.huggingface.ChatHuggingFace._resolve_model_id"
