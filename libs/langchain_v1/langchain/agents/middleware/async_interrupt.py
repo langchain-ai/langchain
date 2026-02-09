@@ -5,7 +5,7 @@ from typing import Any
 
 from langgraph.types import interrupt
 
-from langchain.agents.middleware.human_in_the_loop import HITLRequest
+from langchain.agents.middleware.interrupt_utils import HITLRequest
 
 
 async def execute_interrupt_async(hitl_request: HITLRequest) -> dict[str, Any]:

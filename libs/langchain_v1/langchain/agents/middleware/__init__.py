@@ -2,10 +2,8 @@
 
 from langchain.agents.middleware.context_editing import ClearToolUsesEdit, ContextEditingMiddleware
 from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
-from langchain.agents.middleware.human_in_the_loop import (
-    HumanInTheLoopMiddleware,
-    InterruptOnConfig,
-)
+from langchain.agents.middleware.human_in_the_loop import HumanInTheLoopMiddleware
+from langchain.agents.middleware.interrupt_utils import InterruptOnConfig
 from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddleware
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware

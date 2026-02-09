@@ -8,6 +8,13 @@ from typing_extensions import NotRequired, TypedDict
 
 from langchain.agents.middleware.async_interrupt import execute_interrupt_async
 from langchain.agents.middleware.interrupt_utils import (
+    Action,
+    ActionRequest,
+    Decision,
+    DecisionType,
+    HITLRequest,
+    InterruptOnConfig,
+    ReviewConfig,
     build_hitl_request,
     process_interrupt_response,
     validate_decision_count,
@@ -20,153 +27,6 @@ from langchain.agents.middleware.types import (
     StateT,
 )
 
-
-class Action(TypedDict):
-    """Represents an action with a name and args."""
-
-    name: str
-    """The type or name of action being requested (e.g., `'add_numbers'`)."""
-
-    args: dict[str, Any]
-    """Key-value pairs of args needed for the action (e.g., `{"a": 1, "b": 2}`)."""
-
-
-class ActionRequest(TypedDict):
-    """Represents an action request with a name, args, and description."""
-
-    name: str
-    """The name of the action being requested."""
-
-    args: dict[str, Any]
-    """Key-value pairs of args needed for the action (e.g., `{"a": 1, "b": 2}`)."""
-
-    description: NotRequired[str]
-    """The description of the action to be reviewed."""
-
-
-DecisionType = Literal["approve", "edit", "reject"]
-
-
-class ReviewConfig(TypedDict):
-    """Policy for reviewing a HITL request."""
-
-    action_name: str
-    """Name of the action associated with this review configuration."""
-
-    allowed_decisions: list[DecisionType]
-    """The decisions that are allowed for this request."""
-
-    args_schema: NotRequired[dict[str, Any]]
-    """JSON schema for the args associated with the action, if edits are allowed."""
-
-
-class HITLRequest(TypedDict):
-    """Request for human feedback on a sequence of actions requested by a model."""
-
-    action_requests: list[ActionRequest]
-    """A list of agent actions for human review."""
-
-    review_configs: list[ReviewConfig]
-    """Review configuration for all possible actions."""
-
-
-class ApproveDecision(TypedDict):
-    """Response when a human approves the action."""
-
-    type: Literal["approve"]
-    """The type of response when a human approves the action."""
-
-
-class EditDecision(TypedDict):
-    """Response when a human edits the action."""
-
-    type: Literal["edit"]
-    """The type of response when a human edits the action."""
-
-    edited_action: Action
-    """Edited action for the agent to perform.
-
-    Ex: for a tool call, a human reviewer can edit the tool name and args.
-    """
-
-
-class RejectDecision(TypedDict):
-    """Response when a human rejects the action."""
-
-    type: Literal["reject"]
-    """The type of response when a human rejects the action."""
-
-    message: NotRequired[str]
-    """The message sent to the model explaining why the action was rejected."""
-
-
-Decision = ApproveDecision | EditDecision | RejectDecision
-
-
-class HITLResponse(TypedDict):
-    """Response payload for a HITLRequest."""
-
-    decisions: list[Decision]
-    """The decisions made by the human."""
-
-
-class _DescriptionFactory(Protocol):
-    """Callable that generates a description for a tool call."""
-
-    def __call__(
-        self, tool_call: ToolCall, state: AgentState[Any], runtime: Runtime[ContextT]
-    ) -> str:
-        """Generate a description for a tool call."""
-        ...
-
-
-class InterruptOnConfig(TypedDict):
-    """Configuration for an action requiring human in the loop.
-
-    This is the configuration format used in the `HumanInTheLoopMiddleware.__init__`
-    method.
-    """
-
-    allowed_decisions: list[DecisionType]
-    """The decisions that are allowed for this action."""
-
-    description: NotRequired[str | _DescriptionFactory]
-    """The description attached to the request for human input.
-
-    Can be either:
-
-    - A static string describing the approval request
-    - A callable that dynamically generates the description based on agent state,
-        runtime, and tool call information
-
-    Example:
-        ```python
-        # Static string description
-        config = ToolConfig(
-            allowed_decisions=["approve", "reject"],
-            description="Please review this tool execution"
-        )
-
-        # Dynamic callable description
-        def format_tool_description(
-            tool_call: ToolCall,
-            state: AgentState,
-            runtime: Runtime[ContextT]
-        ) -> str:
-            import json
-            return (
-                f"Tool: {tool_call['name']}\\n"
-                f"Arguments:\\n{json.dumps(tool_call['args'], indent=2)}"
-            )
-
-        config = InterruptOnConfig(
-            allowed_decisions=["approve", "edit", "reject"],
-            description=format_tool_description
-        )
-        ```
-    """
-    args_schema: NotRequired[dict[str, Any]]
-    """JSON schema for the args associated with the action, if edits are allowed."""
 
 
 class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
