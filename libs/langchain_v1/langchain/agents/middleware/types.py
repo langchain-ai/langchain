@@ -19,8 +19,6 @@ from typing import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
-    from langgraph.types import Command
-
 # Needed as top level import for Pydantic schema generation on AgentState
 import warnings
 from typing import TypeAlias
@@ -42,6 +40,7 @@ if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
+    from langgraph.types import Command
 
     from langchain.agents.structured_output import ResponseFormat
 
@@ -49,6 +48,8 @@ __all__ = [
     "AgentMiddleware",
     "AgentState",
     "ContextT",
+    "ExtendedModelResponse",
+    "ModelCallResult",
     "ModelRequest",
     "ModelResponse",
     "OmitFromSchema",
@@ -285,14 +286,43 @@ class ModelResponse(Generic[ResponseT]):
     """Parsed structured output if `response_format` was specified, `None` otherwise."""
 
 
-# Type alias for middleware return type - allows returning either full response or just AIMessage
-ModelCallResult: TypeAlias = "ModelResponse[ResponseT] | AIMessage"
+@dataclass
+class ExtendedModelResponse(Generic[ResponseT]):
+    """Model response with an optional 'Command' from 'wrap_model_call' middleware.
+
+    Use this to return a 'Command' alongside the model response from a
+    'wrap_model_call' handler. The command is applied as an additional state
+    update after the model node completes, using the graph's reducers (e.g.
+    'add_messages' for the 'messages' key).
+
+    Because each 'Command' is applied through the reducer, messages in the
+    command are **added alongside** the model response messages rather than
+    replacing them. For non-reducer state fields, later commands overwrite
+    earlier ones (outermost middleware wins over inner).
+
+    Type Parameters:
+        ResponseT: The type of the structured response. Defaults to 'Any' if not specified.
+    """
+
+    model_response: ModelResponse[ResponseT]
+    """The underlying model response."""
+
+    command: Command[Any] | None = None
+    """Optional command to apply as an additional state update."""
+
+
+ModelCallResult: TypeAlias = (
+    "ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]"
+)
 """`TypeAlias` for model call handler return value.
 
 Middleware can return either:
 
 - `ModelResponse`: Full response with messages and optional structured output
 - `AIMessage`: Simplified return for simple use cases
+- `ExtendedModelResponse`: Response with an optional `Command` for additional state updates
+    `goto`, `resume`, and `graph` are not yet supported on these commands.
+    A `NotImplementedError` will be raised if you try to use them.
 """
 
 
@@ -449,7 +479,7 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
         self,
         request: ModelRequest[ContextT],
         handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
-    ) -> ModelResponse[ResponseT] | AIMessage:
+    ) -> ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]:
         """Intercept and control model execution via handler callback.
 
         Async version is `awrap_model_call`
@@ -544,7 +574,7 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
         self,
         request: ModelRequest[ContextT],
         handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
-    ) -> ModelResponse[ResponseT] | AIMessage:
+    ) -> ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]:
         """Intercept and control async model execution via handler callback.
 
         The handler callback executes the model request and returns a `ModelResponse`.

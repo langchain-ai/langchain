@@ -9,3 +9,36 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "pip"
+    directories:
+      - "/libs/core/"
+      - "/libs/langchain/"
+      - "/libs/langchain_v1/"
+      - "/libs/text-splitters/"
+      - "/libs/standard-tests/"
+      - "/libs/model-profiles/"
+      - "/libs/partners/anthropic/"
+      - "/libs/partners/chroma/"
+      - "/libs/partners/deepseek/"
+      - "/libs/partners/exa/"
+      - "/libs/partners/fireworks/"
+      - "/libs/partners/groq/"
+      - "/libs/partners/huggingface/"
+      - "/libs/partners/mistralai/"
+      - "/libs/partners/nomic/"
+      - "/libs/partners/ollama/"
+      - "/libs/partners/openai/"
+      - "/libs/partners/perplexity/"
+      - "/libs/partners/qdrant/"
+      - "/libs/partners/xai/"
+    schedule:
+      interval: "weekly"
+    groups:
+      python-deps:
+        patterns:
+          - "*"
