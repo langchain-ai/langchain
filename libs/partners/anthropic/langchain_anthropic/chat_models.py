@@ -1303,6 +1303,8 @@ class ChatAnthropic(BaseChatModel):
         if stream_usage is None:
             stream_usage = self.stream_usage
         kwargs["stream"] = True
+        # Validate messages before making API calls
+        self._validate_messages(messages)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
             stream = self._create(payload)
@@ -1340,6 +1342,8 @@ class ChatAnthropic(BaseChatModel):
         if stream_usage is None:
             stream_usage = self.stream_usage
         kwargs["stream"] = True
+        # Validate messages before making API calls
+        self._validate_messages(messages)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
             stream = await self._acreate(payload)

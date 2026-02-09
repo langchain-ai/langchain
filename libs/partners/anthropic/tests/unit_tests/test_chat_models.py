@@ -2603,12 +2603,9 @@ def test_chat_anthropic_validation_streaming() -> None:
     llm = ChatAnthropic(model=MODEL_NAME, streaming=True)
 
     # Empty message should raise before streaming
-    with pytest.raises(ValueError, match="Anthropic models do not allow empty"):
-        with patch.object(llm, "_create") as mock_create:
-            # This should fail before any stream setup
-            try:
-                list(llm.stream([HumanMessage(content="")]))  # type: ignore[misc]
-            except ValueError:
-                pass
-            # Verify no API call was made
-            mock_create.assert_not_called()
+    with patch.object(llm, "_create") as mock_create:
+        # This should fail before any stream setup
+        with pytest.raises(ValueError, match="Anthropic models do not allow empty"):
+            list(llm.stream([HumanMessage(content="")]))  # type: ignore[misc]
+        # Verify no API call was made
+        mock_create.assert_not_called()

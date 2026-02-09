@@ -2359,7 +2359,11 @@ def _is_message_content_empty(message: BaseMessage) -> bool:
           will be converted to tool_use content blocks during formatting.
     """
     # AIMessages with tool_calls are not empty (tool_calls become content blocks)
-    if isinstance(message, AIMessage) and hasattr(message, "tool_calls") and message.tool_calls:
+    if (
+        isinstance(message, AIMessage)
+        and hasattr(message, "tool_calls")
+        and message.tool_calls
+    ):
         return False
 
     content = message.content
@@ -2428,33 +2432,46 @@ def validate_message_content(
             HumanMessage(content="Hello"),
             AIMessage(content=""),
         ])
-        ```
     """
-    from langchain_core.messages.ai import AIMessage
-    from langchain_core.messages.human import HumanMessage
-    from langchain_core.messages.system import SystemMessage
-
     for idx, message in enumerate(messages):
         is_empty = _is_message_content_empty(message)
         is_final = idx == len(messages) - 1
         is_assistant = isinstance(message, AIMessage)
 
-        # Human and System messages must never be empty
-        if isinstance(message, (HumanMessage, SystemMessage)) and is_empty:
+        # Check if message is a human/system type message
+        is_human_or_system = isinstance(message, (HumanMessage, SystemMessage))
+
+        # ChatMessage with human/system role should be validated like HumanMessage/SystemMessage
+        if isinstance(message, ChatMessage):
+            role = getattr(message, "role", "")
+            if isinstance(role, str):
+                role_lower = role.lower()
+                if role_lower in ("human", "user", "system"):
+                    is_human_or_system = True
+                elif role_lower in ("assistant", "ai"):
+                    is_assistant = True
+
+        # FunctionMessage and ToolMessage should be validated (must be non-empty)
+        is_user_provided = isinstance(message, (FunctionMessage, ToolMessage))
+
+        # Human, System, FunctionMessage, ToolMessage, and ChatMessage with human/system role
+        # must never be empty
+        if (is_human_or_system or is_user_provided) and is_empty:
             msg = (
                 f"{message.__class__.__name__} at index {idx} has empty content. "
                 "Human and System messages must have non-empty content."
             )
             raise ValueError(msg)
 
-        # Assistant messages can be empty only if they are the final message
+        # Assistant messages (including ChatMessage with assistant role) can be empty
+        # only if they are the final message
         if (
             is_assistant
             and is_empty
             and not (allow_empty_assistant_final and is_final)
         ):
             msg = (
-                f"AIMessage at index {idx} has empty content. "
+                f"{message.__class__.__name__} at index {idx} has empty content. "
                 "Assistant messages must have non-empty content "
                 "except for the optional final assistant message."
             )

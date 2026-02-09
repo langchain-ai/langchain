@@ -1409,7 +1409,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             fast failure for invalid input.
         """
         # Default implementation: no validation (backward compatible)
-        pass
 
     @abstractmethod
     def _generate(
