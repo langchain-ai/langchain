@@ -11,6 +11,7 @@ import anthropic
 import pytest
 from anthropic.types import Message, TextBlock, Usage
 from blockbuster import blockbuster_ctx
+from langchain_core.exceptions import ContextOverflowError
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
@@ -2339,3 +2340,74 @@ def test__format_messages_trailing_whitespace() -> None:
     ai_intermediate = AIMessage("thought ")  # type: ignore[misc]
     _, anthropic_messages = _format_messages([human, ai_intermediate, human])
     assert anthropic_messages[1]["content"] == "thought "
+
+
+# Test fixtures for context overflow error tests
+_CONTEXT_OVERFLOW_BAD_REQUEST_ERROR = anthropic.BadRequestError(
+    message="prompt is too long: 209752 tokens > 200000 maximum",
+    response=MagicMock(status_code=400),
+    body={
+        "type": "error",
+        "error": {
+            "type": "invalid_request_error",
+            "message": "prompt is too long: 209752 tokens > 200000 maximum",
+        },
+    },
+)
+
+
+def test_context_overflow_error_invoke_sync() -> None:
+    """Test context overflow error on invoke (sync)."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages, "create") as mock_create,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        llm.invoke([HumanMessage(content="test")])
+
+    assert "prompt is too long" in str(exc_info.value)
+
+
+async def test_context_overflow_error_invoke_async() -> None:
+    """Test context overflow error on invoke (async)."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._async_client.messages, "create") as mock_create,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        await llm.ainvoke([HumanMessage(content="test")])
+
+    assert "prompt is too long" in str(exc_info.value)
+
+
+def test_context_overflow_error_stream_sync() -> None:
+    """Test context overflow error on stream (sync)."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages, "create") as mock_create,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        list(llm.stream([HumanMessage(content="test")]))
+
+    assert "prompt is too long" in str(exc_info.value)
+
+
+async def test_context_overflow_error_stream_async() -> None:
+    """Test context overflow error on stream (async)."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._async_client.messages, "create") as mock_create,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        async for _ in llm.astream([HumanMessage(content="test")]):
+            pass
+
+    assert "prompt is too long" in str(exc_info.value)
