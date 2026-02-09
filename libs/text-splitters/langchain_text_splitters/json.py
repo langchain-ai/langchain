@@ -91,7 +91,7 @@ class RecursiveJsonSplitter:
         """Split json into maximum size dictionaries while preserving structure."""
         current_path = current_path or []
         chunks = chunks if chunks is not None else [{}]
-        if isinstance(data, dict):
+        if isinstance(data, dict) and data:
             for key, value in data.items():
                 new_path = [*current_path, key]
                 chunk_size = self._json_size(chunks[-1])
@@ -108,8 +108,8 @@ class RecursiveJsonSplitter:
 
                     # Iterate
                     self._json_split(value, new_path, chunks)
-        else:
-            # handle single item
+        # Handle leaf values and empty dicts
+        elif current_path:
             self._set_nested_dict(chunks[-1], current_path, data)
         return chunks
 
