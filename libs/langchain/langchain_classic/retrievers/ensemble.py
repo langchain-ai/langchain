@@ -80,8 +80,12 @@ class EnsembleRetriever(BaseRetriever):
     @model_validator(mode="before")
     @classmethod
     def _set_weights(cls, values: dict[str, Any]) -> Any:
-        retrievers = values.get("retrievers", [])
+        retrievers = values.get("retrievers")
         weights = values.get("weights")
+
+        # If retrievers are not yet set, defer validation
+        if not retrievers:
+            return values
 
         if not weights:
             n_retrievers = len(retrievers)
@@ -93,7 +97,7 @@ class EnsembleRetriever(BaseRetriever):
                 "Length of weights must match number of retrievers "
                 f"(got {len(weights)} weights for {len(retrievers)} retrievers)."
         )
-        raise ValueError(msg)
+            raise ValueError(msg)
 
         if not any(w > 0 for w in weights):
             msg = "At least one ensemble weight must be greater than zero."
