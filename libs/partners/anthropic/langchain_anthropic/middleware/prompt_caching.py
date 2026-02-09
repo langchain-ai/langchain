@@ -91,10 +91,13 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
                 warn(msg, stacklevel=3)
             return False
 
+        # ModelRequest uses `system_prompt`, not `system_message`.
+        # Check both via getattr for forward compatibility.
+        has_system = getattr(request, "system_prompt", None) or getattr(
+            request, "system_message", None
+        )
         messages_count = (
-            len(request.messages) + 1
-            if request.system_message
-            else len(request.messages)
+            len(request.messages) + 1 if has_system else len(request.messages)
         )
         return messages_count >= self.min_messages_to_cache
 
