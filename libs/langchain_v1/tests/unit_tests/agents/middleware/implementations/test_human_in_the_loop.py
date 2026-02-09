@@ -771,8 +771,7 @@ async def test_human_in_the_loop_middleware_async_approve() -> None:
     def mock_accept(_: Any) -> dict[str, Any]:
         return {"decisions": [{"type": "approve"}]}
 
-    with patch("langgraph.types.interrupt", side_effect=mock_accept), \
-         patch("langgraph.config.get_config", return_value={"configurable": {}}):
+    with patch("langchain.agents.middleware.async_interrupt.interrupt", side_effect=mock_accept):
         result = await middleware.aafter_model(state, Runtime())
         assert result is not None
         assert "messages" in result
@@ -807,8 +806,7 @@ async def test_human_in_the_loop_middleware_async_edit() -> None:
             ]
         }
 
-    with patch("langgraph.types.interrupt", side_effect=mock_edit), \
-         patch("langgraph.config.get_config", return_value={"configurable": {}}):
+    with patch("langchain.agents.middleware.async_interrupt.interrupt", side_effect=mock_edit):
         result = await middleware.aafter_model(state, Runtime())
         assert result is not None
         assert "messages" in result
@@ -835,8 +833,7 @@ async def test_human_in_the_loop_middleware_async_reject() -> None:
     def mock_reject(_: Any) -> dict[str, Any]:
         return {"decisions": [{"type": "reject", "message": "User rejected this action"}]}
 
-    with patch("langgraph.types.interrupt", side_effect=mock_reject), \
-         patch("langgraph.config.get_config", return_value={"configurable": {}}):
+    with patch("langchain.agents.middleware.async_interrupt.interrupt", side_effect=mock_reject):
         result = await middleware.aafter_model(state, Runtime())
         assert result is not None
         assert "messages" in result
@@ -879,8 +876,7 @@ async def test_human_in_the_loop_middleware_async_multiple_tools() -> None:
             ]
         }
 
-    with patch("langgraph.types.interrupt", side_effect=mock_responses), \
-         patch("langgraph.config.get_config", return_value={"configurable": {}}):
+    with patch("langchain.agents.middleware.async_interrupt.interrupt", side_effect=mock_responses):
         result = await middleware.aafter_model(state, Runtime())
         assert result is not None
         assert len(result["messages"]) == 2  # AI message + rejection tool message
@@ -913,8 +909,7 @@ async def test_human_in_the_loop_middleware_async_mixed_auto_approved_and_interr
     def mock_approve(_: Any) -> dict[str, Any]:
         return {"decisions": [{"type": "approve"}]}
 
-    with patch("langgraph.types.interrupt", side_effect=mock_approve), \
-         patch("langgraph.config.get_config", return_value={"configurable": {}}):
+    with patch("langchain.agents.middleware.async_interrupt.interrupt", side_effect=mock_approve):
         result = await middleware.aafter_model(state, Runtime())
         assert result is not None
         assert len(result["messages"]) == 1  # Only AI message, no rejections
@@ -946,8 +941,7 @@ async def test_human_in_the_loop_middleware_async_context_preservation() -> None
         # which preserves the context.
         return {"decisions": [{"type": "approve"}]}
 
-    with patch("langgraph.types.interrupt", side_effect=mock_interrupt), \
-         patch("langgraph.config.get_config", return_value={"configurable": {}}):
+    with patch("langchain.agents.middleware.async_interrupt.interrupt", side_effect=mock_interrupt):
         # This call would raise RuntimeError in the bugged version
         result = await middleware.aafter_model(state, Runtime())
         assert result is not None
@@ -963,8 +957,7 @@ async def test_async_interrupt_execution_basic() -> None:
     def mock_interrupt(request: Any) -> dict[str, Any]:
         return {"decisions": [{"type": "approve"}]}
 
-    with patch("langgraph.types.interrupt", side_effect=mock_interrupt), \
-         patch("langgraph.config.get_config", return_value={"configurable": {}}):
+    with patch("langchain.agents.middleware.async_interrupt.interrupt", side_effect=mock_interrupt):
         result = await execute_interrupt_async({"action_requests": [], "review_configs": []})
         assert result == {"decisions": [{"type": "approve"}]}
 
