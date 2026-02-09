@@ -477,7 +477,7 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
 def _model_prefers_responses_api(model_name: str | None) -> bool:
     if not model_name:
         return False
-    return "gpt-5.2-pro" in model_name
+    return "gpt-5.2-pro" in model_name or "codex" in model_name
 
 
 _BM = TypeVar("_BM", bound=BaseModel)
