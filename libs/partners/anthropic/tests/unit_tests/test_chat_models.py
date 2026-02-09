@@ -2319,3 +2319,23 @@ def test_extras_with_multiple_fields() -> None:
     assert tool_def.get("defer_loading") is True
     assert tool_def.get("cache_control") == {"type": "ephemeral"}
     assert "input_examples" in tool_def
+
+
+def test__format_messages_trailing_whitespace() -> None:
+    """Test that trailing whitespace is trimmed from the final assistant message."""
+    human = HumanMessage("foo")  # type: ignore[misc]
+
+    # Test string content
+    ai_string = AIMessage("thought ")  # type: ignore[misc]
+    _, anthropic_messages = _format_messages([human, ai_string])
+    assert anthropic_messages[-1]["content"] == "thought"
+
+    # Test list content
+    ai_list = AIMessage([{"type": "text", "text": "thought "}])  # type: ignore[misc]
+    _, anthropic_messages = _format_messages([human, ai_list])
+    assert anthropic_messages[-1]["content"][0]["text"] == "thought"  # type: ignore[index]
+
+    # Test that intermediate messages are NOT trimmed
+    ai_intermediate = AIMessage("thought ")  # type: ignore[misc]
+    _, anthropic_messages = _format_messages([human, ai_intermediate, human])
+    assert anthropic_messages[1]["content"] == "thought "
