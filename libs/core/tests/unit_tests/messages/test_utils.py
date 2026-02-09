@@ -28,6 +28,8 @@ from langchain_core.messages.utils import (
     get_buffer_string,
     merge_message_runs,
     trim_messages,
+    validate_message_content,
+    _is_message_content_empty,
 )
 from langchain_core.tools import BaseTool
 
@@ -2908,3 +2910,301 @@ def test_count_tokens_approximately_respects_count_name_flag() -> None:
 
     # When count_name is True, the name should contribute to the token count.
     assert with_name > without_name
+
+
+def test_is_message_content_empty() -> None:
+    """Test _is_message_content_empty utility function."""
+    # Empty string content
+    assert _is_message_content_empty(HumanMessage(content=""))
+    assert _is_message_content_empty(HumanMessage(content="   \n\t  "))
+
+    # Non-empty string content
+    assert not _is_message_content_empty(HumanMessage(content="Hello"))
+    assert not _is_message_content_empty(HumanMessage(content="  Hello  "))
+
+    # Empty list content
+    assert _is_message_content_empty(HumanMessage(content=[]))
+
+    # List with only empty text blocks
+    assert _is_message_content_empty(
+        HumanMessage(content=[{"type": "text", "text": ""}])
+    )
+    assert _is_message_content_empty(
+        HumanMessage(content=[{"type": "text", "text": "   "}])
+    )
+    assert _is_message_content_empty(
+        HumanMessage(
+            content=[
+                {"type": "text", "text": ""},
+                {"type": "text", "text": "   "},
+            ]
+        )
+    )
+
+    # List with non-empty text blocks
+    assert not _is_message_content_empty(
+        HumanMessage(content=[{"type": "text", "text": "Hello"}])
+    )
+    assert not _is_message_content_empty(
+        HumanMessage(
+            content=[
+                {"type": "text", "text": ""},
+                {"type": "text", "text": "Hello"},
+            ]
+        )
+    )
+
+    # List with non-text blocks (images, etc.) are not considered empty
+    assert not _is_message_content_empty(
+        HumanMessage(
+            content=[
+                {"type": "image", "source": {"type": "url", "url": "https://example.com/image.jpg"}},
+            ]
+        )
+    )
+    assert not _is_message_content_empty(
+        HumanMessage(
+            content=[
+                {"type": "text", "text": ""},
+                {"type": "image", "source": {"type": "url", "url": "https://example.com/image.jpg"}},
+            ]
+        )
+    )
+
+
+def test_validate_message_content() -> None:
+    """Test validate_message_content function."""
+    # Empty HumanMessage should raise error
+    with pytest.raises(ValueError, match="HumanMessage.*empty content"):
+        validate_message_content([HumanMessage(content="")])
+
+    # Empty SystemMessage should raise error
+    with pytest.raises(ValueError, match="SystemMessage.*empty content"):
+        validate_message_content([SystemMessage(content="")])
+
+    # Whitespace-only content should raise error
+    with pytest.raises(ValueError, match="HumanMessage.*empty content"):
+        validate_message_content([HumanMessage(content="   \n\t  ")])
+
+    # Empty list content should raise error
+    with pytest.raises(ValueError, match="HumanMessage.*empty content"):
+        validate_message_content([HumanMessage(content=[])])
+
+    # List with only empty text blocks should raise error
+    with pytest.raises(ValueError, match="HumanMessage.*empty content"):
+        validate_message_content(
+            [
+                HumanMessage(
+                    content=[
+                        {"type": "text", "text": ""},
+                        {"type": "text", "text": "   "},
+                    ]
+                )
+            ]
+        )
+
+    # Non-empty messages should pass
+    validate_message_content([HumanMessage(content="Hello")])
+    validate_message_content([SystemMessage(content="You are a helpful assistant")])
+
+    # Empty final assistant message should be allowed
+    validate_message_content(
+        [
+            HumanMessage(content="Hello"),
+            AIMessage(content=""),
+        ]
+    )
+
+    # Empty non-final assistant message should raise error
+    with pytest.raises(ValueError, match="AIMessage.*empty content"):
+        validate_message_content(
+            [
+                HumanMessage(content="Hello"),
+                AIMessage(content=""),
+                HumanMessage(content="World"),
+            ]
+        )
+
+    # Non-empty assistant messages should pass
+    validate_message_content(
+        [
+            HumanMessage(content="Hello"),
+            AIMessage(content="Hi there"),
+            HumanMessage(content="World"),
+        ]
+    )
+
+    # Messages with non-text blocks should pass
+    validate_message_content(
+        [
+            HumanMessage(
+                content=[
+                    {"type": "image", "source": {"type": "url", "url": "https://example.com/image.jpg"}},
+                ]
+            )
+        ]
+    )
+
+    # Test allow_empty_assistant_final=False
+    with pytest.raises(ValueError, match="AIMessage.*empty content"):
+        validate_message_content(
+            [
+                HumanMessage(content="Hello"),
+                AIMessage(content=""),
+            ],
+            allow_empty_assistant_final=False,
+        )
+
+
+def test_validate_message_content_edge_cases() -> None:
+    """Test edge cases for validate_message_content."""
+    # Test with ChatMessage
+    from langchain_core.messages import ChatMessage
+
+    with pytest.raises(ValueError, match="ChatMessage.*empty content"):
+        validate_message_content([ChatMessage(content="", role="human")])
+
+    validate_message_content([ChatMessage(content="Hello", role="human")])
+
+    # Test with FunctionMessage
+    from langchain_core.messages import FunctionMessage
+
+    # FunctionMessage with empty content should fail
+    with pytest.raises(ValueError, match="FunctionMessage.*empty content"):
+        validate_message_content([FunctionMessage(content="", name="test_func")])
+
+    validate_message_content([FunctionMessage(content="result", name="test_func")])
+
+    # Test with ToolMessage
+    from langchain_core.messages import ToolMessage
+
+    # ToolMessage with empty content should fail
+    with pytest.raises(ValueError, match="ToolMessage.*empty content"):
+        validate_message_content([ToolMessage(content="", tool_call_id="1")])
+
+    validate_message_content([ToolMessage(content="result", tool_call_id="1")])
+
+    # Test multiple empty messages
+    with pytest.raises(ValueError, match="HumanMessage.*empty content"):
+        validate_message_content(
+            [
+                HumanMessage(content=""),
+                SystemMessage(content=""),
+            ]
+        )
+
+    # Test empty assistant in middle of conversation
+    with pytest.raises(ValueError, match="AIMessage.*empty content"):
+        validate_message_content(
+            [
+                HumanMessage(content="Hello"),
+                AIMessage(content="Hi"),
+                AIMessage(content=""),  # Empty in middle
+                HumanMessage(content="World"),
+            ]
+        )
+
+    # Test assistant with tool_calls but empty content (should pass - tool_calls provide content)
+    validate_message_content(
+        [
+            HumanMessage(content="Hello"),
+            AIMessage(
+                content=[],
+                tool_calls=[
+                    {
+                        "name": "test_tool",
+                        "args": {},
+                        "id": "toolu_01",
+                        "type": "tool_call",
+                    }
+                ],
+            ),
+        ]
+    )
+
+    # Test message with mixed content (empty text + non-empty blocks)
+    validate_message_content(
+        [
+            HumanMessage(
+                content=[
+                    {"type": "text", "text": ""},
+                    {"type": "text", "text": "Hello"},
+                ]
+            )
+        ]
+    )
+
+    # Test message with only non-text blocks
+    validate_message_content(
+        [
+            HumanMessage(
+                content=[
+                    {"type": "image", "source": {"type": "url", "url": "https://example.com/image.jpg"}},
+                ]
+            )
+        ]
+    )
+
+
+def test_is_message_content_empty_edge_cases() -> None:
+    """Test edge cases for _is_message_content_empty."""
+    from langchain_core.messages import ChatMessage, FunctionMessage, ToolMessage
+
+    # Test with different message types
+    assert _is_message_content_empty(ChatMessage(content="", role="human"))
+    assert not _is_message_content_empty(ChatMessage(content="Hello", role="human"))
+
+    assert _is_message_content_empty(FunctionMessage(content="", name="func"))
+    assert not _is_message_content_empty(FunctionMessage(content="result", name="func"))
+
+    assert _is_message_content_empty(ToolMessage(content="", tool_call_id="1"))
+    assert not _is_message_content_empty(ToolMessage(content="result", tool_call_id="1"))
+
+    # Test AIMessage with tool_calls but empty content
+    # Note: tool_calls make the message non-empty (they become content blocks)
+    assert not _is_message_content_empty(
+        AIMessage(
+            content=[],
+            tool_calls=[
+                {
+                    "name": "test_tool",
+                    "args": {},
+                    "id": "toolu_01",
+                    "type": "tool_call",
+                }
+            ],
+        )
+    )
+
+    # Test AIMessage with empty content and no tool_calls
+    assert _is_message_content_empty(AIMessage(content=[]))
+    assert _is_message_content_empty(AIMessage(content=""))
+
+    # Test list with string blocks (not dict)
+    assert _is_message_content_empty(HumanMessage(content=[""]))
+    assert _is_message_content_empty(HumanMessage(content=["", "   "]))
+    assert not _is_message_content_empty(HumanMessage(content=["", "Hello"]))
+
+    # Test list with mixed string and dict blocks
+    assert not _is_message_content_empty(
+        HumanMessage(
+            content=[
+                "",
+                {"type": "text", "text": "Hello"},
+            ]
+        )
+    )
+
+    # Test list with tool_use blocks (not empty)
+    assert not _is_message_content_empty(
+        HumanMessage(
+            content=[
+                {
+                    "type": "tool_use",
+                    "name": "test",
+                    "input": {},
+                    "id": "toolu_01",
+                }
+            ]
+        )
+    )

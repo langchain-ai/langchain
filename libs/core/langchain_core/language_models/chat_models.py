@@ -1167,6 +1167,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 msg = "Asked to cache, but no cache found at `langchain.cache`."
                 raise ValueError(msg)
 
+        # Validate messages before making API calls (provider-specific validation)
+        self._validate_messages(messages)
+
         # Apply the rate limiter after checking the cache, since
         # we usually don't want to rate limit cache lookups, but
         # we do want to rate limit API requests.
@@ -1293,6 +1296,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 msg = "Asked to cache, but no cache found at `langchain.cache`."
                 raise ValueError(msg)
 
+        # Validate messages before making API calls (provider-specific validation)
+        self._validate_messages(messages)
+
         # Apply the rate limiter after checking the cache, since
         # we usually don't want to rate limit cache lookups, but
         # we do want to rate limit API requests.
@@ -1384,6 +1390,26 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if check_cache and llm_cache:
             await llm_cache.aupdate(prompt, llm_string, result.generations)
         return result
+
+    def _validate_messages(self, messages: list[BaseMessage]) -> None:
+        """Validate messages before sending to the model provider.
+
+        This method can be overridden by subclasses to implement provider-specific
+        validation rules. By default, no validation is performed, allowing all
+        providers to maintain backward compatibility.
+
+        Args:
+            messages: The messages to validate.
+
+        Raises:
+            ValueError: If messages violate provider-specific validation rules.
+
+        Note:
+            This validation occurs before any API calls are made, ensuring
+            fast failure for invalid input.
+        """
+        # Default implementation: no validation (backward compatible)
+        pass
 
     @abstractmethod
     def _generate(

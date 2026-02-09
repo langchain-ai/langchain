@@ -2335,3 +2335,127 @@ def _approximate_token_counter(messages: Sequence[BaseMessage]) -> int:
 _TOKEN_COUNTER_SHORTCUTS = {
     "approximate": _approximate_token_counter,
 }
+
+
+def _is_message_content_empty(message: BaseMessage) -> bool:
+    """Check if a message has empty or whitespace-only content.
+
+    This function determines if a message's content is effectively empty,
+    which is useful for validation before sending to model providers that
+    may reject empty messages.
+
+    Args:
+        message: The message to check.
+
+    Returns:
+        `True` if the message content is empty or whitespace-only, `False` otherwise.
+
+    Note:
+        - String content is considered empty if it's empty or contains only whitespace.
+        - List content is considered empty if the list is empty or contains only
+          empty text blocks (whitespace-only strings).
+        - Non-text blocks (e.g., images, tool_use) are not considered empty.
+        - AIMessages with tool_calls are not considered empty, as tool_calls
+          will be converted to tool_use content blocks during formatting.
+    """
+    # AIMessages with tool_calls are not empty (tool_calls become content blocks)
+    if isinstance(message, AIMessage) and hasattr(message, "tool_calls") and message.tool_calls:
+        return False
+
+    content = message.content
+
+    if isinstance(content, str):
+        return not content.strip()
+
+    if isinstance(content, list):
+        if len(content) == 0:
+            return True
+
+        # Check if all blocks are empty text blocks
+        for block in content:
+            if isinstance(block, str):
+                if block.strip():
+                    return False
+            elif isinstance(block, dict):
+                block_type = block.get("type")
+                if block_type == "text":
+                    text = block.get("text", "")
+                    if isinstance(text, str) and text.strip():
+                        return False
+                else:
+                    # Non-text blocks (images, tool_use, etc.) are not empty
+                    return False
+            else:
+                # Unknown block type, assume not empty
+                return False
+
+        # All blocks were empty text blocks
+        return True
+
+    # Unknown content type, assume not empty
+    return False
+
+
+def validate_message_content(
+    messages: Sequence[BaseMessage],
+    *,
+    allow_empty_assistant_final: bool = True,
+) -> None:
+    """Validate that messages have non-empty content where required.
+
+    This function validates message content according to common provider rules:
+    - Human/System messages must have non-empty content
+    - Assistant messages can be empty only if they are the final message
+      (when `allow_empty_assistant_final=True`)
+
+    Args:
+        messages: The sequence of messages to validate.
+        allow_empty_assistant_final: If `True`, allow empty assistant messages
+            only if they are the final message in the sequence.
+
+    Raises:
+        ValueError: If a message violates the content requirements.
+
+    Example:
+        ```python
+        from langchain_core.messages import HumanMessage, AIMessage
+
+        # This will raise ValueError
+        validate_message_content([HumanMessage(content="")])
+
+        # This is valid (empty final assistant message)
+        validate_message_content([
+            HumanMessage(content="Hello"),
+            AIMessage(content=""),
+        ])
+        ```
+    """
+    from langchain_core.messages.ai import AIMessage
+    from langchain_core.messages.human import HumanMessage
+    from langchain_core.messages.system import SystemMessage
+
+    for idx, message in enumerate(messages):
+        is_empty = _is_message_content_empty(message)
+        is_final = idx == len(messages) - 1
+        is_assistant = isinstance(message, AIMessage)
+
+        # Human and System messages must never be empty
+        if isinstance(message, (HumanMessage, SystemMessage)) and is_empty:
+            msg = (
+                f"{message.__class__.__name__} at index {idx} has empty content. "
+                "Human and System messages must have non-empty content."
+            )
+            raise ValueError(msg)
+
+        # Assistant messages can be empty only if they are the final message
+        if (
+            is_assistant
+            and is_empty
+            and not (allow_empty_assistant_final and is_final)
+        ):
+            msg = (
+                f"AIMessage at index {idx} has empty content. "
+                "Assistant messages must have non-empty content "
+                "except for the optional final assistant message."
+            )
+            raise ValueError(msg)

@@ -2339,3 +2339,276 @@ def test__format_messages_trailing_whitespace() -> None:
     ai_intermediate = AIMessage("thought ")  # type: ignore[misc]
     _, anthropic_messages = _format_messages([human, ai_intermediate, human])
     assert anthropic_messages[1]["content"] == "thought "
+
+
+def test_chat_anthropic_validates_empty_messages() -> None:
+    """Test that ChatAnthropic validates empty messages before API calls."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    # Test empty string content in HumanMessage
+    with pytest.raises(ValueError, match="Anthropic models do not allow empty"):
+        llm._validate_messages([HumanMessage(content="")])  # type: ignore[misc]
+
+    # Test empty list content in HumanMessage
+    with pytest.raises(ValueError, match="Anthropic models do not allow empty"):
+        llm._validate_messages([HumanMessage(content=[])])  # type: ignore[misc]
+
+    # Test whitespace-only string content
+    with pytest.raises(ValueError, match="Anthropic models do not allow empty"):
+        llm._validate_messages([HumanMessage(content="   \n\t  ")])  # type: ignore[misc]
+
+    # Test empty SystemMessage
+    with pytest.raises(ValueError, match="Anthropic models do not allow empty"):
+        llm._validate_messages([SystemMessage(content="")])  # type: ignore[misc]
+
+    # Test list with only empty text blocks
+    with pytest.raises(ValueError, match="Anthropic models do not allow empty"):
+        llm._validate_messages(
+            [
+                HumanMessage(  # type: ignore[misc]
+                    content=[
+                        {"type": "text", "text": ""},
+                        {"type": "text", "text": "   "},
+                    ]
+                )
+            ]
+        )
+
+    # Test that non-empty messages pass validation
+    llm._validate_messages([HumanMessage(content="Hello")])  # type: ignore[misc]
+    llm._validate_messages([SystemMessage(content="You are a helpful assistant")])  # type: ignore[misc]
+
+    # Test that empty final assistant message is allowed
+    llm._validate_messages(
+        [
+            HumanMessage("Hello"),  # type: ignore[misc]
+            AIMessage(content=""),  # type: ignore[misc]
+        ]
+    )
+
+    # Test that empty non-final assistant message raises error
+    with pytest.raises(ValueError, match="AIMessage.*empty content"):
+        llm._validate_messages(
+            [
+                HumanMessage("Hello"),  # type: ignore[misc]
+                AIMessage(content=""),  # type: ignore[misc]
+                HumanMessage("World"),  # type: ignore[misc]
+            ]
+        )
+
+    # Test that messages with non-text blocks are not considered empty
+    llm._validate_messages(
+        [
+            HumanMessage(  # type: ignore[misc]
+                content=[
+                    {"type": "image", "source": {"type": "url", "url": "https://example.com/image.jpg"}},
+                ]
+            )
+        ]
+    )
+
+    # Test messages with tool_calls but empty content (should pass - tool_calls provide content)
+    llm._validate_messages(
+        [
+            HumanMessage("Hello"),  # type: ignore[misc]
+            AIMessage(  # type: ignore[misc]
+                content=[],
+                tool_calls=[
+                    {
+                        "name": "get_weather",
+                        "args": {"location": "Boston"},
+                        "id": "toolu_01",
+                        "type": "tool_call",
+                    }
+                ],
+            ),
+        ]
+    )
+
+    # Test multiple empty messages in sequence
+    with pytest.raises(ValueError, match="Anthropic models do not allow empty"):
+        llm._validate_messages(
+            [
+                HumanMessage(content=""),  # type: ignore[misc]
+                HumanMessage(content=""),  # type: ignore[misc]
+            ]
+        )
+
+    # Test mixed content with empty text but non-empty blocks
+    llm._validate_messages(
+        [
+            HumanMessage(  # type: ignore[misc]
+                content=[
+                    {"type": "text", "text": ""},
+                    {"type": "text", "text": "Hello"},
+                ]
+            )
+        ]
+    )
+
+
+def test_chat_anthropic_validation_in_invoke_path() -> None:
+    """Test that validation occurs in the actual invoke path before API calls."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    # Mock the API call to ensure validation happens before it
+    with patch.object(llm, "_create") as mock_create:
+        # Empty HumanMessage should raise before API call
+        with pytest.raises(ValueError, match="Anthropic models do not allow empty"):
+            llm.invoke([HumanMessage(content="")])  # type: ignore[misc]
+
+        # Verify no API call was made
+        mock_create.assert_not_called()
+
+    # Valid message should proceed to API call
+    with patch.object(llm, "_create") as mock_create:
+        mock_create.return_value = MagicMock(
+            model_dump=lambda: {
+                "content": [{"type": "text", "text": "Hello"}],
+                "usage": {"input_tokens": 10, "output_tokens": 5},
+            }
+        )
+        try:
+            llm.invoke([HumanMessage(content="Hello")])  # type: ignore[misc]
+        except Exception:
+            # We expect this to fail due to missing API key, but validation should pass
+            pass
+        # Verify API call was attempted (validation passed)
+        assert mock_create.called
+
+
+def test_chat_anthropic_validation_in_generate_path() -> None:
+    """Test that validation occurs in the generate path."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    # Empty SystemMessage should raise before API call
+    with pytest.raises(ValueError, match="Anthropic models do not allow empty"):
+        llm.generate([[SystemMessage(content="")]])  # type: ignore[misc]
+
+    # Valid messages should pass validation
+    with patch.object(llm, "_create") as mock_create:
+        mock_create.return_value = MagicMock(
+            model_dump=lambda: {
+                "content": [{"type": "text", "text": "Hello"}],
+                "usage": {"input_tokens": 10, "output_tokens": 5},
+            }
+        )
+        try:
+            llm.generate([[HumanMessage(content="Hello")]])  # type: ignore[misc]
+        except Exception:
+            # We expect this to fail due to missing API key, but validation should pass
+            pass
+        assert mock_create.called
+
+
+def test_chat_anthropic_validation_with_tool_messages() -> None:
+    """Test validation with ToolMessage sequences."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    # ToolMessages are converted to HumanMessages, so empty ToolMessage should fail
+    from langchain_core.messages import ToolMessage
+
+    # Note: ToolMessage with empty content gets converted, so validation will catch it
+    # This tests the full message conversion pipeline
+    with pytest.raises(ValueError, match="Anthropic models do not allow empty"):
+        llm._validate_messages(
+            [
+                HumanMessage("Hello"),  # type: ignore[misc]
+                AIMessage(  # type: ignore[misc]
+                    content="",
+                    tool_calls=[
+                        {
+                            "name": "test_tool",
+                            "args": {},
+                            "id": "toolu_01",
+                            "type": "tool_call",
+                        }
+                    ],
+                ),
+                ToolMessage(content="", tool_call_id="toolu_01"),  # type: ignore[misc]
+            ]
+        )
+
+    # Valid ToolMessage should pass
+    llm._validate_messages(
+        [
+            HumanMessage("Hello"),  # type: ignore[misc]
+            AIMessage(  # type: ignore[misc]
+                content="",
+                tool_calls=[
+                    {
+                        "name": "test_tool",
+                        "args": {},
+                        "id": "toolu_01",
+                        "type": "tool_call",
+                    }
+                ],
+            ),
+            ToolMessage(content="Result", tool_call_id="toolu_01"),  # type: ignore[misc]
+        ]
+    )
+
+
+def test_chat_anthropic_validation_with_chat_message() -> None:
+    """Test validation with ChatMessage."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    from langchain_core.messages import ChatMessage
+
+    # Empty ChatMessage with human role should fail
+    with pytest.raises(ValueError, match="Anthropic models do not allow empty"):
+        llm._validate_messages([ChatMessage(content="", role="human")])  # type: ignore[misc]
+
+    # Valid ChatMessage should pass
+    llm._validate_messages([ChatMessage(content="Hello", role="human")])  # type: ignore[misc]
+
+
+def test_chat_anthropic_validation_complex_content_blocks() -> None:
+    """Test validation with complex content block structures."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    # Message with tool_use blocks (not empty even if text is empty)
+    llm._validate_messages(
+        [
+            HumanMessage("Hello"),  # type: ignore[misc]
+            AIMessage(  # type: ignore[misc]
+                content=[
+                    {"type": "text", "text": ""},
+                    {
+                        "type": "tool_use",
+                        "name": "get_weather",
+                        "input": {"location": "Boston"},
+                        "id": "toolu_01",
+                    },
+                ]
+            ),
+        ]
+    )
+
+    # Message with only empty text blocks should fail for HumanMessage
+    with pytest.raises(ValueError, match="Anthropic models do not allow empty"):
+        llm._validate_messages(
+            [
+                HumanMessage(  # type: ignore[misc]
+                    content=[
+                        {"type": "text", "text": ""},
+                        {"type": "text", "text": "   \n\t"},
+                    ]
+                )
+            ]
+        )
+
+
+def test_chat_anthropic_validation_streaming() -> None:
+    """Test that validation occurs before streaming API calls."""
+    llm = ChatAnthropic(model=MODEL_NAME, streaming=True)
+
+    # Empty message should raise before streaming
+    with pytest.raises(ValueError, match="Anthropic models do not allow empty"):
+        with patch.object(llm, "_create") as mock_create:
+            # This should fail before any stream setup
+            try:
+                list(llm.stream([HumanMessage(content="")]))  # type: ignore[misc]
+            except ValueError:
+                pass
+            # Verify no API call was made
+            mock_create.assert_not_called()

@@ -658,6 +658,7 @@ def _format_messages(
             # anthropic.BadRequestError: Error code: 400: all messages must have
             # non-empty content except for the optional final assistant message
             continue
+
         formatted_messages.append({"role": role, "content": content})
     return system, formatted_messages
 
@@ -1049,6 +1050,35 @@ class ChatAnthropic(BaseChatModel):
             "http_client": http_client,
         }
         return anthropic.AsyncClient(**params)
+
+    def _validate_messages(self, messages: list[BaseMessage]) -> None:
+        """Validate messages according to Anthropic API requirements.
+
+        Anthropic API enforces: "All messages must have non-empty content
+        except for the optional final assistant message."
+
+        This validation occurs before any API calls are made, providing
+        fast failure with clear error messages.
+
+        Args:
+            messages: The messages to validate.
+
+        Raises:
+            ValueError: If messages violate Anthropic's content requirements.
+                The error message provides guidance on how to fix the issue.
+        """
+        from langchain_core.messages.utils import validate_message_content
+
+        try:
+            validate_message_content(messages, allow_empty_assistant_final=True)
+        except ValueError as e:
+            # Enhance error message with Anthropic-specific context
+            msg = (
+                "Anthropic models do not allow empty HumanMessage or SystemMessage content. "
+                "Ensure tools and prompts return non-empty strings. "
+                f"Original error: {str(e)}"
+            )
+            raise ValueError(msg) from e
 
     def _get_request_payload(
         self,
