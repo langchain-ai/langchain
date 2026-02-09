@@ -19,9 +19,15 @@ updates:
       - "/libs/core/"
       - "/libs/langchain/"
       - "/libs/langchain_v1/"
-      - "/libs/text-splitters/"
-      - "/libs/standard-tests/"
-      - "/libs/model-profiles/"
+    schedule:
+      interval: "weekly"
+    groups:
+      langchain-deps:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "pip"
+    directories:
       - "/libs/partners/anthropic/"
       - "/libs/partners/chroma/"
       - "/libs/partners/deepseek/"
@@ -39,6 +45,18 @@ updates:
     schedule:
       interval: "weekly"
     groups:
-      python-deps:
+      partner-deps:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "pip"
+    directories:
+      - "/libs/text-splitters/"
+      - "/libs/standard-tests/"
+      - "/libs/model-profiles/"
+    schedule:
+      interval: "weekly"
+    groups:
+      other-deps:
         patterns:
           - "*"
