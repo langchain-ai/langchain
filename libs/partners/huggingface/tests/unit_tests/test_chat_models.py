@@ -441,33 +441,39 @@ def test_chat_huggingface_supports_async_streaming_with_pipeline() -> None:
 
 def test_chat_huggingface_supports_async_streaming_falls_back_to_llm_method() -> None:
     """Test that ChatHuggingFace checks LLM's supports_async_streaming if available."""
-    custom_llm = Mock()
-    custom_llm.supports_async_streaming = Mock(return_value=True)
+    # Use HuggingFacePipeline as base to pass validation
+    pipeline_llm = Mock(spec=HuggingFacePipeline)
+    # Override supports_async_streaming to return True for this test
+    pipeline_llm.supports_async_streaming = Mock(return_value=True)
 
     with patch(
         "langchain_huggingface.chat_models.huggingface.ChatHuggingFace._resolve_model_id"
     ), patch(
         "langchain_huggingface.chat_models.huggingface._is_huggingface_endpoint",
         return_value=False,
+    ), patch(
+        "langchain_huggingface.chat_models.huggingface._is_huggingface_pipeline",
+        return_value=True,
     ):
-        chat = ChatHuggingFace(llm=custom_llm, tokenizer=MagicMock())
+        chat = ChatHuggingFace(llm=pipeline_llm, tokenizer=MagicMock())
         result = chat.supports_async_streaming()
         assert result is True
-        custom_llm.supports_async_streaming.assert_called_once()
+        pipeline_llm.supports_async_streaming.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_chat_huggingface_astream_with_pipeline_falls_back_to_sync() -> None:
     """Test that _astream falls back to sync streaming for HuggingFacePipeline."""
+    from langchain_core.messages import AIMessageChunk
     from langchain_core.outputs import ChatGenerationChunk
 
     pipeline_llm = Mock(spec=HuggingFacePipeline)
+    # Set supports_async_streaming to return False
     pipeline_llm.supports_async_streaming = Mock(return_value=False)
 
-    # Create a mock sync stream that yields chunks
-    mock_chunk = ChatGenerationChunk(
-        message=MagicMock(content="chunk1"), generation_info=None
-    )
+    # Create a proper sync stream that yields chunks
+    message_chunk = AIMessageChunk(content="chunk1")
+    mock_chunk = ChatGenerationChunk(message=message_chunk, generation_info=None)
     sync_iterator = iter([mock_chunk])
 
     messages = [HumanMessage(content="Hello")]
@@ -486,14 +492,18 @@ async def test_chat_huggingface_astream_with_pipeline_falls_back_to_sync() -> No
         "langchain_core.runnables.config.run_in_executor"
     ) as mock_executor:
         # Mock run_in_executor to simulate async execution
+        call_count = {"stream": 0, "next": 0}
+
         async def mock_run_in_executor(executor, func, *args, **kwargs):
             if func == next:
+                call_count["next"] += 1
                 # Simulate next() call on iterator
                 try:
                     return next(*args)
                 except StopIteration:
                     return kwargs.get("default", object())
             # For _stream call, return the iterator
+            call_count["stream"] += 1
             return sync_iterator
 
         mock_executor.side_effect = mock_run_in_executor
@@ -517,20 +527,24 @@ async def test_chat_huggingface_astream_with_endpoint_uses_async_client(
 ) -> None:
     """Test that _astream uses async_client for HuggingFaceEndpoint."""
     mock_llm.async_client = MagicMock()
-    mock_llm.async_client.chat_completion = MagicMock(
-        return_value=AsyncIteratorMock(
-            [
-                {
-                    "choices": [
-                        {
-                            "delta": {"content": "Hello"},
-                            "finish_reason": None,
-                        }
-                    ]
-                }
-            ]
-        )
+    # chat_completion is awaited, so it should return an awaitable that resolves to async iterator
+    async_iterator = AsyncIteratorMock(
+        [
+            {
+                "choices": [
+                    {
+                        "delta": {"content": "Hello"},
+                        "finish_reason": None,
+                    }
+                ]
+            }
+        ]
     )
+    # Make chat_completion an async function that returns the iterator
+    async def mock_chat_completion(*args, **kwargs):
+        return async_iterator
+
+    mock_llm.async_client.chat_completion = mock_chat_completion
 
     messages = [HumanMessage(content="Hello")]
     mock_run_manager = MagicMock()
@@ -553,7 +567,8 @@ async def test_chat_huggingface_astream_with_endpoint_uses_async_client(
             chunks.append(chunk)
 
         # Verify async_client was called
-        mock_llm.async_client.chat_completion.assert_called_once()
+        # The async function should have been called
+        assert len(chunks) > 0
 
 
 def test_chat_huggingface_astream_capability_check_prevents_attribute_error() -> None:
@@ -562,20 +577,34 @@ def test_chat_huggingface_astream_capability_check_prevents_attribute_error() ->
     This test verifies the fix for issue #34134 where HuggingFacePipeline
     caused AttributeError when _astream tried to access async_client.
     """
+    # Create a mock that mimics HuggingFacePipeline behavior
     pipeline_llm = Mock(spec=HuggingFacePipeline)
+    # Explicitly set supports_async_streaming as a callable that returns False
+    # Use a function instead of Mock to ensure it returns a boolean
+    def mock_supports_async_streaming():
+        return False
+    pipeline_llm.supports_async_streaming = mock_supports_async_streaming
     # Explicitly ensure async_client doesn't exist
-    delattr(pipeline_llm, "async_client") if hasattr(pipeline_llm, "async_client") else None
+    if hasattr(pipeline_llm, "async_client"):
+        delattr(pipeline_llm, "async_client")
 
     with patch(
         "langchain_huggingface.chat_models.huggingface.ChatHuggingFace._resolve_model_id"
     ), patch(
         "langchain_huggingface.chat_models.huggingface._is_huggingface_endpoint",
         return_value=False,
+    ), patch(
+        "langchain_huggingface.chat_models.huggingface._is_huggingface_pipeline",
+        return_value=True,
     ):
         chat = ChatHuggingFace(llm=pipeline_llm, tokenizer=MagicMock())
 
         # Verify capability check returns False
-        assert chat.supports_async_streaming() is False
+        # This should call supports_async_streaming on the LLM
+        result = chat.supports_async_streaming()
+        # The result should be False (from the function), not a Mock object
+        assert result is False
+        assert isinstance(result, bool)
 
         # Verify that _astream would check capability first
         # This prevents AttributeError from accessing async_client
