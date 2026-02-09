@@ -3376,3 +3376,19 @@ async def test_context_overflow_error_stream_async_responses_api() -> None:
             pass
 
     assert "exceeds the context window" in str(exc_info.value)
+
+
+def test_context_overflow_error_backwards_compatibility() -> None:
+    """Test that ContextOverflowError can be caught as BadRequestError."""
+    llm = ChatOpenAI()
+
+    with (  # noqa: PT012
+        patch.object(llm.client, "with_raw_response") as mock_client,
+        pytest.raises(openai.BadRequestError) as exc_info,
+    ):
+        mock_client.create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        llm.invoke([HumanMessage(content="test")])
+
+    # Verify it's both types (multiple inheritance)
+    assert isinstance(exc_info.value, openai.BadRequestError)
+    assert isinstance(exc_info.value, ContextOverflowError)

@@ -450,12 +450,22 @@ def _update_token_usage(
     return new_usage
 
 
+class OpenAIContextOverflowError(openai.BadRequestError, ContextOverflowError):
+    """BadRequestError raised when input exceeds OpenAI's context limit."""
+
+
+class OpenAIAPIContextOverflowError(openai.APIError, ContextOverflowError):
+    """APIError raised when input exceeds OpenAI's context limit."""
+
+
 def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
     if (
         "context_length_exceeded" in str(e)
         or "Input tokens exceed the configured limit" in e.message
     ):
-        raise ContextOverflowError(e.message) from e
+        raise OpenAIContextOverflowError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
     if (
         "'response_format' of type 'json_schema' is not supported with this model"
     ) in e.message:
@@ -483,7 +493,9 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
 def _handle_openai_api_error(e: openai.APIError) -> None:
     error_message = str(e)
     if "exceeds the context window" in error_message:
-        raise ContextOverflowError(error_message) from e
+        raise OpenAIAPIContextOverflowError(
+            message=e.message, request=e.request, body=e.body
+        ) from e
     raise
 
 

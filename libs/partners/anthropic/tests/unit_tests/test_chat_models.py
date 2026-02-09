@@ -2411,3 +2411,19 @@ async def test_context_overflow_error_stream_async() -> None:
             pass
 
     assert "prompt is too long" in str(exc_info.value)
+
+
+def test_context_overflow_error_backwards_compatibility() -> None:
+    """Test that ContextOverflowError can be caught as BadRequestError."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages, "create") as mock_create,
+        pytest.raises(anthropic.BadRequestError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        llm.invoke([HumanMessage(content="test")])
+
+    # Verify it's both types (multiple inheritance)
+    assert isinstance(exc_info.value, anthropic.BadRequestError)
+    assert isinstance(exc_info.value, ContextOverflowError)

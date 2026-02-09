@@ -721,10 +721,16 @@ def _is_code_execution_related_block(
     return False
 
 
+class AnthropicContextOverflowError(anthropic.BadRequestError, ContextOverflowError):
+    """BadRequestError raised when input exceeds Anthropic's context limit."""
+
+
 def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
     """Handle Anthropic BadRequestError."""
     if "prompt is too long" in e.message:
-        raise ContextOverflowError(e.message) from e
+        raise AnthropicContextOverflowError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
     if ("messages: at least one message is required") in e.message:
         message = "Received only system message(s). "
         warnings.warn(message, stacklevel=2)
