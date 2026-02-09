@@ -64,6 +64,7 @@ from langchain_anthropic._client_utils import (
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
 from langchain_anthropic.data._profiles import _PROFILES
 from langchain_anthropic.output_parsers import extract_tool_calls
+from langchain_anthropic.utils import create_bedrock_client_params
 
 _message_type_lookups = {
     "human": "user",
@@ -1798,6 +1799,194 @@ class ChatAnthropic(BaseChatModel):
             **kwargs,
         )
         return response.input_tokens
+
+
+class ChatAnthropicBedrock(ChatAnthropic):
+    """Anthropic Claude via AWS Bedrock with full SDK feature parity.
+
+    Uses AnthropicBedrock client to provide all ChatAnthropic features
+    while using AWS credentials.
+
+    This class provides full feature parity with ChatAnthropic, including:
+    - `parallel_tool_calls` control for tool execution patterns
+    - `thinking` parameter for extended thinking mode
+    - `strict` tool definitions for structured output validation
+    - Configurable prompt caching (5m or 1h TTL)
+    - Reliable streaming with tool use
+
+    Example:
+        ```python
+        # pip install -U langchain-anthropic
+        # export AWS_ACCESS_KEY_ID="your-access-key"
+        # export AWS_SECRET_ACCESS_KEY="your-secret-key"
+
+        from langchain_anthropic import ChatAnthropicBedrock
+
+        model = ChatAnthropicBedrock(
+            model="anthropic.claude-3-5-sonnet-20241022-v2:0",
+            aws_region="us-east-1",
+            # temperature=,
+            # max_tokens=,
+            # thinking={"type": "enabled", "budget_tokens": 5000},
+        )
+
+        # Parallel tool execution
+        llm_parallel = model.bind_tools(tools, parallel_tool_calls=True)
+
+        # Sequential tool execution
+        llm_sequential = model.bind_tools(tools, parallel_tool_calls=False)
+        ```
+
+    Note:
+        Any param which is not explicitly supported will be passed directly to
+        [`AnthropicBedrock.messages.create(...)`](https://docs.anthropic.com/en/api/messages)
+        each time the model is invoked.
+    """
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+
+    aws_region: str = Field(default="us-east-1", alias="region_name")
+    """AWS region for Bedrock API calls."""
+
+    aws_access_key_id: SecretStr | None = Field(
+        default_factory=secret_from_env("AWS_ACCESS_KEY_ID", default=None),
+        alias="aws_access_key",
+    )
+    """AWS access key ID. Automatically read from env var `AWS_ACCESS_KEY_ID` if not provided."""
+
+    aws_secret_access_key: SecretStr | None = Field(
+        default_factory=secret_from_env("AWS_SECRET_ACCESS_KEY", default=None),
+        alias="aws_secret_key",
+    )
+    """AWS secret access key. Automatically read from env var `AWS_SECRET_ACCESS_KEY` if not provided."""
+
+    aws_session_token: SecretStr | None = Field(
+        default_factory=secret_from_env("AWS_SESSION_TOKEN", default=None),
+        default=None,
+    )
+    """AWS session token for temporary credentials. Automatically read from env var `AWS_SESSION_TOKEN` if not provided."""
+
+    # Override parent fields that shouldn't be used with Bedrock
+    anthropic_api_key: SecretStr = Field(
+        default="",
+        exclude=True,
+    )
+    """Not used with Bedrock - AWS credentials are used instead."""
+
+    anthropic_api_url: str | None = Field(
+        default=None,
+        exclude=True,
+    )
+    """Not used with Bedrock - region is used instead."""
+
+    anthropic_proxy: str | None = Field(
+        default=None,
+        exclude=True,
+    )
+    """Not used with Bedrock."""
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of chat model."""
+        return "anthropic-bedrock"
+
+    @property
+    def lc_secrets(self) -> dict[str, str]:
+        """Return a mapping of secret keys to environment variables."""
+        return {
+            "aws_access_key_id": "AWS_ACCESS_KEY_ID",
+            "aws_secret_access_key": "AWS_SECRET_ACCESS_KEY",
+            "aws_session_token": "AWS_SESSION_TOKEN",
+        }
+
+    @classmethod
+    def get_lc_namespace(cls) -> list[str]:
+        """Get the namespace of the LangChain object.
+
+        Returns:
+            `["langchain", "chat_models", "anthropic-bedrock"]`
+        """
+        return ["langchain", "chat_models", "anthropic-bedrock"]
+
+    @cached_property
+    def _client_params(self) -> dict[str, Any]:
+        """Get client parameters for AnthropicBedrock."""
+        return create_bedrock_client_params(
+            aws_region=self.aws_region,
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+            aws_session_token=self.aws_session_token,
+            max_retries=self.max_retries,
+            default_headers=self.default_headers,
+            timeout=self.default_request_timeout,
+        )
+
+    @cached_property
+    def _client(self) -> Any:  # type: ignore[type-arg]
+        """Get synchronous AnthropicBedrock client."""
+        try:
+            from anthropic import AnthropicBedrock
+        except ImportError as e:
+            msg = (
+                "AnthropicBedrock client is not available. "
+                "Please ensure you have anthropic>=0.78.0 installed. "
+                "If using an older version, upgrade with: pip install --upgrade anthropic"
+            )
+            raise ImportError(msg) from e
+
+        client_params = self._client_params
+        return AnthropicBedrock(**client_params)
+
+    @cached_property
+    def _async_client(self) -> Any:  # type: ignore[type-arg]
+        """Get asynchronous AnthropicBedrock client."""
+        try:
+            from anthropic import AsyncAnthropicBedrock
+        except ImportError as e:
+            msg = (
+                "AsyncAnthropicBedrock client is not available. "
+                "Please ensure you have anthropic>=0.78.0 installed. "
+                "If using an older version, upgrade with: pip install --upgrade anthropic"
+            )
+            raise ImportError(msg) from e
+
+        client_params = self._client_params
+        return AsyncAnthropicBedrock(**client_params)
+
+    def _create(self, payload: dict) -> Any:
+        """Create a message using the AnthropicBedrock client."""
+        if "betas" in payload:
+            return self._client.beta.messages.create(**payload)
+        return self._client.messages.create(**payload)
+
+    async def _acreate(self, payload: dict) -> Any:
+        """Create a message asynchronously using the AsyncAnthropicBedrock client."""
+        if "betas" in payload:
+            return await self._async_client.beta.messages.create(**payload)
+        return await self._async_client.messages.create(**payload)
+
+    @property
+    def _identifying_params(self) -> dict[str, Any]:
+        """Get the identifying parameters."""
+        return {
+            "model": self.model,
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
+            "top_k": self.top_k,
+            "top_p": self.top_p,
+            "model_kwargs": self.model_kwargs,
+            "streaming": self.streaming,
+            "max_retries": self.max_retries,
+            "default_request_timeout": self.default_request_timeout,
+            "thinking": self.thinking,
+            "aws_region": self.aws_region,
+        }
+
+    def _get_ls_provider(self) -> str:
+        """Get the provider identifier for LangSmith tracing."""
+        return "anthropic-bedrock"
 
 
 def convert_to_anthropic_tool(

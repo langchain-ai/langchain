@@ -785,12 +785,25 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         params["stop"] = stop
         return {**params, **kwargs}
 
-    def _get_ls_params(
-        self,
-        stop: list[str] | None = None,
-        **kwargs: Any,
-    ) -> LangSmithParams:
-        """Get standard params for tracing."""
+    def _get_ls_provider(self) -> str:
+        """Get the provider identifier for LangSmith tracing.
+
+        This method can be overridden by subclasses to customize how they
+        identify themselves in LangSmith traces. This is particularly useful
+        for models that wrap other providers (e.g., Bedrock-based models that
+        want to distinguish themselves from their base provider).
+
+        Returns:
+            Provider identifier string. Defaults to a normalized version of
+            the class name.
+
+        Example:
+            ```python
+            class ChatAnthropicBedrock(BaseChatModel):
+                def _get_ls_provider(self) -> str:
+                    return "anthropic-bedrock"  # Custom provider name
+            ```
+        """
         # get default provider from class name
         default_provider = self.__class__.__name__
         if default_provider.startswith("Chat"):
@@ -798,8 +811,16 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         elif default_provider.endswith("Chat"):
             default_provider = default_provider[:-4]
         default_provider = default_provider.lower()
+        return default_provider
 
-        ls_params = LangSmithParams(ls_provider=default_provider, ls_model_type="chat")
+    def _get_ls_params(
+        self,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+        ls_provider = self._get_ls_provider()
+        ls_params = LangSmithParams(ls_provider=ls_provider, ls_model_type="chat")
         if stop:
             ls_params["ls_stop"] = stop
 

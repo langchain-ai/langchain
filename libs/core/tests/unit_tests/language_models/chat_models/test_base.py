@@ -806,6 +806,40 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
     )
 
 
+def test_get_ls_provider_extensibility() -> None:
+    """Test that _get_ls_provider can be overridden by subclasses."""
+    # Create a custom chat model that overrides _get_ls_provider
+    class CustomProviderChatModel(FakeListChatModel):
+        def _get_ls_provider(self) -> str:
+            return "custom-provider"
+
+    model = CustomProviderChatModel(responses=["test"])
+    assert model._get_ls_provider() == "custom-provider"
+
+    # Verify it's used in _get_ls_params
+    ls_params = model._get_ls_params()
+    assert ls_params["ls_provider"] == "custom-provider"
+
+
+def test_get_ls_provider_default_behavior() -> None:
+    """Test default _get_ls_provider behavior for classes without override."""
+    # FakeListChatModel should use default provider name derivation
+    model = FakeListChatModel(responses=["test"])
+    provider = model._get_ls_provider()
+    # Should derive from class name (removes "Chat" prefix if present)
+    assert provider == "fakelist"  # FakeListChatModel -> fakelist
+
+
+def test_get_ls_provider_backward_compatibility() -> None:
+    """Test that _get_ls_provider maintains backward compatibility."""
+    # Test that existing models still work correctly
+    model = FakeListChatModel(responses=["test"])
+    ls_params = model._get_ls_params()
+    # Should have a provider set (even if default)
+    assert "ls_provider" in ls_params
+    assert isinstance(ls_params["ls_provider"], str)
+
+
 def test_normalize_messages_edge_cases() -> None:
     # Test behavior of malformed/unrecognized content blocks
 

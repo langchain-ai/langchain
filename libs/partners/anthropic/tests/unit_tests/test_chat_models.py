@@ -19,7 +19,7 @@ from langchain_core.tracers.schemas import Run
 from pydantic import BaseModel, Field, SecretStr, ValidationError
 from pytest import CaptureFixture, MonkeyPatch
 
-from langchain_anthropic import ChatAnthropic
+from langchain_anthropic import ChatAnthropic, ChatAnthropicBedrock
 from langchain_anthropic.chat_models import (
     _create_usage_metadata,
     _format_image,
@@ -28,6 +28,7 @@ from langchain_anthropic.chat_models import (
     _merge_messages,
     convert_to_anthropic_tool,
 )
+from langchain_core.utils import SecretStr
 
 os.environ["ANTHROPIC_API_KEY"] = "foo"
 
@@ -2339,3 +2340,293 @@ def test__format_messages_trailing_whitespace() -> None:
     ai_intermediate = AIMessage("thought ")  # type: ignore[misc]
     _, anthropic_messages = _format_messages([human, ai_intermediate, human])
     assert anthropic_messages[1]["content"] == "thought "
+
+
+# ChatAnthropicBedrock tests
+BEDROCK_MODEL_NAME = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+
+
+def test_chat_anthropic_bedrock_initialization() -> None:
+    """Test ChatAnthropicBedrock initialization."""
+    model = ChatAnthropicBedrock(  # type: ignore[call-arg]
+        model=BEDROCK_MODEL_NAME,
+        aws_region="us-east-1",
+        aws_access_key_id="test-key",
+        aws_secret_access_key="test-secret",
+        default_request_timeout=2,
+    )
+    assert model.model == BEDROCK_MODEL_NAME
+    assert model.aws_region == "us-east-1"
+    assert (
+        cast("SecretStr", model.aws_access_key_id).get_secret_value() == "test-key"
+    )
+    assert (
+        cast("SecretStr", model.aws_secret_access_key).get_secret_value()
+        == "test-secret"
+    )
+    assert model.default_request_timeout == 2.0
+    assert model._llm_type == "anthropic-bedrock"
+
+
+def test_chat_anthropic_bedrock_initialization_with_session_token() -> None:
+    """Test ChatAnthropicBedrock initialization with session token."""
+    model = ChatAnthropicBedrock(  # type: ignore[call-arg]
+        model=BEDROCK_MODEL_NAME,
+        aws_region="us-west-2",
+        aws_access_key_id="test-key",
+        aws_secret_access_key="test-secret",
+        aws_session_token="test-token",
+    )
+    assert model.aws_region == "us-west-2"
+    assert (
+        cast("SecretStr", model.aws_session_token).get_secret_value() == "test-token"
+    )
+
+
+def test_chat_anthropic_bedrock_initialization_from_env() -> None:
+    """Test ChatAnthropicBedrock initialization from environment variables."""
+    with MonkeyPatch().context() as m:
+        m.setenv("AWS_ACCESS_KEY_ID", "env-key")
+        m.setenv("AWS_SECRET_ACCESS_KEY", "env-secret")
+        m.setenv("AWS_SESSION_TOKEN", "env-token")
+        model = ChatAnthropicBedrock(  # type: ignore[call-arg]
+            model=BEDROCK_MODEL_NAME,
+            aws_region="us-east-1",
+        )
+        assert (
+            cast("SecretStr", model.aws_access_key_id).get_secret_value() == "env-key"
+        )
+        assert (
+            cast("SecretStr", model.aws_secret_access_key).get_secret_value()
+            == "env-secret"
+        )
+        assert (
+            cast("SecretStr", model.aws_session_token).get_secret_value() == "env-token"
+        )
+
+
+def test_chat_anthropic_bedrock_client_params() -> None:
+    """Test ChatAnthropicBedrock client parameters."""
+    model = ChatAnthropicBedrock(  # type: ignore[call-arg]
+        model=BEDROCK_MODEL_NAME,
+        aws_region="us-east-1",
+        aws_access_key_id="test-key",
+        aws_secret_access_key="test-secret",
+        max_retries=3,
+        default_request_timeout=5.0,
+    )
+    client_params = model._client_params
+    assert client_params["aws_region"] == "us-east-1"
+    assert client_params["aws_access_key"] == "test-key"
+    assert client_params["aws_secret_key"] == "test-secret"
+    assert client_params["max_retries"] == 3
+    assert client_params["timeout"] == 5.0
+
+
+def test_chat_anthropic_bedrock_client_initialization() -> None:
+    """Test ChatAnthropicBedrock client initialization."""
+    model = ChatAnthropicBedrock(  # type: ignore[call-arg]
+        model=BEDROCK_MODEL_NAME,
+        aws_region="us-east-1",
+        aws_access_key_id="test-key",
+        aws_secret_access_key="test-secret",
+    )
+    # Test that client properties exist and can be accessed
+    # Note: We can't actually instantiate AnthropicBedrock without valid AWS creds,
+    # but we can test that the properties are defined
+    assert hasattr(model, "_client")
+    assert hasattr(model, "_async_client")
+
+
+def test_chat_anthropic_bedrock_llm_type() -> None:
+    """Test ChatAnthropicBedrock LLM type."""
+    model = ChatAnthropicBedrock(  # type: ignore[call-arg]
+        model=BEDROCK_MODEL_NAME,
+        aws_region="us-east-1",
+    )
+    assert model._llm_type == "anthropic-bedrock"
+
+
+def test_chat_anthropic_bedrock_lc_secrets() -> None:
+    """Test ChatAnthropicBedrock LangChain secrets mapping."""
+    model = ChatAnthropicBedrock(  # type: ignore[call-arg]
+        model=BEDROCK_MODEL_NAME,
+        aws_region="us-east-1",
+    )
+    secrets = model.lc_secrets
+    assert "aws_access_key_id" in secrets
+    assert "aws_secret_access_key" in secrets
+    assert "aws_session_token" in secrets
+    assert secrets["aws_access_key_id"] == "AWS_ACCESS_KEY_ID"
+    assert secrets["aws_secret_access_key"] == "AWS_SECRET_ACCESS_KEY"
+    assert secrets["aws_session_token"] == "AWS_SESSION_TOKEN"
+
+
+def test_chat_anthropic_bedrock_get_lc_namespace() -> None:
+    """Test ChatAnthropicBedrock LangChain namespace."""
+    namespace = ChatAnthropicBedrock.get_lc_namespace()
+    assert namespace == ["langchain", "chat_models", "anthropic-bedrock"]
+
+
+def test_chat_anthropic_bedrock_identifying_params() -> None:
+    """Test ChatAnthropicBedrock identifying parameters."""
+    model = ChatAnthropicBedrock(  # type: ignore[call-arg]
+        model=BEDROCK_MODEL_NAME,
+        aws_region="us-east-1",
+        temperature=0.7,
+        max_tokens=1000,
+        thinking={"type": "enabled", "budget_tokens": 5000},
+    )
+    params = model._identifying_params
+    assert params["model"] == BEDROCK_MODEL_NAME
+    assert params["temperature"] == 0.7
+    assert params["max_tokens"] == 1000
+    assert params["thinking"] == {"type": "enabled", "budget_tokens": 5000}
+    assert params["aws_region"] == "us-east-1"
+
+
+def test_chat_anthropic_bedrock_bind_tools() -> None:
+    """Test ChatAnthropicBedrock bind_tools method."""
+    model = ChatAnthropicBedrock(  # type: ignore[call-arg]
+        model=BEDROCK_MODEL_NAME,
+        aws_region="us-east-1",
+    )
+
+    class GetWeather(BaseModel):
+        """Get weather for a location."""
+
+        location: str = Field(..., description="The city and state")
+
+    model_with_tools = model.bind_tools([GetWeather])
+    assert isinstance(model_with_tools, RunnableBinding)
+    assert "tools" in cast("RunnableBinding", model_with_tools).kwargs
+
+
+def test_chat_anthropic_bedrock_bind_tools_parallel_tool_calls() -> None:
+    """Test ChatAnthropicBedrock bind_tools with parallel_tool_calls parameter."""
+    model = ChatAnthropicBedrock(  # type: ignore[call-arg]
+        model=BEDROCK_MODEL_NAME,
+        aws_region="us-east-1",
+    )
+
+    class GetWeather(BaseModel):
+        """Get weather for a location."""
+
+        location: str = Field(..., description="The city and state")
+
+    # Test parallel_tool_calls=True
+    model_parallel = model.bind_tools([GetWeather], parallel_tool_calls=True)
+    tool_choice = cast("RunnableBinding", model_parallel).kwargs.get("tool_choice")
+    assert tool_choice is not None
+    assert tool_choice.get("disable_parallel_tool_use") is False
+
+    # Test parallel_tool_calls=False
+    model_sequential = model.bind_tools([GetWeather], parallel_tool_calls=False)
+    tool_choice = cast("RunnableBinding", model_sequential).kwargs.get("tool_choice")
+    assert tool_choice is not None
+    assert tool_choice.get("disable_parallel_tool_use") is True
+
+
+def test_chat_anthropic_bedrock_thinking_parameter() -> None:
+    """Test ChatAnthropicBedrock thinking parameter."""
+    model = ChatAnthropicBedrock(  # type: ignore[call-arg]
+        model=BEDROCK_MODEL_NAME,
+        aws_region="us-east-1",
+        thinking={"type": "enabled", "budget_tokens": 5000},
+    )
+    assert model.thinking == {"type": "enabled", "budget_tokens": 5000}
+
+    # Test that thinking is included in request payload
+    payload = model._get_request_payload(  # type: ignore[attr-defined]
+        [HumanMessage(content="Hello")],  # type: ignore[misc]
+    )
+    assert payload.get("thinking") == {"type": "enabled", "budget_tokens": 5000}
+
+
+def test_chat_anthropic_bedrock_get_request_payload() -> None:
+    """Test ChatAnthropicBedrock request payload generation."""
+    model = ChatAnthropicBedrock(  # type: ignore[call-arg]
+        model=BEDROCK_MODEL_NAME,
+        aws_region="us-east-1",
+        temperature=0.7,
+        max_tokens=1000,
+    )
+    payload = model._get_request_payload(  # type: ignore[attr-defined]
+        [HumanMessage(content="Hello")],  # type: ignore[misc]
+    )
+    assert payload["model"] == BEDROCK_MODEL_NAME
+    assert payload["temperature"] == 0.7
+    assert payload["max_tokens"] == 1000
+    assert "messages" in payload
+
+
+def test_chat_anthropic_bedrock_inherits_from_chat_anthropic() -> None:
+    """Test that ChatAnthropicBedrock inherits methods from ChatAnthropic."""
+    model = ChatAnthropicBedrock(  # type: ignore[call-arg]
+        model=BEDROCK_MODEL_NAME,
+        aws_region="us-east-1",
+    )
+    # Verify that key methods from ChatAnthropic are available
+    assert hasattr(model, "_generate")
+    assert hasattr(model, "_agenerate")
+    assert hasattr(model, "_stream")
+    assert hasattr(model, "_astream")
+    assert hasattr(model, "bind_tools")
+    assert hasattr(model, "with_structured_output")
+    assert hasattr(model, "_get_request_payload")
+
+
+def test_chat_anthropic_bedrock_import() -> None:
+    """Test that ChatAnthropicBedrock can be imported."""
+    from langchain_anthropic import ChatAnthropicBedrock  # noqa: F401
+
+    assert ChatAnthropicBedrock is not None
+
+
+def test_chat_anthropic_bedrock_uses_utils() -> None:
+    """Test that ChatAnthropicBedrock uses utils.create_bedrock_client_params."""
+    from langchain_anthropic.utils import create_bedrock_client_params
+
+    model = ChatAnthropicBedrock(  # type: ignore[call-arg]
+        model=BEDROCK_MODEL_NAME,
+        aws_region="us-east-1",
+        aws_access_key_id="test-key",  # type: ignore[arg-type]
+        aws_secret_access_key="test-secret",  # type: ignore[arg-type]
+        max_retries=3,
+        default_request_timeout=30.0,
+    )
+
+    # Get client params and verify they match what utils would produce
+    client_params = model._client_params
+
+    # Manually create expected params using utils
+    expected_params = create_bedrock_client_params(
+        aws_region="us-east-1",
+        aws_access_key_id=SecretStr("test-key"),
+        aws_secret_access_key=SecretStr("test-secret"),
+        max_retries=3,
+        timeout=30.0,
+    )
+
+    # Verify they match (excluding default_headers which might differ)
+    assert client_params["aws_region"] == expected_params["aws_region"]
+    assert client_params["aws_access_key"] == expected_params["aws_access_key"]
+    assert client_params["aws_secret_key"] == expected_params["aws_secret_key"]
+    assert client_params["max_retries"] == expected_params["max_retries"]
+    assert client_params["timeout"] == expected_params["timeout"]
+
+
+def test_chat_anthropic_bedrock_get_ls_provider() -> None:
+    """Test that ChatAnthropicBedrock overrides _get_ls_provider correctly."""
+    model = ChatAnthropicBedrock(  # type: ignore[call-arg]
+        model=BEDROCK_MODEL_NAME,
+        aws_region="us-east-1",
+    )
+
+    # Verify _get_ls_provider returns the correct provider name
+    provider = model._get_ls_provider()
+    assert provider == "anthropic-bedrock"
+
+    # Verify it's used in _get_ls_params
+    ls_params = model._get_ls_params()
+    assert ls_params["ls_provider"] == "anthropic-bedrock"
