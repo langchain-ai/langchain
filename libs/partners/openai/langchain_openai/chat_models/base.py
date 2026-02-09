@@ -4505,7 +4505,10 @@ def _convert_responses_chunk_to_generation_chunk(
                 "index": current_index,
             }
         )
-    elif chunk.type == "response.output_item.done" and chunk.item.type in (
+    elif chunk.type in (
+        "response.output_item.added",
+        "response.output_item.done",
+    ) and chunk.item.type in (
         "web_search_call",
         "file_search_call",
         "computer_call",
