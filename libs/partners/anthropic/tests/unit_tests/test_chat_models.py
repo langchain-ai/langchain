@@ -2322,6 +2322,25 @@ def test_extras_with_multiple_fields() -> None:
     assert "input_examples" in tool_def
 
 
+def test__format_messages_rejects_empty_non_final_message() -> None:
+    human_empty = HumanMessage("")  # type: ignore[misc]
+
+    with pytest.raises(ValueError, match="non-empty message content"):
+        _format_messages([human_empty])
+
+    with pytest.raises(ValueError, match="non-empty message content"):
+        _format_messages([HumanMessage("foo"), HumanMessage("")])  # type: ignore[misc]
+
+
+def test__format_messages_allows_empty_final_assistant_message() -> None:
+    human = HumanMessage("foo")  # type: ignore[misc]
+    ai_empty = AIMessage("")  # type: ignore[misc]
+
+    _, anthropic_messages = _format_messages([human, ai_empty])
+
+    assert anthropic_messages[-1]["content"] == ""
+
+
 def test__format_messages_trailing_whitespace() -> None:
     """Test that trailing whitespace is trimmed from the final assistant message."""
     human = HumanMessage("foo")  # type: ignore[misc]

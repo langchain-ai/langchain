@@ -281,6 +281,16 @@ def _merge_messages(
     return merged
 
 
+def _is_empty_content(content: Any) -> bool:
+    """Check if message content is empty."""
+
+    if isinstance(content, str):
+        return content == ""
+    if isinstance(content, list):
+        return len(content) == 0
+    return False
+
+
 def _format_data_content_block(block: dict) -> dict:
     """Format standard data content block to format expected by Anthropic."""
     if block["type"] == "image":
@@ -414,7 +424,19 @@ def _format_messages(
     system: str | list[dict] | None = None
     formatted_messages: list[dict] = []
     merged_messages = _merge_messages(messages)
+    total_messages = len(merged_messages)
     for _i, message in enumerate(merged_messages):
+        is_final_assistant_message = (
+            message.type == "ai" and _i == total_messages - 1
+        )
+
+        if _is_empty_content(message.content) and not is_final_assistant_message:
+            msg = (
+                "Anthropic requires non-empty message content for all messages "
+                "except the optional final assistant message; received an empty "
+                f"{message.type} message at index {_i}."
+            )
+            raise ValueError(msg)
         if message.type == "system":
             if system is not None:
                 msg = "Received multiple non-consecutive system messages."
