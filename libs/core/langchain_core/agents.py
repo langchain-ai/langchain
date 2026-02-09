@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Sequence
+from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from langchain_core.load.serializable import Serializable
@@ -39,6 +40,44 @@ from langchain_core.messages import (
     FunctionMessage,
     HumanMessage,
 )
+
+
+@dataclass
+class CallbackDecision:
+    """Decision returned by a callback to control agent execution.
+
+    !!! warning
+
+        This is an experimental feature and may change in the future.
+
+    Callbacks can return a `CallbackDecision` from `on_agent_action` to
+    signal the agent executor to stop execution early (circuit breaker
+    pattern). This is useful for implementing guardrails, loop detection,
+    or policy enforcement.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_core.agents import CallbackDecision
+            from langchain_core.callbacks import BaseCallbackHandler
+
+            class MyGuardrail(BaseCallbackHandler):
+                def on_agent_action(self, action, **kwargs):
+                    if self._is_policy_violation(action):
+                        return CallbackDecision(
+                            stop_execution=True,
+                            stop_response="Policy violation detected.",
+                        )
+    """
+
+    stop_execution: bool = False
+    """Whether to stop the agent execution loop."""
+
+    stop_response: str = ""
+    """The response to return as the agent's final answer when stopping."""
+
+    metadata: dict[str, Any] = field(default_factory=dict)
+    """Optional metadata about the decision (e.g., reason, handler name)."""
 
 
 class AgentAction(Serializable):

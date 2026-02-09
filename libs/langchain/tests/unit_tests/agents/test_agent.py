@@ -1327,3 +1327,202 @@ async def test_openai_agent_tools_agent() -> None:
             " ",
             "bed.",
         ]
+
+
+# ---------------------------------------------------------------------------
+# Circuit Breaker (CallbackDecision) tests
+# ---------------------------------------------------------------------------
+
+
+def test_circuit_breaker_stops_agent_via_callback() -> None:
+    """Test that a callback returning CallbackDecision can stop the agent."""
+    from uuid import UUID
+
+    from langchain_core.agents import CallbackDecision
+    from langchain_core.callbacks.base import BaseCallbackHandler
+
+    class CircuitBreakerHandler(BaseCallbackHandler):
+        """Handler that stops the agent on the first action."""
+
+        def on_agent_action(
+            self,
+            action: AgentAction,
+            *,
+            run_id: UUID,
+            parent_run_id: UUID | None = None,
+            **kwargs: Any,
+        ) -> CallbackDecision:
+            return CallbackDecision(
+                stop_execution=True,
+                stop_response="Loop detected – stopping.",
+            )
+
+    tool_name = "Search"
+    # The agent would normally loop: action → observe → action → finish.
+    # The circuit breaker should short-circuit on the first action.
+    responses = [
+        f"Hmm\nAction: {tool_name}\nAction Input: test",
+        "Final Answer: should not reach here",
+    ]
+    fake_llm = FakeListLLM(cache=False, responses=responses)
+    tools = [
+        Tool(
+            name="Search",
+            func=lambda x: x,
+            description="Useful for searching",
+        ),
+    ]
+    agent = initialize_agent(
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
+    )
+
+    handler = CircuitBreakerHandler()
+    output = agent.run("test query", callbacks=[handler])
+    assert output == "Loop detected – stopping."
+
+
+def test_circuit_breaker_receives_intermediate_steps() -> None:
+    """Test that on_agent_action receives intermediate_steps via kwargs."""
+    from uuid import UUID
+
+    from langchain_core.callbacks.base import BaseCallbackHandler
+
+    captured_steps: list[Any] = []
+
+    class StepCapturingHandler(BaseCallbackHandler):
+        """Handler that captures intermediate_steps from kwargs."""
+
+        def on_agent_action(
+            self,
+            action: AgentAction,
+            *,
+            run_id: UUID,
+            parent_run_id: UUID | None = None,
+            **kwargs: Any,
+        ) -> None:
+            captured_steps.append(kwargs.get("intermediate_steps"))
+
+    tool_name = "Search"
+    responses = [
+        f"Thought\nAction: {tool_name}\nAction Input: first",
+        "Final Answer: done",
+    ]
+    fake_llm = FakeListLLM(cache=False, responses=responses)
+    tools = [
+        Tool(
+            name="Search",
+            func=lambda x: x,
+            description="Useful for searching",
+        ),
+    ]
+    agent = initialize_agent(
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
+    )
+
+    handler = StepCapturingHandler()
+    agent.run("test", callbacks=[handler])
+
+    # The handler should have been called at least once.
+    assert len(captured_steps) >= 1
+    # The first call should have intermediate_steps (possibly empty list).
+    assert isinstance(captured_steps[0], list)
+
+
+def test_circuit_breaker_noop_when_no_stop() -> None:
+    """Agent completes normally when callback returns no decision."""
+    from uuid import UUID
+
+    from langchain_core.callbacks.base import BaseCallbackHandler
+
+    class PassthroughHandler(BaseCallbackHandler):
+        """Handler that does not stop execution."""
+
+        def on_agent_action(
+            self,
+            action: AgentAction,
+            *,
+            run_id: UUID,
+            parent_run_id: UUID | None = None,
+            **kwargs: Any,
+        ) -> None:
+            # Intentionally returns None – no circuit-breaker signal.
+            pass
+
+    tool_name = "Search"
+    responses = [
+        f"Thought\nAction: {tool_name}\nAction Input: foo",
+        "Final Answer: normal completion",
+    ]
+    fake_llm = FakeListLLM(cache=False, responses=responses)
+    tools = [
+        Tool(
+            name="Search",
+            func=lambda x: x,
+            description="Useful for searching",
+        ),
+    ]
+    agent = initialize_agent(
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
+    )
+
+    handler = PassthroughHandler()
+    output = agent.run("test", callbacks=[handler])
+    assert output == "normal completion"
+
+
+async def test_circuit_breaker_async() -> None:
+    """Test circuit breaker works with async agent execution."""
+    from uuid import UUID
+
+    from langchain_core.agents import CallbackDecision
+    from langchain_core.callbacks.base import AsyncCallbackHandler
+
+    class AsyncCircuitBreaker(AsyncCallbackHandler):
+        """Async handler that stops the agent."""
+
+        async def on_agent_action(
+            self,
+            action: AgentAction,
+            *,
+            run_id: UUID,
+            parent_run_id: UUID | None = None,
+            **kwargs: Any,
+        ) -> CallbackDecision:
+            return CallbackDecision(
+                stop_execution=True,
+                stop_response="Async circuit breaker activated.",
+                metadata={"reason": "test"},
+            )
+
+    tool_name = "Search"
+    responses = [
+        f"Hmm\nAction: {tool_name}\nAction Input: test",
+        "Final Answer: should not reach here",
+    ]
+    fake_llm = FakeListLLM(cache=False, responses=responses)
+    tools = [
+        Tool(
+            name="Search",
+            func=lambda x: x,
+            description="Useful for searching",
+        ),
+    ]
+    agent = initialize_agent(
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
+    )
+
+    handler = AsyncCircuitBreaker()
+    output = await agent.arun("test query", callbacks=[handler])
+    assert output == "Async circuit breaker activated."

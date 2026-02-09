@@ -26,6 +26,7 @@ from langchain_core.callbacks.base import (
     RunManagerMixin,
     ToolManagerMixin,
 )
+from langchain_core.agents import CallbackDecision
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.globals import get_debug
 from langchain_core.messages import BaseMessage, get_buffer_string
@@ -901,25 +902,73 @@ class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
             **kwargs,
         )
 
-    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> None:
+    def on_agent_action(
+        self, action: AgentAction, **kwargs: Any
+    ) -> CallbackDecision | None:
         """Run when agent action is received.
+
+        Handlers may return a `CallbackDecision` to signal circuit-breaker
+        behaviour (e.g., stop the agent loop).  The *first* decision with
+        ``stop_execution=True`` wins.
 
         Args:
             action: The agent action.
-            **kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.  When called from
+                `AgentExecutor`, this includes ``intermediate_steps``.
+
+        Returns:
+            A `CallbackDecision` if any handler requested early termination,
+            otherwise `None`.
         """
         if not self.handlers:
-            return
-        handle_event(
-            self.handlers,
-            "on_agent_action",
-            "ignore_agent",
-            action,
-            run_id=self.run_id,
-            parent_run_id=self.parent_run_id,
-            tags=self.tags,
-            **kwargs,
-        )
+            return None
+
+        decision: CallbackDecision | None = None
+        coros: list[Any] = []
+        for handler in self.handlers:
+            if getattr(handler, "ignore_agent", False):
+                continue
+            try:
+                result = handler.on_agent_action(
+                    action,
+                    run_id=self.run_id,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    **kwargs,
+                )
+                if asyncio.iscoroutine(result):
+                    coros.append(result)
+                elif (
+                    decision is None
+                    and isinstance(result, CallbackDecision)
+                    and result.stop_execution
+                ):
+                    decision = result
+            except NotImplementedError:
+                logger.warning(
+                    "NotImplementedError in %s.on_agent_action",
+                    handler.__class__.__name__,
+                )
+            except Exception:
+                logger.warning(
+                    "Error in %s.on_agent_action callback",
+                    handler.__class__.__name__,
+                    exc_info=True,
+                )
+                if handler.raise_error:
+                    raise
+        if coros:
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    for coro in coros:
+                        coro.close()
+                else:
+                    loop.run_until_complete(asyncio.gather(*coros))
+            except RuntimeError:
+                for coro in coros:
+                    coro.close()
+        return decision
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run when agent finish is received.
@@ -1010,25 +1059,62 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
             **kwargs,
         )
 
-    async def on_agent_action(self, action: AgentAction, **kwargs: Any) -> None:
+    async def on_agent_action(
+        self, action: AgentAction, **kwargs: Any
+    ) -> CallbackDecision | None:
         """Run when agent action is received.
+
+        Handlers may return a `CallbackDecision` to request early
+        termination of the agent loop (circuit-breaker pattern).
 
         Args:
             action: The agent action.
-            **kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.  When called from
+                `AgentExecutor`, this includes ``intermediate_steps``.
+
+        Returns:
+            A `CallbackDecision` if any handler requested early termination,
+            otherwise `None`.
         """
         if not self.handlers:
-            return
-        await ahandle_event(
-            self.handlers,
-            "on_agent_action",
-            "ignore_agent",
-            action,
-            run_id=self.run_id,
-            parent_run_id=self.parent_run_id,
-            tags=self.tags,
-            **kwargs,
-        )
+            return None
+
+        decision: CallbackDecision | None = None
+        for handler in self.handlers:
+            if getattr(handler, "ignore_agent", False):
+                continue
+            try:
+                event = handler.on_agent_action(
+                    action,
+                    run_id=self.run_id,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    **kwargs,
+                )
+                if asyncio.iscoroutine(event):
+                    result = await event
+                else:
+                    result = event
+                if (
+                    decision is None
+                    and isinstance(result, CallbackDecision)
+                    and result.stop_execution
+                ):
+                    decision = result
+            except NotImplementedError:
+                logger.warning(
+                    "NotImplementedError in %s.on_agent_action",
+                    handler.__class__.__name__,
+                )
+            except Exception:
+                logger.warning(
+                    "Error in %s.on_agent_action callback",
+                    handler.__class__.__name__,
+                    exc_info=True,
+                )
+                if handler.raise_error:
+                    raise
+        return decision
 
     async def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run when agent finish is received.

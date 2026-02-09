@@ -18,7 +18,7 @@ from typing import (
 
 import yaml
 from langchain_core._api import deprecated
-from langchain_core.agents import AgentAction, AgentFinish, AgentStep
+from langchain_core.agents import AgentAction, AgentFinish, AgentStep, CallbackDecision
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     AsyncCallbackManagerForToolRun,
@@ -1272,9 +1272,8 @@ class AgentExecutor(Chain):
         values: NextStepOutput,
     ) -> AgentFinish | list[tuple[AgentAction, str]]:
         if isinstance(values[-1], AgentFinish):
-            if len(values) != 1:
-                msg = "Expected a single AgentFinish output, but got multiple values."
-                raise ValueError(msg)
+            # A circuit-breaker callback may yield AgentFinish after
+            # AgentAction items, so we accept that case as well.
             return values[-1]
         return [(a.action, a.observation) for a in values if isinstance(a, AgentStep)]
 
@@ -1370,12 +1369,18 @@ class AgentExecutor(Chain):
         for agent_action in actions:
             yield agent_action
         for agent_action in actions:
-            yield self._perform_agent_action(
+            result = self._perform_agent_action(
                 name_to_tool_map,
                 color_mapping,
                 agent_action,
                 run_manager,
+                intermediate_steps=intermediate_steps,
             )
+            yield result
+            # If the result came from a circuit-breaker decision, stop
+            # processing further actions.
+            if isinstance(result, AgentFinish):
+                return
 
     def _perform_agent_action(
         self,
@@ -1383,9 +1388,20 @@ class AgentExecutor(Chain):
         color_mapping: dict[str, str],
         agent_action: AgentAction,
         run_manager: CallbackManagerForChainRun | None = None,
-    ) -> AgentStep:
+        *,
+        intermediate_steps: list[tuple[AgentAction, str]] | None = None,
+    ) -> AgentStep | AgentFinish:
         if run_manager:
-            run_manager.on_agent_action(agent_action, color="green")
+            decision = run_manager.on_agent_action(
+                agent_action,
+                color="green",
+                intermediate_steps=intermediate_steps or [],
+            )
+            if isinstance(decision, CallbackDecision) and decision.stop_execution:
+                return AgentFinish(
+                    return_values={"output": decision.stop_response},
+                    log=f"Circuit breaker triggered: {decision.stop_response}",
+                )
         # Otherwise we lookup the tool
         if agent_action.tool in name_to_tool_map:
             tool = name_to_tool_map[agent_action.tool]
@@ -1515,6 +1531,7 @@ class AgentExecutor(Chain):
                     color_mapping,
                     agent_action,
                     run_manager,
+                    intermediate_steps=intermediate_steps,
                 )
                 for agent_action in actions
             ],
@@ -1523,6 +1540,8 @@ class AgentExecutor(Chain):
         # TODO: This could yield each result as it becomes available
         for chunk in result:
             yield chunk
+            if isinstance(chunk, AgentFinish):
+                return
 
     async def _aperform_agent_action(
         self,
@@ -1530,13 +1549,21 @@ class AgentExecutor(Chain):
         color_mapping: dict[str, str],
         agent_action: AgentAction,
         run_manager: AsyncCallbackManagerForChainRun | None = None,
-    ) -> AgentStep:
+        *,
+        intermediate_steps: list[tuple[AgentAction, str]] | None = None,
+    ) -> AgentStep | AgentFinish:
         if run_manager:
-            await run_manager.on_agent_action(
+            decision = await run_manager.on_agent_action(
                 agent_action,
                 verbose=self.verbose,
                 color="green",
+                intermediate_steps=intermediate_steps or [],
             )
+            if isinstance(decision, CallbackDecision) and decision.stop_execution:
+                return AgentFinish(
+                    return_values={"output": decision.stop_response},
+                    log=f"Circuit breaker triggered: {decision.stop_response}",
+                )
         # Otherwise we lookup the tool
         if agent_action.tool in name_to_tool_map:
             tool = name_to_tool_map[agent_action.tool]
