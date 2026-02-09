@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from langchain_core.utils import SecretStr
+from pydantic import SecretStr
 
 from langchain_anthropic.utils import (
     create_bedrock_client_params,

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from langchain_core.utils import SecretStr
+from pydantic import SecretStr
 
 
 def resolve_aws_credentials(
@@ -37,7 +37,7 @@ def resolve_aws_credentials(
     Example:
         ```python
         from langchain_anthropic.utils import resolve_aws_credentials
-        from langchain_core.utils import SecretStr
+        from pydantic import SecretStr
 
         creds = resolve_aws_credentials(
             aws_access_key_id=SecretStr("AKIA..."),
@@ -89,7 +89,7 @@ def create_bedrock_client_params(
     Example:
         ```python
         from langchain_anthropic.utils import create_bedrock_client_params
-        from langchain_core.utils import SecretStr
+        from pydantic import SecretStr
         from anthropic import AnthropicBedrock
 
         params = create_bedrock_client_params(

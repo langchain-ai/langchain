@@ -16,7 +16,7 @@ from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, SecretStr, ValidationError
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic, ChatAnthropicBedrock
@@ -28,7 +28,6 @@ from langchain_anthropic.chat_models import (
     _merge_messages,
     convert_to_anthropic_tool,
 )
-from langchain_core.utils import SecretStr
 
 os.environ["ANTHROPIC_API_KEY"] = "foo"
 

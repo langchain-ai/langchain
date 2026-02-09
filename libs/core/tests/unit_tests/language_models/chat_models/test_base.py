@@ -826,8 +826,8 @@ def test_get_ls_provider_default_behavior() -> None:
     # FakeListChatModel should use default provider name derivation
     model = FakeListChatModel(responses=["test"])
     provider = model._get_ls_provider()
-    # Should derive from class name: FakeListChatModel ends with "Chat"
-    # Remove last 4 chars -> "FakeList", then lowercase -> "fakelist"
+    # Should derive from class name: FakeListChatModel ends with "ChatModel"
+    # Remove last 9 chars -> "FakeList", then lowercase -> "fakelist"
     assert provider == "fakelist"
 
 

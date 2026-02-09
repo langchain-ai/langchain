@@ -807,7 +807,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         # get default provider from class name
         default_provider = self.__class__.__name__
         if default_provider.startswith("Chat"):
-            default_provider = default_provider[4:].lower()
+            default_provider = default_provider[4:]
+        elif default_provider.endswith("ChatModel"):
+            default_provider = default_provider[:-9]
         elif default_provider.endswith("Chat"):
             default_provider = default_provider[:-4]
         default_provider = default_provider.lower()
