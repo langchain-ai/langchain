@@ -479,31 +479,18 @@ def render(
     Renders a mustache template with a data scope and inline partial capability.
 
     Args:
-        template: A file-like object or a string containing the template.
-        data: A python dictionary with your data scope.
-        partials_path: The path to where your partials are stored.
+        template: A tokenized template or raw template string to render.
+        data: A dictionary providing the rendering scope.
+        partials_dict: In-memory partials to check before falling back to the
+            filesystem lookup.
 
-            If set to None, then partials won't be loaded from the file system
-
-            Defaults to `'.'`.
-        partials_ext: The extension that you want the parser to look for
-
-            Defaults to `'mustache'`.
-        partials_dict: A python dictionary which will be search for partials
-            before the filesystem is.
-
-            `{'include': 'foo'}` is the same as a file called include.mustache
-            (defaults to `{}`).
-        padding: This is for padding partials, and shouldn't be used
-            (but can be if you really want to).
-        def_ldel: The default left delimiter
-
-            (`'{{'` by default, as in spec compliant mustache).
-        def_rdel: The default right delimiter
-
-            (`'}}'` by default, as in spec compliant mustache).
-        scopes: The list of scopes that `get_key` will look through.
-        warn: Log a warning when a template substitution isn't found in the data
+            `{'include': 'foo'}` behaves the same as a file called
+            `include.mustache` (defaults to `{}`).
+        padding: Optional padding prefixed to newlines when rendering partials.
+        def_ldel: The default left delimiter (`'{{'` by default).
+        def_rdel: The default right delimiter (`'}}'` by default).
+        scopes: Seed scopes for nested renders (primarily internal reuse).
+        warn: Log a warning when a template substitution isn't found in the data.
         keep: Keep unreplaced tags when a substitution isn't found in the data.
 
     Returns:
