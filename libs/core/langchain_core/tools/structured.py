@@ -27,6 +27,7 @@ from langchain_core.tools.base import (
     FILTERED_ARGS,
     ArgsSchema,
     BaseTool,
+    INPUT_SELF_KWARG,
     _get_runnable_config_param,
     _is_injected_arg_type,
     create_schema_from_function,
@@ -89,6 +90,9 @@ class StructuredTool(BaseTool):
         Returns:
             The result of the tool execution
         """
+        if INPUT_SELF_KWARG in kwargs:
+            kwargs["self"] = kwargs.pop(INPUT_SELF_KWARG)
+
         if self.func:
             if run_manager and signature(self.func).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
@@ -116,6 +120,9 @@ class StructuredTool(BaseTool):
         Returns:
             The result of the tool execution
         """
+        if INPUT_SELF_KWARG in kwargs:
+            kwargs["self"] = kwargs.pop(INPUT_SELF_KWARG)
+
         if self.coroutine:
             if run_manager and signature(self.coroutine).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()

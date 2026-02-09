@@ -82,6 +82,7 @@ TOOL_MESSAGE_BLOCK_TYPES = (
     "document",
     "file",
 )
+INPUT_SELF_KWARG = "__lc_tool_input_self__"
 
 _logger = logging.getLogger(__name__)
 
@@ -869,7 +870,10 @@ class ChildTool(BaseTool):
             # original input.
             # This is used by the tool to inject run time information like
             # the callback manager.
-            return (), tool_input.copy()
+            tool_kwargs = tool_input.copy()
+            if "self" in tool_kwargs:
+                tool_kwargs[INPUT_SELF_KWARG] = tool_kwargs.pop("self")
+            return (), tool_kwargs
         # This code path is not expected to be reachable.
         msg = f"Invalid tool input type: {type(tool_input)}"
         raise TypeError(msg)

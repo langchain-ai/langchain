@@ -3631,3 +3631,18 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
+
+
+def test_structured_tool_allows_self_keyword_argument() -> None:
+    def func(**kwargs: Any) -> dict[str, Any]:
+        return kwargs
+
+    structured_tool = StructuredTool(
+        name="test_tool",
+        func=func,
+        args_schema={"type": "object", "properties": {}},
+    )
+
+    result = structured_tool.invoke({"self": 2, "other": 3})
+
+    assert result == {"self": 2, "other": 3}
