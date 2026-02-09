@@ -177,6 +177,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         # Also OpenAI returns None for tool invocations
         content = _dict.get("content", "") or ""
         additional_kwargs: dict = {}
+        if "reasoning_content" in _dict and _dict.get("reasoning_content") is not None:
+            additional_kwargs["reasoning_content"] = _dict.get("reasoning_content")
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
         tool_calls = []
@@ -374,6 +376,8 @@ def _convert_delta_to_message_chunk(
     role = cast(str, _dict.get("role"))
     content = cast(str, _dict.get("content") or "")
     additional_kwargs: dict = {}
+    if "reasoning_content" in _dict and _dict.get("reasoning_content") is not None:
+        additional_kwargs["reasoning_content"] = _dict.get("reasoning_content")
     if _dict.get("function_call"):
         function_call = dict(_dict["function_call"])
         if "name" in function_call and function_call["name"] is None:

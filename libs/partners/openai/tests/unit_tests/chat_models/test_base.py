@@ -70,6 +70,7 @@ from langchain_openai.chat_models.base import (
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
     _convert_dict_to_message,
+    _convert_delta_to_message_chunk,
     _convert_message_to_dict,
     _convert_to_openai_response_format,
     _create_usage_metadata,
@@ -201,6 +202,22 @@ def test__convert_dict_to_message_ai_with_name() -> None:
     expected_output = AIMessage(content="foo", name="test")
     assert result == expected_output
     assert _convert_message_to_dict(expected_output) == message
+
+
+def test__convert_dict_to_message_ai_with_reasoning_content() -> None:
+    message = {"role": "assistant", "content": "foo", "reasoning_content": "trace..."}
+    result = _convert_dict_to_message(message)
+    assert isinstance(result, AIMessage)
+    assert result.content == "foo"
+    assert result.additional_kwargs.get("reasoning_content") == "trace..."
+
+
+def test__convert_delta_to_message_chunk_ai_with_reasoning_content() -> None:
+    delta = {"role": "assistant", "content": "foo", "reasoning_content": "thinking..."}
+    chunk = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(chunk, AIMessageChunk)
+    assert chunk.content == "foo"
+    assert chunk.additional_kwargs.get("reasoning_content") == "thinking..."
 
 
 def test__convert_dict_to_message_system() -> None:
