@@ -10,7 +10,7 @@ import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import Any, Final, Literal, cast
+from typing import Any, Final, Literal, Optional, cast
 
 import anthropic
 from langchain_core.callbacks import (
@@ -1850,21 +1850,20 @@ class ChatAnthropicBedrock(ChatAnthropic):
     aws_region: str = Field(default="us-east-1", alias="region_name")
     """AWS region for Bedrock API calls."""
 
-    aws_access_key_id: SecretStr | None = Field(
+    aws_access_key_id: Optional[SecretStr] = Field(
         default_factory=secret_from_env("AWS_ACCESS_KEY_ID", default=None),
         alias="aws_access_key",
     )
     """AWS access key ID. Automatically read from env var `AWS_ACCESS_KEY_ID` if not provided."""
 
-    aws_secret_access_key: SecretStr | None = Field(
+    aws_secret_access_key: Optional[SecretStr] = Field(
         default_factory=secret_from_env("AWS_SECRET_ACCESS_KEY", default=None),
         alias="aws_secret_key",
     )
     """AWS secret access key. Automatically read from env var `AWS_SECRET_ACCESS_KEY` if not provided."""
 
-    aws_session_token: SecretStr | None = Field(
+    aws_session_token: Optional[SecretStr] = Field(
         default_factory=secret_from_env("AWS_SESSION_TOKEN", default=None),
-        default=None,
     )
     """AWS session token for temporary credentials. Automatically read from env var `AWS_SESSION_TOKEN` if not provided."""
 
