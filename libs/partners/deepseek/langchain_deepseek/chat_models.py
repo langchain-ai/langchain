@@ -262,20 +262,59 @@ class ChatDeepSeek(BaseChatOpenAI):
         **kwargs: Any,
     ) -> dict:
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
-        for message in payload["messages"]:
-            if message["role"] == "tool" and isinstance(message["content"], list):
-                message["content"] = json.dumps(message["content"])
-            elif message["role"] == "assistant" and isinstance(
-                message["content"], list
-            ):
-                # DeepSeek API expects assistant content to be a string, not a list.
-                # Extract text blocks and join them, or use empty string if none exist.
+
+        # --- 1) Determine if you are in thinking mode ---
+        thinking_enabled = False
+        if getattr(self, "model_name", None) == "deepseek-reasoner":
+            thinking_enabled = True
+
+        extra_body = payload.get("extra_body") or kwargs.get("extra_body") or getattr(
+            self, "extra_body", None)
+        if isinstance(extra_body, dict):
+            thinking = extra_body.get("thinking")
+            if isinstance(thinking, dict) and thinking.get("type") == "enabled":
+                thinking_enabled = True
+
+        # --- 2) Get the BaseMessage to read the additional_kwargs ---
+        original_msgs = None
+        try:
+            # BaseChatModel typically has _convert_input; It unifies the various inputs into a PromptValue
+            prompt_value = self._convert_input(input_)  # type: ignore[attr-defined]
+            original_msgs = prompt_value.to_messages()
+        except Exception:
+            # if input_ itself is a list of messages
+            if isinstance(input_, list):
+                original_msgs = input_
+
+        for i, msg in enumerate(payload["messages"]):
+            if msg.get("role") == "tool" and isinstance(msg.get("content"), list):
+                msg["content"] = json.dumps(msg["content"])
+
+            # DeepSeek expects the assistant content to be a string
+            if msg.get("role") == "assistant" and isinstance(msg.get("content"), list):
                 text_parts = [
                     block.get("text", "")
-                    for block in message["content"]
+                    for block in msg["content"]
                     if isinstance(block, dict) and block.get("type") == "text"
                 ]
-                message["content"] = "".join(text_parts) if text_parts else ""
+                msg["content"] = "".join(text_parts) if text_parts else ""
+
+            # --- Core fix: Thinking mode + Return reasoning_content when tool calls---
+            if thinking_enabled and msg.get("role") == "assistant":
+                has_tool_calls = msg.get("tool_calls") is not None
+                if has_tool_calls and "reasoning_content" not in msg:
+                    rc = ""
+
+                    # Preferentially take the corresponding AIMessage.additional_kwargs
+                    if original_msgs is not None and i < len(original_msgs):
+                        m_obj = original_msgs[i]
+                        ak = getattr(m_obj, "additional_kwargs", None)
+                        if isinstance(ak, dict):
+                            rc = ak.get("reasoning_content") or ""
+
+                    # At least have an empty string, otherwise DeepSeek will directly 400
+                    msg["reasoning_content"] = rc
+
         return payload
 
     def _create_chat_result(
