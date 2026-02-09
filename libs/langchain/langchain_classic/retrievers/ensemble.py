@@ -89,17 +89,17 @@ class EnsembleRetriever(BaseRetriever):
             return values
 
         if len(weights) != len(retrievers):
-            raise ValueError(
+            msg = (
                 "Length of weights must match number of retrievers "
-                f"(got {len(weights)} weights for {len(retrievers)} retrievers)."
+                 f"(got {len(weights)} weights for {len(retrievers)} retrievers)."
             )
+            raise ValueError(msg)
 
         if not any(w > 0 for w in weights):
-            raise ValueError(
-                "At least one ensemble weight must be greater than zero."
-            )
+             msg = "At least one ensemble weight must be greater than zero."
+             raise ValueError(msg)
 
-        return values
+             return values
 
     @override
     def invoke(
