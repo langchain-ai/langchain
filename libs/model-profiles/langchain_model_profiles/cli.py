@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -307,7 +308,7 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     # Write as Python module
     output_file = data_dir / "_profiles.py"
     print(f"Writing to {output_file}...")
-    module_content = [f'"""{MODULE_ADMONITION}"""\n', "from typing import Any\n\n"]
+    module_content = [f'"""{MODULE_ADMONITION}"""\n\n', "from typing import Any\n\n"]
     module_content.append("_PROFILES: dict[str, dict[str, Any]] = ")
     json_str = json.dumps(profiles, indent=4)
     json_str = (
@@ -315,6 +316,8 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
         .replace("false", "False")
         .replace("null", "None")
     )
+    # Add trailing commas for ruff format compliance
+    json_str = re.sub(r"([^\s,{\[])(\n\s*[\}\]])", r"\1,\2", json_str)
     module_content.append(f"{json_str}\n")
     _write_profiles_file(output_file, "".join(module_content))
 

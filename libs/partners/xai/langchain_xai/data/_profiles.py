@@ -12,6 +12,7 @@ To update these data, refer to the instructions here:
 
 https://docs.langchain.com/oss/python/langchain/models#updating-or-overwriting-profile-data
 """
+
 from typing import Any
 
 _PROFILES: dict[str, dict[str, Any]] = {
@@ -27,7 +28,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": False,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-3-fast": {
         "max_input_tokens": 131072,
@@ -41,7 +42,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": False,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-4": {
         "max_input_tokens": 256000,
@@ -55,7 +56,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": True,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-2-vision": {
         "max_input_tokens": 8192,
@@ -69,7 +70,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": False,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-code-fast-1": {
         "max_input_tokens": 256000,
@@ -83,7 +84,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": True,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-2": {
         "max_input_tokens": 131072,
@@ -97,7 +98,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": False,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-3-mini-fast-latest": {
         "max_input_tokens": 131072,
@@ -111,7 +112,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": True,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-2-vision-1212": {
         "max_input_tokens": 8192,
@@ -125,7 +126,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": False,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-3": {
         "max_input_tokens": 131072,
@@ -139,7 +140,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": False,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-4-fast": {
         "max_input_tokens": 2000000,
@@ -153,7 +154,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": True,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-2-latest": {
         "max_input_tokens": 131072,
@@ -167,7 +168,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": False,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-4-1-fast": {
         "max_input_tokens": 2000000,
@@ -181,7 +182,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": True,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-2-1212": {
         "max_input_tokens": 131072,
@@ -195,7 +196,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": False,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-3-fast-latest": {
         "max_input_tokens": 131072,
@@ -209,7 +210,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": False,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-3-latest": {
         "max_input_tokens": 131072,
@@ -223,7 +224,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": False,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-2-vision-latest": {
         "max_input_tokens": 8192,
@@ -237,7 +238,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": False,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-vision-beta": {
         "max_input_tokens": 8192,
@@ -251,7 +252,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": False,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-3-mini": {
         "max_input_tokens": 131072,
@@ -265,7 +266,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": True,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-beta": {
         "max_input_tokens": 131072,
@@ -279,7 +280,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": False,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-3-mini-latest": {
         "max_input_tokens": 131072,
@@ -293,7 +294,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": True,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-4-1-fast-non-reasoning": {
         "max_input_tokens": 2000000,
@@ -307,7 +308,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": False,
-        "tool_calling": True
+        "tool_calling": True,
     },
     "grok-3-mini-fast": {
         "max_input_tokens": 131072,
@@ -321,6 +322,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": True,
-        "tool_calling": True
-    }
+        "tool_calling": True,
+    },
 }
