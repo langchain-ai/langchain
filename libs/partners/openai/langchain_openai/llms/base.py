@@ -20,6 +20,11 @@ from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_fro
 from pydantic import ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_openai._client_utils import (
+    _get_default_async_httpx_client,
+    _get_default_httpx_client,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -330,14 +335,33 @@ class BaseOpenAI(BaseLLM):
             "default_query": self.default_query,
         }
         if not self.client:
-            sync_specific = {"http_client": self.http_client}
-            self.client = openai.OpenAI(**client_params, **sync_specific).completions  # type: ignore[arg-type]
+            if api_key_value is None:
+                self.client = None
+            else:
+                sync_specific = {
+                    "http_client": self.http_client
+                    or _get_default_httpx_client(
+                        self.openai_api_base, self.request_timeout
+                    )
+                }
+                self.client = openai.OpenAI(
+                    **client_params,
+                    **sync_specific,  # type: ignore[arg-type]
+                ).completions
         if not self.async_client:
-            async_specific = {"http_client": self.http_async_client}
-            self.async_client = openai.AsyncOpenAI(
-                **client_params,
-                **async_specific,  # type: ignore[arg-type]
-            ).completions
+            if api_key_value is None:
+                self.async_client = None
+            else:
+                async_specific = {
+                    "http_client": self.http_async_client
+                    or _get_default_async_httpx_client(
+                        self.openai_api_base, self.request_timeout
+                    )
+                }
+                self.async_client = openai.AsyncOpenAI(
+                    **client_params,
+                    **async_specific,  # type: ignore[arg-type]
+                ).completions
 
         return self
 

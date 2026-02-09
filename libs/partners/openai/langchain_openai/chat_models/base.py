@@ -117,7 +117,7 @@ from pydantic import (
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
 
-from langchain_openai.chat_models._client_utils import (
+from langchain_openai._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
     _resolve_sync_and_async_api_keys,

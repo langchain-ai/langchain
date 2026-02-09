@@ -15,7 +15,11 @@ from langchain_core.utils import from_env, get_pydantic_field_names, secret_from
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
-from langchain_openai.chat_models._client_utils import _resolve_sync_and_async_api_keys
+from langchain_openai._client_utils import (
+    _get_default_async_httpx_client,
+    _get_default_httpx_client,
+    _resolve_sync_and_async_api_keys,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -384,7 +388,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                         raise ImportError(msg) from e
                     self.http_client = httpx.Client(proxy=self.openai_proxy)
                 sync_specific = {
-                    "http_client": self.http_client,
+                    "http_client": self.http_client
+                    or _get_default_httpx_client(
+                        self.openai_api_base, self.request_timeout
+                    ),
                     "api_key": sync_api_key_value,
                 }
                 self.client = openai.OpenAI(**client_params, **sync_specific).embeddings  # type: ignore[arg-type]
@@ -400,7 +407,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     raise ImportError(msg) from e
                 self.http_async_client = httpx.AsyncClient(proxy=self.openai_proxy)
             async_specific = {
-                "http_client": self.http_async_client,
+                "http_client": self.http_async_client
+                or _get_default_async_httpx_client(
+                    self.openai_api_base, self.request_timeout
+                ),
                 "api_key": async_api_key_value,
             }
             self.async_client = openai.AsyncOpenAI(

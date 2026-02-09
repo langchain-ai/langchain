@@ -12,6 +12,10 @@ from langchain_core.utils import from_env, secret_from_env
 from pydantic import Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_openai._client_utils import (
+    _get_default_async_httpx_client,
+    _get_default_httpx_client,
+)
 from langchain_openai.llms.base import BaseOpenAI
 
 logger = logging.getLogger(__name__)
@@ -174,24 +178,55 @@ class AzureOpenAI(BaseOpenAI):
             },
             "default_query": self.default_query,
         }
+        has_credentials = any(
+            [
+                self.openai_api_key,
+                self.azure_ad_token,
+                self.azure_ad_token_provider,
+            ]
+        )
+
         if not self.client:
-            sync_specific = {"http_client": self.http_client}
-            self.client = openai.AzureOpenAI(
-                **client_params,
-                **sync_specific,  # type: ignore[arg-type]
-            ).completions
+            if not has_credentials:
+                self.client = None
+            else:
+                sync_specific = {
+                    "http_client": self.http_client
+                    or _get_default_httpx_client(
+                        self.azure_endpoint or self.openai_api_base,
+                        self.request_timeout,
+                    )
+                }
+                self.client = openai.AzureOpenAI(
+                    **client_params,
+                    **sync_specific,  # type: ignore[arg-type]
+                ).completions
         if not self.async_client:
-            async_specific = {"http_client": self.http_async_client}
+            # For async, also check for azure_ad_async_token_provider
+            has_async_credentials = (
+                has_credentials or self.azure_ad_async_token_provider
+            )
 
-            if self.azure_ad_async_token_provider:
-                client_params["azure_ad_token_provider"] = (
-                    self.azure_ad_async_token_provider
-                )
+            if not has_async_credentials:
+                self.async_client = None
+            else:
+                async_specific = {
+                    "http_client": self.http_async_client
+                    or _get_default_async_httpx_client(
+                        self.azure_endpoint or self.openai_api_base,
+                        self.request_timeout,
+                    )
+                }
 
-            self.async_client = openai.AsyncAzureOpenAI(
-                **client_params,
-                **async_specific,  # type: ignore[arg-type]
-            ).completions
+                if self.azure_ad_async_token_provider:
+                    client_params["azure_ad_token_provider"] = (
+                        self.azure_ad_async_token_provider
+                    )
+
+                self.async_client = openai.AsyncAzureOpenAI(
+                    **client_params,
+                    **async_specific,  # type: ignore[arg-type]
+                ).completions
 
         return self
 
