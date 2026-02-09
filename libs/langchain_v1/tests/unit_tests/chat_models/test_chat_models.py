@@ -8,7 +8,11 @@ from langchain_core.runnables import RunnableConfig, RunnableSequence
 from pydantic import SecretStr
 
 from langchain.chat_models import __all__, init_chat_model
-from langchain.chat_models.base import _SUPPORTED_PROVIDERS, _attempt_infer_model_provider
+from langchain.chat_models.base import (
+    _SUPPORTED_PROVIDERS,
+    _attempt_infer_model_provider,
+    _parse_model,
+)
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
@@ -335,3 +339,53 @@ def test_configurable_with_default() -> None:
     prompt = ChatPromptTemplate.from_messages([("system", "foo")])
     chain = prompt | model_with_config
     assert isinstance(chain, RunnableSequence)
+
+
+@pytest.mark.parametrize(
+    ("model", "provider", "expected_inferred"),
+    [
+        # Explicit provider kwarg -> not inferred
+        ("gpt-4o", "openai", False),
+        # Colon-prefix format -> not inferred
+        ("openai:gpt-4o", None, False),
+        # Inferred from model name -> inferred
+        ("gpt-4o", None, True),
+        ("claude-sonnet-4-5-20250929", None, True),
+    ],
+)
+def test_parse_model_returns_inference_flag(
+    model: str,
+    provider: str | None,
+    expected_inferred: bool,  # noqa: FBT001
+) -> None:
+    """Test that `_parse_model` tracks whether the provider was inferred."""
+    _model, _provider, inferred = _parse_model(model, provider)
+    assert inferred is expected_inferred
+    assert _provider in {"openai", "anthropic"}
+
+
+@pytest.mark.requires("langchain_openai")
+@mock.patch.dict(os.environ, {"OPENAI_API_KEY": "foo"}, clear=True)
+def test_provider_inference_metadata_inferred() -> None:
+    """When provider is inferred from model name, `provider_was_inferred` is True."""
+    llm = init_chat_model("gpt-4o")
+    assert llm.provider_was_inferred is True  # type: ignore[attr-defined]
+    assert llm.resolved_provider == "openai"  # type: ignore[attr-defined]
+
+
+@pytest.mark.requires("langchain_openai")
+@mock.patch.dict(os.environ, {"OPENAI_API_KEY": "foo"}, clear=True)
+def test_provider_inference_metadata_explicit() -> None:
+    """When provider is explicitly given, `provider_was_inferred` is False."""
+    llm = init_chat_model("gpt-4o", model_provider="openai")
+    assert llm.provider_was_inferred is False  # type: ignore[attr-defined]
+    assert llm.resolved_provider == "openai"  # type: ignore[attr-defined]
+
+
+@pytest.mark.requires("langchain_openai")
+@mock.patch.dict(os.environ, {"OPENAI_API_KEY": "foo"}, clear=True)
+def test_provider_inference_metadata_prefix_format() -> None:
+    """When provider is given via colon prefix, `provider_was_inferred` is False."""
+    llm = init_chat_model("openai:gpt-4o")
+    assert llm.provider_was_inferred is False  # type: ignore[attr-defined]
+    assert llm.resolved_provider == "openai"  # type: ignore[attr-defined]

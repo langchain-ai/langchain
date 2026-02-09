@@ -322,6 +322,19 @@ def init_chat_model(
             chat model emulator that initializes the underlying model at runtime once a
             config is passed in.
 
+            When a concrete `BaseChatModel` is returned (non-configurable path), two
+            extra attributes are set on the instance:
+
+            - `provider_was_inferred` (`bool`): `True` when the provider was guessed
+                from the model name rather than explicitly specified via the
+                `model_provider` kwarg or the `'provider:model'` prefix format.
+            - `resolved_provider` (`str`): The normalized provider string used to
+                look up the model class (e.g., `'openai'`).
+
+            These attributes are **not** Pydantic fields — they won't appear in
+            `model_dump()` / `dict()` and won't survive `model_copy()`. Use
+            `getattr(model, 'provider_was_inferred', None)` for safe access.
+
     Raises:
         ValueError: If `model_provider` cannot be inferred or isn't supported.
         ImportError: If the model provider integration package is not installed.
@@ -471,9 +484,12 @@ def _init_chat_model_helper(
     model_provider: str | None = None,
     **kwargs: Any,
 ) -> BaseChatModel:
-    model, model_provider = _parse_model(model, model_provider)
+    model, model_provider, provider_inferred = _parse_model(model, model_provider)
     creator_func = _get_chat_model_creator(model_provider)
-    return creator_func(model=model, **kwargs)
+    chat_model = creator_func(model=model, **kwargs)
+    object.__setattr__(chat_model, "provider_was_inferred", provider_inferred)
+    object.__setattr__(chat_model, "resolved_provider", model_provider)
+    return chat_model
 
 
 def _attempt_infer_model_provider(model_name: str) -> str | None:
@@ -543,8 +559,21 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
     return None
 
 
-def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
-    """Parse model name and provider, inferring provider if necessary."""
+def _parse_model(model: str, model_provider: str | None) -> tuple[str, str, bool]:
+    """Parse model name and provider, inferring provider if necessary.
+
+    Args:
+        model: The model name, optionally with a provider prefix (e.g., `'openai:gpt-4o'`).
+        model_provider: Explicit provider name, or `None` to infer.
+
+    Returns:
+        A 3-tuple of `(model_name, provider, provider_was_inferred)` where
+            `provider_was_inferred` is `True` only when the provider was
+            determined by `_attempt_infer_model_provider` (not from an explicit
+            kwarg or a colon-prefix format).
+    """
+    provider_inferred = False
+
     # Handle provider:model format
     if (
         not model_provider
@@ -555,7 +584,10 @@ def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
         model = ":".join(model.split(":")[1:])
 
     # Attempt to infer provider if not specified
-    model_provider = model_provider or _attempt_infer_model_provider(model)
+    if not model_provider:
+        model_provider = _attempt_infer_model_provider(model)
+        if model_provider:
+            provider_inferred = True
 
     if not model_provider:
         # Enhanced error message with suggestions
@@ -571,7 +603,7 @@ def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
 
     # Normalize provider name
     model_provider = model_provider.replace("-", "_").lower()
-    return model, model_provider
+    return model, model_provider, provider_inferred
 
 
 def _remove_prefix(s: str, prefix: str) -> str:
