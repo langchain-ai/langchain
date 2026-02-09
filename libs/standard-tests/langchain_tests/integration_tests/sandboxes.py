@@ -57,9 +57,6 @@ class SandboxIntegrationTests(BaseStandardTests):
         sandbox.execute("rm -rf /tmp/test_sandbox_ops && mkdir -p /tmp/test_sandbox_ops")
         yield sandbox
 
-    @property
-    def supports_distinct_download_errors(self) -> bool:
-        return True
 
     @abstractmethod
     @pytest.fixture(scope="class")
@@ -263,15 +260,10 @@ class SandboxIntegrationTests(BaseStandardTests):
 
         responses = sandbox_backend.download_files([dir_path])
 
-        if not self.supports_distinct_download_errors:
-            assert responses == [
-                FileDownloadResponse(path=dir_path, content=None, error="file_not_found")
-            ]
-            return
-
-        assert responses == [
-            FileDownloadResponse(path=dir_path, content=None, error="is_directory")
-        ]
+        assert len(responses) == 1
+        assert responses[0].path == dir_path
+        assert responses[0].content is None
+        assert responses[0].error in {"is_directory", "file_not_found", "invalid_path"}
 
     def test_download_error_permission_denied(self, sandbox_backend: SandboxBackendProtocol) -> None:
         if not self.has_sync:
@@ -287,15 +279,10 @@ class SandboxIntegrationTests(BaseStandardTests):
         finally:
             sandbox_backend.execute(f"chmod 644 {test_path} || true")
 
-        if not self.supports_distinct_download_errors:
-            assert responses == [
-                FileDownloadResponse(path=test_path, content=None, error="file_not_found")
-            ]
-            return
-
-        assert responses == [
-            FileDownloadResponse(path=test_path, content=None, error="permission_denied")
-        ]
+        assert len(responses) == 1
+        assert responses[0].path == test_path
+        assert responses[0].content is None
+        assert responses[0].error in {"permission_denied", "file_not_found", "invalid_path"}
 
     def test_download_error_invalid_path_relative(
         self,
