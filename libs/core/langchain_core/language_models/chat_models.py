@@ -436,6 +436,25 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             "AIMessage", cast("ChatGeneration", llm_result.generations[0][0]).message
         )
 
+    def supports_async_streaming(self) -> bool:
+        """Check if this chat model supports native async streaming.
+
+        This method declares whether the model has native async streaming support.
+        If `False`, async streaming will fall back to synchronous streaming wrapped
+        in an executor.
+
+        Subclasses should override this method to declare their async streaming
+        capabilities explicitly. This prevents runtime errors when async streaming
+        is attempted on models that don't support it.
+
+        Returns:
+            `True` if the model supports native async streaming, `False` otherwise.
+            Defaults to checking if `_astream` is overridden from the base implementation.
+        """
+        # Default implementation: check if _astream is overridden
+        # If it's the base implementation, it falls back to sync, so no native async support
+        return type(self)._astream != BaseChatModel._astream  # noqa: SLF001
+
     def _should_stream(
         self,
         *,
@@ -1461,6 +1480,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     ) -> AsyncIterator[ChatGenerationChunk]:
         """Stream the output of the model.
 
+        This is the default implementation that falls back to synchronous streaming.
+        Subclasses that support native async streaming should override this method
+        and ensure `supports_async_streaming()` returns `True`.
+
         Args:
             messages: The messages to generate from.
             stop: Optional list of stop words to use when generating.
@@ -1470,6 +1493,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         Yields:
             The chat generation chunks.
         """
+        # Default implementation: fall back to synchronous streaming wrapped in executor
+        # Subclasses that support native async streaming should override this method
         iterator = await run_in_executor(
             None,
             self._stream,

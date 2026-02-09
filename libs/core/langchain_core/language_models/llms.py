@@ -699,6 +699,25 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             **kwargs,
         )
 
+    def supports_async_streaming(self) -> bool:
+        """Check if this LLM supports native async streaming.
+
+        This method declares whether the LLM has native async streaming support.
+        If `False`, async streaming will fall back to synchronous streaming wrapped
+        in an executor.
+
+        Subclasses should override this method to declare their async streaming
+        capabilities explicitly. This prevents runtime errors when async streaming
+        is attempted on LLMs that don't support it.
+
+        Returns:
+            `True` if the LLM supports native async streaming, `False` otherwise.
+            Defaults to checking if `_astream` is overridden from the base implementation.
+        """
+        # Default implementation: check if _astream is overridden
+        # If it's the base implementation, it falls back to sync, so no native async support
+        return type(self)._astream != BaseLLM._astream  # noqa: SLF001
+
     def _stream(
         self,
         prompt: str,

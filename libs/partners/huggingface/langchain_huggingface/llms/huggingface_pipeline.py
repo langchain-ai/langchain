@@ -313,6 +313,18 @@ class HuggingFacePipeline(BaseLLM):
     def _llm_type(self) -> str:
         return "huggingface_pipeline"
 
+    def supports_async_streaming(self) -> bool:
+        """HuggingFacePipeline does not support native async streaming.
+
+        HuggingFacePipeline uses synchronous transformers pipeline which does not
+        have async support. Async streaming will fall back to synchronous streaming
+        wrapped in an executor.
+
+        Returns:
+            `False` - HuggingFacePipeline does not support native async streaming.
+        """
+        return False
+
     def _generate(
         self,
         prompts: list[str],

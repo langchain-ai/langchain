@@ -45,3 +45,11 @@ def test_initialization_with_from_model_id(
     )
 
     assert llm.model_id == "mock-model-id"
+
+
+def test_supports_async_streaming() -> None:
+    """Test that HuggingFacePipeline correctly declares it does not support async streaming."""
+    llm = HuggingFacePipeline()
+    # HuggingFacePipeline uses synchronous transformers pipeline
+    # and does not have async_client, so it should return False
+    assert llm.supports_async_streaming() is False

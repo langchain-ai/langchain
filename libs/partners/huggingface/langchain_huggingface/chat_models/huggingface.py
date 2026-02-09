@@ -60,6 +60,7 @@ from langchain_core.outputs import (
     LLMResult,
 )
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
+from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
@@ -603,6 +604,27 @@ class ChatHuggingFace(BaseChatModel):
             self.profile = _get_default_model_profile(self.model_id)
         return self
 
+    def supports_async_streaming(self) -> bool:
+        """Check if the underlying LLM supports native async streaming.
+
+        This method checks the capability of the wrapped LLM to determine
+        if native async streaming is supported. Only HuggingFaceEndpoint
+        currently supports native async streaming via async_client.
+
+        Returns:
+            `True` if the underlying LLM supports native async streaming,
+            `False` otherwise (e.g., HuggingFacePipeline, HuggingFaceTextGenInference).
+        """
+        # HuggingFaceEndpoint supports async streaming via async_client
+        if _is_huggingface_endpoint(self.llm):
+            return True
+        # Check if the wrapped LLM declares async streaming support
+        # This handles cases where LLMs might have their own capability declaration
+        if hasattr(self.llm, "supports_async_streaming"):
+            return self.llm.supports_async_streaming()
+        # Default: assume no async streaming support
+        return False
+
     @classmethod
     def from_model_id(
         cls,
@@ -792,8 +814,22 @@ class ChatHuggingFace(BaseChatModel):
             )
             return self._create_chat_result(answer)
         if _is_huggingface_pipeline(self.llm):
-            msg = "async generation is not supported with HuggingFacePipeline"
-            raise NotImplementedError(msg)
+            # HuggingFacePipeline doesn't have async support, fall back to sync
+            should_stream = stream if stream is not None else self.streaming
+            if should_stream:
+                stream_iter = self._astream(
+                    messages, stop=stop, run_manager=run_manager, **kwargs
+                )
+                return await agenerate_from_stream(stream_iter)
+            return await run_in_executor(
+                None,
+                self._generate,
+                messages,
+                stop,
+                run_manager.get_sync() if run_manager else None,
+                stream,
+                **kwargs,
+            )
         llm_input = self._to_chat_prompt(messages)
         llm_result = await self.llm._agenerate(
             prompts=[llm_input], stop=stop, run_manager=run_manager, **kwargs
@@ -897,52 +933,79 @@ class ChatHuggingFace(BaseChatModel):
         stream_usage: bool | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        stream_usage = self._should_stream_usage(stream_usage=stream_usage, **kwargs)
-        if stream_usage:
-            kwargs["stream_options"] = {"include_usage": stream_usage}
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs, "stream": True}
+        # Check capability first - only use native async streaming if supported
+        if self.supports_async_streaming() and _is_huggingface_endpoint(self.llm):
+            # HuggingFaceEndpoint supports native async streaming via async_client
+            stream_usage = self._should_stream_usage(stream_usage=stream_usage, **kwargs)
+            if stream_usage:
+                kwargs["stream_options"] = {"include_usage": stream_usage}
+            message_dicts, params = self._create_message_dicts(messages, stop)
+            params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
+            default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
 
-        async for chunk in await self.llm.async_client.chat_completion(
-            messages=message_dicts, **params
-        ):
-            if len(chunk["choices"]) == 0:
-                if usage := chunk.get("usage"):
-                    usage_msg = AIMessageChunk(
-                        content="",
-                        additional_kwargs={},
-                        response_metadata={},
-                        usage_metadata={
-                            "input_tokens": usage.get("prompt_tokens", 0),
-                            "output_tokens": usage.get("completion_tokens", 0),
-                            "total_tokens": usage.get("total_tokens", 0),
-                        },
-                    )
-                    yield ChatGenerationChunk(message=usage_msg)
-                continue
+            async for chunk in await self.llm.async_client.chat_completion(
+                messages=message_dicts, **params
+            ):
+                if len(chunk["choices"]) == 0:
+                    if usage := chunk.get("usage"):
+                        usage_msg = AIMessageChunk(
+                            content="",
+                            additional_kwargs={},
+                            response_metadata={},
+                            usage_metadata={
+                                "input_tokens": usage.get("prompt_tokens", 0),
+                                "output_tokens": usage.get("completion_tokens", 0),
+                                "total_tokens": usage.get("total_tokens", 0),
+                            },
+                        )
+                        yield ChatGenerationChunk(message=usage_msg)
+                    continue
 
-            choice = chunk["choices"][0]
-            message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
-            generation_info = {}
-            if finish_reason := choice.get("finish_reason"):
-                generation_info["finish_reason"] = finish_reason
-                generation_info["model_name"] = self.model_id
-            logprobs = choice.get("logprobs")
-            if logprobs:
-                generation_info["logprobs"] = logprobs
-            default_chunk_class = message_chunk.__class__
-            generation_chunk = ChatGenerationChunk(
-                message=message_chunk, generation_info=generation_info or None
-            )
-            if run_manager:
-                await run_manager.on_llm_new_token(
-                    token=generation_chunk.text,
-                    chunk=generation_chunk,
-                    logprobs=logprobs,
+                choice = chunk["choices"][0]
+                message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
+                generation_info = {}
+                if finish_reason := choice.get("finish_reason"):
+                    generation_info["finish_reason"] = finish_reason
+                    generation_info["model_name"] = self.model_id
+                logprobs = choice.get("logprobs")
+                if logprobs:
+                    generation_info["logprobs"] = logprobs
+                default_chunk_class = message_chunk.__class__
+                generation_chunk = ChatGenerationChunk(
+                    message=message_chunk, generation_info=generation_info or None
                 )
-            yield generation_chunk
+                if run_manager:
+                    await run_manager.on_llm_new_token(
+                        token=generation_chunk.text,
+                        chunk=generation_chunk,
+                        logprobs=logprobs,
+                    )
+                yield generation_chunk
+        else:
+            # Fall back to synchronous _stream wrapped in run_in_executor
+            # This handles HuggingFacePipeline, HuggingFaceTextGenInference,
+            # HuggingFaceHub, and any other LLMs without native async streaming support
+            iterator = await run_in_executor(
+                None,
+                self._stream,
+                messages,
+                stop,
+                run_manager.get_sync() if run_manager else None,
+                stream_usage,
+                **kwargs,
+            )
+            done = object()
+            while True:
+                item = await run_in_executor(
+                    None,
+                    next,
+                    iterator,
+                    done,
+                )
+                if item is done:
+                    break
+                yield item  # type: ignore[misc]
 
     def _to_chat_prompt(
         self,

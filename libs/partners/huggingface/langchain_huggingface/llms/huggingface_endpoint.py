@@ -314,6 +314,17 @@ class HuggingFaceEndpoint(LLM):
         """Return type of llm."""
         return "huggingface_endpoint"
 
+    def supports_async_streaming(self) -> bool:
+        """HuggingFaceEndpoint supports native async streaming.
+
+        HuggingFaceEndpoint uses AsyncInferenceClient which provides native
+        async streaming support via async_client.
+
+        Returns:
+            `True` - HuggingFaceEndpoint supports native async streaming.
+        """
+        return True
+
     def _invocation_params(
         self, runtime_stop: list[str] | None, **kwargs: Any
     ) -> dict[str, Any]:
