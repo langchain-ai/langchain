@@ -73,7 +73,7 @@ def _load_sequential_chain(
     message=(
         "See LangGraph guides for a variety of self-reflection and corrective "
         "strategies for question-answering and other tasks: "
-        "https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_self_rag/"
+        "https://docs.langchain.com/oss/python/langgraph/agentic-rag"
     ),
     removal="1.0",
 )

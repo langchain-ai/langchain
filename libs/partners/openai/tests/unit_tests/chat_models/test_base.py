@@ -3191,7 +3191,12 @@ def test_gpt_5_1_temperature_with_reasoning_effort_none(
 
 def test_model_prefers_responses_api() -> None:
     assert _model_prefers_responses_api("gpt-5.2-pro")
+    assert _model_prefers_responses_api("gpt-5.2-codex")
+    assert _model_prefers_responses_api("gpt-5.1-codex")
+    assert _model_prefers_responses_api("gpt-5.1-codex-max")
+    assert _model_prefers_responses_api("gpt-5-codex")
     assert not _model_prefers_responses_api("gpt-5.1")
+    assert not _model_prefers_responses_api("gpt-5")
 
 
 def test_openai_structured_output_refusal_handling_responses_api() -> None:
