@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from html import escape
 from typing import TYPE_CHECKING, Any, cast, overload
 
 from pydantic import ConfigDict, Field
@@ -335,11 +337,74 @@ class BaseMessage(Serializable):
             What is the capital of France?
             ```
         """  # noqa: E501
-        title = get_msg_title_repr(self.type.title() + " Message", bold=html)
-        # TODO: handle non-string content.
+
+        def _format_block(block: Any, *, html: bool) -> str:
+            if isinstance(block, str):
+                return escape(block) if html else block
+
+            if isinstance(block, dict):
+                block_type = block.get("type")
+                if block_type == "text" and isinstance(block.get("text"), str):
+                    text_value = block["text"]
+                    return escape(text_value) if html else text_value
+
+                if block_type == "reasoning":
+                    reasoning = block.get("reasoning", "")
+                    if not isinstance(reasoning, str):
+                        reasoning = json.dumps(reasoning, ensure_ascii=False)
+                    if html:
+                        return f'<pre class="lc-reasoning">{escape(reasoning)}</pre>'
+                    return reasoning
+
+                if block_type in {"image", "image_url"}:
+                    url = block.get("url")
+                    if block_type == "image_url":
+                        image_url = block.get("image_url", {})
+                        if isinstance(image_url, dict):
+                            url = url or image_url.get("url")
+                    file_id = block.get("file_id")
+                    if html and (url or file_id):
+                        if url:
+                            return f'<img src="{escape(str(url))}" alt="image" />'
+                        return f'<img data-file-id="{escape(str(file_id))}" alt="image" />'
+                    if url or file_id:
+                        return str(url or file_id)
+
+            try:
+                serialized = json.dumps(block, ensure_ascii=False)
+            except TypeError:
+                serialized = str(block)
+            return escape(serialized) if html else serialized
+
+        def _format_content(*, html: bool) -> str:
+            if isinstance(self.content, str):
+                return escape(self.content) if html else self.content
+
+            parts = [_format_block(block, html=html) for block in self.content]
+            joiner = "<br/>\n" if html else "\n"
+            return joiner.join(parts)
+
+        if html:
+            title = escape(self.type.title() + " Message")
+            name_line = (
+                f'\n  <div class="lc-message-name">Name: {escape(self.name)}</div>'
+                if self.name is not None
+                else ""
+            )
+            content_repr = _format_content(html=True)
+            return (
+                '<div class="lc-message">'
+                f"\n  <div class=\"lc-message-title\"><strong>{title}</strong></div>"
+                f"{name_line}"
+                f"\n  <div class=\"lc-message-body\">{content_repr}</div>"
+                "\n</div>"
+            )
+
+        title = get_msg_title_repr(self.type.title() + " Message", bold=False)
         if self.name is not None:
             title += f"\nName: {self.name}"
-        return f"{title}\n\n{self.content}"
+        content_repr = _format_content(html=False)
+        return f"{title}\n\n{content_repr}" if content_repr else title
 
     def pretty_print(self) -> None:
         """Print a pretty representation of the message.
