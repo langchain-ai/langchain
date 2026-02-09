@@ -107,10 +107,12 @@ def _model_data_to_profile(model_data: dict[str, Any]) -> dict[str, Any]:
     profile = {
         "max_input_tokens": limit.get("context"),
         "max_output_tokens": limit.get("output"),
+        "text_inputs": "text" in input_modalities,
         "image_inputs": "image" in input_modalities,
         "audio_inputs": "audio" in input_modalities,
         "pdf_inputs": "pdf" in input_modalities or model_data.get("pdf_inputs"),
         "video_inputs": "video" in input_modalities,
+        "text_outputs": "text" in output_modalities,
         "image_outputs": "image" in output_modalities,
         "audio_outputs": "audio" in output_modalities,
         "video_outputs": "video" in output_modalities,
