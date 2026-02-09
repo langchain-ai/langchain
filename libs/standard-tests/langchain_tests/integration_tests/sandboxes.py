@@ -1,34 +1,29 @@
-"""Integration tests for the deepagents `SandboxClient` abstraction.
+"""Integration tests for the deepagents sandbox backend abstraction.
 
 Implementers should subclass this test suite and provide a fixture that returns a
-clean `SandboxClient` instance.
-
-The provider is expected to support:
-
-- `create()` creating a sandbox
-- `get(sandbox_id=...)` reconnecting to an existing sandbox without creating a new one
-- `delete()` being idempotent
+clean `SandboxBackendProtocol` instance.
 
 Example:
 ```python
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 import pytest
-from deepagents.backends.sandbox import SandboxClient
-from langchain_tests.integration_tests import SandboxClientIntegrationTests
+from deepagents.backends.protocol import SandboxBackendProtocol
+from langchain_tests.integration_tests import SandboxIntegrationTests
 
-from langchain_acme_sandbox import AcmeSandboxClient
+from my_pkg import make_sandbox
 
 
-class TestAcmeSandboxClientStandard(SandboxClientIntegrationTests):
-    @pytest.fixture
-    def sandbox_provider(self) -> SandboxClient:
-        # Return a provider instance in a clean state.
-        return AcmeSandboxClient(api_key="...")
-
-    @property
-    def has_async(self) -> bool:
-        return True
+class TestMySandboxStandard(SandboxIntegrationTests):
+    @pytest.fixture(scope="class")
+    def sandbox(self) -> Iterator[SandboxBackendProtocol]:
+        backend = make_sandbox()
+        try:
+            yield backend
+        finally:
+            backend.delete()
 ```
 
 """
@@ -50,240 +45,25 @@ from deepagents.backends.protocol import (
     SandboxBackendProtocol,
 )
 
-try:
-    from deepagents.backends.sandbox import (
-        SandboxClient,
-        SandboxError,
-        SandboxNotFoundError,
-    )
-except ImportError:  # pragma: no cover
-    from typing import Any as SandboxClient
-
-    class SandboxError(Exception):
-        pass
-
-    class SandboxNotFoundError(SandboxError):
-        pass
-
-
 from langchain_tests.base import BaseStandardTests
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
 
-class SandboxClientIntegrationTests(BaseStandardTests):
-    """Base class for sandbox client integration tests."""
-
-    @pytest.fixture(scope="class")
-    def sandbox_backend(
-        self,
-        sandbox_provider: SandboxClient,
-    ) -> Iterator[SandboxBackendProtocol]:
-        """Create one sandbox backend for the test class and clean it up at the end."""
-        if not self.has_sync:
-            pytest.skip("Sync tests not supported.")
-
-        backend = sandbox_provider.create()
-        backend.execute("rm -rf /tmp/test_sandbox_ops && mkdir -p /tmp/test_sandbox_ops")
-        try:
-            yield backend
-        finally:
-            sandbox_provider.delete(sandbox_id=backend.id)
-
-    @abstractmethod
-    @pytest.fixture
-    def sandbox_provider(self) -> SandboxClient:
-        """Get a clean `SandboxClient` instance."""
-
-    @property
-    def has_sync(self) -> bool:
-        """Configurable property to enable or disable sync tests."""
-        return True
-
-    @property
-    def has_async(self) -> bool:
-        """Configurable property to enable or disable async tests."""
-        return True
-
-    @property
-    def supports_distinct_download_errors(self) -> bool:
-        return True
-
-    def test_create_then_get_then_delete_smoke(
-        self,
-        sandbox_provider: SandboxClient,
-    ) -> None:
-        if not self.has_sync:
-            pytest.skip("Sync tests not supported.")
-
-        backend = sandbox_provider.create()
-        assert isinstance(backend.id, str)
-        created_id = backend.id
-
-        reconnected = sandbox_provider.get(sandbox_id=created_id)
-        assert reconnected.id == created_id
-
-        sandbox_provider.delete(sandbox_id=created_id)
-
-    def test_execute_smoke(self, sandbox_backend: SandboxBackendProtocol) -> None:
-        """Test that a sandbox can execute a basic command."""
-        if not self.has_sync:
-            pytest.skip("Sync tests not supported.")
-
-        result = sandbox_backend.execute("echo hello")
-        assert result.output.strip() == "hello"
-
-    def test_get_existing_does_not_create_new(
-        self,
-        sandbox_provider: SandboxClient,
-    ) -> None:
-        if not self.has_sync:
-            pytest.skip("Sync tests not supported.")
-
-        backend = sandbox_provider.create()
-        created_id = backend.id
-
-        try:
-            _reconnected = sandbox_provider.get(sandbox_id=created_id)
-            assert _reconnected.id == created_id
-        finally:
-            sandbox_provider.delete(sandbox_id=created_id)
-
-    def test_get_missing_id_raises(
-        self,
-        sandbox_provider: SandboxClient,
-    ) -> None:
-        if not self.has_sync:
-            pytest.skip("Sync tests not supported.")
-
-        missing_id = "definitely-not-a-real-sandbox-id"
-        with pytest.raises(SandboxNotFoundError):
-            sandbox_provider.get(sandbox_id=missing_id)
-
-        try:
-            sandbox_provider.get(sandbox_id=missing_id)
-        except SandboxNotFoundError:
-            pass
-        except SandboxError as e:
-            msg = f"Expected SandboxNotFoundError, got SandboxError: {type(e).__name__}"
-            raise AssertionError(msg) from e
-
-    def test_delete_is_idempotent(self, sandbox_provider: SandboxClient) -> None:
-        """Test `delete()` is idempotent and safe to call for missing IDs."""
-        if not self.has_sync:
-            pytest.skip("Sync tests not supported.")
-
-        backend = sandbox_provider.create()
-        created_id = backend.id
-
-        sandbox_provider.delete(sandbox_id=created_id)
-        sandbox_provider.delete(sandbox_id=created_id)
-        sandbox_provider.delete(sandbox_id="definitely-not-a-real-sandbox-id")
-
-    async def test_async_create_then_delete_smoke(
-        self,
-        sandbox_provider: SandboxClient,
-    ) -> None:
-        if not self.has_async:
-            pytest.skip("Async tests not supported.")
-
-        backend = await sandbox_provider.acreate()
-        assert isinstance(backend.id, str)
-        created_id = backend.id
-
-        await sandbox_provider.adelete(sandbox_id=created_id)
-
-    async def test_async_execute_smoke(
-        self,
-        sandbox_backend: SandboxBackendProtocol,
-    ) -> None:
-        """Async: test that a sandbox can execute a basic command."""
-        if not self.has_async:
-            pytest.skip("Async tests not supported.")
-
-        result = await sandbox_backend.aexecute("echo hello")
-        assert result.output.strip() == "hello"
-
-    async def test_async_upload_single_file(
-        self,
-        sandbox_backend: SandboxBackendProtocol,
-    ) -> None:
-        """Async: test uploading a single file."""
-        if not self.has_async:
-            pytest.skip("Async tests not supported.")
-
-        test_path = "/tmp/test_upload_single_async.txt"
-        test_content = b"Hello, Sandbox!"
-
-        upload_responses = await sandbox_backend.aupload_files([(test_path, test_content)])
-
-        assert len(upload_responses) == 1
-        assert upload_responses[0].path == test_path
-        assert upload_responses[0].error is None
-
-        result = await sandbox_backend.aexecute(f"cat {test_path}")
-        assert result.output.strip() == test_content.decode()
-
-    async def test_async_download_single_file(
-        self,
-        sandbox_backend: SandboxBackendProtocol,
-    ) -> None:
-        """Async: test downloading a single file."""
-        if not self.has_async:
-            pytest.skip("Async tests not supported.")
-
-        test_path = "/tmp/test_download_single_async.txt"
-        test_content = b"Download test content"
-
-        await sandbox_backend.aupload_files([(test_path, test_content)])
-
-        download_responses = await sandbox_backend.adownload_files([test_path])
-
-        assert len(download_responses) == 1
-        assert download_responses[0].path == test_path
-        assert download_responses[0].content == test_content
-        assert download_responses[0].error is None
-
-    async def test_async_upload_download_roundtrip(
-        self,
-        sandbox_backend: SandboxBackendProtocol,
-    ) -> None:
-        """Async: test upload followed by download for data integrity."""
-        if not self.has_async:
-            pytest.skip("Async tests not supported.")
-
-        test_path = "/tmp/test_roundtrip_async.txt"
-        test_content = b"Roundtrip test: special chars \n\t\r\x00"
-
-        upload_responses = await sandbox_backend.aupload_files([(test_path, test_content)])
-        assert upload_responses[0].error is None
-
-        download_responses = await sandbox_backend.adownload_files([test_path])
-        assert download_responses[0].error is None
-        assert download_responses[0].content == test_content
-
-
 class SandboxIntegrationTests(BaseStandardTests):
     @pytest.fixture(scope="class")
-    def sandbox_backend(
-        self,
-        sandbox_provider: SandboxClient,
-    ) -> Iterator[SandboxBackendProtocol]:
-        backend = sandbox_provider.create()
-        backend.execute("rm -rf /tmp/test_sandbox_ops && mkdir -p /tmp/test_sandbox_ops")
-        try:
-            yield backend
-        finally:
-            sandbox_provider.delete(sandbox_id=backend.id)
+    def sandbox_backend(self, sandbox: SandboxBackendProtocol) -> Iterator[SandboxBackendProtocol]:
+        sandbox.execute("rm -rf /tmp/test_sandbox_ops && mkdir -p /tmp/test_sandbox_ops")
+        yield sandbox
 
     @property
     def supports_distinct_download_errors(self) -> bool:
         return True
 
     @abstractmethod
-    @pytest.fixture
-    def sandbox_provider(self) -> SandboxClient: ...
+    @pytest.fixture(scope="class")
+    def sandbox(self) -> Iterator[SandboxBackendProtocol]: ...
 
     @property
     def has_sync(self) -> bool:
@@ -574,100 +354,3 @@ class SandboxIntegrationTests(BaseStandardTests):
 
         assert responses == [FileUploadResponse(path=path, error="invalid_path")]
 
-    def test_get_existing_does_not_create_new(
-        self,
-        sandbox_provider: SandboxClient,
-    ) -> None:
-        if not self.has_sync:
-            pytest.skip("Sync tests not supported.")
-
-        backend = sandbox_provider.create()
-        created_id = backend.id
-
-        try:
-            _reconnected = sandbox_provider.get(sandbox_id=created_id)
-            assert _reconnected.id == created_id
-        finally:
-            sandbox_provider.delete(sandbox_id=created_id)
-
-    def test_get_missing_id_raises(
-        self,
-        sandbox_provider: SandboxClient,
-    ) -> None:
-        if not self.has_sync:
-            pytest.skip("Sync tests not supported.")
-
-        missing_id = "definitely-not-a-real-sandbox-id"
-        with pytest.raises(SandboxNotFoundError):
-            sandbox_provider.get(sandbox_id=missing_id)
-
-        try:
-            sandbox_provider.get(sandbox_id=missing_id)
-        except SandboxNotFoundError:
-            pass
-        except SandboxError as e:
-            msg = f"Expected SandboxNotFoundError, got SandboxError: {type(e).__name__}"
-            raise AssertionError(msg) from e
-
-    def test_delete_is_idempotent(self, sandbox_provider: SandboxClient) -> None:
-        """Test `delete()` is idempotent and safe to call for missing IDs."""
-        if not self.has_sync:
-            pytest.skip("Sync tests not supported.")
-
-        backend = sandbox_provider.create()
-        created_id = backend.id
-
-        sandbox_provider.delete(sandbox_id=created_id)
-        sandbox_provider.delete(sandbox_id=created_id)
-        sandbox_provider.delete(sandbox_id="definitely-not-a-real-sandbox-id")
-
-    async def test_async_get_existing_does_not_create_new(
-        self,
-        sandbox_provider: SandboxClient,
-    ) -> None:
-        if not self.has_async:
-            pytest.skip("Async tests not supported.")
-
-        backend = await sandbox_provider.acreate()
-        created_id = backend.id
-
-        try:
-            _reconnected = await sandbox_provider.aget(sandbox_id=created_id)
-            assert _reconnected.id == created_id
-        finally:
-            await sandbox_provider.adelete(sandbox_id=created_id)
-
-    async def test_async_get_or_create_missing_id_raises(
-        self,
-        sandbox_provider: SandboxClient,
-    ) -> None:
-        """Async: test missing sandbox_id raises a `SandboxNotFoundError`."""
-        if not self.has_async:
-            pytest.skip("Async tests not supported.")
-
-        missing_id = "definitely-not-a-real-sandbox-id"
-        with pytest.raises(SandboxNotFoundError):
-            await sandbox_provider.aget(sandbox_id=missing_id)
-
-        try:
-            await sandbox_provider.aget(sandbox_id=missing_id)
-        except SandboxNotFoundError:
-            pass
-        except SandboxError as e:
-            msg = f"Expected SandboxNotFoundError, got SandboxError: {type(e).__name__}"
-            raise AssertionError(msg) from e
-
-    async def test_async_delete_is_idempotent(
-        self,
-        sandbox_provider: SandboxClient,
-    ) -> None:
-        """Async: test `delete()` is idempotent and safe to call for missing IDs."""
-        if not self.has_async:
-            pytest.skip("Async tests not supported.")
-
-        backend = await sandbox_provider.acreate()
-        created_id = backend.id
-
-        await sandbox_provider.adelete(sandbox_id=created_id)
-        await sandbox_provider.adelete(sandbox_id=created_id)
-        await sandbox_provider.adelete(sandbox_id="definitely-not-a-real-sandbox-id")
