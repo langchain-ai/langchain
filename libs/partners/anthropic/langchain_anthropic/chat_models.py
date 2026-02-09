@@ -1988,6 +1988,25 @@ class ChatAnthropicBedrock(ChatAnthropic):
         """Get the provider identifier for LangSmith tracing."""
         return "anthropic-bedrock"
 
+    def _get_ls_params(
+        self,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+        params = self._get_invocation_params(stop=stop, **kwargs)
+        ls_params = LangSmithParams(
+            ls_provider="anthropic-bedrock",
+            ls_model_name=params.get("model", self.model),
+            ls_model_type="chat",
+            ls_temperature=params.get("temperature", self.temperature),
+        )
+        if ls_max_tokens := params.get("max_tokens", self.max_tokens):
+            ls_params["ls_max_tokens"] = ls_max_tokens
+        if ls_stop := stop or params.get("stop", None):
+            ls_params["ls_stop"] = ls_stop
+        return ls_params
+
 
 def convert_to_anthropic_tool(
     tool: Mapping[str, Any] | type | Callable | BaseTool,
