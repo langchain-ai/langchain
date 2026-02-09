@@ -36,6 +36,7 @@ from urllib.parse import urlparse
 import certifi
 import openai
 import tiktoken
+from httpx import Response as HTTPXResponse
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -88,6 +89,7 @@ from langchain_core.output_parsers.openai_tools import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import (
     Runnable,
+    RunnableBranch,
     RunnableLambda,
     RunnableMap,
     RunnablePassthrough,
@@ -111,6 +113,7 @@ from pydantic import (
     ConfigDict,
     Field,
     SecretStr,
+    ValidationError,
     model_validator,
 )
 from pydantic.v1 import BaseModel as BaseModelV1
@@ -2164,15 +2167,84 @@ class BaseChatOpenAI(BaseChatModel):
             raise ValueError(msg)
 
         if include_raw:
-            parser_assign = RunnablePassthrough.assign(
-                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            return self._get_raw_structured_output_chain(
+                llm=llm, output_parser=output_parser
             )
-            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
-            parser_with_fallback = parser_assign.with_fallbacks(
-                [parser_none], exception_key="parsing_error"
-            )
-            return RunnableMap(raw=llm) | parser_with_fallback
+
         return llm | output_parser
+
+    def _get_raw_structured_output_chain(
+        self, llm: Runnable, output_parser: Runnable
+    ) -> Runnable:
+        """Get the chain that returns both raw and parsed structured outputs.
+
+        OpenAI SDK runs a first validation using Pydantic model or TypeAdapter.
+        LangChain adds a second validation using output parsers.
+        Therefore the chain first wraps the llm call with a fallback to catch potential
+        SDK validation errors, then applies the output parser with a fallback to catch
+        potential output parsing errors.
+
+        Args:
+            llm: The LLM runnable.
+            output_parser: The output parser runnable.
+
+        Returns:
+            A `Runnable` that returns both raw, parsed outputs and parsing errors.
+        """
+        # `with_fallbacks` requires input to be a dictionnary, so we wrap and
+        # unwrap the input around the LLM since it expects LanguageModelInput.
+        wrap_input = RunnableLambda[LanguageModelInput, dict](lambda x: {"_input": x})
+
+        # LLM/SDK
+        unwrap_input = RunnableLambda(lambda x: x["_input"])
+        wrapped_llm = RunnableMap(raw=unwrap_input | llm)
+        sdk_error_fallback = RunnablePassthrough.assign(
+            raw=lambda x: self._get_message_from_error_response(x["parsing_error"]),
+            parsed=lambda _: None,
+        )
+        llm_with_fallback = wrapped_llm.with_fallbacks(
+            fallbacks=[sdk_error_fallback],
+            exceptions_to_handle=(ValidationError,),
+            exception_key="parsing_error",
+        )
+
+        # Output Parsers
+        parser_assign = RunnablePassthrough.assign(
+            parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+        )
+        parser_error_fallback = RunnablePassthrough.assign(parsed=lambda _: None)
+        parser_with_fallback = parser_assign.with_fallbacks(
+            [parser_error_fallback], exception_key="parsing_error"
+        )
+        branch = RunnableBranch[dict, dict](
+            (lambda x: x.get("parsing_error") is not None, RunnablePassthrough()),
+            parser_with_fallback,
+        )
+
+        return wrap_input | llm_with_fallback | branch
+
+    def _get_message_from_error_response(
+        self, error: Exception
+    ) -> BaseMessage | list[BaseMessage] | None:
+        """Extract message(s) from an OpenAI API error response.
+
+        Args:
+            error: The exception raised during the OpenAI API call, that may contain
+                the response key.
+
+        Returns:
+            A BaseMessage or list of BaseMessage if messages can be extracted, else None
+        """
+        if hasattr(error, "response") and isinstance(error.response, HTTPXResponse):
+            messages = [
+                generation.message
+                for generation in self._create_chat_result(
+                    error.response.json()
+                ).generations
+            ]
+            return messages if len(messages) > 1 else messages[0]
+
+        return None
 
     def _filter_disabled_params(self, **kwargs: Any) -> dict[str, Any]:
         if not self.disabled_params:
