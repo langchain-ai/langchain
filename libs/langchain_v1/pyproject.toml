@@ -72,6 +72,9 @@ test = [
     "blockbuster>=1.5.26,<1.6.0",
     "langchain-tests",
     "langchain-openai",
+    "langchain-ollama>=1.0.0",
+    "langchain-anthropic>=1.0.3",
+    "langchain-google-genai",
 ]
 lint = [
     "ruff>=0.14.11,<0.16.0",

@@ -18,9 +18,16 @@ from langchain.agents.middleware.shell_tool import (
     ShellToolMiddleware,
 )
 from langchain.agents.middleware.summarization import SummarizationMiddleware
+from langchain.agents.middleware.task_shield import TaskShieldMiddleware
 from langchain.agents.middleware.todo import TodoListMiddleware
 from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
 from langchain.agents.middleware.tool_emulator import LLMToolEmulator
+
+from langchain.agents.middleware.tool_result_sanitizer import (
+    DEFAULT_INJECTION_MARKERS,
+    ToolResultSanitizerMiddleware,
+    sanitize_markers,
+)
 from langchain.agents.middleware.tool_retry import ToolRetryMiddleware
 from langchain.agents.middleware.tool_selection import LLMToolSelectorMiddleware
 from langchain.agents.middleware.types import (
@@ -42,6 +49,7 @@ from langchain.agents.middleware.types import (
 )
 
 __all__ = [
+    "DEFAULT_INJECTION_MARKERS",
     "AgentMiddleware",
     "AgentState",
     "ClearToolUsesEdit",
@@ -66,9 +74,12 @@ __all__ = [
     "RedactionRule",
     "ShellToolMiddleware",
     "SummarizationMiddleware",
+    "TaskShieldMiddleware",
     "TodoListMiddleware",
     "ToolCallLimitMiddleware",
     "ToolCallRequest",
+
+    "ToolResultSanitizerMiddleware",
     "ToolRetryMiddleware",
     "after_agent",
     "after_model",
@@ -76,6 +87,7 @@ __all__ = [
     "before_model",
     "dynamic_prompt",
     "hook_config",
+    "sanitize_markers",
     "wrap_model_call",
     "wrap_tool_call",
 ]

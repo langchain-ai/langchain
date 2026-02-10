@@ -119,7 +119,6 @@ typing = [
     "fastapi<1.0.0,>=0.116.1",
 ]
 dev = [
-    "jupyter>=1.0.0,<2.0.0",
     "playwright>=1.28.0,<2.0.0",
     "setuptools>=67.6.1,<83.0.0",
     "langchain-core",
