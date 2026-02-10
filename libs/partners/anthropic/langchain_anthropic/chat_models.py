@@ -283,7 +283,6 @@ def _merge_messages(
 
 def _is_empty_content(content: Any) -> bool:
     """Check if message content is empty."""
-
     if isinstance(content, str):
         return content == ""
     if isinstance(content, list):
