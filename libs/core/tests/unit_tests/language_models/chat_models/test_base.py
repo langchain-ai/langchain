@@ -2,10 +2,11 @@
 
 import uuid
 import warnings
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
+from pydantic import BaseModel
 from typing_extensions import override
 
 from langchain_core.callbacks import (
@@ -31,6 +32,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.outputs.llm_result import LLMResult
+from langchain_core.runnables import RunnableLambda
 from langchain_core.tracers import LogStreamCallbackHandler
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import collect_runs
@@ -1221,6 +1223,70 @@ def test_model_profiles() -> None:
         messages=iter([]), profile={"max_input_tokens": 100}
     )
     assert model_with_profile.profile == {"max_input_tokens": 100}
+
+
+class _StructuredOutputSchema(BaseModel):
+    answer: str
+
+
+class _StructuredOutputSpyChatModel(BaseChatModel):
+    last_bind_tools_kwargs: dict[str, Any] | None = None
+
+    @property
+    def _llm_type(self) -> str:
+        return "structured-output-spy"
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        raise NotImplementedError
+
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable | Any],
+        *,
+        tool_choice: str | None = None,
+        **kwargs: Any,
+    ) -> RunnableLambda:
+        self.last_bind_tools_kwargs = {
+            "tools": tools,
+            "tool_choice": tool_choice,
+            **kwargs,
+        }
+        return RunnableLambda(lambda x: AIMessage(content=str(x)))
+
+
+def test_with_structured_output_uses_default_tool_choice_any() -> None:
+    model = _StructuredOutputSpyChatModel()
+
+    _ = model.with_structured_output(_StructuredOutputSchema)
+
+    assert model.last_bind_tools_kwargs is not None
+    assert model.last_bind_tools_kwargs["tool_choice"] == "any"
+
+
+def test_with_structured_output_accepts_tool_choice_override() -> None:
+    model = _StructuredOutputSpyChatModel()
+
+    _ = model.with_structured_output(_StructuredOutputSchema, tool_choice="auto")
+
+    assert model.last_bind_tools_kwargs is not None
+    assert model.last_bind_tools_kwargs["tool_choice"] == "auto"
+
+
+def test_with_structured_output_rejects_invalid_tool_choice_type() -> None:
+    model = _StructuredOutputSpyChatModel()
+
+    with pytest.raises(TypeError, match=r"tool_choice must be a string or None\."):
+        model.with_structured_output(
+            _StructuredOutputSchema,
+            tool_choice=123,
+        )
 
 
 class MockResponse:

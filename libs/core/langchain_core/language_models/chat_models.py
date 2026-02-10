@@ -1576,6 +1576,13 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
+            kwargs:
+                Additional keyword arguments for structured output.
+
+                - `tool_choice`: Tool choice forwarded to `bind_tools`. Defaults to
+                    `"any"` for backwards compatibility.
+                - `method`: Currently ignored.
+                - `strict`: Currently ignored.
 
         Raises:
             ValueError: If there are any unsupported `kwargs`.
@@ -1684,6 +1691,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """  # noqa: E501
         _ = kwargs.pop("method", None)
         _ = kwargs.pop("strict", None)
+        tool_choice = kwargs.pop("tool_choice", "any")
+        if not isinstance(tool_choice, (str, type(None))):
+            msg = "tool_choice must be a string or None."
+            raise TypeError(msg)
         if kwargs:
             msg = f"Received unsupported arguments {kwargs}"
             raise ValueError(msg)
@@ -1694,7 +1705,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         llm = self.bind_tools(
             [schema],
-            tool_choice="any",
+            tool_choice=tool_choice,
             ls_structured_output_format={
                 "kwargs": {"method": "function_calling"},
                 "schema": schema,
