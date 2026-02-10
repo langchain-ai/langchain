@@ -19,9 +19,11 @@ _PROFILES: dict[str, dict[str, Any]] = {
     "deepseek-chat": {
         "max_input_tokens": 128000,
         "max_output_tokens": 8192,
+        "text_inputs": True,
         "image_inputs": False,
         "audio_inputs": False,
         "video_inputs": False,
+        "text_outputs": True,
         "image_outputs": False,
         "audio_outputs": False,
         "video_outputs": False,
@@ -31,9 +33,11 @@ _PROFILES: dict[str, dict[str, Any]] = {
     "deepseek-reasoner": {
         "max_input_tokens": 128000,
         "max_output_tokens": 128000,
+        "text_inputs": True,
         "image_inputs": False,
         "audio_inputs": False,
         "video_inputs": False,
+        "text_outputs": True,
         "image_outputs": False,
         "audio_outputs": False,
         "video_outputs": False,

@@ -11,6 +11,7 @@ import anthropic
 import pytest
 from anthropic.types import Message, TextBlock, Usage
 from blockbuster import blockbuster_ctx
+from langchain_core.exceptions import ContextOverflowError
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
@@ -1564,6 +1565,13 @@ def test_context_management_in_payload() -> None:
     }
 
 
+def test_inference_geo_in_payload() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME, inference_geo="us")
+    input_message = HumanMessage("Hello, world!")
+    payload = llm._get_request_payload([input_message])
+    assert payload["inference_geo"] == "us"
+
+
 def test_anthropic_model_params() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
@@ -1656,7 +1664,6 @@ def test_streaming_cache_token_reporting() -> None:
 def test_strict_tool_use() -> None:
     model = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]
-        betas=["structured-outputs-2025-11-13"],
     )
 
     def get_weather(location: str, unit: Literal["C", "F"]) -> str:
@@ -1669,8 +1676,8 @@ def test_strict_tool_use() -> None:
     assert tool_definition["strict"] is True
 
 
-def test_beta_merging_with_response_format() -> None:
-    """Test that structured-outputs beta is merged with existing betas."""
+def test_response_format_with_output_config() -> None:
+    """Test that response_format is converted to output_config.format."""
 
     class Person(BaseModel):
         """Person data."""
@@ -1678,114 +1685,47 @@ def test_beta_merging_with_response_format() -> None:
         name: str
         age: int
 
-    # Auto-inject structured-outputs beta with no others specified
+    # Test that response_format converts to output_config.format
     model = ChatAnthropic(model=MODEL_NAME)
     payload = model._get_request_payload(
         "Test query",
         response_format=Person.model_json_schema(),
     )
-    assert payload["betas"] == ["structured-outputs-2025-11-13"]
+    assert "output_config" in payload
+    assert "format" in payload["output_config"]
+    assert payload["output_config"]["format"]["type"] == "json_schema"
+    assert "schema" in payload["output_config"]["format"]
 
-    # Merge structured-outputs beta if other betas are present
-    model = ChatAnthropic(
-        model=MODEL_NAME,
-        betas=["mcp-client-2025-04-04"],
-    )
-    payload = model._get_request_payload(
-        "Test query",
-        response_format=Person.model_json_schema(),
-    )
-    assert payload["betas"] == [
-        "mcp-client-2025-04-04",
-        "structured-outputs-2025-11-13",
-    ]
-
-    # Structured-outputs beta already present - don't duplicate
-    model = ChatAnthropic(
-        model=MODEL_NAME,
-        betas=[
-            "mcp-client-2025-04-04",
-            "structured-outputs-2025-11-13",
-        ],
-    )
-    payload = model._get_request_payload(
-        "Test query",
-        response_format=Person.model_json_schema(),
-    )
-    assert payload["betas"] == [
-        "mcp-client-2025-04-04",
-        "structured-outputs-2025-11-13",
-    ]
-
-    # No response_format - betas should not be modified
-    model = ChatAnthropic(
-        model=MODEL_NAME,
-        betas=["mcp-client-2025-04-04"],
-    )
+    # No response_format - output_config should not have format
+    model = ChatAnthropic(model=MODEL_NAME)
     payload = model._get_request_payload("Test query")
-    assert payload["betas"] == ["mcp-client-2025-04-04"]
+    if "output_config" in payload:
+        assert "format" not in payload["output_config"]
 
 
-def test_beta_merging_with_strict_tool_use() -> None:
-    """Test beta merging for strict tools."""
+def test_strict_tool_use_payload() -> None:
+    """Test that strict tool use property is correctly passed through to payload."""
 
     def get_weather(location: str) -> str:
         """Get the weather at a location."""
         return "Sunny"
 
-    # Auto-inject structured-outputs beta with no others specified
+    # Test that strict=True is correctly passed to payload
     model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
     model_with_tools = model.bind_tools([get_weather], strict=True)
     payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
         "What's the weather?",
         **model_with_tools.kwargs,  # type: ignore[attr-defined]
     )
-    assert payload["betas"] == ["structured-outputs-2025-11-13"]
+    assert payload["tools"][0]["strict"] is True
 
-    # Merge structured-outputs beta if other betas are present
-    model = ChatAnthropic(
-        model=MODEL_NAME,  # type: ignore[call-arg]
-        betas=["mcp-client-2025-04-04"],
-    )
-    model_with_tools = model.bind_tools([get_weather], strict=True)
-    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+    # Test that strict=False is correctly passed to payload
+    model_without_strict = model.bind_tools([get_weather], strict=False)
+    payload = model_without_strict._get_request_payload(  # type: ignore[attr-defined]
         "What's the weather?",
-        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+        **model_without_strict.kwargs,  # type: ignore[attr-defined]
     )
-    assert payload["betas"] == [
-        "mcp-client-2025-04-04",
-        "structured-outputs-2025-11-13",
-    ]
-
-    # Structured-outputs beta already present - don't duplicate
-    model = ChatAnthropic(
-        model=MODEL_NAME,  # type: ignore[call-arg]
-        betas=[
-            "mcp-client-2025-04-04",
-            "structured-outputs-2025-11-13",
-        ],
-    )
-    model_with_tools = model.bind_tools([get_weather], strict=True)
-    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
-        "What's the weather?",
-        **model_with_tools.kwargs,  # type: ignore[attr-defined]
-    )
-    assert payload["betas"] == [
-        "mcp-client-2025-04-04",
-        "structured-outputs-2025-11-13",
-    ]
-
-    # No strict tools - betas should not be modified
-    model = ChatAnthropic(
-        model=MODEL_NAME,  # type: ignore[call-arg]
-        betas=["mcp-client-2025-04-04"],
-    )
-    model_with_tools = model.bind_tools([get_weather], strict=False)
-    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
-        "What's the weather?",
-        **model_with_tools.kwargs,  # type: ignore[attr-defined]
-    )
-    assert payload["betas"] == ["mcp-client-2025-04-04"]
+    assert payload["tools"][0].get("strict") is False
 
 
 def test_auto_append_betas_for_tool_types() -> None:
@@ -2380,3 +2320,110 @@ def test_extras_with_multiple_fields() -> None:
     assert tool_def.get("defer_loading") is True
     assert tool_def.get("cache_control") == {"type": "ephemeral"}
     assert "input_examples" in tool_def
+
+
+def test__format_messages_trailing_whitespace() -> None:
+    """Test that trailing whitespace is trimmed from the final assistant message."""
+    human = HumanMessage("foo")  # type: ignore[misc]
+
+    # Test string content
+    ai_string = AIMessage("thought ")  # type: ignore[misc]
+    _, anthropic_messages = _format_messages([human, ai_string])
+    assert anthropic_messages[-1]["content"] == "thought"
+
+    # Test list content
+    ai_list = AIMessage([{"type": "text", "text": "thought "}])  # type: ignore[misc]
+    _, anthropic_messages = _format_messages([human, ai_list])
+    assert anthropic_messages[-1]["content"][0]["text"] == "thought"  # type: ignore[index]
+
+    # Test that intermediate messages are NOT trimmed
+    ai_intermediate = AIMessage("thought ")  # type: ignore[misc]
+    _, anthropic_messages = _format_messages([human, ai_intermediate, human])
+    assert anthropic_messages[1]["content"] == "thought "
+
+
+# Test fixtures for context overflow error tests
+_CONTEXT_OVERFLOW_BAD_REQUEST_ERROR = anthropic.BadRequestError(
+    message="prompt is too long: 209752 tokens > 200000 maximum",
+    response=MagicMock(status_code=400),
+    body={
+        "type": "error",
+        "error": {
+            "type": "invalid_request_error",
+            "message": "prompt is too long: 209752 tokens > 200000 maximum",
+        },
+    },
+)
+
+
+def test_context_overflow_error_invoke_sync() -> None:
+    """Test context overflow error on invoke (sync)."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages, "create") as mock_create,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        llm.invoke([HumanMessage(content="test")])
+
+    assert "prompt is too long" in str(exc_info.value)
+
+
+async def test_context_overflow_error_invoke_async() -> None:
+    """Test context overflow error on invoke (async)."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._async_client.messages, "create") as mock_create,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        await llm.ainvoke([HumanMessage(content="test")])
+
+    assert "prompt is too long" in str(exc_info.value)
+
+
+def test_context_overflow_error_stream_sync() -> None:
+    """Test context overflow error on stream (sync)."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages, "create") as mock_create,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        list(llm.stream([HumanMessage(content="test")]))
+
+    assert "prompt is too long" in str(exc_info.value)
+
+
+async def test_context_overflow_error_stream_async() -> None:
+    """Test context overflow error on stream (async)."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._async_client.messages, "create") as mock_create,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        async for _ in llm.astream([HumanMessage(content="test")]):
+            pass
+
+    assert "prompt is too long" in str(exc_info.value)
+
+
+def test_context_overflow_error_backwards_compatibility() -> None:
+    """Test that ContextOverflowError can be caught as BadRequestError."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages, "create") as mock_create,
+        pytest.raises(anthropic.BadRequestError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        llm.invoke([HumanMessage(content="test")])
+
+    # Verify it's both types (multiple inheritance)
+    assert isinstance(exc_info.value, anthropic.BadRequestError)
+    assert isinstance(exc_info.value, ContextOverflowError)

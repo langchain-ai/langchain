@@ -45,14 +45,14 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 dev = []
 
 test = [
-    "pytest>=8.0.0,<9.0.0",
+    "pytest>=8.0.0,<10.0.0",
     "pytest-cov>=4.0.0,<8.0.0",
     "pytest-watcher>=0.2.6,<1.0.0",
     "pytest-asyncio>=0.23.2,<2.0.0",
     "pytest-socket>=0.6.0,<1.0.0",
     "pytest-xdist<4.0.0,>=3.6.1",
     "pytest-mock",
-    "syrupy>=4.0.2,<5.0.0",
+    "syrupy>=4.0.2,<6.0.0",
     "toml>=0.10.2,<1.0.0",
     "langchain[openai]>=1.0.2,<2.0.0",
     "langchain-core",
@@ -61,11 +61,11 @@ test = [
 test_integration = ["langchain-core"]
 
 lint = [
-    "ruff>=0.12.2,<0.13.0",
+    "ruff>=0.12.2,<0.16.0",
     "langchain",
 ]
 typing = [
-    "mypy>=1.18.1,<1.19.0",
+    "mypy>=1.18.1,<1.20.0",
     "types-toml>=0.10.8.20240310,<1.0.0.0",
 ]
 
