@@ -28,10 +28,6 @@ from typing_extensions import Self
 
 from langchain_deepseek.data._profiles import _PROFILES
 
-
-
-
-
 DEFAULT_API_BASE = "https://api.deepseek.com/v1"
 DEFAULT_BETA_API_BASE = "https://api.deepseek.com/beta"
 
@@ -335,7 +331,6 @@ class ChatDeepSeek(BaseChatOpenAI):
 
         # DeepSeek requires the field to exist (empty string is acceptable)
         msg["reasoning_content"] = rc
-
 
     def _get_request_payload(
         self,
