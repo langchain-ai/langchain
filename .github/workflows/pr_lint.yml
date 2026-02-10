@@ -30,7 +30,7 @@
 #   core, langchain, langchain-classic, model-profiles,
 #   standard-tests, text-splitters, docs, anthropic, chroma, deepseek, exa,
 #   fireworks, groq, huggingface, mistralai, nomic, ollama, openai,
-#   perplexity, prompty, qdrant, xai, infra, deps
+#   perplexity, qdrant, xai, infra, deps
 #
 # Multiple scopes can be used by separating them with a comma. For example:
 #
@@ -103,7 +103,6 @@ jobs:
             ollama
             openai
             perplexity
-            prompty
             qdrant
             xai
             infra
