@@ -118,3 +118,82 @@ def test_generate_streaming_multiple_prompts_error() -> None:
         ValueError, match="Cannot stream results with multiple prompts\\."
     ):
         llm._generate(["foo", "bar"])
+
+
+def test_stop_tokens_merge_from_model_kwargs_and_params() -> None:
+    """Test that stop tokens from model_kwargs and params are merged, not overwritten.
+
+    This is a critical bug fix for vLLM and other OpenAI-compatible servers where
+    stop tokens need to be specified in model_kwargs (e.g., for special tokens like
+    <|eot_id|>) but should also allow runtime stop tokens to be added.
+    """
+    llm = OpenAI(model="gpt-3.5-turbo-instruct", model_kwargs={"stop": ["<|eot_id|>", "<|eom_id|>"]})
+
+    # Test 1: model_kwargs stop tokens should be preserved when no stop param is passed
+    params = llm._invocation_params.copy()
+    llm.get_sub_prompts(params, ["test prompt"], stop=None)
+    assert "stop" in params
+    assert "<|eot_id|>" in params["stop"]
+    assert "<|eom_id|>" in params["stop"]
+
+    # Test 2: When stop param is passed, it should MERGE with model_kwargs stop tokens
+    params = llm._invocation_params.copy()
+    llm.get_sub_prompts(params, ["test prompt"], stop=["STOP", "END"])
+    assert "stop" in params
+    # All stop tokens should be present (merged, not overwritten)
+    assert "<|eot_id|>" in params["stop"], "model_kwargs stop tokens should not be overwritten"
+    assert "<|eom_id|>" in params["stop"], "model_kwargs stop tokens should not be overwritten"
+    assert "STOP" in params["stop"], "runtime stop tokens should be included"
+    assert "END" in params["stop"], "runtime stop tokens should be included"
+    assert len(params["stop"]) == 4, "Should have all 4 unique stop tokens"
+
+
+def test_stop_tokens_deduplication() -> None:
+    """Test that duplicate stop tokens are removed."""
+    llm = OpenAI(model="gpt-3.5-turbo-instruct", model_kwargs={"stop": ["STOP", "END"]})
+
+    # Pass overlapping stop tokens
+    params = llm._invocation_params.copy()
+    llm.get_sub_prompts(params, ["test prompt"], stop=["STOP", "FINISH"])
+
+    assert "stop" in params
+    # Should have deduplicated stop tokens
+    stop_list = params["stop"]
+    assert "STOP" in stop_list
+    assert "END" in stop_list
+    assert "FINISH" in stop_list
+    # STOP should only appear once
+    assert stop_list.count("STOP") == 1, "Duplicate stop tokens should be removed"
+    assert len(stop_list) == 3, "Should have 3 unique stop tokens"
+
+
+def test_stop_tokens_utility_function() -> None:
+    """Test that the merge_stop_tokens utility function works correctly.
+
+    This tests the utility function directly to ensure it handles all edge cases.
+    If this test fails, it means the utility module is missing or broken.
+    """
+    from langchain_openai.llms._utils import merge_stop_tokens
+
+    # Test merging lists
+    result = merge_stop_tokens(["A", "B"], ["C", "D"])
+    assert result == ["A", "B", "C", "D"]
+
+    # Test deduplication
+    result = merge_stop_tokens(["A", "B"], ["B", "C"])
+    assert result == ["A", "B", "C"]
+    assert result.count("B") == 1
+
+    # Test string inputs
+    result = merge_stop_tokens("A", "B")
+    assert result == ["A", "B"]
+
+    # Test None handling
+    result = merge_stop_tokens(None, ["A"])
+    assert result == ["A"]
+
+    result = merge_stop_tokens(["A"], None)
+    assert result == ["A"]
+
+    result = merge_stop_tokens(None, None)
+    assert result is None

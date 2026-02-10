@@ -12,6 +12,7 @@ from langchain_core.utils import from_env, secret_from_env
 from pydantic import Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_openai.llms._utils import merge_stop_tokens
 from langchain_openai.llms.base import BaseOpenAI
 
 logger = logging.getLogger(__name__)
@@ -210,8 +211,17 @@ class AzureOpenAI(BaseOpenAI):
     def _get_ls_params(
         self, stop: list[str] | None = None, **kwargs: Any
     ) -> LangSmithParams:
-        """Get standard params for tracing."""
-        params = super()._get_ls_params(stop=stop, **kwargs)
+        """Get standard params for tracing.
+
+        Ensures that stop tokens from model_kwargs are properly merged with
+        runtime stop parameters for accurate tracing.
+        """
+        # Merge stop tokens from model_kwargs with runtime stop
+        existing_stop = self.model_kwargs.get("stop") if self.model_kwargs else None
+        merged_stop = merge_stop_tokens(existing_stop, stop)
+
+        # Pass merged stop tokens to parent
+        params = super()._get_ls_params(stop=merged_stop, **kwargs)
         invocation_params = self._invocation_params
         params["ls_provider"] = "azure"
         if model_name := invocation_params.get("model"):
