@@ -9,12 +9,13 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
     groups:
       github-actions:
         patterns:
           - "*"
 
-  - package-ecosystem: "pip"
+  - package-ecosystem: "uv"
     directories:
       - "/libs/core/"
       - "/libs/langchain/"
@@ -44,6 +45,7 @@ updates:
       - "/libs/partners/xai/"
     schedule:
       interval: "weekly"
+      day: "monday"
     groups:
       partner-deps:
         patterns:
