@@ -872,7 +872,7 @@ class ChatAnthropic(BaseChatModel):
     `#!python {"type": "adaptive"}`
     """
 
-    effort: Literal["high", "medium", "low"] | None = None
+    effort: Literal["max", "high", "medium", "low"] | None = None
     """Control how many tokens Claude uses when responding.
 
     This parameter will be merged into the `output_config` parameter when making
@@ -887,13 +887,8 @@ class ChatAnthropic(BaseChatModel):
 
     !!! note "Model Support"
 
-        This feature is currently only supported by Claude Opus 4.5.
-
-    !!! note "Automatic beta header"
-
-        The required `effort-2025-11-24` beta header is
-        automatically appended to the request when using `effort`, so you
-        don't need to manually specify it in the `betas` parameter.
+        This feature is generally available on Claude Opus 4.6 and Claude Opus 4.5.
+        The `max` effort level is only supported by Claude Opus 4.6.
     """
 
     mcp_servers: list[dict[str, Any]] | None = None
@@ -1163,16 +1158,6 @@ class ChatAnthropic(BaseChatModel):
 
         if output_config:
             payload["output_config"] = output_config
-
-            # Auto-append required beta for effort
-            if "effort" in output_config:
-                required_beta = "effort-2025-11-24"
-                if payload["betas"]:
-                    # Merge with existing betas
-                    if required_beta not in payload["betas"]:
-                        payload["betas"] = [*payload["betas"], required_beta]
-                else:
-                    payload["betas"] = [required_beta]
 
         if "response_format" in payload:
             # response_format present when using agents.create_agent's ProviderStrategy
