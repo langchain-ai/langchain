@@ -181,7 +181,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         ```
     """  # noqa: E501
 
-    model_name: str = Field(alias="model")
+    model_name: str = Field(default="deepseek-chat", alias="model")
     """The name of the model"""
     api_key: SecretStr | None = Field(
         default_factory=secret_from_env("DEEPSEEK_API_KEY", default=None),
