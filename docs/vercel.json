@@ -11,6 +11,11 @@
   ],
   "redirects": [
     {
+      "source": "/llms.txt",
+      "destination": "https://docs.langchain.com/llms.txt",
+      "permanent": true
+    },
+    {
       "source": "/v0.3/docs/:path(.*/?)*",
       "destination": "https://docs.langchain.com/oss/python/langchain/overview"
     },
