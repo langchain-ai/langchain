@@ -26,9 +26,7 @@ def test_blob_from_path_prefers_explicit_mimetype(tmp_path: Path) -> None:
     file_path = tmp_path / "data.unknown"
     file_path.write_bytes(b"{}")
 
-    blob = Blob.from_path(
-        file_path, mime_type="application/custom", guess_type=True
-    )
+    blob = Blob.from_path(file_path, mime_type="application/custom", guess_type=True)
 
     assert blob.mimetype == "application/custom"
 
