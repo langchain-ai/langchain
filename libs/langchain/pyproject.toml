@@ -93,7 +93,7 @@ test_integration = [
     "vcrpy>=8.0.0,<9.0.0",
     "wrapt>=1.15.0,<3.0.0",
     "python-dotenv>=1.0.0,<2.0.0",
-    "cassio>=0.1.0,<1.0.0",
+    "cassio>=0.1.0,<1.0.0; python_version < '3.14'",
     "langchainhub>=0.1.16,<1.0.0",
     "langchain-core",
     "langchain-text-splitters",
