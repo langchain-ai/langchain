@@ -430,7 +430,11 @@ def _format_messages(
             message.type == "ai" and _i == total_messages - 1
         )
 
-        if _is_empty_content(message.content) and not is_final_assistant_message:
+        if (
+            _is_empty_content(message.content)
+            and not is_final_assistant_message
+            and not (isinstance(message, AIMessage) and message.tool_calls)
+        ):
             msg = (
                 "Anthropic requires non-empty message content for all messages "
                 "except the optional final assistant message; received an empty "
