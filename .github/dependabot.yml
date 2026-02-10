@@ -22,12 +22,13 @@ updates:
       - "/libs/langchain_v1/"
     schedule:
       interval: "weekly"
+      day: "monday"
     groups:
       langchain-deps:
         patterns:
           - "*"
 
-  - package-ecosystem: "pip"
+  - package-ecosystem: "uv"
     directories:
       - "/libs/partners/anthropic/"
       - "/libs/partners/chroma/"
@@ -51,13 +52,14 @@ updates:
         patterns:
           - "*"
 
-  - package-ecosystem: "pip"
+  - package-ecosystem: "uv"
     directories:
       - "/libs/text-splitters/"
       - "/libs/standard-tests/"
       - "/libs/model-profiles/"
     schedule:
       interval: "weekly"
+      day: "monday"
     groups:
       other-deps:
         patterns:
