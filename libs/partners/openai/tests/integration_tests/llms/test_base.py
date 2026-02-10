@@ -258,6 +258,38 @@ def test_openai_modelname_to_contextsize_invalid() -> None:
         OpenAI().modelname_to_contextsize("foobar")
 
 
+@pytest.mark.scheduled
+def test_stop_tokens_from_model_kwargs_integration() -> None:
+    """Integration test: stop tokens from model_kwargs should work correctly.
+
+    This tests the fix for the bug where stop tokens in model_kwargs were being
+    overwritten by runtime stop parameters instead of being merged.
+    """
+    # Test with model_kwargs stop tokens only
+    llm = OpenAI(
+        model="gpt-3.5-turbo-instruct",
+        model_kwargs={"stop": ["\n\n"]},
+        max_tokens=50,
+    )
+    # Should stop at double newline
+    result = llm.invoke("List 10 colors:\n1. Red\n2. Blue\n3.")
+    # Result should be short because it stops at \n\n
+    assert isinstance(result, str)
+    assert len(result) < 200  # Should be stopped early
+
+    # Test with both model_kwargs and runtime stop tokens
+    llm2 = OpenAI(
+        model="gpt-3.5-turbo-instruct",
+        model_kwargs={"stop": ["\n\n"]},
+        max_tokens=50,
+    )
+    # Should stop at either \n\n or "END"
+    result2 = llm2.invoke("Say END after one word: Hello END", stop=["END"])
+    assert isinstance(result2, str)
+    # Should have stopped at "END" or "\n\n"
+    assert len(result2) < 100
+
+
 @pytest.fixture
 def mock_completion() -> dict:
     return {

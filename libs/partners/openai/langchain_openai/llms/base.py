@@ -20,6 +20,8 @@ from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_fro
 from pydantic import ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_openai.llms._utils import merge_stop_tokens
+
 logger = logging.getLogger(__name__)
 
 
@@ -577,7 +579,11 @@ class BaseOpenAI(BaseLLM):
     ) -> list[list[str]]:
         """Get the sub prompts for llm call."""
         if stop is not None:
-            params["stop"] = stop
+            # Merge stop tokens from params (model_kwargs) with runtime stop tokens
+            existing_stop = params.get("stop")
+            merged_stop = merge_stop_tokens(existing_stop, stop)
+            if merged_stop is not None:
+                params["stop"] = merged_stop
         if params["max_tokens"] == -1:
             if len(prompts) != 1:
                 msg = "max_tokens set to -1 not supported for multiple inputs."
