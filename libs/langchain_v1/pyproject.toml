@@ -67,14 +67,14 @@ test = [
     "pytest-socket>=0.6.0,<1.0.0",
     "pytest-xdist<4.0.0,>=3.6.1",
     "pytest-mock",
-    "syrupy>=4.0.2,<5.0.0",
+    "syrupy>=4.0.2,<6.0.0",
     "toml>=0.10.2,<1.0.0",
     "blockbuster>=1.5.26,<1.6.0",
     "langchain-tests",
     "langchain-openai",
 ]
 lint = [
-    "ruff>=0.14.11,<0.15.0",
+    "ruff>=0.14.11,<0.16.0",
 ]
 typing = [
     "mypy>=1.19.1,<1.20.0",
@@ -83,7 +83,7 @@ typing = [
 
 test_integration = [
     "vcrpy>=8.0.0,<9.0.0",
-    "wrapt>=1.15.0,<2.0.0",
+    "wrapt>=1.15.0,<3.0.0",
     "python-dotenv>=1.0.0,<2.0.0",
     "langchainhub>=0.1.16,<1.0.0",
     "langchain-core",
