@@ -57,7 +57,7 @@ class SandboxIntegrationTests(BaseStandardTests):
     @pytest.fixture(scope="class")
     def sandbox_backend(
         self, sandbox: SandboxBackendProtocol
-    ) -> Iterator[SandboxBackendProtocol]:
+    ) -> SandboxBackendProtocol:
         """Provide the sandbox backend under test.
 
         Resets the shared test directory before yielding.
