@@ -236,7 +236,6 @@ class ChatDeepSeek(BaseChatOpenAI):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Initialize clients."""
-
         client_params: dict = {
             k: v
             for k, v in {
