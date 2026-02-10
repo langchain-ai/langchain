@@ -3550,7 +3550,7 @@ def _url_to_size(image_source: str) -> tuple[int, int] | None:
 
         # Set reasonable limits to prevent resource exhaustion
         # Timeout prevents indefinite hangs on slow/malicious servers
-        timeout = 10.0  # seconds
+        timeout = 5.0  # seconds
         # Max size matches OpenAI's 50 MB payload limit
         max_size = 50 * 1024 * 1024  # 50 MB
 
