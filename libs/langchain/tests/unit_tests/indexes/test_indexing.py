@@ -146,9 +146,9 @@ def record_manager() -> SQLRecordManager:
 
 
 @pytest_asyncio.fixture
-@pytest.mark.requires("aiosqlite")
 async def arecord_manager() -> SQLRecordManager:
     """Timestamped set fixture."""
+    pytest.importorskip("aiosqlite")
     record_manager = SQLRecordManager(
         "kittens",
         db_url="sqlite+aiosqlite:///:memory:",

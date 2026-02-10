@@ -21,7 +21,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.2.9"
+version = "1.2.10"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langsmith>=0.3.45,<1.0.0",
@@ -45,7 +45,7 @@ Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
-lint = ["ruff>=0.14.11,<0.15.0"]
+lint = ["ruff>=0.14.11,<0.16.0"]
 typing = [
     "mypy>=1.19.1,<1.20.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
@@ -54,16 +54,16 @@ typing = [
 ]
 dev = [
     "jupyter>=1.0.0,<2.0.0",
-    "setuptools>=67.6.1,<79.0.0",
+    "setuptools>=67.6.1,<83.0.0",
     "grandalf>=0.8.0,<1.0.0",
 ]
 test = [
-    "pytest>=8.0.0,<9.0.0",
+    "pytest>=8.0.0,<10.0.0",
     "freezegun>=1.2.2,<2.0.0",
     "pytest-mock>=3.10.0,<4.0.0",
-    "syrupy>=4.0.2,<5.0.0",
+    "syrupy>=4.0.2,<6.0.0",
     "pytest-watcher>=0.3.4,<1.0.0",
-    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-asyncio>=0.21.1,<2.0.0",
     "grandalf>=0.8.0,<1.0.0",
     "responses>=0.25.0,<1.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
