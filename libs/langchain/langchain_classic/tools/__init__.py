@@ -20,6 +20,7 @@ from langchain_core.tools import (
 from langchain_core.tools.convert import tool as tool
 
 from langchain_classic._api.interactive_env import is_interactive_env
+from langchain_classic.tools.mcp_discovery.tool import MCPDiscoveryTool
 
 # Used for internal purposes
 _DEPRECATED_TOOLS = {"PythonAstREPLTool", "PythonREPLTool"}
@@ -138,6 +139,7 @@ __all__ = [
     "ListPowerBITool",
     "ListSQLDatabaseTool",
     "ListSparkSQLTool",
+    "MCPDiscoveryTool",
     "MerriamWebsterQueryRun",
     "MetaphorSearchResults",
     "MoveFileTool",
