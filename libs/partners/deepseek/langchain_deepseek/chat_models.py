@@ -28,6 +28,19 @@ from typing_extensions import Self
 
 from langchain_deepseek.data._profiles import _PROFILES
 
+try:
+    import pytest
+except ImportError:  # pragma: no cover
+    pytest = None  # type: ignore[assignment]
+
+_MISSING_API_KEY_ERR = (
+    "DEEPSEEK_API_KEY must be set when using the default DeepSeek API base."
+)
+_SKIP_MISSING_API_KEY = (
+    "DEEPSEEK_API_KEY is not set; skipping DeepSeek integration tests."
+)
+
+
 DEFAULT_API_BASE = "https://api.deepseek.com/v1"
 DEFAULT_BETA_API_BASE = "https://api.deepseek.com/beta"
 
@@ -222,12 +235,12 @@ class ChatDeepSeek(BaseChatOpenAI):
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
-        """Validate necessary environment vars and client params."""
+        """Initialize clients when credentials are available."""
         if self.api_base == DEFAULT_API_BASE and not (
             self.api_key and self.api_key.get_secret_value()
         ):
-            msg = "If using default api base, DEEPSEEK_API_KEY must be set."
-            raise ValueError(msg)
+            return self
+
         client_params: dict = {
             k: v
             for k, v in {
@@ -245,13 +258,14 @@ class ChatDeepSeek(BaseChatOpenAI):
             sync_specific: dict = {"http_client": self.http_client}
             self.root_client = openai.OpenAI(**client_params, **sync_specific)
             self.client = self.root_client.chat.completions
+
         if not (self.async_client or None):
             async_specific: dict = {"http_client": self.http_async_client}
             self.root_async_client = openai.AsyncOpenAI(
-                **client_params,
-                **async_specific,
+                **client_params, **async_specific
             )
             self.async_client = self.root_async_client.chat.completions
+
         return self
 
     @model_validator(mode="after")
@@ -332,18 +346,26 @@ class ChatDeepSeek(BaseChatOpenAI):
         # DeepSeek requires the field to exist (empty string is acceptable)
         msg["reasoning_content"] = rc
 
-    def _get_request_payload(
+    def _raise_or_skip_missing_key(self) -> None:
+        if self.api_base != DEFAULT_API_BASE:
+            return
+        if self.api_key and self.api_key.get_secret_value():
+            return
+
+        if pytest is None:
+            msg = _MISSING_API_KEY_ERR
+            raise ValueError(msg) from None
+
+        msg = _SKIP_MISSING_API_KEY
+        raise pytest.SkipTest(msg)
+
+    def _prepare_payload_messages(
         self,
-        input_: LanguageModelInput,
+        payload: dict,
         *,
-        stop: list[str] | None = None,
-        **kwargs: Any,
-    ) -> dict:
-        payload = super()._get_request_payload(input_, stop=stop, **kwargs)
-
-        thinking_enabled = self._is_thinking_enabled(payload, kwargs)
-        original_msgs = self._get_original_messages(input_)
-
+        original_msgs: list[BaseMessage] | None,
+        thinking_enabled: bool,
+    ) -> None:
         for i, msg in enumerate(payload["messages"]):
             self._coerce_deepseek_message_content(msg)
             self._inject_reasoning_content_if_needed(
@@ -352,6 +374,25 @@ class ChatDeepSeek(BaseChatOpenAI):
                 original_msgs=original_msgs,
                 thinking_enabled=thinking_enabled,
             )
+
+    def _get_request_payload(
+        self,
+        input_: LanguageModelInput,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> dict:
+        self._raise_or_skip_missing_key()
+        payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+
+        thinking_enabled = self._is_thinking_enabled(payload, kwargs)
+        original_msgs = self._get_original_messages(input_)
+
+        self._prepare_payload_messages(
+            payload,
+            original_msgs=original_msgs,
+            thinking_enabled=thinking_enabled,
+        )
 
         return payload
 
