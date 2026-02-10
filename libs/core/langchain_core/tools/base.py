@@ -755,20 +755,31 @@ class ChildTool(BaseTool):
                     if has_default:
                         validated_input[k] = getattr(result, k)
 
-            for k in self._injected_args_keys:
-                if k in tool_input:
-                    validated_input[k] = tool_input[k]
-                elif k == "tool_call_id":
-                    if tool_call_id is None:
-                        msg = (
-                            "When tool includes an InjectedToolCallId "
-                            "argument, tool must always be invoked with a full "
-                            "model ToolCall of the form: {'args': {...}, "
-                            "'name': '...', 'type': 'tool_call', "
-                            "'tool_call_id': '...'}"
-                        )
-                        raise ValueError(msg)
-                    validated_input[k] = tool_call_id
+            # Handle injected arguments
+            # There are two types of injected arguments:
+            # 1. Directly injected args (like ToolRuntime) - passed in tool_input
+            # 2. Runtime injected args (like InjectedToolCallId) - extracted from ToolCall
+            if self._injected_args_keys:
+                # First, preserve directly injected args from tool_input
+                for k in self._injected_args_keys:
+                    if k in tool_input:
+                        validated_input[k] = tool_input[k]
+
+                # Then, inject runtime args (like tool_call_id)
+                from langchain_core.tools.injection import (  # noqa: PLC0415
+                    inject_runtime_args,
+                )
+
+                # Get the function to determine proper error messages
+                # For structured tools, self.func will be set; for others, use _run
+                func = getattr(self, "func", self._run)
+
+                validated_input = inject_runtime_args(
+                    func=func,
+                    injected_keys=self._injected_args_keys,
+                    kwargs=validated_input,
+                    tool_call_id=tool_call_id,
+                )
 
             return validated_input
 
