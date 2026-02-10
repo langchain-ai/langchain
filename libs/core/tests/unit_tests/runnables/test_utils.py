@@ -82,7 +82,10 @@ def test_runnable_lambda_deps_fast_path_without_nonlocals(
         msg = "get_function_nonlocals should not be called for no-closure functions"
         raise AssertionError(msg)
 
-    monkeypatch.setattr("langchain_core.runnables.base.get_function_nonlocals", _explode)
+    monkeypatch.setattr(
+        "langchain_core.runnables.base.get_function_nonlocals",
+        _explode,
+    )
     assert RunnableLambda(lambda x: x + 1).deps == []
 
 
@@ -98,5 +101,8 @@ def test_runnable_lambda_deps_fast_path_with_direct_runnable(
     def my_func(value: str) -> str:
         return agent.invoke(value)
 
-    monkeypatch.setattr("langchain_core.runnables.base.get_function_nonlocals", _explode)
+    monkeypatch.setattr(
+        "langchain_core.runnables.base.get_function_nonlocals",
+        _explode,
+    )
     assert RunnableLambda(my_func).deps == [agent]
