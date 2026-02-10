@@ -90,10 +90,40 @@ class StructuredTool(BaseTool):
             The result of the tool execution
         """
         if self.func:
+            # Import here to avoid circular dependency
+            from langchain_core.tools.injection import (  # noqa: PLC0415
+                validate_injected_args_present,
+            )
+
+            # Add callback and config if needed
             if run_manager and signature(self.func).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.func):
                 kwargs[config_param] = config
+
+            # Defensive validation: Ensure injected args are present
+            # This catches bugs where injection was skipped in some execution path
+            # Note: Only validate non-directly-injected args (like InjectedToolCallId)
+            # Directly injected args (like ToolRuntime) come from the input dict
+            if self._injected_args_keys:
+                from langchain_core.tools.base import (  # noqa: PLC0415
+                    _is_directly_injected_arg_type,
+                )
+
+                # Filter to only args that require runtime injection
+                runtime_injected_keys = frozenset(
+                    k
+                    for k in self._injected_args_keys
+                    if not _is_directly_injected_arg_type(
+                        signature(self.func).parameters[k].annotation
+                    )
+                )
+
+                if runtime_injected_keys:
+                    validate_injected_args_present(
+                        self.func, runtime_injected_keys, kwargs, execution_context="_run"
+                    )
+
             return self.func(*args, **kwargs)
         msg = "StructuredTool does not support sync invocation."
         raise NotImplementedError(msg)
@@ -117,10 +147,40 @@ class StructuredTool(BaseTool):
             The result of the tool execution
         """
         if self.coroutine:
+            # Import here to avoid circular dependency
+            from langchain_core.tools.injection import (  # noqa: PLC0415
+                validate_injected_args_present,
+            )
+
+            # Add callback and config if needed
             if run_manager and signature(self.coroutine).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.coroutine):
                 kwargs[config_param] = config
+
+            # Defensive validation: Ensure injected args are present
+            # This catches bugs where injection was skipped in some execution path
+            # Note: Only validate non-directly-injected args (like InjectedToolCallId)
+            # Directly injected args (like ToolRuntime) come from the input dict
+            if self._injected_args_keys:
+                from langchain_core.tools.base import (  # noqa: PLC0415
+                    _is_directly_injected_arg_type,
+                )
+
+                # Filter to only args that require runtime injection
+                runtime_injected_keys = frozenset(
+                    k
+                    for k in self._injected_args_keys
+                    if not _is_directly_injected_arg_type(
+                        signature(self.coroutine).parameters[k].annotation
+                    )
+                )
+
+                if runtime_injected_keys:
+                    validate_injected_args_present(
+                        self.coroutine, runtime_injected_keys, kwargs, execution_context="_arun"
+                    )
+
             return await self.coroutine(*args, **kwargs)
 
         # If self.coroutine is None, then this will delegate to the default

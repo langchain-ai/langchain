@@ -2468,8 +2468,8 @@ def test_tool_injected_tool_call_id_with_custom_schema() -> None:
     # Test that it still raises error when invoked without a ToolCall
     with pytest.raises(
         ValueError,
-        match="When tool includes an InjectedToolCallId argument, "
-        "tool must always be invoked with a full model ToolCall",
+        match="requires 'tool_call_id' to be injected.*"
+        "Tools with InjectedToolCallId must be invoked with a ToolCall",
     ):
         injected_tool.invoke({"x": 42})
 
