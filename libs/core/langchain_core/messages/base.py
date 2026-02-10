@@ -394,9 +394,9 @@ class BaseMessage(Serializable):
             content_repr = _format_content(html=True)
             return (
                 '<div class="lc-message">'
-                f"\n  <div class=\"lc-message-title\"><strong>{title}</strong></div>"
+                f'\n  <div class="lc-message-title"><strong>{title}</strong></div>'
                 f"{name_line}"
-                f"\n  <div class=\"lc-message-body\">{content_repr}</div>"
+                f'\n  <div class="lc-message-body">{content_repr}</div>'
                 "\n</div>"
             )
 
