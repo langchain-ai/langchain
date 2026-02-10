@@ -21,11 +21,11 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.2.9"
+version = "1.2.10"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.9,<2.0.0",
-    "langgraph>=1.0.7,<1.1.0",
+    "langchain-core>=1.2.10,<2.0.0",
+    "langgraph>=1.0.8,<1.1.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
 
