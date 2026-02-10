@@ -345,7 +345,7 @@ class BaseMessage(Serializable):
             if isinstance(block, dict):
                 block_type = block.get("type")
                 if block_type == "text" and isinstance(block.get("text"), str):
-                    text_value = block["text"]
+                    text_value = cast(str, block["text"])
                     return escape(text_value) if html else text_value
 
                 if block_type == "reasoning":
@@ -354,7 +354,7 @@ class BaseMessage(Serializable):
                         reasoning = json.dumps(reasoning, ensure_ascii=False)
                     if html:
                         return f'<pre class="lc-reasoning">{escape(reasoning)}</pre>'
-                    return cast("str", reasoning)
+                    return reasoning
 
                 if block_type in {"image", "image_url"}:
                     url = block.get("url")
@@ -369,7 +369,7 @@ class BaseMessage(Serializable):
                         img_id = escape(str(file_id))
                         return f'<img data-file-id="{img_id}" alt="image" />'
                     if url or file_id:
-                        return cast("str", url or file_id)
+                        return str(url or file_id)
 
             try:
                 serialized = json.dumps(block, ensure_ascii=False)
