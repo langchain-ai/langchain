@@ -936,6 +936,39 @@ def test_with_structured_output(
     )
 
 
+def test_with_structured_output_bind_tools() -> None:
+    llm = ChatOpenAI(model="gpt-4o", api_key=SecretStr("test-api-key"))
+    structured_llm = llm.with_structured_output(
+        GenerateUsername, method="function_calling"
+    )
+
+    chained_llm = structured_llm.bind_tools([MakeASandwich])  # type: ignore[attr-defined]
+
+    sequence = cast(RunnableSequence, chained_llm)
+    binding = cast(RunnableBinding, sequence.first)
+    bound_tools = cast("list[dict[str, Any]]", binding.kwargs["tools"])
+    tool_names = [tool["function"]["name"] for tool in bound_tools]
+
+    assert "GenerateUsername" in tool_names
+    assert "MakeASandwich" in tool_names
+    assert binding.kwargs["tool_choice"]["function"]["name"] == "GenerateUsername"
+
+
+def test_with_structured_output_bind_tools_include_raw_unsupported() -> None:
+    llm = ChatOpenAI(model="gpt-4o", api_key=SecretStr("test-api-key"))
+    structured_llm = llm.with_structured_output(
+        GenerateUsername,
+        method="function_calling",
+        include_raw=True,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="without include_raw",
+    ):
+        structured_llm.bind_tools([MakeASandwich])  # type: ignore[attr-defined]
+
+
 def test_get_num_tokens_from_messages() -> None:
     llm = ChatOpenAI(model="gpt-4o")
     messages = [

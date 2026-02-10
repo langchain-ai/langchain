@@ -89,9 +89,11 @@ from langchain_core.output_parsers.openai_tools import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import (
     Runnable,
+    RunnableBinding,
     RunnableLambda,
     RunnableMap,
     RunnablePassthrough,
+    RunnableSequence,
 )
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
@@ -508,6 +510,62 @@ def _model_prefers_responses_api(model_name: str | None) -> bool:
 _BM = TypeVar("_BM", bound=BaseModel)
 _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[_BM] | type
 _DictOrPydantic: TypeAlias = dict | _BM
+
+
+class _StructuredOutputRunnableSequence(
+    RunnableSequence[LanguageModelInput, _DictOrPydantic]
+):
+    """Runnable sequence that preserves `bind_tools` after `with_structured_output`."""
+
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
+        *,
+        tool_choice: dict | str | bool | None = None,
+        strict: bool | None = None,
+        parallel_tool_calls: bool | None = None,
+        response_format: _DictOrPydanticClass | None = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
+        first = self.first
+        if not isinstance(first, RunnableBinding):
+            msg = (
+                "bind_tools() is only supported for structured output runnables "
+                "without include_raw."
+            )
+            raise ValueError(msg)
+
+        bound_model = first.bound
+        if not isinstance(bound_model, BaseChatOpenAI):
+            msg = "Structured output runnable is not bound to BaseChatOpenAI."
+            raise ValueError(msg)
+
+        existing_kwargs = dict(first.kwargs)
+        existing_tools = cast(
+            "list[dict[str, Any] | type | Callable | BaseTool]",
+            existing_kwargs.pop("tools", []),
+        )
+
+        merged_kwargs = {**existing_kwargs, **kwargs}
+        if tool_choice is not None:
+            merged_kwargs["tool_choice"] = tool_choice
+        if strict is not None:
+            merged_kwargs["strict"] = strict
+        if parallel_tool_calls is not None:
+            merged_kwargs["parallel_tool_calls"] = parallel_tool_calls
+        if response_format is not None:
+            merged_kwargs["response_format"] = response_format
+
+        rebound = bound_model.bind_tools(
+            [*existing_tools, *tools],
+            **merged_kwargs,
+        )
+        return _StructuredOutputRunnableSequence(
+            first=rebound,
+            middle=list(self.middle),
+            last=self.last,
+            name=self.name,
+        )
 
 
 class BaseChatOpenAI(BaseChatModel):
@@ -2214,8 +2272,10 @@ class BaseChatOpenAI(BaseChatModel):
             parser_with_fallback = parser_assign.with_fallbacks(
                 [parser_none], exception_key="parsing_error"
             )
-            return RunnableMap(raw=llm) | parser_with_fallback
-        return llm | output_parser
+            return _StructuredOutputRunnableSequence(
+                RunnableMap(raw=llm), parser_with_fallback
+            )
+        return _StructuredOutputRunnableSequence(llm, output_parser)
 
     def _filter_disabled_params(self, **kwargs: Any) -> dict[str, Any]:
         if not self.disabled_params:
