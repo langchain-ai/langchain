@@ -16,7 +16,6 @@ from typing import (
 from pydantic import Field, SkipValidation
 from typing_extensions import override
 
-# Cannot move to TYPE_CHECKING as _run/_arun parameter annotations are needed at runtime
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,  # noqa: TC001
     CallbackManagerForToolRun,  # noqa: TC001
