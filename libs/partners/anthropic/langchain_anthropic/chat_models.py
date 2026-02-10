@@ -654,10 +654,15 @@ def _format_messages(
             ):
                 content[-1]["text"] = content[-1]["text"].rstrip()
 
-        if not content and role == "assistant" and _i < len(merged_messages) - 1:
-            # anthropic.BadRequestError: Error code: 400: all messages must have
-            # non-empty content except for the optional final assistant message
-            continue
+        if not content:
+            if role == "assistant" and _i < len(merged_messages) - 1:
+                # anthropic.BadRequestError: Error code: 400: all messages must have
+                # non-empty content except for the optional final assistant message
+                continue
+            elif role == "user":
+                # Anthropic API rejects user messages with empty content
+                # Skip empty human messages rather than sending them
+                continue
         formatted_messages.append({"role": role, "content": content})
     return system, formatted_messages
 
