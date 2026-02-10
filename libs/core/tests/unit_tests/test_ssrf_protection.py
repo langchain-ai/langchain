@@ -219,7 +219,7 @@ class TestSSRFProtectedUrlType:
             url: SSRFProtectedUrl
 
         schema = WebhookSchema(url="https://hooks.slack.com/services/xxx")
-        assert str(schema.url).startswith("https://hooks.slack.com")
+        assert str(schema.url).startswith("https://hooks.slack.com/")
 
     def test_localhost_rejected(self) -> None:
         """Test that localhost URLs are rejected by Pydantic schema."""
