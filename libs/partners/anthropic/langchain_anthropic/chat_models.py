@@ -425,9 +425,7 @@ def _format_messages(
     merged_messages = _merge_messages(messages)
     total_messages = len(merged_messages)
     for _i, message in enumerate(merged_messages):
-        is_final_assistant_message = (
-            message.type == "ai" and _i == total_messages - 1
-        )
+        is_final_assistant_message = message.type == "ai" and _i == total_messages - 1
 
         if _is_empty_content(message.content) and not is_final_assistant_message:
             msg = (
