@@ -31,7 +31,7 @@ from langchain_deepseek.data._profiles import _PROFILES
 try:
     import pytest
 except ImportError:  # pragma: no cover
-    pytest = None  # type: ignore[assignment]
+    pytest: Any = None
 
 _MISSING_API_KEY_ERR = (
     "DEEPSEEK_API_KEY must be set when using the default DeepSeek API base."
@@ -235,11 +235,7 @@ class ChatDeepSeek(BaseChatOpenAI):
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
-        """Initialize clients when credentials are available."""
-        if self.api_base == DEFAULT_API_BASE and not (
-            self.api_key and self.api_key.get_secret_value()
-        ):
-            return self
+        """Initialize clients."""
 
         client_params: dict = {
             k: v
@@ -356,8 +352,7 @@ class ChatDeepSeek(BaseChatOpenAI):
             msg = _MISSING_API_KEY_ERR
             raise ValueError(msg) from None
 
-        msg = _SKIP_MISSING_API_KEY
-        raise pytest.SkipTest(msg)
+        pytest.skip(_SKIP_MISSING_API_KEY)
 
     def _prepare_payload_messages(
         self,
