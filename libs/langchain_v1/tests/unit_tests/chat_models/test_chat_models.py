@@ -8,7 +8,7 @@ from langchain_core.runnables import RunnableConfig, RunnableSequence
 from pydantic import SecretStr
 
 from langchain.chat_models import __all__, init_chat_model
-from langchain.chat_models.base import _SUPPORTED_PROVIDERS, _attempt_infer_model_provider
+from langchain.chat_models.base import _BUILTIN_PROVIDERS, _attempt_infer_model_provider
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
@@ -64,7 +64,7 @@ def test_init_unknown_provider() -> None:
 
 def test_supported_providers_is_sorted() -> None:
     """Test that supported providers are sorted alphabetically."""
-    assert list(_SUPPORTED_PROVIDERS) == sorted(_SUPPORTED_PROVIDERS.keys())
+    assert list(_BUILTIN_PROVIDERS) == sorted(_BUILTIN_PROVIDERS.keys())
 
 
 @pytest.mark.parametrize(
