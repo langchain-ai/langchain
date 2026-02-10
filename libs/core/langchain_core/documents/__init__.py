@@ -31,14 +31,15 @@ from typing import TYPE_CHECKING
 from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
-    from langchain_core.documents.base import Document
+    from langchain_core.documents.base import Blob, Document
     from langchain_core.documents.compressor import BaseDocumentCompressor
     from langchain_core.documents.transformers import BaseDocumentTransformer
 
-__all__ = ("BaseDocumentCompressor", "BaseDocumentTransformer", "Document")
+__all__ = ("BaseDocumentCompressor", "BaseDocumentTransformer", "Blob", "Document")
 
 _dynamic_imports = {
     "Document": "base",
+    "Blob": "base",
     "BaseDocumentCompressor": "compressor",
     "BaseDocumentTransformer": "transformers",
 }
