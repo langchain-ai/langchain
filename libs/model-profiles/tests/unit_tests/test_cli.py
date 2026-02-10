@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from langchain_model_profiles.cli import refresh
+from langchain_model_profiles.cli import _model_data_to_profile, refresh
 
 
 @pytest.fixture
@@ -214,3 +214,33 @@ max_input_tokens = 123
     assert (
         module._PROFILES["custom-offline-model"]["max_input_tokens"] == 123  # type: ignore[index]
     )
+
+
+def test_model_data_to_profile_text_modalities() -> None:
+    """Test that text input/output modalities are correctly mapped."""
+    # Model with text in both input and output
+    model_with_text = {
+        "modalities": {"input": ["text", "image"], "output": ["text"]},
+        "limit": {"context": 128000, "output": 4096},
+    }
+    profile = _model_data_to_profile(model_with_text)
+    assert profile["text_inputs"] is True
+    assert profile["text_outputs"] is True
+
+    # Model without text input (e.g., Whisper-like audio model)
+    audio_only_model = {
+        "modalities": {"input": ["audio"], "output": ["text"]},
+        "limit": {"context": 0, "output": 0},
+    }
+    profile = _model_data_to_profile(audio_only_model)
+    assert profile["text_inputs"] is False
+    assert profile["text_outputs"] is True
+
+    # Model without text output (e.g., image generator)
+    image_gen_model = {
+        "modalities": {"input": ["text"], "output": ["image"]},
+        "limit": {},
+    }
+    profile = _model_data_to_profile(image_gen_model)
+    assert profile["text_inputs"] is True
+    assert profile["text_outputs"] is False

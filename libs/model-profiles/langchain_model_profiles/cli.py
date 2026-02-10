@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -107,10 +108,12 @@ def _model_data_to_profile(model_data: dict[str, Any]) -> dict[str, Any]:
     profile = {
         "max_input_tokens": limit.get("context"),
         "max_output_tokens": limit.get("output"),
+        "text_inputs": "text" in input_modalities,
         "image_inputs": "image" in input_modalities,
         "audio_inputs": "audio" in input_modalities,
         "pdf_inputs": "pdf" in input_modalities or model_data.get("pdf_inputs"),
         "video_inputs": "video" in input_modalities,
+        "text_outputs": "text" in output_modalities,
         "image_outputs": "image" in output_modalities,
         "audio_outputs": "audio" in output_modalities,
         "video_outputs": "video" in output_modalities,
@@ -305,7 +308,7 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     # Write as Python module
     output_file = data_dir / "_profiles.py"
     print(f"Writing to {output_file}...")
-    module_content = [f'"""{MODULE_ADMONITION}"""\n', "from typing import Any\n\n"]
+    module_content = [f'"""{MODULE_ADMONITION}"""\n\n', "from typing import Any\n\n"]
     module_content.append("_PROFILES: dict[str, dict[str, Any]] = ")
     json_str = json.dumps(profiles, indent=4)
     json_str = (
@@ -313,6 +316,8 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
         .replace("false", "False")
         .replace("null", "None")
     )
+    # Add trailing commas for ruff format compliance
+    json_str = re.sub(r"([^\s,{\[])(\n\s*[\}\]])", r"\1,\2", json_str)
     module_content.append(f"{json_str}\n")
     _write_profiles_file(output_file, "".join(module_content))
 

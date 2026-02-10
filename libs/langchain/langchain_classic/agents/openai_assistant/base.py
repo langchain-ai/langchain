@@ -21,7 +21,7 @@ from typing_extensions import Self, override
 
 if TYPE_CHECKING:
     import openai
-    from openai.types.beta.threads import ThreadMessage  # type: ignore[attr-defined]
+    from openai.types.beta.threads import ThreadMessage
     from openai.types.beta.threads.required_action_function_tool_call import (
         RequiredActionFunctionToolCall,
     )
@@ -279,7 +279,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
         assistant = client.beta.assistants.create(
             name=name,
             instructions=instructions,
-            tools=[_get_assistants_tool(tool) for tool in tools],  # type: ignore[misc]
+            tools=[_get_assistants_tool(tool) for tool in tools],
             model=model,
         )
         return cls(assistant_id=assistant.id, client=client, **kwargs)
@@ -412,7 +412,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
         assistant = await async_client.beta.assistants.create(
             name=name,
             instructions=instructions,
-            tools=openai_tools,  # type: ignore[arg-type]
+            tools=openai_tools,
             model=model,
         )
         return cls(assistant_id=assistant.id, async_client=async_client, **kwargs)
@@ -617,7 +617,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                     if version_gte_1_14
                     else isinstance(
                         content,
-                        openai.types.beta.threads.MessageContentText,  # type: ignore[attr-defined]
+                        openai.types.beta.threads.MessageContentText,
                     )
                 )
                 for content in answer
@@ -771,7 +771,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                     if version_gte_1_14
                     else isinstance(
                         content,
-                        openai.types.beta.threads.MessageContentText,  # type: ignore[attr-defined]
+                        openai.types.beta.threads.MessageContentText,
                     )
                 )
                 for content in answer

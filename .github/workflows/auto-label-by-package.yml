@@ -43,7 +43,6 @@ jobs:
               "langchain-nomic": "nomic",
               "langchain-ollama": "ollama",
               "langchain-perplexity": "perplexity",
-              "langchain-prompty": "prompty",
               "langchain-qdrant": "qdrant",
               "langchain-xai": "xai",
             };
