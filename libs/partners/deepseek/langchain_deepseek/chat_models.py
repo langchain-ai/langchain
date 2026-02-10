@@ -27,13 +27,8 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 from langchain_deepseek.data._profiles import _PROFILES
-from __future__ import annotations
 
-import json
-from typing import Any
 
-from langchain_core.language_models import LanguageModelInput
-from langchain_core.messages import BaseMessage
 
 
 
@@ -308,11 +303,12 @@ class ChatDeepSeek(BaseChatOpenAI):
 
         # assistant role content sometimes becomes list -> DeepSeek expects string
         if msg.get("role") == "assistant" and isinstance(msg.get("content"), list):
-            text_parts: list[str] = []
-            for block in msg["content"]:
-                if isinstance(block, dict) and block.get("type") == "text":
-                    text_parts.append(block.get("text", ""))
-            msg["content"] = "".join(text_parts) if text_parts else ""
+            text_parts = [
+                block.get("text", "")
+                for block in msg["content"]
+                if isinstance(block, dict) and block.get("type") == "text"
+            ]
+            msg["content"] = "".join(text_parts)
 
     def _inject_reasoning_content_if_needed(
         self,
