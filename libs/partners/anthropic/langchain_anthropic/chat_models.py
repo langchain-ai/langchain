@@ -17,7 +17,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.exceptions import OutputParserException
+from langchain_core.exceptions import ContextOverflowError, OutputParserException
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -643,6 +643,17 @@ def _format_messages(
                 _lc_tool_calls_to_anthropic_tool_use_blocks(missing_tool_calls),
             )
 
+        if role == "assistant" and _i == len(merged_messages) - 1:
+            if isinstance(content, str):
+                content = content.rstrip()
+            elif (
+                isinstance(content, list)
+                and content
+                and isinstance(content[-1], dict)
+                and content[-1].get("type") == "text"
+            ):
+                content[-1]["text"] = content[-1]["text"].rstrip()
+
         if not content and role == "assistant" and _i < len(merged_messages) - 1:
             # anthropic.BadRequestError: Error code: 400: all messages must have
             # non-empty content except for the optional final assistant message
@@ -710,8 +721,16 @@ def _is_code_execution_related_block(
     return False
 
 
+class AnthropicContextOverflowError(anthropic.BadRequestError, ContextOverflowError):
+    """BadRequestError raised when input exceeds Anthropic's context limit."""
+
+
 def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
     """Handle Anthropic BadRequestError."""
+    if "prompt is too long" in e.message:
+        raise AnthropicContextOverflowError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
     if ("messages: at least one message is required") in e.message:
         message = "Received only system message(s). "
         warnings.warn(message, stacklevel=2)
