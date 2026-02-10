@@ -3235,6 +3235,7 @@ def test_openai_structured_output_refusal_handling_responses_api() -> None:
         pytest.fail(f"This is a wrong behavior. Error details: {e}")
 
 
+<<<<<<< HEAD
 # Test fixtures for context overflow error tests
 _CONTEXT_OVERFLOW_ERROR_BODY = {
     "error": {
@@ -3392,3 +3393,49 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     # Verify it's both types (multiple inheritance)
     assert isinstance(exc_info.value, openai.BadRequestError)
     assert isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_create_chat_result_with_null_choices_in_model_dump() -> None:
+    """
+    Test that _create_chat_result handles the case where model_dump() returns
+    null for choices, but the response object has valid choices (common with
+    OpenAI-compatible APIs like vLLM).
+
+    Regression test for: https://github.com/langchain-ai/langchain/issues/32252
+    """
+    from unittest.mock import MagicMock
+
+    # Create a mock response that simulates vLLM behavior:
+    # - model_dump() returns {"choices": None, ...}
+    # - but response.choices has valid data
+    mock_choice = MagicMock()
+    mock_choice.model_dump.return_value = {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": None,
+        "message": {
+            "content": "Hello! How can I help you?",
+            "role": "assistant",
+            "tool_calls": None,
+        },
+    }
+
+    mock_response = MagicMock()
+    mock_response.model_dump.return_value = {
+        "choices": None,  # Simulates the bug where model_dump returns null
+        "created": 1234567890,
+        "id": "chatcmpl-test",
+        "model": "test-model",
+        "object": "chat.completion",
+        "usage": {"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30},
+    }
+    # But the response object itself has valid choices
+    mock_response.choices = [mock_choice]
+
+    llm = ChatOpenAI(model="test-model", api_key="test-key")  # type: ignore
+
+    # This should succeed by falling back to direct attribute access
+    result = llm._create_chat_result(mock_response)
+
+    assert len(result.generations) == 1
+    assert result.generations[0].message.content == "Hello! How can I help you?"

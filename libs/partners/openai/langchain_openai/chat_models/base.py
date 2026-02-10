@@ -1501,6 +1501,19 @@ class BaseChatOpenAI(BaseChatModel):
             msg = f"Response missing `choices` key: {response_dict.keys()}"
             raise KeyError(msg) from e
 
+        # For OpenAI-compatible APIs (like vLLM), model_dump() may return null
+        # for choices even when the response object has valid choices. In this
+        # case, try to extract choices directly from the response object and
+        # convert to dict format.
+        if choices is None and isinstance(response, openai.BaseModel):
+            raw_choices = getattr(response, "choices", None)
+            if raw_choices is not None:
+                choices = [
+                    choice.model_dump() if hasattr(choice, "model_dump") else choice
+                    for choice in raw_choices
+                ]
+                response_dict["choices"] = choices
+
         if choices is None:
             msg = "Received response with null value for `choices`."
             raise TypeError(msg)
