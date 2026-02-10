@@ -19,8 +19,6 @@ from typing import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
-    from langgraph.types import Command
-
 # Needed as top level import for Pydantic schema generation on AgentState
 import warnings
 from typing import TypeAlias
@@ -42,6 +40,7 @@ if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
+    from langgraph.types import Command
 
     from langchain.agents.structured_output import ResponseFormat
 
@@ -49,6 +48,8 @@ __all__ = [
     "AgentMiddleware",
     "AgentState",
     "ContextT",
+    "ExtendedModelResponse",
+    "ModelCallResult",
     "ModelRequest",
     "ModelResponse",
     "OmitFromSchema",
@@ -68,7 +69,7 @@ __all__ = [
 JumpTo = Literal["tools", "model", "end"]
 """Destination to jump to when a middleware node returns."""
 
-ResponseT = TypeVar("ResponseT")
+ResponseT = TypeVar("ResponseT", default=Any)
 
 
 class _ModelRequestOverrides(TypedDict, total=False):
@@ -85,8 +86,12 @@ class _ModelRequestOverrides(TypedDict, total=False):
 
 
 @dataclass(init=False)
-class ModelRequest:
-    """Model request information for the agent."""
+class ModelRequest(Generic[ContextT]):
+    """Model request information for the agent.
+
+    Type Parameters:
+        ContextT: The type of the runtime context. Defaults to `None` if not specified.
+    """
 
     model: BaseChatModel
     messages: list[AnyMessage]  # excluding system message
@@ -95,7 +100,7 @@ class ModelRequest:
     tools: list[BaseTool | dict[str, Any]]
     response_format: ResponseFormat[Any] | None
     state: AgentState[Any]
-    runtime: Runtime[ContextT]  # type: ignore[valid-type]
+    runtime: Runtime[ContextT]
     model_settings: dict[str, Any] = field(default_factory=dict)
 
     def __init__(
@@ -194,7 +199,7 @@ class ModelRequest:
         )
         object.__setattr__(self, name, value)
 
-    def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest:
+    def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest[ContextT]:
         """Replace the request with a new request with the given overrides.
 
         Returns a new `ModelRequest` instance with the specified attributes replaced.
@@ -264,28 +269,60 @@ class ModelRequest:
 
 
 @dataclass
-class ModelResponse:
+class ModelResponse(Generic[ResponseT]):
     """Response from model execution including messages and optional structured output.
 
     The result will usually contain a single `AIMessage`, but may include an additional
     `ToolMessage` if the model used a tool for structured output.
+
+    Type Parameters:
+        ResponseT: The type of the structured response. Defaults to `Any` if not specified.
     """
 
     result: list[BaseMessage]
     """List of messages from model execution."""
 
-    structured_response: Any = None
+    structured_response: ResponseT | None = None
     """Parsed structured output if `response_format` was specified, `None` otherwise."""
 
 
-# Type alias for middleware return type - allows returning either full response or just AIMessage
-ModelCallResult: TypeAlias = ModelResponse | AIMessage
+@dataclass
+class ExtendedModelResponse(Generic[ResponseT]):
+    """Model response with an optional 'Command' from 'wrap_model_call' middleware.
+
+    Use this to return a 'Command' alongside the model response from a
+    'wrap_model_call' handler. The command is applied as an additional state
+    update after the model node completes, using the graph's reducers (e.g.
+    'add_messages' for the 'messages' key).
+
+    Because each 'Command' is applied through the reducer, messages in the
+    command are **added alongside** the model response messages rather than
+    replacing them. For non-reducer state fields, later commands overwrite
+    earlier ones (outermost middleware wins over inner).
+
+    Type Parameters:
+        ResponseT: The type of the structured response. Defaults to 'Any' if not specified.
+    """
+
+    model_response: ModelResponse[ResponseT]
+    """The underlying model response."""
+
+    command: Command[Any] | None = None
+    """Optional command to apply as an additional state update."""
+
+
+ModelCallResult: TypeAlias = (
+    "ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]"
+)
 """`TypeAlias` for model call handler return value.
 
 Middleware can return either:
 
 - `ModelResponse`: Full response with messages and optional structured output
 - `AIMessage`: Simplified return for simple use cases
+- `ExtendedModelResponse`: Response with an optional `Command` for additional state updates
+    `goto`, `resume`, and `graph` are not yet supported on these commands.
+    A `NotImplementedError` will be raised if you try to use them.
 """
 
 
@@ -340,11 +377,16 @@ class _DefaultAgentState(AgentState[Any]):
     """AgentMiddleware default state."""
 
 
-class AgentMiddleware(Generic[StateT, ContextT]):
+class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
     """Base middleware class for an agent.
 
     Subclass this and implement any of the defined methods to customize agent behavior
     between steps in the main agent loop.
+
+    Type Parameters:
+        StateT: The type of the agent state. Defaults to `AgentState[Any]`.
+        ContextT: The type of the runtime context. Defaults to `None`.
+        ResponseT: The type of the structured response. Defaults to `Any`.
     """
 
     state_schema: type[StateT] = cast("type[StateT]", _DefaultAgentState)
@@ -446,9 +488,9 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
     def wrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
-    ) -> ModelCallResult:
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]:
         """Intercept and control model execution via handler callback.
 
         Async version is `awrap_model_call`
@@ -541,9 +583,9 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
     async def awrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-    ) -> ModelCallResult:
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
+    ) -> ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]:
         """Intercept and control async model execution via handler callback.
 
         The handler callback executes the model request and returns a `ModelResponse`.
@@ -781,13 +823,13 @@ class _CallableReturningSystemMessage(Protocol[StateT_contra, ContextT]):  # typ
     """Callable that returns a prompt string or SystemMessage given `ModelRequest`."""
 
     def __call__(
-        self, request: ModelRequest
+        self, request: ModelRequest[ContextT]
     ) -> str | SystemMessage | Awaitable[str | SystemMessage]:
         """Generate a system prompt string or SystemMessage based on the request."""
         ...
 
 
-class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
+class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT, ResponseT]):  # type: ignore[misc]
     """Callable for model call interception with handler callback.
 
     Receives handler callback to execute model and returns `ModelResponse` or
@@ -796,9 +838,9 @@ class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):  # typ
 
     def __call__(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
-    ) -> ModelCallResult:
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
         """Intercept model execution via handler callback."""
         ...
 
@@ -1681,9 +1723,9 @@ def dynamic_prompt(
 
             async def async_wrapped(
                 _self: AgentMiddleware[StateT, ContextT],
-                request: ModelRequest,
-                handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-            ) -> ModelCallResult:
+                request: ModelRequest[ContextT],
+                handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[Any]]],
+            ) -> ModelResponse[Any] | AIMessage:
                 prompt = await func(request)  # type: ignore[misc]
                 if isinstance(prompt, SystemMessage):
                     request = request.override(system_message=prompt)
@@ -1705,10 +1747,10 @@ def dynamic_prompt(
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelCallResult:
-            prompt = cast("Callable[[ModelRequest], SystemMessage | str]", func)(request)
+            request: ModelRequest[ContextT],
+            handler: Callable[[ModelRequest[ContextT]], ModelResponse[Any]],
+        ) -> ModelResponse[Any] | AIMessage:
+            prompt = cast("Callable[[ModelRequest[ContextT]], SystemMessage | str]", func)(request)
             if isinstance(prompt, SystemMessage):
                 request = request.override(system_message=prompt)
             else:
@@ -1717,11 +1759,11 @@ def dynamic_prompt(
 
         async def async_wrapped_from_sync(
             _self: AgentMiddleware[StateT, ContextT],
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-        ) -> ModelCallResult:
+            request: ModelRequest[ContextT],
+            handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[Any]]],
+        ) -> ModelResponse[Any] | AIMessage:
             # Delegate to sync function
-            prompt = cast("Callable[[ModelRequest], SystemMessage | str]", func)(request)
+            prompt = cast("Callable[[ModelRequest[ContextT]], SystemMessage | str]", func)(request)
             if isinstance(prompt, SystemMessage):
                 request = request.override(system_message=prompt)
             else:
@@ -1748,7 +1790,7 @@ def dynamic_prompt(
 
 @overload
 def wrap_model_call(
-    func: _CallableReturningModelResponse[StateT, ContextT],
+    func: _CallableReturningModelResponse[StateT, ContextT, ResponseT],
 ) -> AgentMiddleware[StateT, ContextT]: ...
 
 
@@ -1761,13 +1803,13 @@ def wrap_model_call(
     name: str | None = None,
     depends_on: Sequence[type[AgentMiddleware] | AgentMiddleware] | None = None,
 ) -> Callable[
-    [_CallableReturningModelResponse[StateT, ContextT]],
+    [_CallableReturningModelResponse[StateT, ContextT, ResponseT]],
     AgentMiddleware[StateT, ContextT],
 ]: ...
 
 
 def wrap_model_call(
-    func: _CallableReturningModelResponse[StateT, ContextT] | None = None,
+    func: _CallableReturningModelResponse[StateT, ContextT, ResponseT] | None = None,
     *,
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
@@ -1775,7 +1817,7 @@ def wrap_model_call(
     depends_on: Sequence[type[AgentMiddleware] | AgentMiddleware] | None = None,
 ) -> (
     Callable[
-        [_CallableReturningModelResponse[StateT, ContextT]],
+        [_CallableReturningModelResponse[StateT, ContextT, ResponseT]],
         AgentMiddleware[StateT, ContextT],
     ]
     | AgentMiddleware[StateT, ContextT]
@@ -1861,7 +1903,7 @@ def wrap_model_call(
     """
 
     def decorator(
-        func: _CallableReturningModelResponse[StateT, ContextT],
+        func: _CallableReturningModelResponse[StateT, ContextT, ResponseT],
     ) -> AgentMiddleware[StateT, ContextT]:
         is_async = iscoroutinefunction(func)
 
@@ -1869,9 +1911,9 @@ def wrap_model_call(
 
             async def async_wrapped(
                 _self: AgentMiddleware[StateT, ContextT],
-                request: ModelRequest,
-                handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-            ) -> ModelCallResult:
+                request: ModelRequest[ContextT],
+                handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
+            ) -> ModelResponse[ResponseT] | AIMessage:
                 return await func(request, handler)  # type: ignore[misc, arg-type]
 
             middleware_name = name or cast(
@@ -1892,9 +1934,9 @@ def wrap_model_call(
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelCallResult:
+            request: ModelRequest[ContextT],
+            handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+        ) -> ModelResponse[ResponseT] | AIMessage:
             return func(request, handler)
 
         middleware_name = name or cast("str", getattr(func, "__name__", "WrapModelCallMiddleware"))

@@ -25,7 +25,7 @@ from langgraph.graph.message import (
 from langgraph.runtime import Runtime
 from typing_extensions import override
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState
+from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
 from langchain.chat_models import BaseChatModel, init_chat_model
 
 TokenCounter = Callable[[Iterable[MessageLikeRepresentation]], int]
@@ -144,11 +144,13 @@ def _get_approximate_token_counter(model: BaseChatModel) -> TokenCounter:
     if model._llm_type == "anthropic-chat":  # noqa: SLF001
         # 3.3 was estimated in an offline experiment, comparing with Claude's token-counting
         # API: https://platform.claude.com/docs/en/build-with-claude/token-counting
-        return partial(count_tokens_approximately, chars_per_token=3.3)
-    return count_tokens_approximately
+        return partial(
+            count_tokens_approximately, use_usage_metadata_scaling=True, chars_per_token=3.3
+        )
+    return partial(count_tokens_approximately, use_usage_metadata_scaling=True)
 
 
-class SummarizationMiddleware(AgentMiddleware):
+class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
     """Summarizes conversation history when token limits are approached.
 
     This middleware monitors message token counts and automatically summarizes older
@@ -268,8 +270,12 @@ class SummarizationMiddleware(AgentMiddleware):
         self.keep = self._validate_context_size(keep, "keep")
         if token_counter is count_tokens_approximately:
             self.token_counter = _get_approximate_token_counter(self.model)
+            self._partial_token_counter: TokenCounter = partial(  # type: ignore[call-arg]
+                self.token_counter, use_usage_metadata_scaling=False
+            )
         else:
             self.token_counter = token_counter
+            self._partial_token_counter = token_counter
         self.summary_prompt = summary_prompt
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
         self.depends_on = depends_on
@@ -288,7 +294,9 @@ class SummarizationMiddleware(AgentMiddleware):
             raise ValueError(msg)
 
     @override
-    def before_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any] | None:
+    def before_model(
+        self, state: AgentState[Any], runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
         """Process messages before model invocation, potentially triggering summarization.
 
         Args:
@@ -325,7 +333,7 @@ class SummarizationMiddleware(AgentMiddleware):
 
     @override
     async def abefore_model(
-        self, state: AgentState[Any], runtime: Runtime
+        self, state: AgentState[Any], runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
         """Process messages before model invocation, potentially triggering summarization.
 
@@ -452,7 +460,7 @@ class SummarizationMiddleware(AgentMiddleware):
                 break
 
             mid = (left + right) // 2
-            if self.token_counter(messages[mid:]) <= target_token_count:
+            if self._partial_token_counter(messages[mid:]) <= target_token_count:
                 cutoff_candidate = mid
                 right = mid
             else:

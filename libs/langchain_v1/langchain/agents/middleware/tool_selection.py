@@ -7,15 +7,17 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Any, Literal, Union
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import Field, TypeAdapter
 from typing_extensions import TypedDict
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
-    ModelCallResult,
+    AgentState,
+    ContextT,
     ModelRequest,
     ModelResponse,
+    ResponseT,
 )
 from langchain.chat_models.base import init_chat_model
 
@@ -88,7 +90,7 @@ def _render_tool_list(tools: list[BaseTool]) -> str:
     return "\n".join(f"- {tool.name}: {tool.description}" for tool in tools)
 
 
-class LLMToolSelectorMiddleware(AgentMiddleware):
+class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
     """Uses an LLM to select relevant tools before calling the main model.
 
     When an agent has many tools available, this middleware filters them down
@@ -157,7 +159,9 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         else:
             self.model = init_chat_model(model)
 
-    def _prepare_selection_request(self, request: ModelRequest) -> _SelectionRequest | None:
+    def _prepare_selection_request(
+        self, request: ModelRequest[ContextT]
+    ) -> _SelectionRequest | None:
         """Prepare inputs for tool selection.
 
         Args:
@@ -234,8 +238,8 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         response: dict[str, Any],
         available_tools: list[BaseTool],
         valid_tool_names: list[str],
-        request: ModelRequest,
-    ) -> ModelRequest:
+        request: ModelRequest[ContextT],
+    ) -> ModelRequest[ContextT]:
         """Process the selection response and return filtered `ModelRequest`."""
         selected_tool_names: list[str] = []
         invalid_tool_selections = []
@@ -273,9 +277,9 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
 
     def wrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
-    ) -> ModelCallResult:
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
         """Filter tools based on LLM selection before invoking the model via handler.
 
         Args:
@@ -316,9 +320,9 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
 
     async def awrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-    ) -> ModelCallResult:
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
         """Filter tools based on LLM selection before invoking the model via handler.
 
         Args:
