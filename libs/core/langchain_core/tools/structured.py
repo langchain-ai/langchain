@@ -24,9 +24,9 @@ from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
     _EMPTY_SET,
     FILTERED_ARGS,
+    INPUT_SELF_KWARG,
     ArgsSchema,
     BaseTool,
-    INPUT_SELF_KWARG,
     _get_runnable_config_param,
     _is_injected_arg_type,
     create_schema_from_function,
