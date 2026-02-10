@@ -31,7 +31,7 @@ from langchain_deepseek.data._profiles import _PROFILES
 try:
     import pytest
 except ImportError:  # pragma: no cover
-    pytest: Any = None
+    pytest = None  # type: ignore[assignment]
 
 _MISSING_API_KEY_ERR = (
     "DEEPSEEK_API_KEY must be set when using the default DeepSeek API base."
