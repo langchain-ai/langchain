@@ -4769,19 +4769,50 @@ class RunnableLambda(Runnable[Input, Output]):
             variables that are `Runnable`s, they are considered dependencies.
 
         """
-        if hasattr(self, "func"):
-            objects = get_function_nonlocals(self.func)
-        elif hasattr(self, "afunc"):
-            objects = get_function_nonlocals(self.afunc)
-        else:
-            objects = []
+        func = (
+            self.func
+            if hasattr(self, "func")
+            else self.afunc
+            if hasattr(self, "afunc")
+            else None
+        )
+        if func is None:
+            return []
+
+        # Fast path: inspect closure vars directly to avoid source-file reads in
+        # async paths where config specs are materialized.
+        closure = inspect.getclosurevars(func)
+        direct_objects = [*closure.nonlocals.values(), *closure.globals.values()]
 
         deps: list[Runnable] = []
-        for obj in objects:
+        seen: set[int] = set()
+        for obj in direct_objects:
             if isinstance(obj, Runnable):
-                deps.append(obj)
+                dep = obj
             elif isinstance(getattr(obj, "__self__", None), Runnable):
-                deps.append(obj.__self__)
+                dep = obj.__self__
+            else:
+                continue
+            if id(dep) not in seen:
+                seen.add(id(dep))
+                deps.append(dep)
+
+        # Fall back to source-based nonlocal inspection only when we had closure
+        # candidates but no direct Runnable deps. This keeps existing coverage for
+        # nested attribute access while avoiding most blocking calls.
+        if deps or not direct_objects:
+            return deps
+
+        for obj in get_function_nonlocals(func):
+            if isinstance(obj, Runnable):
+                dep = obj
+            elif isinstance(getattr(obj, "__self__", None), Runnable):
+                dep = obj.__self__
+            else:
+                continue
+            if id(dep) not in seen:
+                seen.add(id(dep))
+                deps.append(dep)
         return deps
 
     @property

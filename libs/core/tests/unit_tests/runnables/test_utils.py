@@ -73,3 +73,30 @@ def test_nonlocals() -> None:
     assert RunnableLambda(my_func3).deps == [agent]
     assert RunnableLambda(my_func4).deps == [global_agent]
     assert RunnableLambda(func).deps == [nl]
+
+
+def test_runnable_lambda_deps_fast_path_without_nonlocals(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _explode(_: Callable[..., Any]) -> list[Any]:
+        msg = "get_function_nonlocals should not be called for no-closure functions"
+        raise AssertionError(msg)
+
+    monkeypatch.setattr("langchain_core.runnables.base.get_function_nonlocals", _explode)
+    assert RunnableLambda(lambda x: x + 1).deps == []
+
+
+def test_runnable_lambda_deps_fast_path_with_direct_runnable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    agent = RunnableLambda[str, str](lambda x: x)
+
+    def _explode(_: Callable[..., Any]) -> list[Any]:
+        msg = "get_function_nonlocals should not be called for direct runnable closure"
+        raise AssertionError(msg)
+
+    def my_func(value: str) -> str:
+        return agent.invoke(value)
+
+    monkeypatch.setattr("langchain_core.runnables.base.get_function_nonlocals", _explode)
+    assert RunnableLambda(my_func).deps == [agent]
