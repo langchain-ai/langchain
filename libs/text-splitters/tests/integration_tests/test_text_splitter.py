@@ -1,7 +1,7 @@
 """Test text splitters that require an integration."""
 
 import pytest
-from transformers import GPT2TokenizerFast
+from transformers import AutoTokenizer
 
 from langchain_text_splitters import (
     TokenTextSplitter,
@@ -23,7 +23,7 @@ def test_huggingface_type_check() -> None:
 
 def test_huggingface_tokenizer() -> None:
     """Test text splitter that uses a HuggingFace tokenizer."""
-    tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+    tokenizer = AutoTokenizer.from_pretrained("gpt2")
     text_splitter = CharacterTextSplitter.from_huggingface_tokenizer(
         tokenizer, separator=" ", chunk_size=1, chunk_overlap=0
     )

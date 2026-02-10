@@ -267,8 +267,12 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         self.keep = self._validate_context_size(keep, "keep")
         if token_counter is count_tokens_approximately:
             self.token_counter = _get_approximate_token_counter(self.model)
+            self._partial_token_counter: TokenCounter = partial(  # type: ignore[call-arg]
+                self.token_counter, use_usage_metadata_scaling=False
+            )
         else:
             self.token_counter = token_counter
+            self._partial_token_counter = token_counter
         self.summary_prompt = summary_prompt
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
 
@@ -452,7 +456,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 break
 
             mid = (left + right) // 2
-            if self.token_counter(messages[mid:]) <= target_token_count:
+            if self._partial_token_counter(messages[mid:]) <= target_token_count:
                 cutoff_candidate = mid
                 right = mid
             else:
