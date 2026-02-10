@@ -366,7 +366,8 @@ class BaseMessage(Serializable):
                     if html and (url or file_id):
                         if url:
                             return f'<img src="{escape(str(url))}" alt="image" />'
-                        return f'<img data-file-id="{escape(str(file_id))}" alt="image" />'
+                        img_id = escape(str(file_id))
+                        return f'<img data-file-id="{img_id}" alt="image" />'
                     if url or file_id:
                         return str(url or file_id)
 
