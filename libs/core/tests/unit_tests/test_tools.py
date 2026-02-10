@@ -2133,10 +2133,32 @@ def test__is_message_content_block(obj: Any, *, expected: bool) -> None:
         ("foo", True),
         (valid_tool_result_blocks, True),
         (invalid_tool_result_blocks, False),
+        ([], False),
     ],
 )
 def test__is_message_content_type(obj: Any, *, expected: bool) -> None:
     assert _is_message_content_type(obj) is expected
+
+
+def test_tool_returning_empty_list_is_stringified() -> None:
+    """Empty list returned by tool should be JSON-stringified, not passed as-is."""
+
+    @tool
+    def returns_empty(x: str) -> list:
+        """A tool that returns an empty list."""
+        return []
+
+    result = returns_empty.invoke(
+        {
+            "name": "returns_empty",
+            "args": {"x": "test"},
+            "id": "call_123",
+            "type": "tool_call",
+        }
+    )
+    assert isinstance(result, ToolMessage)
+    assert result.content == "[]"
+    assert result.tool_call_id == "call_123"
 
 
 @pytest.mark.parametrize("use_v1_namespace", [True, False])

@@ -1291,7 +1291,9 @@ def _is_message_content_type(obj: Any) -> bool:
         `True` if the object is valid message content, `False` otherwise.
     """
     return isinstance(obj, str) or (
-        isinstance(obj, list) and all(_is_message_content_block(e) for e in obj)
+        isinstance(obj, list)
+        and bool(obj)
+        and all(_is_message_content_block(e) for e in obj)
     )
 
 
