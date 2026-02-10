@@ -4505,10 +4505,31 @@ def _convert_responses_chunk_to_generation_chunk(
                 "index": current_index,
             }
         )
-    elif chunk.type in (
-        "response.output_item.added",
-        "response.output_item.done",
-    ) and chunk.item.type in (
+    elif chunk.type == "response.output_item.added" and chunk.item.type in (
+        "web_search_call",
+        "file_search_call",
+        "computer_call",
+        "code_interpreter_call",
+        "mcp_call",
+        "mcp_list_tools",
+        "mcp_approval_request",
+        "image_generation_call",
+    ):
+        # Emit a minimal chunk immediately so consumers know the tool call
+        # has started.  We intentionally avoid model_dump() here because the
+        # .added item carries partial data - string fields present in both
+        # the .added and .done dumps would be concatenated during
+        # merge_dicts aggregation (e.g. container_id, server_label).
+        _advance(chunk.output_index)
+        content.append(
+            {
+                "type": chunk.item.type,
+                "id": chunk.item.id,
+                "status": getattr(chunk.item, "status", "in_progress"),
+                "index": current_index,
+            }
+        )
+    elif chunk.type == "response.output_item.done" and chunk.item.type in (
         "web_search_call",
         "file_search_call",
         "computer_call",

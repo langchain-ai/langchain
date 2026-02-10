@@ -758,6 +758,398 @@ def test_responses_stream(output_version: str, expected_content: list[dict]) -> 
         assert dumped == payload["input"][idx]
 
 
+def _make_base_response(**overrides: Any) -> Response:
+    """Build a minimal Response object for test event streams."""
+    defaults: dict[str, Any] = {
+        "id": "resp_123",
+        "created_at": 1749734255.0,
+        "error": None,
+        "incomplete_details": None,
+        "instructions": None,
+        "metadata": {},
+        "model": "gpt-4o-2024-08-06",
+        "object": "response",
+        "output": [],
+        "parallel_tool_calls": True,
+        "temperature": 1.0,
+        "tool_choice": "auto",
+        "tools": [],
+        "top_p": 1.0,
+        "background": False,
+        "max_output_tokens": None,
+        "previous_response_id": None,
+        "reasoning": Reasoning(effort=None, generate_summary=None, summary=None),
+        "service_tier": "auto",
+        "status": "in_progress",
+        "text": ResponseTextConfig(format=ResponseFormatText(type="text")),
+        "truncation": "disabled",
+        "usage": None,
+        "user": None,
+    }
+    defaults.update(overrides)
+    return Response(**defaults)
+
+
+# ---------------------------------------------------------------------------
+# Server-side tool streaming tests
+# ---------------------------------------------------------------------------
+
+
+def test_server_tool_streaming_web_search() -> None:
+    """Verify .added emits a minimal chunk and .done the full result.
+
+    After aggregation the web_search_call content block should have
+    non-duplicated string fields and the complete action payload.
+    """
+    from openai.types.responses.response_function_web_search import (
+        ActionSearch,
+        ResponseFunctionWebSearch,
+    )
+
+    ws_added = ResponseFunctionWebSearch.model_construct(
+        id="ws_001",
+        type="web_search_call",
+        status="in_progress",
+    )
+    ws_done = ResponseFunctionWebSearch(
+        id="ws_001",
+        type="web_search_call",
+        status="completed",
+        action=ActionSearch(type="search", query="latest AI news"),
+    )
+
+    stream_events = [
+        ResponseCreatedEvent(
+            response=_make_base_response(),
+            sequence_number=0,
+            type="response.created",
+        ),
+        ResponseInProgressEvent(
+            response=_make_base_response(),
+            sequence_number=1,
+            type="response.in_progress",
+        ),
+        # --- web search: added (partial) ---
+        ResponseOutputItemAddedEvent(
+            item=ws_added,
+            output_index=0,
+            sequence_number=2,
+            type="response.output_item.added",
+        ),
+        # --- web search: done (complete) ---
+        ResponseOutputItemDoneEvent(
+            item=ws_done,
+            output_index=0,
+            sequence_number=3,
+            type="response.output_item.done",
+        ),
+        # --- assistant text ---
+        ResponseOutputItemAddedEvent(
+            item=ResponseOutputMessage(
+                id="msg_001",
+                content=[],
+                role="assistant",
+                status="in_progress",
+                type="message",
+            ),
+            output_index=1,
+            sequence_number=4,
+            type="response.output_item.added",
+        ),
+        ResponseContentPartAddedEvent(
+            content_index=0,
+            item_id="msg_001",
+            output_index=1,
+            part=ResponseOutputText(annotations=[], text="", type="output_text"),
+            sequence_number=5,
+            type="response.content_part.added",
+        ),
+        ResponseTextDeltaEvent(
+            content_index=0,
+            delta="Search results are here",
+            item_id="msg_001",
+            output_index=1,
+            logprobs=[],
+            sequence_number=6,
+            type="response.output_text.delta",
+        ),
+        ResponseTextDoneEvent(
+            content_index=0,
+            item_id="msg_001",
+            output_index=1,
+            text="Search results are here",
+            logprobs=[],
+            sequence_number=7,
+            type="response.output_text.done",
+        ),
+        ResponseContentPartDoneEvent(
+            content_index=0,
+            item_id="msg_001",
+            output_index=1,
+            part=ResponseOutputText(
+                annotations=[], text="Search results are here", type="output_text"
+            ),
+            sequence_number=8,
+            type="response.content_part.done",
+        ),
+        ResponseOutputItemDoneEvent(
+            item=ResponseOutputMessage(
+                id="msg_001",
+                content=[
+                    ResponseOutputText(
+                        annotations=[],
+                        text="Search results are here",
+                        type="output_text",
+                    ),
+                ],
+                role="assistant",
+                status="completed",
+                type="message",
+            ),
+            output_index=1,
+            sequence_number=9,
+            type="response.output_item.done",
+        ),
+        ResponseCompletedEvent(
+            response=_make_base_response(
+                status="completed",
+                service_tier="default",
+                usage=ResponseUsage(
+                    input_tokens=10,
+                    input_tokens_details=InputTokensDetails(cached_tokens=0),
+                    output_tokens=20,
+                    output_tokens_details=OutputTokensDetails(reasoning_tokens=0),
+                    total_tokens=30,
+                ),
+            ),
+            sequence_number=10,
+            type="response.completed",
+        ),
+    ]
+
+    llm = ChatOpenAI(model="gpt-4o", use_responses_api=True)
+    mock_client = MagicMock()
+
+    def mock_create(*_args: Any, **_kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(stream_events)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    chunks: list[AIMessageChunk] = []
+    with patch.object(llm, "root_client", mock_client):
+        for chunk in llm.stream("search the web"):
+            assert isinstance(chunk, AIMessageChunk)
+            full = chunk if full is None else full + chunk
+            chunks.append(chunk)
+
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, list)
+
+    # Find the web_search_call content block
+    ws_blocks = [
+        b
+        for b in full.content
+        if isinstance(b, dict) and b.get("type") == "web_search_call"
+    ]
+    assert len(ws_blocks) == 1
+    ws_block = ws_blocks[0]
+
+    # id must NOT be duplicated
+    assert ws_block["id"] == "ws_001"
+
+    # status is concatenated from the two chunks (expected aggregation behavior)
+    assert "in_progress" in ws_block["status"]
+    assert "completed" in ws_block["status"]
+
+    # action must come through from .done
+    assert ws_block["action"] == {"type": "search", "query": "latest AI news"}
+
+    # Verify the .added chunk was emitted first with minimal data (no 'action')
+    ws_chunks = [
+        c
+        for c in chunks
+        if isinstance(c.content, list)
+        and any(
+            isinstance(b, dict) and b.get("type") == "web_search_call"
+            for b in c.content
+        )
+    ]
+    assert len(ws_chunks) >= 2  # at least added + done
+    first_ws = next(
+        b
+        for b in ws_chunks[0].content
+        if isinstance(b, dict) and b.get("type") == "web_search_call"
+    )
+    assert first_ws["status"] == "in_progress"
+    assert "action" not in first_ws  # minimal chunk has no action
+
+
+def test_server_tool_streaming_code_interpreter_no_field_duplication() -> None:
+    """Ensure string fields like container_id are NOT duplicated on aggregation.
+
+    This is the core regression test for the partial-data handling fix.
+    Previously, model_dump() on the .added item included container_id,
+    which was then concatenated with the same value from .done.
+    """
+    from openai.types.responses import ResponseCodeInterpreterToolCall
+
+    ci_added = ResponseCodeInterpreterToolCall.model_construct(
+        id="ci_001",
+        type="code_interpreter_call",
+        status="in_progress",
+        container_id="ctnr_abc",
+    )
+    ci_done = ResponseCodeInterpreterToolCall(
+        id="ci_001",
+        type="code_interpreter_call",
+        status="completed",
+        container_id="ctnr_abc",
+        code="print(42)",
+        outputs=[],
+    )
+
+    stream_events = [
+        ResponseCreatedEvent(
+            response=_make_base_response(),
+            sequence_number=0,
+            type="response.created",
+        ),
+        ResponseInProgressEvent(
+            response=_make_base_response(),
+            sequence_number=1,
+            type="response.in_progress",
+        ),
+        ResponseOutputItemAddedEvent(
+            item=ci_added,
+            output_index=0,
+            sequence_number=2,
+            type="response.output_item.added",
+        ),
+        ResponseOutputItemDoneEvent(
+            item=ci_done,
+            output_index=0,
+            sequence_number=3,
+            type="response.output_item.done",
+        ),
+        # Minimal text output to complete the response
+        ResponseOutputItemAddedEvent(
+            item=ResponseOutputMessage(
+                id="msg_001",
+                content=[],
+                role="assistant",
+                status="in_progress",
+                type="message",
+            ),
+            output_index=1,
+            sequence_number=4,
+            type="response.output_item.added",
+        ),
+        ResponseContentPartAddedEvent(
+            content_index=0,
+            item_id="msg_001",
+            output_index=1,
+            part=ResponseOutputText(annotations=[], text="", type="output_text"),
+            sequence_number=5,
+            type="response.content_part.added",
+        ),
+        ResponseTextDeltaEvent(
+            content_index=0,
+            delta="42",
+            item_id="msg_001",
+            output_index=1,
+            logprobs=[],
+            sequence_number=6,
+            type="response.output_text.delta",
+        ),
+        ResponseTextDoneEvent(
+            content_index=0,
+            item_id="msg_001",
+            output_index=1,
+            text="42",
+            logprobs=[],
+            sequence_number=7,
+            type="response.output_text.done",
+        ),
+        ResponseContentPartDoneEvent(
+            content_index=0,
+            item_id="msg_001",
+            output_index=1,
+            part=ResponseOutputText(annotations=[], text="42", type="output_text"),
+            sequence_number=8,
+            type="response.content_part.done",
+        ),
+        ResponseOutputItemDoneEvent(
+            item=ResponseOutputMessage(
+                id="msg_001",
+                content=[
+                    ResponseOutputText(annotations=[], text="42", type="output_text"),
+                ],
+                role="assistant",
+                status="completed",
+                type="message",
+            ),
+            output_index=1,
+            sequence_number=9,
+            type="response.output_item.done",
+        ),
+        ResponseCompletedEvent(
+            response=_make_base_response(
+                status="completed",
+                service_tier="default",
+                usage=ResponseUsage(
+                    input_tokens=10,
+                    input_tokens_details=InputTokensDetails(cached_tokens=0),
+                    output_tokens=5,
+                    output_tokens_details=OutputTokensDetails(reasoning_tokens=0),
+                    total_tokens=15,
+                ),
+            ),
+            sequence_number=10,
+            type="response.completed",
+        ),
+    ]
+
+    llm = ChatOpenAI(model="gpt-4o", use_responses_api=True)
+    mock_client = MagicMock()
+
+    def mock_create(*_args: Any, **_kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(stream_events)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with patch.object(llm, "root_client", mock_client):
+        for chunk in llm.stream("run code"):
+            assert isinstance(chunk, AIMessageChunk)
+            full = chunk if full is None else full + chunk
+
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, list)
+
+    ci_blocks = [
+        b
+        for b in full.content
+        if isinstance(b, dict) and b.get("type") == "code_interpreter_call"
+    ]
+    assert len(ci_blocks) == 1
+    ci_block = ci_blocks[0]
+
+    # CRITICAL: container_id must be the original value, NOT duplicated
+    assert ci_block["container_id"] == "ctnr_abc"
+
+    # id must also not be duplicated
+    assert ci_block["id"] == "ci_001"
+
+    # status concatenation is expected
+    assert "in_progress" in ci_block["status"]
+    assert "completed" in ci_block["status"]
+
+    # Complete data from .done must be present
+    assert ci_block["code"] == "print(42)"
+    assert ci_block["outputs"] == []
+
+
 def test_responses_stream_with_image_generation_multiple_calls() -> None:
     """Test that streaming with image_generation tool works across multiple calls.
 
