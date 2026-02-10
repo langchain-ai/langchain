@@ -39,14 +39,14 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
-    "pytest>=7.3.0,<8.0.0",
+    "pytest>=7.3.0,<10.0.0",
     "pytest-mock>=3.10.0,<4.0.0",
     "pytest-benchmark",
     "pytest-watcher>=0.3.4,<1.0.0",
-    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-asyncio>=0.21.1,<2.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
     "freezegun>=1.2.2,<2.0.0",
-    "syrupy>=4.0.2,<5.0.0",
+    "syrupy>=4.0.2,<6.0.0",
     "onnxruntime<1.20.0; python_version < \"3.10\"",
     "onnxruntime; python_version >= \"3.10\"",
     "langchain-core",
@@ -54,7 +54,7 @@ test = [
 ]
 test_integration = []
 lint = [
-    "ruff>=0.13.1,<0.14.0",
+    "ruff>=0.13.1,<0.16.0",
     "onnxruntime<1.20; python_version < \"3.10\"",
     "onnxruntime; python_version >= \"3.10\"",
 ]

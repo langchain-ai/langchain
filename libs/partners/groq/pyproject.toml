@@ -24,7 +24,7 @@ version = "1.1.2"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.2.8,<2.0.0",
-    "groq>=0.30.0,<1.0.0"
+    "groq>=0.30.0,<2.0.0"
 ]
 
 [project.urls]
@@ -39,15 +39,15 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
-    "pytest>=7.3.0,<8.0.0",
+    "pytest>=7.3.0,<10.0.0",
     "pytest-mock>=3.10.0,<4.0.0",
     "pytest-watcher>=0.3.4,<1.0.0",
-    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-asyncio>=0.21.1,<2.0.0",
     "pytest-retry>=1.7.0,<1.8.0",
     "langchain-core",
     "langchain-tests",
 ]
-lint = ["ruff>=0.13.1,<0.14.0"]
+lint = ["ruff>=0.13.1,<0.16.0"]
 dev = ["langchain-core"]
 test_integration = ["langchain-core"]
 typing = [

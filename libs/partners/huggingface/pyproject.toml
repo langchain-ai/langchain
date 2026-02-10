@@ -25,7 +25,7 @@ requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.2.0,<2.0.0",
     "tokenizers>=0.19.1,<1.0.0",
-    "huggingface-hub>=0.33.4,<1.0.0",
+    "huggingface-hub>=0.33.4,<2.0.0",
 ]
 
 [project.urls]
@@ -40,29 +40,29 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [project.optional-dependencies]
 full = [
-    "transformers>=4.39.0,<5.0.0",
-    "sentence-transformers>=2.6.0,<3.0.0",
+    "transformers>=4.39.0,<6.0.0",
+    "sentence-transformers>=2.6.0,<6.0.0",
 ]
 
 [dependency-groups]
 test = [
-    "pytest>=7.3.0,<8.0.0",
-    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest>=7.3.0,<10.0.0",
+    "pytest-asyncio>=0.21.1,<2.0.0",
     "pytest-watcher>=0.3.4,<1.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
     "scipy>=1.0.0,<2.0.0; python_version < \"3.12\"",
     "scipy>=1.7.0,<2.0.0; python_version >= \"3.12\" and python_version < \"3.13\"",
     "scipy>=1.14.1,<2.0.0; python_version >= \"3.13\"",
-    "transformers>=4.39.0,<5.0.0",
-    "sentence-transformers>=2.6.0,<3.0.0",
+    "transformers>=4.39.0,<6.0.0",
+    "sentence-transformers>=2.6.0,<6.0.0",
     "langchain-core",
     "langchain-tests",
     "langchain-community",
     "langchain",
 ]
-lint = ["ruff>=0.13.1,<0.14.0"]
+lint = ["ruff>=0.13.1,<0.16.0"]
 dev = [
-    "ipykernel>=6.29.2,<7.0.0",
+    "ipykernel>=6.29.2,<8.0.0",
     "langchain-core"
 ]
 test_integration = []

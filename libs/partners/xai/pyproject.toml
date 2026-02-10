@@ -41,20 +41,20 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
-    "pytest>=7.3.0,<8.0.0",
+    "pytest>=7.3.0,<10.0.0",
     "pytest-mock>=3.10.0,<4.0.0",
     "pytest-watcher>=0.3.4,<1.0.0",
-    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-asyncio>=0.21.1,<2.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
     "docarray>=0.32.1,<1.0.0",
     "freezegun>=1.2.2,<2.0.0",
-    "syrupy>=4.0.2,<5.0.0",
+    "syrupy>=4.0.2,<6.0.0",
     "langchain-openai",
     "langchain-core",
     "langchain-tests",
 ]
 test_integration = []
-lint = ["ruff>=0.13.1,<0.14.0"]
+lint = ["ruff>=0.13.1,<0.16.0"]
 typing = [
     "mypy>=1.10.0,<2.0.0",
     "types-requests>=2.0.0,<3.0.0",
