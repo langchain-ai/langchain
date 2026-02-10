@@ -2273,9 +2273,10 @@ class BaseChatOpenAI(BaseChatModel):
                 [parser_none], exception_key="parsing_error"
             )
             return _StructuredOutputRunnableSequence(
-                RunnableMap(raw=llm), parser_with_fallback
+                first=RunnableMap(raw=llm),
+                last=parser_with_fallback,
             )
-        return _StructuredOutputRunnableSequence(llm, output_parser)
+        return _StructuredOutputRunnableSequence(first=llm, last=output_parser)
 
     def _filter_disabled_params(self, **kwargs: Any) -> dict[str, Any]:
         if not self.disabled_params:
