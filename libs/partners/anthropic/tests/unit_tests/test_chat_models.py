@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import os
 from collections.abc import Callable
 from typing import Any, Literal, cast
@@ -410,6 +411,91 @@ def test__merge_messages_mutation() -> None:
     actual = _merge_messages(messages)
     assert expected == actual
     assert messages == original_messages
+
+
+def test__merge_messages_tool_message_cache_control() -> None:
+    """Test that cache_control is hoisted from content blocks to tool_result level."""
+    # Test with cache_control in content block
+    messages = [
+        ToolMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": "tool output",
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ],
+            tool_call_id="1",
+        )
+    ]
+    original_messages = [copy.deepcopy(m) for m in messages]
+    expected = [
+        HumanMessage(
+            [
+                {
+                    "type": "tool_result",
+                    "content": [{"type": "text", "text": "tool output"}],
+                    "tool_use_id": "1",
+                    "is_error": False,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ]
+        )
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
+    # Verify no mutation
+    assert messages == original_messages
+
+    # Test with multiple content blocks, cache_control on last one
+    messages = [
+        ToolMessage(
+            content=[
+                {"type": "text", "text": "first output"},
+                {
+                    "type": "text",
+                    "text": "second output",
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+            tool_call_id="2",
+        )
+    ]
+    expected = [
+        HumanMessage(
+            [
+                {
+                    "type": "tool_result",
+                    "content": [
+                        {"type": "text", "text": "first output"},
+                        {"type": "text", "text": "second output"},
+                    ],
+                    "tool_use_id": "2",
+                    "is_error": False,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ]
+        )
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
+
+    # Test without cache_control
+    messages = [ToolMessage(content="simple output", tool_call_id="3")]
+    expected = [
+        HumanMessage(
+            [
+                {
+                    "type": "tool_result",
+                    "content": "simple output",
+                    "tool_use_id": "3",
+                    "is_error": False,
+                }
+            ]
+        )
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
 
 
 def test__format_image() -> None:
