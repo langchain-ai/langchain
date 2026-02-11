@@ -1,6 +1,7 @@
 """**Embeddings** interface."""
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 from langchain_core.runnables.config import run_in_executor
 
@@ -34,45 +35,65 @@ class Embeddings(ABC):
     """
 
     @abstractmethod
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+    def embed_documents(
+        self,
+        texts: list[str],
+        **kwargs: Any,
+    ) -> list[list[float]]:
         """Embed search docs.
 
         Args:
             texts: List of text to embed.
+            output_dimensionality: Embeddings dimension.
 
         Returns:
             List of embeddings.
         """
 
     @abstractmethod
-    def embed_query(self, text: str) -> list[float]:
+    def embed_query(
+        self,
+        text: str,
+        **kwargs: Any,
+    ) -> list[float]:
         """Embed query text.
 
         Args:
             text: Text to embed.
+            output_dimensionality: Embeddings dimension.
 
         Returns:
             Embedding.
         """
 
-    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
+    async def aembed_documents(
+        self,
+        texts: list[str],
+        **kwargs: Any,
+    ) -> list[list[float]]:
         """Asynchronous Embed search docs.
 
         Args:
             texts: List of text to embed.
+            output_dimensionality: Embeddings dimension.
 
         Returns:
             List of embeddings.
         """
-        return await run_in_executor(None, self.embed_documents, texts)
+        return await run_in_executor(None, self.embed_documents, texts, **kwargs)
 
-    async def aembed_query(self, text: str) -> list[float]:
+    async def aembed_query(
+        self,
+        text: str,
+        **kwargs: Any,
+    ) -> list[float]:
         """Asynchronous Embed query text.
 
         Args:
             text: Text to embed.
+            output_dimensionality: Embeddings dimension.
 
         Returns:
             Embedding.
         """
-        return await run_in_executor(None, self.embed_query, text)
+        return await run_in_executor(None, self.embed_query, text, **kwargs)

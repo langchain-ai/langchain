@@ -4,6 +4,7 @@ import contextlib
 import hashlib
 import importlib
 import warnings
+from typing import Any
 
 import pytest
 from langchain_core.embeddings import Embeddings
@@ -15,7 +16,7 @@ from langchain_classic.storage.in_memory import InMemoryStore
 
 class MockEmbeddings(Embeddings):
     @override
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+    def embed_documents(self, texts: list[str], **_kwargs: Any) -> list[list[float]]:
         # Simulate embedding documents
         embeddings: list[list[float]] = []
         for text in texts:
@@ -26,7 +27,7 @@ class MockEmbeddings(Embeddings):
         return embeddings
 
     @override
-    def embed_query(self, text: str) -> list[float]:
+    def embed_query(self, text: str, **_kwargs: Any) -> list[float]:
         # Simulate embedding a query
         return [5.0, 6.0]
 
