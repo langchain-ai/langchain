@@ -40,6 +40,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.exceptions import ContextOverflowError
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfileRegistry,
@@ -455,7 +456,22 @@ def _update_token_usage(
     return new_usage
 
 
+class OpenAIContextOverflowError(openai.BadRequestError, ContextOverflowError):
+    """BadRequestError raised when input exceeds OpenAI's context limit."""
+
+
+class OpenAIAPIContextOverflowError(openai.APIError, ContextOverflowError):
+    """APIError raised when input exceeds OpenAI's context limit."""
+
+
 def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
+    if (
+        "context_length_exceeded" in str(e)
+        or "Input tokens exceed the configured limit" in e.message
+    ):
+        raise OpenAIContextOverflowError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
     if (
         "'response_format' of type 'json_schema' is not supported with this model"
     ) in e.message:
@@ -480,10 +496,19 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
     raise
 
 
+def _handle_openai_api_error(e: openai.APIError) -> None:
+    error_message = str(e)
+    if "exceeds the context window" in error_message:
+        raise OpenAIAPIContextOverflowError(
+            message=e.message, request=e.request, body=e.body
+        ) from e
+    raise
+
+
 def _model_prefers_responses_api(model_name: str | None) -> bool:
     if not model_name:
         return False
-    return "gpt-5.2-pro" in model_name
+    return "gpt-5.2-pro" in model_name or "codex" in model_name
 
 
 _BM = TypeVar("_BM", bound=BaseModel)
@@ -1152,49 +1177,54 @@ class BaseChatOpenAI(BaseChatModel):
         self._ensure_sync_client_available()
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        if self.include_response_headers:
-            raw_context_manager = self.root_client.with_raw_response.responses.create(
-                **payload
-            )
-            context_manager = raw_context_manager.parse()
-            headers = {"headers": dict(raw_context_manager.headers)}
-        else:
-            context_manager = self.root_client.responses.create(**payload)
-            headers = {}
-        original_schema_obj = kwargs.get("response_format")
-
-        with context_manager as response:
-            is_first_chunk = True
-            current_index = -1
-            current_output_index = -1
-            current_sub_index = -1
-            has_reasoning = False
-            for chunk in response:
-                metadata = headers if is_first_chunk else {}
-                (
-                    current_index,
-                    current_output_index,
-                    current_sub_index,
-                    generation_chunk,
-                ) = _convert_responses_chunk_to_generation_chunk(
-                    chunk,
-                    current_index,
-                    current_output_index,
-                    current_sub_index,
-                    schema=original_schema_obj,
-                    metadata=metadata,
-                    has_reasoning=has_reasoning,
-                    output_version=self.output_version,
+        try:
+            if self.include_response_headers:
+                raw_context_manager = (
+                    self.root_client.with_raw_response.responses.create(**payload)
                 )
-                if generation_chunk:
-                    if run_manager:
-                        run_manager.on_llm_new_token(
-                            generation_chunk.text, chunk=generation_chunk
-                        )
-                    is_first_chunk = False
-                    if "reasoning" in generation_chunk.message.additional_kwargs:
-                        has_reasoning = True
-                    yield generation_chunk
+                context_manager = raw_context_manager.parse()
+                headers = {"headers": dict(raw_context_manager.headers)}
+            else:
+                context_manager = self.root_client.responses.create(**payload)
+                headers = {}
+            original_schema_obj = kwargs.get("response_format")
+
+            with context_manager as response:
+                is_first_chunk = True
+                current_index = -1
+                current_output_index = -1
+                current_sub_index = -1
+                has_reasoning = False
+                for chunk in response:
+                    metadata = headers if is_first_chunk else {}
+                    (
+                        current_index,
+                        current_output_index,
+                        current_sub_index,
+                        generation_chunk,
+                    ) = _convert_responses_chunk_to_generation_chunk(
+                        chunk,
+                        current_index,
+                        current_output_index,
+                        current_sub_index,
+                        schema=original_schema_obj,
+                        metadata=metadata,
+                        has_reasoning=has_reasoning,
+                        output_version=self.output_version,
+                    )
+                    if generation_chunk:
+                        if run_manager:
+                            run_manager.on_llm_new_token(
+                                generation_chunk.text, chunk=generation_chunk
+                            )
+                        is_first_chunk = False
+                        if "reasoning" in generation_chunk.message.additional_kwargs:
+                            has_reasoning = True
+                        yield generation_chunk
+        except openai.BadRequestError as e:
+            _handle_openai_bad_request(e)
+        except openai.APIError as e:
+            _handle_openai_api_error(e)
 
     async def _astream_responses(
         self,
@@ -1205,51 +1235,58 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        if self.include_response_headers:
-            raw_context_manager = (
-                await self.root_async_client.with_raw_response.responses.create(
+        try:
+            if self.include_response_headers:
+                raw_context_manager = (
+                    await self.root_async_client.with_raw_response.responses.create(
+                        **payload
+                    )
+                )
+                context_manager = raw_context_manager.parse()
+                headers = {"headers": dict(raw_context_manager.headers)}
+            else:
+                context_manager = await self.root_async_client.responses.create(
                     **payload
                 )
-            )
-            context_manager = raw_context_manager.parse()
-            headers = {"headers": dict(raw_context_manager.headers)}
-        else:
-            context_manager = await self.root_async_client.responses.create(**payload)
-            headers = {}
-        original_schema_obj = kwargs.get("response_format")
+                headers = {}
+            original_schema_obj = kwargs.get("response_format")
 
-        async with context_manager as response:
-            is_first_chunk = True
-            current_index = -1
-            current_output_index = -1
-            current_sub_index = -1
-            has_reasoning = False
-            async for chunk in response:
-                metadata = headers if is_first_chunk else {}
-                (
-                    current_index,
-                    current_output_index,
-                    current_sub_index,
-                    generation_chunk,
-                ) = _convert_responses_chunk_to_generation_chunk(
-                    chunk,
-                    current_index,
-                    current_output_index,
-                    current_sub_index,
-                    schema=original_schema_obj,
-                    metadata=metadata,
-                    has_reasoning=has_reasoning,
-                    output_version=self.output_version,
-                )
-                if generation_chunk:
-                    if run_manager:
-                        await run_manager.on_llm_new_token(
-                            generation_chunk.text, chunk=generation_chunk
-                        )
-                    is_first_chunk = False
-                    if "reasoning" in generation_chunk.message.additional_kwargs:
-                        has_reasoning = True
-                    yield generation_chunk
+            async with context_manager as response:
+                is_first_chunk = True
+                current_index = -1
+                current_output_index = -1
+                current_sub_index = -1
+                has_reasoning = False
+                async for chunk in response:
+                    metadata = headers if is_first_chunk else {}
+                    (
+                        current_index,
+                        current_output_index,
+                        current_sub_index,
+                        generation_chunk,
+                    ) = _convert_responses_chunk_to_generation_chunk(
+                        chunk,
+                        current_index,
+                        current_output_index,
+                        current_sub_index,
+                        schema=original_schema_obj,
+                        metadata=metadata,
+                        has_reasoning=has_reasoning,
+                        output_version=self.output_version,
+                    )
+                    if generation_chunk:
+                        if run_manager:
+                            await run_manager.on_llm_new_token(
+                                generation_chunk.text, chunk=generation_chunk
+                            )
+                        is_first_chunk = False
+                        if "reasoning" in generation_chunk.message.additional_kwargs:
+                            has_reasoning = True
+                        yield generation_chunk
+        except openai.BadRequestError as e:
+            _handle_openai_bad_request(e)
+        except openai.APIError as e:
+            _handle_openai_api_error(e)
 
     def _should_stream_usage(
         self, stream_usage: bool | None = None, **kwargs: Any
@@ -1288,24 +1325,26 @@ class BaseChatOpenAI(BaseChatModel):
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         base_generation_info = {}
 
-        if "response_format" in payload:
-            if self.include_response_headers:
-                warnings.warn(
-                    "Cannot currently include response headers when response_format is "
-                    "specified."
-                )
-            payload.pop("stream")
-            response_stream = self.root_client.beta.chat.completions.stream(**payload)
-            context_manager = response_stream
-        else:
-            if self.include_response_headers:
-                raw_response = self.client.with_raw_response.create(**payload)
-                response = raw_response.parse()
-                base_generation_info = {"headers": dict(raw_response.headers)}
-            else:
-                response = self.client.create(**payload)
-            context_manager = response
         try:
+            if "response_format" in payload:
+                if self.include_response_headers:
+                    warnings.warn(
+                        "Cannot currently include response headers when "
+                        "response_format is specified."
+                    )
+                payload.pop("stream")
+                response_stream = self.root_client.beta.chat.completions.stream(
+                    **payload
+                )
+                context_manager = response_stream
+            else:
+                if self.include_response_headers:
+                    raw_response = self.client.with_raw_response.create(**payload)
+                    response = raw_response.parse()
+                    base_generation_info = {"headers": dict(raw_response.headers)}
+                else:
+                    response = self.client.create(**payload)
+                context_manager = response
             with context_manager as response:
                 is_first_chunk = True
                 for chunk in response:
@@ -1330,6 +1369,8 @@ class BaseChatOpenAI(BaseChatModel):
                     yield generation_chunk
         except openai.BadRequestError as e:
             _handle_openai_bad_request(e)
+        except openai.APIError as e:
+            _handle_openai_api_error(e)
         if hasattr(response, "get_final_completion") and "response_format" in payload:
             final_completion = response.get_final_completion()
             generation_chunk = self._get_generation_chunk_from_completion(
@@ -1355,15 +1396,10 @@ class BaseChatOpenAI(BaseChatModel):
         try:
             if "response_format" in payload:
                 payload.pop("stream")
-                try:
-                    raw_response = (
-                        self.root_client.chat.completions.with_raw_response.parse(
-                            **payload
-                        )
-                    )
-                    response = raw_response.parse()
-                except openai.BadRequestError as e:
-                    _handle_openai_bad_request(e)
+                raw_response = (
+                    self.root_client.chat.completions.with_raw_response.parse(**payload)
+                )
+                response = raw_response.parse()
             elif self._use_responses_api(payload):
                 original_schema_obj = kwargs.get("response_format")
                 if original_schema_obj and _is_pydantic_class(original_schema_obj):
@@ -1386,6 +1422,10 @@ class BaseChatOpenAI(BaseChatModel):
             else:
                 raw_response = self.client.with_raw_response.create(**payload)
                 response = raw_response.parse()
+        except openai.BadRequestError as e:
+            _handle_openai_bad_request(e)
+        except openai.APIError as e:
+            _handle_openai_api_error(e)
         except Exception as e:
             if raw_response is not None and hasattr(raw_response, "http_response"):
                 e.response = raw_response.http_response  # type: ignore[attr-defined]
@@ -1529,28 +1569,28 @@ class BaseChatOpenAI(BaseChatModel):
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         base_generation_info = {}
 
-        if "response_format" in payload:
-            if self.include_response_headers:
-                warnings.warn(
-                    "Cannot currently include response headers when response_format is "
-                    "specified."
-                )
-            payload.pop("stream")
-            response_stream = self.root_async_client.beta.chat.completions.stream(
-                **payload
-            )
-            context_manager = response_stream
-        else:
-            if self.include_response_headers:
-                raw_response = await self.async_client.with_raw_response.create(
+        try:
+            if "response_format" in payload:
+                if self.include_response_headers:
+                    warnings.warn(
+                        "Cannot currently include response headers when "
+                        "response_format is specified."
+                    )
+                payload.pop("stream")
+                response_stream = self.root_async_client.beta.chat.completions.stream(
                     **payload
                 )
-                response = raw_response.parse()
-                base_generation_info = {"headers": dict(raw_response.headers)}
+                context_manager = response_stream
             else:
-                response = await self.async_client.create(**payload)
-            context_manager = response
-        try:
+                if self.include_response_headers:
+                    raw_response = await self.async_client.with_raw_response.create(
+                        **payload
+                    )
+                    response = raw_response.parse()
+                    base_generation_info = {"headers": dict(raw_response.headers)}
+                else:
+                    response = await self.async_client.create(**payload)
+                context_manager = response
             async with context_manager as response:
                 is_first_chunk = True
                 async for chunk in response:
@@ -1575,6 +1615,8 @@ class BaseChatOpenAI(BaseChatModel):
                     yield generation_chunk
         except openai.BadRequestError as e:
             _handle_openai_bad_request(e)
+        except openai.APIError as e:
+            _handle_openai_api_error(e)
         if hasattr(response, "get_final_completion") and "response_format" in payload:
             final_completion = await response.get_final_completion()
             generation_chunk = self._get_generation_chunk_from_completion(
@@ -1599,13 +1641,10 @@ class BaseChatOpenAI(BaseChatModel):
         try:
             if "response_format" in payload:
                 payload.pop("stream")
-                try:
-                    raw_response = await self.root_async_client.chat.completions.with_raw_response.parse(  # noqa: E501
-                        **payload
-                    )
-                    response = raw_response.parse()
-                except openai.BadRequestError as e:
-                    _handle_openai_bad_request(e)
+                raw_response = await self.root_async_client.chat.completions.with_raw_response.parse(  # noqa: E501
+                    **payload
+                )
+                response = raw_response.parse()
             elif self._use_responses_api(payload):
                 original_schema_obj = kwargs.get("response_format")
                 if original_schema_obj and _is_pydantic_class(original_schema_obj):
@@ -1634,6 +1673,10 @@ class BaseChatOpenAI(BaseChatModel):
                     **payload
                 )
                 response = raw_response.parse()
+        except openai.BadRequestError as e:
+            _handle_openai_bad_request(e)
+        except openai.APIError as e:
+            _handle_openai_api_error(e)
         except Exception as e:
             if raw_response is not None and hasattr(raw_response, "http_response"):
                 e.response = raw_response.http_response  # type: ignore[attr-defined]
@@ -1731,6 +1774,8 @@ class BaseChatOpenAI(BaseChatModel):
         self,
         messages: Sequence[BaseMessage],
         tools: Sequence[dict[str, Any] | type | Callable | BaseTool] | None = None,
+        *,
+        allow_fetching_images: bool = True,
     ) -> int:
         """Calculate num tokens for `gpt-3.5-turbo` and `gpt-4` with `tiktoken` package.
 
@@ -1746,6 +1791,7 @@ class BaseChatOpenAI(BaseChatModel):
             messages: The message inputs to tokenize.
             tools: If provided, sequence of `dict`, `BaseModel`, function, or `BaseTool`
                 to be converted to tool schemas.
+            allow_fetching_images: Whether to allow fetching images for token counting.
         """
         # TODO: Count bound tools as part of input.
         if tools is not None:
@@ -1790,11 +1836,13 @@ class BaseChatOpenAI(BaseChatModel):
                         elif val["type"] == "image_url":
                             if val["image_url"].get("detail") == "low":
                                 num_tokens += 85
-                            else:
+                            elif allow_fetching_images:
                                 image_size = _url_to_size(val["image_url"]["url"])
                                 if not image_size:
                                     continue
                                 num_tokens += _count_image_tokens(*image_size)
+                            else:
+                                pass
                         # Tool/function call token counting is not documented by OpenAI.
                         # This is an approximation.
                         elif val["type"] == "function":
@@ -3491,10 +3539,62 @@ def _url_to_size(image_source: str) -> tuple[int, int] | None:
                 "`pip install -U httpx`."
             )
             return None
-        response = httpx.get(image_source)
-        response.raise_for_status()
-        width, height = Image.open(BytesIO(response.content)).size
-        return width, height
+
+        # Validate URL for SSRF protection
+        try:
+            from langchain_core._security._ssrf_protection import validate_safe_url
+
+            validate_safe_url(image_source, allow_private=False, allow_http=True)
+        except ImportError:
+            logger.warning(
+                "SSRF protection not available. "
+                "Update langchain-core to get SSRF protection."
+            )
+        except ValueError as e:
+            logger.warning("Image URL failed SSRF validation: %s", e)
+            return None
+
+        # Set reasonable limits to prevent resource exhaustion
+        # Timeout prevents indefinite hangs on slow/malicious servers
+        timeout = 5.0  # seconds
+        # Max size matches OpenAI's 50 MB payload limit
+        max_size = 50 * 1024 * 1024  # 50 MB
+
+        try:
+            response = httpx.get(
+                image_source,
+                timeout=timeout,
+            )
+            response.raise_for_status()
+
+            # Check response size before loading into memory
+            content_length = response.headers.get("content-length")
+            if content_length and int(content_length) > max_size:
+                logger.warning(
+                    "Image URL exceeds maximum size limit of %d bytes", max_size
+                )
+                return None
+
+            # Also check actual content size
+            if len(response.content) > max_size:
+                logger.warning(
+                    "Image URL exceeds maximum size limit of %d bytes", max_size
+                )
+                return None
+
+            # close things (context managers)
+            width, height = Image.open(BytesIO(response.content)).size
+            return width, height
+        except httpx.TimeoutException:
+            logger.warning("Image URL request timed out after %s seconds", timeout)
+            return None
+        except httpx.HTTPStatusError as e:
+            logger.warning("Image URL returned HTTP error: %s", e)
+            return None
+        except Exception as e:
+            logger.warning("Failed to fetch or process image from URL: %s", e)
+            return None
+
     if _is_b64(image_source):
         _, encoded = image_source.split(",", 1)
         data = base64.b64decode(encoded)

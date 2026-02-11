@@ -47,11 +47,13 @@ from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
+from langchain_core.utils.function_calling import convert_to_openai_tool
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseLanguageModel
     from langchain_core.prompt_values import PromptValue
     from langchain_core.runnables.base import Runnable
+    from langchain_core.tools import BaseTool
 
 try:
     from langchain_text_splitters import TextSplitter
@@ -2188,6 +2190,8 @@ def count_tokens_approximately(
     extra_tokens_per_message: float = 3.0,
     count_name: bool = True,
     tokens_per_image: int = 85,
+    use_usage_metadata_scaling: bool = False,
+    tools: list[BaseTool | dict[str, Any]] | None = None,
 ) -> int:
     """Approximate the total number of tokens in messages.
 
@@ -2197,6 +2201,7 @@ def count_tokens_approximately(
     - For tool messages, the token count also includes the tool call ID.
     - For multimodal messages with images, applies a fixed token penalty per image
       instead of counting base64-encoded characters.
+    - If tools are provided, the token count also includes stringified tool schemas.
 
     Args:
         messages: List of messages to count tokens for.
@@ -2211,9 +2216,17 @@ def count_tokens_approximately(
         count_name: Whether to include message names in the count.
         tokens_per_image: Fixed token cost per image (default: 85, aligned with
             OpenAI's low-resolution image token cost).
+        use_usage_metadata_scaling: If True, and all AI messages have consistent
+            `response_metadata['model_provider']`, scale the approximate token count
+            using the **most recent** AI message that has
+            `usage_metadata['total_tokens']`. The scaling factor is:
+            `AI_total_tokens / approx_tokens_up_to_that_AI_message`
+        tools: List of tools to include in the token count. Each tool can be either
+            a `BaseTool` instance or a dict representing a tool schema. `BaseTool`
+            instances are converted to OpenAI tool format before counting.
 
     Returns:
-        Approximate number of tokens in the messages.
+        Approximate number of tokens in the messages (and tools, if provided).
 
     Note:
         This is a simple approximation that may not match the exact token count used by
@@ -2225,8 +2238,24 @@ def count_tokens_approximately(
 
     !!! version-added "Added in `langchain-core` 0.3.46"
     """
+    converted_messages = convert_to_messages(messages)
+
     token_count = 0.0
-    for message in convert_to_messages(messages):
+
+    ai_model_provider: str | None = None
+    invalid_model_provider = False
+    last_ai_total_tokens: int | None = None
+    approx_at_last_ai: float | None = None
+
+    # Count tokens for tools if provided
+    if tools:
+        tools_chars = 0
+        for tool in tools:
+            tool_dict = tool if isinstance(tool, dict) else convert_to_openai_tool(tool)
+            tools_chars += len(json.dumps(tool_dict))
+        token_count += math.ceil(tools_chars / chars_per_token)
+
+    for message in converted_messages:
         message_chars = 0
 
         if isinstance(message.content, str):
@@ -2283,6 +2312,31 @@ def count_tokens_approximately(
 
         # add extra tokens per message
         token_count += extra_tokens_per_message
+
+        if use_usage_metadata_scaling and isinstance(message, AIMessage):
+            model_provider = message.response_metadata.get("model_provider")
+            if ai_model_provider is None:
+                ai_model_provider = model_provider
+            elif model_provider != ai_model_provider:
+                invalid_model_provider = True
+
+            if message.usage_metadata and isinstance(
+                (total_tokens := message.usage_metadata.get("total_tokens")), int
+            ):
+                last_ai_total_tokens = total_tokens
+                approx_at_last_ai = token_count
+
+    if (
+        use_usage_metadata_scaling
+        and len(converted_messages) > 1
+        and not invalid_model_provider
+        and ai_model_provider is not None
+        and last_ai_total_tokens is not None
+        and approx_at_last_ai
+        and approx_at_last_ai > 0
+    ):
+        scale_factor = last_ai_total_tokens / approx_at_last_ai
+        token_count *= min(1.25, max(1.0, scale_factor))
 
     # round up once more time in case extra_tokens_per_message is a float
     return math.ceil(token_count)

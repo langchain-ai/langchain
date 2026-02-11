@@ -17,7 +17,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.exceptions import OutputParserException
+from langchain_core.exceptions import ContextOverflowError, OutputParserException
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -657,6 +657,17 @@ def _format_messages(
                 _lc_tool_calls_to_anthropic_tool_use_blocks(missing_tool_calls),
             )
 
+        if role == "assistant" and _i == len(merged_messages) - 1:
+            if isinstance(content, str):
+                content = content.rstrip()
+            elif (
+                isinstance(content, list)
+                and content
+                and isinstance(content[-1], dict)
+                and content[-1].get("type") == "text"
+            ):
+                content[-1]["text"] = content[-1]["text"].rstrip()
+
         if not content and role == "assistant" and _i < len(merged_messages) - 1:
             # anthropic.BadRequestError: Error code: 400: all messages must have
             # non-empty content except for the optional final assistant message
@@ -724,8 +735,16 @@ def _is_code_execution_related_block(
     return False
 
 
+class AnthropicContextOverflowError(anthropic.BadRequestError, ContextOverflowError):
+    """BadRequestError raised when input exceeds Anthropic's context limit."""
+
+
 def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
     """Handle Anthropic BadRequestError."""
+    if "prompt is too long" in e.message:
+        raise AnthropicContextOverflowError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
     if ("messages: at least one message is required") in e.message:
         message = "Received only system message(s). "
         warnings.warn(message, stacklevel=2)
@@ -862,9 +881,12 @@ class ChatAnthropic(BaseChatModel):
     """Parameters for Claude reasoning,
 
     e.g., `#!python {"type": "enabled", "budget_tokens": 10_000}`
+
+    For Claude Opus 4.6, `budget_tokens` is deprecated in favor of
+    `#!python {"type": "adaptive"}`
     """
 
-    effort: Literal["high", "medium", "low"] | None = None
+    effort: Literal["max", "high", "medium", "low"] | None = None
     """Control how many tokens Claude uses when responding.
 
     This parameter will be merged into the `output_config` parameter when making
@@ -879,13 +901,8 @@ class ChatAnthropic(BaseChatModel):
 
     !!! note "Model Support"
 
-        This feature is currently only supported by Claude Opus 4.5.
-
-    !!! note "Automatic beta header"
-
-        The required `effort-2025-11-24` beta header is
-        automatically appended to the request when using `effort`, so you
-        don't need to manually specify it in the `betas` parameter.
+        This feature is generally available on Claude Opus 4.6 and Claude Opus 4.5.
+        The `max` effort level is only supported by Claude Opus 4.6.
     """
 
     mcp_servers: list[dict[str, Any]] | None = None
@@ -908,6 +925,12 @@ class ChatAnthropic(BaseChatModel):
     model responses will include container metadata. Set `reuse_last_container=True`
     to automatically reuse the container from the most recent response for subsequent
     invocations.
+    """
+
+    inference_geo: str | None = None
+    """Controls where model inference runs. See Anthropic's
+    [data residency](https://platform.claude.com/docs/en/build-with-claude/data-residency)
+    docs for more information.
     """
 
     @property
@@ -1136,6 +1159,8 @@ class ChatAnthropic(BaseChatModel):
         }
         if self.thinking is not None:
             payload["thinking"] = self.thinking
+        if self.inference_geo is not None:
+            payload["inference_geo"] = self.inference_geo
 
         # Handle output_config and effort parameter
         # Priority: self.effort > payload output_config
@@ -1147,16 +1172,6 @@ class ChatAnthropic(BaseChatModel):
 
         if output_config:
             payload["output_config"] = output_config
-
-            # Auto-append required beta for effort
-            if "effort" in output_config:
-                required_beta = "effort-2025-11-24"
-                if payload["betas"]:
-                    # Merge with existing betas
-                    if required_beta not in payload["betas"]:
-                        payload["betas"] = [*payload["betas"], required_beta]
-                else:
-                    payload["betas"] = [required_beta]
 
         if "response_format" in payload:
             # response_format present when using agents.create_agent's ProviderStrategy
@@ -1170,22 +1185,22 @@ class ChatAnthropic(BaseChatModel):
                 and "schema" in response_format.get("json_schema", {})
             ):
                 response_format = cast(dict, response_format["json_schema"]["schema"])
-            # Convert OpenAI-style response_format to Anthropic's output_format
-            payload["output_format"] = _convert_to_anthropic_output_format(
+            # Convert OpenAI-style response_format to Anthropic's output_config.format
+            output_config = payload.setdefault("output_config", {})
+            output_config["format"] = _convert_to_anthropic_output_config_format(
                 response_format
             )
 
+        # Handle deprecated output_format parameter for backward compatibility
         if "output_format" in payload:
-            # Native structured output requires the structured outputs beta
-            if payload["betas"]:
-                if "structured-outputs-2025-11-13" not in payload["betas"]:
-                    # Merge with existing betas
-                    payload["betas"] = [
-                        *payload["betas"],
-                        "structured-outputs-2025-11-13",
-                    ]
-            else:
-                payload["betas"] = ["structured-outputs-2025-11-13"]
+            warnings.warn(
+                "The 'output_format' parameter is deprecated and will be removed in a "
+                "future version. Use 'output_config={\"format\": ...}' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            output_config = payload.setdefault("output_config", {})
+            output_config["format"] = payload.pop("output_format")
 
         if self.reuse_last_container:
             # Check for most recent AIMessage with container set in response_metadata
@@ -1200,24 +1215,9 @@ class ChatAnthropic(BaseChatModel):
                     payload["container"] = container_id
                     break
 
-        # Check if any tools have strict mode enabled
+        # Note: Beta headers are no longer required for structured outputs
+        # (output_config.format or strict tool use) as they are now generally available
         if "tools" in payload and isinstance(payload["tools"], list):
-            has_strict_tool = any(
-                isinstance(tool, dict) and tool.get("strict") is True
-                for tool in payload["tools"]
-            )
-            if has_strict_tool:
-                # Strict tool use requires the structured outputs beta
-                if payload["betas"]:
-                    if "structured-outputs-2025-11-13" not in payload["betas"]:
-                        # Merge with existing betas
-                        payload["betas"] = [
-                            *payload["betas"],
-                            "structured-outputs-2025-11-13",
-                        ]
-                else:
-                    payload["betas"] = ["structured-outputs-2025-11-13"]
-
             # Auto-append required betas for specific tool types and input_examples
             has_input_examples = False
             for tool in payload["tools"]:
@@ -1287,6 +1287,7 @@ class ChatAnthropic(BaseChatModel):
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
                 and not _thinking_in_params(payload)
+                and not _compact_in_params(payload)
             )
             block_start_event = None
             for event in stream:
@@ -1323,6 +1324,7 @@ class ChatAnthropic(BaseChatModel):
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
                 and not _thinking_in_params(payload)
+                and not _compact_in_params(payload)
             )
             block_start_event = None
             async for event in stream:
@@ -1685,7 +1687,9 @@ class ChatAnthropic(BaseChatModel):
                 )
         elif method == "json_schema":
             llm = self.bind(
-                output_format=_convert_to_anthropic_output_format(schema),
+                output_config={
+                    "format": _convert_to_anthropic_output_config_format(schema)
+                },
                 ls_structured_output_format={
                     "kwargs": {"method": "json_schema"},
                     "schema": convert_to_openai_tool(schema),
@@ -1884,6 +1888,12 @@ def _documents_in_params(params: dict) -> bool:
     return False
 
 
+def _compact_in_params(params: dict) -> bool:
+    edits = params.get("context_management", {}).get("edits") or []
+
+    return any("compact" in (edit.get("type") or "") for edit in edits)
+
+
 class _AnthropicToolUse(TypedDict):
     type: Literal["tool_use"]
     name: str
@@ -1906,10 +1916,16 @@ def _lc_tool_calls_to_anthropic_tool_use_blocks(
     ]
 
 
-def _convert_to_anthropic_output_format(schema: dict | type) -> dict[str, Any]:
-    """Convert JSON schema, Pydantic model, or `TypedDict` into Claude `output_format`.
+def _convert_to_anthropic_output_config_format(schema: dict | type) -> dict[str, Any]:
+    """Convert JSON schema, Pydantic model, or `TypedDict` into `output_config.format`.
 
     See Claude docs on [structured outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs).
+
+    Args:
+        schema: A JSON schema dict, Pydantic model class, or TypedDict.
+
+    Returns:
+        A dict with `type` and `schema` keys suitable for `output_config.format`.
     """
     from anthropic import transform_schema
 
@@ -2062,6 +2078,13 @@ def _make_message_chunk_from_anthropic_event(
                 content=[content_block],
                 tool_call_chunks=tool_call_chunks,
             )
+
+        # Compaction block
+        elif event.delta.type == "compaction_delta":
+            content_block = event.delta.model_dump()
+            content_block["index"] = event.index
+            content_block["type"] = "compaction"
+            message_chunk = AIMessageChunk(content=[content_block])
 
     # Process final usage metadata and completion info
     elif event.type == "message_delta" and stream_usage:
