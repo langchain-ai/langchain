@@ -3,6 +3,8 @@
 from typing import Any, Literal, Protocol
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
+from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables.config import var_child_runnable_config
 from langgraph.runtime import Runtime
 from langgraph.types import interrupt
 from typing_extensions import NotRequired, TypedDict
@@ -286,7 +288,9 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         raise ValueError(msg)
 
     def after_model(
-        self, state: AgentState[Any], runtime: Runtime[ContextT]
+        self,
+        state: AgentState[Any],
+        runtime: Runtime[ContextT],
     ) -> dict[str, Any] | None:
         """Trigger interrupt flows for relevant tool calls after an `AIMessage`.
 
@@ -373,15 +377,32 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         return {"messages": [last_ai_msg, *artificial_tool_messages]}
 
     async def aafter_model(
-        self, state: AgentState[Any], runtime: Runtime[ContextT]
+        self,
+        state: AgentState[Any],
+        runtime: Runtime[ContextT],
+        config: RunnableConfig | None = None,
     ) -> dict[str, Any] | None:
         """Async trigger interrupt flows for relevant tool calls after an `AIMessage`.
 
         Args:
             state: The current agent state.
             runtime: The runtime context.
+            config: The runnable config.
 
         Returns:
             Updated message with the revised tool calls.
         """
-        return self.after_model(state, runtime)
+        if config is None:
+            return self.after_model(state, runtime)
+
+        existing_config = var_child_runnable_config.get()
+        if existing_config is not None:
+            return self.after_model(state, runtime)
+
+        # Python < 3.11 does not automatically propagate runnable config context
+        # through async tasks. Set it explicitly so `interrupt()` can access config.
+        token = var_child_runnable_config.set(config)
+        try:
+            return self.after_model(state, runtime)
+        finally:
+            var_child_runnable_config.reset(token)
