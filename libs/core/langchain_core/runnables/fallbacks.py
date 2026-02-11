@@ -649,7 +649,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 def _returns_runnable(attr: Any) -> bool:
     if not callable(attr):
         return False
-    return_type = typing.get_type_hints(attr).get("return")
+    try:
+        return_type = typing.get_type_hints(attr).get("return")
+    except Exception:
+        return False
     return bool(return_type and _is_runnable_type(return_type))
 
 
