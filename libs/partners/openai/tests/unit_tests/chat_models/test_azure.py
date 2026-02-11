@@ -3,6 +3,7 @@
 import os
 from unittest import mock
 
+import httpx
 import pytest
 from langchain_core.messages import HumanMessage
 from pydantic import SecretStr
@@ -174,3 +175,53 @@ def test_max_tokens_converted_to_max_completion_tokens() -> None:
     assert "max_completion_tokens" in payload
     assert payload["max_completion_tokens"] == 1000
     assert "max_tokens" not in payload
+
+
+def test_azure_client_caching() -> None:
+    """Test that AzureChatOpenAI reuses cached httpx clients."""
+    llm1 = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="gpt-4",
+        openai_api_version="2023-05-15",
+        azure_endpoint="my-endpoint",
+    )
+    llm2 = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="gpt-4",
+        openai_api_version="2023-05-15",
+        azure_endpoint="my-endpoint",
+    )
+    assert llm1.root_client._client is llm2.root_client._client
+
+    # Different endpoint should get a different client.
+    llm3 = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="gpt-4",
+        openai_api_version="2023-05-15",
+        azure_endpoint="other-endpoint",
+    )
+    assert llm1.root_client._client is not llm3.root_client._client
+
+    # timeout=None should still share the default client.
+    llm4 = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="gpt-4",
+        openai_api_version="2023-05-15",
+        azure_endpoint="my-endpoint",
+        timeout=None,
+    )
+    assert llm1.root_client._client is llm4.root_client._client
+
+    # Different numeric timeout should get a different client.
+    llm5 = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="gpt-4",
+        openai_api_version="2023-05-15",
+        azure_endpoint="my-endpoint",
+        timeout=3,
+    )
+    assert llm1.root_client._client is not llm5.root_client._client
+
+    # httpx.Timeout (unhashable) should get a different client.
+    llm6 = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="gpt-4",
+        openai_api_version="2023-05-15",
+        azure_endpoint="my-endpoint",
+        timeout=httpx.Timeout(timeout=60.0, connect=5.0),
+    )
+    assert llm1.root_client._client is not llm6.root_client._client
