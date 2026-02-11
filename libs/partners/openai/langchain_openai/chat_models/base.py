@@ -3547,7 +3547,8 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
 def _lc_invalid_tool_call_to_openai_tool_call(
     invalid_tool_call: InvalidToolCall,
 ) -> dict:
-    _validate_openai_name(invalid_tool_call["name"], context="tool")
+    if name := invalid_tool_call["name"]:
+        _validate_openai_name(name, context="tool")
     return {
         "type": "function",
         "id": invalid_tool_call["id"],
