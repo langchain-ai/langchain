@@ -69,6 +69,7 @@ from langchain_openai.chat_models.base import (
     OpenAIRefusalError,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
+    _convert_delta_to_message_chunk,
     _convert_dict_to_message,
     _convert_message_to_dict,
     _convert_to_openai_response_format,
@@ -3392,3 +3393,57 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     # Verify it's both types (multiple inheritance)
     assert isinstance(exc_info.value, openai.BadRequestError)
     assert isinstance(exc_info.value, ContextOverflowError)
+
+
+# === Tests for reasoning_content support (Issue #35059) ===
+
+
+def test_convert_dict_to_message_with_reasoning_content() -> None:
+    """Test that reasoning_content is captured in additional_kwargs."""
+    message_dict = {
+        "role": "assistant",
+        "content": "The answer is 0.30000000000000004.",
+        "reasoning_content": "Let me think about floating point arithmetic...",
+    }
+    result = _convert_dict_to_message(message_dict)
+    assert isinstance(result, AIMessage)
+    assert result.content == "The answer is 0.30000000000000004."
+    assert result.additional_kwargs["reasoning_content"] == (
+        "Let me think about floating point arithmetic..."
+    )
+
+
+def test_convert_dict_to_message_without_reasoning_content() -> None:
+    """Test that no reasoning_content key is added when field is absent."""
+    message_dict = {
+        "role": "assistant",
+        "content": "Hello!",
+    }
+    result = _convert_dict_to_message(message_dict)
+    assert isinstance(result, AIMessage)
+    assert "reasoning_content" not in result.additional_kwargs
+
+
+def test_convert_delta_to_message_chunk_with_reasoning_content() -> None:
+    """Test that reasoning_content is captured in streaming chunk."""
+    delta = {
+        "role": "assistant",
+        "content": "",
+        "reasoning_content": "Step 1: Consider the problem...",
+    }
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    assert result.additional_kwargs["reasoning_content"] == (
+        "Step 1: Consider the problem..."
+    )
+
+
+def test_convert_delta_to_message_chunk_without_reasoning_content() -> None:
+    """Test that no reasoning_content key is added for normal streaming chunks."""
+    delta = {
+        "role": "assistant",
+        "content": "Hello",
+    }
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    assert "reasoning_content" not in result.additional_kwargs

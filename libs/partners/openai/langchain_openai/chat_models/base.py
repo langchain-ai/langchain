@@ -191,6 +191,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                     )
         if audio := _dict.get("audio"):
             additional_kwargs["audio"] = audio
+        if reasoning_content := _dict.get("reasoning_content"):
+            additional_kwargs["reasoning_content"] = reasoning_content
         return AIMessage(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -397,6 +399,8 @@ def _convert_delta_to_message_chunk(
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content, id=id_)
     if role == "assistant" or default_class == AIMessageChunk:
+        if reasoning_content := _dict.get("reasoning_content"):
+            additional_kwargs["reasoning_content"] = reasoning_content
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -1543,6 +1547,13 @@ class BaseChatOpenAI(BaseChatModel):
                 generations[0].message.additional_kwargs["parsed"] = message.parsed
             if hasattr(message, "refusal"):
                 generations[0].message.additional_kwargs["refusal"] = message.refusal
+            if (
+                hasattr(message, "reasoning_content")
+                and message.reasoning_content
+            ):
+                generations[0].message.additional_kwargs["reasoning_content"] = (
+                    message.reasoning_content
+                )
 
         return ChatResult(generations=generations, llm_output=llm_output)
 
