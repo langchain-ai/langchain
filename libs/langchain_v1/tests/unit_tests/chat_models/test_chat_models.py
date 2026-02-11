@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from unittest import mock
 
 import pytest
+from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableSequence
 from pydantic import SecretStr
@@ -50,6 +51,12 @@ def test_init_chat_model(model_name: str, model_provider: str | None) -> None:
         api_key="foo",
     )
     assert llm1.dict() == llm2.dict()
+
+
+def test_init_chat_model_rejects_model_object() -> None:
+    """Passing a model object instead of a string should raise TypeError."""
+    with pytest.raises(TypeError, match="must be a string"):
+        init_chat_model(model=FakeChatModel())  # type: ignore[arg-type]
 
 
 def test_init_missing_dep() -> None:
