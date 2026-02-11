@@ -187,6 +187,13 @@ def test__convert_dict_to_message_human_with_name() -> None:
     assert _convert_message_to_dict(expected_output) == message
 
 
+def test__convert_message_to_dict_raises_for_invalid_message_name() -> None:
+    expected_output = HumanMessage(content="foo", name="invalid name")
+
+    with pytest.raises(ValueError, match="Invalid message name"):
+        _convert_message_to_dict(expected_output)
+
+
 def test__convert_dict_to_message_ai() -> None:
     message = {"role": "assistant", "content": "foo"}
     result = _convert_dict_to_message(message)
@@ -312,6 +319,59 @@ def test__convert_dict_to_message_tool_call() -> None:
         reverted_message_dict["tool_calls"], key=lambda x: x["id"]
     )
     assert reverted_message_dict == message
+
+
+def test__convert_message_to_dict_raises_for_invalid_tool_call_name() -> None:
+    message = AIMessage(
+        content="",
+        tool_calls=[
+            ToolCall(
+                name="bad tool",
+                args={"name": "Sally", "hair_color": "green"},
+                id="call_abc123",
+                type="tool_call",
+            )
+        ],
+    )
+    with pytest.raises(ValueError, match="Invalid tool name"):
+        _convert_message_to_dict(message)
+
+
+def test__convert_message_to_dict_raises_for_invalid_invalid_tool_call_name() -> None:
+    message = AIMessage(
+        content="",
+        invalid_tool_calls=[
+            InvalidToolCall(
+                name="bad tool",
+                args="{}",
+                id="call_abc123",
+                error="Invalid args",
+                type="invalid_tool_call",
+            )
+        ],
+    )
+    with pytest.raises(ValueError, match="Invalid tool name"):
+        _convert_message_to_dict(message)
+
+
+def test__convert_message_to_dict_raises_for_invalid_additional_tool_name() -> None:
+    message = AIMessage(
+        content="",
+        additional_kwargs={
+            "tool_calls": [
+                {
+                    "id": "call_abc123",
+                    "type": "function",
+                    "function": {
+                        "name": "bad tool",
+                        "arguments": '{"name":"Sally"}',
+                    },
+                }
+            ]
+        },
+    )
+    with pytest.raises(ValueError, match="Invalid tool name"):
+        _convert_message_to_dict(message)
 
 
 class MockAsyncContextManager:
@@ -913,6 +973,73 @@ def test_bind_tools_tool_choice(tool_choice: Any, strict: bool | None) -> None:
     llm.bind_tools(
         tools=[GenerateUsername, MakeASandwich], tool_choice=tool_choice, strict=strict
     )
+
+
+def test_bind_tools_raises_for_invalid_tool_name() -> None:
+    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    invalid_tool = {
+        "type": "function",
+        "function": {
+            "name": "bad tool",
+            "description": "tool with invalid name",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    }
+
+    with pytest.raises(ValueError, match="Invalid tool name"):
+        llm.bind_tools(tools=[invalid_tool])
+
+
+def test_bind_tools_raises_for_invalid_tool_choice_name() -> None:
+    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+
+    with pytest.raises(ValueError, match="Invalid tool_choice name"):
+        llm.bind_tools(tools=[GenerateUsername, MakeASandwich], tool_choice="bad tool")
+
+
+def test_bind_tools_raises_for_invalid_tool_choice_dict_name() -> None:
+    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+
+    with pytest.raises(ValueError, match="Invalid tool_choice name"):
+        llm.bind_tools(
+            tools=[GenerateUsername, MakeASandwich],
+            tool_choice={"type": "function", "function": {"name": "bad tool"}},
+        )
+
+
+def test_bind_tools_tool_choice_true() -> None:
+    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    llm.bind_tools(tools=[GenerateUsername, MakeASandwich], tool_choice=True)
+
+
+def test_bind_tools_raises_for_invalid_top_level_tool_name() -> None:
+    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    invalid_name_tool = {"name": "bad tool"}
+
+    with (
+        patch(
+            "langchain_openai.chat_models.base.convert_to_openai_tool",
+            return_value=invalid_name_tool,
+        ),
+        pytest.raises(ValueError, match="Invalid tool name"),
+    ):
+        llm.bind_tools(tools=[GenerateUsername])
+
+
+def test_bind_tools_accepts_valid_top_level_tool_name() -> None:
+    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    valid_name_tool = {"name": "good_tool"}
+
+    with patch(
+        "langchain_openai.chat_models.base.convert_to_openai_tool",
+        return_value=valid_name_tool,
+    ):
+        llm.bind_tools(tools=[GenerateUsername])
+
+
+def test_bind_tools_tool_choice_well_known_tool() -> None:
+    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    llm.bind_tools(tools=[GenerateUsername], tool_choice="web_search")
 
 
 @pytest.mark.parametrize(
@@ -2995,6 +3122,27 @@ def test_lc_tool_call_to_openai_tool_call_unicode() -> None:
     # Also ensure the raw JSON string contains Unicode, not escaped sequences
     assert "你好啊集团" in arguments_str
     assert "\\u4f60" not in arguments_str  # Should not contain escaped Unicode
+
+
+def test_lc_invalid_tool_call_to_openai_tool_call() -> None:
+    from langchain_openai.chat_models.base import (
+        _lc_invalid_tool_call_to_openai_tool_call,
+    )
+
+    invalid_tool_call = InvalidToolCall(
+        id="call_123",
+        name="create_customer",
+        args='{"customer_name":"abc"}',
+        error="bad args",
+        type="invalid_tool_call",
+    )
+
+    result = _lc_invalid_tool_call_to_openai_tool_call(invalid_tool_call)
+
+    assert result["type"] == "function"
+    assert result["id"] == "call_123"
+    assert result["function"]["name"] == "create_customer"
+    assert result["function"]["arguments"] == '{"customer_name":"abc"}'
 
 
 def test_extra_body_parameter() -> None:

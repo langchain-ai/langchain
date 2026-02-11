@@ -157,6 +157,27 @@ WellKnownTools = (
     "image_generation",
 )
 
+_OPENAI_NAME_PATTERN = re.compile(r"^[^\s<|\\/>]+$")
+
+
+def _validate_openai_name(name: str, *, context: str) -> None:
+    """Validate a name against OpenAI's request constraints.
+
+    Args:
+        name: The name value to validate.
+        context: Short identifier for where the name was sourced from.
+
+    Raises:
+        ValueError: If `name` does not match OpenAI's expected pattern.
+    """
+    if not _OPENAI_NAME_PATTERN.match(name):
+        msg = (
+            f"Invalid {context} name {name!r}. OpenAI requires names to match "
+            f"{_OPENAI_NAME_PATTERN.pattern!r} (no spaces or characters like "
+            "'<', '|', '\\\\', '/', '>'). Use snake_case names instead."
+        )
+        raise ValueError(msg)
+
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     """Convert a dictionary to a LangChain message.
@@ -295,6 +316,7 @@ def _convert_message_to_dict(
         "content": _format_message_content(message.content, api=api, role=message.type)
     }
     if (name := message.name or message.additional_kwargs.get("name")) is not None:
+        _validate_openai_name(name, context="message")
         message_dict["name"] = name
 
     # populate role and additional message data
@@ -318,6 +340,12 @@ def _convert_message_to_dict(
                 {k: v for k, v in tool_call.items() if k in tool_call_supported_props}
                 for tool_call in message_dict["tool_calls"]
             ]
+            for tool_call in message_dict["tool_calls"]:
+                function = tool_call.get("function", {})
+                if isinstance(function, Mapping) and isinstance(
+                    function_name := function.get("name"), str
+                ):
+                    _validate_openai_name(function_name, context="tool")
         elif "function_call" in message.additional_kwargs:
             # OpenAI raises 400 if both function_call and tool_calls are present in the
             # same message.
@@ -1910,9 +1938,13 @@ class BaseChatOpenAI(BaseChatModel):
         tool_names = []
         for tool in formatted_tools:
             if "function" in tool:
-                tool_names.append(tool["function"]["name"])
+                tool_name = tool["function"]["name"]
+                _validate_openai_name(tool_name, context="tool")
+                tool_names.append(tool_name)
             elif "name" in tool:
-                tool_names.append(tool["name"])
+                tool_name = tool["name"]
+                _validate_openai_name(tool_name, context="tool")
+                tool_names.append(tool_name)
             else:
                 pass
         if tool_choice:
@@ -1929,12 +1961,21 @@ class BaseChatOpenAI(BaseChatModel):
                 # We support 'any' since other models use this instead of 'required'.
                 elif tool_choice == "any":
                     tool_choice = "required"
-                else:
+                elif tool_choice in {"auto", "none", "required"}:
                     pass
+                else:
+                    _validate_openai_name(tool_choice, context="tool_choice")
             elif isinstance(tool_choice, bool):
                 tool_choice = "required"
             elif isinstance(tool_choice, dict):
-                pass
+                if (
+                    tool_choice.get("type") == "function"
+                    and isinstance(tool_choice.get("function"), Mapping)
+                    and isinstance(tool_choice["function"].get("name"), str)
+                ):
+                    _validate_openai_name(
+                        tool_choice["function"]["name"], context="tool_choice"
+                    )
             else:
                 msg = (
                     f"Unrecognized tool_choice type. Expected str, bool or dict. "
@@ -3492,6 +3533,7 @@ def _is_pydantic_class(obj: Any) -> bool:
 
 
 def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
+    _validate_openai_name(tool_call["name"], context="tool")
     return {
         "type": "function",
         "id": tool_call["id"],
@@ -3505,6 +3547,7 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
 def _lc_invalid_tool_call_to_openai_tool_call(
     invalid_tool_call: InvalidToolCall,
 ) -> dict:
+    _validate_openai_name(invalid_tool_call["name"], context="tool")
     return {
         "type": "function",
         "id": invalid_tool_call["id"],
