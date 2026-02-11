@@ -261,9 +261,7 @@ def _merge_messages(
                         if isinstance(block, dict) and "cache_control" in block:
                             cache_ctrl = block["cache_control"]
                             block = {
-                                k: v
-                                for k, v in block.items()
-                                if k != "cache_control"
+                                k: v for k, v in block.items() if k != "cache_control"
                             }
                         cleaned.append(block)
                     tool_content = cleaned
