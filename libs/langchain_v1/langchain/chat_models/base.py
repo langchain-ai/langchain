@@ -450,7 +450,7 @@ def init_chat_model(
 
     """  # noqa: E501
     if model is not None and not isinstance(model, str):
-        msg = (
+        msg = (  # type: ignore[unreachable]
             f"`model` must be a string (e.g., 'openai:gpt-4o'), got "
             f"{type(model).__name__}. If you've already constructed a chat model "
             f"object, use it directly instead of passing it to init_chat_model()."

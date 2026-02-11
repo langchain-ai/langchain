@@ -56,7 +56,7 @@ def test_init_chat_model(model_name: str, model_provider: str | None) -> None:
 def test_init_chat_model_rejects_model_object() -> None:
     """Passing a model object instead of a string should raise TypeError."""
     with pytest.raises(TypeError, match="must be a string"):
-        init_chat_model(model=FakeChatModel())  # type: ignore[arg-type]
+        init_chat_model(model=FakeChatModel())  # type: ignore[call-overload]
 
 
 def test_init_missing_dep() -> None:
