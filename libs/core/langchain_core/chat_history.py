@@ -63,17 +63,15 @@ class BaseChatMessageHistory(ABC):
                 # Sanitize session_id to prevent path traversal
                 safe_id = os.path.basename(self.session_id)
                 if not safe_id or safe_id != self.session_id:
-                    raise ValueError(
-                        f"Invalid session_id: {self.session_id!r}"
-                    )
+                    raise ValueError(f"Invalid session_id: {self.session_id!r}")
                 file_path = os.path.join(self.storage_path, safe_id)
                 # Verify the resolved path is within storage_path
-                if not Path(file_path).resolve().is_relative_to(
-                    Path(self.storage_path).resolve()
+                if (
+                    not Path(file_path)
+                    .resolve()
+                    .is_relative_to(Path(self.storage_path).resolve())
                 ):
-                    raise ValueError(
-                        f"Invalid session_id: {self.session_id!r}"
-                    )
+                    raise ValueError(f"Invalid session_id: {self.session_id!r}")
                 return file_path
 
             @property
