@@ -24,19 +24,6 @@ from langchain_core.utils.pydantic import (
 
 logger = logging.getLogger(__name__)
 
-# Regex to strip reasoning tags like <think>...</think>, <thinking>...</thinking>,
-# or <reasoning>...</reasoning> from tool call arguments.
-_REASONING_TAG_RE = re.compile(
-    r"<(think|thinking|reasoning)>.*?</\1>",
-    re.DOTALL,
-)
-
-# Regex to unwrap <tool_call>...</tool_call> wrapper tags (keeps content inside).
-_TOOL_CALL_TAG_RE = re.compile(
-    r"<tool_call>\s*(.*?)\s*</tool_call>",
-    re.DOTALL,
-)
-
 
 def _strip_reasoning_tags(arguments: str) -> str | None:
     """Strip reasoning model tags from tool call arguments.
@@ -52,16 +39,23 @@ def _strip_reasoning_tags(arguments: str) -> str | None:
         The cleaned arguments string, or `None` if no tags were found
         (i.e. the string was not modified).
     """
-    cleaned = _REASONING_TAG_RE.sub("", arguments)
+    reasoning_tag_re = re.compile(
+        r"<(think|thinking|reasoning)>.*?</\1>",
+        re.DOTALL,
+    )
+    tool_call_tag_re = re.compile(
+        r"<tool_call>\s*(.*?)\s*</tool_call>",
+        re.DOTALL,
+    )
 
-    # Unwrap <tool_call>...</tool_call> wrapper tags
-    match = _TOOL_CALL_TAG_RE.search(cleaned)
+    cleaned = reasoning_tag_re.sub("", arguments)
+
+    match = tool_call_tag_re.search(cleaned)
     if match:
         cleaned = match.group(1)
 
     cleaned = cleaned.strip()
 
-    # Only return if we actually changed something
     if cleaned != arguments.strip():
         return cleaned
     return None
