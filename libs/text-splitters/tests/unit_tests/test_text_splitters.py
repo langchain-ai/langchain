@@ -4094,3 +4094,42 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
+
+
+def test_token_text_splitter_start_index_no_negative() -> None:
+    """TokenTextSplitter should never produce start_index of -1.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/29884.
+    When chunk_overlap is expressed in tokens (not characters), the character-
+    based offset calculation in create_documents could produce an incorrect
+    search window, causing text.find() to return -1.
+    """
+    pytest = __import__("pytest")
+    tiktoken = pytest.importorskip("tiktoken")
+
+    from langchain_text_splitters import TokenTextSplitter
+
+    text = (
+        '"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do '
+        "eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim "
+        "ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut "
+        "aliquip ex ea commodo consequat. Duis aute irure dolor in "
+        "reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla "
+        'pariatur. Excepteur sint occaecat cupidatat non proident, sunt in '
+        'culpa qui officia deserunt mollit anim id est laborum."'
+    )
+
+    splitter = TokenTextSplitter(
+        add_start_index=True, chunk_size=10, chunk_overlap=5
+    )
+    docs = splitter.create_documents([text])
+
+    for doc in docs:
+        s_i = doc.metadata["start_index"]
+        assert s_i >= 0, (
+            f"start_index should never be -1, got {s_i} "
+            f"for chunk: {doc.page_content!r}"
+        )
+        assert text[s_i : s_i + len(doc.page_content)] == doc.page_content, (
+            f"start_index {s_i} does not match chunk position in source text"
+        )
