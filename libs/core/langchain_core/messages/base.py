@@ -306,6 +306,43 @@ class BaseMessage(Serializable):
         prompt = ChatPromptTemplate(messages=[self])
         return prompt.__add__(other)
 
+    @staticmethod
+    def _format_content(content: str | list[str | dict]) -> str:
+        """Format message content for display.
+
+        Handles both string and list content types. For list content, string
+        items are included directly, ``text`` blocks have their text extracted,
+        and other dict blocks are rendered as compact JSON.
+
+        Args:
+            content: The message content to format.
+
+        Returns:
+            A formatted string representation of the content.
+        """
+        if isinstance(content, str):
+            return content
+        parts: list[str] = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict):
+                item_type = item.get("type")
+                if item_type == "text":
+                    parts.append(item.get("text", ""))
+                elif item_type == "image_url":
+                    url = item.get("image_url", item)
+                    if isinstance(url, dict):
+                        url = url.get("url", "")
+                    parts.append(f"[Image: {url}]")
+                else:
+                    import json  # noqa: PLC0415
+
+                    parts.append(json.dumps(item, ensure_ascii=False))
+            else:
+                parts.append(str(item))
+        return "\n".join(parts)
+
     def pretty_repr(
         self,
         html: bool = False,  # noqa: FBT001,FBT002
@@ -336,10 +373,9 @@ class BaseMessage(Serializable):
             ```
         """  # noqa: E501
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
-        # TODO: handle non-string content.
         if self.name is not None:
             title += f"\nName: {self.name}"
-        return f"{title}\n\n{self.content}"
+        return f"{title}\n\n{self._format_content(self.content)}"
 
     def pretty_print(self) -> None:
         """Print a pretty representation of the message.
