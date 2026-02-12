@@ -3392,3 +3392,28 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     # Verify it's both types (multiple inheritance)
     assert isinstance(exc_info.value, openai.BadRequestError)
     assert isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_url_to_size_blocks_private_ips() -> None:
+    """Test that _url_to_size blocks URLs resolving to cloud metadata IPs."""
+    from langchain_openai.chat_models.base import _url_to_size
+
+    # Mock getaddrinfo to return a cloud metadata IP
+    private_addr_info = [
+        (2, 1, 6, "", ("169.254.169.254", 80)),
+    ]
+    with patch("socket.getaddrinfo", return_value=private_addr_info):
+        result = _url_to_size("http://metadata.google.internal/computeMetadata/v1/")
+        assert result is None
+
+
+def test_url_to_size_blocks_localhost() -> None:
+    """Test that _url_to_size blocks URLs resolving to localhost."""
+    from langchain_openai.chat_models.base import _url_to_size
+
+    localhost_addr_info = [
+        (2, 1, 6, "", ("127.0.0.1", 80)),
+    ]
+    with patch("socket.getaddrinfo", return_value=localhost_addr_info):
+        result = _url_to_size("http://localhost/image.png")
+        assert result is None

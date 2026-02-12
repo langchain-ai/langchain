@@ -3534,19 +3534,59 @@ def _url_to_size(image_source: str) -> tuple[int, int] | None:
             )
             return None
 
-        # Validate URL for SSRF protection
-        try:
-            from langchain_core._security._ssrf_protection import validate_safe_url
+        # SSRF protection: resolve DNS once and validate all resolved IPs.
+        # We resolve manually rather than delegating to validate_safe_url()
+        # to minimize the TOCTOU window between validation and the httpx
+        # request. The OS DNS cache will serve our resolved addresses to
+        # httpx, narrowing the DNS rebinding window. A complete fix would
+        # require IP-pinned transport support in httpx.
+        import socket
+        from urllib.parse import urlparse
 
-            validate_safe_url(image_source, allow_private=False, allow_http=True)
+        try:
+            from langchain_core._security._ssrf_protection import (
+                is_cloud_metadata,
+                is_localhost,
+                is_private_ip,
+            )
+
+            parsed = urlparse(image_source)
+            hostname = parsed.hostname
+            if not hostname:
+                logger.warning("Image URL has no hostname")
+                return None
+            port = parsed.port or (443 if parsed.scheme == "https" else 80)
+
+            try:
+                addr_info = socket.getaddrinfo(
+                    hostname, port, socket.AF_UNSPEC, socket.SOCK_STREAM
+                )
+            except (socket.gaierror, OSError) as e:
+                logger.warning("Failed to resolve image URL: %s", e)
+                return None
+
+            for result in addr_info:
+                ip_str: str = result[4][0]
+                if is_cloud_metadata(hostname, ip_str):
+                    logger.warning(
+                        "Image URL resolves to cloud metadata IP: %s", ip_str
+                    )
+                    return None
+                if is_localhost(hostname, ip_str):
+                    logger.warning(
+                        "Image URL resolves to localhost: %s", ip_str
+                    )
+                    return None
+                if is_private_ip(ip_str):
+                    logger.warning(
+                        "Image URL resolves to private IP: %s", ip_str
+                    )
+                    return None
         except ImportError:
             logger.warning(
                 "SSRF protection not available. "
                 "Update langchain-core to get SSRF protection."
             )
-        except ValueError as e:
-            logger.warning("Image URL failed SSRF validation: %s", e)
-            return None
 
         # Set reasonable limits to prevent resource exhaustion
         # Timeout prevents indefinite hangs on slow/malicious servers
@@ -3555,6 +3595,9 @@ def _url_to_size(image_source: str) -> tuple[int, int] | None:
         max_size = 50 * 1024 * 1024  # 50 MB
 
         try:
+            # Make request immediately after DNS validation to minimize
+            # the TOCTOU window. The OS DNS cache should serve the same
+            # addresses we just validated.
             response = httpx.get(
                 image_source,
                 timeout=timeout,
