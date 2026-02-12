@@ -21,6 +21,8 @@ from langchain_core.outputs import ChatGeneration
             ],
             "foobar",
         ),
+        ([{"text": "foo"}], "foo"),
+        ([{"text": "foo"}, "bar"], "foobar"),
     ],
 )
 def test_msg_with_text(
