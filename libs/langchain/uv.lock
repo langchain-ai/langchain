@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10.0, <4.0.0"
 resolution-markers = [
     "python_full_version >= '3.14' and platform_python_implementation == 'PyPy'",
@@ -2813,7 +2813,7 @@ test-integration = [
     { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
-    { name = "pillow", specifier = ">=10.3.0,<12.0.0" },
+    { name = "pillow", specifier = ">=10.3.0,<13.0.0" },
 ]
 typing = [
     { name = "langchain-core", editable = "../core" },

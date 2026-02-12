@@ -916,6 +916,7 @@ async def test_openai_agent_with_streaming() -> None:
                     "tool_calls": [],
                     "type": "AIMessageChunk",
                     "usage_metadata": None,
+                    "reasoning_content": None,
                 },
             ],
         },
