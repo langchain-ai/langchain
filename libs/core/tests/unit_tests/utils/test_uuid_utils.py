@@ -28,10 +28,10 @@ def test_uuid7() -> None:
 
 def test_monotonicity() -> None:
     """Test that UUIDs are monotonically increasing."""
-    last = ""
+    last: UUID | None = None
     for n in range(100_000):
-        i = str(uuid7())
-        if n > 0 and i <= last:
+        i = uuid7()
+        if last is not None and i <= last:
             msg = f"UUIDs are not monotonic: {last} versus {i}"
             raise RuntimeError(msg)
         last = i
