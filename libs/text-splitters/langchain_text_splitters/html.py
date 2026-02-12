@@ -205,6 +205,9 @@ class HTMLHeaderTextSplitter:
         Raises:
             requests.RequestException: If the HTTP request fails.
         """
+        from langchain_core._security._ssrf_protection import validate_safe_url
+
+        validate_safe_url(url, allow_private=False, allow_http=True)
         response = requests.get(url, timeout=timeout, **kwargs)
         response.raise_for_status()
         return self.split_text(response.text)
