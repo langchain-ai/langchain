@@ -17,6 +17,7 @@ from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     JsonOutputToolsParser,
     PydanticToolsParser,
+    _strip_reasoning_tags,
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration
@@ -1452,3 +1453,333 @@ def test_pydantic_tools_parser_unknown_tool_raises_output_parser_exception(
     msg = str(excinfo.value)
     assert "Unknown tool type" in msg
     assert "UnknownTool" in msg
+
+
+# --- Tests for reasoning model tag stripping (Issue #32120) ---
+
+
+def test_strip_reasoning_tags_with_think_content() -> None:
+    """Test _strip_reasoning_tags strips <think> tags with reasoning content."""
+    arguments = '<think>\nsome reasoning\n</think>\n{"key": "value"}'
+    result = _strip_reasoning_tags(arguments)
+    assert result == '{"key": "value"}'
+
+
+def test_strip_reasoning_tags_with_empty_think() -> None:
+    """Test _strip_reasoning_tags strips empty <think> tags."""
+    arguments = '<think></think>\n{"key": "value"}'
+    result = _strip_reasoning_tags(arguments)
+    assert result == '{"key": "value"}'
+
+
+def test_strip_reasoning_tags_with_thinking_variant() -> None:
+    """Test _strip_reasoning_tags strips <thinking> tags."""
+    arguments = '<thinking>\nreasoning here\n</thinking>\n{"key": "value"}'
+    result = _strip_reasoning_tags(arguments)
+    assert result == '{"key": "value"}'
+
+
+def test_strip_reasoning_tags_with_reasoning_variant() -> None:
+    """Test _strip_reasoning_tags strips <reasoning> tags."""
+    arguments = '<reasoning>\nreasoning here\n</reasoning>\n{"key": "value"}'
+    result = _strip_reasoning_tags(arguments)
+    assert result == '{"key": "value"}'
+
+
+def test_strip_reasoning_tags_unwraps_tool_call_tags() -> None:
+    """Test _strip_reasoning_tags unwraps <tool_call> wrapper tags."""
+    arguments = '<tool_call>\n{"key": "value"}\n</tool_call>'
+    result = _strip_reasoning_tags(arguments)
+    assert result == '{"key": "value"}'
+
+
+def test_strip_reasoning_tags_with_think_and_tool_call() -> None:
+    """Test _strip_reasoning_tags with combined <think> and <tool_call> tags.
+
+    This matches the exact pattern from issue #32120.
+
+    See: https://github.com/langchain-ai/langchain/issues/32120
+    """
+    arguments = (
+        '<think>\n</think>\n<tool_call>\n{"result": [{"name": "test"}]}\n</tool_call>'
+    )
+    result = _strip_reasoning_tags(arguments)
+    assert result == '{"result": [{"name": "test"}]}'
+
+
+def test_strip_reasoning_tags_with_long_reasoning_content() -> None:
+    """Test _strip_reasoning_tags strips multiline reasoning content."""
+    arguments = (
+        "<think>\nLet me analyze this carefully.\n"
+        "The user wants structured output.\n</think>\n"
+        '<tool_call>\n{"answer": 42}\n</tool_call>'
+    )
+    result = _strip_reasoning_tags(arguments)
+    assert result == '{"answer": 42}'
+
+
+def test_strip_reasoning_tags_returns_none_for_clean_json() -> None:
+    """Test _strip_reasoning_tags returns None when no tags are present."""
+    arguments = '{"key": "value"}'
+    result = _strip_reasoning_tags(arguments)
+    assert result is None
+
+
+def test_strip_reasoning_tags_returns_none_for_plain_text() -> None:
+    """Test _strip_reasoning_tags returns None for text without tags."""
+    arguments = "not json at all"
+    result = _strip_reasoning_tags(arguments)
+    assert result is None
+
+
+def test_strip_reasoning_tags_ignores_mismatched_tags() -> None:
+    """Test _strip_reasoning_tags does not strip mismatched tags.
+
+    Mismatched tags like <think>...</thinking> should not be stripped
+    because the regex requires matching open/close tag names.
+    """
+    arguments = '<think>reasoning</thinking>\n{"key": "value"}'
+    result = _strip_reasoning_tags(arguments)
+    assert result is None
+
+
+def test_strip_reasoning_tags_multiline_reasoning() -> None:
+    """Test _strip_reasoning_tags strips reasoning content spanning many lines."""
+    arguments = (
+        '<think>\nLine 1\nLine 2\nLine 3\nStill thinking...\n</think>\n{"data": true}'
+    )
+    result = _strip_reasoning_tags(arguments)
+    assert result == '{"data": true}'
+
+
+def test_parse_tool_call_strips_think_tags() -> None:
+    """Test parse_tool_call strips <think> tags from arguments.
+
+    See: https://github.com/langchain-ai/langchain/issues/32120
+    """
+    raw_tool_call = {
+        "function": {
+            "arguments": '<think>\nsome reasoning\n</think>\n{"param": "value"}',
+            "name": "MyTool",
+        },
+        "id": "call_123",
+        "type": "function",
+    }
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["name"] == "MyTool"
+    assert result["args"] == {"param": "value"}
+    assert result["id"] == "call_123"
+
+
+def test_parse_tool_call_strips_empty_think_with_tool_call_tags() -> None:
+    """Test parse_tool_call with empty <think> and <tool_call> wrapper.
+
+    This is the exact pattern from issue #32120 where DeepSeek-R1 returns:
+    <think></think><tool_call>{...}</tool_call>
+
+    See: https://github.com/langchain-ai/langchain/issues/32120
+    """
+    raw_tool_call = {
+        "function": {
+            "arguments": (
+                "<think>\n</think>\n"
+                '<tool_call>\n{"result": [{"name": "test"}]}\n</tool_call>'
+            ),
+            "name": "MyTool",
+        },
+        "id": "call_123",
+        "type": "function",
+    }
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["name"] == "MyTool"
+    assert result["args"] == {"result": [{"name": "test"}]}
+
+
+@pytest.mark.parametrize(
+    "tag",
+    ["think", "thinking", "reasoning"],
+    ids=["think", "thinking", "reasoning"],
+)
+def test_parse_tool_call_strips_reasoning_tag_variants(tag: str) -> None:
+    """Test parse_tool_call strips all supported reasoning tag variants.
+
+    See: https://github.com/langchain-ai/langchain/issues/32120
+    """
+    raw_tool_call = {
+        "function": {
+            "arguments": f'<{tag}>\nreasoning\n</{tag}>\n{{"value": 42}}',
+            "name": "MyTool",
+        },
+        "id": "call_123",
+        "type": "function",
+    }
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["args"] == {"value": 42}
+
+
+def test_parse_tool_call_strips_tool_call_tags_only() -> None:
+    """Test parse_tool_call strips standalone <tool_call> wrapper tags."""
+    raw_tool_call = {
+        "function": {
+            "arguments": '<tool_call>\n{"value": 42}\n</tool_call>',
+            "name": "MyTool",
+        },
+        "id": "call_123",
+        "type": "function",
+    }
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["args"] == {"value": 42}
+
+
+def test_parse_tool_call_raises_for_invalid_json_without_tags() -> None:
+    """Test parse_tool_call still raises for invalid JSON with no reasoning tags."""
+    raw_tool_call = {
+        "function": {"arguments": "not json at all", "name": "MyTool"},
+        "id": "call_123",
+        "type": "function",
+    }
+    with pytest.raises(OutputParserException):
+        parse_tool_call(raw_tool_call, return_id=True)
+
+
+def test_parse_tool_call_raises_for_invalid_json_inside_tags() -> None:
+    """Test parse_tool_call raises when JSON inside reasoning tags is also invalid."""
+    raw_tool_call = {
+        "function": {
+            "arguments": (
+                "<think>\nreasoning\n</think>\n<tool_call>\nnot json\n</tool_call>"
+            ),
+            "name": "MyTool",
+        },
+        "id": "call_123",
+        "type": "function",
+    }
+    with pytest.raises(OutputParserException):
+        parse_tool_call(raw_tool_call, return_id=True)
+
+
+def test_parse_tool_call_reasoning_tags_issue_32120_full_pattern() -> None:
+    """End-to-end test reproducing the exact error from issue #32120.
+
+    DeepSeek-R1 returns structured output wrapped in <think> and <tool_call> tags
+    with nested dict fields, which caused JSONDecodeError.
+
+    See: https://github.com/langchain-ai/langchain/issues/32120
+    """
+    raw_tool_call = {
+        "function": {
+            "arguments": (
+                "<think>\n</think>\n"
+                "<tool_call>\n"
+                '{"result": [{"name": {"key": "value"}, '
+                '"information": {"key": "description"}}]}'
+                "\n</tool_call>"
+            ),
+            "name": "AnalysisResult",
+        },
+        "id": "call_abc",
+        "type": "function",
+    }
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["name"] == "AnalysisResult"
+    assert len(result["args"]["result"]) == 1
+    assert result["args"]["result"][0]["name"] == {"key": "value"}
+
+
+def test_parse_tool_call_reasoning_tags_without_return_id() -> None:
+    """Test reasoning tag stripping works with return_id=False."""
+    raw_tool_call = {
+        "function": {
+            "arguments": '<think>\nreasoning\n</think>\n{"param": "value"}',
+            "name": "MyTool",
+        },
+        "id": "call_123",
+        "type": "function",
+    }
+    result = parse_tool_call(raw_tool_call, return_id=False)
+
+    assert result is not None
+    assert result["name"] == "MyTool"
+    assert result["args"] == {"param": "value"}
+    assert "id" not in result
+
+
+def test_pydantic_tools_parser_with_reasoning_tags_in_additional_kwargs() -> None:
+    """Test PydanticToolsParser handles reasoning tags via additional_kwargs.
+
+    This tests the full pipeline: raw tool call with reasoning tags goes through
+    parse_tool_calls -> parse_tool_call -> _strip_reasoning_tags -> Pydantic parsing.
+
+    See: https://github.com/langchain-ai/langchain/issues/32120
+    """
+
+    class AnalysisResult(BaseModel):
+        result: list[dict]
+
+    parser = PydanticToolsParser(tools=[AnalysisResult])
+    message = AIMessage(
+        content="",
+        additional_kwargs={
+            "tool_calls": [
+                {
+                    "id": "call_abc123",
+                    "function": {
+                        "name": "AnalysisResult",
+                        "arguments": (
+                            "<think>\n</think>\n"
+                            '<tool_call>\n{"result": [{"name": "test"}]}'
+                            "\n</tool_call>"
+                        ),
+                    },
+                    "type": "function",
+                }
+            ]
+        },
+    )
+    generation = ChatGeneration(message=message)
+    result = parser.parse_result([generation])
+
+    assert len(result) == 1
+    assert isinstance(result[0], AnalysisResult)
+    assert result[0].result == [{"name": "test"}]
+
+
+def test_json_output_tools_parser_with_reasoning_tags_in_additional_kwargs() -> None:
+    """Test JsonOutputToolsParser handles reasoning tags via additional_kwargs.
+
+    See: https://github.com/langchain-ai/langchain/issues/32120
+    """
+    parser = JsonOutputToolsParser()
+    message = AIMessage(
+        content="",
+        additional_kwargs={
+            "tool_calls": [
+                {
+                    "id": "call_abc123",
+                    "function": {
+                        "name": "MyTool",
+                        "arguments": (
+                            '<think>\nthinking hard\n</think>\n{"value": 42}'
+                        ),
+                    },
+                    "type": "function",
+                }
+            ]
+        },
+    )
+    generation = ChatGeneration(message=message)
+    result = parser.parse_result([generation])
+
+    assert len(result) == 1
+    assert result[0]["type"] == "MyTool"
+    assert result[0]["args"] == {"value": 42}
