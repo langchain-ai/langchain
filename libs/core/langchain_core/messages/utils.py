@@ -566,7 +566,7 @@ def message_chunk_to_message(chunk: BaseMessage) -> BaseMessage:
     # chunk classes always have the equivalent non-chunk class as their first parent
     ignore_keys = ["type"]
     if isinstance(chunk, AIMessageChunk):
-        ignore_keys.extend(["tool_call_chunks", "chunk_position"])
+        ignore_keys.extend(["tool_call_chunks", "chunk_position", "reasoning_content"])
     return cast(
         "BaseMessage",
         chunk.__class__.__mro__[1](

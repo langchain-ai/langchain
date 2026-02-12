@@ -32,11 +32,17 @@ from langchain_core.messages.utils import (
 from langchain_core.tools import BaseTool, tool
 
 
+
+
 @pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])
 def test_merge_message_runs_str(msg_cls: type[BaseMessage]) -> None:
     messages = [msg_cls("foo"), msg_cls("bar"), msg_cls("baz")]
     messages_model_copy = [m.model_copy(deep=True) for m in messages]
-    expected = [msg_cls("foo\nbar\nbaz")]
+    expected_msg = msg_cls("foo\nbar\nbaz")
+    # AIMessage includes reasoning_content=None due to AIMessageChunk inheritance
+    if isinstance(expected_msg, AIMessage):
+        expected_msg = expected_msg.model_copy(update={"reasoning_content": None})
+    expected = [expected_msg]
     actual = merge_message_runs(messages)
     assert actual == expected
     assert messages == messages_model_copy
@@ -48,7 +54,11 @@ def test_merge_message_runs_str_with_specified_separator(
 ) -> None:
     messages = [msg_cls("foo"), msg_cls("bar"), msg_cls("baz")]
     messages_model_copy = [m.model_copy(deep=True) for m in messages]
-    expected = [msg_cls("foo<sep>bar<sep>baz")]
+    expected_msg = msg_cls("foo<sep>bar<sep>baz")
+    # AIMessage includes reasoning_content=None due to AIMessageChunk inheritance
+    if isinstance(expected_msg, AIMessage):
+        expected_msg = expected_msg.model_copy(update={"reasoning_content": None})
+    expected = [expected_msg]
     actual = merge_message_runs(messages, chunk_separator="<sep>")
     assert actual == expected
     assert messages == messages_model_copy
@@ -60,7 +70,11 @@ def test_merge_message_runs_str_without_separator(
 ) -> None:
     messages = [msg_cls("foo"), msg_cls("bar"), msg_cls("baz")]
     messages_model_copy = [m.model_copy(deep=True) for m in messages]
-    expected = [msg_cls("foobarbaz")]
+    expected_msg = msg_cls("foobarbaz")
+    # AIMessage includes reasoning_content=None due to AIMessageChunk inheritance
+    if isinstance(expected_msg, AIMessage):
+        expected_msg = expected_msg.model_copy(update={"reasoning_content": None})
+    expected = [expected_msg]
     actual = merge_message_runs(messages, chunk_separator="")
     assert actual == expected
     assert messages == messages_model_copy
@@ -71,13 +85,14 @@ def test_merge_message_runs_response_metadata() -> None:
         AIMessage("foo", id="1", response_metadata={"input_tokens": 1}),
         AIMessage("bar", id="2", response_metadata={"input_tokens": 2}),
     ]
-    expected = [
-        AIMessage(
-            "foo\nbar",
-            id="1",
-            response_metadata={"input_tokens": 1},
-        )
-    ]
+    expected_msg = AIMessage(
+        "foo\nbar",
+        id="1",
+        response_metadata={"input_tokens": 1},
+    )
+    # AIMessage includes reasoning_content=None due to AIMessageChunk inheritance
+    expected_msg = expected_msg.model_copy(update={"reasoning_content": None})
+    expected = [expected_msg]
     actual = merge_message_runs(messages)
     assert actual == expected
     # Check it's not mutated
@@ -106,21 +121,22 @@ def test_merge_message_runs_content() -> None:
         ),
     ]
     messages_model_copy = [m.model_copy(deep=True) for m in messages]
-    expected = [
-        AIMessage(
-            [
-                "foo",
-                {"text": "bar", "type": "text"},
-                {"image_url": "...", "type": "image_url"},
-                "baz",
-            ],
-            tool_calls=[
-                ToolCall(name="foo_tool", args={"x": 1}, id="tool1", type="tool_call"),
-                ToolCall(name="foo_tool", args={"x": 5}, id="tool2", type="tool_call"),
-            ],
-            id="1",
-        ),
-    ]
+    expected_msg = AIMessage(
+        [
+            "foo",
+            {"text": "bar", "type": "text"},
+            {"image_url": "...", "type": "image_url"},
+            "baz",
+        ],
+        tool_calls=[
+            ToolCall(name="foo_tool", args={"x": 1}, id="tool1", type="tool_call"),
+            ToolCall(name="foo_tool", args={"x": 5}, id="tool2", type="tool_call"),
+        ],
+        id="1",
+    )
+    # AIMessage includes reasoning_content=None due to AIMessageChunk inheritance
+    expected_msg = expected_msg.model_copy(update={"reasoning_content": None})
+    expected = [expected_msg]
     actual = merge_message_runs(messages)
     assert actual == expected
     invoked = merge_message_runs().invoke(messages)
