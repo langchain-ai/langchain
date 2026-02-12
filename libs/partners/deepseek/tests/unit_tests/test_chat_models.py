@@ -309,116 +309,114 @@ class TestChatDeepSeekStrictMode:
         assert structured_model is not None
 
 
-class TestChatDeepSeekAzureIntegration:
-    """Tests for Azure OpenAI integration with ChatDeepSeek.
+class TestChatDeepSeekAzureToolChoice:
+    """Tests for Azure-hosted DeepSeek tool_choice compatibility.
 
-    When using Azure OpenAI endpoints, the tool_choice parameter should be
-    automatically set to 'required' for compatibility with Azure's API.
+    Azure-hosted DeepSeek does not support the dict/object form of tool_choice
+    (e.g. {"type": "function", "function": {"name": "..."}}) and returns a 422
+    error. Only string values ("none", "auto", "required") are accepted.
+
+    The fix converts the unsupported dict form to "required" at the payload
+    level in _get_request_payload, which is the last stop before the API call.
+    String values are preserved as-is.
     """
 
-    def test_bind_tools_with_azure_endpoint_sets_required_tool_choice(self) -> None:
-        """Test that bind_tools with Azure endpoint sets tool_choice to 'required'."""
-        # Test with various Azure endpoint formats
-        azure_endpoints = [
-            "https://my-resource.openai.azure.com/",
-            "https://my-resource.openai.azure.com/openai/deployments/gpt-4",
-            "https://RESOURCE.OPENAI.AZURE.COM/",  # Test case insensitivity
-            "https://test.azure.com/api",
-        ]
-
-        for azure_endpoint in azure_endpoints:
-            llm = ChatDeepSeek(
-                model="deepseek-chat",
-                api_key=SecretStr("test_key"),
-                api_base=azure_endpoint,
-            )
-
-            # Bind tools - should automatically set tool_choice to "required"
-            bound_model = llm.bind_tools([SampleTool])
-
-            # Verify the model was bound successfully
-            assert bound_model is not None
-
-            # The kwargs should contain tool_choice="required"
-            # We check this by inspecting the bound model's kwargs
-            if hasattr(bound_model, "kwargs"):
-                assert bound_model.kwargs.get("tool_choice") == "required"
-
-    def test_bind_tools_with_azure_endpoint_and_explicit_tool_choice(self) -> None:
-        """Test that explicit tool_choice is overridden for Azure endpoints."""
-        llm = ChatDeepSeek(
+    def _get_azure_model(
+        self,
+        endpoint: str = "https://my-resource.openai.azure.com/",
+    ) -> ChatDeepSeek:
+        """Create a ChatDeepSeek instance pointed at an Azure endpoint."""
+        return ChatDeepSeek(
             model="deepseek-chat",
             api_key=SecretStr("test_key"),
-            api_base="https://my-resource.openai.azure.com/",
+            api_base=endpoint,
         )
 
-        # Even if user provides a different tool_choice, it should be overridden
-        bound_model = llm.bind_tools([SampleTool], tool_choice="auto")
+    def test_is_azure_endpoint_detection(self) -> None:
+        """Test that _is_azure_endpoint correctly identifies Azure URLs."""
+        azure_endpoints = [
+            "https://my-resource.openai.azure.com/",
+            "https://my-resource.openai.azure.com/openai/deployments/deepseek",
+            "https://RESOURCE.OPENAI.AZURE.COM/",  # case insensitivity
+            "https://test.services.ai.azure.com/",
+        ]
+        for endpoint in azure_endpoints:
+            llm = self._get_azure_model(endpoint)
+            assert llm._is_azure_endpoint, f"Expected Azure for {endpoint}"
 
-        assert bound_model is not None
-
-    def test_bind_tools_with_non_azure_endpoint_preserves_tool_choice(self) -> None:
-        """Test that non-Azure endpoints don't modify tool_choice."""
         non_azure_endpoints = [
             DEFAULT_API_BASE,
             "https://api.openai.com/v1",
-            "https://api.anthropic.com/v1",
             "https://custom-endpoint.com/api",
         ]
-
         for endpoint in non_azure_endpoints:
             llm = ChatDeepSeek(
                 model="deepseek-chat",
                 api_key=SecretStr("test_key"),
                 api_base=endpoint,
             )
+            assert not llm._is_azure_endpoint, f"Expected non-Azure for {endpoint}"
 
-            # Bind tools with explicit tool_choice
-            bound_model = llm.bind_tools([SampleTool], tool_choice="auto")
+    def test_payload_converts_dict_tool_choice_on_azure(self) -> None:
+        """Test that dict-form tool_choice is converted to 'required' in payload."""
+        llm = self._get_azure_model()
+        # Simulate with_structured_output flow: bind_tools converts a tool name
+        # string into the dict form {"type": "function", "function": {"name": ...}}
+        bound = llm.bind_tools([SampleTool], tool_choice="SampleTool")
+        messages = [("user", "test")]
+        bound_kwargs = bound.kwargs  # type: ignore[attr-defined]
 
-            assert bound_model is not None
+        # At bind_tools level, the parent converts the tool name to dict form
+        assert isinstance(bound_kwargs.get("tool_choice"), dict)
 
-    def test_bind_tools_with_azure_endpoint_using_openai_api_base_attr(self) -> None:
-        """Test Azure detection works with openai_api_base attribute."""
+        # But _get_request_payload should convert it to "required"
+        request_payload = llm._get_request_payload(messages, **bound_kwargs)
+        assert request_payload.get("tool_choice") == "required"
+
+    def test_payload_preserves_string_tool_choice_on_azure(self) -> None:
+        """Test that valid string tool_choice values are NOT overridden on Azure."""
+        llm = self._get_azure_model()
+        messages = [("user", "test")]
+
+        for choice in ("auto", "none", "required"):
+            bound = llm.bind_tools([SampleTool], tool_choice=choice)
+            request_payload = llm._get_request_payload(
+                messages,
+                **bound.kwargs,  # type: ignore[attr-defined]
+            )
+            assert request_payload.get("tool_choice") == choice, (
+                f"Expected '{choice}' to be preserved, got "
+                f"{request_payload.get('tool_choice')!r}"
+            )
+
+    def test_payload_preserves_dict_tool_choice_on_non_azure(self) -> None:
+        """Test that dict-form tool_choice is NOT converted on non-Azure endpoints."""
         llm = ChatDeepSeek(
             model="deepseek-chat",
             api_key=SecretStr("test_key"),
-            api_base="https://my-resource.openai.azure.com/",
         )
-
-        # Set openai_api_base attribute if it exists (for compatibility)
-        if hasattr(llm, "openai_api_base"):
-            llm.openai_api_base = "https://other-resource.openai.azure.com/"
-
-        bound_model = llm.bind_tools([SampleTool])
-        assert bound_model is not None
-
-    def test_bind_tools_with_empty_base_url(self) -> None:
-        """Test that empty base_url doesn't cause errors."""
-        llm = ChatDeepSeek(
-            model="deepseek-chat",
-            api_key=SecretStr("test_key"),
+        bound = llm.bind_tools([SampleTool], tool_choice="SampleTool")
+        messages = [("user", "test")]
+        request_payload = llm._get_request_payload(
+            messages,
+            **bound.kwargs,  # type: ignore[attr-defined]
         )
+        # On non-Azure, the dict form should be preserved
+        assert isinstance(request_payload.get("tool_choice"), dict)
 
-        # Manually set api_base to empty string
-        llm.api_base = ""
+    def test_with_structured_output_on_azure(self) -> None:
+        """Test that with_structured_output works on Azure (the original bug)."""
+        llm = self._get_azure_model()
 
-        # Should not raise an error
-        bound_model = llm.bind_tools([SampleTool])
-        assert bound_model is not None
+        # with_structured_output internally calls bind_tools with the schema
+        # name as tool_choice, which gets converted to the dict form.
+        structured = llm.with_structured_output(SampleTool)
+        assert structured is not None
 
     def test_bind_tools_azure_with_strict_mode(self) -> None:
         """Test Azure endpoint with strict mode enabled."""
-        llm = ChatDeepSeek(
-            model="deepseek-chat",
-            api_key=SecretStr("test_key"),
-            api_base="https://my-resource.openai.azure.com/",
-        )
-
-        # Bind tools with both Azure endpoint and strict mode
+        llm = self._get_azure_model()
         bound_model = llm.bind_tools([SampleTool], strict=True)
-
-        # Should handle both Azure detection and strict mode
         assert bound_model is not None
 
 
