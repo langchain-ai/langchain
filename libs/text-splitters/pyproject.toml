@@ -74,6 +74,7 @@ test_integration = [
     "scipy>=1.14.1,<2.0.0; python_version >= \"3.13\"",
     "tiktoken>=0.8.0,<1.0.0",
     "en-core-web-sm",
+    "chonkie>=1.5.5",
 ]
 
 [tool.uv.sources]
