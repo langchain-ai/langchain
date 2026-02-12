@@ -455,7 +455,7 @@ def test_create_chat_stream_raises_when_client_none() -> None:
         mock_client_class.return_value = MagicMock()
         llm = ChatOllama(model="test-model")
         # Force _client to None to simulate uninitialized state
-        llm._client = None
+        llm._client = None  # type: ignore[assignment]
 
         with pytest.raises(RuntimeError, match="sync client is not initialized"):
             list(llm._create_chat_stream([HumanMessage("Hello")]))
