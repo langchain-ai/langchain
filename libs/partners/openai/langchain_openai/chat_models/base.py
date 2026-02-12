@@ -3573,14 +3573,10 @@ def _url_to_size(image_source: str) -> tuple[int, int] | None:
                     )
                     return None
                 if is_localhost(hostname, ip_str):
-                    logger.warning(
-                        "Image URL resolves to localhost: %s", ip_str
-                    )
+                    logger.warning("Image URL resolves to localhost: %s", ip_str)
                     return None
                 if is_private_ip(ip_str):
-                    logger.warning(
-                        "Image URL resolves to private IP: %s", ip_str
-                    )
+                    logger.warning("Image URL resolves to private IP: %s", ip_str)
                     return None
         except ImportError:
             logger.warning(
