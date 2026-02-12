@@ -25,7 +25,7 @@ from langchain_core.utils.pydantic import (
 logger = logging.getLogger(__name__)
 
 
-def _strip_reasoning_tags(arguments: str) -> str | None:
+def strip_reasoning_tags(arguments: str) -> str | None:
     """Strip reasoning model tags from tool call arguments.
 
     Some reasoning models (e.g. DeepSeek-R1) include ``<think>...</think>`` and/or
@@ -102,7 +102,7 @@ def parse_tool_call(
             # Some reasoning models (e.g. DeepSeek-R1) include <think>...</think>
             # or <tool_call>...</tool_call> tags in tool call arguments.
             # Try stripping those tags before giving up.
-            cleaned = _strip_reasoning_tags(arguments)
+            cleaned = strip_reasoning_tags(arguments)
             if cleaned is not None:
                 try:
                     function_args = json.loads(cleaned, strict=strict)
