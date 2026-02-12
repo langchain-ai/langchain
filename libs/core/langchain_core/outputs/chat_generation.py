@@ -54,22 +54,7 @@ class ChatGeneration(Generation):
         Raises:
             ValueError: If the message is not a string or a list.
         """
-        text = ""
-        if isinstance(self.message.content, str):
-            text = self.message.content
-        # Extracts first text block from content blocks.
-        # Skips blocks with explicit non-text type (e.g., thinking, reasoning).
-        elif isinstance(self.message.content, list):
-            for block in self.message.content:
-                if isinstance(block, str):
-                    text = block
-                    break
-                if isinstance(block, dict) and "text" in block:
-                    block_type = block.get("type")
-                    if block_type is None or block_type == "text":
-                        text = block["text"]
-                        break
-        self.text = text
+        self.text = self.message.text
         return self
 
 
