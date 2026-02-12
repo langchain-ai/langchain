@@ -411,7 +411,22 @@ class AIMessage(BaseMessage):
 
 
 class AIMessageChunk(AIMessage, BaseMessageChunk):
-    """Message chunk from an AI (yielded when streaming)."""
+    """Message chunk from an AI (yielded when streaming).
+
+    Attributes:
+        content: The text content of the message chunk.
+        tool_call_chunks: Tool call chunks associated with the message.
+        reasoning_content: Reasoning or thinking tokens from reasoning-capable models.
+            This field captures the model's internal reasoning process during generation.
+            Examples include:
+            - DeepSeek's reasoning tokens
+            - OpenAI o1/o3 reasoning summaries
+            - Groq's reasoning output
+            - xAI's reasoning content
+
+            When streaming, reasoning_content arrives incrementally and is concatenated
+            across chunks. Access via `chunk.reasoning_content` (public API).
+    """
 
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
@@ -421,6 +436,23 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
     tool_call_chunks: list[ToolCallChunk] = Field(default_factory=list)
     """If provided, tool call chunks associated with the message."""
+
+    reasoning_content: str | None = Field(default=None)
+    """Reasoning or thinking tokens from reasoning-capable models.
+
+    This field captures incremental reasoning output during streaming.
+    When multiple chunks are merged, reasoning_content is concatenated.
+
+    Examples:
+        - DeepSeek: Reasoning tokens explaining the model's thought process
+        - OpenAI o1/o3: Reasoning summaries
+        - Groq: Reasoning output
+        - xAI: Reasoning content
+
+    !!! note "Public API"
+        This is a public API for accessing reasoning tokens. Users should access
+        reasoning via `chunk.reasoning_content`, not via `additional_kwargs`.
+    """
 
     chunk_position: Literal["last"] | None = None
     """Optional span represented by an aggregated `AIMessageChunk`.
@@ -640,6 +672,14 @@ def add_ai_message_chunks(
 ) -> AIMessageChunk:
     """Add multiple `AIMessageChunk`s together.
 
+    This function merges streaming chunks, concatenating:
+    - Content (text)
+    - Reasoning content (thinking/reasoning tokens)
+    - Tool call chunks
+    - Usage metadata
+    - Additional kwargs
+    - Response metadata
+
     Args:
         left: The first `AIMessageChunk`.
         *others: Other `AIMessageChunk`s to add.
@@ -655,6 +695,13 @@ def add_ai_message_chunks(
     response_metadata = merge_dicts(
         left.response_metadata, *(o.response_metadata for o in others)
     )
+
+    # Merge reasoning content (concatenate strings)
+    reasoning_parts = [left.reasoning_content] if left.reasoning_content else []
+    for other in others:
+        if other.reasoning_content:
+            reasoning_parts.append(other.reasoning_content)
+    reasoning_content = "".join(reasoning_parts) if reasoning_parts else None
 
     # Merge tool call chunks
     if raw_tool_calls := merge_lists(
@@ -711,6 +758,7 @@ def add_ai_message_chunks(
         content=content,
         additional_kwargs=additional_kwargs,
         tool_call_chunks=tool_call_chunks,
+        reasoning_content=reasoning_content,
         response_metadata=response_metadata,
         usage_metadata=usage_metadata,
         id=chunk_id,

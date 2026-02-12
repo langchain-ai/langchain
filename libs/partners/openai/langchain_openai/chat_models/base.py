@@ -368,7 +368,15 @@ def _convert_message_to_dict(
 def _convert_delta_to_message_chunk(
     _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
 ) -> BaseMessageChunk:
-    """Convert to a LangChain message chunk."""
+    """Convert OpenAI delta to a LangChain message chunk.
+
+    Extracts reasoning tokens from vendor-specific fields and normalizes them
+    into the first-class `reasoning_content` field on AIMessageChunk.
+
+    Supported reasoning field names:
+    - reasoning_content (DeepSeek, xAI)
+    - reasoning (Groq, OpenAI o1/o3)
+    """
     id_ = _dict.get("id")
     role = cast(str, _dict.get("role"))
     content = cast(str, _dict.get("content") or "")
@@ -393,12 +401,29 @@ def _convert_delta_to_message_chunk(
         except KeyError:
             pass
 
+    # Extract reasoning from vendor-specific fields
+    # Normalize to first-class reasoning_content field
+    reasoning_content = None
+    if reasoning_content_raw := _dict.get("reasoning_content"):
+        reasoning_content = reasoning_content_raw
+    elif reasoning_raw := _dict.get("reasoning"):
+        reasoning_content = reasoning_raw
+
+    # Also preserve in additional_kwargs for backward compatibility
+    if reasoning_content:
+        # Store under the original field name for backward compat
+        if _dict.get("reasoning_content"):
+            additional_kwargs["reasoning_content"] = reasoning_content
+        if _dict.get("reasoning"):
+            additional_kwargs["reasoning"] = reasoning_content
+
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content, id=id_)
     if role == "assistant" or default_class == AIMessageChunk:
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
+            reasoning_content=reasoning_content,
             id=id_,
             tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
         )
