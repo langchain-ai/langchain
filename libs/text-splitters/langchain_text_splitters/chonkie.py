@@ -9,8 +9,14 @@ from typing_extensions import override
 from langchain_text_splitters.base import TextSplitter
 
 try:
-    from chonkie.chunker.base import BaseChunker
-    from chonkie.pipeline import ComponentRegistry, ComponentType
+    from typing import TYPE_CHECKING
+
+    if TYPE_CHECKING:
+        from chonkie.chunker.base import BaseChunker  # type: ignore[import]
+    from chonkie.pipeline import (  # type: ignore[import]
+        ComponentRegistry,
+        ComponentType,
+    )
 
     _HAS_CHONKIE = True
     CHUNKERS = sorted(
@@ -21,9 +27,6 @@ try:
 except ImportError:
     _HAS_CHONKIE = False
 
-    # define a placeholder for BaseChunker for typing reasons
-    class BaseChunker:
-        """Placeholder for BaseChunker when Chonkie is not installed."""
 
 
 class ChonkieTextSplitter(TextSplitter):

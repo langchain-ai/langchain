@@ -1,6 +1,7 @@
 """Test ChonkieTextSplitter functionality."""
 
 import pytest
+from chonkie.pipeline import ComponentRegistry  # type: ignore[import]
 
 from langchain_text_splitters.chonkie import ChonkieTextSplitter
 
@@ -34,8 +35,6 @@ def test_chonkie_text_splitter_with_alias() -> None:
 
 def test_chonkie_text_splitter_with_chunker_instance() -> None:
     """Test passing a chunker instance directly."""
-    from chonkie.pipeline import ComponentRegistry  # noqa: PLC0415
-
     ChunkingClass = ComponentRegistry.get_chunker("recursive").component_class  # noqa: N806
     chunker_instance = ChunkingClass()
     text = "Direct instance test."
@@ -51,7 +50,7 @@ def test_chonkie_text_splitter_invalid_alias() -> None:
         ChonkieTextSplitter(chunker="not_a_real_chunker")
 
 
-def test_chonkie_text_splitter_importerror(monkeypatch) -> None:  # noqa: ANN001
+def test_chonkie_text_splitter_importerror(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test ImportError is raised if chonkie is not installed."""
     import sys  # noqa: PLC0415
 
