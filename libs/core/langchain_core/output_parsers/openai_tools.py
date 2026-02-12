@@ -3,6 +3,7 @@
 import copy
 import json
 import logging
+import re
 from json import JSONDecodeError
 from typing import Annotated, Any
 
@@ -22,6 +23,48 @@ from langchain_core.utils.pydantic import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Regex to strip reasoning tags like <think>...</think>, <thinking>...</thinking>,
+# or <reasoning>...</reasoning> from tool call arguments.
+_REASONING_TAG_RE = re.compile(
+    r"<(think|thinking|reasoning)>.*?</\1>",
+    re.DOTALL,
+)
+
+# Regex to unwrap <tool_call>...</tool_call> wrapper tags (keeps content inside).
+_TOOL_CALL_TAG_RE = re.compile(
+    r"<tool_call>\s*(.*?)\s*</tool_call>",
+    re.DOTALL,
+)
+
+
+def _strip_reasoning_tags(arguments: str) -> str | None:
+    """Strip reasoning model tags from tool call arguments.
+
+    Some reasoning models (e.g. DeepSeek-R1) include ``<think>...</think>`` and/or
+    ``<tool_call>...</tool_call>`` tags in tool call arguments, which prevents
+    JSON parsing. This function strips those tags to extract the JSON content.
+
+    Args:
+        arguments: The raw arguments string from a tool call.
+
+    Returns:
+        The cleaned arguments string, or `None` if no tags were found
+        (i.e. the string was not modified).
+    """
+    cleaned = _REASONING_TAG_RE.sub("", arguments)
+
+    # Unwrap <tool_call>...</tool_call> wrapper tags
+    match = _TOOL_CALL_TAG_RE.search(cleaned)
+    if match:
+        cleaned = match.group(1)
+
+    cleaned = cleaned.strip()
+
+    # Only return if we actually changed something
+    if cleaned != arguments.strip():
+        return cleaned
+    return None
 
 
 def parse_tool_call(
@@ -61,13 +104,23 @@ def parse_tool_call(
     else:
         try:
             function_args = json.loads(arguments, strict=strict)
-        except JSONDecodeError as e:
-            msg = (
-                f"Function {raw_tool_call['function']['name']} arguments:\n\n"
-                f"{arguments}\n\nare not valid JSON. "
-                f"Received JSONDecodeError {e}"
-            )
-            raise OutputParserException(msg) from e
+        except JSONDecodeError as original_error:
+            # Some reasoning models (e.g. DeepSeek-R1) include <think>...</think>
+            # or <tool_call>...</tool_call> tags in tool call arguments.
+            # Try stripping those tags before giving up.
+            cleaned = _strip_reasoning_tags(arguments)
+            if cleaned is not None:
+                try:
+                    function_args = json.loads(cleaned, strict=strict)
+                except JSONDecodeError:
+                    cleaned = None
+            if cleaned is None:
+                msg = (
+                    f"Function {raw_tool_call['function']['name']} arguments:\n\n"
+                    f"{arguments}\n\nare not valid JSON. "
+                    f"Received JSONDecodeError {original_error}"
+                )
+                raise OutputParserException(msg) from original_error
     parsed = {
         "name": raw_tool_call["function"]["name"] or "",
         "args": function_args or {},
