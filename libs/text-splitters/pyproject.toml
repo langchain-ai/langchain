@@ -25,7 +25,7 @@ classifiers = [
 version = "1.1.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.0,<2.0.0",
+    "langchain-core>=1.2.12,<2.0.0",
 ]
 
 [project.urls]
