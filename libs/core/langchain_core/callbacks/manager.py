@@ -284,7 +284,7 @@ def handle_event(
                     if asyncio.iscoroutine(event):
                         coros.append(event)
             except NotImplementedError as e:
-                if event_name == "on_chat_model_start":
+                if event_name == "on_chat_model_start" and len(args) >= 2:
                     if message_strings is None:
                         message_strings = [get_buffer_string(m) for m in args[1]]
                     handle_event(
