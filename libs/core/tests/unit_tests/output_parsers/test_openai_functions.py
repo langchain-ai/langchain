@@ -164,6 +164,74 @@ def test_pydantic_output_functions_parser() -> None:
     assert result == Model(name="value", age=10)
 
 
+@pytest.mark.parametrize(
+    ("arguments", "expected_args"),
+    [
+        (
+            '<think>\nsome reasoning\n</think>\n{"name": "value", "age": 10}',
+            {"name": "value", "age": 10},
+        ),
+        (
+            '<thinking>\nreasoning\n</thinking>\n{"name": "value", "age": 10}',
+            {"name": "value", "age": 10},
+        ),
+        (
+            '<reasoning>\nreasoning\n</reasoning>\n{"name": "value", "age": 10}',
+            {"name": "value", "age": 10},
+        ),
+        (
+            '<tool_call>\n{"name": "value", "age": 10}\n</tool_call>',
+            {"name": "value", "age": 10},
+        ),
+        (
+            "<think>\n</think>\n"
+            '<tool_call>\n{"name": "value", "age": 10}\n</tool_call>',
+            {"name": "value", "age": 10},
+        ),
+    ],
+    ids=["think", "thinking", "reasoning", "tool_call", "think+tool_call"],
+)
+def test_json_output_functions_parser_with_reasoning_tags(
+    arguments: str, expected_args: dict[str, Any]
+) -> None:
+    """Test JsonOutputFunctionsParser strips reasoning tags from arguments."""
+    message = AIMessage(
+        content="",
+        additional_kwargs={
+            "function_call": {"name": "function_name", "arguments": arguments}
+        },
+    )
+    chat_generation = ChatGeneration(message=message)
+
+    # args_only=True
+    parser = JsonOutputFunctionsParser(args_only=True)
+    result = parser.parse_result([chat_generation])
+    assert result == expected_args
+
+    # args_only=False
+    parser_full = JsonOutputFunctionsParser(args_only=False)
+    result_full = parser_full.parse_result([chat_generation])
+    assert result_full["arguments"] == expected_args
+    assert result_full["name"] == "function_name"
+
+
+def test_json_output_functions_parser_invalid_json_with_reasoning_tags() -> None:
+    """Test that invalid JSON inside reasoning tags still raises."""
+    message = AIMessage(
+        content="",
+        additional_kwargs={
+            "function_call": {
+                "name": "function_name",
+                "arguments": "<think>\nreasoning\n</think>\nnot json at all",
+            }
+        },
+    )
+    chat_generation = ChatGeneration(message=message)
+
+    with pytest.raises(OutputParserException):
+        JsonOutputFunctionsParser().parse_result([chat_generation])
+
+
 def test_pydantic_output_functions_parser_multiple_schemas() -> None:
     """Test that the parser works if providing multiple pydantic schemas."""
     message = AIMessage(

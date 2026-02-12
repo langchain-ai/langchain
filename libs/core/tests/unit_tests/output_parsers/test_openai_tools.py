@@ -18,9 +18,9 @@ from langchain_core.output_parsers.openai_tools import (
     JsonOutputToolsParser,
     PydanticToolsParser,
     parse_tool_call,
-    strip_reasoning_tags,
 )
 from langchain_core.outputs import ChatGeneration
+from langchain_core.utils.json import strip_reasoning_tags
 
 STREAMED_MESSAGES = [
     AIMessageChunk(content=""),
