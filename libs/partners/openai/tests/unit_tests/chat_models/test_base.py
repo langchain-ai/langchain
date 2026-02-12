@@ -260,6 +260,295 @@ def test__convert_dict_to_message_tool_call() -> None:
     assert result == expected_output
     assert _convert_message_to_dict(expected_output) == message
 
+
+def test__convert_dict_to_message_ai_with_reasoning_content() -> None:
+    """Test that reasoning_content is preserved from OpenAI-compatible providers."""
+    message = {
+        "role": "assistant",
+        "content": "The answer is 42",
+        "reasoning_content": "Let me think step by step: 6 * 7 = 42",
+    }
+    result = _convert_dict_to_message(message)
+    assert isinstance(result, AIMessage)
+    assert result.content == "The answer is 42"
+    assert result.additional_kwargs["reasoning_content"] == "Let me think step by step: 6 * 7 = 42"
+
+
+def test__convert_dict_to_message_ai_with_reasoning_alternative() -> None:
+    """Test that 'reasoning' field is also supported as an alternative to reasoning_content."""
+    message = {
+        "role": "assistant",
+        "content": "The answer is 42",
+        "reasoning": "Let me think step by step: 6 * 7 = 42",
+    }
+    result = _convert_dict_to_message(message)
+    assert isinstance(result, AIMessage)
+    assert result.content == "The answer is 42"
+    assert result.additional_kwargs["reasoning_content"] == "Let me think step by step: 6 * 7 = 42"
+
+
+def test__convert_dict_to_message_ai_without_reasoning() -> None:
+    """Test backward compatibility: messages without reasoning work as before."""
+    message = {"role": "assistant", "content": "The answer is 42"}
+    result = _convert_dict_to_message(message)
+    assert isinstance(result, AIMessage)
+    assert result.content == "The answer is 42"
+    assert "reasoning_content" not in result.additional_kwargs
+
+
+def test__convert_delta_to_message_chunk_with_reasoning_content() -> None:
+    """Test that reasoning_content is preserved in streaming deltas."""
+    from langchain_openai.chat_models.base import _convert_delta_to_message_chunk
+
+    delta = {
+        "role": "assistant",
+        "content": "The answer",
+        "reasoning_content": "Let me think",
+    }
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    assert result.content == "The answer"
+    assert result.additional_kwargs["reasoning_content"] == "Let me think"
+
+
+def test__convert_delta_to_message_chunk_with_reasoning_alternative() -> None:
+    """Test that 'reasoning' field is also supported in streaming deltas."""
+    from langchain_openai.chat_models.base import _convert_delta_to_message_chunk
+
+    delta = {
+        "role": "assistant",
+        "content": "The answer",
+        "reasoning": "Let me think",
+    }
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    assert result.content == "The answer"
+    assert result.additional_kwargs["reasoning_content"] == "Let me think"
+
+
+def test__convert_delta_to_message_chunk_without_reasoning() -> None:
+    """Test backward compatibility: deltas without reasoning work as before."""
+    from langchain_openai.chat_models.base import _convert_delta_to_message_chunk
+
+    delta = {"role": "assistant", "content": "The answer"}
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    assert result.content == "The answer"
+    assert "reasoning_content" not in result.additional_kwargs
+
+
+def test_create_chat_result_with_reasoning_content_in_message_dict() -> None:
+    """Test that reasoning_content is extracted from message dict in response."""
+    llm = ChatOpenAI(model="test-model")
+    response = {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": "The answer is 42",
+                    "reasoning_content": "Let me think step by step: 6 * 7 = 42",
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "model": "test-model",
+    }
+    result = llm._create_chat_result(response)
+    assert len(result.generations) == 1
+    message = result.generations[0].message
+    assert isinstance(message, AIMessage)
+    assert message.content == "The answer is 42"
+    assert message.additional_kwargs["reasoning_content"] == "Let me think step by step: 6 * 7 = 42"
+
+
+def test_create_chat_result_with_reasoning_content_in_openai_sdk() -> None:
+    """Test that reasoning_content is extracted from OpenAI SDK response object."""
+    llm = ChatOpenAI(model="test-model")
+    # Mock OpenAI SDK response object
+    mock_message = MagicMock()
+    mock_message.reasoning_content = "Let me think step by step: 6 * 7 = 42"
+    mock_message.content = "The answer is 42"
+    mock_message.role = "assistant"
+    mock_choice = MagicMock()
+    mock_choice.message = mock_message
+    mock_response = MagicMock()
+    mock_response.choices = [mock_choice]
+    mock_response.model_dump.return_value = {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": "The answer is 42",
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "model": "test-model",
+    }
+
+    result = llm._create_chat_result(mock_response)
+    assert len(result.generations) == 1
+    message = result.generations[0].message
+    assert isinstance(message, AIMessage)
+    assert message.content == "The answer is 42"
+    assert message.additional_kwargs["reasoning_content"] == "Let me think step by step: 6 * 7 = 42"
+
+
+def test_create_chat_result_with_reasoning_in_model_extra() -> None:
+    """Test that reasoning is extracted from model_extra (OpenRouter compatibility)."""
+    llm = ChatOpenAI(model="test-model")
+    # Mock OpenAI SDK response object with model_extra
+    mock_message = MagicMock()
+    mock_message.content = "The answer is 42"
+    mock_message.role = "assistant"
+    mock_message.model_extra = {"reasoning": "Let me think step by step: 6 * 7 = 42"}
+    mock_choice = MagicMock()
+    mock_choice.message = mock_message
+    mock_response = MagicMock()
+    mock_response.choices = [mock_choice]
+    mock_response.model_dump.return_value = {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": "The answer is 42",
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "model": "test-model",
+    }
+
+    result = llm._create_chat_result(mock_response)
+    assert len(result.generations) == 1
+    message = result.generations[0].message
+    assert isinstance(message, AIMessage)
+    assert message.content == "The answer is 42"
+    assert message.additional_kwargs["reasoning_content"] == "Let me think step by step: 6 * 7 = 42"
+
+
+def test_convert_chunk_to_generation_chunk_with_reasoning_content() -> None:
+    """Test that reasoning_content is extracted from streaming chunks."""
+    llm = ChatOpenAI(model="test-model")
+    chunk = {
+        "choices": [
+            {
+                "delta": {
+                    "role": "assistant",
+                    "content": "The answer",
+                    "reasoning_content": "Let me think",
+                }
+            }
+        ],
+        "model": "test-model",
+    }
+    result = llm._convert_chunk_to_generation_chunk(chunk, AIMessageChunk, None)
+    assert result is not None
+    assert isinstance(result.message, AIMessageChunk)
+    assert result.message.content == "The answer"
+    assert result.message.additional_kwargs["reasoning_content"] == "Let me think"
+
+
+def test_convert_chunk_to_generation_chunk_with_reasoning_at_choice_level() -> None:
+    """Test that reasoning_content is extracted from choice level in chunks."""
+    llm = ChatOpenAI(model="test-model")
+    chunk = {
+        "choices": [
+            {
+                "delta": {"role": "assistant", "content": "The answer"},
+                "reasoning_content": "Let me think",
+            }
+        ],
+        "model": "test-model",
+    }
+    result = llm._convert_chunk_to_generation_chunk(chunk, AIMessageChunk, None)
+    assert result is not None
+    assert isinstance(result.message, AIMessageChunk)
+    assert result.message.content == "The answer"
+    assert result.message.additional_kwargs["reasoning_content"] == "Let me think"
+
+
+def test_streaming_reasoning_content_accumulation() -> None:
+    """Test that reasoning_content from multiple chunks is accumulated correctly."""
+    from langchain_core.messages.ai import add_ai_message_chunks
+
+    chunk1 = AIMessageChunk(
+        content="",
+        additional_kwargs={"reasoning_content": "Let me "},
+    )
+    chunk2 = AIMessageChunk(
+        content="",
+        additional_kwargs={"reasoning_content": "think step "},
+    )
+    chunk3 = AIMessageChunk(
+        content="The answer is 42",
+        additional_kwargs={"reasoning_content": "by step: 6 * 7 = 42"},
+    )
+
+    merged = add_ai_message_chunks(chunk1, chunk2, chunk3)
+    assert merged.content == "The answer is 42"
+    assert merged.additional_kwargs["reasoning_content"] == "Let me think step by step: 6 * 7 = 42"
+
+
+def test_reasoning_utilities_module() -> None:
+    """Test that the reasoning utilities module works correctly."""
+    from langchain_openai.chat_models.reasoning import (
+        extract_reasoning_from_dict,
+        extract_reasoning_from_openai_message,
+        normalize_reasoning_for_additional_kwargs,
+        REASONING_CONTENT_KEY,
+    )
+
+    # Test extract_reasoning_from_dict with reasoning_content
+    data1 = {"reasoning_content": "Let me think..."}
+    assert extract_reasoning_from_dict(data1) == "Let me think..."
+
+    # Test extract_reasoning_from_dict with reasoning (alternative field)
+    data2 = {"reasoning": "Step by step..."}
+    assert extract_reasoning_from_dict(data2) == "Step by step..."
+
+    # Test extract_reasoning_from_dict with no reasoning
+    data3 = {"content": "Hello"}
+    assert extract_reasoning_from_dict(data3) is None
+
+    # Test normalize_reasoning_for_additional_kwargs
+    kwargs = {}
+    normalize_reasoning_for_additional_kwargs(kwargs, data1)
+    assert kwargs[REASONING_CONTENT_KEY] == "Let me think..."
+
+    # Test that it doesn't overwrite existing
+    kwargs2 = {REASONING_CONTENT_KEY: "existing"}
+    normalize_reasoning_for_additional_kwargs(kwargs2, data1)
+    assert kwargs2[REASONING_CONTENT_KEY] == "existing"
+
+    # Test extract_reasoning_from_openai_message
+    mock_message = MagicMock()
+    mock_message.reasoning_content = "OpenAI SDK reasoning"
+    assert extract_reasoning_from_openai_message(mock_message) == "OpenAI SDK reasoning"
+
+    # Test model_extra path
+    mock_message2 = MagicMock()
+    mock_message2.model_extra = {"reasoning": "OpenRouter reasoning"}
+    assert extract_reasoning_from_openai_message(mock_message2) == "OpenRouter reasoning"
+
+
+def test_reasoning_preserved_through_compat_conversion() -> None:
+    """Test that reasoning_content is preserved through message format conversions."""
+    from langchain_openai.chat_models._compat import _convert_to_v03_ai_message
+
+    # Create a message with reasoning_content in additional_kwargs
+    message = AIMessage(
+        content="The answer is 42",
+        additional_kwargs={"reasoning_content": "Let me think: 6 * 7 = 42"},
+    )
+
+    # Convert to v0.3 format
+    converted = _convert_to_v03_ai_message(message, has_reasoning=False)
+
+    # Reasoning content should still be present
+    assert "reasoning_content" in converted.additional_kwargs
+    assert converted.additional_kwargs["reasoning_content"] == "Let me think: 6 * 7 = 42"
+
     # Test malformed tool call
     raw_tool_calls: list = [
         {

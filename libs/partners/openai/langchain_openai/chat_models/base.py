@@ -126,6 +126,11 @@ from langchain_openai.chat_models._compat import (
     _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
 )
+from langchain_openai.chat_models.reasoning import (
+    extract_reasoning_from_dict,
+    extract_reasoning_from_openai_message,
+    normalize_reasoning_for_additional_kwargs,
+)
 from langchain_openai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
@@ -190,6 +195,9 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                     )
         if audio := _dict.get("audio"):
             additional_kwargs["audio"] = audio
+        # Preserve reasoning_content from OpenAI-compatible providers using
+        # centralized reasoning extraction utilities
+        normalize_reasoning_for_additional_kwargs(additional_kwargs, _dict)
         return AIMessage(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -396,6 +404,8 @@ def _convert_delta_to_message_chunk(
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content, id=id_)
     if role == "assistant" or default_class == AIMessageChunk:
+        # Preserve reasoning_content from streaming deltas using centralized utilities
+        normalize_reasoning_for_additional_kwargs(additional_kwargs, _dict)
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -1105,6 +1115,15 @@ class BaseChatOpenAI(BaseChatModel):
         )
         generation_info = {**base_generation_info} if base_generation_info else {}
 
+        # Handle reasoning_content from streaming chunks (OpenAI-compatible providers)
+        # Check both delta and choice level for maximum compatibility using centralized utilities
+        if isinstance(message_chunk, AIMessageChunk):
+            # reasoning_content may be in delta (already handled by _convert_delta_to_message_chunk)
+            # but also check choice level for some providers
+            if "reasoning_content" not in message_chunk.additional_kwargs:
+                if reasoning := extract_reasoning_from_dict(choice):
+                    message_chunk.additional_kwargs["reasoning_content"] = reasoning
+
         if finish_reason := choice.get("finish_reason"):
             generation_info["finish_reason"] = finish_reason
             if model_name := chunk.get("model"):
@@ -1474,6 +1493,11 @@ class BaseChatOpenAI(BaseChatModel):
                 message.usage_metadata = _create_usage_metadata(
                     token_usage, service_tier
                 )
+            # Handle reasoning_content from response message dict using centralized utilities
+            if isinstance(message, AIMessage) and isinstance(res.get("message"), dict):
+                normalize_reasoning_for_additional_kwargs(
+                    message.additional_kwargs, res["message"]
+                )
             generation_info = generation_info or {}
             generation_info["finish_reason"] = (
                 res.get("finish_reason")
@@ -1503,6 +1527,10 @@ class BaseChatOpenAI(BaseChatModel):
                 generations[0].message.additional_kwargs["parsed"] = message.parsed
             if hasattr(message, "refusal"):
                 generations[0].message.additional_kwargs["refusal"] = message.refusal
+            # Handle reasoning_content from OpenAI SDK response object using
+            # centralized reasoning extraction utilities
+            if reasoning := extract_reasoning_from_openai_message(message):
+                generations[0].message.additional_kwargs["reasoning_content"] = reasoning
 
         return ChatResult(generations=generations, llm_output=llm_output)
 

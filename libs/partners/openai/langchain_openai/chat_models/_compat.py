@@ -74,6 +74,8 @@ from typing import Any, cast
 from langchain_core.messages import AIMessage, is_data_content_block
 from langchain_core.messages import content as types
 
+from langchain_openai.chat_models.reasoning import REASONING_CONTENT_KEY
+
 _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
 
 
@@ -94,6 +96,13 @@ def _convert_to_v03_ai_message(
                         _ = block.pop("id", None)
                         _ = block.pop("type", None)
                     message.additional_kwargs["reasoning"] = block
+                    # Also preserve reasoning_content if present in the block
+                    # This ensures compatibility with OpenAI-compatible providers
+                    if reasoning_content := block.get("reasoning"):
+                        if isinstance(reasoning_content, str):
+                            message.additional_kwargs[REASONING_CONTENT_KEY] = (
+                                reasoning_content
+                            )
                 elif block.get("type") in (
                     "web_search_call",
                     "file_search_call",
