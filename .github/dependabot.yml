@@ -9,19 +9,27 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
     groups:
       github-actions:
         patterns:
           - "*"
 
-  - package-ecosystem: "pip"
+  - package-ecosystem: "uv"
     directories:
       - "/libs/core/"
       - "/libs/langchain/"
       - "/libs/langchain_v1/"
-      - "/libs/text-splitters/"
-      - "/libs/standard-tests/"
-      - "/libs/model-profiles/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      langchain-deps:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "uv"
+    directories:
       - "/libs/partners/anthropic/"
       - "/libs/partners/chroma/"
       - "/libs/partners/deepseek/"
@@ -38,7 +46,21 @@ updates:
       - "/libs/partners/xai/"
     schedule:
       interval: "weekly"
+      day: "monday"
     groups:
-      python-deps:
+      partner-deps:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "uv"
+    directories:
+      - "/libs/text-splitters/"
+      - "/libs/standard-tests/"
+      - "/libs/model-profiles/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      other-deps:
         patterns:
           - "*"
