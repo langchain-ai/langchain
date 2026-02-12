@@ -361,6 +361,10 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
 
     fake_llm = FakeListLLM(responses=["a"])  # str -> list[list[str]]
 
+    # NOTE: This snapshot includes AIMessageChunk schema. If AIMessageChunk schema changes
+    # (e.g., adding new fields like reasoning_content), regenerate with:
+    # pytest tests/unit_tests/runnables/test_runnable.py::test_schemas --snapshot-update
+    # This must be run in an environment where the test is not skipped (Pydantic < 2.10)
     assert _schema(fake_llm.input_schema) == snapshot(name="fake_llm_input_schema")
     assert _schema(fake_llm.output_schema) == {
         "title": "FakeListLLMOutput",
