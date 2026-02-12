@@ -378,6 +378,22 @@ class FakeModel(BaseChatModel):
         return "fake2"
 
 
+def test_returns_runnable_handles_nameerror() -> None:
+    """Test that _returns_runnable handles NameError from get_type_hints.
+
+    typing.get_type_hints() raises NameError when annotations reference names
+    only available in TYPE_CHECKING blocks. This should not crash.
+    """
+    from langchain_core.runnables.fallbacks import _returns_runnable
+
+    # Simulate a callable whose annotations reference an undefined name
+    def func_with_bad_annotation() -> "UndefinedType":  # type: ignore[name-defined]  # noqa: F821
+        pass
+
+    # Should return False instead of raising NameError
+    assert _returns_runnable(func_with_bad_annotation) is False
+
+
 def test_fallbacks_getattr() -> None:
     llm_with_fallbacks = FakeStructuredOutputModel(foo=3).with_fallbacks(
         [FakeModel(bar=4)]
