@@ -2060,21 +2060,7 @@
         'type': 'object',
       }),
       'AIMessageChunk': dict({
-        'description': '''Message chunk from an AI (yielded when streaming).
-
-Attributes:
-    content: The text content of the message chunk.
-    tool_call_chunks: Tool call chunks associated with the message.
-    reasoning_content: Reasoning or thinking tokens from reasoning-capable models.
-        This field captures the model's internal reasoning process during generation.
-        Examples include:
-        - DeepSeek's reasoning tokens
-        - OpenAI o1/o3 reasoning summaries
-        - Groq's reasoning output
-        - xAI's reasoning content
-
-        When streaming, reasoning_content arrives incrementally and is concatenated
-        across chunks. Access via `chunk.reasoning_content` (public API).''',
+        'description': ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3481,21 +3467,7 @@ Attributes:
         'type': 'object',
       }),
       'AIMessageChunk': dict({
-        'description': '''Message chunk from an AI (yielded when streaming).
-
-Attributes:
-    content: The text content of the message chunk.
-    tool_call_chunks: Tool call chunks associated with the message.
-    reasoning_content: Reasoning or thinking tokens from reasoning-capable models.
-        This field captures the model's internal reasoning process during generation.
-        Examples include:
-        - DeepSeek's reasoning tokens
-        - OpenAI o1/o3 reasoning summaries
-        - Groq's reasoning output
-        - xAI's reasoning content
-
-        When streaming, reasoning_content arrives incrementally and is concatenated
-        across chunks. Access via `chunk.reasoning_content` (public API).''',
+        'description': ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -4996,21 +4968,7 @@ Attributes:
         'type': 'object',
       }),
       'AIMessageChunk': dict({
-        'description': '''Message chunk from an AI (yielded when streaming).
-
-Attributes:
-    content: The text content of the message chunk.
-    tool_call_chunks: Tool call chunks associated with the message.
-    reasoning_content: Reasoning or thinking tokens from reasoning-capable models.
-        This field captures the model's internal reasoning process during generation.
-        Examples include:
-        - DeepSeek's reasoning tokens
-        - OpenAI o1/o3 reasoning summaries
-        - Groq's reasoning output
-        - xAI's reasoning content
-
-        When streaming, reasoning_content arrives incrementally and is concatenated
-        across chunks. Access via `chunk.reasoning_content` (public API).''',
+        'description': ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -6449,21 +6407,7 @@ Attributes:
         'type': 'object',
       }),
       'AIMessageChunk': dict({
-        'description': '''Message chunk from an AI (yielded when streaming).
-
-Attributes:
-    content: The text content of the message chunk.
-    tool_call_chunks: Tool call chunks associated with the message.
-    reasoning_content: Reasoning or thinking tokens from reasoning-capable models.
-        This field captures the model's internal reasoning process during generation.
-        Examples include:
-        - DeepSeek's reasoning tokens
-        - OpenAI o1/o3 reasoning summaries
-        - Groq's reasoning output
-        - xAI's reasoning content
-
-        When streaming, reasoning_content arrives incrementally and is concatenated
-        across chunks. Access via `chunk.reasoning_content` (public API).''',
+        'description': ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -7912,21 +7856,7 @@ Attributes:
         'type': 'object',
       }),
       'AIMessageChunk': dict({
-        'description': '''Message chunk from an AI (yielded when streaming).
-
-Attributes:
-    content: The text content of the message chunk.
-    tool_call_chunks: Tool call chunks associated with the message.
-    reasoning_content: Reasoning or thinking tokens from reasoning-capable models.
-        This field captures the model's internal reasoning process during generation.
-        Examples include:
-        - DeepSeek's reasoning tokens
-        - OpenAI o1/o3 reasoning summaries
-        - Groq's reasoning output
-        - xAI's reasoning content
-
-        When streaming, reasoning_content arrives incrementally and is concatenated
-        across chunks. Access via `chunk.reasoning_content` (public API).''',
+        'description': ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -9410,21 +9340,7 @@ Attributes:
         'type': 'object',
       }),
       'AIMessageChunk': dict({
-        'description': '''Message chunk from an AI (yielded when streaming).
-
-Attributes:
-    content: The text content of the message chunk.
-    tool_call_chunks: Tool call chunks associated with the message.
-    reasoning_content: Reasoning or thinking tokens from reasoning-capable models.
-        This field captures the model's internal reasoning process during generation.
-        Examples include:
-        - DeepSeek's reasoning tokens
-        - OpenAI o1/o3 reasoning summaries
-        - Groq's reasoning output
-        - xAI's reasoning content
-
-        When streaming, reasoning_content arrives incrementally and is concatenated
-        across chunks. Access via `chunk.reasoning_content` (public API).''',
+        'description': ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -10781,21 +10697,7 @@ Attributes:
         'type': 'object',
       }),
       'AIMessageChunk': dict({
-        'description': '''Message chunk from an AI (yielded when streaming).
-
-Attributes:
-    content: The text content of the message chunk.
-    tool_call_chunks: Tool call chunks associated with the message.
-    reasoning_content: Reasoning or thinking tokens from reasoning-capable models.
-        This field captures the model's internal reasoning process during generation.
-        Examples include:
-        - DeepSeek's reasoning tokens
-        - OpenAI o1/o3 reasoning summaries
-        - Groq's reasoning output
-        - xAI's reasoning content
-
-        When streaming, reasoning_content arrives incrementally and is concatenated
-        across chunks. Access via `chunk.reasoning_content` (public API).''',
+        'description': ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -12257,21 +12159,7 @@ Attributes:
         'type': 'object',
       }),
       'AIMessageChunk': dict({
-        'description': '''Message chunk from an AI (yielded when streaming).
-
-Attributes:
-    content: The text content of the message chunk.
-    tool_call_chunks: Tool call chunks associated with the message.
-    reasoning_content: Reasoning or thinking tokens from reasoning-capable models.
-        This field captures the model's internal reasoning process during generation.
-        Examples include:
-        - DeepSeek's reasoning tokens
-        - OpenAI o1/o3 reasoning summaries
-        - Groq's reasoning output
-        - xAI's reasoning content
-
-        When streaming, reasoning_content arrives incrementally and is concatenated
-        across chunks. Access via `chunk.reasoning_content` (public API).''',
+        'description': ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
