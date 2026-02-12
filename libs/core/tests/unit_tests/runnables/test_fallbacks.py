@@ -385,6 +385,7 @@ def test_returns_runnable_handles_nameerror() -> None:
     typing.get_type_hints() raises NameError when annotations reference names
     only available in TYPE_CHECKING blocks. This should not crash.
     """
+
     # Simulate a callable whose annotations reference an undefined name
     def func_with_bad_annotation() -> "UndefinedType":  # type: ignore[name-defined]  # noqa: F821
         pass
