@@ -934,6 +934,12 @@ class ChatOllama(BaseChatModel):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[Mapping[str, Any] | str]:
+        if not self._async_client:
+            msg = (
+                "Ollama async client is not initialized. "
+                "Make sure the model was properly constructed."
+            )
+            raise RuntimeError(msg)
         chat_params = self._chat_params(messages, stop, **kwargs)
 
         if chat_params["stream"]:
