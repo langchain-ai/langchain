@@ -25,7 +25,7 @@ requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.2.0,<2.0.0",
     "tokenizers>=0.19.1,<1.0.0",
-    "huggingface-hub>=0.33.4,<1.0.0",
+    "huggingface-hub>=0.33.4,<2.0.0",
 ]
 
 [project.urls]
@@ -40,7 +40,7 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [project.optional-dependencies]
 full = [
-    "transformers>=4.39.0,<5.0.0",
+    "transformers>=4.39.0,<6.0.0",
     "sentence-transformers>=2.6.0,<3.0.0",
 ]
 
@@ -53,7 +53,7 @@ test = [
     "scipy>=1.0.0,<2.0.0; python_version < \"3.12\"",
     "scipy>=1.7.0,<2.0.0; python_version >= \"3.12\" and python_version < \"3.13\"",
     "scipy>=1.14.1,<2.0.0; python_version >= \"3.13\"",
-    "transformers>=4.39.0,<5.0.0",
+    "transformers>=4.39.0,<6.0.0",
     "sentence-transformers>=2.6.0,<3.0.0",
     "langchain-core",
     "langchain-tests",
