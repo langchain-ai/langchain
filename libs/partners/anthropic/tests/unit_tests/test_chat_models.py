@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import os
 from collections.abc import Callable
 from typing import Any, Literal, cast
@@ -410,6 +411,91 @@ def test__merge_messages_mutation() -> None:
     actual = _merge_messages(messages)
     assert expected == actual
     assert messages == original_messages
+
+
+def test__merge_messages_tool_message_cache_control() -> None:
+    """Test that cache_control is hoisted from content blocks to tool_result level."""
+    # Test with cache_control in content block
+    messages = [
+        ToolMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": "tool output",
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ],
+            tool_call_id="1",
+        )
+    ]
+    original_messages = [copy.deepcopy(m) for m in messages]
+    expected = [
+        HumanMessage(
+            [
+                {
+                    "type": "tool_result",
+                    "content": [{"type": "text", "text": "tool output"}],
+                    "tool_use_id": "1",
+                    "is_error": False,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ]
+        )
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
+    # Verify no mutation
+    assert messages == original_messages
+
+    # Test with multiple content blocks, cache_control on last one
+    messages = [
+        ToolMessage(
+            content=[
+                {"type": "text", "text": "first output"},
+                {
+                    "type": "text",
+                    "text": "second output",
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+            tool_call_id="2",
+        )
+    ]
+    expected = [
+        HumanMessage(
+            [
+                {
+                    "type": "tool_result",
+                    "content": [
+                        {"type": "text", "text": "first output"},
+                        {"type": "text", "text": "second output"},
+                    ],
+                    "tool_use_id": "2",
+                    "is_error": False,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ]
+        )
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
+
+    # Test without cache_control
+    messages = [ToolMessage(content="simple output", tool_call_id="3")]
+    expected = [
+        HumanMessage(
+            [
+                {
+                    "type": "tool_result",
+                    "content": "simple output",
+                    "tool_use_id": "3",
+                    "is_error": False,
+                }
+            ]
+        )
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
 
 
 def test__format_image() -> None:
@@ -2085,7 +2171,7 @@ async def test_model_profile_not_blocking() -> None:
 def test_effort_parameter_validation() -> None:
     """Test that effort parameter is validated correctly.
 
-    The effort parameter is currently in beta and only supported by Claude Opus 4.5.
+    The effort parameter is generally available on Claude Opus 4.6 and Opus 4.5.
     """
     # Valid effort values should work
     model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="high")
@@ -2097,20 +2183,22 @@ def test_effort_parameter_validation() -> None:
     model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="low")
     assert model.effort == "low"
 
+    model = ChatAnthropic(model="claude-opus-4-6", effort="max")
+    assert model.effort == "max"
+
     # Invalid effort values should raise ValidationError
     with pytest.raises(ValidationError, match="Input should be"):
         ChatAnthropic(model="claude-opus-4-5-20251101", effort="invalid")  # type: ignore[arg-type]
 
 
-def test_effort_populates_betas() -> None:
-    """Test that effort parameter auto-populates required betas."""
+def test_effort_in_output_config_payload() -> None:
+    """Test that effort parameter is properly added to output_config in payload."""
     model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="medium")
     assert model.effort == "medium"
 
-    # Test that effort works with dated API ID
+    # Test that effort is added to output_config
     payload = model._get_request_payload("Test query")
     assert payload["output_config"]["effort"] == "medium"
-    assert "effort-2025-11-24" in payload["betas"]
 
 
 def test_effort_in_output_config() -> None:
@@ -2136,43 +2224,6 @@ def test_effort_priority() -> None:
     assert payload["output_config"]["effort"] == "high"
 
 
-def test_effort_beta_header_auto_append() -> None:
-    """Test that effort beta header is automatically appended."""
-    # Test with top-level effort parameter
-    model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="medium")
-    payload = model._get_request_payload("Test query")
-    assert "effort-2025-11-24" in payload["betas"]
-
-    # Test with output_config
-    model = ChatAnthropic(
-        model="claude-opus-4-5-20251101",
-        output_config={"effort": "low"},
-    )
-    payload = model._get_request_payload("Test query")
-    assert "effort-2025-11-24" in payload["betas"]
-
-    # Test that beta is not duplicated if already present
-    model = ChatAnthropic(
-        model="claude-opus-4-5-20251101",
-        effort="high",
-        betas=["effort-2025-11-24"],
-    )
-    payload = model._get_request_payload("Test query")
-    assert payload["betas"].count("effort-2025-11-24") == 1
-
-    # Test combining effort with other betas
-    model = ChatAnthropic(
-        model="claude-opus-4-5-20251101",
-        effort="medium",
-        betas=["context-1m-2025-08-07"],
-    )
-    payload = model._get_request_payload("Test query")
-    assert set(payload["betas"]) == {
-        "context-1m-2025-08-07",
-        "effort-2025-11-24",
-    }
-
-
 def test_output_config_without_effort() -> None:
     """Test that output_config can be used without effort."""
     # output_config might have other fields in the future
@@ -2182,10 +2233,6 @@ def test_output_config_without_effort() -> None:
     )
     payload = model._get_request_payload("Test query")
     assert payload["output_config"] == {"some_future_param": "value"}
-    # No effort beta should be added
-    assert payload.get("betas") is None or "effort-2025-11-24" not in payload.get(
-        "betas", []
-    )
 
 
 def test_extras_with_defer_loading() -> None:

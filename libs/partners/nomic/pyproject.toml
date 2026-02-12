@@ -24,7 +24,7 @@ requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.0.0,<2.0.0",
     "nomic>=3.5.3,<4.0.0",
-    "pillow>=10.3.0,<12.0.0",
+    "pillow>=10.3.0,<13.0.0",
 ]
 
 [project.urls]
