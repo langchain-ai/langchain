@@ -3,7 +3,6 @@
 import copy
 import json
 import logging
-import re
 from json import JSONDecodeError
 from typing import Annotated, Any
 
@@ -15,7 +14,7 @@ from langchain_core.messages.tool import invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
-from langchain_core.utils.json import parse_partial_json
+from langchain_core.utils.json import parse_partial_json, strip_reasoning_tags
 from langchain_core.utils.pydantic import (
     TypeBaseModel,
     is_pydantic_v1_subclass,
@@ -23,42 +22,6 @@ from langchain_core.utils.pydantic import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-def strip_reasoning_tags(arguments: str) -> str | None:
-    """Strip reasoning model tags from tool call arguments.
-
-    Some reasoning models (e.g. DeepSeek-R1) include ``<think>...</think>`` and/or
-    ``<tool_call>...</tool_call>`` tags in tool call arguments, which prevents
-    JSON parsing. This function strips those tags to extract the JSON content.
-
-    Args:
-        arguments: The raw arguments string from a tool call.
-
-    Returns:
-        The cleaned arguments string, or `None` if no tags were found
-        (i.e. the string was not modified).
-    """
-    reasoning_tag_re = re.compile(
-        r"<(think|thinking|reasoning)>.*?</\1>",
-        re.DOTALL,
-    )
-    tool_call_tag_re = re.compile(
-        r"<tool_call>\s*(.*?)\s*</tool_call>",
-        re.DOTALL,
-    )
-
-    cleaned = reasoning_tag_re.sub("", arguments)
-
-    match = tool_call_tag_re.search(cleaned)
-    if match:
-        cleaned = match.group(1)
-
-    cleaned = cleaned.strip()
-
-    if cleaned != arguments.strip():
-        return cleaned
-    return None
 
 
 def parse_tool_call(

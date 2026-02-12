@@ -191,6 +191,42 @@ def _parse_json(
     return parser(json_str)
 
 
+def strip_reasoning_tags(text: str) -> str | None:
+    """Strip reasoning model tags from text.
+
+    Some reasoning models (e.g. DeepSeek-R1) include ``<think>...</think>`` and/or
+    ``<tool_call>...</tool_call>`` tags in their output, which prevents
+    JSON parsing. This function strips those tags to extract the JSON content.
+
+    Args:
+        text: The raw text string potentially containing reasoning tags.
+
+    Returns:
+        The cleaned string, or `None` if no tags were found
+        (i.e. the string was not modified).
+    """
+    reasoning_tag_re = re.compile(
+        r"<(think|thinking|reasoning)>.*?</\1>",
+        re.DOTALL,
+    )
+    tool_call_tag_re = re.compile(
+        r"<tool_call>\s*(.*?)\s*</tool_call>",
+        re.DOTALL,
+    )
+
+    cleaned = reasoning_tag_re.sub("", text)
+
+    match = tool_call_tag_re.search(cleaned)
+    if match:
+        cleaned = match.group(1)
+
+    cleaned = cleaned.strip()
+
+    if cleaned != text.strip():
+        return cleaned
+    return None
+
+
 def parse_and_check_json_markdown(text: str, expected_keys: list[str]) -> dict:
     """Parse and check a JSON string from a Markdown string.
 
