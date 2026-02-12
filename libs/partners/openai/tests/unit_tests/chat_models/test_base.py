@@ -365,13 +365,18 @@ def test_create_chat_result_with_reasoning_content_in_openai_sdk() -> None:
     """Test that reasoning_content is extracted from OpenAI SDK response object."""
     llm = ChatOpenAI(model="test-model")
     # Mock OpenAI SDK response object
-    mock_message = MagicMock()
+    # Use spec to make hasattr checks work properly
+    mock_message = MagicMock(spec=["reasoning_content", "content", "role", "parsed", "refusal", "model_extra"])
     mock_message.reasoning_content = "Let me think step by step: 6 * 7 = 42"
     mock_message.content = "The answer is 42"
     mock_message.role = "assistant"
+    # Prevent MagicMock from auto-creating attributes
+    del mock_message.parsed
+    del mock_message.refusal
+    del mock_message.model_extra
     mock_choice = MagicMock()
     mock_choice.message = mock_message
-    mock_response = MagicMock()
+    mock_response = MagicMock(spec=openai.BaseModel)
     mock_response.choices = [mock_choice]
     mock_response.model_dump.return_value = {
         "choices": [
@@ -398,13 +403,17 @@ def test_create_chat_result_with_reasoning_in_model_extra() -> None:
     """Test that reasoning is extracted from model_extra (OpenRouter compatibility)."""
     llm = ChatOpenAI(model="test-model")
     # Mock OpenAI SDK response object with model_extra
-    mock_message = MagicMock()
+    mock_message = MagicMock(spec=["content", "role", "parsed", "refusal", "model_extra", "reasoning_content"])
     mock_message.content = "The answer is 42"
     mock_message.role = "assistant"
     mock_message.model_extra = {"reasoning": "Let me think step by step: 6 * 7 = 42"}
+    # Prevent MagicMock from auto-creating attributes we don't want
+    del mock_message.parsed
+    del mock_message.refusal
+    del mock_message.reasoning_content
     mock_choice = MagicMock()
     mock_choice.message = mock_message
-    mock_response = MagicMock()
+    mock_response = MagicMock(spec=openai.BaseModel)
     mock_response.choices = [mock_choice]
     mock_response.model_dump.return_value = {
         "choices": [
@@ -522,13 +531,17 @@ def test_reasoning_utilities_module() -> None:
     assert kwargs2[REASONING_CONTENT_KEY] == "existing"
 
     # Test extract_reasoning_from_openai_message
-    mock_message = MagicMock()
+    mock_message = MagicMock(spec=["reasoning_content", "model_extra"])
     mock_message.reasoning_content = "OpenAI SDK reasoning"
+    # Prevent MagicMock from auto-creating model_extra
+    del mock_message.model_extra
     assert extract_reasoning_from_openai_message(mock_message) == "OpenAI SDK reasoning"
 
     # Test model_extra path
-    mock_message2 = MagicMock()
+    mock_message2 = MagicMock(spec=["reasoning_content", "model_extra"])
     mock_message2.model_extra = {"reasoning": "OpenRouter reasoning"}
+    # Prevent MagicMock from auto-creating reasoning_content
+    del mock_message2.reasoning_content
     assert extract_reasoning_from_openai_message(mock_message2) == "OpenRouter reasoning"
 
 

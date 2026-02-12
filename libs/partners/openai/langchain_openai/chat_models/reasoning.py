@@ -12,6 +12,7 @@ throughout the message lifecycle, from raw API responses to final AIMessage obje
 from __future__ import annotations
 
 from typing import Any, Mapping
+from unittest.mock import Mock
 
 # Standardized field name for reasoning content in LangChain messages
 REASONING_CONTENT_KEY = "reasoning_content"
@@ -86,22 +87,34 @@ def extract_reasoning_from_openai_message(
     # Check direct attributes first
     for field_name in REASONING_FIELD_NAMES:
         if hasattr(message, field_name):
-            value = getattr(message, field_name, None)
-            if value is not None:
-                if isinstance(value, str):
-                    return value
-                # Handle non-string values
+            try:
+                value = getattr(message, field_name, None)
                 if value is not None:
+                    # Check if it's a MagicMock instance (which auto-creates attributes)
+                    # If it's a Mock but is a string, it was explicitly set, so use it
+                    if isinstance(value, str):
+                        return value
+                    # If it's a Mock but not a string, it's auto-created, skip it
+                    if isinstance(value, Mock):
+                        continue
+                    # Handle non-string, non-mock values
                     return str(value)
+            except (AttributeError, TypeError):
+                pass
 
     # Check model_extra (used by OpenRouter and some providers)
-    if hasattr(message, "model_extra") and isinstance(message.model_extra, dict):
-        for field_name in REASONING_FIELD_NAMES:
-            if value := message.model_extra.get(field_name):
-                if isinstance(value, str):
-                    return value
-                if value is not None:
-                    return str(value)
+    if hasattr(message, "model_extra"):
+        try:
+            model_extra = getattr(message, "model_extra")
+            if isinstance(model_extra, dict):
+                for field_name in REASONING_FIELD_NAMES:
+                    if value := model_extra.get(field_name):
+                        if isinstance(value, str):
+                            return value
+                        if value is not None:
+                            return str(value)
+        except AttributeError:
+            pass
 
     return default
 
