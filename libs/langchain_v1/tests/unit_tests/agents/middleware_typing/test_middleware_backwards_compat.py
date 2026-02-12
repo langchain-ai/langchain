@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 class OldStyleMiddleware1(AgentMiddleware):
     """Middleware with no type parameters at all - most common old pattern."""
 
-    def before_model(self, state: AgentState[Any], runtime: Runtime[None]) -> dict[str, Any] | None:
+    def before_model(self, state: AgentState[Any], runtime: Runtime[Any]) -> dict[str, Any] | None:
         # Simple middleware that just logs or does something
         return None
 
@@ -104,7 +104,7 @@ class OldStyleMiddleware4(AgentMiddleware[AgentState[Any], MyContext]):
 # OLD PATTERN 5: Decorator-based middleware
 # =============================================================================
 @before_model
-def old_style_decorator(state: AgentState[Any], runtime: Runtime[None]) -> dict[str, Any] | None:
+def old_style_decorator(state: AgentState[Any], runtime: Runtime[Any]) -> dict[str, Any] | None:
     """Decorator middleware - old pattern."""
     return None
 
