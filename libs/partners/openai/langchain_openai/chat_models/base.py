@@ -3566,7 +3566,7 @@ def _url_to_size(image_source: str) -> tuple[int, int] | None:
                 return None
 
             for result in addr_info:
-                ip_str: str = result[4][0]
+                ip_str = str(result[4][0])
                 if is_cloud_metadata(hostname, ip_str):
                     logger.warning(
                         "Image URL resolves to cloud metadata IP: %s", ip_str
