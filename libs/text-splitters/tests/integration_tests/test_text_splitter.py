@@ -1,7 +1,7 @@
 """Test text splitters that require an integration."""
 
 import pytest
-from transformers import GPT2TokenizerFast
+from transformers import AutoTokenizer
 
 from langchain_text_splitters import (
     TokenTextSplitter,
@@ -23,7 +23,7 @@ def test_huggingface_type_check() -> None:
 
 def test_huggingface_tokenizer() -> None:
     """Test text splitter that uses a HuggingFace tokenizer."""
-    tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+    tokenizer = AutoTokenizer.from_pretrained("gpt2")
     text_splitter = CharacterTextSplitter.from_huggingface_tokenizer(
         tokenizer, separator=" ", chunk_size=1, chunk_overlap=0
     )
@@ -112,3 +112,22 @@ def test_sentence_transformers_multiple_tokens() -> None:
         - splitter.maximum_tokens_per_chunk
     )
     assert expected == actual
+
+
+@pytest.mark.requires("sentence_transformers")
+def test_sentence_transformers_with_additional_model_kwargs() -> None:
+    """Test passing model_kwargs to SentenceTransformer."""
+    # ensure model is downloaded (online)
+    splitter_online = SentenceTransformersTokenTextSplitter(
+        model_name="sentence-transformers/paraphrase-albert-small-v2"
+    )
+    text = "lorem ipsum"
+    splitter_online.count_tokens(text=text)
+
+    # test offline model loading using model_kwargs
+    splitter_offline = SentenceTransformersTokenTextSplitter(
+        model_name="sentence-transformers/paraphrase-albert-small-v2",
+        model_kwargs={"local_files_only": True},
+    )
+    splitter_offline.count_tokens(text=text)
+    assert splitter_offline.tokenizer is not None
