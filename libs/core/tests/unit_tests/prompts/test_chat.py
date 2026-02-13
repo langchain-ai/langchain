@@ -1,3 +1,4 @@
+import json
 import re
 import warnings
 from pathlib import Path
@@ -1983,3 +1984,22 @@ def test_mustache_template_attribute_access_vulnerability() -> None:
     )
     result_dict = prompt_dict.invoke({"person": {"name": "Alice"}})
     assert result_dict.messages[0].content == "Alice"  # type: ignore[attr-defined]
+
+
+def test_chat_prompt_template_save(tmp_path: Path) -> None:
+    """Test saving a chat prompt template."""
+    file_path = tmp_path / "chat_prompt.json"
+    template = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are a helpful assistant."),
+            ("human", "Tell me a joke about {topic}"),
+        ]
+    )
+    template.save(file_path)
+    assert file_path.exists()
+
+    # Verify the saved content contains the correct type for the loader
+    with file_path.open("r") as f:
+        data = json.load(f)
+    assert data["_type"] == "chat"
+    assert "messages" in data

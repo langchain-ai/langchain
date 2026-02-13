@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from pathlib import Path
@@ -14,6 +15,7 @@ from typing import (
     overload,
 )
 
+import yaml
 from pydantic import (
     Field,
     PositiveInt,
@@ -1306,12 +1308,32 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         return "chat"
 
     def save(self, file_path: Path | str) -> None:
-        """Save prompt to file.
+        """Save the prompt to a file.
 
         Args:
             file_path: path to file.
         """
-        raise NotImplementedError
+        path = Path(file_path)
+        if path.suffix not in [".json", ".yaml"]:
+            msg = (
+                f"Got unsupported file extension {path.suffix}. "
+                "Please use .json or .yaml"
+            )
+            raise ValueError(msg)
+
+        # Convert to dict for serialization
+        prompt_dict = self.dict()
+
+        # Ensure the loader knows this is a chat prompt
+        if "_type" not in prompt_dict:
+            prompt_dict["_type"] = "chat"
+
+        if path.suffix == ".json":
+            with path.open("w") as f:
+                json.dump(prompt_dict, f, indent=2)
+        else:
+            with path.open("w") as f:
+                yaml.dump(prompt_dict, f)
 
     @override
     def pretty_repr(self, html: bool = False) -> str:
