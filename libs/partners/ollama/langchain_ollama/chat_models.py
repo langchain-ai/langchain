@@ -38,7 +38,6 @@ Stream dictionary chunks containing:
 - Tool calls attached to `AIMessage.tool_calls`
 - Reasoning content in `AIMessage.additional_kwargs['reasoning_content']`
 """
-
 from __future__ import annotations
 
 import ast
@@ -82,7 +81,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
-from ollama import AsyncClient, Client, Message
+from ollama import AsyncClient, Client, Message, ResponseError
 from pydantic import BaseModel, PrivateAttr, model_validator
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
@@ -940,11 +939,29 @@ class ChatOllama(BaseChatModel):
                 "Make sure the model was properly constructed."
             )
             raise RuntimeError(msg)
+
         chat_params = self._chat_params(messages, stop, **kwargs)
 
         if chat_params["stream"]:
-            async for part in await self._async_client.chat(**chat_params):
-                yield part
+            try:
+                async for part in await self._async_client.chat(**chat_params):
+                    yield part
+            except ResponseError as e:
+                # Catch malformed tool call JSON errors. This usually happens
+                # when the model outputs "Thought: ..." before the JSON.
+                if "error parsing tool call" in str(e) and hasattr(e, "raw"):
+                    # Recover by yielding the raw content as a normal text message.
+                    # This prevents the crash and lets the agent "see" the raw output.
+                    yield {
+                        "message": {
+                            "role": "assistant",
+                            "content": e.raw,
+                        },
+                        "done": False,
+                    }
+                else:
+                    # Re-raise other genuine errors (e.g., connection issues)
+                    raise
         else:
             yield await self._async_client.chat(**chat_params)
 
