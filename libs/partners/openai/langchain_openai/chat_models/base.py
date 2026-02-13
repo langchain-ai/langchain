@@ -759,6 +759,11 @@ class BaseChatOpenAI(BaseChatModel):
     passed in the parameter during invocation.
     """
 
+    context_management: list[dict[str, Any]] | None = None
+    """Configuration for
+    [context management](https://developers.openai.com/api/docs/guides/compaction).
+    """
+
     include: list[str] | None = None
     """Additional fields to include in generations from Responses API.
 
@@ -1051,6 +1056,7 @@ class BaseChatOpenAI(BaseChatModel):
             "reasoning_effort": self.reasoning_effort,
             "reasoning": self.reasoning,
             "verbosity": self.verbosity,
+            "context_management": self.context_management,
             "include": self.include,
             "service_tier": self.service_tier,
             "truncation": self.truncation,
@@ -1437,6 +1443,7 @@ class BaseChatOpenAI(BaseChatModel):
             return self.use_responses_api
         if (
             self.output_version == "responses/v1"
+            or self.context_management is not None
             or self.include is not None
             or self.reasoning is not None
             or self.truncation is not None
@@ -3817,6 +3824,7 @@ def _use_responses_api(payload: dict) -> bool:
         _is_builtin_tool(tool) for tool in payload["tools"]
     )
     responses_only_args = {
+        "context_management",
         "include",
         "previous_response_id",
         "reasoning",
@@ -4196,6 +4204,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                                 )
                         elif block_type in (
                             "reasoning",
+                            "compaction",
                             "web_search_call",
                             "file_search_call",
                             "function_call",
@@ -4398,6 +4407,7 @@ def _construct_lc_result_from_responses_api(
             tool_calls.append(tool_call)
         elif output.type in (
             "reasoning",
+            "compaction",
             "web_search_call",
             "file_search_call",
             "computer_call",
