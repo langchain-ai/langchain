@@ -38,6 +38,7 @@ Stream dictionary chunks containing:
 - Tool calls attached to `AIMessage.tool_calls`
 - Reasoning content in `AIMessage.additional_kwargs['reasoning_content']`
 """
+
 from __future__ import annotations
 
 import ast
