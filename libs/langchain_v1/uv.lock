@@ -1990,7 +1990,7 @@ requires-dist = [
 provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
-lint = [{ name = "ruff", specifier = ">=0.14.11,<0.16.0" }]
+lint = [{ name = "ruff", specifier = ">=0.15.0,<0.16.0" }]
 test = [
     { name = "blockbuster", specifier = ">=1.5.26,<1.6.0" },
     { name = "langchain-openai", editable = "../partners/openai" },
@@ -2183,7 +2183,7 @@ dev = [
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
     { name = "setuptools", specifier = ">=67.6.1,<83.0.0" },
 ]
-lint = [{ name = "ruff", specifier = ">=0.14.11,<0.16.0" }]
+lint = [{ name = "ruff", specifier = ">=0.15.0,<0.16.0" }]
 test = [
     { name = "blockbuster", specifier = ">=1.5.18,<1.6.0" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
@@ -2432,7 +2432,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-lint = [{ name = "ruff", specifier = ">=0.14.11,<0.16.0" }]
+lint = [{ name = "ruff", specifier = ">=0.15.0,<0.16.0" }]
 test = [{ name = "langchain-core", editable = "../core" }]
 test-integration = []
 typing = [
@@ -2459,7 +2459,7 @@ dev = [
 ]
 lint = [
     { name = "langchain-core", editable = "../core" },
-    { name = "ruff", specifier = ">=0.14.11,<0.16.0" },
+    { name = "ruff", specifier = ">=0.15.0,<0.16.0" },
 ]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
