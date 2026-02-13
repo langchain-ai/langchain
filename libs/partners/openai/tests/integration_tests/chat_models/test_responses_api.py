@@ -1107,3 +1107,49 @@ def test_custom_tool(output_version: Literal["responses/v1", "v1"]) -> None:
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert len(full.tool_calls) == 1
+
+
+@pytest.mark.default_cassette("test_compaction.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
+def test_compaction(output_version: Literal["responses/v1", "v1"]) -> None:
+    """Test the compation beta feature."""
+    llm = ChatOpenAI(
+        model="gpt-5.2",
+        context_management=[{"type": "compaction", "compact_threshold": 10_000}],
+        output_version=output_version,
+    )
+
+    input_message = {
+        "role": "user",
+        "content": f"Generate a one-sentence summary of this:\n\n{'a' * 50000}",
+    }
+    messages: list = [input_message]
+
+    first_response = llm.invoke(messages)
+    messages.append(first_response)
+
+    second_message = {
+        "role": "user",
+        "content": f"Generate a one-sentence summary of this:\n\n{'b' * 50000}",
+    }
+    messages.append(second_message)
+
+    second_response = llm.invoke(messages)
+    messages.append(second_response)
+
+    content_blocks = second_response.content_blocks
+    compaction_block = next(
+        (block for block in content_blocks if block["type"] == "non_standard"),
+        None,
+    )
+    assert compaction_block
+    assert compaction_block["value"].get("type") == "compaction"
+
+    third_message = {
+        "role": "user",
+        "content": "What are we talking about?",
+    }
+    messages.append(third_message)
+    third_response = llm.invoke(messages)
+    assert third_response.text
