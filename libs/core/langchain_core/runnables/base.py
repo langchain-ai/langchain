@@ -2587,6 +2587,10 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
     """Runnable that can be serialized to JSON."""
 
     name: str | None = None
+    """The name of the `Runnable`.
+
+    Used for debugging and tracing.
+    """
 
     model_config = ConfigDict(
         # Suppress warnings from pydantic protected namespaces
