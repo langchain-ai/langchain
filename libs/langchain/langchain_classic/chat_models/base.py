@@ -573,7 +573,10 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
 
     # AWS Bedrock models
     if model_name.startswith("amazon.") or model_lower.startswith(
-        ("anthropic.", "meta.")
+        (
+            "anthropic.",
+            "meta.",
+        )
     ):
         return "bedrock"
 
