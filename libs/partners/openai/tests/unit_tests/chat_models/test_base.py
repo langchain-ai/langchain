@@ -3235,7 +3235,6 @@ def test_openai_structured_output_refusal_handling_responses_api() -> None:
         pytest.fail(f"This is a wrong behavior. Error details: {e}")
 
 
-<<<<<<< HEAD
 # Test fixtures for context overflow error tests
 _CONTEXT_OVERFLOW_ERROR_BODY = {
     "error": {
