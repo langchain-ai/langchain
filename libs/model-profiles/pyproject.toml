@@ -61,7 +61,7 @@ test = [
 test_integration = ["langchain-core"]
 
 lint = [
-    "ruff>=0.12.2,<0.16.0",
+    "ruff>=0.15.0,<0.16.0",
     "langchain",
 ]
 typing = [
