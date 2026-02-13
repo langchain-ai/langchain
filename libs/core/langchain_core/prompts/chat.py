@@ -1307,11 +1307,76 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
     def save(self, file_path: Path | str) -> None:
         """Save prompt to file.
-
+        
         Args:
             file_path: path to file.
         """
-        raise NotImplementedError
+        import json
+        from pathlib import Path as PathLib
+        
+        file_path = PathLib(file_path)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        data = {
+            "_type": "chat_prompt_template",
+            "input_variables": self.input_variables,
+            "optional_variables": list(getattr(self, "optional_variables", [])),
+            "partial_variables": dict(self.partial_variables),
+            "messages": self._serialize_messages(),
+        }
+        
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+    def _serialize_messages(self) -> list:
+        """Serialize messages to JSON-compatible format."""
+        serialized = []
+        for msg in self.messages:
+            serialized.append(self._serialize_message(msg))
+        return serialized
+
+    def _serialize_message(self, msg) -> dict:
+        """Serialize a single message."""
+        from langchain_core.messages import BaseMessage
+        from langchain_core.prompts.chat import (
+            MessagesPlaceholder,
+            HumanMessagePromptTemplate,
+            AIMessagePromptTemplate,
+            SystemMessagePromptTemplate,
+            ChatMessagePromptTemplate,
+        )
+        
+        if isinstance(msg, BaseMessage):
+            return {
+                "type": "message",
+                "role": msg.type,
+                "content": msg.content,
+            }
+        
+        if isinstance(msg, MessagesPlaceholder):
+            return {
+                "type": "placeholder",
+                "variable_name": msg.variable_name,
+                "optional": msg.optional,
+            }
+        
+        if isinstance(msg, HumanMessagePromptTemplate):
+            role = "human"
+        elif isinstance(msg, AIMessagePromptTemplate):
+            role = "ai"
+        elif isinstance(msg, SystemMessagePromptTemplate):
+            role = "system"
+        elif isinstance(msg, ChatMessagePromptTemplate):
+            role = msg.role
+        else:
+            role = "unknown"
+        
+        return {
+            "type": "message_template",
+            "role": role,
+            "template": msg.prompt.template if hasattr(msg.prompt, 'template') else str(msg.prompt),
+            "input_variables": list(msg.input_variables),
+        }
 
     @override
     def pretty_repr(self, html: bool = False) -> str:
