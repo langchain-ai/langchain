@@ -1,6 +1,7 @@
 from typing import Any
 from unittest.mock import MagicMock, patch
 
+import pytest
 from packaging import version
 from pydantic import BaseModel
 from syrupy.assertion import SnapshotAssertion
@@ -14,7 +15,13 @@ from langchain_core.output_parsers.xml import XMLOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.runnables import RunnableConfig
 from langchain_core.runnables.base import Runnable
-from langchain_core.runnables.graph import Edge, Graph, MermaidDrawMethod, Node
+from langchain_core.runnables.graph import (
+    Edge,
+    Graph,
+    MermaidDrawMethod,
+    Node,
+    node_data_str,
+)
 from langchain_core.runnables.graph_mermaid import (
     _render_mermaid_using_api,
     _to_safe_id,
@@ -717,3 +724,134 @@ def test_graph_mermaid_special_chars(snapshot: SnapshotAssertion) -> None:
         ],
     )
     assert graph.draw_mermaid() == snapshot(name="mermaid")
+
+
+# --- Node validation tests (Issue #30719) ---
+
+
+def test_add_node_invalid_data_raises() -> None:
+    """Test that add_node raises ValueError for invalid data types."""
+    graph = Graph()
+
+    with pytest.raises(ValueError, match="Invalid node data"):
+        graph.add_node(object(), id="obj")  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError, match="Invalid node data"):
+        graph.add_node(42, id="int_node")  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError, match="Invalid node data"):
+        graph.add_node(lambda x: x, id="lambda_node")  # type: ignore[arg-type]
+
+
+def test_add_node_valid_data_types() -> None:
+    """Test that add_node accepts all valid data types without error."""
+    graph = Graph()
+
+    # None is valid
+    node_none = graph.add_node(None, id="none_node")
+    assert node_none.data is None
+
+    # Runnable instance is valid
+    runnable = StrOutputParser()
+    node_runnable = graph.add_node(runnable, id="runnable_node")
+    assert node_runnable.data is runnable
+
+    # BaseModel subclass (class, not instance) is valid
+    node_schema = graph.add_node(BaseModel, id="schema_node")
+    assert node_schema.data is BaseModel
+
+
+def test_add_node_skip_validation() -> None:
+    """Test that add_node with skip_validation=True accepts arbitrary data."""
+    graph = Graph()
+    node = graph.add_node(
+        object(),  # type: ignore[arg-type]
+        id="custom",
+        skip_validation=True,
+    )
+    assert node.id == "custom"
+
+
+def test_draw_png_raises_for_invalid_nodes() -> None:
+    """Test that draw_png raises ValueError when graph has invalid nodes."""
+    graph = Graph()
+    # Bypass add_node validation by inserting directly into nodes dict
+    graph.nodes["bad"] = Node(
+        id="bad",
+        name="bad",
+        data=object(),  # type: ignore[arg-type]
+        metadata=None,
+    )
+
+    with pytest.raises(ValueError, match="Cannot render graph"):
+        graph.draw_png(output_file_path=None)
+
+
+def test_draw_mermaid_png_raises_for_invalid_nodes() -> None:
+    """Test that draw_mermaid_png raises ValueError for invalid node data."""
+    graph = Graph()
+    graph.nodes["bad"] = Node(
+        id="bad",
+        name="bad",
+        data=object(),  # type: ignore[arg-type]
+        metadata=None,
+    )
+
+    with pytest.raises(ValueError, match="Cannot render graph"):
+        graph.draw_mermaid_png()
+
+
+def test_draw_png_mixed_valid_and_invalid_nodes() -> None:
+    """Test that draw_png reports all invalid nodes when some are valid."""
+    graph = Graph()
+    graph.add_node(BaseModel, id="valid")
+    # Bypass validation to insert invalid nodes
+    graph.nodes["bad1"] = Node(
+        id="bad1",
+        name="bad1",
+        data=42,  # type: ignore[arg-type]
+        metadata=None,
+    )
+    graph.nodes["bad2"] = Node(
+        id="bad2",
+        name="bad2",
+        data="oops",  # type: ignore[arg-type]
+        metadata=None,
+    )
+
+    with pytest.raises(ValueError, match=r"2 node\(s\) have invalid"):
+        graph.draw_png(output_file_path=None)
+
+
+def test_draw_png_empty_graph() -> None:
+    """Test that draw_png does not raise validation errors for an empty graph."""
+    import contextlib  # noqa: PLC0415
+
+    graph = Graph()
+    # Empty graph passes validation but may raise ImportError if
+    # pygraphviz is not installed.
+    with contextlib.suppress(ImportError):
+        graph.draw_png(output_file_path=None)
+
+
+def test_node_data_str_handles_objects_without_name() -> None:
+    """Test that node_data_str does not crash for objects lacking __name__."""
+    # Use a 32-char hex string that looks like a UUID
+    uuid_like = "a" * 32
+    result = node_data_str(uuid_like, object())  # type: ignore[arg-type]
+    # Should fall back to type name rather than crashing
+    assert result == "object"
+
+
+def test_draw_mermaid_unaffected_by_validation() -> None:
+    """Test that draw_mermaid (text output) works regardless of node data."""
+    graph = Graph()
+    # Construct nodes directly - draw_mermaid uses node.name, not node.data
+    graph.nodes["start"] = Node(id="start", name="start", data=None, metadata=None)
+    graph.nodes["end"] = Node(id="end", name="end", data=None, metadata=None)
+    graph.edges.append(Edge(source="start", target="end"))
+    # draw_mermaid should work fine regardless
+    result = graph.draw_mermaid()
+    assert isinstance(result, str)
+    assert "start" in result
+    assert "end" in result
