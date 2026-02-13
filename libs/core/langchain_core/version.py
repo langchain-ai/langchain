@@ -1,3 +1,3 @@
 """langchain-core version information and utilities."""
 
-VERSION = "1.2.11"
+VERSION = "1.2.12"
