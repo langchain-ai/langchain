@@ -27,6 +27,7 @@ from langchain_openrouter.chat_models import (
     _convert_dict_to_message,
     _convert_message_to_dict,
     _create_usage_metadata,
+    _format_message_content,
 )
 
 MODEL_NAME = "openai/gpt-4o-mini"
@@ -1307,3 +1308,500 @@ class TestErrorPaths:
             call_kwargs = mock_cls.call_args[1]
             retry_config = call_kwargs["retry_config"]
             assert retry_config.backoff.max_elapsed_time == 4 * 150_000
+
+
+# ===========================================================================
+# Reasoning details tests
+# ===========================================================================
+
+
+class TestReasoningDetails:
+    """Tests for reasoning_details extraction.
+
+    OpenRouter returns reasoning metadata via `reasoning_details` for models
+    like OpenAI o-series and Gemini (thought signatures). This verifies the
+    field is preserved in both streaming and non-streaming paths.
+    """
+
+    def test_reasoning_details_in_non_streaming_response(self) -> None:
+        """Test that reasoning_details are extracted from a non-streaming response."""
+        details = [
+            {"type": "reasoning.text", "text": "Step 1: analyze the problem"},
+            {"type": "reasoning.text", "text": "Step 2: solve it"},
+        ]
+        d = {
+            "role": "assistant",
+            "content": "The answer is 42.",
+            "reasoning_details": details,
+        }
+        msg = _convert_dict_to_message(d)
+        assert isinstance(msg, AIMessage)
+        assert msg.additional_kwargs["reasoning_details"] == details
+
+    def test_reasoning_details_in_streaming_chunk(self) -> None:
+        """Test that reasoning_details are extracted from a streaming chunk."""
+        details = [{"type": "reasoning.text", "text": "thinking..."}]
+        chunk: dict[str, Any] = {
+            "choices": [
+                {
+                    "delta": {
+                        "content": "Answer",
+                        "reasoning_details": details,
+                    },
+                }
+            ],
+        }
+        message_chunk = _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
+        assert isinstance(message_chunk, AIMessageChunk)
+        assert message_chunk.additional_kwargs["reasoning_details"] == details
+
+    def test_reasoning_and_reasoning_details_coexist(self) -> None:
+        """Test that both reasoning and reasoning_details can be present."""
+        d = {
+            "role": "assistant",
+            "content": "Answer",
+            "reasoning": "I thought about it",
+            "reasoning_details": [
+                {"type": "reasoning.text", "text": "detailed thinking"},
+            ],
+        }
+        msg = _convert_dict_to_message(d)
+        assert isinstance(msg, AIMessage)
+        assert msg.additional_kwargs["reasoning_content"] == "I thought about it"
+        assert len(msg.additional_kwargs["reasoning_details"]) == 1
+
+    def test_reasoning_in_full_invoke_flow(self) -> None:
+        """Test reasoning extraction through the full invoke path."""
+        model = _make_model()
+        model.client = MagicMock()
+        response_dict: dict[str, Any] = {
+            "choices": [
+                {
+                    "message": {
+                        "role": "assistant",
+                        "content": "9.9 is larger than 9.11",
+                        "reasoning": "Comparing decimals: 9.9 = 9.90 > 9.11",
+                        "reasoning_details": [
+                            {
+                                "type": "reasoning.text",
+                                "text": "Let me compare these numbers...",
+                            },
+                        ],
+                    },
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30},
+        }
+        model.client.chat.send.return_value = _make_sdk_response(response_dict)
+
+        result = model.invoke("Which is larger: 9.11 or 9.9?")
+        assert isinstance(result, AIMessage)
+        assert result.content == "9.9 is larger than 9.11"
+        assert result.additional_kwargs["reasoning_content"] == (
+            "Comparing decimals: 9.9 = 9.90 > 9.11"
+        )
+        assert len(result.additional_kwargs["reasoning_details"]) == 1
+
+    def test_reasoning_in_streaming_flow(self) -> None:
+        """Test reasoning extraction through the full streaming path."""
+        model = _make_model()
+        model.client = MagicMock()
+        reasoning_chunks = [
+            {
+                "choices": [
+                    {"delta": {"role": "assistant", "content": ""}, "index": 0}
+                ],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-reason",
+            },
+            {
+                "choices": [
+                    {
+                        "delta": {
+                            "reasoning": "Thinking step 1...",
+                        },
+                        "index": 0,
+                    }
+                ],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-reason",
+            },
+            {
+                "choices": [
+                    {
+                        "delta": {"content": "The answer"},
+                        "index": 0,
+                    }
+                ],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-reason",
+            },
+            {
+                "choices": [{"delta": {}, "finish_reason": "stop", "index": 0}],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-reason",
+            },
+        ]
+        model.client.chat.send.return_value = _MockSyncStream(
+            [dict(c) for c in reasoning_chunks]
+        )
+
+        chunks = list(model.stream("Think about this"))
+        reasoning_found = any(
+            c.additional_kwargs.get("reasoning_content") for c in chunks
+        )
+        assert reasoning_found, "Expected reasoning_content in at least one chunk"
+
+
+# ===========================================================================
+# OpenRouter-specific params tests (issues #34797, #34962)
+# ===========================================================================
+
+
+class TestOpenRouterSpecificParams:
+    """Tests for OpenRouter-specific parameter handling."""
+
+    def test_openrouter_plugins_in_params(self) -> None:
+        """Test that openrouter_plugins is included in default params."""
+        plugins = [{"id": "web", "max_results": 3}]
+        model = _make_model(openrouter_plugins=plugins)
+        params = model._default_params
+        assert params["plugins"] == plugins
+
+    def test_openrouter_plugins_excluded_when_none(self) -> None:
+        """Test that plugins key is absent when not set."""
+        model = _make_model()
+        params = model._default_params
+        assert "plugins" not in params
+
+    def test_openrouter_plugins_in_payload(self) -> None:
+        """Test that plugins appear in the actual SDK call."""
+        plugins = [{"id": "web", "max_results": 5}]
+        model = _make_model(openrouter_plugins=plugins)
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+
+        model.invoke("Search the web for LangChain")
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert call_kwargs["plugins"] == plugins
+
+    def test_max_completion_tokens_in_params(self) -> None:
+        """Test that max_completion_tokens is included when set."""
+        model = _make_model(max_completion_tokens=1024)
+        params = model._default_params
+        assert params["max_completion_tokens"] == 1024
+
+    def test_max_completion_tokens_excluded_when_none(self) -> None:
+        """Test that max_completion_tokens is absent when not set."""
+        model = _make_model()
+        params = model._default_params
+        assert "max_completion_tokens" not in params
+
+    def test_base_url_passed_to_client(self) -> None:
+        """Test that base_url is passed as server_url to the SDK client."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                base_url="https://custom.openrouter.ai/api/v1",
+            )
+            call_kwargs = mock_cls.call_args[1]
+            assert call_kwargs["server_url"] == "https://custom.openrouter.ai/api/v1"
+
+    def test_timeout_passed_to_client(self) -> None:
+        """Test that timeout is passed as timeout_ms to the SDK client."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                timeout=30000,
+            )
+            call_kwargs = mock_cls.call_args[1]
+            assert call_kwargs["timeout_ms"] == 30000
+
+    def test_all_openrouter_params_in_single_payload(self) -> None:
+        """Test that all OpenRouter-specific params coexist in a payload."""
+        model = _make_model(
+            openrouter_reasoning={"effort": "high"},
+            openrouter_provider={"order": ["Anthropic"], "allow_fallbacks": True},
+            openrouter_route="fallback",
+            openrouter_plugins=[{"id": "web"}],
+        )
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+
+        model.invoke("Hi")
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert call_kwargs["reasoning"] == {"effort": "high"}
+        assert call_kwargs["provider"] == {
+            "order": ["Anthropic"],
+            "allow_fallbacks": True,
+        }
+        assert call_kwargs["route"] == "fallback"
+        assert call_kwargs["plugins"] == [{"id": "web"}]
+
+
+# ===========================================================================
+# Multimodal content formatting tests
+# ===========================================================================
+
+
+class TestFormatMessageContent:
+    """Tests for `_format_message_content` handling of data blocks."""
+
+    def test_string_content_passthrough(self) -> None:
+        """Test that plain string content passes through unchanged."""
+        assert _format_message_content("Hello") == "Hello"
+
+    def test_empty_string_passthrough(self) -> None:
+        """Test that empty string passes through unchanged."""
+        assert _format_message_content("") == ""
+
+    def test_none_passthrough(self) -> None:
+        """Test that None passes through unchanged."""
+        assert _format_message_content(None) is None
+
+    def test_text_block_passthrough(self) -> None:
+        """Test that standard text content blocks pass through."""
+        content = [{"type": "text", "text": "Hello"}]
+        result = _format_message_content(content)
+        assert result == [{"type": "text", "text": "Hello"}]
+
+    def test_image_url_block_passthrough(self) -> None:
+        """Test that image_url content blocks pass through."""
+        content = [
+            {"type": "text", "text": "What is in this image?"},
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/img.png"},
+            },
+        ]
+        result = _format_message_content(content)
+        assert len(result) == 2
+        assert result[0]["type"] == "text"
+        assert result[1]["type"] == "image_url"
+
+
+# ===========================================================================
+# Structured output tests
+# ===========================================================================
+
+
+class TestStructuredOutputIntegration:
+    """Tests for structured output covering issue-specific scenarios."""
+
+    def test_structured_output_function_calling_invokes_with_tools(self) -> None:
+        """Test that `function_calling` structured output sends tools in payload."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_TOOL_RESPONSE_DICT)
+
+        structured = model.with_structured_output(GetWeather, method="function_calling")
+        # The first step in the chain is the bound model
+        bound = structured.first  # type: ignore[attr-defined]
+        assert isinstance(bound, RunnableBinding)
+        assert "tools" in bound.kwargs
+        assert bound.kwargs["tool_choice"] == {
+            "type": "function",
+            "function": {"name": "GetWeather"},
+        }
+
+    def test_structured_output_json_schema_no_beta_parse(self) -> None:
+        """Test that `json_schema` method uses `response_format`, not `beta.parse`."""
+        model = _make_model()
+        structured = model.with_structured_output(GetWeather, method="json_schema")
+        bound = structured.first  # type: ignore[attr-defined]
+        assert isinstance(bound, RunnableBinding)
+        rf = bound.kwargs["response_format"]
+        assert rf["type"] == "json_schema"
+        assert "schema" in rf["json_schema"]
+
+    def test_response_format_json_schema_reaches_sdk(self) -> None:
+        """Test that `response_format` from json_schema method is sent to the SDK."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(
+            {
+                **_SIMPLE_RESPONSE_DICT,
+                "choices": [
+                    {
+                        "message": {
+                            "role": "assistant",
+                            "content": '{"location": "SF"}',
+                        },
+                        "finish_reason": "stop",
+                        "index": 0,
+                    }
+                ],
+            }
+        )
+
+        structured = model.with_structured_output(GetWeather, method="json_schema")
+        structured.invoke("weather in SF")
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert "response_format" in call_kwargs
+        assert call_kwargs["response_format"]["type"] == "json_schema"
+
+    def test_response_format_json_mode_reaches_sdk(self) -> None:
+        """Test that `response_format` from json_mode method is sent to the SDK."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(
+            {
+                **_SIMPLE_RESPONSE_DICT,
+                "choices": [
+                    {
+                        "message": {
+                            "role": "assistant",
+                            "content": '{"location": "SF"}',
+                        },
+                        "finish_reason": "stop",
+                        "index": 0,
+                    }
+                ],
+            }
+        )
+
+        structured = model.with_structured_output(GetWeather, method="json_mode")
+        structured.invoke("weather in SF")
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert "response_format" in call_kwargs
+        assert call_kwargs["response_format"]["type"] == "json_object"
+
+    def test_include_raw_returns_raw_and_parsed_on_success(self) -> None:
+        """Test that `include_raw=True` returns raw message, parsed output, no error."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_TOOL_RESPONSE_DICT)
+
+        structured = model.with_structured_output(
+            GetWeather, method="function_calling", include_raw=True
+        )
+        result = structured.invoke("weather in SF")
+        assert isinstance(result, dict)
+        assert "raw" in result
+        assert "parsed" in result
+        assert "parsing_error" in result
+        assert isinstance(result["raw"], AIMessage)
+        assert result["parsing_error"] is None
+        # PydanticToolsParser returns a Pydantic instance, not a dict
+        assert isinstance(result["parsed"], GetWeather)
+        assert result["parsed"].location == "San Francisco"
+
+    def test_include_raw_preserves_raw_on_parse_failure(self) -> None:
+        """Test that `include_raw=True` still returns the raw message on parse error."""
+        model = _make_model()
+        model.client = MagicMock()
+        # Return a tool call whose arguments fail Pydantic validation
+        # (missing required field "location")
+        bad_tool_response: dict[str, Any] = {
+            **_SIMPLE_RESPONSE_DICT,
+            "choices": [
+                {
+                    "message": {
+                        "role": "assistant",
+                        "content": None,
+                        "tool_calls": [
+                            {
+                                "id": "call_bad",
+                                "type": "function",
+                                "function": {
+                                    "name": "GetWeather",
+                                    "arguments": '{"wrong_field": "oops"}',
+                                },
+                            }
+                        ],
+                    },
+                    "finish_reason": "tool_calls",
+                    "index": 0,
+                }
+            ],
+        }
+        model.client.chat.send.return_value = _make_sdk_response(bad_tool_response)
+
+        structured = model.with_structured_output(
+            GetWeather, method="function_calling", include_raw=True
+        )
+        result = structured.invoke("weather in SF")
+        assert isinstance(result, dict)
+        assert "raw" in result
+        assert isinstance(result["raw"], AIMessage)
+        # Raw response should have the tool call even though parsing failed
+        assert len(result["raw"].tool_calls) == 1
+        # Parsed should be None since Pydantic validation failed
+        assert result["parsed"] is None
+        # parsing_error should capture the validation exception
+        assert result["parsing_error"] is not None
+
+
+# ===========================================================================
+# Multiple choices (n > 1) response tests
+# ===========================================================================
+
+
+class TestMultipleChoices:
+    """Tests for handling responses with `n > 1`."""
+
+    def test_multiple_choices_in_response(self) -> None:
+        """Test that multiple choices in a response produce multiple generations."""
+        model = _make_model(n=2)
+        response_dict: dict[str, Any] = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "Answer A"},
+                    "finish_reason": "stop",
+                    "index": 0,
+                },
+                {
+                    "message": {"role": "assistant", "content": "Answer B"},
+                    "finish_reason": "stop",
+                    "index": 1,
+                },
+            ],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 10, "total_tokens": 20},
+        }
+        result = model._create_chat_result(response_dict)
+        assert len(result.generations) == 2
+        assert result.generations[0].message.content == "Answer A"
+        assert result.generations[1].message.content == "Answer B"
+
+
+# ===========================================================================
+# Environment variable configuration tests
+# ===========================================================================
+
+
+class TestEnvironmentConfiguration:
+    """Tests for environment variable based configuration."""
+
+    def test_base_url_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test that OPENROUTER_API_BASE env var sets the base URL."""
+        monkeypatch.setenv("OPENROUTER_API_KEY", "env-key")
+        monkeypatch.setenv("OPENROUTER_API_BASE", "https://custom.example.com")
+        model = ChatOpenRouter(model=MODEL_NAME)
+        assert model.openrouter_api_base == "https://custom.example.com"
+
+    def test_app_url_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test that OPENROUTER_APP_URL env var sets the app URL."""
+        monkeypatch.setenv("OPENROUTER_API_KEY", "env-key")
+        monkeypatch.setenv("OPENROUTER_APP_URL", "https://myapp.com")
+        model = ChatOpenRouter(model=MODEL_NAME)
+        assert model.app_url == "https://myapp.com"
+
+    def test_app_title_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test that OPENROUTER_APP_TITLE env var sets the app title."""
+        monkeypatch.setenv("OPENROUTER_API_KEY", "env-key")
+        monkeypatch.setenv("OPENROUTER_APP_TITLE", "My LangChain App")
+        model = ChatOpenRouter(model=MODEL_NAME)
+        assert model.app_title == "My LangChain App"
