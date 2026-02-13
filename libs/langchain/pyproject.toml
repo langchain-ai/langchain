@@ -99,7 +99,7 @@ test_integration = [
     "langchain-text-splitters",
 ]
 lint = [
-    "ruff>=0.14.11,<0.16.0",
+    "ruff>=0.15.0,<0.16.0",
     "cffi<1.17.1; python_version < \"3.10\"",
     "cffi; python_version >= \"3.10\"",
 ]
