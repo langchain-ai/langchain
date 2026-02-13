@@ -1,4 +1,5 @@
 """Test ChonkieTextSplitter functionality."""
+# ruff: noqa: PLC0415
 
 import pytest
 from langchain_core.documents import Document
