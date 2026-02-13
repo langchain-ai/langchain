@@ -1042,7 +1042,11 @@ class TestStreamingChunks:
         }
         message_chunk = _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
         assert isinstance(message_chunk, AIMessageChunk)
-        assert "tool_calls" in message_chunk.additional_kwargs
+        assert len(message_chunk.tool_call_chunks) == 1
+        assert message_chunk.tool_call_chunks[0]["name"] == "get_weather"
+        assert message_chunk.tool_call_chunks[0]["args"] == '{"loc'
+        assert message_chunk.tool_call_chunks[0]["id"] == "call_1"
+        assert message_chunk.tool_call_chunks[0]["index"] == 0
 
     def test_chunk_with_user_role(self) -> None:
         """Test that a chunk with role=user produces HumanMessageChunk."""
