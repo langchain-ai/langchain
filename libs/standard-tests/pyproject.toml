@@ -51,7 +51,7 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 [dependency-groups]
 test = ["langchain-core"]
 test_integration = []
-lint = ["ruff>=0.14.11,<0.16.0"]
+lint = ["ruff>=0.15.0,<0.16.0"]
 typing = [
     "mypy>=1.19.1,<1.20.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
