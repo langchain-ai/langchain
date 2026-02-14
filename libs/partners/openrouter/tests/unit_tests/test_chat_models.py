@@ -783,7 +783,6 @@ class TestBindTools:
         assert "strict" not in tools[0]["function"]
 
 
-
 # ===========================================================================
 # with_structured_output tests
 # ===========================================================================
@@ -2391,9 +2390,7 @@ class TestStreamingErrors:
                 "id": "gen-logprobs",
             },
             {
-                "choices": [
-                    {"delta": {}, "finish_reason": "stop", "index": 0}
-                ],
+                "choices": [{"delta": {}, "finish_reason": "stop", "index": 0}],
                 "model": MODEL_NAME,
                 "object": "chat.completion.chunk",
                 "created": 1700000000.0,
@@ -2427,4 +2424,6 @@ class TestStreamingErrors:
             result = _convert_chunk_to_message_chunk(chunk_data, AIMessageChunk)
             assert isinstance(result, AIMessageChunk)
             # Should have warned about the malformed tool call
-            assert any("malformed tool call chunk" in str(warning.message) for warning in w)
+            assert any(
+                "malformed tool call chunk" in str(warning.message) for warning in w
+            )

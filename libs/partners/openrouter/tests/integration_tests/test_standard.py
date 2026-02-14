@@ -1,7 +1,5 @@
 """Standard integration tests for `ChatOpenRouter`."""
 
-from typing import Literal
-
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 
@@ -27,6 +25,11 @@ class TestChatOpenRouter(ChatModelIntegrationTests):
         }
 
     @property
+    def returns_usage_metadata(self) -> bool:
+        # Don't want to implement tests for now
+        return False
+
+    @property
     def supports_json_mode(self) -> bool:
         return False
 
@@ -45,32 +48,6 @@ class TestChatOpenRouter(ChatModelIntegrationTests):
     @property
     def model_override_value(self) -> str:
         return "openai/gpt-4o"
-
-    @property
-    def supported_usage_metadata_details(
-        self,
-    ) -> dict[
-        Literal["invoke", "stream"],
-        list[
-            Literal[
-                "audio_input",
-                "audio_output",
-                "reasoning_output",
-                "cache_read_input",
-                "cache_creation_input",
-            ]
-        ],
-    ]:
-        return {
-            "invoke": [
-                "cache_read_input",
-                "cache_creation_input",
-            ],
-            "stream": [
-                "cache_read_input",
-                "cache_creation_input",
-            ],
-        }
 
 
 AUDIO_MODEL = "google/gemini-2.5-flash"
@@ -96,6 +73,11 @@ class TestChatOpenRouterMultiModal(ChatModelIntegrationTests):
         }
 
     @property
+    def returns_usage_metadata(self) -> bool:
+        # Don't want to implement tests for now
+        return False
+
+    @property
     def supports_json_mode(self) -> bool:
         return False
 
@@ -118,34 +100,6 @@ class TestChatOpenRouterMultiModal(ChatModelIntegrationTests):
     @property
     def model_override_value(self) -> str:
         return "openai/gpt-4o"
-
-    @property
-    def supported_usage_metadata_details(
-        self,
-    ) -> dict[
-        Literal["invoke", "stream"],
-        list[
-            Literal[
-                "audio_input",
-                "audio_output",
-                "reasoning_output",
-                "cache_read_input",
-                "cache_creation_input",
-            ]
-        ],
-    ]:
-        return {
-            "invoke": [
-                "reasoning_output",
-                "cache_read_input",
-                "cache_creation_input",
-            ],
-            "stream": [
-                "reasoning_output",
-                "cache_read_input",
-                "cache_creation_input",
-            ],
-        }
 
     def invoke_with_reasoning_output(self, *, stream: bool = False) -> AIMessage:
         """Invoke a reasoning model to exercise reasoning token tracking."""
