@@ -199,7 +199,7 @@ class ChatOpenRouter(BaseChatModel):
     stop: list[str] | str | None = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
 
-    n: int = 1
+    n: int = Field(default=1, ge=1)
     """Number of chat completions to generate for each prompt."""
 
     streaming: bool = False
@@ -277,13 +277,10 @@ class ChatOpenRouter(BaseChatModel):
         return values
 
     @model_validator(mode="after")
-    def validate_environment(self) -> Self:  # noqa: C901
+    def validate_environment(self) -> Self:
         """Validate configuration and build the SDK client."""
         if not (self.openrouter_api_key and self.openrouter_api_key.get_secret_value()):
             msg = "OPENROUTER_API_KEY must be set."
-            raise ValueError(msg)
-        if self.n < 1:
-            msg = "n must be at least 1."
             raise ValueError(msg)
         if self.n > 1 and self.streaming:
             msg = "n must be 1 when streaming."
@@ -426,7 +423,7 @@ class ChatOpenRouter(BaseChatModel):
         response = await self.client.chat.send_async(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
-    def _stream(  # noqa: C901, PLR0912
+    def _stream(  # noqa: C901
         self,
         messages: list[BaseMessage],
         stop: list[str] | None = None,
@@ -459,8 +456,6 @@ class ChatOpenRouter(BaseChatModel):
                 # Include response-level metadata on the final chunk
                 response_model = chunk_dict.get("model")
                 generation_info["model_name"] = response_model or self.model_name
-                if response_model:
-                    generation_info["model"] = response_model
                 if system_fingerprint := chunk_dict.get("system_fingerprint"):
                     generation_info["system_fingerprint"] = system_fingerprint
                 if native_finish_reason := choice.get("native_finish_reason"):
@@ -468,7 +463,7 @@ class ChatOpenRouter(BaseChatModel):
                 if response_id := chunk_dict.get("id"):
                     generation_info["id"] = response_id
                 if created := chunk_dict.get("created"):
-                    generation_info["created"] = created
+                    generation_info["created"] = int(created)
                 if object_ := chunk_dict.get("object"):
                     generation_info["object"] = object_
             logprobs = choice.get("logprobs")
@@ -494,7 +489,7 @@ class ChatOpenRouter(BaseChatModel):
                 )
             yield generation_chunk
 
-    async def _astream(  # noqa: C901, PLR0912
+    async def _astream(  # noqa: C901
         self,
         messages: list[BaseMessage],
         stop: list[str] | None = None,
@@ -529,8 +524,6 @@ class ChatOpenRouter(BaseChatModel):
                 # Include response-level metadata on the final chunk
                 response_model = chunk_dict.get("model")
                 generation_info["model_name"] = response_model or self.model_name
-                if response_model:
-                    generation_info["model"] = response_model
                 if system_fingerprint := chunk_dict.get("system_fingerprint"):
                     generation_info["system_fingerprint"] = system_fingerprint
                 if native_finish_reason := choice.get("native_finish_reason"):
@@ -538,7 +531,7 @@ class ChatOpenRouter(BaseChatModel):
                 if response_id := chunk_dict.get("id"):
                     generation_info["id"] = response_id
                 if created := chunk_dict.get("created"):
-                    generation_info["created"] = created
+                    generation_info["created"] = int(created)  # UNIX timestamp
                 if object_ := chunk_dict.get("object"):
                     generation_info["object"] = object_
             logprobs = choice.get("logprobs")
@@ -613,7 +606,7 @@ class ChatOpenRouter(BaseChatModel):
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
-    def _create_chat_result(self, response: Any) -> ChatResult:  # noqa: C901, PLR0912
+    def _create_chat_result(self, response: Any) -> ChatResult:  # noqa: C901
         """Create a `ChatResult` from an OpenRouter SDK response."""
         if not isinstance(response, dict):
             response = response.model_dump(by_alias=True)
@@ -646,8 +639,6 @@ class ChatOpenRouter(BaseChatModel):
             if token_usage and isinstance(message, AIMessage):
                 message.usage_metadata = _create_usage_metadata(token_usage)
             if isinstance(message, AIMessage):
-                if response_model:
-                    message.response_metadata["model"] = response_model
                 if system_fingerprint:
                     message.response_metadata["system_fingerprint"] = system_fingerprint
                 if native_finish_reason := res.get("native_finish_reason"):
@@ -671,7 +662,7 @@ class ChatOpenRouter(BaseChatModel):
         if response_id := response.get("id"):
             llm_output["id"] = response_id
         if created := response.get("created"):
-            llm_output["created"] = created
+            llm_output["created"] = int(created)
         if object_ := response.get("object"):
             llm_output["object"] = object_
         return ChatResult(generations=generations, llm_output=llm_output)
@@ -682,7 +673,6 @@ class ChatOpenRouter(BaseChatModel):
         *,
         tool_choice: dict | str | bool | None = None,
         strict: bool | None = None,
-        parallel_tool_calls: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
@@ -698,15 +688,8 @@ class ChatOpenRouter(BaseChatModel):
 
                 If `None`, the `strict` argument will not be passed to
                 the model.
-            parallel_tool_calls: If `False`, the model will only request one
-                tool call at a time.
-
-                Defaults to `None` (no specification, which allows parallel
-                tool use).
             **kwargs: Any additional parameters.
         """
-        if parallel_tool_calls is not None:
-            kwargs["parallel_tool_calls"] = parallel_tool_calls
         formatted_tools = [
             convert_to_openai_tool(tool, strict=strict) for tool in tools
         ]
@@ -1052,7 +1035,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:  # noqa: 
     return ChatMessage(content=_dict.get("content", ""), role=role)
 
 
-def _convert_chunk_to_message_chunk(  # noqa: C901
+def _convert_chunk_to_message_chunk(  # noqa: C901, PLR0911
     chunk: Mapping[str, Any], default_class: type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     """Convert a streaming chunk dict to a LangChain message chunk.
@@ -1082,10 +1065,10 @@ def _convert_chunk_to_message_chunk(  # noqa: C901
                         index=rtc["index"],
                     )
                 )
-            except KeyError:  # noqa: PERF203
+            except (KeyError, TypeError, AttributeError):  # noqa: PERF203
                 warnings.warn(
                     f"Skipping malformed tool call chunk during streaming: "
-                    f"missing required key in {rtc!r}.",
+                    f"unexpected structure in {rtc!r}.",
                     stacklevel=2,
                 )
 
@@ -1112,8 +1095,15 @@ def _convert_chunk_to_message_chunk(  # noqa: C901
         return ToolMessageChunk(
             content=content, tool_call_id=_dict.get("tool_call_id", "")
         )
-    if role or default_class == ChatMessageChunk:
+    if role:
+        warnings.warn(
+            f"Unrecognized streaming chunk role '{role}' from OpenRouter. "
+            f"Falling back to ChatMessageChunk.",
+            stacklevel=2,
+        )
         return ChatMessageChunk(content=content, role=role)
+    if default_class is ChatMessageChunk:
+        return ChatMessageChunk(content=content, role=role or "")
     return default_class(content=content)  # type: ignore[call-arg]
 
 

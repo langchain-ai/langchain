@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import Any, Literal
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -549,12 +550,12 @@ class TestMockedGenerate:
         ]
         assert len(final) == 1
         meta = final[0].response_metadata
-        assert meta["model"] == "anthropic/claude-sonnet-4-5"
+        assert meta["model_name"] == "anthropic/claude-sonnet-4-5"
         assert meta["system_fingerprint"] == "fp_stream123"
         assert meta["native_finish_reason"] == "end_turn"
         assert meta["finish_reason"] == "stop"
         assert meta["id"] == "gen-stream-meta"
-        assert meta["created"] == 1700000000.0
+        assert meta["created"] == 1700000000
         assert meta["object"] == "chat.completion.chunk"
 
     async def test_astream_response_metadata_fields(self) -> None:
@@ -601,11 +602,11 @@ class TestMockedGenerate:
         ]
         assert len(final) == 1
         meta = final[0].response_metadata
-        assert meta["model"] == "anthropic/claude-sonnet-4-5"
+        assert meta["model_name"] == "anthropic/claude-sonnet-4-5"
         assert meta["system_fingerprint"] == "fp_async123"
         assert meta["native_finish_reason"] == "end_turn"
         assert meta["id"] == "gen-astream-meta"
-        assert meta["created"] == 1700000000.0
+        assert meta["created"] == 1700000000
         assert meta["object"] == "chat.completion.chunk"
 
 
@@ -781,19 +782,6 @@ class TestBindTools:
         tools = bound.kwargs["tools"]
         assert "strict" not in tools[0]["function"]
 
-    def test_bind_tools_parallel_tool_calls_false(self) -> None:
-        """Test that parallel_tool_calls=False is forwarded."""
-        model = _make_model()
-        bound = model.bind_tools([GetWeather], parallel_tool_calls=False)
-        assert isinstance(bound, RunnableBinding)
-        assert bound.kwargs["parallel_tool_calls"] is False
-
-    def test_bind_tools_parallel_tool_calls_not_set_by_default(self) -> None:
-        """Test that parallel_tool_calls is not set when not provided."""
-        model = _make_model()
-        bound = model.bind_tools([GetWeather])
-        assert isinstance(bound, RunnableBinding)
-        assert "parallel_tool_calls" not in bound.kwargs
 
 
 # ===========================================================================
@@ -1195,13 +1183,12 @@ class TestCreateChatResult:
         assert len(msg.tool_calls) == 1
         assert msg.tool_calls[0]["name"] == "GetWeather"
 
-    def test_response_model_in_metadata(self) -> None:
-        """Test that the response model is included in response_metadata."""
+    def test_response_model_in_llm_output(self) -> None:
+        """Test that the response model is included in llm_output."""
         model = _make_model()
         result = model._create_chat_result(_SIMPLE_RESPONSE_DICT)
-        msg = result.generations[0].message
-        assert isinstance(msg, AIMessage)
-        assert msg.response_metadata["model"] == MODEL_NAME
+        assert result.llm_output is not None
+        assert result.llm_output["model_name"] == MODEL_NAME
 
     def test_response_model_propagated_to_llm_output(self) -> None:
         """Test that llm_output uses response model when available."""
@@ -1273,7 +1260,7 @@ class TestCreateChatResult:
         result = model._create_chat_result(_SIMPLE_RESPONSE_DICT)
         assert result.llm_output is not None
         assert result.llm_output["id"] == "gen-abc123"
-        assert result.llm_output["created"] == 1700000000.0
+        assert result.llm_output["created"] == 1700000000
         assert result.llm_output["object"] == "chat.completion"
 
     def test_float_token_usage_normalized_to_int_in_usage_metadata(self) -> None:
@@ -1584,7 +1571,7 @@ class TestErrorPaths:
 
     def test_n_less_than_1_raises(self) -> None:
         """Test that n < 1 raises ValueError."""
-        with pytest.raises(ValueError, match="n must be at least 1"):
+        with pytest.raises(ValueError, match="greater than or equal to 1"):
             _make_model(n=0)
 
     def test_n_greater_than_1_with_streaming_raises(self) -> None:
@@ -2288,3 +2275,156 @@ class TestEnvironmentConfiguration:
         monkeypatch.setenv("OPENROUTER_APP_TITLE", "My LangChain App")
         model = ChatOpenRouter(model=MODEL_NAME)
         assert model.app_title == "My LangChain App"
+
+
+# ===========================================================================
+# Streaming error handling tests
+# ===========================================================================
+
+
+class TestStreamingErrors:
+    """Tests for error handling during streaming."""
+
+    def test_stream_error_chunk_raises(self) -> None:
+        """Test that a streaming error chunk raises ValueError."""
+        model = _make_model()
+        model.client = MagicMock()
+        error_chunks: list[dict[str, Any]] = [
+            {
+                "error": {"code": 429, "message": "Rate limit exceeded"},
+            },
+        ]
+        model.client.chat.send.return_value = _MockSyncStream(error_chunks)
+        with pytest.raises(ValueError, match="Rate limit exceeded"):
+            list(model.stream("Hello"))
+
+    def test_stream_error_chunk_without_message(self) -> None:
+        """Test that a streaming error chunk without a message still raises."""
+        model = _make_model()
+        model.client = MagicMock()
+        error_chunks: list[dict[str, Any]] = [
+            {
+                "error": {"code": 500},
+            },
+        ]
+        model.client.chat.send.return_value = _MockSyncStream(error_chunks)
+        with pytest.raises(ValueError, match="OpenRouter API returned an error"):
+            list(model.stream("Hello"))
+
+    def test_stream_heartbeat_chunk_skipped(self) -> None:
+        """Test that empty heartbeat chunks are silently skipped."""
+        model = _make_model()
+        model.client = MagicMock()
+        chunks_with_heartbeat: list[dict[str, Any]] = [
+            # Heartbeat -- no choices, no error
+            {"id": "heartbeat", "object": "chat.completion.chunk", "created": 0},
+            *[dict(c) for c in _STREAM_CHUNKS],
+        ]
+        model.client.chat.send.return_value = _MockSyncStream(chunks_with_heartbeat)
+        chunks = list(model.stream("Hello"))
+        # Should still produce content from the real chunks
+        full_content = "".join(c.content for c in chunks if isinstance(c.content, str))
+        assert "Hello" in full_content
+
+    async def test_astream_error_chunk_raises(self) -> None:
+        """Test that an async streaming error chunk raises ValueError."""
+        model = _make_model()
+        model.client = MagicMock()
+        error_chunks: list[dict[str, Any]] = [
+            {
+                "error": {"code": 429, "message": "Rate limit exceeded"},
+            },
+        ]
+        model.client.chat.send_async = AsyncMock(
+            return_value=_MockAsyncStream(error_chunks)
+        )
+        with pytest.raises(ValueError, match="Rate limit exceeded"):
+            chunks = [c async for c in model.astream("Hello")]  # noqa: F841
+
+    async def test_astream_heartbeat_chunk_skipped(self) -> None:
+        """Test that empty heartbeat chunks are skipped in async streaming."""
+        model = _make_model()
+        model.client = MagicMock()
+        chunks_with_heartbeat: list[dict[str, Any]] = [
+            {"id": "heartbeat", "object": "chat.completion.chunk", "created": 0},
+            *[dict(c) for c in _STREAM_CHUNKS],
+        ]
+        model.client.chat.send_async = AsyncMock(
+            return_value=_MockAsyncStream(chunks_with_heartbeat)
+        )
+        chunks = [c async for c in model.astream("Hello")]
+        full_content = "".join(c.content for c in chunks if isinstance(c.content, str))
+        assert "Hello" in full_content
+
+    async def test_ainvoke_with_streaming_flag(self) -> None:
+        """Test that ainvoke delegates to _astream when streaming=True."""
+        model = _make_model(streaming=True)
+        model.client = MagicMock()
+        model.client.chat.send_async = AsyncMock(
+            return_value=_MockAsyncStream([dict(c) for c in _STREAM_CHUNKS])
+        )
+        result = await model.ainvoke("Hello")
+        assert isinstance(result, AIMessage)
+        model.client.chat.send_async.assert_awaited_once()
+        call_kwargs = model.client.chat.send_async.call_args[1]
+        assert call_kwargs["stream"] is True
+
+    def test_stream_logprobs_in_response_metadata(self) -> None:
+        """Test that logprobs are propagated in streaming response_metadata."""
+        model = _make_model()
+        model.client = MagicMock()
+        logprobs_data = {
+            "content": [{"token": "Hello", "logprob": -0.5, "top_logprobs": []}]
+        }
+        stream_chunks: list[dict[str, Any]] = [
+            {
+                "choices": [
+                    {
+                        "delta": {"role": "assistant", "content": "Hello"},
+                        "index": 0,
+                        "logprobs": logprobs_data,
+                    }
+                ],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-logprobs",
+            },
+            {
+                "choices": [
+                    {"delta": {}, "finish_reason": "stop", "index": 0}
+                ],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-logprobs",
+            },
+        ]
+        model.client.chat.send.return_value = _MockSyncStream(stream_chunks)
+        chunks = list(model.stream("Hello"))
+        # First chunk should carry logprobs in response_metadata
+        assert chunks[0].response_metadata.get("logprobs") == logprobs_data
+
+    def test_stream_malformed_tool_call_with_null_function(self) -> None:
+        """Test that a tool call chunk with function=None is handled gracefully."""
+        chunk_data: dict[str, Any] = {
+            "choices": [
+                {
+                    "delta": {
+                        "role": "assistant",
+                        "content": "",
+                        "tool_calls": [
+                            {"function": None, "index": 0},
+                        ],
+                    },
+                    "index": 0,
+                }
+            ],
+            "model": MODEL_NAME,
+        }
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = _convert_chunk_to_message_chunk(chunk_data, AIMessageChunk)
+            assert isinstance(result, AIMessageChunk)
+            # Should have warned about the malformed tool call
+            assert any("malformed tool call chunk" in str(warning.message) for warning in w)
