@@ -251,6 +251,24 @@ class TestChatOpenRouterInstantiation:
         ls_params = model._get_ls_params()
         assert ls_params["ls_provider"] == "openrouter"
 
+    def test_ls_params_includes_max_tokens(self) -> None:
+        """Test that ls_max_tokens is set when max_tokens is configured."""
+        model = _make_model(max_tokens=512)
+        ls_params = model._get_ls_params()
+        assert ls_params["ls_max_tokens"] == 512
+
+    def test_ls_params_stop_string_wrapped_in_list(self) -> None:
+        """Test that a string stop value is wrapped in a list for ls_stop."""
+        model = _make_model(stop_sequences="END")
+        ls_params = model._get_ls_params()
+        assert ls_params["ls_stop"] == ["END"]
+
+    def test_ls_params_stop_list_passthrough(self) -> None:
+        """Test that a list stop value is passed through directly."""
+        model = _make_model(stop_sequences=["END", "STOP"])
+        ls_params = model._get_ls_params()
+        assert ls_params["ls_stop"] == ["END", "STOP"]
+
     def test_client_created(self) -> None:
         """Test that OpenRouter SDK client is created."""
         model = _make_model()
@@ -850,7 +868,8 @@ class TestWithStructuredOutput:
         model = _make_model()
         with pytest.warns(match="Defaulting to 'json_schema'"):
             structured = model.with_structured_output(
-                GenerateUsername, method="json_mode"  # type: ignore[arg-type]
+                GenerateUsername,
+                method="json_mode",  # type: ignore[arg-type]
             )
         bound = structured.first  # type: ignore[attr-defined]
         assert isinstance(bound, RunnableBinding)
@@ -882,8 +901,7 @@ class TestWithStructuredOutput:
     def test_with_structured_output_json_mode_with_strict_warns_and_forwards(
         self,
     ) -> None:
-        """Test that json_mode with strict warns, falls back to json_schema, and
-        forwards strict."""
+        """Test json_mode with strict warns and falls back to json_schema."""
         model = _make_model()
         with pytest.warns(match="Defaulting to 'json_schema'"):
             structured = model.with_structured_output(
@@ -1377,6 +1395,45 @@ class TestStreamingChunks:
         assert message_chunk.tool_call_chunks[0]["id"] == "call_1"
         assert message_chunk.tool_call_chunks[0]["index"] == 0
 
+    def test_chunk_with_malformed_tool_call_skips_bad_keeps_good(self) -> None:
+        """Test that a malformed tool call chunk is skipped; valid ones kept."""
+        chunk: dict[str, Any] = {
+            "choices": [
+                {
+                    "delta": {
+                        "tool_calls": [
+                            {
+                                "index": 0,
+                                "id": "call_good",
+                                "type": "function",
+                                "function": {
+                                    "name": "get_weather",
+                                    "arguments": "{}",
+                                },
+                            },
+                            {
+                                "index": 1,
+                                "id": "call_bad",
+                                "type": "function",
+                                # missing "function" key
+                            },
+                        ],
+                    },
+                },
+            ],
+        }
+        import warnings as _warnings  # noqa: PLC0415
+
+        with _warnings.catch_warnings(record=True) as w:
+            _warnings.simplefilter("always")
+            message_chunk = _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
+        assert isinstance(message_chunk, AIMessageChunk)
+        # The valid tool call is preserved; only the bad one is skipped
+        assert len(message_chunk.tool_call_chunks) == 1
+        assert message_chunk.tool_call_chunks[0]["name"] == "get_weather"
+        # A warning was emitted for the malformed chunk
+        assert any("malformed tool call chunk" in str(warning.message) for warning in w)
+
     def test_chunk_with_user_role(self) -> None:
         """Test that a chunk with role=user produces HumanMessageChunk."""
         chunk: dict[str, Any] = {
@@ -1487,6 +1544,22 @@ class TestUsageMetadata:
         assert "input_token_details" in usage
         assert usage["input_token_details"]["cache_creation"] == 80
 
+    def test_zero_token_details_preserved(self) -> None:
+        """Test that zero-value token details are preserved (not dropped)."""
+        usage = _create_usage_metadata(
+            {
+                "prompt_tokens": 100,
+                "completion_tokens": 50,
+                "total_tokens": 150,
+                "prompt_tokens_details": {"cached_tokens": 0},
+                "completion_tokens_details": {"reasoning_tokens": 0},
+            }
+        )
+        assert "input_token_details" in usage
+        assert usage["input_token_details"]["cache_read"] == 0
+        assert "output_token_details" in usage
+        assert usage["output_token_details"]["reasoning"] == 0
+
     def test_alternative_token_key_names(self) -> None:
         """Test fallback to input_tokens/output_tokens key names."""
         usage = _create_usage_metadata(
@@ -1528,6 +1601,43 @@ class TestErrorPaths:
         """Test that n=1 (default) is not in _default_params."""
         model = _make_model()
         assert "n" not in model._default_params
+
+    def test_error_response_raises(self) -> None:
+        """Test that an error response from the API raises ValueError."""
+        model = _make_model()
+        error_response: dict[str, Any] = {
+            "error": {
+                "code": 429,
+                "message": "Rate limit exceeded",
+            },
+        }
+        with pytest.raises(ValueError, match="Rate limit exceeded"):
+            model._create_chat_result(error_response)
+
+    def test_error_response_without_message(self) -> None:
+        """Test that an error response without a message still raises."""
+        model = _make_model()
+        error_response: dict[str, Any] = {
+            "error": {"code": 500},
+        }
+        with pytest.raises(ValueError, match="OpenRouter API returned an error"):
+            model._create_chat_result(error_response)
+
+    def test_empty_choices_raises(self) -> None:
+        """Test that a response with no choices raises ValueError."""
+        model = _make_model()
+        response: dict[str, Any] = {
+            "choices": [],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 0, "total_tokens": 10},
+        }
+        with pytest.raises(ValueError, match="no choices"):
+            model._create_chat_result(response)
+
+    def test_missing_role_raises(self) -> None:
+        """Test that a response message missing 'role' raises ValueError."""
+        d: dict[str, Any] = {"content": "Hello"}
+        with pytest.raises(ValueError, match="missing the 'role' field"):
+            _convert_dict_to_message(d)
 
     def test_unknown_message_type_raises(self) -> None:
         """Test that unknown message types raise TypeError."""
@@ -1928,6 +2038,18 @@ class TestFormatMessageContent:
         result = _format_message_content(content)
         assert result[0]["video_url"]["url"].startswith("data:video/mp4;base64,")
 
+    def test_video_base64_source_type_format(self) -> None:
+        """Test video block using ``source_type`` + ``data`` keys."""
+        block: dict[str, Any] = {
+            "type": "video",
+            "source_type": "base64",
+            "data": "AAAAIGZ0...",
+            "mime_type": "video/webm",
+        }
+        result = _convert_video_block_to_openrouter(block)
+        assert result["type"] == "video_url"
+        assert result["video_url"]["url"] == "data:video/webm;base64,AAAAIGZ0..."
+
     def test_video_block_missing_source_raises(self) -> None:
         """Test that video blocks without url or base64 raise ValueError."""
         block: dict[str, Any] = {"type": "video", "mime_type": "video/mp4"}
@@ -2032,7 +2154,8 @@ class TestStructuredOutputIntegration:
 
         with pytest.warns(match="Defaulting to 'json_schema'"):
             structured = model.with_structured_output(
-                GetWeather, method="json_mode"  # type: ignore[arg-type]
+                GetWeather,
+                method="json_mode",  # type: ignore[arg-type]
             )
         structured.invoke("weather in SF")
         call_kwargs = model.client.chat.send.call_args[1]

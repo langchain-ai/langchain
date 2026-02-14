@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import contextlib
 import json
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
@@ -215,6 +214,9 @@ class ChatOpenRouter(BaseChatModel):
     Controls how many tokens the model allocates for internal chain-of-thought
     reasoning.
 
+    Accepts an `openrouter.components.OpenResponsesReasoningConfig` or an
+    equivalent dict.
+
     Supported keys:
 
     - `effort`: Controls reasoning token budget.
@@ -354,6 +356,21 @@ class ChatOpenRouter(BaseChatModel):
         """Return type of chat model."""
         return "openrouter-chat"
 
+    @property
+    def _identifying_params(self) -> dict[str, Any]:
+        """Get the identifying parameters."""
+        return {
+            "model": self.model_name,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            "top_p": self.top_p,
+            "streaming": self.streaming,
+            "reasoning": self.reasoning,
+            "openrouter_provider": self.openrouter_provider,
+            "route": self.route,
+            "model_kwargs": self.model_kwargs,
+        }
+
     def _get_ls_params(
         self,
         stop: list[str] | None = None,
@@ -409,7 +426,7 @@ class ChatOpenRouter(BaseChatModel):
         response = await self.client.chat.send_async(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
-    def _stream(
+    def _stream(  # noqa: C901, PLR0912
         self,
         messages: list[BaseMessage],
         stop: list[str] | None = None,
@@ -424,6 +441,13 @@ class ChatOpenRouter(BaseChatModel):
         for chunk in self.client.chat.send(messages=message_dicts, **params):
             chunk_dict = chunk.model_dump(by_alias=True)
             if not chunk_dict.get("choices"):
+                if error := chunk_dict.get("error"):
+                    msg = (
+                        f"OpenRouter API returned an error during streaming: "
+                        f"{error.get('message', str(error))} "
+                        f"(code: {error.get('code', 'unknown')})"
+                    )
+                    raise ValueError(msg)
                 continue
             choice = chunk_dict["choices"][0]
             message_chunk = _convert_chunk_to_message_chunk(
@@ -432,9 +456,10 @@ class ChatOpenRouter(BaseChatModel):
             generation_info: dict[str, Any] = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
-                generation_info["model_name"] = self.model_name
                 # Include response-level metadata on the final chunk
-                if response_model := chunk_dict.get("model"):
+                response_model = chunk_dict.get("model")
+                generation_info["model_name"] = response_model or self.model_name
+                if response_model:
                     generation_info["model"] = response_model
                 if system_fingerprint := chunk_dict.get("system_fingerprint"):
                     generation_info["system_fingerprint"] = system_fingerprint
@@ -451,6 +476,7 @@ class ChatOpenRouter(BaseChatModel):
                 generation_info["logprobs"] = logprobs
 
             if generation_info:
+                generation_info["model_provider"] = "openrouter"
                 message_chunk = message_chunk.model_copy(
                     update={"response_metadata": generation_info}
                 )
@@ -468,7 +494,7 @@ class ChatOpenRouter(BaseChatModel):
                 )
             yield generation_chunk
 
-    async def _astream(
+    async def _astream(  # noqa: C901, PLR0912
         self,
         messages: list[BaseMessage],
         stop: list[str] | None = None,
@@ -485,6 +511,13 @@ class ChatOpenRouter(BaseChatModel):
         ):
             chunk_dict = chunk.model_dump(by_alias=True)
             if not chunk_dict.get("choices"):
+                if error := chunk_dict.get("error"):
+                    msg = (
+                        f"OpenRouter API returned an error during streaming: "
+                        f"{error.get('message', str(error))} "
+                        f"(code: {error.get('code', 'unknown')})"
+                    )
+                    raise ValueError(msg)
                 continue
             choice = chunk_dict["choices"][0]
             message_chunk = _convert_chunk_to_message_chunk(
@@ -493,9 +526,10 @@ class ChatOpenRouter(BaseChatModel):
             generation_info: dict[str, Any] = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
-                generation_info["model_name"] = self.model_name
                 # Include response-level metadata on the final chunk
-                if response_model := chunk_dict.get("model"):
+                response_model = chunk_dict.get("model")
+                generation_info["model_name"] = response_model or self.model_name
+                if response_model:
                     generation_info["model"] = response_model
                 if system_fingerprint := chunk_dict.get("system_fingerprint"):
                     generation_info["system_fingerprint"] = system_fingerprint
@@ -512,6 +546,7 @@ class ChatOpenRouter(BaseChatModel):
                 generation_info["logprobs"] = logprobs
 
             if generation_info:
+                generation_info["model_provider"] = "openrouter"
                 message_chunk = message_chunk.model_copy(
                     update={"response_metadata": generation_info}
                 )
@@ -578,7 +613,7 @@ class ChatOpenRouter(BaseChatModel):
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
-    def _create_chat_result(self, response: Any) -> ChatResult:
+    def _create_chat_result(self, response: Any) -> ChatResult:  # noqa: C901, PLR0912
         """Create a `ChatResult` from an OpenRouter SDK response."""
         if not isinstance(response, dict):
             response = response.model_dump(by_alias=True)
@@ -594,11 +629,19 @@ class ChatOpenRouter(BaseChatModel):
         generations = []
         token_usage = response.get("usage") or {}
 
+        choices = response.get("choices", [])
+        if not choices:
+            msg = (
+                "OpenRouter API returned a response with no choices. "
+                "This may indicate a problem with the request or model availability."
+            )
+            raise ValueError(msg)
+
         # Extract top-level response metadata
         response_model = response.get("model")
         system_fingerprint = response.get("system_fingerprint")
 
-        for res in response.get("choices", []):
+        for res in choices:
             message = _convert_dict_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
                 message.usage_metadata = _create_usage_metadata(token_usage)
@@ -867,14 +910,18 @@ def _format_message_content(content: Any) -> Any:
     return content
 
 
-def _convert_message_to_dict(message: BaseMessage) -> dict:  # noqa: C901, PLR0912
-    """Convert a LangChain message to a dictionary.
+def _convert_message_to_dict(message: BaseMessage) -> dict[str, Any]:  # noqa: C901, PLR0912
+    """Convert a LangChain message to an OpenRouter-compatible dict payload.
+
+    Handles role mapping, multimodal content formatting, tool call
+    serialization, and reasoning content preservation for multi-turn
+    conversations.
 
     Args:
         message: The LangChain message.
 
     Returns:
-        The dictionary.
+        A dict suitable for the OpenRouter chat API `messages` parameter.
     """
     message_dict: dict[str, Any]
     if isinstance(message, ChatMessage):
@@ -939,13 +986,17 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:  # noqa: C901, PLR09
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:  # noqa: C901
-    """Convert a dictionary to a LangChain message.
+    """Convert an OpenRouter API response message dict to a LangChain message.
+
+    Extracts tool calls, reasoning content, and maps roles to the appropriate
+    LangChain message type (`HumanMessage`, `AIMessage`, `SystemMessage`,
+    `ToolMessage`, or `ChatMessage`).
 
     Args:
-        _dict: The dictionary.
+        _dict: The message dictionary from the API response.
 
     Returns:
-        The LangChain message.
+        The corresponding LangChain message.
     """
     id_ = _dict.get("id")
     role = _dict.get("role")
@@ -993,10 +1044,15 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:  # noqa: 
             f"Message keys: {list(_dict.keys())}"
         )
         raise ValueError(msg)
+    warnings.warn(
+        f"Unrecognized message role '{role}' from OpenRouter. "
+        f"Falling back to ChatMessage.",
+        stacklevel=2,
+    )
     return ChatMessage(content=_dict.get("content", ""), role=role)
 
 
-def _convert_chunk_to_message_chunk(
+def _convert_chunk_to_message_chunk(  # noqa: C901
     chunk: Mapping[str, Any], default_class: type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     """Convert a streaming chunk dict to a LangChain message chunk.
@@ -1016,16 +1072,22 @@ def _convert_chunk_to_message_chunk(
     tool_call_chunks: list = []
 
     if raw_tool_calls := _dict.get("tool_calls"):
-        with contextlib.suppress(KeyError):
-            tool_call_chunks = [
-                tool_call_chunk(
-                    name=rtc["function"].get("name"),
-                    args=rtc["function"].get("arguments"),
-                    id=rtc.get("id"),
-                    index=rtc["index"],
+        for rtc in raw_tool_calls:
+            try:
+                tool_call_chunks.append(
+                    tool_call_chunk(
+                        name=rtc["function"].get("name"),
+                        args=rtc["function"].get("arguments"),
+                        id=rtc.get("id"),
+                        index=rtc["index"],
+                    )
                 )
-                for rtc in raw_tool_calls
-            ]
+            except KeyError:  # noqa: PERF203
+                warnings.warn(
+                    f"Skipping malformed tool call chunk during streaming: "
+                    f"missing required key in {rtc!r}.",
+                    stacklevel=2,
+                )
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
@@ -1055,7 +1117,11 @@ def _convert_chunk_to_message_chunk(
     return default_class(content=content)  # type: ignore[call-arg]
 
 
-def _lc_tool_call_to_openrouter_tool_call(tool_call: ToolCall) -> dict:
+def _lc_tool_call_to_openrouter_tool_call(tool_call: ToolCall) -> dict[str, Any]:
+    """Convert a LangChain ``ToolCall`` to an OpenRouter tool call dict.
+
+    Serializes `args` (a dict) via `json.dumps`.
+    """
     return {
         "type": "function",
         "id": tool_call["id"],
@@ -1068,7 +1134,12 @@ def _lc_tool_call_to_openrouter_tool_call(tool_call: ToolCall) -> dict:
 
 def _lc_invalid_tool_call_to_openrouter_tool_call(
     invalid_tool_call: InvalidToolCall,
-) -> dict:
+) -> dict[str, Any]:
+    """Convert a LangChain `InvalidToolCall` to an OpenRouter tool call dict.
+
+    Unlike the valid variant, `args` is already a raw string (not a dict) and
+    is passed through as-is.
+    """
     return {
         "type": "function",
         "id": invalid_tool_call["id"],
@@ -1079,7 +1150,7 @@ def _lc_invalid_tool_call_to_openrouter_tool_call(
     }
 
 
-def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
+def _create_usage_metadata(token_usage: dict[str, Any]) -> UsageMetadata:
     """Create usage metadata from OpenRouter token usage response.
 
     OpenRouter may return token counts as floats rather than ints, so all
@@ -1126,8 +1197,10 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
         "total_tokens": total_tokens,
     }
 
-    if filtered_input := {k: v for k, v in input_token_details.items() if v}:
+    filtered_input = {k: v for k, v in input_token_details.items() if v is not None}
+    if filtered_input:
         usage_metadata["input_token_details"] = InputTokenDetails(**filtered_input)  # type: ignore[typeddict-item]
-    if filtered_output := {k: v for k, v in output_token_details.items() if v}:
+    filtered_output = {k: v for k, v in output_token_details.items() if v is not None}
+    if filtered_output:
         usage_metadata["output_token_details"] = OutputTokenDetails(**filtered_output)  # type: ignore[typeddict-item]
     return usage_metadata

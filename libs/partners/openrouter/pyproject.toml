@@ -98,6 +98,7 @@ asyncio_mode = "auto"
     "S311",   # Standard pseudo-random generators are not suitable for cryptographic purposes
     "SLF001", # Private member access
     "PLR2004", # Magic values are fine in tests
+    "D102",
 
     # TODO
     "ARG002", # Unused method argument:
