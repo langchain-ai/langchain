@@ -402,7 +402,8 @@ class ChatOpenRouter(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         _strip_internal_kwargs(params)
-        response = self.client.chat.send(messages=message_dicts, **params)
+        sdk_messages = _wrap_messages_for_sdk(message_dicts)
+        response = self.client.chat.send(messages=sdk_messages, **params)
         return self._create_chat_result(response)
 
     async def _agenerate(
@@ -420,7 +421,8 @@ class ChatOpenRouter(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         _strip_internal_kwargs(params)
-        response = await self.client.chat.send_async(messages=message_dicts, **params)
+        sdk_messages = _wrap_messages_for_sdk(message_dicts)
+        response = await self.client.chat.send_async(messages=sdk_messages, **params)
         return self._create_chat_result(response)
 
     def _stream(  # noqa: C901
@@ -433,9 +435,10 @@ class ChatOpenRouter(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
         _strip_internal_kwargs(params)
+        sdk_messages = _wrap_messages_for_sdk(message_dicts)
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
-        for chunk in self.client.chat.send(messages=message_dicts, **params):
+        for chunk in self.client.chat.send(messages=sdk_messages, **params):
             chunk_dict = chunk.model_dump(by_alias=True)
             if not chunk_dict.get("choices"):
                 if error := chunk_dict.get("error"):
@@ -499,10 +502,11 @@ class ChatOpenRouter(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
         _strip_internal_kwargs(params)
+        sdk_messages = _wrap_messages_for_sdk(message_dicts)
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         async for chunk in await self.client.chat.send_async(
-            messages=message_dicts, **params
+            messages=sdk_messages, **params
         ):
             chunk_dict = chunk.model_dump(by_alias=True)
             if not chunk_dict.get("choices"):
@@ -840,6 +844,66 @@ def _strip_internal_kwargs(params: dict[str, Any]) -> None:
         params.pop(key, None)
 
 
+def _has_file_content_blocks(message_dicts: list[dict[str, Any]]) -> bool:
+    """Return `True` if any message dict contains a `file` content block."""
+    for msg in message_dicts:
+        content = msg.get("content")
+        if isinstance(content, list):
+            for block in content:
+                if isinstance(block, dict) and block.get("type") == "file":
+                    return True
+    return False
+
+
+def _wrap_messages_for_sdk(
+    message_dicts: list[dict[str, Any]],
+) -> list[dict[str, Any]] | list[Any]:
+    """Wrap message dicts as SDK Pydantic models when file blocks are present.
+
+    The OpenRouter Python SDK (v0.6.0) does not include `file` in its
+    `ChatMessageContentItem` discriminated union, so Pydantic validation
+    rejects file content blocks even though the OpenRouter **API** supports
+    them. Using `model_construct` on the SDK's message classes bypasses
+    validation while still producing the correct JSON payload.
+
+    When no file blocks are detected the original dicts are returned unchanged
+    so the normal (validated) code path is preserved.
+
+    Args:
+        message_dicts: Message dicts produced by `_convert_message_to_dict`.
+
+    Returns:
+        The original list when no file blocks are present, or a list of SDK
+        Pydantic model instances otherwise.
+    """
+    if not _has_file_content_blocks(message_dicts):
+        return message_dicts
+
+    try:
+        from openrouter import components  # noqa: PLC0415
+    except ImportError:
+        return message_dicts
+
+    role_to_model: dict[str, type[BaseModel]] = {
+        "user": components.UserMessage,
+        "system": components.SystemMessage,
+        "assistant": components.AssistantMessage,
+        "tool": components.ToolResponseMessage,
+        "developer": components.DeveloperMessage,
+    }
+
+    wrapped: list[Any] = []
+    for msg in message_dicts:
+        model_cls = role_to_model.get(msg.get("role", ""))
+        if model_cls is None:
+            # Unknown role — pass dict through and hope for the best.
+            wrapped.append(msg)
+            continue
+        fields = {k: v for k, v in msg.items() if k != "role"}
+        wrapped.append(model_cls.model_construct(**fields))
+    return wrapped
+
+
 #
 # Type conversion helpers
 #
@@ -868,6 +932,52 @@ def _convert_video_block_to_openrouter(block: dict[str, Any]) -> dict[str, Any]:
     raise ValueError(msg)
 
 
+def _convert_file_block_to_openrouter(block: dict[str, Any]) -> dict[str, Any]:
+    """Convert a LangChain file content block to OpenRouter's `file` format.
+
+    OpenRouter accepts files as::
+
+        {"type": "file", "file": {"filename": "...", "file_data": "..."}}
+
+    where `file_data` is either a public URL or a `data:` URI.
+
+    Args:
+        block: A LangChain file content block.
+
+    Returns:
+        A dict in OpenRouter's `file` format.
+
+    Raises:
+        ValueError: If the block contains neither a URL, base64 data, nor a
+            file ID.
+    """
+    file: dict[str, str] = {}
+
+    # --- resolve file_data ---------------------------------------------------
+    if "url" in block:
+        file["file_data"] = block["url"]
+    elif block.get("source_type") == "base64" or "base64" in block:
+        base64_data = block["data"] if "source_type" in block else block["base64"]
+        mime_type = block.get("mime_type", "application/octet-stream")
+        file["file_data"] = f"data:{mime_type};base64,{base64_data}"
+    elif block.get("source_type") == "id" or "file_id" in block:
+        msg = "OpenRouter does not support file IDs."
+        raise ValueError(msg)
+    else:
+        msg = "File block must have either 'url' or 'base64' data."
+        raise ValueError(msg)
+
+    # --- resolve filename ----------------------------------------------------
+    if filename := block.get("filename"):
+        file["filename"] = filename
+    elif ((extras := block.get("extras")) and "filename" in extras) or (
+        (extras := block.get("metadata")) and "filename" in extras
+    ):
+        file["filename"] = extras["filename"]
+
+    return {"type": "file", "file": file}
+
+
 def _format_message_content(content: Any) -> Any:
     """Format message content for OpenRouter API.
 
@@ -885,6 +995,8 @@ def _format_message_content(content: Any) -> Any:
             if isinstance(block, dict) and is_data_content_block(block):
                 if block.get("type") == "video":
                     formatted.append(_convert_video_block_to_openrouter(block))
+                elif block.get("type") == "file":
+                    formatted.append(_convert_file_block_to_openrouter(block))
                 else:
                     formatted.append(convert_to_openai_data_block(block))
             else:

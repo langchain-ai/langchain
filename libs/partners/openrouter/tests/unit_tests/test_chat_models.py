@@ -26,10 +26,13 @@ from langchain_openrouter.chat_models import (
     ChatOpenRouter,
     _convert_chunk_to_message_chunk,
     _convert_dict_to_message,
+    _convert_file_block_to_openrouter,
     _convert_message_to_dict,
     _convert_video_block_to_openrouter,
     _create_usage_metadata,
     _format_message_content,
+    _has_file_content_blocks,
+    _wrap_messages_for_sdk,
 )
 
 MODEL_NAME = "openai/gpt-4o-mini"
@@ -2042,20 +2045,255 @@ class TestFormatMessageContent:
         with pytest.raises(ValueError, match=r"url.*base64"):
             _convert_video_block_to_openrouter(block)
 
+    # --- file block tests ---
+
+    def test_file_url_block(self) -> None:
+        """Test that file URL blocks are converted to OpenRouter file format."""
+        content = [
+            {"type": "text", "text": "Summarize this document."},
+            {
+                "type": "file",
+                "url": "https://example.com/document.pdf",
+                "mime_type": "application/pdf",
+            },
+        ]
+        result = _format_message_content(content)
+        assert len(result) == 2
+        assert result[0]["type"] == "text"
+        assert result[1] == {
+            "type": "file",
+            "file": {"file_data": "https://example.com/document.pdf"},
+        }
+
+    def test_file_url_block_with_filename(self) -> None:
+        """Test that filename is included when present."""
+        block: dict[str, Any] = {
+            "type": "file",
+            "url": "https://example.com/report.pdf",
+            "mime_type": "application/pdf",
+            "filename": "report.pdf",
+        }
+        result = _convert_file_block_to_openrouter(block)
+        assert result == {
+            "type": "file",
+            "file": {
+                "file_data": "https://example.com/report.pdf",
+                "filename": "report.pdf",
+            },
+        }
+
+    def test_file_base64_block(self) -> None:
+        """Test that base64 file blocks are converted to data URI format."""
+        content = [
+            {
+                "type": "file",
+                "base64": "JVBERi0xLjQ=",
+                "mime_type": "application/pdf",
+                "filename": "doc.pdf",
+            },
+        ]
+        result = _format_message_content(content)
+        assert len(result) == 1
+        assert result[0] == {
+            "type": "file",
+            "file": {
+                "file_data": "data:application/pdf;base64,JVBERi0xLjQ=",
+                "filename": "doc.pdf",
+            },
+        }
+
+    def test_file_base64_source_type_format(self) -> None:
+        """Test file block using ``source_type`` + ``data`` keys."""
+        block: dict[str, Any] = {
+            "type": "file",
+            "source_type": "base64",
+            "data": "JVBERi0xLjQ=",
+            "mime_type": "application/pdf",
+        }
+        result = _convert_file_block_to_openrouter(block)
+        assert result == {
+            "type": "file",
+            "file": {
+                "file_data": "data:application/pdf;base64,JVBERi0xLjQ=",
+            },
+        }
+
+    def test_file_filename_from_extras(self) -> None:
+        """Test filename extraction from extras dict."""
+        block: dict[str, Any] = {
+            "type": "file",
+            "url": "https://example.com/doc.pdf",
+            "extras": {"filename": "my-doc.pdf"},
+        }
+        result = _convert_file_block_to_openrouter(block)
+        assert result["file"]["filename"] == "my-doc.pdf"
+
+    def test_file_filename_from_metadata(self) -> None:
+        """Test filename extraction from metadata dict (backward compat)."""
+        block: dict[str, Any] = {
+            "type": "file",
+            "url": "https://example.com/doc.pdf",
+            "metadata": {"filename": "legacy.pdf"},
+        }
+        result = _convert_file_block_to_openrouter(block)
+        assert result["file"]["filename"] == "legacy.pdf"
+
+    def test_file_id_block_raises(self) -> None:
+        """Test that file ID blocks raise ValueError (unsupported by OpenRouter)."""
+        block: dict[str, Any] = {"type": "file", "file_id": "file-abc123"}
+        with pytest.raises(ValueError, match="file IDs"):
+            _convert_file_block_to_openrouter(block)
+
+    def test_file_block_missing_source_raises(self) -> None:
+        """Test that file blocks without url or base64 raise ValueError."""
+        block: dict[str, Any] = {"type": "file", "mime_type": "application/pdf"}
+        with pytest.raises(ValueError, match=r"url.*base64"):
+            _convert_file_block_to_openrouter(block)
+
     def test_mixed_multimodal_content(self) -> None:
-        """Test formatting a message with text, image, audio, and video blocks."""
+        """Test formatting a message with text, image, audio, video, and file."""
         content = [
             {"type": "text", "text": "Analyze these inputs."},
             {"type": "image", "url": "https://example.com/img.png"},
             {"type": "audio", "base64": "audio_data", "mime_type": "audio/mp3"},
             {"type": "video", "url": "https://example.com/clip.mp4"},
+            {"type": "file", "url": "https://example.com/doc.pdf"},
         ]
         result = _format_message_content(content)
-        assert len(result) == 4
+        assert len(result) == 5
         assert result[0]["type"] == "text"
         assert result[1]["type"] == "image_url"
         assert result[2]["type"] == "input_audio"
         assert result[3]["type"] == "video_url"
+        assert result[4] == {
+            "type": "file",
+            "file": {"file_data": "https://example.com/doc.pdf"},
+        }
+
+
+class TestWrapMessagesForSdk:
+    """Tests for ``_wrap_messages_for_sdk`` SDK validation bypass."""
+
+    def test_no_file_blocks_returns_dicts(self) -> None:
+        """Messages without file blocks should be returned as plain dicts."""
+        msgs: list[dict[str, Any]] = [
+            {"role": "user", "content": "Hello"},
+            {"role": "assistant", "content": "Hi there"},
+        ]
+        result = _wrap_messages_for_sdk(msgs)
+        # Should be the exact same list object (no wrapping needed)
+        assert result is msgs
+
+    def test_has_file_content_blocks_detection(self) -> None:
+        """Test ``_has_file_content_blocks`` detects file blocks correctly."""
+        assert not _has_file_content_blocks([{"role": "user", "content": "plain text"}])
+        assert not _has_file_content_blocks(
+            [
+                {
+                    "role": "user",
+                    "content": [{"type": "text", "text": "hi"}],
+                }
+            ]
+        )
+        assert _has_file_content_blocks(
+            [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "hi"},
+                        {
+                            "type": "file",
+                            "file": {"file_data": "https://example.com/a.pdf"},
+                        },
+                    ],
+                }
+            ]
+        )
+
+    def test_wraps_as_pydantic_models(self) -> None:
+        """File-containing messages should be wrapped as SDK Pydantic models."""
+        from openrouter import components  # noqa: PLC0415
+
+        msgs: list[dict[str, Any]] = [
+            {"role": "system", "content": "You are helpful."},
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Summarize this."},
+                    {
+                        "type": "file",
+                        "file": {
+                            "file_data": "https://example.com/doc.pdf",
+                            "filename": "doc.pdf",
+                        },
+                    },
+                ],
+            },
+        ]
+        result = _wrap_messages_for_sdk(msgs)
+        assert len(result) == 2
+        assert isinstance(result[0], components.SystemMessage)
+        assert isinstance(result[1], components.UserMessage)
+
+    def test_wrapped_serializes_correctly(self) -> None:
+        """Wrapped models should serialize to the correct JSON payload."""
+        import warnings  # noqa: PLC0415
+
+        msgs: list[dict[str, Any]] = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Read this."},
+                    {
+                        "type": "file",
+                        "file": {"file_data": "data:application/pdf;base64,abc"},
+                    },
+                ],
+            },
+        ]
+        result = _wrap_messages_for_sdk(msgs)
+        wrapped_msg = result[0]
+        assert hasattr(wrapped_msg, "model_dump")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            dumped = wrapped_msg.model_dump(by_alias=True, exclude_none=True)
+        assert dumped["role"] == "user"
+        assert dumped["content"][0] == {"type": "text", "text": "Read this."}
+        assert dumped["content"][1] == {
+            "type": "file",
+            "file": {"file_data": "data:application/pdf;base64,abc"},
+        }
+
+    def test_all_roles_wrapped(self) -> None:
+        """All standard roles should be wrapped correctly."""
+        from openrouter import components  # noqa: PLC0415
+
+        msgs: list[dict[str, Any]] = [
+            {"role": "system", "content": "System prompt."},
+            {
+                "role": "user",
+                "content": [
+                    {"type": "file", "file": {"file_data": "https://x.com/f.pdf"}},
+                ],
+            },
+            {
+                "role": "assistant",
+                "content": "Summary here.",
+                "tool_calls": [
+                    {
+                        "id": "c1",
+                        "type": "function",
+                        "function": {"name": "fn", "arguments": "{}"},
+                    }
+                ],
+            },
+            {"role": "tool", "content": "result", "tool_call_id": "c1"},
+        ]
+        result = _wrap_messages_for_sdk(msgs)
+        assert isinstance(result[0], components.SystemMessage)
+        assert isinstance(result[1], components.UserMessage)
+        assert isinstance(result[2], components.AssistantMessage)
+        assert isinstance(result[3], components.ToolResponseMessage)
 
 
 # ===========================================================================
