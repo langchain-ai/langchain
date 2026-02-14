@@ -1,5 +1,7 @@
 """Standard integration tests for `ChatOpenRouter`."""
 
+from typing import Literal
+
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_openrouter.chat_models import ChatOpenRouter
@@ -25,15 +27,56 @@ class TestChatOpenRouter(ChatModelIntegrationTests):
 
     @property
     def supports_json_mode(self) -> bool:
-        """Whether the chat model supports JSON mode."""
         return False
 
     @property
     def supports_image_inputs(self) -> bool:
-        """Whether the chat model supports image inputs."""
         return True
 
     @property
     def supports_image_urls(self) -> bool:
-        """Whether the chat model supports image inputs from URLs."""
         return True
+
+    @property
+    def supports_audio_inputs(self) -> bool:
+        return True
+
+    @property
+    def supports_video_inputs(self) -> bool:
+        return True
+
+    @property
+    def supports_pdf_inputs(self) -> bool:
+        return True
+
+    @property
+    def model_override_value(self) -> str:
+        return "openai/gpt-4o"
+
+    @property
+    def supported_usage_metadata_details(
+        self,
+    ) -> dict[
+        Literal["invoke", "stream"],
+        list[
+            Literal[
+                "audio_input",
+                "audio_output",
+                "reasoning_output",
+                "cache_read_input",
+                "cache_creation_input",
+            ]
+        ],
+    ]:
+        return {
+            "invoke": [
+                "reasoning_output",
+                "cache_read_input",
+                "cache_creation_input",
+            ],
+            "stream": [
+                "reasoning_output",
+                "cache_read_input",
+                "cache_creation_input",
+            ],
+        }

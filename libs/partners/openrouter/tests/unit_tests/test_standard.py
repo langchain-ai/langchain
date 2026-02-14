@@ -37,3 +37,27 @@ class TestChatOpenRouterUnit(ChatModelUnitTests):
             "model": MODEL_NAME,
             "api_key": "test-api-key",
         }
+
+    @property
+    def supports_image_inputs(self) -> bool:
+        return True
+
+    @property
+    def supports_image_urls(self) -> bool:
+        return True
+
+    @property
+    def supports_audio_inputs(self) -> bool:
+        return True
+
+    @property
+    def supports_video_inputs(self) -> bool:
+        return True
+
+    @property
+    def supports_pdf_inputs(self) -> bool:
+        return True
+
+    @property
+    def model_override_value(self) -> str:
+        return "openai/gpt-4o"
