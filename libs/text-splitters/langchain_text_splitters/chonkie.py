@@ -55,8 +55,6 @@ class ChonkieTextSplitter(TextSplitter):
         Raises:
             ImportError: If Chonkie is not installed.
         """
-        import inspect
-
         if "chunk_overlap" not in kwargs:
             kwargs["chunk_overlap"] = 0
 
