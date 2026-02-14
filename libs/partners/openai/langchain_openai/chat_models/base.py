@@ -233,8 +233,12 @@ def _sanitize_chat_completions_content(content: str | list[dict]) -> str | list[
     if isinstance(content, list):
         sanitized = []
         for block in content:
-            if isinstance(block, dict) and block.get("type") == "text":
-                sanitized.append({"type": "text", "text": block.get("text", "")})
+            if (
+                isinstance(block, dict)
+                and block.get("type") == "text"
+                and "text" in block
+            ):
+                sanitized.append({"type": "text", "text": block["text"]})
             else:
                 sanitized.append(block)
         return sanitized
