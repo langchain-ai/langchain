@@ -209,7 +209,7 @@ class ChatOpenRouter(BaseChatModel):
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Any extra model parameters for the OpenRouter API."""
 
-    openrouter_reasoning: dict[str, Any] | None = None
+    reasoning: dict[str, Any] | None = None
     """Reasoning settings to pass to OpenRouter.
 
     Example: `{"effort": "high"}`
@@ -221,10 +221,10 @@ class ChatOpenRouter(BaseChatModel):
     Example: `{"order": ["Anthropic", "OpenAI"]}`
     """
 
-    openrouter_route: str | None = None
+    route: str | None = None
     """Route preference for OpenRouter. E.g. `'fallback'`."""
 
-    openrouter_plugins: list[dict[str, Any]] | None = None
+    plugins: list[dict[str, Any]] | None = None
     """Plugins configuration for OpenRouter."""
 
     model_config = ConfigDict(populate_by_name=True)
@@ -532,14 +532,14 @@ class ChatOpenRouter(BaseChatModel):
         if self.stop is not None:
             params["stop"] = self.stop
         # OpenRouter-specific params
-        if self.openrouter_reasoning is not None:
-            params["reasoning"] = self.openrouter_reasoning
+        if self.reasoning is not None:
+            params["reasoning"] = self.reasoning
         if self.openrouter_provider is not None:
             params["provider"] = self.openrouter_provider
-        if self.openrouter_route is not None:
-            params["route"] = self.openrouter_route
-        if self.openrouter_plugins is not None:
-            params["plugins"] = self.openrouter_plugins
+        if self.route is not None:
+            params["route"] = self.route
+        if self.plugins is not None:
+            params["plugins"] = self.plugins
         return params
 
     def _create_message_dicts(

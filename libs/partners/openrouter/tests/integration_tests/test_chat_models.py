@@ -63,7 +63,7 @@ def test_reasoning_content() -> None:
     """Test reasoning content from a reasoning model."""
     model = ChatOpenRouter(
         model="openai/o3-mini",
-        openrouter_reasoning={"effort": "low"},
+        reasoning={"effort": "low"},
     )
     response = model.invoke("What is 2 + 2?")
     assert response.content

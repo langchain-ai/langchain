@@ -288,21 +288,21 @@ class TestChatOpenRouterInstantiation:
             call_kwargs = mock_cls.call_args[1]
             assert call_kwargs["x_title"] == "My App"
 
-    def test_openrouter_reasoning_in_params(self) -> None:
-        """Test that openrouter_reasoning is included in default params."""
-        model = _make_model(openrouter_reasoning={"effort": "high"})
+    def test_reasoning_in_params(self) -> None:
+        """Test that `reasoning` is included in default params."""
+        model = _make_model(reasoning={"effort": "high"})
         params = model._default_params
         assert params["reasoning"] == {"effort": "high"}
 
     def test_openrouter_provider_in_params(self) -> None:
-        """Test that openrouter_provider is included in default params."""
+        """Test that `openrouter_provider` is included in default params."""
         model = _make_model(openrouter_provider={"order": ["Anthropic"]})
         params = model._default_params
         assert params["provider"] == {"order": ["Anthropic"]}
 
-    def test_openrouter_route_in_params(self) -> None:
-        """Test that openrouter_route is included in default params."""
-        model = _make_model(openrouter_route="fallback")
+    def test_route_in_params(self) -> None:
+        """Test that `route` is included in default params."""
+        model = _make_model(route="fallback")
         params = model._default_params
         assert params["route"] == "fallback"
 
@@ -649,9 +649,9 @@ class TestRequestPayload:
     def test_openrouter_params_in_payload(self) -> None:
         """Test that OpenRouter-specific params appear in the SDK call."""
         model = _make_model(
-            openrouter_reasoning={"effort": "high"},
+            reasoning={"effort": "high"},
             openrouter_provider={"order": ["Anthropic"]},
-            openrouter_route="fallback",
+            route="fallback",
         )
         model.client = MagicMock()
         model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
@@ -1690,23 +1690,23 @@ class TestReasoningDetails:
 class TestOpenRouterSpecificParams:
     """Tests for OpenRouter-specific parameter handling."""
 
-    def test_openrouter_plugins_in_params(self) -> None:
-        """Test that openrouter_plugins is included in default params."""
+    def test_plugins_in_params(self) -> None:
+        """Test that `plugins` is included in default params."""
         plugins = [{"id": "web", "max_results": 3}]
-        model = _make_model(openrouter_plugins=plugins)
+        model = _make_model(plugins=plugins)
         params = model._default_params
         assert params["plugins"] == plugins
 
-    def test_openrouter_plugins_excluded_when_none(self) -> None:
-        """Test that plugins key is absent when not set."""
+    def test_plugins_excluded_when_none(self) -> None:
+        """Test that `plugins` key is absent when not set."""
         model = _make_model()
         params = model._default_params
         assert "plugins" not in params
 
-    def test_openrouter_plugins_in_payload(self) -> None:
-        """Test that plugins appear in the actual SDK call."""
+    def test_plugins_in_payload(self) -> None:
+        """Test that `plugins` appear in the actual SDK call."""
         plugins = [{"id": "web", "max_results": 5}]
-        model = _make_model(openrouter_plugins=plugins)
+        model = _make_model(plugins=plugins)
         model.client = MagicMock()
         model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
 
@@ -1753,10 +1753,10 @@ class TestOpenRouterSpecificParams:
     def test_all_openrouter_params_in_single_payload(self) -> None:
         """Test that all OpenRouter-specific params coexist in a payload."""
         model = _make_model(
-            openrouter_reasoning={"effort": "high"},
+            reasoning={"effort": "high"},
             openrouter_provider={"order": ["Anthropic"], "allow_fallbacks": True},
-            openrouter_route="fallback",
-            openrouter_plugins=[{"id": "web"}],
+            route="fallback",
+            plugins=[{"id": "web"}],
         )
         model.client = MagicMock()
         model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
