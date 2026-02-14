@@ -418,6 +418,13 @@ class ChatOpenRouter(BaseChatModel):
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
                 generation_info["model_name"] = self.model_name
+                # Include response-level metadata on the final chunk
+                if response_model := chunk_dict.get("model"):
+                    generation_info["model"] = response_model
+                if system_fingerprint := chunk_dict.get("system_fingerprint"):
+                    generation_info["system_fingerprint"] = system_fingerprint
+                if native_finish_reason := choice.get("native_finish_reason"):
+                    generation_info["native_finish_reason"] = native_finish_reason
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -466,6 +473,13 @@ class ChatOpenRouter(BaseChatModel):
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
                 generation_info["model_name"] = self.model_name
+                # Include response-level metadata on the final chunk
+                if response_model := chunk_dict.get("model"):
+                    generation_info["model"] = response_model
+                if system_fingerprint := chunk_dict.get("system_fingerprint"):
+                    generation_info["system_fingerprint"] = system_fingerprint
+                if native_finish_reason := choice.get("native_finish_reason"):
+                    generation_info["native_finish_reason"] = native_finish_reason
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -553,10 +567,23 @@ class ChatOpenRouter(BaseChatModel):
         generations = []
         token_usage = response.get("usage") or {}
 
+        # Extract top-level response metadata
+        response_model = response.get("model")
+        system_fingerprint = response.get("system_fingerprint")
+
         for res in response.get("choices", []):
             message = _convert_dict_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
                 message.usage_metadata = _create_usage_metadata(token_usage)
+            if isinstance(message, AIMessage):
+                if response_model:
+                    message.response_metadata["model"] = response_model
+                if system_fingerprint:
+                    message.response_metadata["system_fingerprint"] = system_fingerprint
+                if native_finish_reason := res.get("native_finish_reason"):
+                    message.response_metadata["native_finish_reason"] = (
+                        native_finish_reason
+                    )
             generation_info: dict[str, Any] = {
                 "finish_reason": res.get("finish_reason"),
             }
@@ -570,7 +597,7 @@ class ChatOpenRouter(BaseChatModel):
 
         llm_output: dict[str, Any] = {
             "token_usage": token_usage,
-            "model_name": self.model_name,
+            "model_name": response_model or self.model_name,
         }
         return ChatResult(generations=generations, llm_output=llm_output)
 
@@ -817,7 +844,7 @@ def _format_message_content(content: Any) -> Any:
     return content
 
 
-def _convert_message_to_dict(message: BaseMessage) -> dict:  # noqa: C901
+def _convert_message_to_dict(message: BaseMessage) -> dict:  # noqa: C901, PLR0912
     """Convert a LangChain message to a dictionary.
 
     Args:
@@ -867,9 +894,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:  # noqa: C901
         # tool-calling loops). OpenRouter stores reasoning in "reasoning" and
         # optional structured details in "reasoning_details".
         if "reasoning_content" in message.additional_kwargs:
-            message_dict["reasoning"] = message.additional_kwargs[
-                "reasoning_content"
-            ]
+            message_dict["reasoning"] = message.additional_kwargs["reasoning_content"]
         if "reasoning_details" in message.additional_kwargs:
             message_dict["reasoning_details"] = message.additional_kwargs[
                 "reasoning_details"

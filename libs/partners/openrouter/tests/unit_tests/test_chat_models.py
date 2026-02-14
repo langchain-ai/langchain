@@ -489,6 +489,101 @@ class TestMockedGenerate:
         assert len(chunks) > 0
         assert all(isinstance(c, AIMessageChunk) for c in chunks)
 
+    def test_stream_response_metadata_fields(self) -> None:
+        """Test response-level metadata in streaming response_metadata."""
+        model = _make_model()
+        model.client = MagicMock()
+        stream_chunks: list[dict[str, Any]] = [
+            {
+                "choices": [
+                    {"delta": {"role": "assistant", "content": "Hi"}, "index": 0}
+                ],
+                "model": "anthropic/claude-sonnet-4-5",
+                "system_fingerprint": "fp_stream123",
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-stream-meta",
+            },
+            {
+                "choices": [
+                    {
+                        "delta": {},
+                        "finish_reason": "stop",
+                        "native_finish_reason": "end_turn",
+                        "index": 0,
+                    }
+                ],
+                "model": "anthropic/claude-sonnet-4-5",
+                "system_fingerprint": "fp_stream123",
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-stream-meta",
+            },
+        ]
+        model.client.chat.send.return_value = _MockSyncStream(stream_chunks)
+
+        chunks = list(model.stream("Hello"))
+        assert len(chunks) >= 2
+
+        # Find the chunk with finish_reason (final metadata chunk)
+        final = [
+            c for c in chunks if c.response_metadata.get("finish_reason") == "stop"
+        ]
+        assert len(final) == 1
+        meta = final[0].response_metadata
+        assert meta["model"] == "anthropic/claude-sonnet-4-5"
+        assert meta["system_fingerprint"] == "fp_stream123"
+        assert meta["native_finish_reason"] == "end_turn"
+        assert meta["finish_reason"] == "stop"
+
+    async def test_astream_response_metadata_fields(self) -> None:
+        """Test response-level metadata in async streaming response_metadata."""
+        model = _make_model()
+        model.client = MagicMock()
+        stream_chunks: list[dict[str, Any]] = [
+            {
+                "choices": [
+                    {"delta": {"role": "assistant", "content": "Hi"}, "index": 0}
+                ],
+                "model": "anthropic/claude-sonnet-4-5",
+                "system_fingerprint": "fp_async123",
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-astream-meta",
+            },
+            {
+                "choices": [
+                    {
+                        "delta": {},
+                        "finish_reason": "stop",
+                        "native_finish_reason": "end_turn",
+                        "index": 0,
+                    }
+                ],
+                "model": "anthropic/claude-sonnet-4-5",
+                "system_fingerprint": "fp_async123",
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-astream-meta",
+            },
+        ]
+        model.client.chat.send_async = AsyncMock(
+            return_value=_MockAsyncStream(stream_chunks)
+        )
+
+        chunks = [c async for c in model.astream("Hello")]
+        assert len(chunks) >= 2
+
+        # Find the chunk with finish_reason (final metadata chunk)
+        final = [
+            c for c in chunks if c.response_metadata.get("finish_reason") == "stop"
+        ]
+        assert len(final) == 1
+        meta = final[0].response_metadata
+        assert meta["model"] == "anthropic/claude-sonnet-4-5"
+        assert meta["system_fingerprint"] == "fp_async123"
+        assert meta["native_finish_reason"] == "end_turn"
+
 
 # ===========================================================================
 # Request payload verification
@@ -809,9 +904,7 @@ class TestMessageConversion:
             "role": "assistant",
             "content": "The answer",
             "reasoning": "My thinking process",
-            "reasoning_details": [
-                {"type": "reasoning.text", "text": "step-by-step"}
-            ],
+            "reasoning_details": [{"type": "reasoning.text", "text": "step-by-step"}],
         }
         msg = _convert_dict_to_message(original_dict)
         result = _convert_message_to_dict(msg)
@@ -1018,6 +1111,74 @@ class TestCreateChatResult:
         assert isinstance(msg, AIMessage)
         assert len(msg.tool_calls) == 1
         assert msg.tool_calls[0]["name"] == "GetWeather"
+
+    def test_response_model_in_metadata(self) -> None:
+        """Test that the response model is included in response_metadata."""
+        model = _make_model()
+        result = model._create_chat_result(_SIMPLE_RESPONSE_DICT)
+        msg = result.generations[0].message
+        assert isinstance(msg, AIMessage)
+        assert msg.response_metadata["model"] == MODEL_NAME
+
+    def test_response_model_propagated_to_llm_output(self) -> None:
+        """Test that llm_output uses response model when available."""
+        model = _make_model()
+        response = {
+            **_SIMPLE_RESPONSE_DICT,
+            "model": "openai/gpt-4o",
+        }
+        result = model._create_chat_result(response)
+        assert result.llm_output is not None
+        assert result.llm_output["model_name"] == "openai/gpt-4o"
+
+    def test_system_fingerprint_in_metadata(self) -> None:
+        """Test that system_fingerprint is included in response_metadata."""
+        model = _make_model()
+        response = {
+            **_SIMPLE_RESPONSE_DICT,
+            "system_fingerprint": "fp_abc123",
+        }
+        result = model._create_chat_result(response)
+        msg = result.generations[0].message
+        assert isinstance(msg, AIMessage)
+        assert msg.response_metadata["system_fingerprint"] == "fp_abc123"
+
+    def test_native_finish_reason_in_metadata(self) -> None:
+        """Test that native_finish_reason is included in response_metadata."""
+        model = _make_model()
+        response: dict[str, Any] = {
+            **_SIMPLE_RESPONSE_DICT,
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "Hello!"},
+                    "finish_reason": "stop",
+                    "native_finish_reason": "end_turn",
+                    "index": 0,
+                }
+            ],
+        }
+        result = model._create_chat_result(response)
+        msg = result.generations[0].message
+        assert isinstance(msg, AIMessage)
+        assert msg.response_metadata["native_finish_reason"] == "end_turn"
+
+    def test_missing_optional_metadata_excluded(self) -> None:
+        """Test that absent optional fields are not added to response_metadata."""
+        model = _make_model()
+        response: dict[str, Any] = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "Hello!"},
+                    "finish_reason": "stop",
+                }
+            ],
+        }
+        result = model._create_chat_result(response)
+        msg = result.generations[0].message
+        assert isinstance(msg, AIMessage)
+        assert "system_fingerprint" not in msg.response_metadata
+        assert "native_finish_reason" not in msg.response_metadata
+        assert "model" not in msg.response_metadata
 
 
 # ===========================================================================
@@ -1711,9 +1872,7 @@ class TestFormatMessageContent:
         result = _format_message_content(content)
         assert len(result) == 1
         assert result[0]["type"] == "video_url"
-        assert result[0]["video_url"]["url"] == (
-            "data:video/mp4;base64,AAAAIGZ0..."
-        )
+        assert result[0]["video_url"]["url"] == ("data:video/mp4;base64,AAAAIGZ0...")
 
     def test_video_base64_default_mime_type(self) -> None:
         """Test that video base64 defaults to video/mp4 when mime_type is missing."""
@@ -1729,7 +1888,7 @@ class TestFormatMessageContent:
     def test_video_block_missing_source_raises(self) -> None:
         """Test that video blocks without url or base64 raise ValueError."""
         block: dict[str, Any] = {"type": "video", "mime_type": "video/mp4"}
-        with pytest.raises(ValueError, match="url.*base64"):
+        with pytest.raises(ValueError, match=r"url.*base64"):
             _convert_video_block_to_openrouter(block)
 
     def test_mixed_multimodal_content(self) -> None:
