@@ -278,7 +278,7 @@ class TestChatDeepSeekCustomUnit:
         assert assistant_tool_msgs[0]["reasoning_content"] == "reasoning..."
 
     def test_thinking_tool_calls_falls_back_to_empty_reasoning_content(self) -> None:
-        """Ensure thinking-mode tool calls always include reasoning_content"""
+        """Ensure thinking-mode tool calls always include reasoning_content."""
         chat_model = ChatDeepSeek(
             model="deepseek-reasoner",
             api_key=SecretStr("api_key"),
