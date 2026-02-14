@@ -535,6 +535,9 @@ class TestMockedGenerate:
         assert meta["system_fingerprint"] == "fp_stream123"
         assert meta["native_finish_reason"] == "end_turn"
         assert meta["finish_reason"] == "stop"
+        assert meta["id"] == "gen-stream-meta"
+        assert meta["created"] == 1700000000.0
+        assert meta["object"] == "chat.completion.chunk"
 
     async def test_astream_response_metadata_fields(self) -> None:
         """Test response-level metadata in async streaming response_metadata."""
@@ -583,6 +586,9 @@ class TestMockedGenerate:
         assert meta["model"] == "anthropic/claude-sonnet-4-5"
         assert meta["system_fingerprint"] == "fp_async123"
         assert meta["native_finish_reason"] == "end_turn"
+        assert meta["id"] == "gen-astream-meta"
+        assert meta["created"] == 1700000000.0
+        assert meta["object"] == "chat.completion.chunk"
 
 
 # ===========================================================================
@@ -1225,6 +1231,19 @@ class TestCreateChatResult:
         assert "system_fingerprint" not in msg.response_metadata
         assert "native_finish_reason" not in msg.response_metadata
         assert "model" not in msg.response_metadata
+        assert result.llm_output is not None
+        assert "id" not in result.llm_output
+        assert "created" not in result.llm_output
+        assert "object" not in result.llm_output
+
+    def test_id_created_object_in_llm_output(self) -> None:
+        """Test that id, created, and object are included in llm_output."""
+        model = _make_model()
+        result = model._create_chat_result(_SIMPLE_RESPONSE_DICT)
+        assert result.llm_output is not None
+        assert result.llm_output["id"] == "gen-abc123"
+        assert result.llm_output["created"] == 1700000000.0
+        assert result.llm_output["object"] == "chat.completion"
 
     def test_float_token_usage_normalized_to_int(self) -> None:
         """Test that float token counts in llm_output are cast to int."""

@@ -425,6 +425,12 @@ class ChatOpenRouter(BaseChatModel):
                     generation_info["system_fingerprint"] = system_fingerprint
                 if native_finish_reason := choice.get("native_finish_reason"):
                     generation_info["native_finish_reason"] = native_finish_reason
+                if response_id := chunk_dict.get("id"):
+                    generation_info["id"] = response_id
+                if created := chunk_dict.get("created"):
+                    generation_info["created"] = created
+                if object_ := chunk_dict.get("object"):
+                    generation_info["object"] = object_
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -480,6 +486,12 @@ class ChatOpenRouter(BaseChatModel):
                     generation_info["system_fingerprint"] = system_fingerprint
                 if native_finish_reason := choice.get("native_finish_reason"):
                     generation_info["native_finish_reason"] = native_finish_reason
+                if response_id := chunk_dict.get("id"):
+                    generation_info["id"] = response_id
+                if created := chunk_dict.get("created"):
+                    generation_info["created"] = created
+                if object_ := chunk_dict.get("object"):
+                    generation_info["object"] = object_
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -599,6 +611,12 @@ class ChatOpenRouter(BaseChatModel):
             "token_usage": token_usage,
             "model_name": response_model or self.model_name,
         }
+        if response_id := response.get("id"):
+            llm_output["id"] = response_id
+        if created := response.get("created"):
+            llm_output["created"] = created
+        if object_ := response.get("object"):
+            llm_output["object"] = object_
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _combine_llm_outputs(self, llm_outputs: list[dict | None]) -> dict:
