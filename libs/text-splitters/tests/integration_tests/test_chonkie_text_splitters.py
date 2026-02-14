@@ -41,7 +41,7 @@ def test_chonkie_text_splitter_with_alias() -> None:
 
 def test_chonkie_text_splitter_with_chunker_instance() -> None:
     """Test passing a chunker instance directly."""
-    from chonkie.pipeline import ComponentRegistry  # type: ignore[import]
+    from chonkie.pipeline import ComponentRegistry  # type: ignore[import-not-found]
 
     from langchain_text_splitters.chonkie import ChonkieTextSplitter
 
