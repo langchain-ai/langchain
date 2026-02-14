@@ -30,10 +30,10 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
+from langgraph._internal._typing import StateLike
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
-from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
 if TYPE_CHECKING:
@@ -70,6 +70,7 @@ JumpTo = Literal["tools", "model", "end"]
 """Destination to jump to when a middleware node returns."""
 
 ResponseT = TypeVar("ResponseT", default=Any)
+ContextT = TypeVar("ContextT", bound=StateLike | None, default=Any)
 
 
 class _ModelRequestOverrides(TypedDict, total=False):
@@ -90,7 +91,7 @@ class ModelRequest(Generic[ContextT]):
     """Model request information for the agent.
 
     Type Parameters:
-        ContextT: The type of the runtime context. Defaults to `None` if not specified.
+        ContextT: The type of the runtime context. Defaults to `Any` if not specified.
     """
 
     model: BaseChatModel
@@ -385,7 +386,7 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
 
     Type Parameters:
         StateT: The type of the agent state. Defaults to `AgentState[Any]`.
-        ContextT: The type of the runtime context. Defaults to `None`.
+        ContextT: The type of the runtime context. Defaults to `Any`.
         ResponseT: The type of the structured response. Defaults to `Any`.
     """
 

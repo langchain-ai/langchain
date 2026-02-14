@@ -78,7 +78,7 @@ class SummaryResult(BaseModel):
 class BackwardsCompatibleMiddleware(AgentMiddleware):
     """Middleware that doesn't specify type parameters - backwards compatible."""
 
-    def before_model(self, state: AgentState[Any], runtime: Runtime[None]) -> dict[str, Any] | None:
+    def before_model(self, state: AgentState[Any], runtime: Runtime[Any]) -> dict[str, Any] | None:
         return None
 
     def wrap_model_call(
@@ -94,7 +94,7 @@ class BackwardsCompatibleMiddleware2(AgentMiddleware):
 
     def wrap_model_call(
         self,
-        request: ModelRequest,  # Unparameterized - defaults to ModelRequest[None]
+        request: ModelRequest,  # Unparameterized - defaults to ModelRequest[Any]
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelResponse:
         _ = request.runtime
@@ -103,7 +103,7 @@ class BackwardsCompatibleMiddleware2(AgentMiddleware):
 
 @before_model
 def backwards_compatible_decorator(
-    state: AgentState[Any], runtime: Runtime[None]
+    state: AgentState[Any], runtime: Runtime[Any]
 ) -> dict[str, Any] | None:
     """Decorator middleware without explicit type parameters."""
     return None
@@ -237,8 +237,8 @@ def fake_model() -> GenericFakeChatModel:
 
 
 def test_create_agent_no_context_schema(fake_model: GenericFakeChatModel) -> None:
-    """Backwards compatible: No context_schema means ContextT=None."""
-    agent: CompiledStateGraph[Any, None, Any, Any] = create_agent(
+    """Backwards compatible: No context_schema means ContextT=Any."""
+    agent: CompiledStateGraph[Any, Any, Any, Any] = create_agent(
         model=fake_model,
         middleware=[
             BackwardsCompatibleMiddleware(),
@@ -246,6 +246,18 @@ def test_create_agent_no_context_schema(fake_model: GenericFakeChatModel) -> Non
             backwards_compatible_decorator,
         ],
         # No context_schema - backwards compatible
+    )
+    assert agent is not None
+
+
+def test_create_agent_untyped_middleware_with_context_schema(
+    fake_model: GenericFakeChatModel,
+) -> None:
+    """Untyped middleware should be compatible with explicit context_schema."""
+    agent: CompiledStateGraph[Any, UserContext, Any, Any] = create_agent(
+        model=fake_model,
+        middleware=[BackwardsCompatibleMiddleware()],
+        context_schema=UserContext,
     )
     assert agent is not None
 
@@ -396,9 +408,9 @@ def test_model_request_backwards_compatible() -> None:
     assert request.messages[0].content == "test"
 
 
-def test_model_request_explicit_none() -> None:
-    """Test ModelRequest[None] is same as unparameterized ModelRequest."""
-    request1: ModelRequest[None] = ModelRequest(
+def test_model_request_explicit_any() -> None:
+    """Test ModelRequest[Any] is same as unparameterized ModelRequest."""
+    request1: ModelRequest[Any] = ModelRequest(
         model=None,  # type: ignore[arg-type]
         messages=[HumanMessage(content="test")],
     )
