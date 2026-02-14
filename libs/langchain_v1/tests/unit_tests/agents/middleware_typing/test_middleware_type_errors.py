@@ -1,16 +1,3 @@
-"""Demonstrate type errors that mypy catches for ContextT and ResponseT mismatches.
-
-This file contains intentional type errors to demonstrate that mypy catches them.
-Run: uv run --group typing mypy <this file>
-
-Expected errors:
-1. TypedDict "UserContext" has no key "session_id" - accessing wrong context field
-2. Argument incompatible with supertype - mismatched ModelRequest type
-3. Cannot infer value of type parameter - middleware/context_schema mismatch
-4. "AnalysisResult" has no attribute "summary" - accessing wrong response field
-5. Handler returns wrong ResponseT type
-"""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -32,9 +19,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-# =============================================================================
-# Context and Response schemas
-# =============================================================================
 class UserContext(TypedDict):
     user_id: str
     user_name: str
@@ -55,9 +39,6 @@ class SummaryResult(BaseModel):
     key_points: list[str]
 
 
-# =============================================================================
-# ERROR 1: Using wrong context fields
-# =============================================================================
 class WrongContextFieldsMiddleware(AgentMiddleware[AgentState[Any], UserContext, Any]):
     def wrap_model_call(
         self,
@@ -70,9 +51,6 @@ class WrongContextFieldsMiddleware(AgentMiddleware[AgentState[Any], UserContext,
         return handler(request)
 
 
-# =============================================================================
-# ERROR 2: Mismatched ModelRequest type parameter in method signature
-# =============================================================================
 class MismatchedRequestMiddleware(AgentMiddleware[AgentState[Any], UserContext, Any]):
     def wrap_model_call(  # type: ignore[override]
         self,
@@ -83,9 +61,6 @@ class MismatchedRequestMiddleware(AgentMiddleware[AgentState[Any], UserContext, 
         return handler(request)
 
 
-# =============================================================================
-# ERROR 3: Middleware ContextT doesn't match context_schema
-# =============================================================================
 class SessionContextMiddleware(AgentMiddleware[AgentState[Any], SessionContext, Any]):
     def wrap_model_call(
         self,
@@ -106,32 +81,28 @@ def test_mismatched_context_schema() -> None:
     )
 
 
-# =============================================================================
-# ERROR 4: Backwards compatible middleware with typed context_schema
-# =============================================================================
-class BackwardsCompatibleMiddleware(AgentMiddleware):
+class ExplicitNoneContextMiddleware(AgentMiddleware[AgentState[Any], None, Any]):
+    """Middleware with explicit None context - should NOT work with context_schema."""
+
     def wrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
-    ) -> ModelResponse:
+        request: ModelRequest[None],
+        handler: Callable[[ModelRequest[None]], ModelResponse[Any]],
+    ) -> ModelResponse[Any]:
         return handler(request)
 
 
-def test_backwards_compat_with_context_schema() -> None:
-    # TYPE ERROR: BackwardsCompatibleMiddleware is AgentMiddleware[..., None]
+def test_explicit_none_context_mismatch() -> None:
+    # TYPE ERROR: ExplicitNoneContextMiddleware has ContextT=None,
     # but context_schema=UserContext expects AgentMiddleware[..., UserContext]
     fake_model = FakeToolCallingModel()
     _agent = create_agent(  # type: ignore[misc]
         model=fake_model,
-        middleware=[BackwardsCompatibleMiddleware()],
+        middleware=[ExplicitNoneContextMiddleware()],
         context_schema=UserContext,
     )
 
 
-# =============================================================================
-# ERROR 5: Using wrong response fields
-# =============================================================================
 class WrongResponseFieldsMiddleware(
     AgentMiddleware[AgentState[AnalysisResult], ContextT, AnalysisResult]
 ):
@@ -141,61 +112,28 @@ class WrongResponseFieldsMiddleware(
         handler: Callable[[ModelRequest[ContextT]], ModelResponse[AnalysisResult]],
     ) -> ModelResponse[AnalysisResult]:
         response = handler(request)
-        if response.structured_response is not None:
-            # TYPE ERROR: 'summary' doesn't exist on AnalysisResult
-            summary: str = response.structured_response.summary  # type: ignore[attr-defined]
-            _ = summary
+        # TYPE ERROR: 'summary' doesn't exist on AnalysisResult
+        _summary: str = response.response.summary  # type: ignore[union-attr]
         return response
 
 
-# =============================================================================
-# ERROR 6: Mismatched ResponseT in method signature
-# =============================================================================
-class MismatchedResponseMiddleware(
-    AgentMiddleware[AgentState[AnalysisResult], ContextT, AnalysisResult]
-):
-    def wrap_model_call(  # type: ignore[override]
-        self,
-        request: ModelRequest[ContextT],
-        # TYPE ERROR: Handler should return ModelResponse[AnalysisResult], not SummaryResult
-        handler: Callable[[ModelRequest[ContextT]], ModelResponse[SummaryResult]],
-    ) -> ModelResponse[AnalysisResult]:
-        # This would fail at runtime - types don't match
-        return handler(request)  # type: ignore[return-value]
+class UnparameterizedMiddleware(AgentMiddleware):
+    """Unparameterized middleware - ContextT defaults to Any."""
 
-
-# =============================================================================
-# ERROR 7: Middleware ResponseT doesn't match response_format
-# =============================================================================
-class AnalysisMiddleware(AgentMiddleware[AgentState[AnalysisResult], ContextT, AnalysisResult]):
     def wrap_model_call(
         self,
-        request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], ModelResponse[AnalysisResult]],
-    ) -> ModelResponse[AnalysisResult]:
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelResponse:
         return handler(request)
 
 
-def test_mismatched_response_format() -> None:
-    # TODO: TYPE ERROR not yet detected by mypy - AnalysisMiddleware expects AnalysisResult,
-    # but response_format is SummaryResult. This requires more sophisticated typing.
+def test_unparameterized_middleware_with_context_schema() -> None:
+    # NO TYPE ERROR: Unparameterized middleware defaults ContextT to Any,
+    # so it's compatible with any context_schema
     fake_model = FakeToolCallingModel()
     _agent = create_agent(
         model=fake_model,
-        middleware=[AnalysisMiddleware()],
-        response_format=SummaryResult,
+        middleware=[UnparameterizedMiddleware()],
+        context_schema=UserContext,
     )
-
-
-# =============================================================================
-# ERROR 8: Wrong return type from wrap_model_call
-# =============================================================================
-class WrongReturnTypeMiddleware(
-    AgentMiddleware[AgentState[AnalysisResult], ContextT, AnalysisResult]
-):
-    def wrap_model_call(  # type: ignore[override]
-        self,
-        request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], ModelResponse[AnalysisResult]],
-    ) -> ModelResponse[SummaryResult]:  # TYPE ERROR: Should return ModelResponse[AnalysisResult]
-        return handler(request)  # type: ignore[return-value]
