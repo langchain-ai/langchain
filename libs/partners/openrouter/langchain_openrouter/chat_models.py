@@ -1024,6 +1024,9 @@ def _lc_invalid_tool_call_to_openrouter_tool_call(
 def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
     """Create usage metadata from OpenRouter token usage response.
 
+    OpenRouter may return token counts as floats rather than ints, so all
+    values are explicitly cast to int.
+
     Args:
         token_usage: Token usage dict from the API response.
 
