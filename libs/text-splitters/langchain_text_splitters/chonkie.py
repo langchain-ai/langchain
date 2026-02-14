@@ -14,8 +14,8 @@ try:
     from typing import TYPE_CHECKING
 
     if TYPE_CHECKING:
-        from chonkie.chunker.base import (
-            BaseChunker,  # type: ignore[import, unused-ignore]
+        from chonkie.chunker.base import (  # type: ignore[import, unused-ignore]
+            BaseChunker,
         )
     from chonkie.pipeline import (  # type: ignore[import, unused-ignore]
         ComponentRegistry,
