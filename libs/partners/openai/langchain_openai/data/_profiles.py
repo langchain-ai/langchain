@@ -247,7 +247,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
-        "structured_output": True,
+        "structured_output": False,
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
