@@ -26,7 +26,7 @@ class TestChatOpenRouter(ChatModelIntegrationTests):
     @property
     def supports_json_mode(self) -> bool:
         """Whether the chat model supports JSON mode."""
-        return True
+        return False
 
     @property
     def supports_image_inputs(self) -> bool:

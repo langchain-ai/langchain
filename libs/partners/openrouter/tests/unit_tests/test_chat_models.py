@@ -786,11 +786,11 @@ class TestBindTools:
 class TestWithStructuredOutput:
     """Tests for the with_structured_output public method."""
 
-    @pytest.mark.parametrize("method", ["function_calling", "json_schema", "json_mode"])
+    @pytest.mark.parametrize("method", ["function_calling", "json_schema"])
     @pytest.mark.parametrize("include_raw", ["yes", "no"])
     def test_with_structured_output_pydantic(
         self,
-        method: Literal["function_calling", "json_mode", "json_schema"],
+        method: Literal["function_calling", "json_schema"],
         include_raw: str,
     ) -> None:
         """Test with_structured_output using a Pydantic schema."""
@@ -800,10 +800,10 @@ class TestWithStructuredOutput:
         )
         assert structured is not None
 
-    @pytest.mark.parametrize("method", ["function_calling", "json_schema", "json_mode"])
+    @pytest.mark.parametrize("method", ["function_calling", "json_schema"])
     def test_with_structured_output_dict_schema(
         self,
-        method: Literal["function_calling", "json_mode", "json_schema"],
+        method: Literal["function_calling", "json_schema"],
     ) -> None:
         """Test with_structured_output using a JSON schema dict."""
         schema = GenerateUsername.model_json_schema()
@@ -845,14 +845,17 @@ class TestWithStructuredOutput:
         assert rf["type"] == "json_schema"
         assert rf["json_schema"]["name"] == "GenerateUsername"
 
-    def test_with_structured_output_json_mode_sets_response_format(self) -> None:
-        """Test that json_mode method sets response_format correctly."""
+    def test_with_structured_output_json_mode_warns_and_falls_back(self) -> None:
+        """Test that json_mode warns and falls back to json_schema."""
         model = _make_model()
-        structured = model.with_structured_output(GenerateUsername, method="json_mode")
+        with pytest.warns(match="Defaulting to 'json_schema'"):
+            structured = model.with_structured_output(
+                GenerateUsername, method="json_mode"  # type: ignore[arg-type]
+            )
         bound = structured.first  # type: ignore[attr-defined]
         assert isinstance(bound, RunnableBinding)
         rf = bound.kwargs["response_format"]
-        assert rf["type"] == "json_object"
+        assert rf["type"] == "json_schema"
 
     def test_with_structured_output_strict_function_calling(self) -> None:
         """Test that strict is forwarded for function_calling method."""
@@ -876,13 +879,23 @@ class TestWithStructuredOutput:
         rf = bound.kwargs["response_format"]
         assert rf["json_schema"]["strict"] is True
 
-    def test_with_structured_output_strict_json_mode_raises(self) -> None:
-        """Test that strict with json_mode raises ValueError."""
+    def test_with_structured_output_json_mode_with_strict_warns_and_forwards(
+        self,
+    ) -> None:
+        """Test that json_mode with strict warns, falls back to json_schema, and
+        forwards strict."""
         model = _make_model()
-        with pytest.raises(ValueError, match="not supported"):
-            model.with_structured_output(
-                GenerateUsername, method="json_mode", strict=True
+        with pytest.warns(match="Defaulting to 'json_schema'"):
+            structured = model.with_structured_output(
+                GenerateUsername,
+                method="json_mode",  # type: ignore[arg-type]
+                strict=True,
             )
+        bound = structured.first  # type: ignore[attr-defined]
+        assert isinstance(bound, RunnableBinding)
+        rf = bound.kwargs["response_format"]
+        assert rf["type"] == "json_schema"
+        assert rf["json_schema"]["strict"] is True
 
 
 # ===========================================================================
@@ -1245,8 +1258,8 @@ class TestCreateChatResult:
         assert result.llm_output["created"] == 1700000000.0
         assert result.llm_output["object"] == "chat.completion"
 
-    def test_float_token_usage_normalized_to_int(self) -> None:
-        """Test that float token counts in llm_output are cast to int."""
+    def test_float_token_usage_normalized_to_int_in_usage_metadata(self) -> None:
+        """Test that float token counts are cast to int in usage_metadata."""
         model = _make_model()
         response: dict[str, Any] = {
             "choices": [
@@ -1259,32 +1272,26 @@ class TestCreateChatResult:
                 "prompt_tokens": 585.0,
                 "completion_tokens": 56.0,
                 "total_tokens": 641.0,
-                "completion_tokens_details": {"reasoning_tokens": 0.0},
-                "prompt_tokens_details": {
-                    "cached_tokens": 0.0,
-                    "cache_write_tokens": 0.0,
-                    "audio_tokens": None,
-                    "video_tokens": None,
-                },
+                "completion_tokens_details": {"reasoning_tokens": 10.0},
+                "prompt_tokens_details": {"cached_tokens": 20.0},
             },
             "model": MODEL_NAME,
         }
         result = model._create_chat_result(response)
-        token_usage = result.llm_output["token_usage"]
-        assert token_usage["prompt_tokens"] == 585
-        assert isinstance(token_usage["prompt_tokens"], int)
-        assert token_usage["completion_tokens"] == 56
-        assert isinstance(token_usage["completion_tokens"], int)
-        assert token_usage["total_tokens"] == 641
-        assert isinstance(token_usage["total_tokens"], int)
-        assert token_usage["completion_tokens_details"]["reasoning_tokens"] == 0
-        assert isinstance(
-            token_usage["completion_tokens_details"]["reasoning_tokens"], int
-        )
-        assert token_usage["prompt_tokens_details"]["cached_tokens"] == 0
-        assert isinstance(token_usage["prompt_tokens_details"]["cached_tokens"], int)
-        # None values should be preserved as-is
-        assert token_usage["prompt_tokens_details"]["audio_tokens"] is None
+        msg = result.generations[0].message
+        assert isinstance(msg, AIMessage)
+        usage = msg.usage_metadata
+        assert usage is not None
+        assert usage["input_tokens"] == 585
+        assert isinstance(usage["input_tokens"], int)
+        assert usage["output_tokens"] == 56
+        assert isinstance(usage["output_tokens"], int)
+        assert usage["total_tokens"] == 641
+        assert isinstance(usage["total_tokens"], int)
+        assert usage["input_token_details"]["cache_read"] == 20
+        assert isinstance(usage["input_token_details"]["cache_read"], int)
+        assert usage["output_token_details"]["reasoning"] == 10
+        assert isinstance(usage["output_token_details"]["reasoning"], int)
 
 
 # ===========================================================================
@@ -1460,7 +1467,25 @@ class TestUsageMetadata:
             }
         )
         assert "input_token_details" in usage
+        assert usage["input_token_details"]["cache_read"] == 20
         assert "output_token_details" in usage
+        assert usage["output_token_details"]["reasoning"] == 10
+
+    def test_cache_creation_details(self) -> None:
+        """Test that cache_write_tokens maps to cache_creation."""
+        usage = _create_usage_metadata(
+            {
+                "prompt_tokens": 100,
+                "completion_tokens": 50,
+                "total_tokens": 150,
+                "prompt_tokens_details": {
+                    "cached_tokens": 0,
+                    "cache_write_tokens": 80,
+                },
+            }
+        )
+        assert "input_token_details" in usage
+        assert usage["input_token_details"]["cache_creation"] == 80
 
     def test_alternative_token_key_names(self) -> None:
         """Test fallback to input_tokens/output_tokens key names."""
@@ -1474,94 +1499,6 @@ class TestUsageMetadata:
         assert usage["input_tokens"] == 10
         assert usage["output_tokens"] == 5
         assert usage["total_tokens"] == 15
-
-
-# ===========================================================================
-# _combine_llm_outputs tests
-# ===========================================================================
-
-
-class TestCombineLLMOutputs:
-    """Tests for _combine_llm_outputs."""
-
-    def test_single_output(self) -> None:
-        """Test combining a single output."""
-        model = _make_model()
-        result = model._combine_llm_outputs(
-            [{"token_usage": {"prompt_tokens": 10, "completion_tokens": 5}}]
-        )
-        assert result["token_usage"]["prompt_tokens"] == 10
-        assert result["token_usage"]["completion_tokens"] == 5
-
-    def test_multiple_outputs_accumulated(self) -> None:
-        """Test that token counts from multiple outputs are accumulated."""
-        model = _make_model()
-        result = model._combine_llm_outputs(
-            [
-                {
-                    "token_usage": {
-                        "prompt_tokens": 10,
-                        "completion_tokens": 5,
-                        "total_tokens": 15,
-                    }
-                },
-                {
-                    "token_usage": {
-                        "prompt_tokens": 20,
-                        "completion_tokens": 10,
-                        "total_tokens": 30,
-                    }
-                },
-            ]
-        )
-        assert result["token_usage"]["prompt_tokens"] == 30
-        assert result["token_usage"]["completion_tokens"] == 15
-        assert result["token_usage"]["total_tokens"] == 45
-
-    def test_none_outputs_skipped(self) -> None:
-        """Test that None outputs are skipped."""
-        model = _make_model()
-        result = model._combine_llm_outputs(
-            [None, {"token_usage": {"prompt_tokens": 10}}, None]
-        )
-        assert result["token_usage"]["prompt_tokens"] == 10
-
-    def test_empty_list(self) -> None:
-        """Test combining an empty list."""
-        model = _make_model()
-        result = model._combine_llm_outputs([])
-        assert result["token_usage"] == {}
-        assert result["model_name"] == MODEL_NAME
-
-    def test_nested_dict_accumulation(self) -> None:
-        """Test that nested dicts (e.g. token details) are accumulated."""
-        model = _make_model()
-        result = model._combine_llm_outputs(
-            [
-                {
-                    "token_usage": {
-                        "prompt_tokens": 10,
-                        "prompt_tokens_details": {"cached_tokens": 5},
-                    }
-                },
-                {
-                    "token_usage": {
-                        "prompt_tokens": 20,
-                        "prompt_tokens_details": {"cached_tokens": 3},
-                    }
-                },
-            ]
-        )
-        assert result["token_usage"]["prompt_tokens"] == 30
-        assert result["token_usage"]["prompt_tokens_details"]["cached_tokens"] == 8
-
-    def test_none_token_usage_skipped(self) -> None:
-        """Test that outputs with token_usage=None are handled."""
-        model = _make_model()
-        result = model._combine_llm_outputs(
-            [{"token_usage": None}, {"token_usage": {"prompt_tokens": 5}}]
-        )
-        assert result["token_usage"]["prompt_tokens"] == 5
 
 
 # ===========================================================================
@@ -2073,8 +2010,8 @@ class TestStructuredOutputIntegration:
         assert "response_format" in call_kwargs
         assert call_kwargs["response_format"]["type"] == "json_schema"
 
-    def test_response_format_json_mode_reaches_sdk(self) -> None:
-        """Test that `response_format` from json_mode method is sent to the SDK."""
+    def test_response_format_json_mode_falls_back_to_json_schema_in_sdk(self) -> None:
+        """Test that json_mode warns, falls back to json_schema, and reaches SDK."""
         model = _make_model()
         model.client = MagicMock()
         model.client.chat.send.return_value = _make_sdk_response(
@@ -2093,11 +2030,14 @@ class TestStructuredOutputIntegration:
             }
         )
 
-        structured = model.with_structured_output(GetWeather, method="json_mode")
+        with pytest.warns(match="Defaulting to 'json_schema'"):
+            structured = model.with_structured_output(
+                GetWeather, method="json_mode"  # type: ignore[arg-type]
+            )
         structured.invoke("weather in SF")
         call_kwargs = model.client.chat.send.call_args[1]
         assert "response_format" in call_kwargs
-        assert call_kwargs["response_format"]["type"] == "json_object"
+        assert call_kwargs["response_format"]["type"] == "json_schema"
 
     def test_include_raw_returns_raw_and_parsed_on_success(self) -> None:
         """Test that `include_raw=True` returns raw message, parsed output, no error."""

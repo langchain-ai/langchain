@@ -212,7 +212,22 @@ class ChatOpenRouter(BaseChatModel):
     reasoning: dict[str, Any] | None = None
     """Reasoning settings to pass to OpenRouter.
 
-    Example: `{"effort": "high"}`
+    Controls how many tokens the model allocates for internal chain-of-thought
+    reasoning.
+
+    Supported keys:
+
+    - `effort`: Controls reasoning token budget.
+
+        Values: `'xhigh'`, `'high'`, `'medium'`, `'low'`, `'minimal'`, `'none'`.
+    - `summary`: Controls verbosity of the reasoning summary returned in the
+        response.
+
+        Values: `'auto'`, `'concise'`, `'detailed'`.
+
+    Example: `{"effort": "high", "summary": "auto"}`
+
+    See https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
     """
 
     openrouter_provider: dict[str, Any] | None = None
@@ -577,7 +592,7 @@ class ChatOpenRouter(BaseChatModel):
             raise ValueError(msg)
 
         generations = []
-        token_usage = _normalize_token_usage(response.get("usage") or {})
+        token_usage = response.get("usage") or {}
 
         # Extract top-level response metadata
         response_model = response.get("model")
@@ -608,7 +623,6 @@ class ChatOpenRouter(BaseChatModel):
             generations.append(gen)
 
         llm_output: dict[str, Any] = {
-            "token_usage": token_usage,
             "model_name": response_model or self.model_name,
         }
         if response_id := response.get("id"):
@@ -618,33 +632,6 @@ class ChatOpenRouter(BaseChatModel):
         if object_ := response.get("object"):
             llm_output["object"] = object_
         return ChatResult(generations=generations, llm_output=llm_output)
-
-    def _combine_llm_outputs(self, llm_outputs: list[dict | None]) -> dict:
-        """Combine multiple LLM outputs by aggregating token usage."""
-        overall_token_usage: dict = {}
-        for output in llm_outputs:
-            if output is None:
-                continue
-            token_usage = output.get("token_usage")
-            if token_usage is not None:
-                for k, v in token_usage.items():
-                    if v is None:
-                        continue
-                    if k in overall_token_usage:
-                        if isinstance(v, dict):
-                            for nested_k, nested_v in v.items():
-                                if (
-                                    nested_k in overall_token_usage[k]
-                                    and nested_v is not None
-                                ):
-                                    overall_token_usage[k][nested_k] += nested_v
-                                else:
-                                    overall_token_usage[k][nested_k] = nested_v
-                        else:
-                            overall_token_usage[k] += v
-                    else:
-                        overall_token_usage[k] = v
-        return {"token_usage": overall_token_usage, "model_name": self.model_name}
 
     def bind_tools(
         self,
@@ -702,13 +689,11 @@ class ChatOpenRouter(BaseChatModel):
             kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
 
-    def with_structured_output(
+    def with_structured_output(  # type: ignore[override]
         self,
         schema: dict | type[BaseModel] | None = None,
         *,
-        method: Literal[
-            "function_calling", "json_mode", "json_schema"
-        ] = "function_calling",
+        method: Literal["function_calling", "json_schema"] = "function_calling",
         include_raw: bool = False,
         strict: bool | None = None,
         **kwargs: Any,
@@ -731,9 +716,13 @@ class ChatOpenRouter(BaseChatModel):
         Returns:
             A `Runnable` that takes same inputs as a `BaseChatModel`.
         """
-        if strict is not None and method == "json_mode":
-            msg = "Argument `strict` is not supported with `method`='json_mode'"
-            raise ValueError(msg)
+        if method == "json_mode":
+            warnings.warn(
+                "Unrecognized structured output method 'json_mode'. "
+                "Defaulting to 'json_schema' method.",
+                stacklevel=2,
+            )
+            method = "json_schema"
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
             if schema is None:
@@ -796,24 +785,10 @@ class ChatOpenRouter(BaseChatModel):
                 if is_pydantic_schema
                 else JsonOutputParser()
             )
-        elif method == "json_mode":
-            llm = self.bind(
-                response_format={"type": "json_object"},
-                ls_structured_output_format={
-                    "kwargs": {"method": "json_mode"},
-                    "schema": schema,
-                },
-                **kwargs,
-            )
-            output_parser = (
-                PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
-                if is_pydantic_schema
-                else JsonOutputParser()
-            )
         else:
             msg = (
-                f"Unrecognized method argument. Expected one of 'function_calling', "
-                f"'json_schema', or 'json_mode'. Received: '{method}'"
+                f"Unrecognized method argument. Expected one of 'function_calling' "
+                f"or 'json_schema'. Received: '{method}'"
             )
             raise ValueError(msg)
 
@@ -1104,33 +1079,6 @@ def _lc_invalid_tool_call_to_openrouter_tool_call(
     }
 
 
-def _normalize_token_usage(token_usage: dict) -> dict:
-    """Cast numeric token usage values to int.
-
-    OpenRouter may return token counts as floats (e.g. `56.0`). This normalizes
-    them so that `response_metadata["token_usage"]` contains clean
-    integer values.
-
-    Args:
-        token_usage: Raw token usage dict from the API response.
-
-    Returns:
-        A new dict with numeric values cast to `int`.
-    """
-    normalized: dict[str, Any] = {}
-    for key, value in token_usage.items():
-        if isinstance(value, float) and value.is_integer():
-            normalized[key] = int(value)
-        elif isinstance(value, dict):
-            normalized[key] = {
-                k: int(v) if isinstance(v, float) and v.is_integer() else v
-                for k, v in value.items()
-            }
-        else:
-            normalized[key] = value
-    return normalized
-
-
 def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
     """Create usage metadata from OpenRouter token usage response.
 
@@ -1163,8 +1111,10 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
     )
 
     cache_read = input_details_dict.get("cached_tokens")
+    cache_creation = input_details_dict.get("cache_write_tokens")
     input_token_details: dict = {
         "cache_read": int(cache_read) if cache_read is not None else None,
+        "cache_creation": int(cache_creation) if cache_creation is not None else None,
     }
     reasoning_tokens = output_details_dict.get("reasoning_tokens")
     output_token_details: dict = {
