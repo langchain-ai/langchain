@@ -1291,6 +1291,10 @@ class ChatAnthropic(BaseChatModel):
     ) -> dict:
         messages = self._convert_input(input_).to_messages()
         system, formatted_messages = _format_messages(messages)
+        
+        # Extract metadata from kwargs if present
+        metadata = kwargs.pop("metadata", None)
+        
         payload = {
             "model": self.model,
             "max_tokens": self.max_tokens,
@@ -1305,6 +1309,11 @@ class ChatAnthropic(BaseChatModel):
             **self.model_kwargs,
             **kwargs,
         }
+        
+        # Add metadata to payload if user_id is present
+        if metadata and "user_id" in metadata:
+            payload["metadata"] = {"user_id": metadata["user_id"]}
+        
         if self.thinking is not None:
             payload["thinking"] = self.thinking
         return {k: v for k, v in payload.items() if v is not None}
