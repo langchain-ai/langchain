@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import inspect
 from typing import Any
 
 from langchain_core.documents import Document
@@ -54,6 +55,8 @@ class ChonkieTextSplitter(TextSplitter):
         Raises:
             ImportError: If Chonkie is not installed.
         """
+        import inspect
+
         if "chunk_overlap" not in kwargs:
             kwargs["chunk_overlap"] = 0
 
@@ -79,7 +82,16 @@ class ChonkieTextSplitter(TextSplitter):
             # flexible approach to pull chunker classes based on their alias
             chunking_class = ComponentRegistry.get_chunker(chunker).component_class
 
-            self.chunker = chunking_class(**kwargs)
+            # only use kwargs that the chunker accepts
+            # and remove TextSplitter kwargs
+            kwargs["chunk_size"] = chunk_size
+
+            sig = inspect.signature(chunking_class.__init__)
+            params = sig.parameters
+            filtered_kwargs = {k: v for k, v in kwargs.items() if k in params}
+
+            # instantiate the chunker
+            self.chunker = chunking_class(**filtered_kwargs)
         else:
             self.chunker = chunker
 
