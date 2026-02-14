@@ -26,6 +26,7 @@ from langchain_openrouter.chat_models import (
     _convert_chunk_to_message_chunk,
     _convert_dict_to_message,
     _convert_message_to_dict,
+    _convert_video_block_to_openrouter,
     _create_usage_metadata,
     _format_message_content,
 )
@@ -1595,6 +1596,102 @@ class TestFormatMessageContent:
         assert len(result) == 2
         assert result[0]["type"] == "text"
         assert result[1]["type"] == "image_url"
+
+    def test_image_base64_block(self) -> None:
+        """Test that base64 image blocks are converted to image_url format."""
+        content = [
+            {
+                "type": "image",
+                "base64": "iVBORw0KGgo=",
+                "mime_type": "image/png",
+            },
+        ]
+        result = _format_message_content(content)
+        assert len(result) == 1
+        assert result[0]["type"] == "image_url"
+        assert result[0]["image_url"]["url"].startswith("data:image/png;base64,")
+
+    def test_audio_base64_block(self) -> None:
+        """Test that base64 audio blocks are converted to input_audio format."""
+        content = [
+            {"type": "text", "text": "Transcribe this audio."},
+            {
+                "type": "audio",
+                "base64": "UklGR...",
+                "mime_type": "audio/wav",
+            },
+        ]
+        result = _format_message_content(content)
+        assert len(result) == 2
+        assert result[0]["type"] == "text"
+        assert result[1]["type"] == "input_audio"
+        assert result[1]["input_audio"]["data"] == "UklGR..."
+        assert result[1]["input_audio"]["format"] == "wav"
+
+    def test_video_url_block(self) -> None:
+        """Test that video URL blocks are converted to video_url format."""
+        content = [
+            {"type": "text", "text": "Describe this video."},
+            {
+                "type": "video",
+                "url": "https://example.com/video.mp4",
+            },
+        ]
+        result = _format_message_content(content)
+        assert len(result) == 2
+        assert result[0]["type"] == "text"
+        assert result[1] == {
+            "type": "video_url",
+            "video_url": {"url": "https://example.com/video.mp4"},
+        }
+
+    def test_video_base64_block(self) -> None:
+        """Test that base64 video blocks are converted to video_url data URI."""
+        content = [
+            {
+                "type": "video",
+                "base64": "AAAAIGZ0...",
+                "mime_type": "video/mp4",
+            },
+        ]
+        result = _format_message_content(content)
+        assert len(result) == 1
+        assert result[0]["type"] == "video_url"
+        assert result[0]["video_url"]["url"] == (
+            "data:video/mp4;base64,AAAAIGZ0..."
+        )
+
+    def test_video_base64_default_mime_type(self) -> None:
+        """Test that video base64 defaults to video/mp4 when mime_type is missing."""
+        content = [
+            {
+                "type": "video",
+                "base64": "AAAAIGZ0...",
+            },
+        ]
+        result = _format_message_content(content)
+        assert result[0]["video_url"]["url"].startswith("data:video/mp4;base64,")
+
+    def test_video_block_missing_source_raises(self) -> None:
+        """Test that video blocks without url or base64 raise ValueError."""
+        block: dict[str, Any] = {"type": "video", "mime_type": "video/mp4"}
+        with pytest.raises(ValueError, match="url.*base64"):
+            _convert_video_block_to_openrouter(block)
+
+    def test_mixed_multimodal_content(self) -> None:
+        """Test formatting a message with text, image, audio, and video blocks."""
+        content = [
+            {"type": "text", "text": "Analyze these inputs."},
+            {"type": "image", "url": "https://example.com/img.png"},
+            {"type": "audio", "base64": "audio_data", "mime_type": "audio/mp3"},
+            {"type": "video", "url": "https://example.com/clip.mp4"},
+        ]
+        result = _format_message_content(content)
+        assert len(result) == 4
+        assert result[0]["type"] == "text"
+        assert result[1]["type"] == "image_url"
+        assert result[2]["type"] == "input_audio"
+        assert result[3]["type"] == "video_url"
 
 
 # ===========================================================================

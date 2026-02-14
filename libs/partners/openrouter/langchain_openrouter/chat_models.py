@@ -86,7 +86,7 @@ def _get_default_model_profile(model_name: str) -> ModelProfile:
 class ChatOpenRouter(BaseChatModel):
     """OpenRouter chat model integration.
 
-    OpenRouter is a unified API that provides access to models from
+    OpenRouter is a unified API that provides access to hundreds of models from
     multiple providers (OpenAI, Anthropic, Google, Meta, etc.).
 
     ???+ info "Setup"
@@ -119,6 +119,7 @@ class ChatOpenRouter(BaseChatModel):
         | `timeout` | `int | None` | Timeout in milliseconds. |
         | `app_url` | `str | None` | App URL for attribution. |
         | `app_title` | `str | None` | App title for attribution. |
+        | `max_retries` | `int` | Max retries (default `2`). Set to `0` to disable. |
 
     ??? info "Instantiate"
 
@@ -137,9 +138,39 @@ class ChatOpenRouter(BaseChatModel):
     """
 
     client: Any = Field(default=None, exclude=True)
-    """Underlying SDK client (`openrouter.OpenRouter`).
+    """Underlying SDK client (`openrouter.OpenRouter`)."""
 
-    Created automatically during validation.
+    openrouter_api_key: SecretStr | None = Field(
+        alias="api_key",
+        default_factory=secret_from_env("OPENROUTER_API_KEY", default=None),
+    )
+    """OpenRouter API key."""
+
+    openrouter_api_base: str | None = Field(
+        default_factory=from_env("OPENROUTER_API_BASE", default=None),
+        alias="base_url",
+    )
+    """OpenRouter API base URL. Maps to SDK `server_url`."""
+
+    app_url: str | None = Field(
+        default_factory=from_env("OPENROUTER_APP_URL", default=None),
+    )
+    """Application URL for OpenRouter attribution. Maps to `HTTP-Referer` header."""
+
+    app_title: str | None = Field(
+        default_factory=from_env("OPENROUTER_APP_TITLE", default=None),
+    )
+    """Application title for OpenRouter attribution. Maps to `X-Title` header."""
+
+    request_timeout: int | None = Field(default=None, alias="timeout")
+    """Timeout for requests in milliseconds. Maps to SDK `timeout_ms`."""
+
+    max_retries: int = 2
+    """Maximum number of retries.
+
+    Controls the retry backoff window via the SDK's `max_elapsed_time`.
+
+    Set to `0` to disable retries.
     """
 
     model_name: str = Field(alias="model")
@@ -177,39 +208,6 @@ class ChatOpenRouter(BaseChatModel):
 
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Any extra model parameters for the OpenRouter API."""
-
-    openrouter_api_key: SecretStr | None = Field(
-        alias="api_key",
-        default_factory=secret_from_env("OPENROUTER_API_KEY", default=None),
-    )
-    """OpenRouter API key."""
-
-    openrouter_api_base: str | None = Field(
-        default_factory=from_env("OPENROUTER_API_BASE", default=None),
-        alias="base_url",
-    )
-    """OpenRouter API base URL. Maps to SDK `server_url`."""
-
-    app_url: str | None = Field(
-        default_factory=from_env("OPENROUTER_APP_URL", default=None),
-    )
-    """Application URL for OpenRouter attribution. Maps to `HTTP-Referer` header."""
-
-    app_title: str | None = Field(
-        default_factory=from_env("OPENROUTER_APP_TITLE", default=None),
-    )
-    """Application title for OpenRouter attribution. Maps to `X-Title` header."""
-
-    request_timeout: int | None = Field(default=None, alias="timeout")
-    """Timeout for requests in milliseconds. Maps to SDK `timeout_ms`."""
-
-    max_retries: int = 2
-    """Maximum number of retries.
-
-    Controls the retry backoff window via the SDK's `max_elapsed_time`.
-
-    Set to `0` to disable retries.
-    """
 
     openrouter_reasoning: dict[str, Any] | None = None
     """Reasoning settings to pass to OpenRouter.
@@ -769,6 +767,31 @@ def _strip_internal_kwargs(params: dict[str, Any]) -> None:
 #
 # Type conversion helpers
 #
+def _convert_video_block_to_openrouter(block: dict[str, Any]) -> dict[str, Any]:
+    """Convert a LangChain video content block to OpenRouter's `video_url` format.
+
+    Args:
+        block: A LangChain `VideoContentBlock`.
+
+    Returns:
+        A dict in OpenRouter's `video_url` format.
+
+    Raises:
+        ValueError: If no video source is provided.
+    """
+    if "url" in block:
+        return {"type": "video_url", "video_url": {"url": block["url"]}}
+    if "base64" in block or block.get("source_type") == "base64":
+        base64_data = block["data"] if "source_type" in block else block["base64"]
+        mime_type = block.get("mime_type", "video/mp4")
+        return {
+            "type": "video_url",
+            "video_url": {"url": f"data:{mime_type};base64,{base64_data}"},
+        }
+    msg = "Video block must have either 'url' or 'base64' data."
+    raise ValueError(msg)
+
+
 def _format_message_content(content: Any) -> Any:
     """Format message content for OpenRouter API.
 
@@ -784,7 +807,10 @@ def _format_message_content(content: Any) -> Any:
         formatted: list = []
         for block in content:
             if isinstance(block, dict) and is_data_content_block(block):
-                formatted.append(convert_to_openai_data_block(block))
+                if block.get("type") == "video":
+                    formatted.append(_convert_video_block_to_openrouter(block))
+                else:
+                    formatted.append(convert_to_openai_data_block(block))
             else:
                 formatted.append(block)
         return formatted
@@ -1023,11 +1049,13 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
         or {}
     )
 
+    cache_read = input_details_dict.get("cached_tokens")
     input_token_details: dict = {
-        "cache_read": input_details_dict.get("cached_tokens"),
+        "cache_read": int(cache_read) if cache_read is not None else None,
     }
+    reasoning_tokens = output_details_dict.get("reasoning_tokens")
     output_token_details: dict = {
-        "reasoning": output_details_dict.get("reasoning_tokens"),
+        "reasoning": int(reasoning_tokens) if reasoning_tokens is not None else None,
     }
     usage_metadata: UsageMetadata = {
         "input_tokens": input_tokens,
