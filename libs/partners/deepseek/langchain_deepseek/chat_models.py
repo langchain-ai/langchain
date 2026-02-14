@@ -28,18 +28,6 @@ from typing_extensions import Self
 
 from langchain_deepseek.data._profiles import _PROFILES
 
-try:
-    import pytest
-except ImportError:  # pragma: no cover
-    pytest = None  # type: ignore[assignment]
-
-_MISSING_API_KEY_ERR = (
-    "DEEPSEEK_API_KEY must be set when using the default DeepSeek API base."
-)
-_SKIP_MISSING_API_KEY = (
-    "DEEPSEEK_API_KEY is not set; skipping DeepSeek integration tests."
-)
-
 
 DEFAULT_API_BASE = "https://api.deepseek.com/v1"
 DEFAULT_BETA_API_BASE = "https://api.deepseek.com/beta"
@@ -235,7 +223,12 @@ class ChatDeepSeek(BaseChatOpenAI):
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
-        """Initialize clients."""
+        """Validate necessary environment vars and client params."""
+        if self.api_base == DEFAULT_API_BASE and not (
+            self.api_key and self.api_key.get_secret_value()
+        ):
+            msg = "If using default api base, DEEPSEEK_API_KEY must be set."
+            raise ValueError(msg)
         client_params: dict = {
             k: v
             for k, v in {
@@ -341,18 +334,6 @@ class ChatDeepSeek(BaseChatOpenAI):
         # DeepSeek requires the field to exist (empty string is acceptable)
         msg["reasoning_content"] = rc
 
-    def _raise_or_skip_missing_key(self) -> None:
-        if self.api_base != DEFAULT_API_BASE:
-            return
-        if self.api_key and self.api_key.get_secret_value():
-            return
-
-        if pytest is None:
-            msg = _MISSING_API_KEY_ERR
-            raise ValueError(msg) from None
-
-        pytest.skip(_SKIP_MISSING_API_KEY)
-
     def _prepare_payload_messages(
         self,
         payload: dict,
@@ -376,7 +357,6 @@ class ChatDeepSeek(BaseChatOpenAI):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> dict:
-        self._raise_or_skip_missing_key()
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
 
         thinking_enabled = self._is_thinking_enabled(payload, kwargs)
