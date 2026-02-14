@@ -1,6 +1,5 @@
 """Tests for BaseMessage.pretty_repr with non-string content."""
 
-import json
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
