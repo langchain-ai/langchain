@@ -17,6 +17,7 @@ from langchain_text_splitters import (
     RecursiveCharacterTextSplitter,
     TextSplitter,
     Tokenizer,
+    TokenTextSplitter,
 )
 from langchain_text_splitters.base import split_text_on_tokens
 from langchain_text_splitters.character import CharacterTextSplitter
@@ -4104,10 +4105,7 @@ def test_token_text_splitter_start_index_no_negative() -> None:
     based offset calculation in create_documents could produce an incorrect
     search window, causing text.find() to return -1.
     """
-    pytest = __import__("pytest")
-    tiktoken = pytest.importorskip("tiktoken")
-
-    from langchain_text_splitters import TokenTextSplitter
+    pytest.importorskip("tiktoken")
 
     text = (
         '"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do '
