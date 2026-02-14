@@ -245,6 +245,7 @@ class TestChatDeepSeekCustomUnit:
         assert payload["messages"][0]["content"] == "test string"
 
     def test_thinking_tool_calls_keeps_reasoning_content_if_provided(self) -> None:
+        """Ensure thinking-mode tool calls preserve provided reasoning_content."""
         chat_model = ChatDeepSeek(
             model="deepseek-reasoner",
             api_key=SecretStr("api_key"),
@@ -253,23 +254,31 @@ class TestChatDeepSeekCustomUnit:
 
         ai = AIMessage(
             content="",
-            tool_calls=[{"id": "call_1", "name": "get_weather",
-                         "args": {"location": "New York"}}],
+            tool_calls=[
+                {
+                    "id": "call_1",
+                    "name": "get_weather",
+                    "args": {"location": "New York"},
+                }
+            ],
             additional_kwargs={"reasoning_content": "reasoning..."},
         )
         tool = ToolMessage(content='{"temp": 10}', tool_call_id="call_1")
 
         payload = chat_model._get_request_payload(
-            [HumanMessage(content="hi"), ai, tool])
+            [HumanMessage(content="hi"), ai, tool]
+        )
 
         assistant_tool_msgs = [
-            m for m in payload["messages"]
+            m
+            for m in payload["messages"]
             if m.get("role") == "assistant" and m.get("tool_calls")
         ]
         assert assistant_tool_msgs
         assert assistant_tool_msgs[0]["reasoning_content"] == "reasoning..."
 
     def test_thinking_tool_calls_falls_back_to_empty_reasoning_content(self) -> None:
+        """Ensure thinking-mode tool calls always include reasoning_content (empty fallback)."""
         chat_model = ChatDeepSeek(
             model="deepseek-reasoner",
             api_key=SecretStr("api_key"),
@@ -278,17 +287,24 @@ class TestChatDeepSeekCustomUnit:
 
         ai = AIMessage(
             content="",
-            tool_calls=[{"id": "call_1", "name": "get_weather",
-                         "args": {"location": "New York"}}],
+            tool_calls=[
+                {
+                    "id": "call_1",
+                    "name": "get_weather",
+                    "args": {"location": "New York"},
+                }
+            ],
             additional_kwargs={},  # ✅ missing
         )
         tool = ToolMessage(content='{"temp": 10}', tool_call_id="call_1")
 
         payload = chat_model._get_request_payload(
-            [HumanMessage(content="hi"), ai, tool])
+            [HumanMessage(content="hi"), ai, tool]
+        )
 
         assistant_tool_msgs = [
-            m for m in payload["messages"]
+            m
+            for m in payload["messages"]
             if m.get("role") == "assistant" and m.get("tool_calls")
         ]
         assert assistant_tool_msgs
