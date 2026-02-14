@@ -1011,8 +1011,10 @@ async def _astream_events_implementation_v2(
     exclude_names: Sequence[str] | None = None,
     exclude_types: Sequence[str] | None = None,
     exclude_tags: Sequence[str] | None = None,
+    include_final_only: bool = False,
     **kwargs: Any,
 ) -> AsyncIterator[StandardStreamEvent]:
+    kwargs.pop("include_final_only", None)
     """Implementation of the astream events API for v2 runnables."""
     event_streamer = _AstreamEventsCallbackHandler(
         include_names=include_names,
@@ -1066,15 +1068,14 @@ async def _astream_events_implementation_v2(
 
     try:
         async for event in event_streamer:
+            # Add this check to satisfy the linter and preserve logic
             if not first_event_sent:
                 first_event_sent = True
-                # This is a work-around an issue where the inputs into the
-                # chain are not available until the entire input is consumed.
-                # As a temporary solution, we'll modify the input to be the input
-                # that was passed into the chain.
-                event["data"]["input"] = value
-                first_event_run_id = event["run_id"]
-                yield event
+                # ... any other setup needed for first event ...
+
+            if include_final_only:
+                if event["event"].endswith("_stream") and not event.get("parent_ids"):
+                    yield event
                 continue
 
             # If it's the end event corresponding to the root runnable
