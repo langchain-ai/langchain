@@ -1014,8 +1014,8 @@ async def _astream_events_implementation_v2(
     include_final_only: bool = False,
     **kwargs: Any,
 ) -> AsyncIterator[StandardStreamEvent]:
-    kwargs.pop("include_final_only", None)
     """Implementation of the astream events API for v2 runnables."""
+    kwargs.pop("include_final_only", None)
     event_streamer = _AstreamEventsCallbackHandler(
         include_names=include_names,
         include_types=include_types,
@@ -1068,19 +1068,26 @@ async def _astream_events_implementation_v2(
 
     try:
         async for event in event_streamer:
-            # Add this check to satisfy the linter and preserve logic
+            # 1. ALWAYS handle the first event setup logic
             if not first_event_sent:
                 first_event_sent = True
-                # ... any other setup needed for first event ...
-
-            if include_final_only:
-                if event["event"].endswith("_stream") and not event.get("parent_ids"):
+                # Workaround: manually attach input to the first event
+                event["data"]["input"] = value
+                first_event_run_id = event["run_id"]
+                # If filtering for final chunks only, we skip yielding the 'start' event
+                if not include_final_only:
                     yield event
                 continue
 
-            # If it's the end event corresponding to the root runnable
-            # we don't include the input in the event since it's guaranteed
-            # to be included in the first event.
+            # 2. Selective Streaming Logic
+            if include_final_only:
+                # ONLY yield stream events that have no parent (root level)
+                if event["event"].endswith("_stream") and not event.get("parent_ids"):
+                    yield event
+                # SKIP everything else in this mode to avoid double-yields
+                continue
+
+            # 3. Standard Logic (only reached if include_final_only=False)
             if (
                 event["run_id"] == first_event_run_id
                 and event["event"].endswith("_end")
