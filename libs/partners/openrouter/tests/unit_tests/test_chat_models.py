@@ -764,6 +764,60 @@ class TestMessageConversion:
         result = _convert_message_to_dict(msg)
         assert result == {"role": "assistant", "content": "Hi there!"}
 
+    def test_ai_message_with_reasoning_content_to_dict(self) -> None:
+        """Test that reasoning_content is preserved when converting back to dict."""
+        msg = AIMessage(
+            content="The answer is 42.",
+            additional_kwargs={"reasoning_content": "Let me think about this..."},
+        )
+        result = _convert_message_to_dict(msg)
+        assert result["role"] == "assistant"
+        assert result["content"] == "The answer is 42."
+        assert result["reasoning"] == "Let me think about this..."
+
+    def test_ai_message_with_reasoning_details_to_dict(self) -> None:
+        """Test that reasoning_details is preserved when converting back to dict."""
+        details = [
+            {"type": "reasoning.text", "text": "Step 1: analyze"},
+            {"type": "reasoning.text", "text": "Step 2: solve"},
+        ]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={"reasoning_details": details},
+        )
+        result = _convert_message_to_dict(msg)
+        assert result["reasoning_details"] == details
+        assert "reasoning" not in result
+
+    def test_ai_message_with_both_reasoning_fields_to_dict(self) -> None:
+        """Test that both reasoning_content and reasoning_details are preserved."""
+        details = [{"type": "reasoning.text", "text": "detailed thinking"}]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={
+                "reasoning_content": "I thought about it",
+                "reasoning_details": details,
+            },
+        )
+        result = _convert_message_to_dict(msg)
+        assert result["reasoning"] == "I thought about it"
+        assert result["reasoning_details"] == details
+
+    def test_reasoning_roundtrip_through_dict(self) -> None:
+        """Test that reasoning survives dict -> message -> dict roundtrip."""
+        original_dict = {
+            "role": "assistant",
+            "content": "The answer",
+            "reasoning": "My thinking process",
+            "reasoning_details": [
+                {"type": "reasoning.text", "text": "step-by-step"}
+            ],
+        }
+        msg = _convert_dict_to_message(original_dict)
+        result = _convert_message_to_dict(msg)
+        assert result["reasoning"] == "My thinking process"
+        assert result["reasoning_details"] == original_dict["reasoning_details"]
+
     def test_tool_message_to_dict(self) -> None:
         """Test converting ToolMessage to dict."""
         msg = ToolMessage(content="result", tool_call_id="call_123")

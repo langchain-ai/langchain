@@ -863,6 +863,17 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:  # noqa: C901
                 and not message_dict["content"]
             ):
                 message_dict["content"] = None
+        # Preserve reasoning content for multi-turn conversations (e.g.
+        # tool-calling loops). OpenRouter stores reasoning in "reasoning" and
+        # optional structured details in "reasoning_details".
+        if "reasoning_content" in message.additional_kwargs:
+            message_dict["reasoning"] = message.additional_kwargs[
+                "reasoning_content"
+            ]
+        if "reasoning_details" in message.additional_kwargs:
+            message_dict["reasoning_details"] = message.additional_kwargs[
+                "reasoning_details"
+            ]
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     elif isinstance(message, ToolMessage):
