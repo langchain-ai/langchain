@@ -741,11 +741,35 @@ class TestBindTools:
         assert isinstance(bound, RunnableBinding)
         assert "tool_choice" not in bound.kwargs
 
-    def test_bind_tools_strict_ignored(self) -> None:
-        """Test that strict param is accepted but ignored."""
+    def test_bind_tools_strict_forwarded(self) -> None:
+        """Test that strict param is forwarded to tool definitions."""
         model = _make_model()
         bound = model.bind_tools([GetWeather], strict=True)
         assert isinstance(bound, RunnableBinding)
+        tools = bound.kwargs["tools"]
+        assert tools[0]["function"]["strict"] is True
+
+    def test_bind_tools_strict_none_by_default(self) -> None:
+        """Test that strict is not set when not provided."""
+        model = _make_model()
+        bound = model.bind_tools([GetWeather])
+        assert isinstance(bound, RunnableBinding)
+        tools = bound.kwargs["tools"]
+        assert "strict" not in tools[0]["function"]
+
+    def test_bind_tools_parallel_tool_calls_false(self) -> None:
+        """Test that parallel_tool_calls=False is forwarded."""
+        model = _make_model()
+        bound = model.bind_tools([GetWeather], parallel_tool_calls=False)
+        assert isinstance(bound, RunnableBinding)
+        assert bound.kwargs["parallel_tool_calls"] is False
+
+    def test_bind_tools_parallel_tool_calls_not_set_by_default(self) -> None:
+        """Test that parallel_tool_calls is not set when not provided."""
+        model = _make_model()
+        bound = model.bind_tools([GetWeather])
+        assert isinstance(bound, RunnableBinding)
+        assert "parallel_tool_calls" not in bound.kwargs
 
 
 # ===========================================================================
@@ -824,13 +848,35 @@ class TestWithStructuredOutput:
         rf = bound.kwargs["response_format"]
         assert rf["type"] == "json_object"
 
-    def test_with_structured_output_strict_ignored(self) -> None:
-        """Test that strict param is accepted but ignored."""
+    def test_with_structured_output_strict_function_calling(self) -> None:
+        """Test that strict is forwarded for function_calling method."""
         model = _make_model()
         structured = model.with_structured_output(
             GenerateUsername, method="function_calling", strict=True
         )
-        assert structured is not None
+        bound = structured.first  # type: ignore[attr-defined]
+        assert isinstance(bound, RunnableBinding)
+        tools = bound.kwargs["tools"]
+        assert tools[0]["function"]["strict"] is True
+
+    def test_with_structured_output_strict_json_schema(self) -> None:
+        """Test that strict is forwarded for json_schema method."""
+        model = _make_model()
+        structured = model.with_structured_output(
+            GenerateUsername, method="json_schema", strict=True
+        )
+        bound = structured.first  # type: ignore[attr-defined]
+        assert isinstance(bound, RunnableBinding)
+        rf = bound.kwargs["response_format"]
+        assert rf["json_schema"]["strict"] is True
+
+    def test_with_structured_output_strict_json_mode_raises(self) -> None:
+        """Test that strict with json_mode raises ValueError."""
+        model = _make_model()
+        with pytest.raises(ValueError, match="not supported"):
+            model.with_structured_output(
+                GenerateUsername, method="json_mode", strict=True
+            )
 
 
 # ===========================================================================
@@ -1179,6 +1225,47 @@ class TestCreateChatResult:
         assert "system_fingerprint" not in msg.response_metadata
         assert "native_finish_reason" not in msg.response_metadata
         assert "model" not in msg.response_metadata
+
+    def test_float_token_usage_normalized_to_int(self) -> None:
+        """Test that float token counts in llm_output are cast to int."""
+        model = _make_model()
+        response: dict[str, Any] = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "Hello!"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {
+                "prompt_tokens": 585.0,
+                "completion_tokens": 56.0,
+                "total_tokens": 641.0,
+                "completion_tokens_details": {"reasoning_tokens": 0.0},
+                "prompt_tokens_details": {
+                    "cached_tokens": 0.0,
+                    "cache_write_tokens": 0.0,
+                    "audio_tokens": None,
+                    "video_tokens": None,
+                },
+            },
+            "model": MODEL_NAME,
+        }
+        result = model._create_chat_result(response)
+        token_usage = result.llm_output["token_usage"]
+        assert token_usage["prompt_tokens"] == 585
+        assert isinstance(token_usage["prompt_tokens"], int)
+        assert token_usage["completion_tokens"] == 56
+        assert isinstance(token_usage["completion_tokens"], int)
+        assert token_usage["total_tokens"] == 641
+        assert isinstance(token_usage["total_tokens"], int)
+        assert token_usage["completion_tokens_details"]["reasoning_tokens"] == 0
+        assert isinstance(
+            token_usage["completion_tokens_details"]["reasoning_tokens"], int
+        )
+        assert token_usage["prompt_tokens_details"]["cached_tokens"] == 0
+        assert isinstance(token_usage["prompt_tokens_details"]["cached_tokens"], int)
+        # None values should be preserved as-is
+        assert token_usage["prompt_tokens_details"]["audio_tokens"] is None
 
 
 # ===========================================================================

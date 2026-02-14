@@ -565,7 +565,7 @@ class ChatOpenRouter(BaseChatModel):
             raise ValueError(msg)
 
         generations = []
-        token_usage = response.get("usage") or {}
+        token_usage = _normalize_token_usage(response.get("usage") or {})
 
         # Extract top-level response metadata
         response_model = response.get("model")
@@ -633,6 +633,8 @@ class ChatOpenRouter(BaseChatModel):
         tools: Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
         *,
         tool_choice: dict | str | bool | None = None,
+        strict: bool | None = None,
+        parallel_tool_calls: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
@@ -643,10 +645,23 @@ class ChatOpenRouter(BaseChatModel):
                 Supports any tool definition handled by
                 `langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call.
+            strict: If `True`, model output is guaranteed to exactly match the
+                JSON Schema provided in the tool definition.
+
+                If `None`, the `strict` argument will not be passed to
+                the model.
+            parallel_tool_calls: If `False`, the model will only request one
+                tool call at a time.
+
+                Defaults to `None` (no specification, which allows parallel
+                tool use).
             **kwargs: Any additional parameters.
         """
-        _ = kwargs.pop("strict", None)
-        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        if parallel_tool_calls is not None:
+            kwargs["parallel_tool_calls"] = parallel_tool_calls
+        formatted_tools = [
+            convert_to_openai_tool(tool, strict=strict) for tool in tools
+        ]
         if tool_choice is not None and tool_choice:
             if tool_choice == "any":
                 tool_choice = "required"
@@ -677,6 +692,7 @@ class ChatOpenRouter(BaseChatModel):
             "function_calling", "json_mode", "json_schema"
         ] = "function_calling",
         include_raw: bool = False,
+        strict: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, dict | BaseModel]:
         """Model wrapper that returns outputs formatted to match the given schema.
@@ -687,12 +703,19 @@ class ChatOpenRouter(BaseChatModel):
             method: The method for steering model generation.
             include_raw: If `True` then both the raw model response and the
                 parsed model response will be returned.
+            strict: If `True`, model output is guaranteed to exactly match the
+                JSON Schema provided in the schema definition.
+
+                If `None`, the `strict` argument will not be passed to
+                the model.
             **kwargs: Any additional parameters.
 
         Returns:
             A `Runnable` that takes same inputs as a `BaseChatModel`.
         """
-        _ = kwargs.pop("strict", None)
+        if strict is not None and method == "json_mode":
+            msg = "Argument `strict` is not supported with `method`='json_mode'"
+            raise ValueError(msg)
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
             if schema is None:
@@ -706,8 +729,9 @@ class ChatOpenRouter(BaseChatModel):
             llm = self.bind_tools(
                 [schema],
                 tool_choice=tool_name,
+                strict=strict,
                 ls_structured_output_format={
-                    "kwargs": {"method": "function_calling"},
+                    "kwargs": {"method": "function_calling", "strict": strict},
                     "schema": formatted_tool,
                 },
                 **kwargs,
@@ -730,12 +754,18 @@ class ChatOpenRouter(BaseChatModel):
                 raise ValueError(msg)
             json_schema = convert_to_json_schema(schema)
             schema_name = json_schema.get("title", "")
+            json_schema_spec: dict[str, Any] = {
+                "name": schema_name,
+                "schema": json_schema,
+            }
+            if strict is not None:
+                json_schema_spec["strict"] = strict
             response_format = {
                 "type": "json_schema",
-                "json_schema": {"name": schema_name, "schema": json_schema},
+                "json_schema": json_schema_spec,
             }
             ls_format_info = {
-                "kwargs": {"method": "json_schema"},
+                "kwargs": {"method": "json_schema", "strict": strict},
                 "schema": json_schema,
             }
             llm = self.bind(
@@ -1054,6 +1084,33 @@ def _lc_invalid_tool_call_to_openrouter_tool_call(
             "arguments": invalid_tool_call["args"],
         },
     }
+
+
+def _normalize_token_usage(token_usage: dict) -> dict:
+    """Cast numeric token usage values to int.
+
+    OpenRouter may return token counts as floats (e.g. `56.0`). This normalizes
+    them so that `response_metadata["token_usage"]` contains clean
+    integer values.
+
+    Args:
+        token_usage: Raw token usage dict from the API response.
+
+    Returns:
+        A new dict with numeric values cast to `int`.
+    """
+    normalized: dict[str, Any] = {}
+    for key, value in token_usage.items():
+        if isinstance(value, float) and value.is_integer():
+            normalized[key] = int(value)
+        elif isinstance(value, dict):
+            normalized[key] = {
+                k: int(v) if isinstance(v, float) and v.is_integer() else v
+                for k, v in value.items()
+            }
+        else:
+            normalized[key] = value
+    return normalized
 
 
 def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
