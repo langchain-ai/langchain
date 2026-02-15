@@ -79,17 +79,23 @@ def test_nonlocals() -> None:
 def test_deps_does_not_call_inspect_getsource() -> None:
     original = inspect.getsource
     error_message = "inspect.getsource was called while computing deps"
+
     def explode(*_args: Any, **_kwargs: Any) -> NoReturn:
         raise AssertionError(error_message)
+
     inspect.getsource = explode
     try:
         agent = RunnableLambda(lambda x: x)
+
         class Box:
             def __init__(self, a: RunnableLambda) -> None:
                 self.agent = a
+
         box = Box(agent)
+
         def my_func(x: str) -> str:
             return box.agent.invoke(x)
+
         r = RunnableLambda(my_func)
         _ = r.deps
     finally:

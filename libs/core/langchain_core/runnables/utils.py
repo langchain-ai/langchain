@@ -486,7 +486,7 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
     }
 
     target = func
-    seen_wrapped= set()
+    seen_wrapped = set()
     while True:
         w = getattr(target, "__wrapped__", None)
         if not callable(w):
@@ -509,8 +509,8 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
     closure = getattr(target, "__closure__", None)
     if closure and freevars:
         for name, cell in zip(freevars, closure, strict=False):
-           with suppress(ValueError):
-               nonlocals_dict[name] = cell.cell_contents
+            with suppress(ValueError):
+                nonlocals_dict[name] = cell.cell_contents
 
     globals_dict = getattr(target, "__globals__", {})
 
