@@ -22,6 +22,9 @@
   <a href="https://x.com/langchain" target="_blank"><img src="https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40LangChain" alt="Twitter / X"></a>
 </div>
 
+> [!CAUTION]
+> **This repository is deprecated.** The `langchain` package is no longer actively maintained. We recommend migrating to [LangGraph](https://github.com/langchain-ai/langgraph) for building agents and LLM-powered applications. See the [LangGraph documentation](https://docs.langchain.com/oss/python/langgraph/overview) for more details.
+
 LangChain is a framework for building agents and LLM-powered applications. It helps you chain together interoperable components and third-party integrations to simplify AI application development – all while future-proofing decisions as the underlying technology evolves.
 
 ```bash
