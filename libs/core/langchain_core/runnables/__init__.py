@@ -83,6 +83,7 @@ __all__ = (
     "RunnableSerializable",
     "RunnableWithFallbacks",
     "RunnableWithMessageHistory",
+    "TieredSemanticRouter",
     "aadd",
     "add",
     "chain",
@@ -90,7 +91,6 @@ __all__ = (
     "get_config_list",
     "patch_config",
     "run_in_executor",
-    "TieredSemanticRouter",
 )
 
 _dynamic_imports = {
