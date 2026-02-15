@@ -239,7 +239,7 @@ class ChatOpenRouter(BaseChatModel):
     """
 
     route: str | None = None
-    """Route preference for OpenRouter. E.g. `'fallback'`."""
+    """Route preference for OpenRouter, e.g. `'fallback'`."""
 
     plugins: list[dict[str, Any]] | None = None
     """Plugins configuration for OpenRouter."""
