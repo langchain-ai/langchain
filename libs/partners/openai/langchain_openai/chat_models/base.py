@@ -1520,7 +1520,15 @@ class BaseChatOpenAI(BaseChatModel):
             raise KeyError(msg) from e
 
         if choices is None:
-            msg = "Received response with null value for `choices`."
+            # Some OpenAI-compatible APIs (e.g., vLLM) may return null choices
+            # when the response format differs or an error occurs without
+            # populating the error field. Provide a more helpful error message.
+            msg = (
+                "Received response with null value for `choices`. "
+                "This can happen when using OpenAI-compatible APIs (e.g., vLLM) "
+                "that return a response in an unexpected format. "
+                f"Full response keys: {list(response_dict.keys())}"
+            )
             raise TypeError(msg)
 
         token_usage = response_dict.get("usage")
