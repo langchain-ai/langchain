@@ -1,0 +1,108 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "langchain-openrouter"
+description = "An integration package connecting OpenRouter and LangChain"
+license = { text = "MIT" }
+readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+version = "0.0.2"
+requires-python = ">=3.10.0,<4.0.0"
+dependencies = [
+    "langchain-core>=1.2.11,<2.0.0",
+    "openrouter>=0.6.0,<1.0.0",
+]
+
+[project.urls]
+Homepage = "https://docs.langchain.com/oss/python/integrations/providers/openrouter"
+Documentation = "https://reference.langchain.com/python/integrations/langchain_openrouter/"
+Repository = "https://github.com/langchain-ai/langchain"
+Issues = "https://github.com/langchain-ai/langchain/issues"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-openrouter%22"
+Twitter = "https://x.com/LangChain"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
+
+[dependency-groups]
+test = [
+    "pytest>=9.0.0,<10.0.0",
+    "pytest-asyncio>=1.3.0,<2.0.0",
+    "pytest-socket>=0.7.0,<1.0.0",
+    "pytest-watcher>=0.6.3,<1.0.0",
+    "pytest-timeout>=2.4.0,<3.0.0",
+    "langchain-tests",
+]
+test_integration = []
+lint = ["ruff>=0.15.0,<0.16.0"]
+dev = ["langchain-core"]
+typing = ["mypy>=1.19.1,<2.0.0"]
+
+
+[tool.uv.sources]
+langchain-core = { path = "../../core", editable = true }
+langchain-tests = { path = "../../standard-tests", editable = true }
+
+[tool.mypy]
+disallow_untyped_defs = "True"
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = [ "ALL" ]
+ignore = [
+    "COM812",  # Conflicts with formatter
+    "PLR0913", # Too many arguments
+
+    # TODO
+    "ANN401",
+    "TC002",
+    "TC003",
+]
+unfixable = ["B028"] # People should intentionally tune the stacklevel
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.coverage.run]
+omit = ["tests/*"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config --durations=5"
+markers = [
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
+asyncio_mode = "auto"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101",   # Tests need assertions
+    "S311",   # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "SLF001", # Private member access
+    "PLR2004", # Magic values are fine in tests
+    "D102",
+
+    # TODO
+    "ARG002", # Unused method argument:
+]
+"scripts/*.py" = [
+    "INP001",   # Not a package
+]
