@@ -1,4 +1,15 @@
-"""OpenAI chat wrapper."""
+"""OpenAI chat wrapper.
+
+!!! warning "API scope"
+
+        `ChatOpenAI` targets
+        [official OpenAI API specifications](https://github.com/openai/openai-openapi)
+        only. Non-standard response fields added by third-party providers (e.g.,
+        `reasoning_content`, `reasoning_details`) are **not** extracted or
+        preserved. If you are pointing `base_url` at a provider such as
+        OpenRouter, vLLM, or DeepSeek, use the corresponding provider-specific
+        LangChain package instead (e.g., `ChatDeepSeek`, `ChatOpenRouter`).
+"""
 
 from __future__ import annotations
 
@@ -225,6 +236,26 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)  # type: ignore[arg-type]
 
 
+def _sanitize_chat_completions_content(content: str | list[dict]) -> str | list[dict]:
+    """Sanitize content for chat/completions API.
+
+    For list content, filters text blocks to only keep 'type' and 'text' keys.
+    """
+    if isinstance(content, list):
+        sanitized = []
+        for block in content:
+            if (
+                isinstance(block, dict)
+                and block.get("type") == "text"
+                and "text" in block
+            ):
+                sanitized.append({"type": "text", "text": block["text"]})
+            else:
+                sanitized.append(block)
+        return sanitized
+    return content
+
+
 def _format_message_content(
     content: Any,
     api: Literal["chat/completions", "responses"] = "chat/completions",
@@ -357,7 +388,9 @@ def _convert_message_to_dict(
     elif isinstance(message, ToolMessage):
         message_dict["role"] = "tool"
         message_dict["tool_call_id"] = message.tool_call_id
-
+        message_dict["content"] = _sanitize_chat_completions_content(
+            message_dict["content"]
+        )
         supported_props = {"content", "role", "tool_call_id"}
         message_dict = {k: v for k, v in message_dict.items() if k in supported_props}
     else:
@@ -511,7 +544,14 @@ _DictOrPydantic: TypeAlias = dict | _BM
 
 
 class BaseChatOpenAI(BaseChatModel):
-    """Base wrapper around OpenAI large language models for chat."""
+    """Base wrapper around OpenAI large language models for chat.
+
+    This base class targets
+    [official OpenAI API specifications](https://github.com/openai/openai-openapi)
+    only. Non-standard response fields added by third-party providers (e.g.,
+    `reasoning_content`) are not extracted. Use a provider-specific subclass for
+    full provider support.
+    """
 
     client: Any = Field(default=None, exclude=True)
 
@@ -1509,7 +1549,15 @@ class BaseChatOpenAI(BaseChatModel):
             raise KeyError(msg) from e
 
         if choices is None:
-            msg = "Received response with null value for `choices`."
+            # Some OpenAI-compatible APIs (e.g., vLLM) may return null choices
+            # when the response format differs or an error occurs without
+            # populating the error field. Provide a more helpful error message.
+            msg = (
+                "Received response with null value for `choices`. "
+                "This can happen when using OpenAI-compatible APIs (e.g., vLLM) "
+                "that return a response in an unexpected format. "
+                f"Full response keys: {list(response_dict.keys())}"
+            )
             raise TypeError(msg)
 
         token_usage = response_dict.get("usage")
@@ -2268,6 +2316,16 @@ class BaseChatOpenAI(BaseChatModel):
 
 class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     r"""Interface to OpenAI chat model APIs.
+
+    !!! warning "API scope"
+
+        `ChatOpenAI` targets
+        [official OpenAI API specifications](https://github.com/openai/openai-openapi)
+        only. Non-standard response fields added by third-party providers (e.g.,
+        `reasoning_content`, `reasoning_details`) are **not** extracted or
+        preserved. If you are pointing `base_url` at a provider such as
+        OpenRouter, vLLM, or DeepSeek, use the corresponding provider-specific
+        LangChain package instead (e.g., `ChatDeepSeek`, `ChatOpenRouter`).
 
     ???+ info "Setup"
 

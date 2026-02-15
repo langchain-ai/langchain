@@ -1264,6 +1264,23 @@ def test__get_request_payload() -> None:
     assert payload == expected
 
 
+def test_sanitize_chat_completions_text_blocks() -> None:
+    messages = [
+        ToolMessage(
+            content=[{"type": "text", "text": "foo", "id": "lc_abc123"}],
+            tool_call_id="def456",
+        ),
+    ]
+    payload = ChatOpenAI(model="gpt-5.2")._get_request_payload(messages)
+    assert payload["messages"] == [
+        {
+            "content": [{"type": "text", "text": "foo"}],
+            "role": "tool",
+            "tool_call_id": "def456",
+        }
+    ]
+
+
 def test_init_o1() -> None:
     with warnings.catch_warnings(record=True) as record:
         warnings.simplefilter("error")  # Treat warnings as errors

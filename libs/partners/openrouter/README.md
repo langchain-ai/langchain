@@ -1,0 +1,30 @@
+# langchain-openrouter
+
+[![PyPI - Version](https://img.shields.io/pypi/v/langchain-openrouter?label=%20)](https://pypi.org/project/langchain-openrouter/#history)
+[![PyPI - License](https://img.shields.io/pypi/l/langchain-openrouter)](https://opensource.org/licenses/MIT)
+[![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-openrouter)](https://pypistats.org/packages/langchain-openrouter)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40LangChain)](https://x.com/langchain)
+
+## Quick Install
+
+```bash
+pip install langchain-openrouter
+```
+
+## 🤔 What is this?
+
+This package contains the LangChain integration with [OpenRouter](https://openrouter.ai/), a unified API for hundreds of AI models across many providers.
+
+## 📖 Documentation
+
+For full documentation, see the [API reference](https://reference.langchain.com/python/integrations/langchain_openrouter/). For conceptual guides, tutorials, and examples on using these classes, see the [LangChain Docs](https://docs.langchain.com/oss/python/integrations/providers/openrouter).
+
+## 📕 Releases & Versioning
+
+See our [Releases](https://docs.langchain.com/oss/python/release-policy) and [Versioning](https://docs.langchain.com/oss/python/versioning) policies.
+
+## 💁 Contributing
+
+As an open-source project in a rapidly developing field, we are extremely open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
+
+For detailed information on how to contribute, see the [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview).
