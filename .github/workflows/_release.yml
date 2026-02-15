@@ -377,6 +377,7 @@ jobs:
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           LANGCHAIN_TESTS_USER_AGENT: ${{ secrets.LANGCHAIN_TESTS_USER_AGENT }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
@@ -585,6 +586,8 @@ jobs:
       - test-pypi-publish
       - pre-release-checks
       - publish
+    # Run if all needed jobs succeeded or were skipped (test-dependents only runs for core/langchain_v1)
+    if: ${{ !cancelled() && !failure() }}
     runs-on: ubuntu-latest
     permissions:
       # This permission is needed by `ncipollo/release-action` to

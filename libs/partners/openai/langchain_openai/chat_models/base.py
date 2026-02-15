@@ -1,4 +1,15 @@
-"""OpenAI chat wrapper."""
+"""OpenAI chat wrapper.
+
+!!! warning "API scope"
+
+        `ChatOpenAI` targets
+        [official OpenAI API specifications](https://github.com/openai/openai-openapi)
+        only. Non-standard response fields added by third-party providers (e.g.,
+        `reasoning_content`, `reasoning_details`) are **not** extracted or
+        preserved. If you are pointing `base_url` at a provider such as
+        OpenRouter, vLLM, or DeepSeek, use the corresponding provider-specific
+        LangChain package instead (e.g., `ChatDeepSeek`, `ChatOpenRouter`).
+"""
 
 from __future__ import annotations
 
@@ -511,7 +522,14 @@ _DictOrPydantic: TypeAlias = dict | _BM
 
 
 class BaseChatOpenAI(BaseChatModel):
-    """Base wrapper around OpenAI large language models for chat."""
+    """Base wrapper around OpenAI large language models for chat.
+
+    This base class targets
+    [official OpenAI API specifications](https://github.com/openai/openai-openapi)
+    only. Non-standard response fields added by third-party providers (e.g.,
+    `reasoning_content`) are not extracted. Use a provider-specific subclass for
+    full provider support.
+    """
 
     client: Any = Field(default=None, exclude=True)
 
@@ -2261,6 +2279,16 @@ class BaseChatOpenAI(BaseChatModel):
 
 class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     r"""Interface to OpenAI chat model APIs.
+
+    !!! warning "API scope"
+
+        `ChatOpenAI` targets
+        [official OpenAI API specifications](https://github.com/openai/openai-openapi)
+        only. Non-standard response fields added by third-party providers (e.g.,
+        `reasoning_content`, `reasoning_details`) are **not** extracted or
+        preserved. If you are pointing `base_url` at a provider such as
+        OpenRouter, vLLM, or DeepSeek, use the corresponding provider-specific
+        LangChain package instead (e.g., `ChatDeepSeek`, `ChatOpenRouter`).
 
     ???+ info "Setup"
 
