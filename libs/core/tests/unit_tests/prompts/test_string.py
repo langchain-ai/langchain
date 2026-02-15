@@ -39,3 +39,15 @@ def test_get_template_variables_mustache_nested() -> None:
     expected = ["user"]
     actual = get_template_variables(template, template_format)
     assert actual == expected
+
+
+def test_pretty_repr_with_partial_variables() -> None:
+    from langchain_core.prompts import PromptTemplate
+
+    prompt = PromptTemplate(
+        template="Hello {name}, welcome to {place}!",
+        input_variables=["name", "place"],
+        partial_variables={"place": "World"},
+    )
+    # We want the partial variable to be displayed as a placeholder, not its value.
+    assert "welcome to {place}" in prompt.pretty_repr()

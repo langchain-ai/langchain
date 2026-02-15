@@ -360,6 +360,13 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
         dummy_vars = {
             input_var: "{" + f"{input_var}" + "}" for input_var in self.input_variables
         }
+        if hasattr(self, "partial_variables"):
+            dummy_vars.update(
+                {
+                    k: "{" + f"{k}" + "}"
+                    for k in self.partial_variables.keys()
+                }
+            )
         if html:
             dummy_vars = {
                 k: get_colored_text(v, "yellow") for k, v in dummy_vars.items()
