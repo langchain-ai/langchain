@@ -247,7 +247,7 @@ class TestProviderStrategyBinding:
 
         with pytest.raises(
             ValueError,
-            match="Native structured output expected valid JSON for _TestModel, but parsing failed",
+            match="Failed to parse structured output for _TestModel",
         ):
             tool_binding.parse(message)
 
