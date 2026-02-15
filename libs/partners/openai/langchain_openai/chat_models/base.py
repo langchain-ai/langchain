@@ -236,6 +236,26 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)  # type: ignore[arg-type]
 
 
+def _sanitize_chat_completions_content(content: str | list[dict]) -> str | list[dict]:
+    """Sanitize content for chat/completions API.
+
+    For list content, filters text blocks to only keep 'type' and 'text' keys.
+    """
+    if isinstance(content, list):
+        sanitized = []
+        for block in content:
+            if (
+                isinstance(block, dict)
+                and block.get("type") == "text"
+                and "text" in block
+            ):
+                sanitized.append({"type": "text", "text": block["text"]})
+            else:
+                sanitized.append(block)
+        return sanitized
+    return content
+
+
 def _format_message_content(
     content: Any,
     api: Literal["chat/completions", "responses"] = "chat/completions",
@@ -368,7 +388,9 @@ def _convert_message_to_dict(
     elif isinstance(message, ToolMessage):
         message_dict["role"] = "tool"
         message_dict["tool_call_id"] = message.tool_call_id
-
+        message_dict["content"] = _sanitize_chat_completions_content(
+            message_dict["content"]
+        )
         supported_props = {"content", "role", "tool_call_id"}
         message_dict = {k: v for k, v in message_dict.items() if k in supported_props}
     else:
