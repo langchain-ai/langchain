@@ -586,6 +586,8 @@ jobs:
       - test-pypi-publish
       - pre-release-checks
       - publish
+    # Run if all needed jobs succeeded or were skipped (test-dependents only runs for core/langchain_v1)
+    if: ${{ !cancelled() && !failure() }}
     runs-on: ubuntu-latest
     permissions:
       # This permission is needed by `ncipollo/release-action` to
