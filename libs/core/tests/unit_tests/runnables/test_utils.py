@@ -85,18 +85,18 @@ def test_deps_does_not_call_inspect_getsource() -> None:
 
     inspect.getsource = explode
     try:
-        agent = RunnableLambda(lambda x: x)
+        agent: RunnableLambda[str, str] = RunnableLambda(lambda x: x)
 
         class Box:
-            def __init__(self, a: RunnableLambda) -> None:
-                self.agent = a
+            def __init__(self, a: RunnableLambda[str, str]) -> None:
+                self.agent: RunnableLambda[str, str] = a
 
         box = Box(agent)
 
         def my_func(x: str) -> str:
             return box.agent.invoke(x)
 
-        r = RunnableLambda(my_func)
+        r: RunnableLambda[str, str] = RunnableLambda(my_func)
         _ = r.deps
     finally:
         inspect.getsource = original
