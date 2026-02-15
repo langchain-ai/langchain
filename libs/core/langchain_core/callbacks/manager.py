@@ -253,6 +253,35 @@ def shielded(func: Func) -> Func:
     return cast("Func", wrapped)
 
 
+async def _achat_model_start_fallback(
+    coro: Coroutine[Any, Any, Any],
+    handler: BaseCallbackHandler,
+    *args: Any,
+    **kwargs: Any,
+) -> None:
+    """Wrap an async `on_chat_model_start` coroutine with fallback.
+
+    Catches `NotImplementedError` and triggers the `on_llm_start` fallback.
+    This covers async handlers invoked from a **sync** `handle_event` call,
+    where the coroutine is collected into `coros` and executed later by
+    `_run_coros`.  Without this wrapper the `NotImplementedError` would be
+    caught generically by `_run_coros` and the trace would be lost.
+    """
+    try:
+        await coro
+    except NotImplementedError:
+        message_strings = [get_buffer_string(m) for m in args[1]]
+        await _ahandle_event_for_handler(
+            handler,
+            "on_llm_start",
+            "ignore_llm",
+            args[0],
+            message_strings,
+            *args[2:],
+            **kwargs,
+        )
+
+
 def handle_event(
     handlers: list[BaseCallbackHandler],
     event_name: str,
@@ -282,6 +311,10 @@ def handle_event(
                 ):
                     event = getattr(handler, event_name)(*args, **kwargs)
                     if asyncio.iscoroutine(event):
+                        if event_name == "on_chat_model_start":
+                            event = _achat_model_start_fallback(
+                                event, handler, *args, **kwargs
+                            )
                         coros.append(event)
             except NotImplementedError as e:
                 if event_name == "on_chat_model_start":
