@@ -219,6 +219,7 @@ jobs:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
         with:
