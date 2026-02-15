@@ -1,5 +1,6 @@
+import inspect
 from collections.abc import Callable
-from typing import Any
+from typing import Any, NoReturn
 
 import pytest
 
@@ -73,3 +74,29 @@ def test_nonlocals() -> None:
     assert RunnableLambda(my_func3).deps == [agent]
     assert RunnableLambda(my_func4).deps == [global_agent]
     assert RunnableLambda(func).deps == [nl]
+
+
+def test_deps_does_not_call_inspect_getsource() -> None:
+    original = inspect.getsource
+    error_message = "inspect.getsource was called while computing deps"
+    def explode(*_args: Any, **_kwargs: Any) -> NoReturn:
+        raise AssertionError(error_message)
+    inspect.getsource = explode
+    try:
+        agent = RunnableLambda(lambda x: x)
+        class Box:
+            def __init__(self, a: RunnableLambda) -> None:
+                self.agent = a
+        box = Box(agent)
+        def my_func(x: str) -> str:
+            return box.agent.invoke(x)
+        r = RunnableLambda(my_func)
+        _ = r.deps
+    finally:
+        inspect.getsource = original
+
+
+def test_deps_is_cached_on_instance() -> None:
+    r = RunnableLambda(lambda x: x)
+    _ = r.deps
+    assert "deps" in r.__dict__

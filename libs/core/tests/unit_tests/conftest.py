@@ -17,9 +17,6 @@ def blockbuster() -> Iterator[BlockBuster]:
                 bb.functions[func]
                 .can_block_in("langchain_core/_api/internal.py", "is_caller_internal")
                 .can_block_in("langchain_core/runnables/base.py", "__repr__")
-                .can_block_in(
-                    "langchain_core/beta/runnables/context.py", "aconfig_with_context"
-                )
             )
 
         for func in ["os.stat", "io.TextIOWrapper.read"]:
