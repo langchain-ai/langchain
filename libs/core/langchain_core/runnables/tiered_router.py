@@ -27,13 +27,15 @@ class TieredSemanticRouter(Serializable):
     ) -> Union[BaseMessage, str]:
         score = self._get_complexity_score(input)
         if score <= self.threshold:
-            return self.primary.invoke(input, config, **kwargs)
-        return self.fallback.invoke(input, config, **kwargs)
+            # Fix: Pass config and kwargs
+            return self.primary.invoke(input, config=config, **kwargs)
+        return self.fallback.invoke(input, config=config, **kwargs)
 
     async def ainvoke(
         self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Union[BaseMessage, str]:
         score = self._get_complexity_score(input)
         if score <= self.threshold:
-            return await self.primary.ainvoke(input, config, **kwargs)
-        return await self.fallback.ainvoke(input, config, **kwargs)
+            # Fix: Pass config and kwargs
+            return await self.primary.ainvoke(input, config=config, **kwargs)
+        return await self.fallback.ainvoke(input, config=config, **kwargs)
