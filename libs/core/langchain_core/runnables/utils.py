@@ -424,11 +424,11 @@ def _nonlocal_access_plan(
     root_ops = {"LOAD_GLOBAL", "LOAD_DEREF", "LOAD_NAME"}
     attr_ops = {"LOAD_ATTR", "LOAD_METHOD"}
 
-    plain_roots = set()
-    chains = []
+    plain_roots: set[str] = set()
+    chains: list[tuple[str, tuple[str, ...]]] = []
 
-    base = None
-    attrs = []
+    base: str | None = None
+    attrs: list[str] = []
 
     def flush() -> None:
         nonlocal base, attrs
