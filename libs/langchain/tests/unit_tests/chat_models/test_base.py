@@ -147,6 +147,7 @@ def test_configurable() -> None:
             "reasoning_effort": None,
             "verbosity": None,
             "frequency_penalty": None,
+            "context_management": None,
             "include": None,
             "seed": None,
             "service_tier": None,
