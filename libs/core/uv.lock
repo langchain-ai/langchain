@@ -1120,7 +1120,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-lint = [{ name = "ruff", specifier = ">=0.14.11,<0.16.0" }]
+lint = [{ name = "ruff", specifier = ">=0.15.0,<0.16.0" }]
 test = [{ name = "langchain-core", editable = "." }]
 test-integration = []
 typing = [
@@ -1147,7 +1147,7 @@ dev = [
 ]
 lint = [
     { name = "langchain-core", editable = "." },
-    { name = "ruff", specifier = ">=0.14.11,<0.16.0" },
+    { name = "ruff", specifier = ">=0.15.0,<0.16.0" },
 ]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
