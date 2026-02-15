@@ -1310,8 +1310,16 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
         Args:
             file_path: path to file.
+
+        Raises:
+            ValueError: If the file path is not json or yaml.
+
+        Example:
+            .. code-block:: python
+
+                prompt.save(file_path="path/prompt.json")
         """
-        raise NotImplementedError
+        super().save(file_path)
 
     @override
     def pretty_repr(self, html: bool = False) -> str:
