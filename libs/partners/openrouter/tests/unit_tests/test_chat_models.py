@@ -1109,7 +1109,8 @@ class TestMessageConversion:
     def test_dict_to_chat_message_unknown_role(self) -> None:
         """Test that unrecognized roles fall back to ChatMessage."""
         d = {"role": "developer", "content": "Some content"}
-        msg = _convert_dict_to_message(d)
+        with pytest.warns(UserWarning, match="Unrecognized message role"):
+            msg = _convert_dict_to_message(d)
         assert isinstance(msg, ChatMessage)
         assert msg.role == "developer"
         assert msg.content == "Some content"
@@ -1445,7 +1446,8 @@ class TestStreamingChunks:
         chunk: dict[str, Any] = {
             "choices": [{"delta": {"role": "developer", "content": "test"}}]
         }
-        msg = _convert_chunk_to_message_chunk(chunk, ChatMessageChunk)
+        with pytest.warns(UserWarning, match="Unrecognized streaming chunk role"):
+            msg = _convert_chunk_to_message_chunk(chunk, ChatMessageChunk)
         assert isinstance(msg, ChatMessageChunk)
 
     def test_chunk_with_usage(self) -> None:
