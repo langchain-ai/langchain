@@ -406,13 +406,39 @@ class ProviderStrategyBinding(Generic[SchemaT]):
         # Extract text content from AIMessage and parse as JSON
         raw_text = self._extract_text_content_from_message(response)
 
+        # Validate that we have non-empty content before attempting JSON parsing
+        if not raw_text or not raw_text.strip():
+            schema_name = getattr(self.schema, "__name__", "response_format")
+            msg = (
+                f"Native structured output for {schema_name} received empty content. "
+                f"This may indicate incomplete streaming or premature parsing. "
+                f"Ensure the complete response is received before parsing."
+            )
+            raise ValueError(msg)
+
         try:
             data = json.loads(raw_text)
+        except json.JSONDecodeError as e:
+            schema_name = getattr(self.schema, "__name__", "response_format")
+            # Provide detailed error message for debugging concurrency issues
+            msg = (
+                f"Failed to parse structured output for {schema_name}. "
+                f"Expected valid JSON but received malformed data.\n\n"
+                f"Content received ({len(raw_text)} chars):\n{raw_text[:500]}"
+                f"{'...' if len(raw_text) > 500 else ''}\n\n"
+                f"JSON parsing error: {e}\n\n"
+                f"This error may occur if:\n"
+                f"1. The model output is incomplete (streaming not finished)\n"
+                f"2. Concurrent requests are interfering with chunk aggregation\n"
+                f"3. The response format does not match the expected schema\n\n"
+                f"If this error occurs intermittently under high concurrency, "
+                f"it suggests a streaming or parsing concurrency issue."
+            )
+            raise ValueError(msg) from e
         except Exception as e:
             schema_name = getattr(self.schema, "__name__", "response_format")
             msg = (
-                f"Native structured output expected valid JSON for {schema_name}, "
-                f"but parsing failed: {e}."
+                f"Unexpected error parsing structured output for {schema_name}: {e}"
             )
             raise ValueError(msg) from e
 

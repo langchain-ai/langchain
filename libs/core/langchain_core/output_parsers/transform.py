@@ -97,7 +97,12 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
 
 
 class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
-    """Base class for an output parser that can handle streaming input."""
+    """Base class for an output parser that can handle streaming input.
+
+    This parser accumulates chunks from a stream and parses them incrementally.
+    Each invocation maintains its own isolated accumulation state to ensure
+    concurrency safety.
+    """
 
     diff: bool = False
     """In streaming mode, whether to yield diffs between the previous and current parsed
@@ -124,8 +129,22 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
 
     @override
     def _transform(self, input: Iterator[str | BaseMessage]) -> Iterator[Any]:
+        """Transform streaming input into parsed output.
+
+        This method maintains per-invocation state to ensure concurrency safety.
+        Each call to _transform creates its own local accumulation variables that
+        are not shared across concurrent invocations.
+
+        Args:
+            input: Iterator of message chunks or strings to parse.
+
+        Yields:
+            Parsed output objects as they become available.
+        """
+        # Local state - isolated per invocation for concurrency safety
         prev_parsed = None
         acc_gen: GenerationChunk | ChatGenerationChunk | None = None
+
         for chunk in input:
             chunk_gen: GenerationChunk | ChatGenerationChunk
             if isinstance(chunk, BaseMessageChunk):
@@ -137,6 +156,7 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
             else:
                 chunk_gen = GenerationChunk(text=chunk)
 
+            # Accumulate chunks - this creates a new object, not mutating shared state
             acc_gen = chunk_gen if acc_gen is None else acc_gen + chunk_gen  # type: ignore[operator]
 
             parsed = self.parse_result([acc_gen], partial=True)
@@ -151,8 +171,22 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
     async def _atransform(
         self, input: AsyncIterator[str | BaseMessage]
     ) -> AsyncIterator[T]:
+        """Async transform streaming input into parsed output.
+
+        This method maintains per-invocation state to ensure concurrency safety.
+        Each call to _atransform creates its own local accumulation variables that
+        are not shared across concurrent invocations.
+
+        Args:
+            input: Async iterator of message chunks or strings to parse.
+
+        Yields:
+            Parsed output objects as they become available.
+        """
+        # Local state - isolated per invocation for concurrency safety
         prev_parsed = None
         acc_gen: GenerationChunk | ChatGenerationChunk | None = None
+
         async for chunk in input:
             chunk_gen: GenerationChunk | ChatGenerationChunk
             if isinstance(chunk, BaseMessageChunk):
@@ -164,6 +198,7 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
             else:
                 chunk_gen = GenerationChunk(text=chunk)
 
+            # Accumulate chunks - this creates a new object, not mutating shared state
             acc_gen = chunk_gen if acc_gen is None else acc_gen + chunk_gen  # type: ignore[operator]
 
             parsed = await self.aparse_result([acc_gen], partial=True)

@@ -49,6 +49,15 @@ def parse_tool_call(
         return None
 
     arguments = raw_tool_call["function"]["arguments"]
+    function_name = raw_tool_call["function"].get("name", "")
+
+    # Ensure arguments is a string for consistent processing
+    if not isinstance(arguments, str):
+        if arguments is None:
+            arguments = ""
+        else:
+            # Convert non-string arguments to string representation
+            arguments = str(arguments)
 
     if partial:
         try:
@@ -63,13 +72,18 @@ def parse_tool_call(
             function_args = json.loads(arguments, strict=strict)
         except JSONDecodeError as e:
             msg = (
-                f"Function {raw_tool_call['function']['name']} arguments:\n\n"
-                f"{arguments}\n\nare not valid JSON. "
-                f"Received JSONDecodeError {e}"
+                f"Failed to parse structured output for tool '{function_name}'. "
+                f"Expected valid JSON but received malformed data. "
+                f"This may indicate incomplete streaming aggregation or "
+                f"concurrent request interference.\n\n"
+                f"Arguments received:\n{arguments}\n\n"
+                f"JSON parsing error: {e}\n\n"
+                f"If this error occurs intermittently under high concurrency, "
+                f"it suggests a streaming or parsing concurrency issue."
             )
             raise OutputParserException(msg) from e
     parsed = {
-        "name": raw_tool_call["function"]["name"] or "",
+        "name": function_name,
         "args": function_args or {},
     }
     if return_id:

@@ -74,5 +74,6 @@
     {
       "file": ".github/workflows/pr_lint.yml"
     }
-  ]
+  ],
+  "kiroAgent.configureMCP": "Disabled"
 }
