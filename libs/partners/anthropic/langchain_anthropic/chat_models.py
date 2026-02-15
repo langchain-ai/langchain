@@ -60,6 +60,7 @@ from typing_extensions import NotRequired, Self, TypedDict
 from langchain_anthropic._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
+    extract_metadata_from_run_manager,
 )
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
 from langchain_anthropic.data._profiles import _PROFILES
@@ -1398,6 +1399,10 @@ class ChatAnthropic(BaseChatModel):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
+        # Extract metadata from run_manager if available
+        metadata = extract_metadata_from_run_manager(run_manager)
+        if metadata:
+            kwargs.setdefault("metadata", {}).update(metadata)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
             data = self._create(payload)
@@ -1412,6 +1417,10 @@ class ChatAnthropic(BaseChatModel):
         run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
+        # Extract metadata from run_manager if available
+        metadata = extract_metadata_from_run_manager(run_manager)
+        if metadata:
+            kwargs.setdefault("metadata", {}).update(metadata)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
             data = await self._acreate(payload)

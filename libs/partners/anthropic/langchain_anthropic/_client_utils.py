@@ -81,3 +81,32 @@ def _get_default_async_httpx_client(
     if anthropic_proxy is not None:
         kwargs["proxy"] = anthropic_proxy
     return _AsyncHttpxClientWrapper(**kwargs)
+
+
+
+def extract_metadata_from_run_manager(
+    run_manager: Any | None,
+) -> dict[str, Any] | None:
+    """Extract metadata from run_manager for Anthropic API requests.
+
+    The Anthropic API supports a `metadata` parameter that can include a `user_id`
+    field for tracking requests and enabling features like prompt caching with
+    third-party Claude providers.
+
+    Args:
+        run_manager: The callback run manager that may contain metadata.
+
+    Returns:
+        A dict with `user_id` if present in run_manager.metadata, otherwise `None`.
+
+    Example:
+        ```python
+        metadata = extract_metadata_from_run_manager(run_manager)
+        if metadata:
+            params["metadata"] = metadata
+        ```
+    """
+    if run_manager and hasattr(run_manager, "metadata") and run_manager.metadata:
+        if "user_id" in run_manager.metadata:
+            return {"user_id": run_manager.metadata["user_id"]}
+    return None
