@@ -7,13 +7,25 @@ name = "langchain"
 description = "Building applications with LLMs through composability"
 license = { text = "MIT" }
 readme = "README.md"
-authors = []
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
-version = "1.2.7"
+version = "1.2.10"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.7,<2.0.0",
-    "langgraph>=1.0.7,<1.1.0",
+    "langchain-core>=1.2.10,<2.0.0",
+    "langgraph>=1.0.8,<1.1.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
 
@@ -39,7 +51,8 @@ perplexity = ["langchain-perplexity"]
 [project.urls]
 Homepage = "https://docs.langchain.com/"
 Documentation = "https://reference.langchain.com/python/langchain/langchain/"
-Source = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"
+Repository = "https://github.com/langchain-ai/langchain"
+Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain%3D%3D1%22"
 Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
@@ -47,21 +60,21 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
-    "pytest>=8.0.0,<9.0.0",
+    "pytest>=8.0.0,<10.0.0",
     "pytest-cov>=4.0.0,<8.0.0",
     "pytest-watcher>=0.2.6,<1.0.0",
     "pytest-asyncio>=0.23.2,<2.0.0",
     "pytest-socket>=0.6.0,<1.0.0",
     "pytest-xdist<4.0.0,>=3.6.1",
     "pytest-mock",
-    "syrupy>=4.0.2,<5.0.0",
+    "syrupy>=4.0.2,<6.0.0",
     "toml>=0.10.2,<1.0.0",
     "blockbuster>=1.5.26,<1.6.0",
     "langchain-tests",
     "langchain-openai",
 ]
 lint = [
-    "ruff>=0.14.11,<0.15.0",
+    "ruff>=0.15.0,<0.16.0",
 ]
 typing = [
     "mypy>=1.19.1,<1.20.0",
@@ -70,7 +83,7 @@ typing = [
 
 test_integration = [
     "vcrpy>=8.0.0,<9.0.0",
-    "wrapt>=1.15.0,<2.0.0",
+    "wrapt>=1.15.0,<3.0.0",
     "python-dotenv>=1.0.0,<2.0.0",
     "langchainhub>=0.1.16,<1.0.0",
     "langchain-core",
@@ -86,6 +99,7 @@ langchain-core = { path = "../core", editable = true }
 langchain-tests = { path = "../standard-tests", editable = true }
 langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
+langchain-anthropic = { path = "../partners/anthropic", editable = true }
 
 [tool.ruff]
 line-length = 100
@@ -94,7 +108,12 @@ line-length = 100
 strict = true
 enable_error_code = "deprecated"
 warn_unreachable = true
-exclude = ["tests/unit_tests/agents/*"]
+exclude = [
+    # Exclude agents tests except middleware_typing/ which has type-checked tests
+    "tests/unit_tests/agents/middleware/",
+    "tests/unit_tests/agents/specifications/",
+    "tests/unit_tests/agents/test_.*\\.py",
+]
 
 # TODO: activate for 'strict' checking
 warn_return_any = false

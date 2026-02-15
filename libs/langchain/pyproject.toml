@@ -7,7 +7,18 @@ name = "langchain-classic"
 description = "Building applications with LLMs through composability"
 license = { text = "MIT" }
 readme = "README.md"
-authors = []
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
 version = "1.0.1"
 requires-python = ">=3.10.0,<4.0.0"
@@ -44,7 +55,8 @@ perplexity = ["langchain-perplexity"]
 [project.urls]
 Homepage = "https://docs.langchain.com/"
 Documentation = "https://reference.langchain.com/python/langchain_classic/"
-Source = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"
+Repository = "https://github.com/langchain-ai/langchain"
+Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-classic%3D%3D1%22"
 Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
@@ -52,11 +64,11 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
-    "pytest>=8.0.0,<9.0.0",
-    "pytest-cov>=4.0.0,<5.0.0",
+    "pytest>=8.0.0,<10.0.0",
+    "pytest-cov>=4.0.0,<8.0.0",
     "pytest-dotenv>=0.5.2,<1.0.0",
     "pytest-watcher>=0.2.6,<1.0.0",
-    "pytest-asyncio>=0.23.2,<1.0.0",
+    "pytest-asyncio>=0.23.2,<2.0.0",
     "pytest-mock>=3.10.0,<4.0.0",
     "pytest-socket>=0.6.0,<1.0.0",
     "pytest-xdist<4.0.0,>=3.6.1",
@@ -68,10 +80,10 @@ test = [
     "responses>=0.22.0,<1.0.0",
     "lark>=1.1.5,<2.0.0",
     "pandas>=2.0.0,<3.0.0",
-    "syrupy>=4.0.2,<5.0.0",
+    "syrupy>=4.0.2,<6.0.0",
     "requests-mock>=1.11.0,<2.0.0",
     "toml>=0.10.2,<1.0.0",
-    "packaging>=24.2.0,<26.0.0",
+    "packaging>=24.2.0,<27.0.0",
     "langchain-tests",
     "langchain-core",
     "langchain-text-splitters",
@@ -79,26 +91,26 @@ test = [
 ]
 test_integration = [
     "vcrpy>=8.0.0,<9.0.0",
-    "wrapt>=1.15.0,<2.0.0",
+    "wrapt>=1.15.0,<3.0.0",
     "python-dotenv>=1.0.0,<2.0.0",
-    "cassio>=0.1.0,<1.0.0",
+    "cassio>=0.1.0,<1.0.0; python_version < '3.14'",
     "langchainhub>=0.1.16,<1.0.0",
     "langchain-core",
     "langchain-text-splitters",
 ]
 lint = [
-    "ruff>=0.14.11,<0.15.0",
+    "ruff>=0.15.0,<0.16.0",
     "cffi<1.17.1; python_version < \"3.10\"",
     "cffi; python_version >= \"3.10\"",
 ]
 typing = [
     "mypy>=1.19.1,<1.20.0",
-    "mypy-protobuf>=3.0.0,<4.0.0",
+    "mypy-protobuf>=3.0.0,<6.0.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
     "types-requests>=2.28.11.5,<3.0.0.0",
     "types-toml>=0.10.8.1,<1.0.0.0",
     "types-redis>=4.3.21.6,<5.0.0.0",
-    "types-pytz>=2023.3.0.0,<2024.0.0.0",
+    "types-pytz>=2023.3.0.0,<2026.0.0.0",
     "types-chardet>=5.0.4.6,<6.0.0.0",
     "numpy>=1.26.4; python_version < '3.13'",
     "numpy>=2.1.0; python_version >= '3.13'",
@@ -109,7 +121,7 @@ typing = [
 dev = [
     "jupyter>=1.0.0,<2.0.0",
     "playwright>=1.28.0,<2.0.0",
-    "setuptools>=67.6.1,<81.0.0",
+    "setuptools>=67.6.1,<83.0.0",
     "langchain-core",
     "langchain-text-splitters",
 ]

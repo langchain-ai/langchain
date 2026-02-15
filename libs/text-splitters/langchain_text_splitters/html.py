@@ -205,6 +205,11 @@ class HTMLHeaderTextSplitter:
         Raises:
             requests.RequestException: If the HTTP request fails.
         """
+        from langchain_core._security._ssrf_protection import (  # noqa: PLC0415
+            validate_safe_url,
+        )
+
+        validate_safe_url(url, allow_private=False, allow_http=True)
         response = requests.get(url, timeout=timeout, **kwargs)
         response.raise_for_status()
         return self.split_text(response.text)
@@ -1055,7 +1060,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         Returns:
             The content with placeholders replaced by preserved elements.
         """
-        for placeholder, preserved_content in preserved_elements.items():
+        for placeholder, preserved_content in reversed(preserved_elements.items()):
             content = content.replace(placeholder, preserved_content.strip())
         return content
 

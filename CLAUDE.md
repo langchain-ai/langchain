@@ -43,7 +43,9 @@ langchain/
 This monorepo uses `uv` for dependency management. Local development uses editable installs: `[tool.uv.sources]`
 
 Each package in `libs/` has its own `pyproject.toml` and `uv.lock`.
-Before running your tests, setup all packages by
+
+Before running your tests, setup all packages by running:
+
 ```bash
 # For all groups
 uv sync --all-groups
@@ -126,7 +128,7 @@ def filter_unknown_users(users: list[str], known_users: set[str]) -> list[str]:
         known_users: Set of known/valid user identifiers.
 
     Returns:
-        List of users that are not in the known_users set.
+        List of users that are not in the `known_users` set.
     """
 ```
 
@@ -190,6 +192,7 @@ def send_email(to: str, msg: str, *, priority: str = "normal") -> bool:
 - Document all parameters, return values, and exceptions
 - Keep descriptions concise but clear
 - Ensure American English spelling (e.g., "behavior", not "behaviour")
+- Do NOT use Sphinx-style double backtick formatting (` ``code`` `). Use single backticks (`` `code` ``) for inline code references in docstrings and comments.
 
 ## Additional resources
 

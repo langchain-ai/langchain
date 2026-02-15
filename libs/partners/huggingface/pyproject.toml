@@ -7,20 +7,32 @@ name = "langchain-huggingface"
 description = "An integration package connecting Hugging Face and LangChain."
 license = { text = "MIT" }
 readme = "README.md"
-authors = []
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 
-version = "1.2.0"
+version = "1.2.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.0,<2.0.0",
+    "langchain-core>=1.2.11,<2.0.0",
     "tokenizers>=0.19.1,<1.0.0",
-    "huggingface-hub>=0.33.4,<1.0.0",
+    "huggingface-hub>=0.33.4,<2.0.0",
 ]
 
 [project.urls]
 Homepage = "https://docs.langchain.com/oss/python/integrations/providers/huggingface"
 Documentation = "https://reference.langchain.com/python/integrations/langchain_huggingface/"
-Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/huggingface"
+Repository = "https://github.com/langchain-ai/langchain"
+Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-huggingface%22"
 Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
@@ -28,7 +40,7 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [project.optional-dependencies]
 full = [
-    "transformers>=4.39.0,<5.0.0",
+    "transformers>=4.39.0,<6.0.0",
     "sentence-transformers>=2.6.0,<3.0.0",
 ]
 
@@ -41,7 +53,7 @@ test = [
     "scipy>=1.0.0,<2.0.0; python_version < \"3.12\"",
     "scipy>=1.7.0,<2.0.0; python_version >= \"3.12\" and python_version < \"3.13\"",
     "scipy>=1.14.1,<2.0.0; python_version >= \"3.13\"",
-    "transformers>=4.39.0,<5.0.0",
+    "transformers>=4.39.0,<6.0.0",
     "sentence-transformers>=2.6.0,<3.0.0",
     "langchain-core",
     "langchain-tests",

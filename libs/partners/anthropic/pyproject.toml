@@ -7,20 +7,32 @@ name = "langchain-anthropic"
 description = "Integration package connecting Claude (Anthropic) APIs and LangChain"
 license = { text = "MIT" }
 readme = "README.md"
-authors = []
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 
-version = "1.3.1"
+version = "1.3.3"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "anthropic>=0.75.0,<1.0.0",
-    "langchain-core>=1.2.6,<2.0.0",
+    "anthropic>=0.78.0,<1.0.0",
+    "langchain-core>=1.2.11,<2.0.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
 
 [project.urls]
 Homepage = "https://docs.langchain.com/oss/python/integrations/providers/anthropic"
 Documentation = "https://reference.langchain.com/python/integrations/langchain_anthropic/"
-Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/anthropic"
+Repository = "https://github.com/langchain-ai/langchain"
+Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-anthropic%22"
 Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
