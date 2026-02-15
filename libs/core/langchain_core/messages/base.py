@@ -336,10 +336,34 @@ class BaseMessage(Serializable):
             ```
         """  # noqa: E501
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
-        # TODO: handle non-string content.
         if self.name is not None:
             title += f"\nName: {self.name}"
-        return f"{title}\n\n{self.content}"
+
+        if isinstance(self.content, str):
+            val = self.content
+        elif isinstance(self.content, list):
+            val_parts = []
+            for block in self.content:
+                if isinstance(block, str):
+                    val_parts.append(block)
+                elif isinstance(block, dict):
+                    block_type = block.get("type")
+                    if block_type == "text":
+                        val_parts.append(block.get("text", ""))
+                    elif block_type in ("image_url", "image"):
+                        val_parts.append(f"[{block_type}]")
+                    elif block_type in ("tool_use", "tool_call"):
+                        name = block.get("name", "")
+                        val_parts.append(f"[{block_type}: {name}]")
+                    else:
+                        val_parts.append(str(block))
+                else:
+                    val_parts.append(str(block))
+            val = "".join(val_parts)
+        else:
+            val = str(self.content)
+
+        return f"{title}\n\n{val}"
 
     def pretty_print(self) -> None:
         """Print a pretty representation of the message.
