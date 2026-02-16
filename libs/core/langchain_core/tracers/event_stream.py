@@ -732,32 +732,30 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """End a trace for a tool run."""
         run_info, inputs = self._get_tool_run_info_with_inputs(run_id)
 
-        data: dict[str, Any] = {
-            "output": output,
-            "input": inputs,
-        }
-        # Include artifact in the event data if available.
-        # The artifact may be on the output (if it's a ToolMessage) or passed
-        # explicitly as a kwarg (when tool_call_id is None and output is a
-        # plain string/dict).
+        # Resolve artifact: prefer the one on the output (ToolMessage) if
+        # present, otherwise fall back to the kwarg (passed when
+        # tool_call_id is None and _format_output could not create a
+        # ToolMessage).
         artifact = getattr(output, "artifact", None)
         if artifact is None:
             artifact = kwargs.get("artifact")
-        if artifact is not None:
-            data["artifact"] = artifact
 
-        self._send(
-            {
-                "event": "on_tool_end",
-                "data": data,
-                "run_id": str(run_id),
-                "name": run_info["name"],
-                "tags": run_info["tags"],
-                "metadata": run_info["metadata"],
-                "parent_ids": self._get_parent_ids(run_id),
+        event: StandardStreamEvent = {
+            "event": "on_tool_end",
+            "data": {
+                "output": output,
+                "input": inputs,
+                **(  # conditionally include artifact
+                    {"artifact": artifact} if artifact is not None else {}
+                ),
             },
-            "tool",
-        )
+            "run_id": str(run_id),
+            "name": run_info["name"],
+            "tags": run_info["tags"],
+            "metadata": run_info["metadata"],
+            "parent_ids": self._get_parent_ids(run_id),
+        }
+        self._send(event, "tool")
 
     @override
     async def on_retriever_start(
