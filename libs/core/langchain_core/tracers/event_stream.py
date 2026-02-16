@@ -745,9 +745,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             "data": {
                 "output": output,
                 "input": inputs,
-                **(  # conditionally include artifact
-                    {"artifact": artifact} if artifact is not None else {}
-                ),
+                # conditionally include artifact
+                **({"artifact": artifact} if artifact is not None else {}),
             },
             "run_id": str(run_id),
             "name": run_info["name"],
