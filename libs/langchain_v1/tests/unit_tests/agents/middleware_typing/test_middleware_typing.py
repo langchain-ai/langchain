@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from pydantic import BaseModel
 from typing_extensions import TypedDict
 
@@ -30,7 +30,10 @@ from langchain.agents.middleware.types import (
     ModelRequest,
     ModelResponse,
     ResponseT,
+    ToolCallRequest,
     before_model,
+    wrap_model_call,
+    wrap_tool_call,
 )
 
 if TYPE_CHECKING:
@@ -38,6 +41,7 @@ if TYPE_CHECKING:
 
     from langgraph.graph.state import CompiledStateGraph
     from langgraph.runtime import Runtime
+    from langgraph.types import Command
 
 
 # =============================================================================
@@ -228,7 +232,26 @@ class FlexibleMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
 
 
 # =============================================================================
-# 6. CREATE_AGENT INTEGRATION TESTS
+# 6. ASYNC DECORATOR TYPING: Async decorator support for wrap_model_call/wrap_tool_call
+# =============================================================================
+@wrap_model_call
+async def async_decorated_wrap_model_call(
+    request: ModelRequest[ContextT],
+    handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[Any]]],
+) -> ModelResponse[Any] | AIMessage:
+    return await handler(request)
+
+
+@wrap_tool_call
+async def async_decorated_wrap_tool_call(
+    request: ToolCallRequest,
+    handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+) -> ToolMessage | Command[Any]:
+    return await handler(request)
+
+
+# =============================================================================
+# 7. CREATE_AGENT INTEGRATION TESTS
 # =============================================================================
 @pytest.fixture
 def fake_model() -> GenericFakeChatModel:
@@ -258,6 +281,11 @@ def test_create_agent_with_user_context(fake_model: GenericFakeChatModel) -> Non
         context_schema=UserContext,
     )
     assert agent is not None
+
+
+def test_async_decorator_instances() -> None:
+    assert isinstance(async_decorated_wrap_model_call, AgentMiddleware)
+    assert isinstance(async_decorated_wrap_tool_call, AgentMiddleware)
 
 
 def test_create_agent_with_session_context(fake_model: GenericFakeChatModel) -> None:
