@@ -185,6 +185,19 @@ class Serializable(BaseModel, ABC):
         extra="ignore",
     )
 
+    @classmethod
+    def get_field_names(cls) -> set[str]:
+        """Return all Pydantic model field names declared on this class.
+
+        Provides schema-driven introspection so that serialization and
+        deserialization utilities can distinguish declared model fields from
+        extra kwargs without hard-coding individual field names.
+
+        Returns:
+            A set of field name strings for the current class.
+        """
+        return set(cls.model_fields.keys())
+
     @override
     def __repr_args__(self) -> Any:
         return [

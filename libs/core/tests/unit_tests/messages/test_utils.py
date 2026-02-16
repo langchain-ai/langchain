@@ -2908,3 +2908,315 @@ def test_count_tokens_approximately_respects_count_name_flag() -> None:
 
     # When count_name is True, the name should contribute to the token count.
     assert with_name > without_name
+
+
+# ---------------------------------------------------------------------------
+# Round-trip serialization tests: model_dump() -> convert_to_messages()
+# ---------------------------------------------------------------------------
+
+
+class TestMessageRoundTrip:
+    """Verify that model_dump() -> convert_to_messages() is lossless.
+
+    These tests ensure that ALL model fields survive the round-trip,
+    preventing regressions like the ToolMessage.status bug (#32840) and the
+    AIMessage.usage_metadata / invalid_tool_calls data loss.
+    """
+
+    @staticmethod
+    def _round_trip(msg: BaseMessage) -> BaseMessage:
+        """Serialize with model_dump() and reconstruct via convert_to_messages."""
+        return convert_to_messages([msg.model_dump()])[0]
+
+    def test_tool_message_status_error(self) -> None:
+        """ToolMessage.status='error' must survive round-trip."""
+        original = ToolMessage(
+            content="Error: please fix your mistakes",
+            tool_call_id="foobar",
+            status="error",
+        )
+        recovered = self._round_trip(original)
+        assert isinstance(recovered, ToolMessage)
+        assert recovered.status == "error"
+
+    def test_tool_message_status_success(self) -> None:
+        """ToolMessage.status='success' (the default) must survive round-trip."""
+        original = ToolMessage(
+            content="42",
+            tool_call_id="call_1",
+            status="success",
+        )
+        recovered = self._round_trip(original)
+        assert isinstance(recovered, ToolMessage)
+        assert recovered.status == "success"
+
+    def test_tool_message_status_default_when_omitted(self) -> None:
+        """When status is omitted it defaults to 'success'."""
+        original = ToolMessage(content="42", tool_call_id="call_1")
+        assert original.status == "success"
+        recovered = self._round_trip(original)
+        assert recovered.status == "success"
+
+    def test_tool_message_artifact(self) -> None:
+        """ToolMessage.artifact must survive round-trip."""
+        original = ToolMessage(
+            content="result",
+            tool_call_id="call_1",
+            artifact={"data": [1, 2, 3], "type": "custom"},
+        )
+        recovered = self._round_trip(original)
+        assert isinstance(recovered, ToolMessage)
+        assert recovered.artifact == {"data": [1, 2, 3], "type": "custom"}
+
+    def test_tool_message_all_fields(self) -> None:
+        """All ToolMessage fields must survive round-trip simultaneously."""
+        original = ToolMessage(
+            content="Error",
+            tool_call_id="tc_42",
+            status="error",
+            artifact={"stdout": "", "stderr": "fail"},
+            name="calculator",
+            id="msg-001",
+        )
+        recovered = self._round_trip(original)
+        assert isinstance(recovered, ToolMessage)
+        assert recovered.content == original.content
+        assert recovered.tool_call_id == original.tool_call_id
+        assert recovered.status == original.status
+        assert recovered.artifact == original.artifact
+        assert recovered.name == original.name
+        assert recovered.id == original.id
+
+    def test_ai_message_usage_metadata(self) -> None:
+        """AIMessage.usage_metadata must survive round-trip."""
+        original = AIMessage(
+            content="Hello",
+            usage_metadata={
+                "input_tokens": 10,
+                "output_tokens": 5,
+                "total_tokens": 15,
+            },
+        )
+        recovered = self._round_trip(original)
+        assert isinstance(recovered, AIMessage)
+        assert recovered.usage_metadata == original.usage_metadata
+
+    def test_ai_message_invalid_tool_calls(self) -> None:
+        """AIMessage.invalid_tool_calls must survive round-trip."""
+        original = AIMessage(
+            content="I tried to call a tool",
+            invalid_tool_calls=[
+                {
+                    "name": "bad_tool",
+                    "args": "{invalid json",
+                    "id": "tc_99",
+                    "error": "JSON parse error",
+                    "type": "invalid_tool_call",
+                }
+            ],
+        )
+        recovered = self._round_trip(original)
+        assert isinstance(recovered, AIMessage)
+        assert recovered.invalid_tool_calls == original.invalid_tool_calls
+
+    def test_ai_message_tool_calls(self) -> None:
+        """AIMessage.tool_calls must survive round-trip."""
+        original = AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": {"city": "SF"},
+                    "id": "tc_1",
+                    "type": "tool_call",
+                }
+            ],
+        )
+        recovered = self._round_trip(original)
+        assert isinstance(recovered, AIMessage)
+        assert recovered.tool_calls == original.tool_calls
+
+    def test_ai_message_all_fields(self) -> None:
+        """All AIMessage-specific fields must survive simultaneously."""
+        original = AIMessage(
+            content="response",
+            tool_calls=[
+                {
+                    "name": "fn",
+                    "args": {"x": 1},
+                    "id": "tc1",
+                    "type": "tool_call",
+                }
+            ],
+            invalid_tool_calls=[
+                {
+                    "name": "bad",
+                    "args": "nope",
+                    "id": "tc2",
+                    "error": "err",
+                    "type": "invalid_tool_call",
+                }
+            ],
+            usage_metadata={
+                "input_tokens": 100,
+                "output_tokens": 50,
+                "total_tokens": 150,
+            },
+            id="ai-msg-1",
+            name="assistant",
+        )
+        recovered = self._round_trip(original)
+        assert isinstance(recovered, AIMessage)
+        for field_name in original.get_field_names():
+            if field_name == "type":
+                continue
+            assert getattr(recovered, field_name) == getattr(
+                original, field_name
+            ), f"AIMessage.{field_name} was not preserved"
+
+    def test_chat_message_round_trip(self) -> None:
+        """ChatMessage with custom role must survive round-trip."""
+        original = ChatMessage(content="Hi there", role="custom_role")
+        recovered = self._round_trip(original)
+        assert isinstance(recovered, ChatMessage)
+        assert recovered.role == "custom_role"
+        assert recovered.content == "Hi there"
+
+    def test_human_message_round_trip(self) -> None:
+        """HumanMessage with all fields must survive round-trip."""
+        original = HumanMessage(content="Hello", name="user1", id="h-001")
+        recovered = self._round_trip(original)
+        assert isinstance(recovered, HumanMessage)
+        assert recovered.content == original.content
+        assert recovered.name == original.name
+        assert recovered.id == original.id
+
+    def test_system_message_round_trip(self) -> None:
+        """SystemMessage must survive round-trip."""
+        original = SystemMessage(content="Be helpful", id="s-001")
+        recovered = self._round_trip(original)
+        assert isinstance(recovered, SystemMessage)
+        assert recovered.content == original.content
+        assert recovered.id == original.id
+
+    def test_function_message_round_trip(self) -> None:
+        """FunctionMessage must survive round-trip."""
+        original = FunctionMessage(content="result", name="my_function")
+        recovered = self._round_trip(original)
+        assert isinstance(recovered, FunctionMessage)
+        assert recovered.content == original.content
+        assert recovered.name == original.name
+
+    def test_mixed_message_list_round_trip(self) -> None:
+        """A mixed list of message types must all survive round-trip."""
+        messages: list[BaseMessage] = [
+            HumanMessage(content="What's 2+2?"),
+            AIMessage(
+                content="",
+                tool_calls=[
+                    {
+                        "name": "calculator",
+                        "args": {"expr": "2+2"},
+                        "id": "tc1",
+                        "type": "tool_call",
+                    }
+                ],
+            ),
+            ToolMessage(content="4", tool_call_id="tc1", status="success"),
+            AIMessage(
+                content="The answer is 4.",
+                usage_metadata={
+                    "input_tokens": 20,
+                    "output_tokens": 10,
+                    "total_tokens": 30,
+                },
+            ),
+        ]
+        serialized = [m.model_dump() for m in messages]
+        recovered = convert_to_messages(serialized)
+
+        assert len(recovered) == len(messages)
+        for orig, rec in zip(messages, recovered):
+            assert type(orig) is type(rec)
+            assert orig.content == rec.content
+
+        # Check specific fields
+        assert isinstance(recovered[1], AIMessage)
+        assert recovered[1].tool_calls == messages[1].tool_calls
+        assert isinstance(recovered[2], ToolMessage)
+        assert recovered[2].status == "success"
+        assert recovered[2].tool_call_id == "tc1"
+        assert isinstance(recovered[3], AIMessage)
+        assert recovered[3].usage_metadata == messages[3].usage_metadata
+
+    def test_round_trip_preserves_all_fields_generically(self) -> None:
+        """Schema-driven: every model field must survive for every message type."""
+        test_messages: list[BaseMessage] = [
+            HumanMessage(content="hi", name="u", id="1"),
+            SystemMessage(content="sys", id="2"),
+            AIMessage(
+                content="ai",
+                id="3",
+                tool_calls=[
+                    {
+                        "name": "t",
+                        "args": {},
+                        "id": "tc",
+                        "type": "tool_call",
+                    }
+                ],
+                usage_metadata={
+                    "input_tokens": 1,
+                    "output_tokens": 1,
+                    "total_tokens": 2,
+                },
+            ),
+            ToolMessage(
+                content="ok",
+                tool_call_id="tc",
+                status="error",
+                artifact={"k": "v"},
+                id="4",
+            ),
+            ChatMessage(content="chat", role="narrator"),
+            FunctionMessage(content="fn", name="func"),
+        ]
+        for msg in test_messages:
+            recovered = self._round_trip(msg)
+            for field_name in msg.get_field_names():
+                if field_name == "type":
+                    continue
+                orig_val = getattr(msg, field_name)
+                rec_val = getattr(recovered, field_name)
+                assert orig_val == rec_val, (
+                    f"{type(msg).__name__}.{field_name}: "
+                    f"{orig_val!r} != {rec_val!r}"
+                )
+
+    def test_legacy_role_dicts_still_work(self) -> None:
+        """Simple role/content dicts (not from model_dump) must still work."""
+        legacy = [
+            {"role": "user", "content": "hello"},
+            {"role": "assistant", "content": "hi there"},
+            {"role": "tool", "content": "result", "tool_call_id": "abc"},
+            {"role": "system", "content": "be helpful"},
+        ]
+        recovered = convert_to_messages(legacy)
+        assert [type(m).__name__ for m in recovered] == [
+            "HumanMessage",
+            "AIMessage",
+            "ToolMessage",
+            "SystemMessage",
+        ]
+
+    def test_legacy_role_dict_with_status(self) -> None:
+        """Legacy role-based dict with status must still work."""
+        d = {
+            "role": "tool",
+            "content": "error occurred",
+            "tool_call_id": "tc_1",
+            "status": "error",
+        }
+        recovered = convert_to_messages([d])[0]
+        assert isinstance(recovered, ToolMessage)
+        assert recovered.status == "error"

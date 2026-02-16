@@ -143,6 +143,30 @@ class BaseMessage(Serializable):
         extra="allow",
     )
 
+    @classmethod
+    def _from_dict(cls, data: dict[str, Any]) -> "BaseMessage":
+        """Reconstruct a message from a serialized dict.
+
+        Provides schema-driven reconstruction from ``model_dump()`` output.
+        The ``type`` field is consumed (it is only needed to look up the
+        correct class) and all remaining fields are passed directly to the
+        constructor.  Because ``BaseMessage`` uses
+        ``model_config = ConfigDict(extra="allow")``, both declared model
+        fields and any extras are preserved losslessly.
+
+        Subclasses may override this method if they require custom
+        reconstruction logic.
+
+        Args:
+            data: A dict produced by ``model_dump()``.
+
+        Returns:
+            A new message instance with all fields preserved.
+        """
+        data = data.copy()
+        data.pop("type", None)
+        return cls(**data)
+
     @overload
     def __init__(
         self,

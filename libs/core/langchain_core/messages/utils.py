@@ -98,6 +98,55 @@ AnyMessage = Annotated[
 ]
 """A type representing any defined `Message` or `MessageChunk` type."""
 
+# Registry mapping serialized ``type`` strings to message classes.
+# Used for schema-driven reconstruction in ``_convert_to_message`` and
+# ``_message_from_dict`` so that *all* model fields are preserved during
+# round-trips through ``model_dump()`` / ``convert_to_messages()`` without
+# hard-coding individual field names.
+_MESSAGE_TYPE_TO_CLASS: dict[str, type[BaseMessage]] = {
+    "human": HumanMessage,
+    "ai": AIMessage,
+    "system": SystemMessage,
+    "chat": ChatMessage,
+    "function": FunctionMessage,
+    "tool": ToolMessage,
+    "remove": RemoveMessage,
+    "AIMessageChunk": AIMessageChunk,
+    "HumanMessageChunk": HumanMessageChunk,
+    "ChatMessageChunk": ChatMessageChunk,
+    "SystemMessageChunk": SystemMessageChunk,
+    "FunctionMessageChunk": FunctionMessageChunk,
+    "ToolMessageChunk": ToolMessageChunk,
+}
+
+
+def _reconstruct_message_from_dict(data: dict) -> BaseMessage:
+    """Reconstruct a message from a serialized dict (e.g. from ``model_dump``).
+
+    Looks up the concrete message class via ``_MESSAGE_TYPE_TO_CLASS`` and
+    delegates reconstruction to ``BaseMessage._from_dict``, which passes all
+    fields directly to the class constructor.  Because every ``BaseMessage``
+    subclass uses ``model_config = ConfigDict(extra="allow")``, Pydantic
+    accepts both declared model fields *and* any extras, so **all** fields
+    survive the round-trip without per-field special-casing.
+
+    Args:
+        data: A dict produced by ``BaseMessage.model_dump()`` (must contain a
+            ``type`` key whose value matches a key in ``_MESSAGE_TYPE_TO_CLASS``).
+
+    Returns:
+        A fully-reconstructed message instance.
+
+    Raises:
+        KeyError: If the ``type`` value is not recognised.
+    """
+    msg_type = data.get("type")
+    if msg_type is None:
+        msg = "Message dict must contain a 'type' key"
+        raise KeyError(msg)
+    msg_cls = _MESSAGE_TYPE_TO_CLASS[msg_type]
+    return msg_cls._from_dict(data)
+
 
 def _has_base64_data(block: dict) -> bool:
     """Check if a content block contains base64 encoded data.
@@ -507,34 +556,11 @@ def get_buffer_string(
 
 def _message_from_dict(message: dict) -> BaseMessage:
     type_ = message["type"]
-    if type_ == "human":
-        return HumanMessage(**message["data"])
-    if type_ == "ai":
-        return AIMessage(**message["data"])
-    if type_ == "system":
-        return SystemMessage(**message["data"])
-    if type_ == "chat":
-        return ChatMessage(**message["data"])
-    if type_ == "function":
-        return FunctionMessage(**message["data"])
-    if type_ == "tool":
-        return ToolMessage(**message["data"])
-    if type_ == "remove":
-        return RemoveMessage(**message["data"])
-    if type_ == "AIMessageChunk":
-        return AIMessageChunk(**message["data"])
-    if type_ == "HumanMessageChunk":
-        return HumanMessageChunk(**message["data"])
-    if type_ == "FunctionMessageChunk":
-        return FunctionMessageChunk(**message["data"])
-    if type_ == "ToolMessageChunk":
-        return ToolMessageChunk(**message["data"])
-    if type_ == "SystemMessageChunk":
-        return SystemMessageChunk(**message["data"])
-    if type_ == "ChatMessageChunk":
-        return ChatMessageChunk(**message["data"])
-    msg = f"Got unexpected message type: {type_}"
-    raise ValueError(msg)
+    msg_cls = _MESSAGE_TYPE_TO_CLASS.get(type_)
+    if msg_cls is None:
+        msg = f"Got unexpected message type: {type_}"
+        raise ValueError(msg)
+    return msg_cls(**message["data"])
 
 
 def messages_from_dict(messages: Sequence[dict]) -> list[BaseMessage]:
@@ -644,6 +670,13 @@ def _create_message_from_message_type(
     elif message_type in {"ai", "assistant"}:
         if example := kwargs.get("additional_kwargs", {}).pop("example", False):
             kwargs["example"] = example
+        # Schema-driven: extract any AIMessage model fields that were
+        # incorrectly captured into additional_kwargs.
+        additional = kwargs.get("additional_kwargs", {})
+        if additional:
+            for field_name in list(additional):
+                if field_name in AIMessage.get_field_names():
+                    kwargs[field_name] = additional.pop(field_name)
         message = AIMessage(content=content, **kwargs)
     elif message_type in {"system", "developer"}:
         if message_type == "developer":
@@ -653,11 +686,16 @@ def _create_message_from_message_type(
     elif message_type == "function":
         message = FunctionMessage(content=content, **kwargs)
     elif message_type == "tool":
-        artifact = kwargs.get("additional_kwargs", {}).pop("artifact", None)
-        status = kwargs.get("additional_kwargs", {}).pop("status", None)
-        if status is not None:
-            kwargs["status"] = status
-        message = ToolMessage(content=content, artifact=artifact, **kwargs)
+        # Schema-driven: extract any ToolMessage model fields that were
+        # incorrectly captured into additional_kwargs by the **kwargs catch-all
+        # of this function's signature.  This replaces the previous per-field
+        # hardcoded extraction (artifact, status) with a generic approach.
+        additional = kwargs.get("additional_kwargs", {})
+        if additional:
+            for field_name in list(additional):
+                if field_name in ToolMessage.get_field_names():
+                    kwargs[field_name] = additional.pop(field_name)
+        message = ToolMessage(content=content, **kwargs)
     elif message_type == "remove":
         message = RemoveMessage(**kwargs)
     else:
@@ -668,6 +706,29 @@ def _create_message_from_message_type(
         msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
         raise ValueError(msg)
     return message
+
+
+def _convert_to_message_legacy(message: dict) -> BaseMessage:
+    """Construct a message from a simple ``role``/``content`` dict.
+
+    This is the legacy code-path for dicts that do **not** look like they were
+    produced by ``model_dump()`` (e.g. ``{"role": "user", "content": "hi"}``).
+    """
+    msg_kwargs = message.copy()
+    try:
+        try:
+            msg_type = msg_kwargs.pop("role")
+        except KeyError:
+            msg_type = msg_kwargs.pop("type")
+        # None msg content is not allowed
+        msg_content = msg_kwargs.pop("content") or ""
+    except KeyError as e:
+        msg = f"Message dict must contain 'role' and 'content' keys, got {message}"
+        msg = create_message(
+            message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE
+        )
+        raise ValueError(msg) from e
+    return _create_message_from_message_type(msg_type, msg_content, **msg_kwargs)
 
 
 def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
@@ -705,23 +766,20 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
                 raise NotImplementedError(msg) from e
             message_ = _create_message_from_message_type(message_type_str, template)
     elif isinstance(message, dict):
-        msg_kwargs = message.copy()
-        try:
+        # Detect dicts produced by ``model_dump()`` — they carry a ``type``
+        # key whose value matches a known message class.  For these we use
+        # schema-driven reconstruction so that *every* model field is
+        # preserved (not just those hard-coded in
+        # ``_create_message_from_message_type``).
+        msg_type_value = message.get("type")
+        if msg_type_value is not None and msg_type_value in _MESSAGE_TYPE_TO_CLASS:
             try:
-                msg_type = msg_kwargs.pop("role")
-            except KeyError:
-                msg_type = msg_kwargs.pop("type")
-            # None msg content is not allowed
-            msg_content = msg_kwargs.pop("content") or ""
-        except KeyError as e:
-            msg = f"Message dict must contain 'role' and 'content' keys, got {message}"
-            msg = create_message(
-                message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE
-            )
-            raise ValueError(msg) from e
-        message_ = _create_message_from_message_type(
-            msg_type, msg_content, **msg_kwargs
-        )
+                message_ = _reconstruct_message_from_dict(message)
+            except (KeyError, TypeError, ValueError):
+                # Fallback: treat as a simple role/content dict.
+                message_ = _convert_to_message_legacy(message)
+        else:
+            message_ = _convert_to_message_legacy(message)
     else:
         msg = f"Unsupported message type: {type(message)}"
         msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
