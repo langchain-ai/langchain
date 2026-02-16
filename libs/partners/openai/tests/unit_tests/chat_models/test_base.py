@@ -2462,6 +2462,19 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
     ]
 
 
+def test__construct_responses_api_input_missing_role_raises_error() -> None:
+    """Test that a message dict missing 'role' raises ValueError with guidance."""
+    msg = HumanMessage(content="hello")
+    with (
+        patch(
+            "langchain_openai.chat_models.base._convert_message_to_dict",
+            return_value={"content": "hello"},
+        ),
+        pytest.raises(ValueError, match="Expected a 'role' key in message dict"),
+    ):
+        _construct_responses_api_input([msg])
+
+
 def test_service_tier() -> None:
     llm = ChatOpenAI(model="o4-mini", service_tier="flex")
     payload = llm._get_request_payload([HumanMessage("Hello")])

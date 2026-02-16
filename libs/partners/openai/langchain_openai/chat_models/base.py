@@ -4202,6 +4202,16 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
         # "name" parameter unsupported
         if "name" in msg:
             msg.pop("name")
+        if "role" not in msg:
+            err_msg = (
+                f"Expected a 'role' key in message dict when constructing "
+                f"Responses API payload, but none was found. "
+                f"Message type: {type(lc_msg).__name__}, "
+                f"available keys: {sorted(msg.keys())}. "
+                f"This can happen when middleware or checkpoint state produces "
+                f"messages that are not properly constructed BaseMessage objects."
+            )
+            raise ValueError(err_msg)
         if msg["role"] == "tool":
             tool_output = msg["content"]
             computer_call_output = _make_computer_call_output_from_message(
