@@ -160,6 +160,24 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         ```python
         [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
         ```
+
+    OpenAI-compatible APIs (e.g. OpenRouter, Ollama, vLLM):
+        When using a non-OpenAI provider, set ``check_embedding_ctx_length=False``
+        to send raw text instead of tokens (which many providers don't support),
+        and optionally set ``encoding_format`` to ``"float"`` to avoid base64
+        encoding issues:
+
+        ```python
+        from langchain_openai import OpenAIEmbeddings
+
+        embeddings = OpenAIEmbeddings(
+            model="openai/text-embedding-3-small",
+            base_url="https://openrouter.ai/api/v1",
+            api_key="your-openrouter-key",
+            check_embedding_ctx_length=False,
+            model_kwargs={"encoding_format": "float"},
+        )
+        ```
     """
 
     client: Any = Field(default=None, exclude=True)
@@ -239,7 +257,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     tiktoken_enabled: bool = True
     """Set this to False for non-OpenAI implementations of the embeddings API, e.g.
-    the `--extensions openai` extension for `text-generation-webui`"""
+    the `--extensions openai` extension for `text-generation-webui`.
+
+    For most non-OpenAI providers (OpenRouter, Ollama, vLLM, etc.), setting
+    ``check_embedding_ctx_length=False`` is simpler and sufficient, as it
+    bypasses both tiktoken tokenization and token-array input entirely."""
 
     tiktoken_model_name: str | None = None
     """The model name to pass to tiktoken when using this class.
@@ -293,7 +315,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     check_embedding_ctx_length: bool = True
     """Whether to check the token length of inputs and automatically split inputs
-        longer than embedding_ctx_length."""
+        longer than embedding_ctx_length.
+
+    Set to ``False`` when using non-OpenAI providers (e.g. OpenRouter, Ollama,
+    vLLM) that do not accept token arrays as input. This sends raw text strings
+    directly to the API instead of tiktoken-encoded token arrays."""
 
     model_config = ConfigDict(
         extra="forbid", populate_by_name=True, protected_namespaces=()
@@ -415,6 +441,35 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         if self.dimensions is not None:
             params["dimensions"] = self.dimensions
         return params
+
+    @property
+    def _is_openai_url(self) -> bool:
+        """Check if the configured base URL points to the official OpenAI API."""
+        return (
+            self.openai_api_base is None
+            or "api.openai.com" in self.openai_api_base
+        )
+
+    def _raise_with_provider_guidance(self, original_error: ValueError) -> None:
+        """Re-raise a ValueError with guidance for non-OpenAI providers.
+
+        When a non-default base_url is detected and the error is about missing
+        embedding data, re-raise with actionable suggestions. Otherwise, re-raise
+        the original error unchanged.
+        """
+        if (
+            not self._is_openai_url
+            and "No embedding data received" in str(original_error)
+        ):
+            msg = (
+                f"No embedding data received. When using a non-OpenAI API "
+                f"(base_url={self.openai_api_base!r}), try setting "
+                f"check_embedding_ctx_length=False to send raw text instead "
+                f"of tokens, and/or model_kwargs={{\"encoding_format\": \"float\"}} "
+                f"to avoid base64 encoding."
+            )
+            raise ValueError(msg) from original_error
+        raise
 
     def _ensure_sync_client_available(self) -> None:
         """Check that sync client is available, raise error if not."""
@@ -573,7 +628,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
             # Make API call with this batch
             batch_tokens = tokens[i:batch_end]
-            response = self.client.create(input=batch_tokens, **client_kwargs)
+            try:
+                response = self.client.create(
+                    input=batch_tokens, **client_kwargs
+                )
+            except ValueError as e:
+                self._raise_with_provider_guidance(e)
             if not isinstance(response, dict):
                 response = response.model_dump()
             batched_embeddings.extend(r["embedding"] for r in response["data"])
@@ -647,9 +707,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
             # Make API call with this batch
             batch_tokens = tokens[i:batch_end]
-            response = await self.async_client.create(
-                input=batch_tokens, **client_kwargs
-            )
+            try:
+                response = await self.async_client.create(
+                    input=batch_tokens, **client_kwargs
+                )
+            except ValueError as e:
+                self._raise_with_provider_guidance(e)
             if not isinstance(response, dict):
                 response = response.model_dump()
             batched_embeddings.extend(r["embedding"] for r in response["data"])
@@ -695,9 +758,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         if not self.check_embedding_ctx_length:
             embeddings: list[list[float]] = []
             for i in range(0, len(texts), chunk_size_):
-                response = self.client.create(
-                    input=texts[i : i + chunk_size_], **client_kwargs
-                )
+                try:
+                    response = self.client.create(
+                        input=texts[i : i + chunk_size_], **client_kwargs
+                    )
+                except ValueError as e:
+                    self._raise_with_provider_guidance(e)
                 if not isinstance(response, dict):
                     response = response.model_dump()
                 embeddings.extend(r["embedding"] for r in response["data"])
@@ -730,9 +796,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         if not self.check_embedding_ctx_length:
             embeddings: list[list[float]] = []
             for i in range(0, len(texts), chunk_size_):
-                response = await self.async_client.create(
-                    input=texts[i : i + chunk_size_], **client_kwargs
-                )
+                try:
+                    response = await self.async_client.create(
+                        input=texts[i : i + chunk_size_], **client_kwargs
+                    )
+                except ValueError as e:
+                    self._raise_with_provider_guidance(e)
                 if not isinstance(response, dict):
                     response = response.model_dump()
                 embeddings.extend(r["embedding"] for r in response["data"])
