@@ -2926,8 +2926,7 @@ async def test_tool_artifact_in_on_tool_end_event_with_tool_call() -> None:
     }
 
     events: list[StreamEvent] = [
-        event
-        async for event in artifact_tool.astream_events(tool_call, version="v2")
+        event async for event in artifact_tool.astream_events(tool_call, version="v2")
     ]
 
     end_events = [e for e in events if e["event"] == "on_tool_end"]
@@ -2981,9 +2980,7 @@ async def test_tool_no_artifact_when_not_content_and_artifact() -> None:
 
     events: list[StreamEvent] = [
         event
-        async for event in simple_tool.astream_events(
-            {"query": "hello"}, version="v2"
-        )
+        async for event in simple_tool.astream_events({"query": "hello"}, version="v2")
     ]
 
     end_events = [e for e in events if e["event"] == "on_tool_end"]
