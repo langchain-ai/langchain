@@ -755,6 +755,24 @@ def test__format_messages_with_tool_calls() -> None:
             "user",
         ]
 
+    # Check handling of empty HumanMessage
+    # Empty content should be replaced with " " to avoid API rejection
+    _, anthropic_messages = _format_messages([HumanMessage(content="")])
+    assert anthropic_messages == [{"role": "user", "content": " "}]
+
+    # Empty content in non-final position
+    _, anthropic_messages = _format_messages(
+        [HumanMessage(content=""), AIMessage(content="response")]
+    )
+    assert anthropic_messages == [
+        {"role": "user", "content": " "},
+        {"role": "assistant", "content": "response"},
+    ]
+
+    # Empty list content should also be replaced
+    _, anthropic_messages = _format_messages([HumanMessage(content=[])])
+    assert anthropic_messages == [{"role": "user", "content": " "}]
+
 
 def test__format_tool_use_block() -> None:
     # Test we correctly format tool_use blocks when there is no corresponding tool_call.
