@@ -2701,6 +2701,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             model = ChatOpenAI(model="...", use_previous_response_id=True)
             ```
 
+        !!! note "OpenAI-compatible endpoints"
+            Some OpenAI-compatible providers/proxies may not support forwarding
+            reasoning blocks in request history. If you see request-format errors
+            while using reasoning + Responses API, prefer
+            `use_previous_response_id=True` (so the server keeps conversation state).
+
     ??? info "Reasoning output"
 
         OpenAI's Responses API supports [reasoning models](https://platform.openai.com/docs/guides/reasoning?api-mode=responses)
@@ -2741,6 +2747,11 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             format output from reasoning summaries, built-in tool invocations, and other
             response items into the message's `content` field, rather than
             `additional_kwargs`. We recommend this format for new applications.
+
+        !!! note "Troubleshooting with non-OpenAI backends"
+            When using a non-OpenAI endpoint via `base_url`, request handling for
+            reasoning history can differ. If agent loops fail after tool calls, use:
+            `ChatOpenAI(..., use_responses_api=True, use_previous_response_id=True)`.
 
     ??? info "Structured output"
 
