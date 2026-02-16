@@ -11,6 +11,7 @@ from langchain_core.language_models import BaseChatModel, LanguageModelInput
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
+    InvalidToolCall,
     ToolCall,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
@@ -22,6 +23,7 @@ from typing_extensions import override
 
 class FakeToolCallingModel(BaseChatModel):
     tool_calls: list[list[ToolCall]] | list[list[dict[str, Any]]] | None = None
+    invalid_tool_calls: list[list[InvalidToolCall]] | list[list[dict[str, Any]]] | None = None
     structured_response: Any | None = None
     index: int = 0
     tool_style: Literal["openai", "anthropic"] = "openai"
@@ -58,10 +60,14 @@ class FakeToolCallingModel(BaseChatModel):
             message = AIMessage(content=json.dumps(content_obj), id=str(self.index))
         else:
             messages_string = "-".join([m.text for m in messages])
+            invalid_tc: list[InvalidToolCall] | list[dict[str, Any]] = []
+            if self.invalid_tool_calls:
+                invalid_tc = self.invalid_tool_calls[self.index % len(self.invalid_tool_calls)]
             message = AIMessage(
                 content=messages_string,
                 id=str(self.index),
                 tool_calls=tool_calls.copy(),
+                invalid_tool_calls=list(invalid_tc),
             )
         self.index += 1
         return ChatResult(generations=[ChatGeneration(message=message)])

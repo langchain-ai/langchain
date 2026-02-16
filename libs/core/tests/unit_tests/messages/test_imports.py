@@ -58,6 +58,7 @@ EXPECTED_ALL = [
     "UsageMetadata",
     "InputTokenDetails",
     "OutputTokenDetails",
+    "tool_messages_from_invalid_tool_calls",
 ]
 
 

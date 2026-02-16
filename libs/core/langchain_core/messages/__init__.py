@@ -54,6 +54,7 @@ if TYPE_CHECKING:
         ToolCallChunk,
         ToolMessage,
         ToolMessageChunk,
+        tool_messages_from_invalid_tool_calls,
     )
     from langchain_core.messages.utils import (
         AnyMessage,
@@ -126,6 +127,7 @@ __all__ = (
     "message_to_dict",
     "messages_from_dict",
     "messages_to_dict",
+    "tool_messages_from_invalid_tool_calls",
     "trim_messages",
 )
 
@@ -170,6 +172,7 @@ _dynamic_imports = {
     "ToolMessageChunk": "tool",
     "UsageMetadata": "ai",
     "VideoContentBlock": "content",
+    "tool_messages_from_invalid_tool_calls": "tool",
     "AnyMessage": "utils",
     "MessageLikeRepresentation": "utils",
     "_message_from_dict": "utils",

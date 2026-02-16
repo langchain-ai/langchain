@@ -51,6 +51,7 @@ from langchain.agents.structured_output import (
     ToolStrategy,
 )
 from langchain.chat_models import init_chat_model
+from langchain.tools.tool_node import convert_invalid_tool_calls
 
 
 @dataclass
@@ -1086,6 +1087,12 @@ def create_agent(
                         ],
                     }
 
+        # Handle invalid tool calls by converting them to error ToolMessages
+        # so the LLM receives feedback about malformed JSON and can retry.
+        if output.invalid_tool_calls:
+            error_messages = convert_invalid_tool_calls(output)
+            return {"messages": [output, *error_messages]}
+
         return {"messages": [output]}
 
     def _get_bound_model(
@@ -1464,7 +1471,10 @@ def create_agent(
         # - there is a response format -- to allow for jumping to model to handle
         #   regenerating structured output tool calls
         model_to_tools_destinations = ["tools", exit_node]
-        if response_format or loop_exit_node != "model":
+        # Always include loop_entry_node so the routing edge can send the
+        # agent back to the model (needed for: invalid tool call recovery,
+        # response_format retries, and after_model middleware jump_to).
+        if loop_entry_node not in model_to_tools_destinations:
             model_to_tools_destinations.append(loop_entry_node)
 
         graph.add_conditional_edges(
@@ -1668,6 +1678,11 @@ def _make_model_to_tools_edge(
         # 3. If the model hasn't called any tools, exit the loop
         # this is the classic exit condition for an agent loop
         if len(last_ai_message.tool_calls) == 0:
+            # If there are invalid tool calls, error ToolMessages have been
+            # injected by _handle_model_output. Route back to the model so
+            # it can see the error feedback and retry.
+            if last_ai_message.invalid_tool_calls:
+                return model_destination
             return end_destination
 
         pending_tool_calls = [

@@ -346,6 +346,49 @@ def invalid_tool_call(
     )
 
 
+INVALID_TOOL_CALL_ERROR_TEMPLATE = (
+    "Error: Failed to parse tool call arguments for '{name}'.\n"
+    "{error_detail}"
+    "Please fix your mistakes and try again."
+)
+"""Error template used when converting invalid tool calls to error messages."""
+
+
+def tool_messages_from_invalid_tool_calls(
+    invalid_tool_calls: list[InvalidToolCall],
+) -> list["ToolMessage"]:
+    """Create error ``ToolMessage`` objects from invalid tool calls.
+
+    Converts each ``InvalidToolCall`` into a ``ToolMessage`` with
+    ``status="error"``, allowing the LLM to receive feedback about malformed
+    tool calls and retry with corrected arguments.
+
+    Args:
+        invalid_tool_calls: List of invalid tool calls to convert.
+
+    Returns:
+        List of ``ToolMessage`` objects with ``status="error"``.
+    """
+    tool_messages: list[ToolMessage] = []
+    for itc in invalid_tool_calls:
+        error_detail = f"Details: {itc['error']}\n" if itc.get("error") else ""
+        tool_call_id = itc.get("id") or ""
+        name = itc.get("name") or "unknown"
+        content = INVALID_TOOL_CALL_ERROR_TEMPLATE.format(
+            name=name,
+            error_detail=error_detail,
+        )
+        tool_messages.append(
+            ToolMessage(
+                content=content,
+                tool_call_id=tool_call_id,
+                name=name,
+                status="error",
+            )
+        )
+    return tool_messages
+
+
 def default_tool_parser(
     raw_tool_calls: list[dict],
 ) -> tuple[list[ToolCall], list[InvalidToolCall]]:
