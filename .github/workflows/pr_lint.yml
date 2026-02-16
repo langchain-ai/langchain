@@ -102,6 +102,7 @@ jobs:
             nomic
             ollama
             openai
+            openrouter
             perplexity
             qdrant
             xai

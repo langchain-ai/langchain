@@ -160,6 +160,23 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         ```python
         [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
         ```
+
+    OpenAI-compatible APIs (e.g. OpenRouter, Ollama, vLLM):
+        When using a non-OpenAI provider, set ``check_embedding_ctx_length=False``
+        to send raw text instead of tokens (which many providers don't support),
+        and optionally set ``encoding_format`` to ``"float"`` to avoid base64
+        encoding issues:
+
+        ```python
+        from langchain_openai import OpenAIEmbeddings
+
+        embeddings = OpenAIEmbeddings(
+            model="...",
+            base_url="...",
+            check_embedding_ctx_length=False,
+        )
+        ```
+
     """
 
     client: Any = Field(default=None, exclude=True)
@@ -238,8 +255,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     headers: Any = None
 
     tiktoken_enabled: bool = True
-    """Set this to False for non-OpenAI implementations of the embeddings API, e.g.
-    the `--extensions openai` extension for `text-generation-webui`"""
+    """Set this to False to use HuggingFace `transformers` tokenization.
+
+    For non-OpenAI providers (OpenRouter, Ollama, vLLM, etc.), consider setting
+    ``check_embedding_ctx_length=False`` instead, as it bypasses tokenization
+    entirely."""
 
     tiktoken_model_name: str | None = None
     """The model name to pass to tiktoken when using this class.
@@ -293,7 +313,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     check_embedding_ctx_length: bool = True
     """Whether to check the token length of inputs and automatically split inputs
-        longer than embedding_ctx_length."""
+        longer than embedding_ctx_length.
+
+    Set to ``False`` to send raw text strings directly to the API instead of
+    tokenizing. Useful for many non-OpenAI providers (e.g. OpenRouter, Ollama,
+    vLLM)."""
 
     model_config = ConfigDict(
         extra="forbid", populate_by_name=True, protected_namespaces=()
