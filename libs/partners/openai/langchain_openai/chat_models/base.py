@@ -901,6 +901,10 @@ class BaseChatOpenAI(BaseChatModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
+    @property
+    def model(self) -> str:
+        return self.model_name
+
     @model_validator(mode="before")
     @classmethod
     def build_extra(cls, values: dict[str, Any]) -> Any:
