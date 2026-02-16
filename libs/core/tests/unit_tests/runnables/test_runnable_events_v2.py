@@ -2925,9 +2925,10 @@ async def test_tool_artifact_in_on_tool_end_event_with_tool_call() -> None:
         "type": "tool_call",
     }
 
-    events: list[StreamEvent] = []
-    async for event in artifact_tool.astream_events(tool_call, version="v2"):
-        events.append(event)
+    events: list[StreamEvent] = [
+        event
+        async for event in artifact_tool.astream_events(tool_call, version="v2")
+    ]
 
     end_events = [e for e in events if e["event"] == "on_tool_end"]
     assert len(end_events) == 1
@@ -2951,11 +2952,12 @@ async def test_tool_artifact_in_on_tool_end_event_without_tool_call() -> None:
         """A tool that returns content and an artifact."""
         return query[::-1], {"length": len(query)}
 
-    events: list[StreamEvent] = []
-    async for event in artifact_tool_no_id.astream_events(
-        {"query": "hello"}, version="v2"
-    ):
-        events.append(event)
+    events: list[StreamEvent] = [
+        event
+        async for event in artifact_tool_no_id.astream_events(
+            {"query": "hello"}, version="v2"
+        )
+    ]
 
     end_events = [e for e in events if e["event"] == "on_tool_end"]
     assert len(end_events) == 1
@@ -2977,9 +2979,12 @@ async def test_tool_no_artifact_when_not_content_and_artifact() -> None:
         """A simple tool."""
         return query[::-1]
 
-    events: list[StreamEvent] = []
-    async for event in simple_tool.astream_events({"query": "hello"}, version="v2"):
-        events.append(event)
+    events: list[StreamEvent] = [
+        event
+        async for event in simple_tool.astream_events(
+            {"query": "hello"}, version="v2"
+        )
+    ]
 
     end_events = [e for e in events if e["event"] == "on_tool_end"]
     assert len(end_events) == 1
