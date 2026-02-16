@@ -819,7 +819,7 @@ class ChildTool(BaseTool):
         filtered_keys.update(self._injected_args_keys)
 
         # If we have an args_schema, use it to identify injected args
-        if self.args_schema is not None:
+        if self.args_schema is not None and is_basemodel_subclass(self.args_schema):
             try:
                 annotations = get_all_basemodel_annotations(self.args_schema)
                 for field_name, field_type in annotations.items():

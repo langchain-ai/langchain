@@ -3632,3 +3632,29 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
+
+
+def test_structured_tool_recursion_with_dict_schema() -> None:
+    """Test that a StructuredTool with a dict schema does not cause recursion error."""
+
+    def foo(bar: int) -> int:
+        return bar
+
+    json_schema = {
+        "title": "foo",
+        "description": "foo",
+        "type": "object",
+        "properties": {"bar": {"title": "Bar", "type": "integer"}},
+        "required": ["bar"],
+    }
+
+    tool = StructuredTool.from_function(
+        func=foo,
+        name="TestTool",
+        description="Test Tool",
+        args_schema=json_schema,
+    )
+
+    # This should not raise RecursionError
+    result = tool.invoke({"bar": 1})
+    assert result == 1
