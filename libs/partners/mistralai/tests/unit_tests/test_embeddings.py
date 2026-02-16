@@ -1,14 +1,12 @@
 import os
 from typing import cast
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import httpx
-import pytest
 from pydantic import SecretStr
 
 from langchain_mistralai import MistralAIEmbeddings
 from langchain_mistralai.embeddings import (
-    DEFAULT_MAX_TOKENS,
     DummyTokenizer,
     _is_retryable_error,
 )
@@ -16,97 +14,13 @@ from langchain_mistralai.embeddings import (
 os.environ["MISTRAL_API_KEY"] = "foo"
 
 
-@patch("langchain_mistralai.embeddings.Tokenizer.from_pretrained")
-def test_mistral_init(mock_tokenizer: MagicMock) -> None:
-    mock_tokenizer.side_effect = OSError(
-        "No HuggingFace access"
-    )  # Force DummyTokenizer
+def test_mistral_init() -> None:
     for model in [
         MistralAIEmbeddings(model="mistral-embed", mistral_api_key="test"),  # type: ignore[call-arg]
         MistralAIEmbeddings(model="mistral-embed", api_key="test"),  # type: ignore[arg-type]
     ]:
         assert model.model == "mistral-embed"
         assert cast("SecretStr", model.mistral_api_key).get_secret_value() == "test"
-
-
-@patch("langchain_mistralai.embeddings.Tokenizer.from_pretrained")
-def test_max_tokens_configurable(mock_tokenizer: MagicMock) -> None:
-    """Test that max_tokens parameter is configurable."""
-    mock_tokenizer.side_effect = OSError("No HuggingFace access")
-    model = MistralAIEmbeddings(model="mistral-embed", api_key="test", max_tokens=8000)  # type: ignore[arg-type]
-    assert model.max_tokens == 8000
-
-
-@patch("langchain_mistralai.embeddings.Tokenizer.from_pretrained")
-def test_default_max_tokens(mock_tokenizer: MagicMock) -> None:
-    """Test that default max_tokens is set correctly."""
-    mock_tokenizer.side_effect = OSError("No HuggingFace access")
-    model = MistralAIEmbeddings(model="mistral-embed", api_key="test")  # type: ignore[arg-type]
-    assert model.max_tokens == DEFAULT_MAX_TOKENS
-
-
-@patch("langchain_mistralai.embeddings.Tokenizer.from_pretrained")
-def test_get_batches_normal_documents(mock_tokenizer: MagicMock) -> None:
-    """Test batching with normal-sized documents."""
-    mock_tokenizer.side_effect = OSError("No HuggingFace access")
-    model = MistralAIEmbeddings(model="mistral-embed", api_key="test", max_tokens=100)  # type: ignore[arg-type]
-    # Override the tokenizer to return specific token counts
-    model.tokenizer = MagicMock()
-    model.tokenizer.encode_batch.return_value = [
-        list(range(30)),  # 30 tokens
-        list(range(30)),  # 30 tokens
-        list(range(30)),  # 30 tokens
-        list(range(30)),  # 30 tokens
-    ]
-
-    texts = ["doc1", "doc2", "doc3", "doc4"]
-    batches = list(model._get_batches(texts))
-
-    # With max_tokens=100 and 95% safety margin (effective=95),
-    # each batch can hold up to 3 documents of 30 tokens each (90 tokens)
-    assert len(batches) == 2
-    assert batches[0] == ["doc1", "doc2", "doc3"]
-    assert batches[1] == ["doc4"]
-
-
-@patch("langchain_mistralai.embeddings.Tokenizer.from_pretrained")
-def test_get_batches_oversized_document_raises_error(mock_tokenizer: MagicMock) -> None:
-    """Test that a document exceeding max tokens raises ValueError."""
-    mock_tokenizer.side_effect = OSError("No HuggingFace access")
-    model = MistralAIEmbeddings(model="mistral-embed", api_key="test", max_tokens=100)  # type: ignore[arg-type]
-    # Override the tokenizer
-    model.tokenizer = MagicMock()
-    model.tokenizer.encode_batch.return_value = [
-        list(range(200)),  # 200 tokens - exceeds 95 (100 * 0.95)
-    ]
-
-    texts = ["oversized_document"]
-
-    with pytest.raises(ValueError) as exc_info:
-        list(model._get_batches(texts))
-
-    assert "Document at index 0 has 200 tokens" in str(exc_info.value)
-    assert "exceeds the maximum" in str(exc_info.value)
-    assert "split your document" in str(exc_info.value)
-
-
-@patch("langchain_mistralai.embeddings.Tokenizer.from_pretrained")
-def test_get_batches_second_document_oversized(mock_tokenizer: MagicMock) -> None:
-    """Test that error includes correct index for oversized document."""
-    mock_tokenizer.side_effect = OSError("No HuggingFace access")
-    model = MistralAIEmbeddings(model="mistral-embed", api_key="test", max_tokens=100)  # type: ignore[arg-type]
-    model.tokenizer = MagicMock()
-    model.tokenizer.encode_batch.return_value = [
-        list(range(30)),  # 30 tokens - OK
-        list(range(200)),  # 200 tokens - exceeds limit
-    ]
-
-    texts = ["normal_doc", "oversized_document"]
-
-    with pytest.raises(ValueError) as exc_info:
-        list(model._get_batches(texts))
-
-    assert "Document at index 1 has 200 tokens" in str(exc_info.value)
 
 
 def test_is_retryable_error_timeout() -> None:

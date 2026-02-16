@@ -16,26 +16,17 @@ from pydantic import (
     SecretStr,
     model_validator,
 )
-from tenacity import (
-    retry,
-    retry_if_exception,
-    stop_after_attempt,
-    wait_fixed,
-)
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_fixed
 from tokenizers import Tokenizer  # type: ignore[import]
 from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MAX_TOKENS = 16_000
-"""Default batching parameter for the Mistral API. This is NOT the maximum number of
-tokens accepted by the embedding model for each document/chunk, but rather the maximum
-number of tokens that can be sent in a single request to the Mistral API (across
-multiple documents/chunks)"""
-
-SAFETY_MARGIN = 0.95
-"""Safety margin applied to max_tokens to account for tokenizer approximation
-differences, especially when using the DummyTokenizer fallback."""
+MAX_TOKENS = 16_000
+"""A batching parameter for the Mistral API. This is NOT the maximum number of tokens
+accepted by the embedding model for each document/chunk, but rather the maximum number
+of tokens that can be sent in a single request to the Mistral API (across multiple
+documents/chunks)"""
 
 
 def _is_retryable_error(exception: BaseException) -> bool:
@@ -177,10 +168,6 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
 
     model: str = "mistral-embed"
 
-    max_tokens: int = Field(default=DEFAULT_MAX_TOKENS)
-    """Maximum number of tokens per batch request. Defaults to 16,000. A safety
-    margin is automatically applied to account for tokenizer approximation."""
-
     model_config = ConfigDict(
         extra="forbid",
         arbitrary_types_allowed=True,
@@ -230,42 +217,19 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         return self
 
     def _get_batches(self, texts: list[str]) -> Iterable[list[str]]:
-        """Split list of texts into batches respecting token limits for Mistral API.
-
-        Applies a safety margin to account for tokenizer approximation differences,
-        especially when using the DummyTokenizer fallback.
-
-        Raises:
-            ValueError: If a single document exceeds the maximum token limit.
-        """
+        """Split list of texts into batches of less than 16k tokens for Mistral API."""
         batch: list[str] = []
         batch_tokens = 0
-
-        # Apply safety margin to max_tokens
-        effective_max_tokens = int(self.max_tokens * SAFETY_MARGIN)
 
         text_token_lengths = [
             len(encoded) for encoded in self.tokenizer.encode_batch(texts)
         ]
 
-        for i, (text, text_tokens) in enumerate(
-            zip(texts, text_token_lengths, strict=False)
-        ):
-            # Check if a single document exceeds the limit
-            if text_tokens > effective_max_tokens:
-                msg = (
-                    f"Document at index {i} has {text_tokens} tokens, which exceeds "
-                    f"the maximum of {effective_max_tokens} tokens per document "
-                    f"(max_tokens={self.max_tokens} with {SAFETY_MARGIN:.0%} safety "
-                    f"margin). Please split your document into smaller chunks before "
-                    f"embedding. Note: If using the fallback DummyTokenizer (no "
-                    f"HuggingFace access), token count is approximated by character "
-                    f"count, which may overestimate the actual token count."
-                )
-                raise ValueError(msg)
-
-            if batch_tokens + text_tokens > effective_max_tokens:
+        for text, text_tokens in zip(texts, text_token_lengths, strict=False):
+            if batch_tokens + text_tokens > MAX_TOKENS:
                 if len(batch) > 0:
+                    # edge case where first batch exceeds max tokens
+                    # should not yield an empty batch.
                     yield batch
                 batch = [text]
                 batch_tokens = text_tokens
