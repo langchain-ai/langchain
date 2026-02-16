@@ -1,0 +1,41 @@
+# Orcest.ai - Render Blueprint
+# Deploy: danialsamiei/orcest.ai on orcest.ai
+
+services:
+  - type: web
+    runtime: docker
+    name: orcest-ai
+    plan: standard  # منابع بهینه: 512MB RAM, 0.5 CPU
+
+    # Repository
+    repo: https://github.com/danialsamiei/orcest.ai
+    branch: master
+    rootDir: /
+
+    # Domain
+    domains:
+      - orcest.ai
+      - www.orcest.ai
+
+    # Docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+
+    # Scaling - بهینه برای شروع
+    numInstances: 1
+    scaling:
+      minInstances: 1
+      maxInstances: 3
+      targetCPUPercent: 70
+      targetMemoryPercent: 80
+
+    # Health check
+    healthCheckPath: /health
+
+    # Auto deploy on push
+    autoDeployTrigger: commit
+
+    # Environment
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"
