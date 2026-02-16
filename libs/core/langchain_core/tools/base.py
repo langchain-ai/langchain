@@ -999,7 +999,9 @@ class ChildTool(BaseTool):
             run_manager.on_tool_error(error_to_raise, tool_call_id=tool_call_id)
             raise error_to_raise
         output = _format_output(content, artifact, tool_call_id, self.name, status)
-        run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
+        run_manager.on_tool_end(
+            output, color=color, name=self.name, artifact=artifact, **kwargs
+        )
         return output
 
     async def arun(
@@ -1130,7 +1132,9 @@ class ChildTool(BaseTool):
             raise error_to_raise
 
         output = _format_output(content, artifact, tool_call_id, self.name, status)
-        await run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
+        await run_manager.on_tool_end(
+            output, color=color, name=self.name, artifact=artifact, **kwargs
+        )
         return output
 
 

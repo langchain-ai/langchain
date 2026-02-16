@@ -2908,3 +2908,82 @@ async def test_tool_error_event_tool_call_id_is_none_when_not_provided() -> None
     assert error_event["name"] == "failing_tool_no_id"
     assert "tool_call_id" in error_event["data"]
     assert error_event["data"]["tool_call_id"] is None
+
+
+async def test_tool_artifact_in_on_tool_end_event_with_tool_call() -> None:
+    """Test that artifact is included in on_tool_end event when using ToolCall."""
+
+    @tool(response_format="content_and_artifact")
+    def artifact_tool(query: str) -> tuple[str, dict]:
+        """A tool that returns content and an artifact."""
+        return query[::-1], {"length": len(query)}
+
+    tool_call = {
+        "name": "artifact_tool",
+        "args": {"query": "hello"},
+        "id": "call_123",
+        "type": "tool_call",
+    }
+
+    events: list[StreamEvent] = []
+    async for event in artifact_tool.astream_events(tool_call, version="v2"):
+        events.append(event)
+
+    end_events = [e for e in events if e["event"] == "on_tool_end"]
+    assert len(end_events) == 1
+
+    end_event = end_events[0]
+    assert end_event["name"] == "artifact_tool"
+    assert "artifact" in end_event["data"]
+    assert end_event["data"]["artifact"] == {"length": 5}
+
+
+async def test_tool_artifact_in_on_tool_end_event_without_tool_call() -> None:
+    """Test that artifact is included in on_tool_end event even without ToolCall.
+
+    When a tool is invoked with a plain dict (no tool_call_id), the output is
+    a plain string (not a ToolMessage), but the artifact should still be
+    available in the event data.
+    """
+
+    @tool(response_format="content_and_artifact")
+    def artifact_tool_no_id(query: str) -> tuple[str, dict]:
+        """A tool that returns content and an artifact."""
+        return query[::-1], {"length": len(query)}
+
+    events: list[StreamEvent] = []
+    async for event in artifact_tool_no_id.astream_events(
+        {"query": "hello"}, version="v2"
+    ):
+        events.append(event)
+
+    end_events = [e for e in events if e["event"] == "on_tool_end"]
+    assert len(end_events) == 1
+
+    end_event = end_events[0]
+    assert end_event["name"] == "artifact_tool_no_id"
+    # The output is just the content string (no ToolMessage without tool_call_id)
+    assert end_event["data"]["output"] == "olleh"
+    # But the artifact should still be in the event data
+    assert "artifact" in end_event["data"]
+    assert end_event["data"]["artifact"] == {"length": 5}
+
+
+async def test_tool_no_artifact_when_not_content_and_artifact() -> None:
+    """Test that artifact key is absent when tool doesn't use content_and_artifact."""
+
+    @tool
+    def simple_tool(query: str) -> str:
+        """A simple tool."""
+        return query[::-1]
+
+    events: list[StreamEvent] = []
+    async for event in simple_tool.astream_events({"query": "hello"}, version="v2"):
+        events.append(event)
+
+    end_events = [e for e in events if e["event"] == "on_tool_end"]
+    assert len(end_events) == 1
+
+    end_event = end_events[0]
+    assert end_event["name"] == "simple_tool"
+    assert "artifact" not in end_event["data"]
