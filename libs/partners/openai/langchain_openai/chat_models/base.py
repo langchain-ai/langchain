@@ -2647,8 +2647,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             Some OpenAI-compatible providers/proxies may not support forwarding
             reasoning blocks in request history. If you see request-format errors
             while using reasoning + Responses API, prefer
-            `use_previous_response_id=True` (so the server keeps conversation state)
-            and set `output_version="responses/v1"` for consistent message formatting.
+            `use_previous_response_id=True` (so the server keeps conversation state).
 
     ??? info "Reasoning output"
 
@@ -2694,8 +2693,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         !!! note "Troubleshooting with non-OpenAI backends"
             When using a non-OpenAI endpoint via `base_url`, request handling for
             reasoning history can differ. If agent loops fail after tool calls, use:
-            `ChatOpenAI(..., use_responses_api=True, output_version="responses/v1",
-            use_previous_response_id=True)`.
+            `ChatOpenAI(..., use_responses_api=True, use_previous_response_id=True)`.
 
     ??? info "Structured output"
 
