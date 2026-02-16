@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import warnings
 from functools import partial
 from types import TracebackType
@@ -3116,6 +3117,176 @@ def test_gpt_5_temperature(use_responses_api: bool) -> None:
     messages = [HumanMessage(content="Hello")]
     payload = llm._get_request_payload(messages)
     assert payload["temperature"] == 0.5  # gpt-5-chat is exception
+
+
+def test_http_client_aiohttp_explicit() -> None:
+    """Test that custom http_client flows through to OpenAI client construction."""
+    mock_client = MagicMock()
+
+    # Mock the OpenAI client constructor to capture the http_client parameter
+    with (
+        patch("openai.OpenAI") as mock_openai,
+        patch("openai.AsyncOpenAI") as mock_async_openai,
+    ):
+        mock_openai.return_value = MagicMock()
+        mock_async_openai.return_value = MagicMock()
+
+        llm = ChatOpenAI(
+            http_client=mock_client,
+            http_async_client=mock_client,
+            api_key=SecretStr("test-key"),
+        )
+
+        # Trigger client initialization by accessing a client property
+        _ = llm.client
+
+        # Verify the http_client was passed to OpenAI constructor
+        mock_openai.assert_called_once()
+        call_kwargs = mock_openai.call_args[1]
+        assert call_kwargs["http_client"] == mock_client
+
+        # Verify async client gets the same client
+        mock_async_openai.assert_called_once()
+        async_call_kwargs = mock_async_openai.call_args[1]
+        assert async_call_kwargs["http_client"] == mock_client
+
+
+def test_aiohttp_env_variable_enabled() -> None:
+    """Test that LC_OPENAI_USE_AIOHTTP=1 uses aiohttp client when available."""
+    # Mock successful import of DefaultAioHttpClient
+    mock_aiohttp_client = MagicMock()
+
+    with (
+        patch.dict(os.environ, {"LC_OPENAI_USE_AIOHTTP": "1"}),
+        patch("openai.DefaultAioHttpClient", return_value=mock_aiohttp_client),
+        patch("openai.OpenAI") as mock_openai,
+        patch("openai.AsyncOpenAI") as mock_async_openai,
+    ):
+        mock_openai.return_value = MagicMock()
+        mock_async_openai.return_value = MagicMock()
+
+        llm = ChatOpenAI(api_key=SecretStr("test-key"))
+        _ = llm.client  # Trigger client initialization
+
+        # Verify aiohttp client was used for both sync and async
+        mock_openai.assert_called_once()
+        sync_call_kwargs = mock_openai.call_args[1]
+        assert sync_call_kwargs["http_client"] == mock_aiohttp_client
+
+        mock_async_openai.assert_called_once()
+        async_call_kwargs = mock_async_openai.call_args[1]
+        assert async_call_kwargs["http_client"] == mock_aiohttp_client
+
+
+def test_aiohttp_env_variable_disabled() -> None:
+    """Test that LC_OPENAI_USE_AIOHTTP=0 doesn't use aiohttp client."""
+    with (
+        patch.dict(os.environ, {"LC_OPENAI_USE_AIOHTTP": "0"}),
+        patch("openai.OpenAI") as mock_openai,
+        patch("openai.AsyncOpenAI") as mock_async_openai,
+    ):
+        mock_openai.return_value = MagicMock()
+        mock_async_openai.return_value = MagicMock()
+
+        llm = ChatOpenAI(api_key=SecretStr("test-key"))
+        _ = llm.client  # Trigger client initialization
+
+        # Verify httpx clients were used (not aiohttp)
+        mock_openai.assert_called_once()
+        sync_call_kwargs = mock_openai.call_args[1]
+        # Should be httpx client wrapper
+        assert hasattr(sync_call_kwargs["http_client"], "is_closed")
+
+        mock_async_openai.assert_called_once()
+        async_call_kwargs = mock_async_openai.call_args[1]
+        assert hasattr(async_call_kwargs["http_client"], "is_closed")
+
+
+def test_aiohttp_env_variable_fallback_with_warning() -> None:
+    """Test graceful fallback when aiohttp is not available but env var is set."""
+    with (
+        patch.dict(os.environ, {"LC_OPENAI_USE_AIOHTTP": "1"}),
+        patch(
+            "openai.DefaultAioHttpClient",
+            side_effect=ImportError("No module named aiohttp"),
+        ),
+        patch("warnings.warn") as mock_warn,
+        patch("openai.OpenAI") as mock_openai,
+        patch("openai.AsyncOpenAI") as mock_async_openai,
+    ):
+        mock_openai.return_value = MagicMock()
+        mock_async_openai.return_value = MagicMock()
+
+        llm = ChatOpenAI(api_key=SecretStr("test-key"))
+        _ = llm.client  # Trigger client initialization
+
+        # Verify warning was issued (called twice, once for sync and once for async)
+        assert mock_warn.call_count == 2
+        warning_msg = mock_warn.call_args_list[0][0][0]
+        assert (
+            "LC_OPENAI_USE_AIOHTTP is set but openai[aiohttp] is not installed"
+            in warning_msg
+        )
+        assert 'pip install "openai[aiohttp]"' in warning_msg
+
+        # Verify fallback to httpx clients
+        mock_openai.assert_called_once()
+        sync_call_kwargs = mock_openai.call_args[1]
+        assert hasattr(sync_call_kwargs["http_client"], "is_closed")
+
+
+def test_aiohttp_env_variable_truthy_values() -> None:
+    """Test that various truthy values for LC_OPENAI_USE_AIOHTTP work."""
+    mock_aiohttp_client = MagicMock()
+
+    for env_value in ["1", "true", "TRUE", "yes", "YES", "on", "ON"]:
+        with (
+            patch.dict(os.environ, {"LC_OPENAI_USE_AIOHTTP": env_value}),
+            patch("openai.DefaultAioHttpClient", return_value=mock_aiohttp_client),
+            patch("openai.OpenAI") as mock_openai,
+            patch("openai.AsyncOpenAI") as mock_async_openai,
+        ):
+            mock_openai.return_value = MagicMock()
+            mock_async_openai.return_value = MagicMock()
+
+            llm = ChatOpenAI(api_key=SecretStr("test-key"))
+            _ = llm.client  # Trigger client initialization
+
+            # Verify aiohttp client was used
+            mock_openai.assert_called_once()
+            call_kwargs = mock_openai.call_args[1]
+            assert call_kwargs["http_client"] == mock_aiohttp_client
+
+
+def test_explicit_http_client_overrides_env_variable() -> None:
+    """Test that explicitly provided http_client overrides environment variable."""
+    explicit_client = MagicMock()
+    mock_aiohttp_client = MagicMock()
+
+    with (
+        patch.dict(os.environ, {"LC_OPENAI_USE_AIOHTTP": "1"}),
+        patch("openai.DefaultAioHttpClient", return_value=mock_aiohttp_client),
+        patch("openai.OpenAI") as mock_openai,
+        patch("openai.AsyncOpenAI") as mock_async_openai,
+    ):
+        mock_openai.return_value = MagicMock()
+        mock_async_openai.return_value = MagicMock()
+
+        llm = ChatOpenAI(
+            http_client=explicit_client,
+            http_async_client=explicit_client,
+            api_key=SecretStr("test-key"),
+        )
+        _ = llm.client  # Trigger client initialization
+
+        # Verify explicit client was used, not aiohttp
+        mock_openai.assert_called_once()
+        sync_call_kwargs = mock_openai.call_args[1]
+        assert sync_call_kwargs["http_client"] == explicit_client
+
+        mock_async_openai.assert_called_once()
+        async_call_kwargs = mock_async_openai.call_args[1]
+        assert async_call_kwargs["http_client"] == explicit_client
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
