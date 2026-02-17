@@ -2,6 +2,7 @@
 
 import inspect
 import json
+import logging
 import sys
 import textwrap
 import threading
@@ -3310,6 +3311,33 @@ def test_filter_injected_args_not_in_schema(
     assert captured is not None
     assert captured == {"query": "test", "limit": 5}
     assert "runtime" not in captured
+
+
+def test_filter_injected_args_with_dict_args_schema(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test filtering with JSON Schema dict args_schema does not log annotation errors."""
+
+    def echo(x: str) -> str:
+        """Echo input."""
+        return x
+
+    custom_tool = StructuredTool(
+        name="echo",
+        description="Echo tool",
+        func=echo,
+        args_schema={
+            "type": "object",
+            "properties": {"x": {"type": "string"}},
+            "required": ["x"],
+        },
+    )
+
+    with caplog.at_level(logging.DEBUG, logger="langchain_core.tools.base"):
+        result = custom_tool.invoke({"x": "test"})
+
+    assert result == "test"
+    assert "Failed to get args_schema annotations for filtering." not in caplog.text
 
 
 class CallbackHandlerWithToolCallIdCapture(FakeCallbackHandler):
