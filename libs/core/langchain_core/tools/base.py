@@ -818,8 +818,10 @@ class ChildTool(BaseTool):
         # Add injected args from function signature (e.g., ToolRuntime parameters)
         filtered_keys.update(self._injected_args_keys)
 
-        # If we have an args_schema, use it to identify injected args
-        if self.args_schema is not None:
+        # If we have an args_schema, use it to identify injected args.
+        # Skip dict schemas (JSON Schema) since they don't have type annotations
+        # and passing them to get_all_basemodel_annotations causes a RecursionError.
+        if self.args_schema is not None and not isinstance(self.args_schema, dict):
             try:
                 annotations = get_all_basemodel_annotations(self.args_schema)
                 for field_name, field_type in annotations.items():
