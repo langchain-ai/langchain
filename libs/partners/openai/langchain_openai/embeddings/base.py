@@ -334,7 +334,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     Set to `False` to send raw text strings directly to the API instead of
     tokenizing. Useful for many non-OpenAI providers (e.g. OpenRouter, Ollama,
-    vLLM)."""
+    vLLM).
+    """
 
     model_config = ConfigDict(
         extra="forbid", populate_by_name=True, protected_namespaces=()
