@@ -9,7 +9,6 @@ import re
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
-from importlib.metadata import version
 from operator import itemgetter
 from typing import Any, Final, Literal, cast
 
@@ -58,6 +57,7 @@ from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import NotRequired, Self, TypedDict
 
+from langchain_anthropic import __version__
 from langchain_anthropic._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
@@ -75,11 +75,7 @@ _message_type_lookups = {
 
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
 
-try:
-    _LANGCHAIN_ANTHROPIC_VERSION = version("langchain-anthropic")
-except Exception:
-    _LANGCHAIN_ANTHROPIC_VERSION = "unknown"
-_USER_AGENT: Final[str] = f"langchain-anthropic/{_LANGCHAIN_ANTHROPIC_VERSION}"
+_USER_AGENT: Final[str] = f"langchain-anthropic/{__version__}"
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
