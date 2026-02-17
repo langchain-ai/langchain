@@ -53,6 +53,34 @@ class EventData(TypedDict, total=False):
     """
 
 
+StreamEventName = Literal[
+    "on_llm_start",
+    "on_llm_stream",
+    "on_llm_end",
+    "on_chat_model_start",
+    "on_chat_model_stream",
+    "on_chat_model_end",
+    "on_tool_start",
+    "on_tool_stream",
+    "on_tool_end",
+    "on_tool_error",
+    "on_chain_start",
+    "on_chain_stream",
+    "on_chain_end",
+    "on_retriever_start",
+    "on_retriever_stream",
+    "on_retriever_end",
+    "on_prompt_start",
+    "on_prompt_stream",
+    "on_prompt_end",
+    "on_parser_start",
+    "on_parser_stream",
+    "on_parser_end",
+    "on_custom_event",
+]
+"""Supported event names emitted by the `astream_events` API."""
+
+
 class BaseStreamEvent(TypedDict):
     """Streaming event.
 
@@ -99,7 +127,7 @@ class BaseStreamEvent(TypedDict):
         ```
     """
 
-    event: str
+    event: StreamEventName
     """Event names are of the format: `on_[runnable_type]_(start|stream|end)`.
 
     Runnable types are one of:
@@ -116,6 +144,11 @@ class BaseStreamEvent(TypedDict):
     - **start** - when the `Runnable` starts
     - **stream** - when the `Runnable` is streaming
     - **end* - when the `Runnable` ends
+
+    Additional events:
+
+    - `on_tool_error` - emitted when a tool run raises an error
+    - `on_custom_event` - user-dispatched custom events (v2 only)
 
     start, stream and end are associated with slightly different `data` payload.
 
