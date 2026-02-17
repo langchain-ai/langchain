@@ -1,3 +1,3 @@
 """Version information for langchain-anthropic."""
 
-__version__ = "1.3.100"
+__version__ = "1.3.3"
