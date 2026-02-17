@@ -2152,6 +2152,7 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
 
         class EmptyModel(BaseModelV1, Generic[A], extra="allow"):
             pass
+
     else:
 
         class ModelA(BaseModel, Generic[A]):  # type: ignore[no-redef]

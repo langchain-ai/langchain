@@ -44,7 +44,7 @@ from langchain_tests.integration_tests.vectorstores import VectorStoreIntegratio
 
 if _HAS_DEEPAGENTS:
     from langchain_tests.integration_tests.sandboxes import (
-        SandboxProviderIntegrationTests,
+        SandboxIntegrationTests,
     )
 
 __all__ = [
@@ -60,4 +60,4 @@ __all__ = [
 ]
 
 if _HAS_DEEPAGENTS:
-    __all__ += ["SandboxProviderIntegrationTests"]
+    __all__ += ["SandboxIntegrationTests"]

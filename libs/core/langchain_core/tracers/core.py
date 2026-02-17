@@ -102,7 +102,7 @@ class _TracerCore(ABC):
         try:
             tb = traceback.format_exception(error)
             return (msg + "\n\n".join(tb)).strip()
-        except:  # noqa: E722
+        except Exception:
             return msg
 
     def _start_trace(self, run: Run) -> Coroutine[Any, Any, None] | None:  # type: ignore[return]

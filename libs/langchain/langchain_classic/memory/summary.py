@@ -21,7 +21,7 @@ from langchain_classic.memory.prompt import SUMMARY_PROMPT
     removal="1.0",
     message=(
         "Refer here for how to incorporate summaries of conversation history: "
-        "https://langchain-ai.github.io/langgraph/how-tos/memory/add-summary-conversation-history/"
+        "https://docs.langchain.com/oss/python/langgraph/add-memory#summarize-messages"
     ),
 )
 class SummarizerMixin(BaseModel):

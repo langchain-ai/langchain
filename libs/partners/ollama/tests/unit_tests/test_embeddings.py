@@ -1,7 +1,9 @@
 """Test embedding model integration."""
 
 from typing import Any
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 from langchain_ollama.embeddings import OllamaEmbeddings
 
@@ -50,3 +52,25 @@ def test_embed_documents_passes_options(mock_client_class: Any) -> None:
     options = call_args.kwargs["options"]
     assert options["num_gpu"] == 4
     assert options["temperature"] == 0.5
+
+
+def test_embed_documents_raises_when_client_none() -> None:
+    """Test that embed_documents raises RuntimeError when client is None."""
+    with patch("langchain_ollama.embeddings.Client") as mock_client_class:
+        mock_client_class.return_value = MagicMock()
+        embeddings = OllamaEmbeddings(model="test-model")
+        embeddings._client = None  # type: ignore[assignment]
+
+        with pytest.raises(RuntimeError, match="sync client is not initialized"):
+            embeddings.embed_documents(["test"])
+
+
+async def test_aembed_documents_raises_when_client_none() -> None:
+    """Test that aembed_documents raises RuntimeError when async client is None."""
+    with patch("langchain_ollama.embeddings.AsyncClient") as mock_client_class:
+        mock_client_class.return_value = MagicMock()
+        embeddings = OllamaEmbeddings(model="test-model")
+        embeddings._async_client = None  # type: ignore[assignment]
+
+        with pytest.raises(RuntimeError, match="async client is not initialized"):
+            await embeddings.aembed_documents(["test"])
