@@ -6224,24 +6224,101 @@ def chain(
 ) -> Runnable[Input, Output]: ...
 
 
+@overload
+def chain(
+    func: Callable[[Input, RunnableConfig], Output],
+) -> Runnable[Input, Output]: ...
+
+
+@overload
+def chain(
+    func: Callable[[Input, CallbackManagerForChainRun], Output],
+) -> Runnable[Input, Output]: ...
+
+
+@overload
+def chain(
+    func: Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
+) -> Runnable[Input, Output]: ...
+
+
+@overload
+def chain(
+    func: Callable[[Input], Runnable[Input, Output]],
+) -> Runnable[Input, Output]: ...
+
+
+@overload
+def chain(
+    func: Callable[[Input, RunnableConfig], Coroutine[Any, Any, Output]],
+) -> Runnable[Input, Output]: ...
+
+
+@overload
+def chain(
+    func: Callable[
+        [Input, AsyncCallbackManagerForChainRun], Coroutine[Any, Any, Output]
+    ],
+) -> Runnable[Input, Output]: ...
+
+
+@overload
+def chain(
+    func: Callable[
+        [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
+        Coroutine[Any, Any, Output],
+    ],
+) -> Runnable[Input, Output]: ...
+
+
 def chain(
     func: Callable[[Input], Output]
     | Callable[[Input], Iterator[Output]]
     | Callable[[Input], Coroutine[Any, Any, Output]]
-    | Callable[[Input], AsyncIterator[Output]],
+    | Callable[[Input], AsyncIterator[Output]]
+    | Callable[[Input, RunnableConfig], Output]
+    | Callable[[Input, RunnableConfig], Coroutine[Any, Any, Output]]
+    | Callable[[Input, CallbackManagerForChainRun], Output]
+    | Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output]
+    | Callable[[Input, AsyncCallbackManagerForChainRun], Coroutine[Any, Any, Output]]
+    | Callable[
+        [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
+        Coroutine[Any, Any, Output],
+    ]
+    | Callable[[Input], Runnable[Input, Output]],
 ) -> Runnable[Input, Output]:
     """Decorate a function to make it a `Runnable`.
 
     Sets the name of the `Runnable` to the name of the function.
     Any runnables called by the function will be traced as dependencies.
 
+    The decorated function can optionally accept additional parameters.
+
+    These parameters must use the exact names specified below:
+
+    - `config` (typed as `RunnableConfig`): Access runtime configuration
+        (e.g., `config['configurable']`).
+    - `run_manager` (typed as `CallbackManagerForChainRun` or
+        `AsyncCallbackManagerForChainRun`): Access the callback manager for tracing and
+        instrumentation.
+
+    The function can also return a `Runnable`, which will be automatically
+    invoked with the original input.
+
     Args:
-        func: A `Callable`.
+        func: A callable that takes an input and optionally a `config` parameter (typed
+            as `RunnableConfig`) and/or a `run_manager` parameter (typed as a callback
+            manager).
+
+            Can be sync or async, and may return a value, an iterator/async iterator, or
+            a `Runnable`.
 
     Returns:
-        A `Runnable`.
+        A `Runnable` that wraps the function.
 
     Example:
+        Basic usage:
+
         ```python
         from langchain_core.runnables import chain
         from langchain_core.prompts import PromptTemplate
@@ -6252,10 +6329,23 @@ def chain(
         def my_func(fields):
             prompt = PromptTemplate("Hello, {name}!")
             model = OpenAI()
-            formatted = prompt.invoke(**fields)
+            formatted = prompt.invoke(fields)
 
             for chunk in model.stream(formatted):
                 yield chunk
+        ```
+
+        With `RunnableConfig`:
+
+        ```python
+        from langchain_core.runnables import RunnableConfig, chain
+
+
+        @chain
+        def configurable_func(data: str, config: RunnableConfig) -> str:
+            if config["configurable"].get("uppercase", False):
+                return data.upper()
+            return data
         ```
     """
     return RunnableLambda(func)
