@@ -903,6 +903,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     @property
     def model(self) -> str:
+        """Same as model_name."""
         return self.model_name
 
     @model_validator(mode="before")
