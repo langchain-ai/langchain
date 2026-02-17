@@ -170,9 +170,8 @@ def _get_own_docstring(obj: Any) -> str | None:
         return None
     # For classes, check if the docstring was actually defined on this class
     # rather than inherited from a parent.
-    if isinstance(obj, type):
-        if "__doc__" not in obj.__dict__:
-            return None
+    if isinstance(obj, type) and "__doc__" not in obj.__dict__:
+        return None
     return inspect.cleandoc(doc)
 
 

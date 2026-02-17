@@ -245,8 +245,12 @@ class StructuredTool(BaseTool):
                 )
                 raise TypeError(msg)
         if description_ is None:
-            msg = "Function must have a docstring if description not provided."
-            raise ValueError(msg)
+            if isinstance(source_function, type):
+                # Classes without docstrings get an empty description
+                description_ = ""
+            else:
+                msg = "Function must have a docstring if description not provided."
+                raise ValueError(msg)
         if description is None:
             # Only apply if using the function's docstring
             description_ = textwrap.dedent(description_).strip()
