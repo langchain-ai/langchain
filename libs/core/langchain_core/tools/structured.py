@@ -5,7 +5,7 @@ from __future__ import annotations
 import functools
 import textwrap
 from collections.abc import Awaitable, Callable
-from inspect import signature
+from inspect import isclass, signature
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -230,6 +230,8 @@ class StructuredTool(BaseTool):
                     f"got {args_schema}"
                 )
                 raise TypeError(msg)
+        if description_ is None and isclass(source_function):
+            description_ = ""
         if description_ is None:
             msg = "Function must have a docstring if description not provided."
             raise ValueError(msg)
