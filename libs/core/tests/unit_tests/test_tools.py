@@ -2,6 +2,7 @@
 
 import inspect
 import json
+import logging
 import sys
 import textwrap
 import threading
@@ -2632,7 +2633,8 @@ def test_tool_mutate_input() -> None:
     assert my_input == {"x": "hi"}
 
 
-def test_structured_tool_args_schema_dict() -> None:
+def test_structured_tool_args_schema_dict(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.DEBUG)
     args_schema = {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -2666,6 +2668,8 @@ def test_structured_tool_args_schema_dict() -> None:
         "a": {"title": "A", "type": "integer"},
         "b": {"title": "B", "type": "integer"},
     }
+    # test that we didn't log an error about failing to get args_schema annotations
+    assert "Failed to get args_schema annotations for filtering" not in caplog.text
 
 
 def test_simple_tool_args_schema_dict() -> None:
@@ -3632,39 +3636,3 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
-
-
-def test_tool_with_dict_args_schema() -> None:
-    """Test that StructuredTool works with dict (JSON Schema) args_schema.
-
-    Regression test for issue #35258: When args_schema is a dict instead of
-    a Pydantic BaseModel, _filter_injected_args should not cause a RecursionError.
-    """
-    # Create a tool with dict args_schema (JSON Schema format)
-    tool = StructuredTool(
-        name="example_tool",
-        description="Example tool with JSON Schema",
-        func=lambda x: f"received: {x}",
-        args_schema={"type": "object", "properties": {"x": {"type": "string"}}},
-    )
-
-    # Invoking the tool should work without RecursionError
-    result = tool.invoke({"x": "test"})
-    assert result == "received: test"
-
-    # Test with multiple parameters
-    multi_param_tool = StructuredTool(
-        name="multi_param_tool",
-        description="Tool with multiple parameters",
-        func=lambda x, y: f"x={x}, y={y}",
-        args_schema={
-            "type": "object",
-            "properties": {
-                "x": {"type": "string"},
-                "y": {"type": "integer"},
-            },
-        },
-    )
-
-    result = multi_param_tool.invoke({"x": "hello", "y": 42})
-    assert result == "x=hello, y=42"
