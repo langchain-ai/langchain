@@ -32,9 +32,8 @@ from langchain_classic.chains.llm import LLMChain
     removal="1.0",
     message=(
         "Refer to migration guide here for a recommended implementation using "
-        "LangGraph: https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain/"
-        ". See also LangGraph guides for map-reduce: "
-        "https://langchain-ai.github.io/langgraph/how-tos/map-reduce/."
+        "LangGraph: https://docs.langchain.com/oss/python/langgraph/graph-api#map-reduce-and-the-send-api"
+        "."
     ),
 )
 class MapReduceChain(Chain):
@@ -63,7 +62,7 @@ class MapReduceChain(Chain):
         stuff_chain = StuffDocumentsChain(
             llm_chain=llm_chain,
             callbacks=callbacks,
-            **(reduce_chain_kwargs if reduce_chain_kwargs else {}),
+            **(reduce_chain_kwargs or {}),
         )
         reduce_documents_chain = ReduceDocumentsChain(
             combine_documents_chain=stuff_chain,
@@ -72,7 +71,7 @@ class MapReduceChain(Chain):
             llm_chain=llm_chain,
             reduce_documents_chain=reduce_documents_chain,
             callbacks=callbacks,
-            **(combine_chain_kwargs if combine_chain_kwargs else {}),
+            **(combine_chain_kwargs or {}),
         )
         return cls(
             combine_documents_chain=combine_documents_chain,

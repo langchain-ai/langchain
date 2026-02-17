@@ -1,156 +1,170 @@
-"""Integration tests for the deepagents `SandboxProvider` abstraction.
+"""Integration tests for the deepagents sandbox backend abstraction.
 
 Implementers should subclass this test suite and provide a fixture that returns a
-clean `SandboxProvider` instance.
-
-The provider is expected to support:
-
-- `list()` returning all sandboxes visible to the provider
-- `get_or_create(sandbox_id=None)` creating a sandbox
-- `get_or_create(sandbox_id=...)` reconnecting to an existing sandbox without
-  creating a new one
-- `delete()` being idempotent
+clean `SandboxBackendProtocol` instance.
 
 Example:
 ```python
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Iterator
 
 import pytest
-from deepagents.backends.sandbox import SandboxProvider
-from langchain_tests.integration_tests import SandboxProviderIntegrationTests
+from deepagents.backends.protocol import SandboxBackendProtocol
+from langchain_tests.integration_tests import SandboxIntegrationTests
 
-from langchain_acme_sandbox import AcmeSandboxProvider
+from my_pkg import make_sandbox
 
 
-class TestAcmeSandboxProviderStandard(SandboxProviderIntegrationTests):
-    @pytest.fixture
-    def sandbox_provider(self) -> SandboxProvider[Any]:
-        # Return a provider instance in a clean state.
-        return AcmeSandboxProvider(api_key="...")
-
-    @property
-    def has_async(self) -> bool:
-        return True
+class TestMySandboxStandard(SandboxIntegrationTests):
+    @pytest.fixture(scope="class")
+    def sandbox(self) -> Iterator[SandboxBackendProtocol]:
+        backend = make_sandbox()
+        try:
+            yield backend
+        finally:
+            backend.delete()
 ```
 
 """
 
-# ruff: noqa: E402
+# ruff: noqa: E402, S108
 
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import pytest
 
 deepagents = pytest.importorskip("deepagents")
 
-from deepagents.backends.sandbox import SandboxNotFoundError, SandboxProvider
+from deepagents.backends.protocol import (
+    FileDownloadResponse,
+    FileUploadResponse,
+    SandboxBackendProtocol,
+)
 
 from langchain_tests.base import BaseStandardTests
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from deepagents.backends.protocol import SandboxBackendProtocol
 
-
-class SandboxProviderIntegrationTests(BaseStandardTests):
-    """Base class for sandbox provider integration tests."""
+class SandboxIntegrationTests(BaseStandardTests):
+    """Standard integration tests for a `SandboxBackendProtocol` implementation."""
 
     @pytest.fixture(scope="class")
     def sandbox_backend(
-        self,
-        sandbox_provider: SandboxProvider[Any],
-    ) -> Iterator[SandboxBackendProtocol]:
-        """Create one sandbox backend for the test class and clean it up at the end."""
-        if not self.has_sync:
-            pytest.skip("Sync tests not supported.")
+        self, sandbox: SandboxBackendProtocol
+    ) -> SandboxBackendProtocol:
+        """Provide the sandbox backend under test.
 
-        backend = sandbox_provider.get_or_create(sandbox_id=None)
-        try:
-            yield backend
-        finally:
-            sandbox_provider.delete(sandbox_id=backend.id)
+        Resets the shared test directory before yielding.
+        """
+        sandbox.execute(
+            "rm -rf /tmp/test_sandbox_ops && mkdir -p /tmp/test_sandbox_ops"
+        )
+        return sandbox
 
     @abstractmethod
-    @pytest.fixture
-    def sandbox_provider(self) -> SandboxProvider[Any]:
-        """Get a clean `SandboxProvider` instance."""
+    @pytest.fixture(scope="class")
+    def sandbox(self) -> Iterator[SandboxBackendProtocol]:
+        """Yield a clean sandbox backend and tear it down after the class."""
 
     @property
     def has_sync(self) -> bool:
-        """Configurable property to enable or disable sync tests."""
+        """Whether the sandbox supports sync methods."""
         return True
 
     @property
     def has_async(self) -> bool:
-        """Configurable property to enable or disable async tests."""
+        """Whether the sandbox supports async methods."""
         return True
 
-    def test_list_is_empty(self, sandbox_provider: SandboxProvider[Any]) -> None:
-        """Test that the `SandboxProvider` starts from a blank slate."""
+    @pytest.fixture(autouse=True)
+    def _setup_test_dir(self, sandbox_backend: SandboxBackendProtocol) -> None:
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
+        sandbox_backend.execute(
+            "rm -rf /tmp/test_sandbox_ops && mkdir -p /tmp/test_sandbox_ops"
+        )
 
-        assert sandbox_provider.list()["items"] == []
-
-    def test_list_schema_empty(self, sandbox_provider: SandboxProvider[Any]) -> None:
-        """Test the return schema of `list()` on an empty provider."""
+    def test_write_new_file(self, sandbox_backend: SandboxBackendProtocol) -> None:
+        """Write a new file and verify it can be read back via command execution."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
+        test_path = "/tmp/test_sandbox_ops/new_file.txt"
+        content = "Hello, sandbox!\nLine 2\nLine 3"
+        result = sandbox_backend.write(test_path, content)
+        assert result.error is None
+        assert result.path == test_path
+        exec_result = sandbox_backend.execute(f"cat {test_path}")
+        assert exec_result.output.strip() == content
 
-        result = sandbox_provider.list()
-        assert set(result) == {"items", "cursor"}
-        assert isinstance(result["items"], list)
-        assert isinstance(result["cursor"], str | type(None))
-        assert result["items"] == []
+    def test_read_basic_file(self, sandbox_backend: SandboxBackendProtocol) -> None:
+        """Write a file and verify `read()` returns expected contents."""
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+        test_path = "/tmp/test_sandbox_ops/read_test.txt"
+        content = "Line 1\nLine 2\nLine 3"
+        sandbox_backend.write(test_path, content)
+        result = sandbox_backend.read(test_path)
+        assert "Error:" not in result
+        assert all(line in result for line in ("Line 1", "Line 2", "Line 3"))
 
-    def test_create_then_list_schema_then_delete_restores_empty(
-        self,
-        sandbox_provider: SandboxProvider[Any],
+    def test_edit_single_occurrence(
+        self, sandbox_backend: SandboxBackendProtocol
     ) -> None:
-        """Test create is visible in list, and delete returns provider to empty."""
+        """Edit a file and assert exactly one occurrence was replaced."""
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+        test_path = "/tmp/test_sandbox_ops/edit_single.txt"
+        content = "Hello world\nGoodbye world\nHello again"
+        sandbox_backend.write(test_path, content)
+        result = sandbox_backend.edit(test_path, "Goodbye", "Farewell")
+        assert result.error is None
+        assert result.occurrences == 1
+        file_content = sandbox_backend.read(test_path)
+        assert "Farewell world" in file_content
+        assert "Goodbye" not in file_content
+
+    def test_ls_info_lists_files(self, sandbox_backend: SandboxBackendProtocol) -> None:
+        """Create files and verify `ls_info()` lists them."""
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+        sandbox_backend.write("/tmp/test_sandbox_ops/a.txt", "a")
+        sandbox_backend.write("/tmp/test_sandbox_ops/b.txt", "b")
+        info = sandbox_backend.ls_info("/tmp/test_sandbox_ops")
+        paths = sorted([i["path"] for i in info])
+        assert "/tmp/test_sandbox_ops/a.txt" in paths
+        assert "/tmp/test_sandbox_ops/b.txt" in paths
+
+    def test_glob_info(self, sandbox_backend: SandboxBackendProtocol) -> None:
+        """Create files and verify `glob_info()` returns expected matches."""
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+        sandbox_backend.write("/tmp/test_sandbox_ops/x.py", "print('x')")
+        sandbox_backend.write("/tmp/test_sandbox_ops/y.txt", "y")
+        matches = sandbox_backend.glob_info("*.py", path="/tmp/test_sandbox_ops")
+        assert [m["path"] for m in matches] == ["x.py"]
+
+    def test_grep_raw_literal(self, sandbox_backend: SandboxBackendProtocol) -> None:
+        """Verify `grep_raw()` performs literal matching on special characters."""
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+        sandbox_backend.write("/tmp/test_sandbox_ops/grep.txt", "a (b)\nstr | int\n")
+        matches = sandbox_backend.grep_raw("str | int", path="/tmp/test_sandbox_ops")
+        assert isinstance(matches, list)
+        assert matches[0]["path"].endswith("/grep.txt")
+        assert matches[0]["text"].strip() == "str | int"
+
+    def test_upload_single_file(self, sandbox_backend: SandboxBackendProtocol) -> None:
+        """Upload one file and verify its contents on the sandbox."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
-        before = sandbox_provider.list()
-        assert before["items"] == []
-
-        backend = sandbox_provider.get_or_create(sandbox_id=None)
-        assert isinstance(backend.id, str)
-        created_id = backend.id
-
-        after_create = sandbox_provider.list()
-        assert len(after_create["items"]) == 1
-        assert {item["sandbox_id"] for item in after_create["items"]} == {created_id}
-        assert isinstance(after_create["items"][0]["sandbox_id"], str)
-
-        sandbox_provider.delete(sandbox_id=created_id)
-
-        after_delete = sandbox_provider.list()
-        assert after_delete["items"] == []
-
-    def test_execute_smoke(self, sandbox_backend: SandboxBackendProtocol) -> None:
-        """Test that a sandbox can execute a basic command."""
-        if not self.has_sync:
-            pytest.skip("Sync tests not supported.")
-
-        result = sandbox_backend.execute("echo hello")
-        assert result.output.strip() == "hello"
-
-    def test_upload_single_file(
-        self,
-        sandbox_backend: SandboxBackendProtocol,
-    ) -> None:
-        """Test uploading a single file."""
-        if not self.has_sync:
-            pytest.skip("Sync tests not supported.")
-
-        test_path = "/tmp/test_upload_single.txt"  # noqa: S108
+        test_path = "/tmp/test_upload_single.txt"
         test_content = b"Hello, Sandbox!"
 
         upload_responses = sandbox_backend.upload_files([(test_path, test_content)])
@@ -163,14 +177,13 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
         assert result.output.strip() == test_content.decode()
 
     def test_download_single_file(
-        self,
-        sandbox_backend: SandboxBackendProtocol,
+        self, sandbox_backend: SandboxBackendProtocol
     ) -> None:
-        """Test downloading a single file."""
+        """Upload then download a file and verify bytes match."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
-        test_path = "/tmp/test_download_single.txt"  # noqa: S108
+        test_path = "/tmp/test_download_single.txt"
         test_content = b"Download test content"
 
         sandbox_backend.upload_files([(test_path, test_content)])
@@ -183,252 +196,208 @@ class SandboxProviderIntegrationTests(BaseStandardTests):
         assert download_responses[0].error is None
 
     def test_upload_download_roundtrip(
-        self,
-        sandbox_backend: SandboxBackendProtocol,
+        self, sandbox_backend: SandboxBackendProtocol
     ) -> None:
-        """Test upload followed by download for data integrity."""
+        """Upload then download and verify bytes survive a roundtrip."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
-        test_path = "/tmp/test_roundtrip.txt"  # noqa: S108
+        test_path = "/tmp/test_roundtrip.txt"
         test_content = b"Roundtrip test: special chars \n\t\r\x00"
 
         upload_responses = sandbox_backend.upload_files([(test_path, test_content)])
-        assert upload_responses[0].error is None
+        assert upload_responses == [FileUploadResponse(path=test_path, error=None)]
 
         download_responses = sandbox_backend.download_files([test_path])
-        assert download_responses[0].error is None
-        assert download_responses[0].content == test_content
+        assert download_responses == [
+            FileDownloadResponse(path=test_path, content=test_content, error=None)
+        ]
 
-    def test_get_or_create_existing_does_not_create_new(
-        self,
-        sandbox_provider: SandboxProvider[Any],
-    ) -> None:
-        """Test reconnecting to an existing sandbox does not create a new one."""
-        if not self.has_sync:
-            pytest.skip("Sync tests not supported.")
-
-        assert sandbox_provider.list()["items"] == []
-
-        backend = sandbox_provider.get_or_create(sandbox_id=None)
-        created_id = backend.id
-
-        after_create = sandbox_provider.list()
-        assert {item["sandbox_id"] for item in after_create["items"]} == {created_id}
-
-        _reconnected = sandbox_provider.get_or_create(sandbox_id=created_id)
-        after_reconnect = sandbox_provider.list()
-        assert {item["sandbox_id"] for item in after_reconnect["items"]} == {created_id}
-
-        sandbox_provider.delete(sandbox_id=created_id)
-        assert sandbox_provider.list()["items"] == []
-
-    def test_get_or_create_missing_id_raises(
-        self,
-        sandbox_provider: SandboxProvider[Any],
-    ) -> None:
-        """Test missing sandbox_id raises a `SandboxNotFoundError`."""
-        if not self.has_sync:
-            pytest.skip("Sync tests not supported.")
-
-        assert sandbox_provider.list()["items"] == []
-
-        missing_id = "definitely-not-a-real-sandbox-id"
-        with pytest.raises(SandboxNotFoundError):
-            sandbox_provider.get_or_create(sandbox_id=missing_id)
-
-        assert sandbox_provider.list()["items"] == []
-
-    def test_delete_is_idempotent(self, sandbox_provider: SandboxProvider[Any]) -> None:
-        """Test `delete()` is idempotent and safe to call for missing IDs."""
-        if not self.has_sync:
-            pytest.skip("Sync tests not supported.")
-
-        assert sandbox_provider.list()["items"] == []
-
-        backend = sandbox_provider.get_or_create(sandbox_id=None)
-        created_id = backend.id
-
-        sandbox_provider.delete(sandbox_id=created_id)
-        sandbox_provider.delete(sandbox_id=created_id)
-        sandbox_provider.delete(sandbox_id="definitely-not-a-real-sandbox-id")
-
-        assert sandbox_provider.list()["items"] == []
-
-    async def test_async_list_is_empty(
-        self, sandbox_provider: SandboxProvider[Any]
-    ) -> None:
-        """Async: test that the `SandboxProvider` starts from a blank slate."""
-        if not self.has_async:
-            pytest.skip("Async tests not supported.")
-
-        assert (await sandbox_provider.alist())["items"] == []
-
-    async def test_async_list_schema_empty(
-        self, sandbox_provider: SandboxProvider[Any]
-    ) -> None:
-        """Async: test the return schema of `list()` on an empty provider."""
-        if not self.has_async:
-            pytest.skip("Async tests not supported.")
-
-        result = await sandbox_provider.alist()
-        assert set(result) == {"items", "cursor"}
-        assert isinstance(result["items"], list)
-        assert isinstance(result["cursor"], str | type(None))
-        assert result["items"] == []
-
-    async def test_async_create_then_list_schema_then_delete_restores_empty(
-        self,
-        sandbox_provider: SandboxProvider[Any],
-    ) -> None:
-        """Async: test create is visible in list, and delete restores empty."""
-        if not self.has_async:
-            pytest.skip("Async tests not supported.")
-
-        before = await sandbox_provider.alist()
-        assert before["items"] == []
-
-        backend = await sandbox_provider.aget_or_create(sandbox_id=None)
-        assert isinstance(backend.id, str)
-        created_id = backend.id
-
-        after_create = await sandbox_provider.alist()
-        assert len(after_create["items"]) == 1
-        assert {item["sandbox_id"] for item in after_create["items"]} == {created_id}
-        assert isinstance(after_create["items"][0]["sandbox_id"], str)
-
-        await sandbox_provider.adelete(sandbox_id=created_id)
-
-        after_delete = await sandbox_provider.alist()
-        assert after_delete["items"] == []
-
-    async def test_async_execute_smoke(
+    def test_upload_multiple_files_order_preserved(
         self,
         sandbox_backend: SandboxBackendProtocol,
     ) -> None:
-        """Async: test that a sandbox can execute a basic command."""
-        if not self.has_async:
-            pytest.skip("Async tests not supported.")
+        """Uploading multiple files should preserve input order in responses."""
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
 
-        result = await sandbox_backend.aexecute("echo hello")
-        assert result.output.strip() == "hello"
+        files = [
+            ("/tmp/test_multi_1.txt", b"Content 1"),
+            ("/tmp/test_multi_2.txt", b"Content 2"),
+            ("/tmp/test_multi_3.txt", b"Content 3"),
+        ]
 
-    async def test_async_upload_single_file(
+        upload_responses = sandbox_backend.upload_files(files)
+
+        assert upload_responses == [
+            FileUploadResponse(path=files[0][0], error=None),
+            FileUploadResponse(path=files[1][0], error=None),
+            FileUploadResponse(path=files[2][0], error=None),
+        ]
+
+    def test_download_multiple_files_order_preserved(
         self,
         sandbox_backend: SandboxBackendProtocol,
     ) -> None:
-        """Async: test uploading a single file."""
-        if not self.has_async:
-            pytest.skip("Async tests not supported.")
+        """Downloading multiple files should preserve input order in responses."""
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
 
-        test_path = "/tmp/test_upload_single_async.txt"  # noqa: S108
-        test_content = b"Hello, Sandbox!"
+        files = [
+            ("/tmp/test_batch_1.txt", b"Batch 1"),
+            ("/tmp/test_batch_2.txt", b"Batch 2"),
+            ("/tmp/test_batch_3.txt", b"Batch 3"),
+        ]
+        sandbox_backend.upload_files(files)
 
-        upload_responses = await sandbox_backend.aupload_files(
-            [(test_path, test_content)]
+        paths = [p for p, _ in files]
+        download_responses = sandbox_backend.download_files(paths)
+
+        assert download_responses == [
+            FileDownloadResponse(path=files[0][0], content=files[0][1], error=None),
+            FileDownloadResponse(path=files[1][0], content=files[1][1], error=None),
+            FileDownloadResponse(path=files[2][0], content=files[2][1], error=None),
+        ]
+
+    def test_upload_binary_content_roundtrip(
+        self, sandbox_backend: SandboxBackendProtocol
+    ) -> None:
+        """Upload and download binary bytes (0..255) without corruption."""
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
+        test_path = "/tmp/binary_file.bin"
+        test_content = bytes(range(256))
+
+        upload_responses = sandbox_backend.upload_files([(test_path, test_content)])
+        assert upload_responses == [FileUploadResponse(path=test_path, error=None)]
+
+        download_responses = sandbox_backend.download_files([test_path])
+        assert download_responses == [
+            FileDownloadResponse(path=test_path, content=test_content, error=None)
+        ]
+
+    def test_download_error_file_not_found(
+        self, sandbox_backend: SandboxBackendProtocol
+    ) -> None:
+        """Downloading a missing file should return `error="file_not_found"`."""
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
+        missing_path = "/tmp/nonexistent_test_file.txt"
+
+        responses = sandbox_backend.download_files([missing_path])
+
+        assert responses == [
+            FileDownloadResponse(
+                path=missing_path, content=None, error="file_not_found"
+            )
+        ]
+
+    def test_download_error_is_directory(
+        self, sandbox_backend: SandboxBackendProtocol
+    ) -> None:
+        """Downloading a directory should fail with a reasonable error code."""
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
+        dir_path = "/tmp/test_directory"
+        sandbox_backend.execute(f"rm -rf {dir_path} && mkdir -p {dir_path}")
+
+        responses = sandbox_backend.download_files([dir_path])
+
+        assert len(responses) == 1
+        assert responses[0].path == dir_path
+        assert responses[0].content is None
+        assert responses[0].error in {"is_directory", "file_not_found", "invalid_path"}
+
+    def test_download_error_permission_denied(
+        self, sandbox_backend: SandboxBackendProtocol
+    ) -> None:
+        """Downloading a chmod 000 file should fail with a reasonable error code."""
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
+        test_path = "/tmp/test_no_read.txt"
+        sandbox_backend.execute(
+            f"rm -f {test_path} && echo secret > {test_path} && chmod 000 {test_path}"
         )
 
-        assert len(upload_responses) == 1
-        assert upload_responses[0].path == test_path
-        assert upload_responses[0].error is None
+        try:
+            responses = sandbox_backend.download_files([test_path])
+        finally:
+            sandbox_backend.execute(f"chmod 644 {test_path} || true")
 
-        result = await sandbox_backend.aexecute(f"cat {test_path}")
-        assert result.output.strip() == test_content.decode()
+        assert len(responses) == 1
+        assert responses[0].path == test_path
+        assert responses[0].content is None
+        assert responses[0].error in {
+            "permission_denied",
+            "file_not_found",
+            "invalid_path",
+        }
 
-    async def test_async_download_single_file(
+    def test_download_error_invalid_path_relative(
         self,
         sandbox_backend: SandboxBackendProtocol,
     ) -> None:
-        """Async: test downloading a single file."""
-        if not self.has_async:
-            pytest.skip("Async tests not supported.")
+        """Downloading a relative path should fail with `error="invalid_path"`."""
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
 
-        test_path = "/tmp/test_download_single_async.txt"  # noqa: S108
-        test_content = b"Download test content"
+        responses = sandbox_backend.download_files(["relative/path.txt"])
 
-        await sandbox_backend.aupload_files([(test_path, test_content)])
+        assert responses == [
+            FileDownloadResponse(
+                path="relative/path.txt",
+                content=None,
+                error="invalid_path",
+            )
+        ]
 
-        download_responses = await sandbox_backend.adownload_files([test_path])
-
-        assert len(download_responses) == 1
-        assert download_responses[0].path == test_path
-        assert download_responses[0].content == test_content
-        assert download_responses[0].error is None
-
-    async def test_async_upload_download_roundtrip(
+    def test_upload_missing_parent_dir_or_roundtrip(
         self,
         sandbox_backend: SandboxBackendProtocol,
     ) -> None:
-        """Async: test upload followed by download for data integrity."""
-        if not self.has_async:
-            pytest.skip("Async tests not supported.")
+        """Uploading into a missing parent dir should error or roundtrip.
 
-        test_path = "/tmp/test_roundtrip_async.txt"  # noqa: S108
-        test_content = b"Roundtrip test: special chars \n\t\r\x00"
+        Some sandboxes auto-create parent directories; others return an error.
+        """
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
 
-        upload_responses = await sandbox_backend.aupload_files(
-            [(test_path, test_content)]
-        )
-        assert upload_responses[0].error is None
+        dir_path = "/tmp/test_upload_missing_parent_dir"
+        path = f"{dir_path}/deepagents_test_upload.txt"
+        content = b"nope"
+        sandbox_backend.execute(f"rm -rf {dir_path}")
 
-        download_responses = await sandbox_backend.adownload_files([test_path])
-        assert download_responses[0].error is None
-        assert download_responses[0].content == test_content
+        responses = sandbox_backend.upload_files([(path, content)])
+        assert len(responses) == 1
+        assert responses[0].path == path
 
-    async def test_async_get_or_create_existing_does_not_create_new(
+        if responses[0].error is not None:
+            assert responses[0].error in {
+                "invalid_path",
+                "permission_denied",
+                "file_not_found",
+            }
+            return
+
+        download = sandbox_backend.download_files([path])
+        assert download == [
+            FileDownloadResponse(path=path, content=content, error=None)
+        ]
+
+    def test_upload_relative_path_returns_invalid_path(
         self,
-        sandbox_provider: SandboxProvider[Any],
+        sandbox_backend: SandboxBackendProtocol,
     ) -> None:
-        """Async: test reconnecting to an existing sandbox does not create a new one."""
-        if not self.has_async:
-            pytest.skip("Async tests not supported.")
+        """Uploading to a relative path should fail with `error="invalid_path"`."""
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
 
-        assert (await sandbox_provider.alist())["items"] == []
+        path = "relative_upload.txt"
+        content = b"nope"
+        responses = sandbox_backend.upload_files([(path, content)])
 
-        backend = await sandbox_provider.aget_or_create(sandbox_id=None)
-        created_id = backend.id
-
-        after_create = await sandbox_provider.alist()
-        assert {item["sandbox_id"] for item in after_create["items"]} == {created_id}
-
-        _reconnected = await sandbox_provider.aget_or_create(sandbox_id=created_id)
-        after_reconnect = await sandbox_provider.alist()
-        assert {item["sandbox_id"] for item in after_reconnect["items"]} == {created_id}
-
-        await sandbox_provider.adelete(sandbox_id=created_id)
-        assert (await sandbox_provider.alist())["items"] == []
-
-    async def test_async_get_or_create_missing_id_raises(
-        self,
-        sandbox_provider: SandboxProvider[Any],
-    ) -> None:
-        """Async: test missing sandbox_id raises a `SandboxNotFoundError`."""
-        if not self.has_async:
-            pytest.skip("Async tests not supported.")
-
-        assert (await sandbox_provider.alist())["items"] == []
-
-        missing_id = "definitely-not-a-real-sandbox-id"
-        with pytest.raises(SandboxNotFoundError):
-            await sandbox_provider.aget_or_create(sandbox_id=missing_id)
-
-        assert (await sandbox_provider.alist())["items"] == []
-
-    async def test_async_delete_is_idempotent(
-        self,
-        sandbox_provider: SandboxProvider[Any],
-    ) -> None:
-        """Async: test `delete()` is idempotent and safe to call for missing IDs."""
-        if not self.has_async:
-            pytest.skip("Async tests not supported.")
-
-        assert (await sandbox_provider.alist())["items"] == []
-
-        backend = await sandbox_provider.aget_or_create(sandbox_id=None)
-        created_id = backend.id
-
-        await sandbox_provider.adelete(sandbox_id=created_id)
-        await sandbox_provider.adelete(sandbox_id=created_id)
-        await sandbox_provider.adelete(sandbox_id="definitely-not-a-real-sandbox-id")
-
-        assert (await sandbox_provider.alist())["items"] == []
+        assert responses == [FileUploadResponse(path=path, error="invalid_path")]
