@@ -3316,7 +3316,7 @@ def test_filter_injected_args_not_in_schema(
 def test_filter_injected_args_with_dict_args_schema(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """Test filtering with JSON Schema dict args_schema does not log annotation errors."""
+    """Test dict `args_schema` filtering does not trigger annotation debug errors."""
 
     def echo(x: str) -> str:
         """Echo input."""
