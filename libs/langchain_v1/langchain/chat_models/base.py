@@ -66,6 +66,7 @@ _BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
     "nvidia": ("langchain_nvidia_ai_endpoints", "ChatNVIDIA", _call),
     "ollama": ("langchain_ollama", "ChatOllama", _call),
     "openai": ("langchain_openai", "ChatOpenAI", _call),
+    "openrouter": ("langchain_openrouter", "ChatOpenRouter", _call),
     "perplexity": ("langchain_perplexity", "ChatPerplexity", _call),
     "together": ("langchain_together", "ChatTogether", _call),
     "upstage": ("langchain_upstage", "ChatUpstage", _call),
@@ -277,6 +278,7 @@ def init_chat_model(
             - `ibm`                     -> [`langchain-ibm`](https://docs.langchain.com/oss/python/integrations/providers/ibm)
             - `nvidia`                  -> [`langchain-nvidia-ai-endpoints`](https://docs.langchain.com/oss/python/integrations/providers/nvidia)
             - `xai`                     -> [`langchain-xai`](https://docs.langchain.com/oss/python/integrations/providers/xai)
+            - `openrouter`              -> [`langchain-openrouter`](https://docs.langchain.com/oss/python/integrations/providers/openrouter)
             - `perplexity`              -> [`langchain-perplexity`](https://docs.langchain.com/oss/python/integrations/providers/perplexity)
             - `upstage`                 -> [`langchain-upstage`](https://docs.langchain.com/oss/python/integrations/providers/upstage)
 
