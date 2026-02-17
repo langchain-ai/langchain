@@ -8,8 +8,8 @@ from langchain_anthropic.chat_models import (
 from langchain_anthropic.llms import AnthropicLLM
 
 __all__ = [
-    "__version__",
     "AnthropicLLM",
     "ChatAnthropic",
+    "__version__",
     "convert_to_anthropic_tool",
 ]
