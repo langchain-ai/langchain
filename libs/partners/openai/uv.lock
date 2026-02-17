@@ -610,7 +610,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.2.12"
+version = "1.2.13"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -670,7 +670,7 @@ typing = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.1.9"
+version = "1.1.10"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -747,7 +747,7 @@ test-integration = [
     { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
-    { name = "pillow", specifier = ">=10.3.0,<13.0.0" },
+    { name = "pillow", specifier = ">=12.1.1,<13.0.0" },
 ]
 typing = [
     { name = "langchain-core", editable = "../../core" },
