@@ -264,8 +264,9 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
                 - `'original'` is the format used by all current tracers. This format is
                     slightly inconsistent with respect to inputs and outputs.
                 - 'streaming_events' is used for supporting streaming events, for
-                    internal usage. It will likely change in the future, or be deprecated
-                    entirely in favor of a dedicated async tracer for streaming events.
+                    internal usage. It will likely change in the future,
+                    or be deprecated entirely in favor of a dedicated async
+                    tracer for streaming events.
 
         Raises:
             ValueError: If an invalid schema format is provided (internal use only).
