@@ -223,9 +223,7 @@ class ChatDeepSeek(BaseChatOpenAI):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate necessary environment vars and client params."""
-        if self.api_base == DEFAULT_API_BASE and not (
-            self.api_key and self.api_key.get_secret_value()
-        ):
+        if self.api_base == DEFAULT_API_BASE and self.api_key is None:
             msg = "If using default api base, DEEPSEEK_API_KEY must be set."
             raise ValueError(msg)
         client_params: dict = {
