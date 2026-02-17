@@ -1538,7 +1538,7 @@ class BaseChatOpenAI(BaseChatModel):
         try:
             choices = response_dict["choices"]
         except KeyError as e:
-            msg = f"Response missing `choices` key: {response_dict.keys()}"
+            msg = f"Response missing 'choices' key: {response_dict.keys()}"
             raise KeyError(msg) from e
 
         if choices is None:
@@ -1546,7 +1546,7 @@ class BaseChatOpenAI(BaseChatModel):
             # when the response format differs or an error occurs without
             # populating the error field. Provide a more helpful error message.
             msg = (
-                "Received response with null value for `choices`. "
+                "Received response with null value for 'choices'. "
                 "This can happen when using OpenAI-compatible APIs (e.g., vLLM) "
                 "that return a response in an unexpected format. "
                 f"Full response keys: {list(response_dict.keys())}"
@@ -2692,6 +2692,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         !!! version-added "Added in `langchain-openai` 0.3.9"
 
         !!! version-added "Added in `langchain-openai` 0.3.26"
+
             You can also initialize `ChatOpenAI` with `use_previous_response_id`.
             Input messages up to the most recent response will then be dropped from request
             payloads, and `previous_response_id` will be set using the ID of the most
@@ -2702,10 +2703,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             ```
 
         !!! note "OpenAI-compatible endpoints"
+
             Some OpenAI-compatible providers/proxies may not support forwarding
-            reasoning blocks in request history. If you see request-format errors
-            while using reasoning + Responses API, prefer
-            `use_previous_response_id=True` (so the server keeps conversation state).
+            reasoning blocks in request history. If you see request-format
+            errors while using reasoning + Responses API, prefer
+            `use_previous_response_id=True` (so the server keeps
+            conversation state).
 
     ??? info "Reasoning output"
 
