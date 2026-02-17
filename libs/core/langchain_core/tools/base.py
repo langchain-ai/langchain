@@ -741,7 +741,7 @@ class ChildTool(BaseTool):
                 if k in tool_input:
                     # Field was provided in input - include it (validated)
                     validated_input[k] = getattr(result, k)
-                elif k in field_info and k not in ("args", "kwargs"):
+                elif k in field_info and k not in {"args", "kwargs"}:
                     # Check if field has an explicit default defined in the schema.
                     # Exclude "args"/"kwargs" as these are synthetic fields for variadic
                     # parameters that should not be passed as keyword arguments.

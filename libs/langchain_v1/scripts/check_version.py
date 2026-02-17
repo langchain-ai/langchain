@@ -12,14 +12,14 @@ from pathlib import Path
 
 def get_pyproject_version(pyproject_path: Path) -> str | None:
     """Extract version from pyproject.toml."""
-    content = pyproject_path.read_text()
+    content = pyproject_path.read_text(encoding="utf-8")
     match = re.search(r'^version\s*=\s*"([^"]+)"', content, re.MULTILINE)
     return match.group(1) if match else None
 
 
 def get_init_version(init_path: Path) -> str | None:
     """Extract __version__ from __init__.py."""
-    content = init_path.read_text()
+    content = init_path.read_text(encoding="utf-8")
     match = re.search(r'^__version__\s*=\s*"([^"]+)"', content, re.MULTILINE)
     return match.group(1) if match else None
 
