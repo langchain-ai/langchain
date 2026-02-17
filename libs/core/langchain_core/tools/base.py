@@ -152,6 +152,30 @@ def _get_filtered_args(
     }
 
 
+def _get_own_docstring(obj: Any) -> str | None:
+    """Get the docstring directly defined on obj, without inheriting from parents.
+
+    Unlike ``inspect.getdoc``, this does **not** walk the MRO to find a
+    docstring defined on a parent class.  Whitespace is still cleaned via
+    ``inspect.cleandoc``.
+
+    Args:
+        obj: The object (function, class, etc.) to retrieve the docstring from.
+
+    Returns:
+        The cleaned docstring, or ``None`` if the object has no own docstring.
+    """
+    doc = obj.__doc__
+    if doc is None:
+        return None
+    # For classes, check if the docstring was actually defined on this class
+    # rather than inherited from a parent.
+    if isinstance(obj, type):
+        if "__doc__" not in obj.__dict__:
+            return None
+    return inspect.cleandoc(doc)
+
+
 def _parse_python_function_docstring(
     function: Callable, annotations: dict, *, error_on_invalid_docstring: bool = False
 ) -> tuple[str, dict]:
@@ -167,7 +191,7 @@ def _parse_python_function_docstring(
     Returns:
         A tuple containing the function description and argument descriptions.
     """
-    docstring = inspect.getdoc(function)
+    docstring = _get_own_docstring(function)
     return _parse_google_docstring(
         docstring,
         list(annotations),
@@ -215,7 +239,7 @@ def _infer_arg_descriptions(
             fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
         )
     else:
-        description = inspect.getdoc(fn) or ""
+        description = _get_own_docstring(fn) or ""
         arg_descriptions = {}
     if parse_docstring:
         _validate_docstring_args_against_annotations(arg_descriptions, annotations)

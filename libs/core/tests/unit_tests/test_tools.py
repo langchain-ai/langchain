@@ -3632,3 +3632,40 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
+
+
+def test_docstring_not_inherited_from_parent() -> None:
+    """Test that child classes don't inherit docstrings from parents."""
+    from pydantic import BaseModel
+
+    from langchain_core.tools import tool
+
+    class ParentModel(BaseModel):
+        """Parent description that should not be inherited."""
+
+        foo: str
+
+    class ChildWithoutDocstring(ParentModel):
+        bar: str
+
+    class ChildWithDocstring(ParentModel):
+        """Child's own description."""
+
+        bar: str
+
+    # When a child class has no docstring, it should NOT inherit parent's
+    @tool
+    class ToolWithoutDocstring(ParentModel):
+        bar: str
+
+    # The description should not be "Parent description that should not be inherited."
+    assert "Parent description" not in (ToolWithoutDocstring.description or "")
+
+    # When a child class has its own docstring, it should use it
+    @tool
+    class ToolWithDocstring(ParentModel):
+        """Child tool description."""
+
+        bar: str
+
+    assert ToolWithDocstring.description == "Child tool description."

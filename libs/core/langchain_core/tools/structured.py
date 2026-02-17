@@ -211,10 +211,24 @@ class StructuredTool(BaseTool):
             )
         description_ = description
         if description is None and not parse_docstring:
-            description_ = source_function.__doc__ or None
+            # Only use docstring if directly defined, not inherited from parent
+            if isinstance(source_function, type):
+                description_ = (
+                    source_function.__doc__
+                    if "__doc__" in source_function.__dict__
+                    else None
+                )
+            else:
+                description_ = source_function.__doc__ or None
         if description_ is None and args_schema:
             if isinstance(args_schema, type) and is_basemodel_subclass(args_schema):
-                description_ = args_schema.__doc__
+                # Only use docstring if directly defined on this class,
+                # not inherited from a parent.
+                description_ = (
+                    args_schema.__doc__
+                    if "__doc__" in args_schema.__dict__
+                    else None
+                )
                 if (
                     description_
                     and "A base class for creating Pydantic models" in description_
