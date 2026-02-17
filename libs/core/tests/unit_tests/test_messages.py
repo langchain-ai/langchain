@@ -917,8 +917,7 @@ def test_merge_tool_calls() -> None:
 
 
 def test_merge_tool_calls_parallel_same_index() -> None:
-    """Test that parallel tool calls with the same index but different IDs
-    are not incorrectly merged (issue #34807)."""
+    """Test parallel tool calls with same index but different IDs."""
     # Two parallel tool calls with the same index but different IDs
     left = create_tool_call_chunk(
         name="read_file", args='{"path": "foo.txt"}', id="tooluse_ABC", index=0
