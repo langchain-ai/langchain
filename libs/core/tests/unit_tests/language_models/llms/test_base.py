@@ -277,3 +277,38 @@ def test_get_ls_params() -> None:
 
     ls_params = llm._get_ls_params(stop=["stop"])
     assert ls_params["ls_stop"] == ["stop"]
+
+
+def test_get_ls_params_int_temperature() -> None:
+    class IntTempModel(BaseLLM):
+        model: str = "foo"
+        temperature: int = 0
+        max_tokens: int = 1024
+
+        @override
+        def _generate(
+            self,
+            prompts: list[str],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> LLMResult:
+            raise NotImplementedError
+
+        @property
+        def _llm_type(self) -> str:
+            return "fake-model"
+
+    llm = IntTempModel()
+
+    # Integer temperature from self attribute
+    ls_params = llm._get_ls_params()
+    assert ls_params["ls_temperature"] == 0
+
+    # Integer temperature from kwargs
+    ls_params = llm._get_ls_params(temperature=1)
+    assert ls_params["ls_temperature"] == 1
+
+    # Float temperature from kwargs still works
+    ls_params = llm._get_ls_params(temperature=0.5)
+    assert ls_params["ls_temperature"] == 0.5
