@@ -325,7 +325,7 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
             and block.get("type") == "text"
             and block.get("text", "").strip()
             for block in content
-            )
+        )
 
     @override
     async def aafter_model(
