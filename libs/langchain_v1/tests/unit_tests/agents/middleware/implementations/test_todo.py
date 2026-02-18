@@ -812,7 +812,8 @@ def test_aafter_model_delegates_to_after_model() -> None:
     import asyncio
     middleware = TodoListMiddleware()
     ai_message = AIMessage(
-        content="Here is your answer.",
+        content="Task completed!",
+        id="unique_msg_id",
         tool_calls=[{
             "name": "write_todos",
             "args": {"todos": [{"content": "Task A", "status": "completed"}]},
@@ -820,9 +821,17 @@ def test_aafter_model_delegates_to_after_model() -> None:
             "type": "tool_call",
         }],
     )
-    state: PlanningState = {"messages": [HumanMessage(content="Hello"), ai_message]}
-
-    sync_result = middleware.after_model(state, _fake_runtime())
-    async_result = asyncio.run(middleware.aafter_model(state, _fake_runtime()))
-
+    state: PlanningState = {
+        "messages": [HumanMessage(content="Hello"), ai_message]
+    }
+    fake_runtime = _fake_runtime()
+    sync_result = middleware.after_model(state, fake_runtime)
+    async_result = asyncio.run(middleware.aafter_model(state, fake_runtime))
     assert sync_result == async_result
+
+    assert sync_result is not None
+    clean_msg = sync_result["messages"][0]
+    assert isinstance(clean_msg, AIMessage)
+    assert len(clean_msg.tool_calls) == 0
+    assert clean_msg.id == "unique_msg_id"
+    assert sync_result["todos"][0]["status"] == "completed"
