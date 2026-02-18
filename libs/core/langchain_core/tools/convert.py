@@ -24,6 +24,7 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
+    side_effects: bool = False,
 ) -> Callable[[Callable | Runnable], BaseTool]: ...
 
 
@@ -40,6 +41,7 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
+    side_effects: bool = False,
 ) -> BaseTool: ...
 
 
@@ -55,6 +57,7 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
+    side_effects: bool = False,
 ) -> BaseTool: ...
 
 
@@ -70,6 +73,7 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
+    side_effects: bool = False,
 ) -> Callable[[Callable | Runnable], BaseTool]: ...
 
 
@@ -85,6 +89,7 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
+    side_effects: bool = False,
 ) -> BaseTool | Callable[[Callable | Runnable], BaseTool]:
     """Convert Python functions and `Runnables` to LangChain tools.
 
@@ -150,6 +155,10 @@ def tool(
 
                 For example, Anthropic-specific fields like `cache_control`,
                 `defer_loading`, or `input_examples`.
+        side_effects: Whether this tool performs side effects (e.g., writes, deletes,
+            sends). When `True`, provenance-based execution guards (such as
+            `ProvenanceMiddleware`) may require that arguments be traceable to prior
+            trusted tool outputs before allowing execution.
 
     Raises:
         ValueError: If too many positional arguments are provided (e.g. violating the
@@ -313,6 +322,7 @@ def tool(
                     parse_docstring=parse_docstring,
                     error_on_invalid_docstring=error_on_invalid_docstring,
                     extras=extras,
+                    side_effects=side_effects,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
@@ -330,6 +340,7 @@ def tool(
                 coroutine=coroutine,
                 response_format=response_format,
                 extras=extras,
+                side_effects=side_effects,
             )
 
         return _tool_factory

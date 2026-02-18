@@ -10,6 +10,7 @@ from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddlewar
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
 from langchain.agents.middleware.pii import PIIDetectionError, PIIMiddleware
+from langchain.agents.middleware.provenance import ProvenanceMiddleware
 from langchain.agents.middleware.shell_tool import (
     CodexSandboxExecutionPolicy,
     DockerExecutionPolicy,
@@ -63,6 +64,7 @@ __all__ = [
     "ModelRetryMiddleware",
     "PIIDetectionError",
     "PIIMiddleware",
+    "ProvenanceMiddleware",
     "RedactionRule",
     "ShellToolMiddleware",
     "SummarizationMiddleware",

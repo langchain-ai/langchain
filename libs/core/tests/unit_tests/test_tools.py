@@ -3631,3 +3631,52 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
+
+
+def test_tool_decorator_side_effects_default() -> None:
+    """Test that @tool defaults side_effects to False."""
+
+    @tool
+    def read_data(query: str) -> str:
+        """Read some data."""
+        return query
+
+    assert isinstance(read_data, BaseTool)
+    assert read_data.side_effects is False
+
+
+def test_tool_decorator_side_effects_true() -> None:
+    """Test that @tool(side_effects=True) sets the field."""
+
+    @tool(side_effects=True)
+    def delete_record(record_id: str) -> str:
+        """Delete a record by ID."""
+        return f"Deleted {record_id}"
+
+    assert isinstance(delete_record, BaseTool)
+    assert delete_record.side_effects is True
+
+
+def test_tool_decorator_side_effects_with_name() -> None:
+    """Test that @tool('name', side_effects=True) works."""
+
+    @tool("delete", side_effects=True)
+    def delete_record(record_id: str) -> str:
+        """Delete a record by ID."""
+        return f"Deleted {record_id}"
+
+    assert isinstance(delete_record, BaseTool)
+    assert delete_record.name == "delete"
+    assert delete_record.side_effects is True
+
+
+def test_tool_decorator_side_effects_false_explicit() -> None:
+    """Test that @tool(side_effects=False) explicitly sets False."""
+
+    @tool(side_effects=False)
+    def search(query: str) -> str:
+        """Search for things."""
+        return query
+
+    assert isinstance(search, BaseTool)
+    assert search.side_effects is False

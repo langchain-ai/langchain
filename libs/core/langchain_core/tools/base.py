@@ -512,6 +512,17 @@ class ChildTool(BaseTool):
     two-tuple corresponding to the `(content, artifact)` of a `ToolMessage`.
     """
 
+    side_effects: bool = False
+    """Whether this tool performs side effects (e.g., writes, deletes, sends).
+
+    When `True`, provenance-based execution guards (such as
+    `ProvenanceMiddleware`) may require that arguments be traceable to prior
+    trusted tool outputs in the same session before allowing execution.
+
+    Tools that only read or query data should leave this as `False` (the
+    default).
+    """
+
     extras: dict[str, Any] | None = None
     """Optional provider-specific extra fields for the tool.
 
