@@ -1,4 +1,15 @@
-"""OpenAI chat wrapper."""
+"""OpenAI chat wrapper.
+
+!!! warning "API scope"
+
+        `ChatOpenAI` targets
+        [official OpenAI API specifications](https://github.com/openai/openai-openapi)
+        only. Non-standard response fields added by third-party providers (e.g.,
+        `reasoning_content`, `reasoning_details`) are **not** extracted or
+        preserved. If you are pointing `base_url` at a provider such as
+        OpenRouter, vLLM, or DeepSeek, use the corresponding provider-specific
+        LangChain package instead (e.g., `ChatDeepSeek`, `ChatOpenRouter`).
+"""
 
 from __future__ import annotations
 
@@ -225,6 +236,26 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)  # type: ignore[arg-type]
 
 
+def _sanitize_chat_completions_content(content: str | list[dict]) -> str | list[dict]:
+    """Sanitize content for chat/completions API.
+
+    For list content, filters text blocks to only keep 'type' and 'text' keys.
+    """
+    if isinstance(content, list):
+        sanitized = []
+        for block in content:
+            if (
+                isinstance(block, dict)
+                and block.get("type") == "text"
+                and "text" in block
+            ):
+                sanitized.append({"type": "text", "text": block["text"]})
+            else:
+                sanitized.append(block)
+        return sanitized
+    return content
+
+
 def _format_message_content(
     content: Any,
     api: Literal["chat/completions", "responses"] = "chat/completions",
@@ -357,7 +388,9 @@ def _convert_message_to_dict(
     elif isinstance(message, ToolMessage):
         message_dict["role"] = "tool"
         message_dict["tool_call_id"] = message.tool_call_id
-
+        message_dict["content"] = _sanitize_chat_completions_content(
+            message_dict["content"]
+        )
         supported_props = {"content", "role", "tool_call_id"}
         message_dict = {k: v for k, v in message_dict.items() if k in supported_props}
     else:
@@ -511,7 +544,14 @@ _DictOrPydantic: TypeAlias = dict | _BM
 
 
 class BaseChatOpenAI(BaseChatModel):
-    """Base wrapper around OpenAI large language models for chat."""
+    """Base wrapper around OpenAI large language models for chat.
+
+    This base class targets
+    [official OpenAI API specifications](https://github.com/openai/openai-openapi)
+    only. Non-standard response fields added by third-party providers (e.g.,
+    `reasoning_content`) are not extracted. Use a provider-specific subclass for
+    full provider support.
+    """
 
     client: Any = Field(default=None, exclude=True)
 
@@ -759,6 +799,11 @@ class BaseChatOpenAI(BaseChatModel):
     passed in the parameter during invocation.
     """
 
+    context_management: list[dict[str, Any]] | None = None
+    """Configuration for
+    [context management](https://developers.openai.com/api/docs/guides/compaction).
+    """
+
     include: list[str] | None = None
     """Additional fields to include in generations from Responses API.
 
@@ -860,6 +905,11 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     model_config = ConfigDict(populate_by_name=True)
+
+    @property
+    def model(self) -> str:
+        """Same as model_name."""
+        return self.model_name
 
     @model_validator(mode="before")
     @classmethod
@@ -1051,6 +1101,7 @@ class BaseChatOpenAI(BaseChatModel):
             "reasoning_effort": self.reasoning_effort,
             "reasoning": self.reasoning,
             "verbosity": self.verbosity,
+            "context_management": self.context_management,
             "include": self.include,
             "service_tier": self.service_tier,
             "truncation": self.truncation,
@@ -1437,6 +1488,7 @@ class BaseChatOpenAI(BaseChatModel):
             return self.use_responses_api
         if (
             self.output_version == "responses/v1"
+            or self.context_management is not None
             or self.include is not None
             or self.reasoning is not None
             or self.truncation is not None
@@ -1498,11 +1550,19 @@ class BaseChatOpenAI(BaseChatModel):
         try:
             choices = response_dict["choices"]
         except KeyError as e:
-            msg = f"Response missing `choices` key: {response_dict.keys()}"
+            msg = f"Response missing 'choices' key: {response_dict.keys()}"
             raise KeyError(msg) from e
 
         if choices is None:
-            msg = "Received response with null value for `choices`."
+            # Some OpenAI-compatible APIs (e.g., vLLM) may return null choices
+            # when the response format differs or an error occurs without
+            # populating the error field. Provide a more helpful error message.
+            msg = (
+                "Received response with null value for 'choices'. "
+                "This can happen when using OpenAI-compatible APIs (e.g., vLLM) "
+                "that return a response in an unexpected format. "
+                f"Full response keys: {list(response_dict.keys())}"
+            )
             raise TypeError(msg)
 
         token_usage = response_dict.get("usage")
@@ -2262,6 +2322,16 @@ class BaseChatOpenAI(BaseChatModel):
 class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     r"""Interface to OpenAI chat model APIs.
 
+    !!! warning "API scope"
+
+        `ChatOpenAI` targets
+        [official OpenAI API specifications](https://github.com/openai/openai-openapi)
+        only. Non-standard response fields added by third-party providers (e.g.,
+        `reasoning_content`, `reasoning_details`) are **not** extracted or
+        preserved. If you are pointing `base_url` at a provider such as
+        OpenRouter, vLLM, or DeepSeek, use the corresponding provider-specific
+        LangChain package instead (e.g., `ChatDeepSeek`, `ChatOpenRouter`).
+
     ???+ info "Setup"
 
         Install `langchain-openai` and set environment variable `OPENAI_API_KEY`.
@@ -2634,6 +2704,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         !!! version-added "Added in `langchain-openai` 0.3.9"
 
         !!! version-added "Added in `langchain-openai` 0.3.26"
+
             You can also initialize `ChatOpenAI` with `use_previous_response_id`.
             Input messages up to the most recent response will then be dropped from request
             payloads, and `previous_response_id` will be set using the ID of the most
@@ -2642,6 +2713,14 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             ```python
             model = ChatOpenAI(model="...", use_previous_response_id=True)
             ```
+
+        !!! note "OpenAI-compatible endpoints"
+
+            Some OpenAI-compatible providers/proxies may not support forwarding
+            reasoning blocks in request history. If you see request-format
+            errors while using reasoning + Responses API, prefer
+            `use_previous_response_id=True` (so the server keeps
+            conversation state).
 
     ??? info "Reasoning output"
 
@@ -2683,6 +2762,11 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             format output from reasoning summaries, built-in tool invocations, and other
             response items into the message's `content` field, rather than
             `additional_kwargs`. We recommend this format for new applications.
+
+        !!! note "Troubleshooting with non-OpenAI backends"
+            When using a non-OpenAI endpoint via `base_url`, request handling for
+            reasoning history can differ. If agent loops fail after tool calls, use:
+            `ChatOpenAI(..., use_responses_api=True, use_previous_response_id=True)`.
 
     ??? info "Structured output"
 
@@ -3817,6 +3901,7 @@ def _use_responses_api(payload: dict) -> bool:
         _is_builtin_tool(tool) for tool in payload["tools"]
     )
     responses_only_args = {
+        "context_management",
         "include",
         "previous_response_id",
         "reasoning",
@@ -4196,6 +4281,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                                 )
                         elif block_type in (
                             "reasoning",
+                            "compaction",
                             "web_search_call",
                             "file_search_call",
                             "function_call",
@@ -4398,6 +4484,7 @@ def _construct_lc_result_from_responses_api(
             tool_calls.append(tool_call)
         elif output.type in (
             "reasoning",
+            "compaction",
             "web_search_call",
             "file_search_call",
             "computer_call",
@@ -4606,6 +4693,7 @@ def _convert_responses_chunk_to_generation_chunk(
             }
         )
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
+        "compaction",
         "web_search_call",
         "file_search_call",
         "computer_call",
