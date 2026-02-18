@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Literal
 from unittest.mock import MagicMock
 
-from langchain_core.messages import AIMessageChunk, ToolMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, ToolMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
 from openai.types.chat import ChatCompletionMessage
@@ -243,6 +243,80 @@ class TestChatDeepSeekCustomUnit:
         tool_message = ToolMessage(content="test string", tool_call_id="test_id")
         payload = chat_model._get_request_payload([tool_message])
         assert payload["messages"][0]["content"] == "test string"
+
+    def test_get_request_payload_preserves_reasoning_content(self) -> None:
+        """Test that reasoning_content from AIMessage additional_kwargs is preserved.
+
+        This is a regression test for issue #34166 where multi-turn conversations
+        with deepseek-reasoner failed because reasoning_content was not included
+        in assistant messages when resending the conversation history.
+        """
+        chat_model = ChatDeepSeek(
+            model="deepseek-reasoner", api_key=SecretStr("api_key")
+        )
+
+        # Simulate a multi-turn conversation where the first response included
+        # reasoning_content (stored in additional_kwargs)
+        messages = [
+            HumanMessage(content="What is 2 + 2?"),
+            AIMessage(
+                content="The answer is 4.",
+                additional_kwargs={"reasoning_content": "Let me think... 2 + 2 = 4"},
+            ),
+            HumanMessage(content="And what is 3 + 3?"),
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+
+        # Verify the assistant message includes reasoning_content
+        assistant_message = payload["messages"][1]
+        assert assistant_message["role"] == "assistant"
+        assert assistant_message["content"] == "The answer is 4."
+        assert (
+            assistant_message["reasoning_content"] == "Let me think... 2 + 2 = 4"
+        ), "reasoning_content should be preserved from additional_kwargs"
+
+    def test_get_request_payload_adds_empty_reasoning_for_reasoner(self) -> None:
+        """Test that empty reasoning_content is added for reasoner models.
+
+        DeepSeek API requires the reasoning_content field to be present
+        in assistant messages when using reasoner models, even if empty.
+        """
+        chat_model = ChatDeepSeek(
+            model="deepseek-reasoner", api_key=SecretStr("api_key")
+        )
+
+        # AIMessage without reasoning_content
+        messages = [
+            HumanMessage(content="Hello"),
+            AIMessage(content="Hi there!"),
+            HumanMessage(content="How are you?"),
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+
+        # Verify the assistant message has reasoning_content (empty string)
+        assistant_message = payload["messages"][1]
+        assert assistant_message["role"] == "assistant"
+        assert "reasoning_content" in assistant_message
+        assert assistant_message["reasoning_content"] == ""
+
+    def test_get_request_payload_no_reasoning_for_non_reasoner(self) -> None:
+        """Test that reasoning_content is not added for non-reasoner models."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        messages = [
+            HumanMessage(content="Hello"),
+            AIMessage(content="Hi there!"),
+            HumanMessage(content="How are you?"),
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+
+        # Verify the assistant message does NOT have reasoning_content
+        assistant_message = payload["messages"][1]
+        assert assistant_message["role"] == "assistant"
+        assert "reasoning_content" not in assistant_message
 
 
 class SampleTool(PydanticBaseModel):

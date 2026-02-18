@@ -261,21 +261,43 @@ class ChatDeepSeek(BaseChatOpenAI):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> dict:
+        # Get the original messages before conversion to extract reasoning_content
+        messages = self._convert_input(input_).to_messages()
+
+        # Build a map of message index to reasoning_content from additional_kwargs
+        # This is needed because the parent's _get_request_payload doesn't preserve
+        # reasoning_content in the converted message dicts
+        reasoning_content_map: dict[int, str | None] = {}
+        for i, msg in enumerate(messages):
+            if isinstance(msg, AIMessage):
+                reasoning_content = msg.additional_kwargs.get("reasoning_content")
+                if reasoning_content is not None:
+                    reasoning_content_map[i] = reasoning_content
+
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
-        for message in payload["messages"]:
+        for i, message in enumerate(payload["messages"]):
             if message["role"] == "tool" and isinstance(message["content"], list):
                 message["content"] = json.dumps(message["content"])
-            elif message["role"] == "assistant" and isinstance(
-                message["content"], list
-            ):
-                # DeepSeek API expects assistant content to be a string, not a list.
-                # Extract text blocks and join them, or use empty string if none exist.
-                text_parts = [
-                    block.get("text", "")
-                    for block in message["content"]
-                    if isinstance(block, dict) and block.get("type") == "text"
-                ]
-                message["content"] = "".join(text_parts) if text_parts else ""
+            elif message["role"] == "assistant":
+                # DeepSeek reasoner models require reasoning_content in assistant
+                # messages for multi-turn conversations. Add it from additional_kwargs
+                # if present. Fixes issue #34166.
+                if i in reasoning_content_map:
+                    message["reasoning_content"] = reasoning_content_map[i]
+                # Even if no reasoning_content was captured, DeepSeek API requires
+                # the field to be present (can be empty string) for reasoner models
+                elif "deepseek-reasoner" in self.model_name and "reasoning_content" not in message:
+                    message["reasoning_content"] = ""
+
+                if isinstance(message["content"], list):
+                    # DeepSeek API expects assistant content to be a string, not a list.
+                    # Extract text blocks and join them, or use empty string if none exist.
+                    text_parts = [
+                        block.get("text", "")
+                        for block in message["content"]
+                        if isinstance(block, dict) and block.get("type") == "text"
+                    ]
+                    message["content"] = "".join(text_parts) if text_parts else ""
         return payload
 
     def _create_chat_result(
