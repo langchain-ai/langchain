@@ -42,6 +42,7 @@ jobs:
               "langchain-mistralai": "mistralai",
               "langchain-nomic": "nomic",
               "langchain-ollama": "ollama",
+              "langchain-openrouter": "openrouter",
               "langchain-perplexity": "perplexity",
               "langchain-qdrant": "qdrant",
               "langchain-xai": "xai",
