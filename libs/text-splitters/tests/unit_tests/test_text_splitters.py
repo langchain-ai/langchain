@@ -624,6 +624,29 @@ def test_svelte_text_splitter() -> None:
     assert [s.strip() for s in splits] == [s.strip() for s in expected_splits]
 
 
+def test_jsx_splitter_separator_not_mutated_across_calls() -> None:
+    """Regression test: calling split_text() multiple times on the same
+    JSFrameworkTextSplitter instance must not grow the internal separator
+    list between calls.  Before the fix, self._separators was overwritten
+    with the full expanded list on every invocation, so a second call would
+    start with the already-expanded list and append even more separators."""
+    splitter = JSFrameworkTextSplitter(chunk_size=30, chunk_overlap=0)
+
+    # Record separator count after constructing (should be 0 – no custom separators)
+    initial_sep_count = len(splitter._separators)
+
+    # Call split_text twice; the results should be identical for identical input
+    splits_first = splitter.split_text(FAKE_JSX_TEXT)
+    splits_second = splitter.split_text(FAKE_JSX_TEXT)
+
+    assert splits_first == splits_second, (
+        "split_text() must return identical results on repeated calls with the same input"
+    )
+    assert len(splitter._separators) == initial_sep_count, (
+        "split_text() must not mutate self._separators between calls"
+    )
+
+
 CHUNK_SIZE = 16
 
 
