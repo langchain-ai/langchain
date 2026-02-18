@@ -1434,14 +1434,8 @@ def create_agent(
     graph.add_edge(START, entry_node)
     # add conditional edges only if tools exist
     if tool_node is not None:
-        # Only include exit_node in destinations if any tool has return_direct=True
-        # or if there are structured output tools
-        tools_to_model_destinations = [loop_entry_node]
-        if (
-            any(tool.return_direct for tool in tool_node.tools_by_name.values())
-            or structured_output_tools
-        ):
-            tools_to_model_destinations.append(exit_node)
+        # includes loop_entry_node and exit_node
+        tools_to_model_destinations = [loop_entry_node, exit_node]
 
         graph.add_conditional_edges(
             "tools",
@@ -1755,6 +1749,14 @@ def _make_tools_to_model_edge(
         # 3. Exit condition: A structured output tool was executed
         if any(t.name in structured_output_tools for t in tool_messages):
             return end_destination
+
+        # 3. If there's an explicit jump_to in the state, use it
+        if jump_to := state.get("jump_to"):
+            return _resolve_jump(
+                jump_to,
+                model_destination=model_destination,
+                end_destination=end_destination,
+            )
 
         # 4. Default: Continue the loop
         #    Tool execution completed successfully, route back to the model

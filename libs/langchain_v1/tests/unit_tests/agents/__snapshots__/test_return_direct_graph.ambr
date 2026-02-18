@@ -60,6 +60,7 @@
   	__start__ --> model;
   	model -.-> __end__;
   	model -.-> tools;
+  	tools -.-> __end__;
   	tools -.-> model;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
