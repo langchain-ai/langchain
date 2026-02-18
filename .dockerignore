@@ -29,6 +29,17 @@ coverage.xml
 dist
 build
 
+# Libs (not needed for Docker build)
+libs
+
+# Docs
+*.md
+*.cff
+LICENSE
+
+# Render config
+render.yaml
+
 # Misc
 *.log
 .DS_Store
