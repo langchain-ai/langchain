@@ -814,16 +814,16 @@ def test_aafter_model_delegates_to_after_model() -> None:
     ai_message = AIMessage(
         content="Task completed!",
         id="unique_msg_id",
-        tool_calls=[{
-            "name": "write_todos",
-            "args": {"todos": [{"content": "Task A", "status": "completed"}]},
-            "id": "call_123",
-            "type": "tool_call",
-        }],
+        tool_calls=[
+            {
+                "name": "write_todos",
+                "args": {"todos": [{"content": "Task A", "status": "completed"}]},
+                "id": "call_123",
+                "type": "tool_call",
+            }
+        ],
     )
-    state: PlanningState = {
-        "messages": [HumanMessage(content="Hello"), ai_message]
-    }
+    state: PlanningState = {"messages": [HumanMessage(content="Hello"), ai_message]}
     fake_runtime = _fake_runtime()
     sync_result = middleware.after_model(state, fake_runtime)
     async_result = asyncio.run(middleware.aafter_model(state, fake_runtime))
