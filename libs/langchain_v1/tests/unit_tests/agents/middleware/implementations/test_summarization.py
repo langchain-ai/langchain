@@ -1284,3 +1284,277 @@ async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None
     assert config is not None
     assert "metadata" in config
     assert config["metadata"]["lc_source"] == "summarization"
+
+
+# ---------------------------------------------------------------------------
+# AND-capable trigger (TriggerClause / dict-based) tests
+# ---------------------------------------------------------------------------
+
+
+def test_dict_trigger_and_semantics() -> None:
+    """Dict trigger with multiple keys fires only when ALL thresholds are met."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger={"tokens": 500, "messages": 10},
+        keep=("messages", 2),
+    )
+
+    # Low tokens, low messages — should NOT trigger
+    def mock_low_tokens(_: Iterable[MessageLikeRepresentation]) -> int:
+        return 100
+
+    middleware.token_counter = mock_low_tokens
+    messages: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(5)]
+    state = AgentState[Any](messages=messages)
+    assert middleware.before_model(state, Runtime()) is None
+
+    # High tokens but low messages — should NOT trigger (AND not satisfied)
+    def mock_high_tokens(_: Iterable[MessageLikeRepresentation]) -> int:
+        return 600
+
+    middleware.token_counter = mock_high_tokens
+    messages = [HumanMessage(content=str(i)) for i in range(5)]
+    state = AgentState[Any](messages=messages)
+    assert middleware.before_model(state, Runtime()) is None
+
+    # Low tokens but high messages — should NOT trigger (AND not satisfied)
+    middleware.token_counter = mock_low_tokens
+    messages = [HumanMessage(content=str(i)) for i in range(15)]
+    state = AgentState[Any](messages=messages)
+    assert middleware.before_model(state, Runtime()) is None
+
+    # High tokens AND high messages — should trigger
+    middleware.token_counter = mock_high_tokens
+    messages = [HumanMessage(content=str(i)) for i in range(15)]
+    state = AgentState[Any](messages=messages)
+    result = middleware.before_model(state, Runtime())
+    assert result is not None
+
+
+def test_dict_trigger_single_key() -> None:
+    """Dict with single key behaves like a legacy tuple."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger={"messages": 10},
+        keep=("messages", 2),
+    )
+
+    def mock_tokens(_: Iterable[MessageLikeRepresentation]) -> int:
+        return 100
+
+    middleware.token_counter = mock_tokens
+
+    # Below threshold — should NOT trigger
+    messages: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(5)]
+    state = AgentState[Any](messages=messages)
+    assert middleware.before_model(state, Runtime()) is None
+
+    # At threshold — should trigger
+    messages = [HumanMessage(content=str(i)) for i in range(10)]
+    state = AgentState[Any](messages=messages)
+    result = middleware.before_model(state, Runtime())
+    assert result is not None
+
+
+def test_mixed_tuple_dict_or_semantics() -> None:
+    """List mixing tuples and dicts uses OR across clauses."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=[("messages", 20), {"tokens": 500, "messages": 10}],
+        keep=("messages", 2),
+    )
+
+    def mock_high_tokens(_: Iterable[MessageLikeRepresentation]) -> int:
+        return 600
+
+    middleware.token_counter = mock_high_tokens
+
+    # 15 messages with high tokens — dict clause satisfied (tokens >= 500 AND messages >= 10)
+    messages: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(15)]
+    state = AgentState[Any](messages=messages)
+    result = middleware.before_model(state, Runtime())
+    assert result is not None
+
+    # 5 messages with high tokens — neither clause met
+    # tuple needs 20 messages, dict needs tokens >= 500 AND messages >= 10
+    messages = [HumanMessage(content=str(i)) for i in range(5)]
+    state = AgentState[Any](messages=messages)
+    assert middleware.before_model(state, Runtime()) is None
+
+    # 20 messages with low tokens — tuple clause satisfied (OR)
+    def mock_low_tokens(_: Iterable[MessageLikeRepresentation]) -> int:
+        return 100
+
+    middleware.token_counter = mock_low_tokens
+    messages = [HumanMessage(content=str(i)) for i in range(20)]
+    state = AgentState[Any](messages=messages)
+    result = middleware.before_model(state, Runtime())
+    assert result is not None
+
+
+def test_dict_trigger_or_of_ands() -> None:
+    """List of dicts: OR of ANDs."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=[
+            {"tokens": 5000, "messages": 3},
+            {"tokens": 3000, "messages": 6},
+        ],
+        keep=("messages", 2),
+    )
+
+    # tokens=4000, messages=4 — neither clause met
+    # clause 1: tokens >= 5000? No. clause 2: messages >= 6? No.
+    def mock_4000_tokens(_: Iterable[MessageLikeRepresentation]) -> int:
+        return 4000
+
+    middleware.token_counter = mock_4000_tokens
+    messages: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(4)]
+    state = AgentState[Any](messages=messages)
+    assert middleware.before_model(state, Runtime()) is None
+
+    # tokens=5000, messages=3 — clause 1 met (tokens >= 5000 AND messages >= 3)
+    def mock_5000_tokens(_: Iterable[MessageLikeRepresentation]) -> int:
+        return 5000
+
+    middleware.token_counter = mock_5000_tokens
+    messages = [HumanMessage(content=str(i)) for i in range(3)]
+    state = AgentState[Any](messages=messages)
+    result = middleware.before_model(state, Runtime())
+    assert result is not None
+
+    # tokens=3000, messages=6 — clause 2 met (tokens >= 3000 AND messages >= 6)
+    def mock_3000_tokens(_: Iterable[MessageLikeRepresentation]) -> int:
+        return 3000
+
+    middleware.token_counter = mock_3000_tokens
+    messages = [HumanMessage(content=str(i)) for i in range(6)]
+    state = AgentState[Any](messages=messages)
+    result = middleware.before_model(state, Runtime())
+    assert result is not None
+
+
+def test_legacy_tuple_unchanged() -> None:
+    """Existing tuple-based triggers continue to work identically."""
+    # Single tuple
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=("messages", 10),
+        keep=("messages", 2),
+    )
+
+    def mock_tokens(_: Iterable[MessageLikeRepresentation]) -> int:
+        return 100
+
+    middleware.token_counter = mock_tokens
+
+    messages: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(5)]
+    state = AgentState[Any](messages=messages)
+    assert middleware.before_model(state, Runtime()) is None
+
+    messages = [HumanMessage(content=str(i)) for i in range(10)]
+    state = AgentState[Any](messages=messages)
+    assert middleware.before_model(state, Runtime()) is not None
+
+    # List of tuples — OR semantics
+    middleware2 = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=[("messages", 10), ("tokens", 500)],
+        keep=("messages", 2),
+    )
+    middleware2.token_counter = mock_tokens
+
+    # Only messages threshold met
+    messages = [HumanMessage(content=str(i)) for i in range(10)]
+    state = AgentState[Any](messages=messages)
+    assert middleware2.before_model(state, Runtime()) is not None
+
+    # Only tokens threshold met
+    def mock_high_tokens(_: Iterable[MessageLikeRepresentation]) -> int:
+        return 600
+
+    middleware2.token_counter = mock_high_tokens
+    messages = [HumanMessage(content=str(i)) for i in range(5)]
+    state = AgentState[Any](messages=messages)
+    assert middleware2.before_model(state, Runtime()) is not None
+
+
+def test_dict_trigger_validation() -> None:
+    """Invalid keys/values in dict triggers raise ValueError."""
+    # Unsupported key
+    with pytest.raises(ValueError, match="Unsupported trigger key"):
+        SummarizationMiddleware(
+            model=MockChatModel(),
+            trigger={"invalid_key": 100},
+        )
+
+    # Empty dict
+    with pytest.raises(ValueError, match="must not be empty"):
+        SummarizationMiddleware(
+            model=MockChatModel(),
+            trigger={},
+        )
+
+    # Negative tokens value
+    with pytest.raises(ValueError, match="greater than 0"):
+        SummarizationMiddleware(
+            model=MockChatModel(),
+            trigger={"tokens": -1},
+        )
+
+    # Zero messages value
+    with pytest.raises(ValueError, match="greater than 0"):
+        SummarizationMiddleware(
+            model=MockChatModel(),
+            trigger={"messages": 0},
+        )
+
+    # Fraction out of range
+    with pytest.raises(ValueError, match="between 0 and 1"):
+        SummarizationMiddleware(
+            model=MockChatModel(),
+            trigger={"fraction": 1.5},
+        )
+
+    # Mixed valid + invalid in a dict
+    with pytest.raises(ValueError, match="Unsupported trigger key"):
+        SummarizationMiddleware(
+            model=MockChatModel(),
+            trigger={"tokens": 100, "bad": 50},
+        )
+
+
+def test_dict_trigger_fraction_and_messages() -> None:
+    """AND with fraction-based key works correctly."""
+    middleware = SummarizationMiddleware(
+        model=ProfileChatModel(),
+        trigger={"fraction": 0.5, "messages": 5},
+        keep=("messages", 2),
+    )
+
+    # ProfileChatModel has max_input_tokens=1000, so fraction 0.5 = 500 tokens
+
+    # High tokens but low messages — should NOT trigger
+    def mock_600_tokens(_: Iterable[MessageLikeRepresentation]) -> int:
+        return 600
+
+    middleware.token_counter = mock_600_tokens
+    messages: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(3)]
+    state = AgentState[Any](messages=messages)
+    assert middleware.before_model(state, Runtime()) is None
+
+    # Low tokens but high messages — should NOT trigger
+    def mock_100_tokens(_: Iterable[MessageLikeRepresentation]) -> int:
+        return 100
+
+    middleware.token_counter = mock_100_tokens
+    messages = [HumanMessage(content=str(i)) for i in range(10)]
+    state = AgentState[Any](messages=messages)
+    assert middleware.before_model(state, Runtime()) is None
+
+    # High tokens AND high messages — should trigger
+    middleware.token_counter = mock_600_tokens
+    messages = [HumanMessage(content=str(i)) for i in range(10)]
+    state = AgentState[Any](messages=messages)
+    result = middleware.before_model(state, Runtime())
+    assert result is not None

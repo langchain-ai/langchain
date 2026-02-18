@@ -57,6 +57,7 @@ __all__ = [
     "StateT_co",
     "ToolCallRequest",
     "ToolCallWrapper",
+    "TriggerClause",
     "after_agent",
     "after_model",
     "before_agent",
@@ -68,6 +69,29 @@ __all__ = [
 
 JumpTo = Literal["tools", "model", "end"]
 """Destination to jump to when a middleware node returns."""
+
+TriggerClause = dict[str, int | float]
+"""AND-capable trigger condition for
+[`SummarizationMiddleware`][langchain.agents.middleware.summarization.SummarizationMiddleware].
+
+A dictionary where keys are threshold types (`"tokens"`, `"messages"`, `"fraction"`)
+and values are their thresholds. ALL conditions within a single clause must be met
+for it to trigger summarization (AND semantics).
+
+Multiple clauses in a list are evaluated with OR semantics.
+
+Example:
+    ```python
+    # AND: summarize only when tokens >= 4000 AND messages >= 10
+    trigger: TriggerClause = {"tokens": 4000, "messages": 10}
+
+    # OR of ANDs
+    trigger = [
+        {"tokens": 5000, "messages": 3},
+        {"tokens": 3000, "messages": 6},
+    ]
+    ```
+"""
 
 ResponseT = TypeVar("ResponseT", default=Any)
 

@@ -25,7 +25,13 @@ from langgraph.graph.message import (
 from langgraph.runtime import Runtime
 from typing_extensions import override
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ContextT,
+    ResponseT,
+    TriggerClause,
+)
 from langchain.chat_models import BaseChatModel, init_chat_model
 
 TokenCounter = Callable[[Iterable[MessageLikeRepresentation]], int]
@@ -138,6 +144,8 @@ Example:
     ```
 """
 
+_VALID_TRIGGER_KEYS = frozenset({"tokens", "messages", "fraction"})
+
 
 def _get_approximate_token_counter(model: BaseChatModel) -> TokenCounter:
     """Tune parameters of approximate token counter based on model type."""
@@ -162,7 +170,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         self,
         model: str | BaseChatModel,
         *,
-        trigger: ContextSize | list[ContextSize] | None = None,
+        trigger: ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None = None,
         keep: ContextSize = ("messages", _DEFAULT_MESSAGES_TO_KEEP),
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
@@ -175,10 +183,14 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             model: The language model to use for generating summaries.
             trigger: One or more thresholds that trigger summarization.
 
-                Provide a single
+                Accepts a single
                 [`ContextSize`][langchain.agents.middleware.summarization.ContextSize]
-                tuple or a list of tuples, in which case summarization runs when any
-                threshold is met.
+                tuple, a
+                [`TriggerClause`][langchain.agents.middleware.summarization.TriggerClause]
+                dict, or a list mixing both. Tuples and single-key dicts are evaluated
+                as simple thresholds. Multi-key dicts use AND semantics (all conditions
+                must be met). Multiple items in a list use OR semantics (any clause
+                matching triggers summarization).
 
                 !!! example
 
@@ -189,12 +201,24 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                     # Trigger summarization when 3000 tokens is reached
                     ("tokens", 3000)
 
-                    # Trigger summarization either when 80% of model's max input tokens
-                    # is reached or when 100 messages is reached (whichever comes first)
+                    # OR: trigger when 80% of max input tokens OR 100 messages
                     [("fraction", 0.8), ("messages", 100)]
+
+                    # AND: trigger only when tokens >= 4000 AND messages >= 10
+                    {"tokens": 4000, "messages": 10}
+
+                    # OR of ANDs
+                    [
+                        {"tokens": 5000, "messages": 3},
+                        {"tokens": 3000, "messages": 6},
+                    ]
+
+                    # Mixed tuple + dict
+                    [("fraction", 0.8), {"tokens": 3000, "messages": 10}]
                     ```
 
                     See [`ContextSize`][langchain.agents.middleware.summarization.ContextSize]
+                    and [`TriggerClause`][langchain.agents.middleware.summarization.TriggerClause]
                     for more details.
             keep: Context retention policy applied after summarization.
 
@@ -251,18 +275,8 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             model = init_chat_model(model)
 
         self.model = model
-        if trigger is None:
-            self.trigger: ContextSize | list[ContextSize] | None = None
-            trigger_conditions: list[ContextSize] = []
-        elif isinstance(trigger, list):
-            validated_list = [self._validate_context_size(item, "trigger") for item in trigger]
-            self.trigger = validated_list
-            trigger_conditions = validated_list
-        else:
-            validated = self._validate_context_size(trigger, "trigger")
-            self.trigger = validated
-            trigger_conditions = [validated]
-        self._trigger_conditions = trigger_conditions
+        self.trigger = trigger
+        self._trigger_clauses = self._normalize_triggers(trigger)
 
         self.keep = self._validate_context_size(keep, "keep")
         if token_counter is count_tokens_approximately:
@@ -272,7 +286,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         self.summary_prompt = summary_prompt
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
 
-        requires_profile = any(condition[0] == "fraction" for condition in self._trigger_conditions)
+        requires_profile = any("fraction" in clause for clause in self._trigger_clauses)
         if self.keep[0] == "fraction":
             requires_profile = True
         if requires_profile and self._get_profile_limits() is None:
@@ -381,31 +395,55 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         return False
 
     def _should_summarize(self, messages: list[AnyMessage], total_tokens: int) -> bool:
-        """Determine whether summarization should run for the current token usage."""
-        if not self._trigger_conditions:
+        """Determine whether summarization should run for the current token usage.
+
+        Each trigger clause is a dict of thresholds evaluated with AND semantics.
+        Multiple clauses are evaluated with OR semantics.
+        """
+        if not self._trigger_clauses:
             return False
 
-        for kind, value in self._trigger_conditions:
-            if kind == "messages" and len(messages) >= value:
+        for clause in self._trigger_clauses:
+            if self._clause_matches(clause, messages, total_tokens):
                 return True
-            if kind == "tokens" and total_tokens >= value:
-                return True
-            if kind == "tokens" and self._should_summarize_based_on_reported_tokens(
-                messages, value
-            ):
-                return True
-            if kind == "fraction":
-                max_input_tokens = self._get_profile_limits()
-                if max_input_tokens is None:
-                    continue
-                threshold = int(max_input_tokens * value)
-                if threshold <= 0:
-                    threshold = 1
-                if total_tokens >= threshold:
-                    return True
+        return False
 
-                if self._should_summarize_based_on_reported_tokens(messages, threshold):
-                    return True
+    def _clause_matches(
+        self,
+        clause: TriggerClause,
+        messages: list[AnyMessage],
+        total_tokens: int,
+    ) -> bool:
+        """Return True if ALL thresholds in the clause are met (AND semantics)."""
+        for kind, value in clause.items():
+            if not self._threshold_met(kind, value, messages, total_tokens):
+                return False
+        return True
+
+    def _threshold_met(
+        self,
+        kind: str,
+        value: float,
+        messages: list[AnyMessage],
+        total_tokens: int,
+    ) -> bool:
+        """Check whether a single threshold condition is met."""
+        if kind == "messages":
+            return len(messages) >= value
+        if kind == "tokens":
+            if total_tokens >= value:
+                return True
+            return self._should_summarize_based_on_reported_tokens(messages, value)
+        if kind == "fraction":
+            max_input_tokens = self._get_profile_limits()
+            if max_input_tokens is None:
+                return False
+            threshold = int(max_input_tokens * value)
+            if threshold <= 0:
+                threshold = 1
+            if total_tokens >= threshold:
+                return True
+            return self._should_summarize_based_on_reported_tokens(messages, threshold)
         return False
 
     def _determine_cutoff_index(self, messages: list[AnyMessage]) -> int:
@@ -485,6 +523,63 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             return None
 
         return max_input_tokens
+
+    @staticmethod
+    def _normalize_triggers(
+        trigger: ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None,
+    ) -> list[TriggerClause]:
+        """Normalize trigger input into a list of validated clause dicts.
+
+        Args:
+            trigger: Raw trigger input from the constructor.
+
+        Returns:
+            List of trigger clause dicts with AND semantics per clause.
+        """
+        if trigger is None:
+            return []
+
+        items: list[ContextSize | TriggerClause] = (
+            trigger if isinstance(trigger, list) else [trigger]
+        )
+
+        clauses: list[TriggerClause] = []
+        for item in items:
+            if isinstance(item, dict):
+                SummarizationMiddleware._validate_trigger_clause(item)
+                clauses.append(item)
+            else:
+                # Legacy tuple — validate and convert to single-key dict
+                SummarizationMiddleware._validate_context_size(item, "trigger")
+                kind, value = item
+                clauses.append({kind: value})
+        return clauses
+
+    @staticmethod
+    def _validate_trigger_clause(clause: TriggerClause) -> None:
+        """Validate a dict-based trigger clause.
+
+        Args:
+            clause: Dict mapping threshold types to values.
+
+        Raises:
+            ValueError: If keys are unsupported or values are out of range.
+        """
+        if not clause:
+            msg = "Trigger clause must not be empty."
+            raise ValueError(msg)
+        for kind, value in clause.items():
+            if kind not in _VALID_TRIGGER_KEYS:
+                valid = sorted(_VALID_TRIGGER_KEYS)
+                msg = f"Unsupported trigger key '{kind}'. Must be one of {valid}."
+                raise ValueError(msg)
+            if kind == "fraction":
+                if not isinstance(value, (int, float)) or not 0 < value <= 1:
+                    msg = f"Fractional trigger values must be between 0 and 1, got {value}."
+                    raise ValueError(msg)
+            elif not isinstance(value, (int, float)) or value <= 0:
+                msg = f"trigger thresholds must be greater than 0, got {value}."
+                raise ValueError(msg)
 
     @staticmethod
     def _validate_context_size(context: ContextSize, parameter_name: str) -> ContextSize:
