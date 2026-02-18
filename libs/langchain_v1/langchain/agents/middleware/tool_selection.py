@@ -237,10 +237,20 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         request: ModelRequest[ContextT],
     ) -> ModelRequest[ContextT]:
         """Process the selection response and return filtered `ModelRequest`."""
+        # Validate response structure
+        tools_value = response.get("tools")
+        if tools_value is None or not isinstance(tools_value, list):
+            msg = (
+                "LLM returned invalid response for tool selection. "
+                f"Expected dict with 'tools' list, got: {response!r}. "
+                "Consider using a model with better structured output support."
+            )
+            raise ValueError(msg)
+
         selected_tool_names: list[str] = []
         invalid_tool_selections = []
 
-        for tool_name in response["tools"]:
+        for tool_name in tools_value:
             if tool_name not in valid_tool_names:
                 invalid_tool_selections.append(tool_name)
                 continue
