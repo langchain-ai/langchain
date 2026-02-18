@@ -43,5 +43,5 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
-    }
+    },
 }
