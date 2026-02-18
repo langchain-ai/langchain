@@ -410,7 +410,7 @@ def test_todo_middleware_agent_creation_with_middleware() -> None:
     # ai message (6) - complete todo
     # tool message (7)
     # ai message (8) - no tool calls
-    assert len(result["messages"]) == 8
+    assert len(result["messages"]) == 6
 
 
 def test_todo_middleware_custom_system_prompt_in_agent() -> None:

@@ -321,7 +321,9 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
             return bool(msg.content.strip())
         if isinstance(msg.content, list):
             return any(
-                isinstance(block, dict) and block.get("type") == "text" and block.get("text", "").strip()
+                isinstance(block, dict)
+                and block.get("type") == "text"
+                and block.get("text", "").strip()
                 for block in msg.content
             )
         return False
