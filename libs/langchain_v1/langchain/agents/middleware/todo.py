@@ -317,14 +317,15 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
 
     @staticmethod
     def _has_text_content(msg: AIMessage) -> bool:
-        if isinstance(msg.content, str):
-            return bool(msg.content.strip())
-        if isinstance(msg.content, list):
+        content = msg.content
+        if isinstance(content, str):
+            return bool(content.strip())
+        if isinstance(content, list):
             return any(
                 isinstance(block, dict)
                 and block.get("type") == "text"
                 and block.get("text", "").strip()
-                for block in msg.content
+                for block in content
             )
         return False
 
