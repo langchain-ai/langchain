@@ -422,7 +422,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.2.11"
+version = "1.2.13"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -453,7 +453,7 @@ dev = [
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
     { name = "setuptools", specifier = ">=67.6.1,<83.0.0" },
 ]
-lint = [{ name = "ruff", specifier = ">=0.14.11,<0.16.0" }]
+lint = [{ name = "ruff", specifier = ">=0.15.0,<0.16.0" }]
 test = [
     { name = "blockbuster", specifier = ">=1.5.18,<1.6.0" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
@@ -545,7 +545,7 @@ test = [
 ]
 test-integration = [
     { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
-    { name = "pillow", specifier = ">=10.3.0,<13.0.0" },
+    { name = "pillow", specifier = ">=12.1.1,<13.0.0" },
 ]
 typing = [
     { name = "langchain-core", editable = "../../core" },
@@ -589,7 +589,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-lint = [{ name = "ruff", specifier = ">=0.14.11,<0.16.0" }]
+lint = [{ name = "ruff", specifier = ">=0.15.0,<0.16.0" }]
 test = [{ name = "langchain-core", editable = "../../core" }]
 test-integration = []
 typing = [
