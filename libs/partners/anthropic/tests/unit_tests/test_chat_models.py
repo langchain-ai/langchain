@@ -1359,6 +1359,29 @@ def test_anthropic_uses_actual_secret_value_from_secretstr() -> None:
     )
 
 
+def test_anthropic_client_args_passed_correctly() -> None:
+    """Test that client args are passed correctly to the Anthropic Client."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+        client_args={"transport": "custom-transport"},
+    )
+    assert chat_model._client._client._transport == "custom-transport"
+
+
+def test_anthropic_raises_error_on_conflicting_client_args() -> None:
+    with pytest.raises(ValidationError) as exc_info:
+        _ = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+            model=MODEL_NAME,
+            anthropic_api_key="secret-api-key",
+            base_url="https://custom-anthropic.com",
+            client_args={"base_url": "https://custom-anthropic.com"},
+        )
+    assert "Conflicting keys found between client_args: {'base_url'}" in str(
+        exc_info.value
+    )
+
+
 class GetWeather(BaseModel):
     """Get the current weather in a given location."""
 
