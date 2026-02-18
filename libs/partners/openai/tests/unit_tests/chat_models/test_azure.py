@@ -43,6 +43,7 @@ def test_initialize_more() -> None:
     ls_params = llm._get_ls_params()
     assert ls_params.get("ls_provider") == "azure"
     assert ls_params.get("ls_model_name") == "gpt-35-turbo-0125"
+    assert "versions" in ls_params
 
 
 def test_initialize_azure_openai_with_openai_api_base_set() -> None:
@@ -65,6 +66,7 @@ def test_initialize_azure_openai_with_openai_api_base_set() -> None:
         ls_params = llm._get_ls_params()
         assert ls_params["ls_provider"] == "azure"
         assert ls_params["ls_model_name"] == "35-turbo-dev"
+        assert "versions" in ls_params
 
 
 def test_structured_output_old_model() -> None:
@@ -174,3 +176,17 @@ def test_max_tokens_converted_to_max_completion_tokens() -> None:
     assert "max_completion_tokens" in payload
     assert payload["max_completion_tokens"] == 1000
     assert "max_tokens" not in payload
+
+
+def test_ls_params_versions_value() -> None:
+    """Test that _get_ls_params reports the correct langchain-openai version."""
+    from importlib.metadata import version
+
+    llm = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="35-turbo-dev",
+        openai_api_version="2023-05-15",
+        azure_endpoint="my-base-url",
+    )
+    ls_params = llm._get_ls_params()
+    assert "versions" in ls_params
+    assert ls_params["versions"] == {"langchain-openai": version("langchain-openai")}

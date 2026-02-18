@@ -30,6 +30,7 @@ from collections.abc import (
     Sequence,
 )
 from functools import partial
+from importlib.metadata import version as _get_pkg_version
 from io import BytesIO
 from json import JSONDecodeError
 from math import ceil
@@ -1788,6 +1789,9 @@ class BaseChatOpenAI(BaseChatModel):
             ls_params["ls_max_tokens"] = ls_max_tokens
         if ls_stop := stop or params.get("stop", None):
             ls_params["ls_stop"] = ls_stop
+        ls_params["versions"] = {
+            "langchain-openai": _get_pkg_version("langchain-openai")
+        }
         return ls_params
 
     @property

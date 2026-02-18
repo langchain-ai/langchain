@@ -509,3 +509,13 @@ def test_chat_ollama_ignores_strict_arg() -> None:
         # Check that 'strict' was NOT passed to the client
         call_kwargs = mock_client.chat.call_args[1]
         assert "strict" not in call_kwargs
+
+
+def test_ls_params_versions_value() -> None:
+    """Test that _get_ls_params reports the correct langchain-ollama version."""
+    from importlib.metadata import version  # noqa: PLC0415
+
+    llm = ChatOllama(model=MODEL_NAME)
+    ls_params = llm._get_ls_params()
+    assert "versions" in ls_params
+    assert ls_params["versions"] == {"langchain-ollama": version("langchain-ollama")}

@@ -576,6 +576,7 @@ class ChatGroq(BaseChatModel):
             ls_params["ls_max_tokens"] = ls_max_tokens
         if ls_stop := stop or params.get("stop", None) or self.stop:
             ls_params["ls_stop"] = ls_stop if isinstance(ls_stop, list) else [ls_stop]
+        ls_params["versions"] = {"langchain-groq": __version__}
         return ls_params
 
     def _should_stream(

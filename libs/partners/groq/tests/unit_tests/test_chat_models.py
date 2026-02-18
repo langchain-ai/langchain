@@ -1007,3 +1007,13 @@ def test_format_message_content_mixed() -> None:
         {"type": "image_url", "image_url": {"url": "data:image/png;base64,<data>"}},
     ]
     assert expected == _format_message_content(content)
+
+
+def test_ls_params_versions_value() -> None:
+    """Test that _get_ls_params reports the correct langchain-groq version."""
+    from langchain_groq.version import __version__  # noqa: PLC0415
+
+    llm = ChatGroq(model="foo")  # type: ignore[call-arg]
+    ls_params = llm._get_ls_params()
+    assert "versions" in ls_params
+    assert ls_params["versions"] == {"langchain-groq": __version__}

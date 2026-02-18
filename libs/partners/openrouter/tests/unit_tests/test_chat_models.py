@@ -254,6 +254,7 @@ class TestChatOpenRouterInstantiation:
         model = _make_model()
         ls_params = model._get_ls_params()
         assert ls_params["ls_provider"] == "openrouter"
+        assert "versions" in ls_params
 
     def test_ls_params_includes_max_tokens(self) -> None:
         """Test that ls_max_tokens is set when max_tokens is configured."""
@@ -272,6 +273,17 @@ class TestChatOpenRouterInstantiation:
         model = _make_model(stop_sequences=["END", "STOP"])
         ls_params = model._get_ls_params()
         assert ls_params["ls_stop"] == ["END", "STOP"]
+
+    def test_ls_params_versions_value(self) -> None:
+        """Test that _get_ls_params reports the correct langchain-openrouter version."""
+        from importlib.metadata import version  # noqa: PLC0415
+
+        model = _make_model()
+        ls_params = model._get_ls_params()
+        assert "versions" in ls_params
+        assert ls_params["versions"] == {
+            "langchain-openrouter": version("langchain-openrouter")
+        }
 
     def test_client_created(self) -> None:
         """Test that OpenRouter SDK client is created."""

@@ -6,6 +6,7 @@ import contextlib
 import json
 import logging
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
+from importlib.metadata import version as _get_pkg_version
 from operator import itemgetter
 from typing import (
     Any,
@@ -457,6 +458,9 @@ class ChatFireworks(BaseChatModel):
             ls_params["ls_max_tokens"] = ls_max_tokens
         if ls_stop := stop or params.get("stop", None):
             ls_params["ls_stop"] = ls_stop
+        ls_params["versions"] = {
+            "langchain-fireworks": _get_pkg_version("langchain-fireworks")
+        }
         return ls_params
 
     def _combine_llm_outputs(self, llm_outputs: list[dict | None]) -> dict:

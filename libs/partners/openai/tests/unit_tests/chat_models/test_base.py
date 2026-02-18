@@ -3411,3 +3411,13 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     # Verify it's both types (multiple inheritance)
     assert isinstance(exc_info.value, openai.BadRequestError)
     assert isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_ls_params_versions_value() -> None:
+    """Test that _get_ls_params reports the correct langchain-openai version."""
+    from importlib.metadata import version
+
+    llm = ChatOpenAI()
+    ls_params = llm._get_ls_params()
+    assert "versions" in ls_params
+    assert ls_params["versions"] == {"langchain-openai": version("langchain-openai")}
