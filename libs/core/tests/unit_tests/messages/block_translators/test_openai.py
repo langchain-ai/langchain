@@ -603,3 +603,71 @@ def test_convert_to_openai_data_block() -> None:
     expected = {"type": "input_file", "file_id": "file-abc123"}
     result = convert_to_openai_data_block(block, api="responses")
     assert result == expected
+
+
+# ---------------------------------------------------------------------------
+# Chat Completions reasoning_content → content_blocks
+# ---------------------------------------------------------------------------
+
+
+def test_chat_completions_reasoning_content_message() -> None:
+    """Test reasoning_content from Chat Completions appears in content_blocks."""
+    message = AIMessage(
+        content="The capital of France is Paris.",
+        additional_kwargs={"reasoning_content": "Let me think about geography..."},
+        response_metadata={"model_provider": "openai"},
+    )
+    blocks = message.content_blocks
+    assert {
+        "type": "reasoning",
+        "reasoning": "Let me think about geography...",
+    } in blocks
+    assert {"type": "text", "text": "The capital of France is Paris."} in blocks
+
+
+def test_chat_completions_reasoning_content_chunk() -> None:
+    """Test reasoning_content from Chat Completions streaming in content_blocks."""
+    chunk = AIMessageChunk(
+        content="",
+        additional_kwargs={"reasoning_content": "Let me reason..."},
+        response_metadata={"model_provider": "openai"},
+    )
+    blocks = chunk.content_blocks
+    assert {"type": "reasoning", "reasoning": "Let me reason..."} in blocks
+
+
+def test_chat_completions_no_reasoning_content() -> None:
+    """Test that messages without reasoning_content still work correctly."""
+    message = AIMessage(
+        content="Hello!",
+        response_metadata={"model_provider": "openai"},
+    )
+    blocks = message.content_blocks
+    assert blocks == [{"type": "text", "text": "Hello!"}]
+
+
+def test_chat_completions_reasoning_content_chunk_accumulation() -> None:
+    """Test that reasoning_content chunks accumulate correctly."""
+    chunk1 = AIMessageChunk(
+        content="",
+        additional_kwargs={"reasoning_content": "Let me "},
+        response_metadata={"model_provider": "openai"},
+    )
+    chunk2 = AIMessageChunk(
+        content="",
+        additional_kwargs={"reasoning_content": "think..."},
+        response_metadata={"model_provider": "openai"},
+    )
+    chunk3 = AIMessageChunk(
+        content="Paris.",
+        response_metadata={"model_provider": "openai"},
+    )
+
+    full = chunk1 + chunk2 + chunk3
+    assert isinstance(full, AIMessageChunk)
+    assert full.additional_kwargs.get("reasoning_content") == "Let me think..."
+    assert full.content == "Paris."
+
+    blocks = full.content_blocks
+    assert {"type": "reasoning", "reasoning": "Let me think..."} in blocks
+    assert {"type": "text", "text": "Paris."} in blocks

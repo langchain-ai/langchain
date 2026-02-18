@@ -201,6 +201,32 @@ def test__convert_dict_to_message_ai_with_name() -> None:
     assert _convert_message_to_dict(expected_output) == message
 
 
+def test__convert_dict_to_message_ai_with_reasoning_content() -> None:
+    """Test that reasoning_content from Chat Completions is captured."""
+    message = {
+        "role": "assistant",
+        "content": "The capital is Paris.",
+        "reasoning_content": "Let me think about geography...",
+    }
+    result = _convert_dict_to_message(message)
+    assert isinstance(result, AIMessage)
+    assert result.content == "The capital is Paris."
+    assert result.additional_kwargs["reasoning_content"] == (
+        "Let me think about geography..."
+    )
+
+
+def test__convert_delta_to_message_chunk_with_reasoning_content() -> None:
+    """Test that reasoning_content from Chat Completions streaming is captured."""
+    from langchain_openai.chat_models.base import _convert_delta_to_message_chunk
+
+    delta = {"role": "assistant", "reasoning_content": "Let me reason..."}
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    assert result.additional_kwargs["reasoning_content"] == "Let me reason..."
+    assert result.content == ""
+
+
 def test__convert_dict_to_message_system() -> None:
     message = {"role": "system", "content": "foo"}
     result = _convert_dict_to_message(message)

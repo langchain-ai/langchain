@@ -156,21 +156,24 @@ def _convert_to_v1_from_chat_completions(
 ) -> list[types.ContentBlock]:
     """Mutate a Chat Completions message to v1 format."""
     content_blocks: list[types.ContentBlock] = []
-    if isinstance(message.content, str):
-        if message.content:
-            content_blocks = [{"type": "text", "text": message.content}]
-        else:
-            content_blocks = []
 
-    for tool_call in message.tool_calls:
-        content_blocks.append(
-            {
-                "type": "tool_call",
-                "name": tool_call["name"],
-                "args": tool_call["args"],
-                "id": tool_call.get("id"),
-            }
-        )
+    # Reasoning from Chat Completions (e.g. Azure reasoning models)
+    reasoning_content = message.additional_kwargs.get("reasoning_content")
+    if reasoning_content and isinstance(reasoning_content, str):
+        content_blocks.append({"type": "reasoning", "reasoning": reasoning_content})
+
+    if isinstance(message.content, str) and message.content:
+        content_blocks.append({"type": "text", "text": message.content})
+
+    content_blocks.extend(
+        {
+            "type": "tool_call",
+            "name": tool_call["name"],
+            "args": tool_call["args"],
+            "id": tool_call.get("id"),
+        }
+        for tool_call in message.tool_calls
+    )
 
     return content_blocks
 
@@ -228,22 +231,25 @@ def _convert_to_v1_from_chat_completions_chunk(
 ) -> list[types.ContentBlock]:
     """Mutate a Chat Completions chunk to v1 format."""
     content_blocks: list[types.ContentBlock] = []
-    if isinstance(chunk.content, str):
-        if chunk.content:
-            content_blocks = [{"type": "text", "text": chunk.content}]
-        else:
-            content_blocks = []
+
+    # Reasoning from Chat Completions (e.g. Azure reasoning models)
+    reasoning_content = chunk.additional_kwargs.get("reasoning_content")
+    if reasoning_content and isinstance(reasoning_content, str):
+        content_blocks.append({"type": "reasoning", "reasoning": reasoning_content})
+
+    if isinstance(chunk.content, str) and chunk.content:
+        content_blocks.append({"type": "text", "text": chunk.content})
 
     if chunk.chunk_position == "last":
-        for tool_call in chunk.tool_calls:
-            content_blocks.append(
-                {
-                    "type": "tool_call",
-                    "name": tool_call["name"],
-                    "args": tool_call["args"],
-                    "id": tool_call.get("id"),
-                }
-            )
+        content_blocks.extend(
+            {
+                "type": "tool_call",
+                "name": tool_call["name"],
+                "args": tool_call["args"],
+                "id": tool_call.get("id"),
+            }
+            for tool_call in chunk.tool_calls
+        )
 
     else:
         for tool_call_chunk in chunk.tool_call_chunks:
