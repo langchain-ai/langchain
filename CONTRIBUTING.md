@@ -1,6 +1,6 @@
-# Contributing to LangChain
+# Contributing to Orcest Core
 
-Thanks for your interest in contributing to LangChain!
+Thanks for your interest in contributing to Orcest Core!
 
 We have moved our contributing guidelines to our documentation site to keep them up-to-date and easy to access.
 

@@ -3,12 +3,12 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/langchain-model-profiles?label=%20)](https://pypi.org/project/langchain-model-profiles/#history)
 [![PyPI - License](https://img.shields.io/pypi/l/langchain-model-profiles)](https://opensource.org/licenses/MIT)
 [![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-model-profiles)](https://pypistats.org/packages/langchain-model-profiles)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40LangChain)](https://x.com/langchain)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40Orcest Core)](https://x.com/langchain)
 
 > [!WARNING]
 > This package is currently in development and the API is subject to change.
 
-CLI tool for updating model profile data in LangChain integration packages.
+CLI tool for updating model profile data in Orcest Core integration packages.
 
 ## Quick Install
 
@@ -18,19 +18,19 @@ pip install langchain-model-profiles
 
 ## 🤔 What is this?
 
-`langchain-model-profiles` is a CLI tool for fetching and updating model capability data from [models.dev](https://github.com/sst/models.dev) for use in LangChain integration packages.
+`langchain-model-profiles` is a CLI tool for fetching and updating model capability data from [models.dev](https://github.com/sst/models.dev) for use in Orcest Core integration packages.
 
-LangChain chat models expose a `.profile` field that provides programmatic access to model capabilities such as context window sizes, supported modalities, tool calling, structured output, and more. This CLI tool helps maintainers keep that data up-to-date.
+Orcest Core chat models expose a `.profile` field that provides programmatic access to model capabilities such as context window sizes, supported modalities, tool calling, structured output, and more. This CLI tool helps maintainers keep that data up-to-date.
 
 ## Data sources
 
 This package is built on top of the excellent work by the [models.dev](https://github.com/sst/models.dev) project, an open source initiative that provides model capability data.
 
-LangChain model profiles augment the data from models.dev with some additional fields. We intend to keep this aligned with the upstream project as it evolves.
+Orcest Core model profiles augment the data from models.dev with some additional fields. We intend to keep this aligned with the upstream project as it evolves.
 
 ## 📖 Documentation
 
-For full documentation, see the [API reference](https://reference.langchain.com/python/langchain_model_profiles/). For conceptual guides, tutorials, and examples on using LangChain, see the [LangChain Docs](https://docs.langchain.com/oss/python/langchain/overview). You can also chat with the docs using [Chat LangChain](https://chat.langchain.com).
+For full documentation, see the [API reference](https://reference.langchain.com/python/langchain_model_profiles/). For conceptual guides, tutorials, and examples on using Orcest Core, see the [Orcest Core Docs](https://docs.langchain.com/oss/python/langchain/overview). You can also chat with the docs using [Chat Orcest Core](https://chat.langchain.com).
 
 ## Usage
 

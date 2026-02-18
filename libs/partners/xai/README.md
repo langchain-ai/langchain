@@ -3,9 +3,9 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/langchain-xai?label=%20)](https://pypi.org/project/langchain-xai/#history)
 [![PyPI - License](https://img.shields.io/pypi/l/langchain-xai)](https://opensource.org/licenses/MIT)
 [![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-xai)](https://pypistats.org/packages/langchain-xai)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40LangChain)](https://x.com/langchain)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40Orcest Core)](https://x.com/langchain)
 
-Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+Looking for the JS/TS version? Check out [Orcest Core.js](https://github.com/langchain-ai/langchainjs).
 
 ## Quick Install
 
@@ -15,11 +15,11 @@ pip install langchain-xai
 
 ## 🤔 What is this?
 
-This package contains the LangChain integrations for [xAI](https://x.ai/) through their [APIs](https://console.x.ai).
+This package contains the Orcest Core integrations for [xAI](https://x.ai/) through their [APIs](https://console.x.ai).
 
 ## 📖 Documentation
 
-For full documentation, see the [API reference](https://reference.langchain.com/python/integrations/langchain_xai/). For conceptual guides, tutorials, and examples on using these classes, see the [LangChain Docs](https://docs.langchain.com/oss/python/integrations/providers/xai).
+For full documentation, see the [API reference](https://reference.langchain.com/python/integrations/langchain_xai/). For conceptual guides, tutorials, and examples on using these classes, see the [Orcest Core Docs](https://docs.langchain.com/oss/python/integrations/providers/xai).
 
 ## 📕 Releases & Versioning
 

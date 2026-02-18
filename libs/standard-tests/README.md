@@ -3,9 +3,9 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/langchain-tests?label=%20)](https://pypi.org/project/langchain-tests/#history)
 [![PyPI - License](https://img.shields.io/pypi/l/langchain-tests)](https://opensource.org/licenses/MIT)
 [![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-tests)](https://pypistats.org/packages/langchain-tests)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40LangChain)](https://x.com/langchain)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40Orcest Core)](https://x.com/langchain)
 
-Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+Looking for the JS/TS version? Check out [Orcest Core.js](https://github.com/langchain-ai/langchainjs).
 
 ## Quick Install
 
@@ -15,7 +15,7 @@ pip install langchain-tests
 
 ## 🤔 What is this?
 
-This is a testing library for LangChain integrations. It contains the base classes for a standard set of tests.
+This is a testing library for Orcest Core integrations. It contains the base classes for a standard set of tests.
 
 ## 📖 Documentation
 
@@ -45,7 +45,7 @@ To add standard tests to an integration package (e.g., for a chat model), you ne
 `tests/unit_tests/test_standard.py`:
 
 ```python
-"""Standard LangChain interface tests"""
+"""Standard Orcest Core interface tests"""
 
 from typing import Type
 
@@ -65,7 +65,7 @@ class TestParrotChainStandard(ChatModelUnitTests):
 `tests/integration_tests/test_standard.py`:
 
 ```python
-"""Standard LangChain interface tests"""
+"""Standard Orcest Core interface tests"""
 
 from typing import Type
 

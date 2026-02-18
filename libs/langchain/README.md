@@ -1,19 +1,19 @@
-# 🦜️🔗 LangChain Classic
+# 🦜️🔗 Orcest Core Classic
 
-[![PyPI - Version](https://img.shields.io/pypi/v/langchain-classic?label=%20)](https://pypi.org/project/langchain-classic/#history)
-[![PyPI - License](https://img.shields.io/pypi/l/langchain-classic)](https://opensource.org/licenses/MIT)
-[![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-classic)](https://pypistats.org/packages/langchain-classic)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40LangChain)](https://x.com/langchain)
+[![PyPI - Version](https://img.shields.io/pypi/v/langchain?label=%20)](https://pypi.org/project/langchain/#history)
+[![PyPI - License](https://img.shields.io/pypi/l/langchain)](https://opensource.org/licenses/MIT)
+[![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain)](https://pypistats.org/packages/langchain)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40Orcest Core)](https://x.com/langchain)
 
-Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+Looking for the JS/TS version? Check out [Orcest Core.js](https://github.com/langchain-ai/langchainjs).
 
-To help you ship LangChain apps to production faster, check out [LangSmith](https://smith.langchain.com).
-[LangSmith](https://smith.langchain.com) is a unified developer platform for building, testing, and monitoring LLM applications.
+To help you ship Orcest Core apps to production faster, check out [Orcest Analytics](https://smith.langchain.com).
+[Orcest Analytics](https://smith.langchain.com) is a unified developer platform for building, testing, and monitoring LLM applications.
 
 ## Quick Install
 
 ```bash
-pip install langchain-classic
+pip install langchain
 ```
 
 ## 🤔 What is this?
@@ -24,7 +24,7 @@ In most cases, you should be using the main [`langchain`](https://pypi.org/proje
 
 ## 📖 Documentation
 
-For full documentation, see the [API reference](https://reference.langchain.com/python/langchain_classic). For conceptual guides, tutorials, and examples on using LangChain, see the [LangChain Docs](https://docs.langchain.com/oss/python/langchain/overview).
+For full documentation, see the [API reference](https://reference.langchain.com/python/langchain_classic). For conceptual guides, tutorials, and examples on using Orcest Core, see the [Orcest Core Docs](https://docs.langchain.com/oss/python/langchain/overview).
 
 ## 📕 Releases & Versioning
 

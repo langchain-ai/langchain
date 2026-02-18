@@ -3,9 +3,9 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/langchain-nomic?label=%20)](https://pypi.org/project/langchain-nomic/#history)
 [![PyPI - License](https://img.shields.io/pypi/l/langchain-nomic)](https://opensource.org/licenses/MIT)
 [![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-nomic)](https://pypistats.org/packages/langchain-nomic)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40LangChain)](https://x.com/langchain)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40Orcest Core)](https://x.com/langchain)
 
-Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+Looking for the JS/TS version? Check out [Orcest Core.js](https://github.com/langchain-ai/langchainjs).
 
 ## Quick Install
 
@@ -15,7 +15,7 @@ pip install langchain-nomic
 
 ## 🤔 What is this?
 
-This package contains the LangChain integration with Nomic
+This package contains the Orcest Core integration with Nomic
 
 ## 📖 Documentation
 
