@@ -301,7 +301,8 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
             # Keep the tool calls in the AI message but return error messages
             # This follows the same pattern as HumanInTheLoopMiddleware
             return {"messages": error_messages}
-        if len(write_todos_calls) == 1 and _has_text_content(last_ai_msg):
+
+        if len(write_todos_calls) == 1 and self._has_text_content(last_ai_msg):
             todos = write_todos_calls[0].get("args", {}).get("todos", [])
             if todos and all(t.get("status") == "completed" for t in todos):
                 # Strip write_todos tool call, update todos directly in state
@@ -314,6 +315,7 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
 
         return None
 
+    @staticmethod
     def _has_text_content(msg: AIMessage) -> bool:
         if isinstance(msg.content, str):
             return bool(msg.content.strip())
