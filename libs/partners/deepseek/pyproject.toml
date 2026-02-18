@@ -101,6 +101,7 @@ ban-relative-imports = "all"
     "S101",   # Tests need assertions
     "S311",   # Standard pseudo-random generators are not suitable for cryptographic purposes
     "SLF001", # Private member access
+    "PLR2004", # Magic value used in comparison
 
     # TODO
     "ARG002", # Unused method argument:
