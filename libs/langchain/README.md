@@ -7,8 +7,8 @@
 
 Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
 
-To help you ship LangChain apps to production faster, check out [LangSmith](https://smith.langchain.com).
-[LangSmith](https://smith.langchain.com) is a unified developer platform for building, testing, and monitoring LLM applications.
+To help you ship LangChain apps to production faster, check out [LangSmith](https://www.langchain.com/langsmith).
+[LangSmith](https://www.langchain.com/langsmith) is a unified developer platform for building, testing, and monitoring LLM applications.
 
 ## Quick Install
 
