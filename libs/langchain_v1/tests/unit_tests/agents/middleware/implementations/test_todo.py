@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import TYPE_CHECKING, Any, cast
 
 import pytest
@@ -809,7 +810,6 @@ async def test_handler_called_with_modified_request_async() -> None:
 
 def test_aafter_model_delegates_to_after_model() -> None:
     """aafter_model should return the same result as after_model."""
-    import asyncio
     middleware = TodoListMiddleware()
     ai_message = AIMessage(
         content="Task completed!",
