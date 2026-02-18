@@ -160,6 +160,24 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         ```python
         [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
         ```
+
+    !!! note "OpenAI-compatible APIs (e.g. OpenRouter, Ollama, vLLM)"
+
+        When using a non-OpenAI provider, set
+        `check_embedding_ctx_length=False` to send raw text instead of tokens
+        (which many providers don't support), and optionally set
+        `encoding_format` to `'float'` to avoid base64 encoding issues:
+
+        ```python
+        from langchain_openai import OpenAIEmbeddings
+
+        embeddings = OpenAIEmbeddings(
+            model="...",
+            base_url="...",
+            check_embedding_ctx_length=False,
+        )
+        ```
+
     """
 
     client: Any = Field(default=None, exclude=True)
@@ -171,7 +189,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     dimensions: int | None = None
     """The number of dimensions the resulting output embeddings should have.
 
-    Only supported in `text-embedding-3` and later models.
+    Only supported in `'text-embedding-3'` and later models.
     """
 
     # to support Azure OpenAI Service custom deployment names
@@ -182,14 +200,20 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         default_factory=from_env("OPENAI_API_VERSION", default=None),
         alias="api_version",
     )
-    """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
+    """Version of the OpenAI API to use.
+
+    Automatically inferred from env var `OPENAI_API_VERSION` if not provided.
+    """
 
     # to support Azure OpenAI Service custom endpoints
     openai_api_base: str | None = Field(
         alias="base_url", default_factory=from_env("OPENAI_API_BASE", default=None)
     )
-    """Base URL path for API requests, leave blank if not using a proxy or service
-        emulator."""
+    """Base URL path for API requests, leave blank if not using a proxy or
+    service emulator.
+
+    Automatically inferred from env var `OPENAI_API_BASE` if not provided.
+    """
 
     # to support Azure OpenAI Service custom endpoints
     openai_api_type: str | None = Field(
@@ -209,7 +233,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     ) = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
-    """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
+    """API key to use for API calls.
+
+    Automatically inferred from env var `OPENAI_API_KEY` if not provided.
+    """
 
     openai_organization: str | None = Field(
         alias="organization",
@@ -217,7 +244,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             ["OPENAI_ORG_ID", "OPENAI_ORGANIZATION"], default=None
         ),
     )
-    """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
+    """OpenAI organization ID to use for API calls.
+
+    Automatically inferred from env var `OPENAI_ORG_ID` if not provided.
+    """
 
     allowed_special: Literal["all"] | set[str] | None = None
 
@@ -232,14 +262,20 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, `httpx.Timeout` or
-    None."""
+    """Timeout for requests to OpenAI completion API.
+
+    Can be float, `httpx.Timeout` or `None`.
+    """
 
     headers: Any = None
 
     tiktoken_enabled: bool = True
-    """Set this to False for non-OpenAI implementations of the embeddings API, e.g.
-    the `--extensions openai` extension for `text-generation-webui`"""
+    """Set this to False to use HuggingFace `transformers` tokenization.
+
+    For non-OpenAI providers (OpenRouter, Ollama, vLLM, etc.), consider setting
+    `check_embedding_ctx_length=False` instead, as it bypasses tokenization
+    entirely.
+    """
 
     tiktoken_model_name: str | None = None
     """The model name to pass to tiktoken when using this class.
@@ -247,12 +283,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     Tiktoken is used to count the number of tokens in documents to constrain
     them to be under a certain limit.
 
-    By default, when set to `None`, this will be the same as the embedding model name.
-    However, there are some cases where you may want to use this `Embedding` class with
-    a model name not supported by tiktoken. This can include when using Azure embeddings
-    or when using one of the many model providers that expose an OpenAI-like
-    API but with different models. In those cases, in order to avoid erroring
-    when tiktoken is called, you can specify a model name to use here.
+    By default, when set to `None`, this will be the same as the embedding model
+    name. However, there are some cases where you may want to use this
+    `Embedding` class with a model name not supported by tiktoken. This can
+    include when using Azure embeddings or when using one of the many model
+    providers that expose an OpenAI-like API but with different models. In those
+    cases, in order to avoid erroring when tiktoken is called, you can specify a
+    model name to use here.
     """
 
     show_progress_bar: bool = False
@@ -280,20 +317,25 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     http_client: Any | None = None
     """Optional `httpx.Client`.
 
-    Only used for sync invocations. Must specify `http_async_client` as well if you'd
-    like a custom client for async invocations.
+    Only used for sync invocations. Must specify `http_async_client` as well if
+    you'd like a custom client for async invocations.
     """
 
     http_async_client: Any | None = None
     """Optional `httpx.AsyncClient`.
 
-    Only used for async invocations. Must specify `http_client` as well if you'd like a
-    custom client for sync invocations.
+    Only used for async invocations. Must specify `http_client` as well if you'd
+    like a custom client for sync invocations.
     """
 
     check_embedding_ctx_length: bool = True
     """Whether to check the token length of inputs and automatically split inputs
-        longer than embedding_ctx_length."""
+    longer than `embedding_ctx_length`.
+
+    Set to `False` to send raw text strings directly to the API instead of
+    tokenizing. Useful for many non-OpenAI providers (e.g. OpenRouter, Ollama,
+    vLLM).
+    """
 
     model_config = ConfigDict(
         extra="forbid", populate_by_name=True, protected_namespaces=()
