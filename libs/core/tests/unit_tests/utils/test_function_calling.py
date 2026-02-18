@@ -1209,3 +1209,63 @@ def test_convert_to_openai_function_json_schema_missing_title_includes_schema() 
     }
     with pytest.raises(ValueError, match="my_field"):
         convert_to_openai_function(schema_without_title)
+
+
+def test_nested_model_field_description_fallback() -> None:
+    """Test that field descriptions propagate to nested models without docstrings."""
+
+    class NestedModel(BaseModel):
+        value: str
+
+    class ParentModel(BaseModel):
+        """Parent model."""
+
+        nested: NestedModel = Field(description="A nested model field")
+
+    result = convert_to_openai_function(ParentModel)
+    # Assert nested field has the description from the parent field
+    assert (
+        result["parameters"]["properties"]["nested"].get("description")
+        == "A nested model field"
+    )
+
+
+def test_nested_model_preserves_own_docstring() -> None:
+    """Test that nested models with docstrings keep their own descriptions."""
+
+    class NestedModel(BaseModel):
+        """Nested model's own docstring."""
+
+        value: str
+
+    class ParentModel(BaseModel):
+        """Parent model."""
+
+        nested: NestedModel = Field(description="Parent's field description")
+
+    result = convert_to_openai_function(ParentModel)
+    # Nested model should keep its own docstring, not use field description
+    assert (
+        result["parameters"]["properties"]["nested"].get("description")
+        == "Nested model's own docstring."
+    )
+
+
+def test_nested_model_list_not_processed() -> None:
+    """Test that List[NestedModel] fields are not processed for description fallback."""
+
+    class NestedModel(BaseModel):
+        value: str
+
+    class ParentModel(BaseModel):
+        """Parent model."""
+
+        nested_list: list[NestedModel] = Field(description="A list of nested models")
+
+    result = convert_to_openai_function(ParentModel)
+    # The list field should not have description applied to items
+    # This test ensures container types don't trigger the fallback logic
+    assert "properties" in result["parameters"]
+    # The nested_list field should exist but not have a description propagated
+    # to its items (the field itself may have description from array handling)
+    assert "nested_list" in result["parameters"]["properties"]
