@@ -1159,7 +1159,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 prompt = dumps(normalized_messages)
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
-                    print("Cache hit")
                     converted_generations = self._convert_cached_generations(cache_val)
                     return ChatResult(generations=converted_generations)
             elif self.cache is None:
