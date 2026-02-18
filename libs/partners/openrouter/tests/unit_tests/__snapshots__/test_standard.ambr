@@ -1,0 +1,30 @@
+# serializer version: 1
+# name: TestChatOpenRouterUnit.test_serdes[serialized]
+  dict({
+    'id': list([
+      'langchain_openrouter',
+      'chat_models',
+      'ChatOpenRouter',
+    ]),
+    'kwargs': dict({
+      'max_retries': 2,
+      'max_tokens': 100,
+      'model_name': 'openai/gpt-4o-mini',
+      'n': 1,
+      'openrouter_api_key': dict({
+        'id': list([
+          'OPENROUTER_API_KEY',
+        ]),
+        'lc': 1,
+        'type': 'secret',
+      }),
+      'request_timeout': 60,
+      'stop': list([
+      ]),
+      'temperature': 0.0,
+    }),
+    'lc': 1,
+    'name': 'ChatOpenRouter',
+    'type': 'constructor',
+  })
+# ---
