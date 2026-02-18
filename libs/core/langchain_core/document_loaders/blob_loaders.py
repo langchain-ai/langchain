@@ -1,8 +1,7 @@
 """Schema for Blobs and Blob Loaders.
 
-The goal is to facilitate decoupling of content loading from content parsing code.
-
-In addition, content loading code should provide a lazy loading interface by default.
+The goal is to facilitate decoupling of content loading from content parsing code. In
+addition, content loading code should provide a lazy loading interface by default.
 """
 
 from __future__ import annotations
@@ -14,24 +13,24 @@ from typing import TYPE_CHECKING
 from langchain_core.documents.base import Blob, PathLike
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterator
 
 
 class BlobLoader(ABC):
     """Abstract interface for blob loaders implementation.
 
-    Implementer should be able to load raw content from a storage system according
-    to some criteria and return the raw content lazily as a stream of blobs.
+    Implementer should be able to load raw content from a storage system according to
+    some criteria and return the raw content lazily as a stream of blobs.
     """
 
     @abstractmethod
     def yield_blobs(
         self,
-    ) -> Iterable[Blob]:
+    ) -> Iterator[Blob]:
         """A lazy loader for raw data represented by LangChain's `Blob` object.
 
-        Returns:
-            A generator over blobs
+        Yields:
+            `Blob` objects.
         """
 
 

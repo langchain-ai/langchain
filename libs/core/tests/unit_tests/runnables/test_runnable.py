@@ -320,6 +320,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "associated metadata.\n"
                 "\n"
                 "!!! note\n"
+                "\n"
                 "    `Document` is for **retrieval workflows**, not chat I/O. For "
                 "sending text\n"
                 "    to an LLM in a conversation, use message types from "

@@ -5,10 +5,11 @@ from typing import Any, TypedDict, cast
 
 from langchain_core.messages import AIMessage
 from langgraph.runtime import Runtime
+from langgraph.types import Command
 
 from langchain.agents import AgentState
-from langchain.agents.factory import _chain_model_call_handlers
-from langchain.agents.middleware.types import ModelRequest, ModelResponse
+from langchain.agents.factory import _chain_model_call_handlers, _ComposedExtendedModelResponse
+from langchain.agents.middleware.types import ExtendedModelResponse, ModelRequest, ModelResponse
 
 
 def create_test_request(**kwargs: Any) -> ModelRequest:
@@ -88,9 +89,41 @@ class TestChainModelCallHandlers:
             "inner-after",
             "outer-after",
         ]
-        # Result is now ModelResponse
-        assert isinstance(result, ModelResponse)
-        assert result.result[0].content == "test"
+        # Outermost result is always _ComposedExtendedModelResponse
+        assert isinstance(result, _ComposedExtendedModelResponse)
+        assert result.model_response.result[0].content == "test"
+
+    def test_two_handlers_with_commands(self) -> None:
+        """Test that commands from inner and outer are collected correctly."""
+
+        def outer(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ExtendedModelResponse:
+            response = handler(request)
+            return ExtendedModelResponse(
+                model_response=response,
+                command=Command(update={"outer_key": "outer_val"}),
+            )
+
+        def inner(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ExtendedModelResponse:
+            response = handler(request)
+            return ExtendedModelResponse(
+                model_response=response,
+                command=Command(update={"inner_key": "inner_val"}),
+            )
+
+        composed = _chain_model_call_handlers([outer, inner])
+        assert composed is not None
+
+        result = composed(create_test_request(), create_mock_base_handler())
+
+        assert isinstance(result, _ComposedExtendedModelResponse)
+        # Commands are collected: inner first, then outer
+        assert len(result.commands) == 2
+        assert result.commands[0].update == {"inner_key": "inner_val"}
+        assert result.commands[1].update == {"outer_key": "outer_val"}
 
     def test_three_handlers_composition(self) -> None:
         """Test composition of three handlers."""
@@ -134,8 +167,8 @@ class TestChainModelCallHandlers:
             "second-after",
             "first-after",
         ]
-        assert isinstance(result, ModelResponse)
-        assert result.result[0].content == "test"
+        assert isinstance(result, _ComposedExtendedModelResponse)
+        assert result.model_response.result[0].content == "test"
 
     def test_inner_handler_retry(self) -> None:
         """Test inner handler retrying before outer sees response."""
@@ -173,8 +206,8 @@ class TestChainModelCallHandlers:
         result = composed(create_test_request(), mock_base_handler)
 
         assert inner_attempts == [0, 1, 2]
-        assert isinstance(result, ModelResponse)
-        assert result.result[0].content == "success"
+        assert isinstance(result, _ComposedExtendedModelResponse)
+        assert result.model_response.result[0].content == "success"
 
     def test_error_to_success_conversion(self) -> None:
         """Test handler converting error to success response."""
@@ -202,10 +235,10 @@ class TestChainModelCallHandlers:
 
         result = composed(create_test_request(), mock_base_handler)
 
-        # AIMessage was automatically converted to ModelResponse
-        assert isinstance(result, ModelResponse)
-        assert result.result[0].content == "Fallback response"
-        assert result.structured_response is None
+        # AIMessage was automatically normalized into ExtendedModelResponse
+        assert isinstance(result, _ComposedExtendedModelResponse)
+        assert result.model_response.result[0].content == "Fallback response"
+        assert result.model_response.structured_response is None
 
     def test_request_modification(self) -> None:
         """Test handlers modifying the request."""
@@ -231,8 +264,8 @@ class TestChainModelCallHandlers:
         result = composed(create_test_request(), create_mock_base_handler(content="response"))
 
         assert requests_seen == ["Added by outer"]
-        assert isinstance(result, ModelResponse)
-        assert result.result[0].content == "response"
+        assert isinstance(result, _ComposedExtendedModelResponse)
+        assert result.model_response.result[0].content == "response"
 
     def test_composition_preserves_state_and_runtime(self) -> None:
         """Test that state and runtime are passed through composition."""
@@ -273,8 +306,8 @@ class TestChainModelCallHandlers:
         # Both handlers should see same state and runtime
         assert state_values == [("outer", test_state), ("inner", test_state)]
         assert runtime_values == [("outer", test_runtime), ("inner", test_runtime)]
-        assert isinstance(result, ModelResponse)
-        assert result.result[0].content == "test"
+        assert isinstance(result, _ComposedExtendedModelResponse)
+        assert result.model_response.result[0].content == "test"
 
     def test_multiple_yields_in_retry_loop(self) -> None:
         """Test handler that retries multiple times."""
@@ -312,5 +345,5 @@ class TestChainModelCallHandlers:
         # Outer called once, inner retried so base handler called twice
         assert call_count["value"] == 1
         assert attempt["value"] == 2
-        assert isinstance(result, ModelResponse)
-        assert result.result[0].content == "ok"
+        assert isinstance(result, _ComposedExtendedModelResponse)
+        assert result.model_response.result[0].content == "ok"

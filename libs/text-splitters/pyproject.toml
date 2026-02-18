@@ -7,18 +7,32 @@ name = "langchain-text-splitters"
 description = "LangChain text splitting utilities"
 license = { text = "MIT" }
 readme = "README.md"
-authors = []
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing",
+]
 
 version = "1.1.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.0,<2.0.0",
+    "langchain-core>=1.2.12,<2.0.0",
 ]
 
 [project.urls]
 Homepage = "https://docs.langchain.com/"
 Documentation = "https://docs.langchain.com/"
-Source = "https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters"
+Repository = "https://github.com/langchain-ai/langchain"
+Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-text-splitters%22"
 Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
@@ -26,7 +40,7 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 lint = [
-    "ruff>=0.14.11,<0.15.0",
+    "ruff>=0.15.0,<0.16.0",
     "langchain-core"
 ]
 typing = [
@@ -41,21 +55,21 @@ dev = [
     "langchain-core"
 ]
 test = [
-    "pytest>=8.0.0,<9.0.0",
+    "pytest>=8.0.0,<10.0.0",
     "freezegun>=1.2.2,<2.0.0",
     "pytest-mock>=3.10.0,<4.0.0",
     "pytest-watcher>=0.3.4,<1.0.0",
-    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-asyncio>=0.21.1,<2.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
     "pytest-xdist<4.0.0,>=3.6.1",
     "langchain-core",
 ]
 test_integration = [
     "spacy>=3.8.7,<4.0.0; python_version < \"3.14\"",
-    "thinc>=8.3.6,<9.0.0",
+    "thinc>=8.3.6,<10.0.0",
     "nltk>=3.9.1,<4.0.0",
-    "transformers>=4.51.3,<5.0.0",
-    "sentence-transformers>=3.0.1,<4.0.0",
+    "transformers>=4.51.3,<6.0.0",
+    "sentence-transformers>=3.0.1,<6.0.0",
     "scipy>=1.7.0,<2.0.0; python_version >= \"3.12\" and python_version < \"3.13\"",
     "scipy>=1.14.1,<2.0.0; python_version >= \"3.13\"",
     "tiktoken>=0.8.0,<1.0.0",

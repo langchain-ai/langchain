@@ -34,6 +34,18 @@ def initialize_agent(
 ) -> AgentExecutor:
     """Load an agent executor given tools and LLM.
 
+    !!! warning
+
+        This function is no deprecated in favor of
+        [`create_agent`][langchain.agents.create_agent] from the `langchain`
+        package, which provides a more flexible agent factory with middleware
+        support, structured output, and integration with LangGraph.
+
+        For migration guidance, see
+        [Migrating to langchain v1](https://docs.langchain.com/oss/python/migrate/langchain-v1)
+        and
+        [Migrating from AgentExecutor](https://python.langchain.com/docs/how_to/migrate_agent/).
+
     Args:
         tools: List of tools this agent has access to.
         llm: Language model to use as the agent.
@@ -44,7 +56,6 @@ def initialize_agent(
         agent_path: Path to serialized agent to use. If `None` and agent is also None,
             will default to AgentType.ZERO_SHOT_REACT_DESCRIPTION.
         agent_kwargs: Additional keyword arguments to pass to the underlying agent.
-
         tags: Tags to apply to the traced runs.
         kwargs: Additional keyword arguments passed to the agent executor.
 
