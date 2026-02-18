@@ -25,7 +25,7 @@ allowlist. If the class is not in the allowlist, deserialization raises a `Value
     additional classes), treat the serialized payload as a manifest and only
     deserialize data that comes from a trusted source. A crafted payload that
     is allowed to instantiate unintended classes could cause network calls,
-    file operations, or environment variable access during `__init__`. 
+    file operations, or environment variable access during `__init__`.
 
 The `allowed_objects` parameter controls which classes can be deserialized:
 
