@@ -135,6 +135,7 @@ class AnthropicTool(TypedDict):
 # ---------------------------------------------------------------------------
 
 _TOOL_TYPE_TO_BETA: dict[str, str] = {
+    "web_search_20260209": "code-execution-web-tools-2026-02-09",
     "web_fetch_20250910": "web-fetch-2025-09-10",
     "code_execution_20250522": "code-execution-2025-05-22",
     "code_execution_20250825": "code-execution-2025-08-25",

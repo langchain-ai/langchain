@@ -1835,6 +1835,16 @@ def test_auto_append_betas_for_tool_types() -> None:
     )
     assert payload["betas"] == ["web-fetch-2025-09-10"]
 
+    # Test web_search_20260209 auto-appends code-execution-web-tools-2026-02-09
+    model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    tool = {"type": "web_search_20260209", "name": "web_search"}
+    model_with_tools = model.bind_tools([tool])
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+    assert payload["betas"] == ["code-execution-web-tools-2026-02-09"]
+
     # Test code_execution_20250522 auto-appends code-execution-2025-05-22
     model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
     tool = {"type": "code_execution_20250522", "name": "code_execution"}
@@ -1885,6 +1895,7 @@ def test_auto_append_betas_for_tool_types() -> None:
     model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
     tools = [
         {"type": "web_fetch_20250910", "name": "web_fetch"},
+        {"type": "web_search_20260209", "name": "web_search"},
         {"type": "code_execution_20250522", "name": "code_execution"},
     ]
     model_with_tools = model.bind_tools(tools)
@@ -1894,6 +1905,7 @@ def test_auto_append_betas_for_tool_types() -> None:
     )
     assert set(payload["betas"]) == {
         "web-fetch-2025-09-10",
+        "code-execution-web-tools-2026-02-09",
         "code-execution-2025-05-22",
     }
 
