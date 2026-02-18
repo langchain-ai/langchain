@@ -492,14 +492,10 @@ def _supports_provider_strategy(
             or getattr(model, "model_id", "")
         )
         model_profile = model.profile
-        if (
-            model_profile is not None
-            and model_profile.get("structured_output")
-            # We make an exception for Gemini models, which currently do not support
-            # simultaneous tool use with structured output
-            and not (tools and isinstance(model_name, str) and "gemini" in model_name.lower())
-        ):
-            return True
+        if model_profile is not None and model_profile.get("structured_output"):
+            # When tools are present, check if model explicitly blocks
+            # structured output with tools (e.g. pre-Gemini 3 models)
+            return not (tools and model_profile.get("structured_output_with_tools") is False)
 
     return (
         any(part in model_name.lower() for part in FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT)

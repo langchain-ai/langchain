@@ -80,6 +80,14 @@ class ModelProfile(TypedDict, total=False):
     """Whether the model supports a native [structured output](https://docs.langchain.com/oss/python/langchain/models#structured-outputs)
     feature"""
 
+    structured_output_with_tools: bool
+    """Whether the model supports structured output simultaneously with tool calling.
+
+    When `False`, the agent framework falls back to tool-based structured output
+    when tools are present. When absent or `True`, structured output with tools
+    is assumed to be supported if `structured_output` is `True`.
+    """
+
 
 ModelProfileRegistry = dict[str, ModelProfile]
 """Registry mapping model identifiers or names to their ModelProfile."""

@@ -118,6 +118,7 @@ def _model_data_to_profile(model_data: dict[str, Any]) -> dict[str, Any]:
         "tool_calling": model_data.get("tool_call"),
         "tool_choice": model_data.get("tool_choice"),
         "structured_output": model_data.get("structured_output"),
+        "structured_output_with_tools": model_data.get("structured_output_with_tools"),
         "image_url_inputs": model_data.get("image_url_inputs"),
         "image_tool_message": model_data.get("image_tool_message"),
         "pdf_tool_message": model_data.get("pdf_tool_message"),

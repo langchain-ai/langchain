@@ -11,11 +11,13 @@ from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import HumanMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 from langchain.agents import create_agent
+from langchain.agents.factory import _supports_provider_strategy
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     ModelCallResult,
@@ -897,3 +899,87 @@ def test_union_of_types() -> None:
 
     assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
     assert len(response["messages"]) == 5
+
+
+# ---------------------------------------------------------------------------
+# _supports_provider_strategy with structured_output_with_tools
+# ---------------------------------------------------------------------------
+
+
+class _ProfileModel(BaseChatModel):
+    """Minimal model with configurable profile and model_name for testing."""
+
+    model_name: str = "test-model"
+
+    def _generate(
+        self,
+        messages: list[Any],
+        stop: list[str] | None = None,
+        run_manager: Any = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(content="ok"))])
+
+    @property
+    def _llm_type(self) -> str:
+        return "profile-test-model"
+
+
+def _make_model_with_profile(
+    profile: dict[str, Any],
+    model_name: str = "test-model",
+) -> _ProfileModel:
+    """Create a model with a given profile for testing _supports_provider_strategy."""
+    return _ProfileModel(model_name=model_name, profile=profile)  # type: ignore[arg-type]
+
+
+_DUMMY_TOOLS: list[dict[str, Any]] = [{"type": "function", "function": {"name": "t"}}]
+
+
+def test_supports_provider_strategy_gemini3_with_tools() -> None:
+    """Gemini 3 model with structured_output_with_tools=True is allowed."""
+    model = _make_model_with_profile(
+        {"structured_output": True, "structured_output_with_tools": True},
+        model_name="gemini-3-flash-preview",
+    )
+    assert _supports_provider_strategy(model, tools=_DUMMY_TOOLS) is True
+
+
+def test_supports_provider_strategy_old_gemini_with_tools() -> None:
+    """Old Gemini model with structured_output_with_tools=False is blocked."""
+    model = _make_model_with_profile(
+        {"structured_output": True, "structured_output_with_tools": False},
+        model_name="gemini-2.5-pro",
+    )
+    assert _supports_provider_strategy(model, tools=_DUMMY_TOOLS) is False
+
+
+def test_supports_provider_strategy_non_gemini_unchanged() -> None:
+    """Non-Gemini model with structured_output=True works with tools (backward compat)."""
+    model = _make_model_with_profile(
+        {"structured_output": True},
+        model_name="gpt-4o",
+    )
+    # No structured_output_with_tools key at all — should still return True
+    assert _supports_provider_strategy(model, tools=_DUMMY_TOOLS) is True
+
+
+def test_supports_provider_strategy_no_tools_unchanged() -> None:
+    """Any model with structured_output=True returns True without tools."""
+    # Even a model that blocks structured_output_with_tools should work without tools
+    model = _make_model_with_profile(
+        {"structured_output": True, "structured_output_with_tools": False},
+        model_name="gemini-2.0-flash",
+    )
+    assert _supports_provider_strategy(model, tools=None) is True
+    assert _supports_provider_strategy(model, tools=[]) is True
+
+
+def test_supports_provider_strategy_no_structured_output() -> None:
+    """Model without structured_output returns False regardless."""
+    model = _make_model_with_profile(
+        {"structured_output": False},
+        model_name="some-model",
+    )
+    assert _supports_provider_strategy(model, tools=None) is False
+    assert _supports_provider_strategy(model, tools=_DUMMY_TOOLS) is False
