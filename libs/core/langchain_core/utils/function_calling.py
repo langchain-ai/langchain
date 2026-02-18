@@ -718,12 +718,22 @@ def _parse_google_docstring(
 
     Assumes the function docstring follows Google Python style guide.
 
+    Args:
+        docstring: The docstring to parse.
+        args: The list of argument names to extract descriptions for.
+        error_on_invalid_docstring: Whether to raise an error if the docstring is
+            invalid.
+
+    Returns:
+        A tuple of the function description and a dictionary of argument descriptions.
     """
     if docstring:
         docstring_blocks = docstring.split("\n\n")
         if error_on_invalid_docstring:
             filtered_annotations = {
-                arg for arg in args if arg not in {"run_manager", "callbacks", "return"}
+                arg
+                for arg in args
+                if arg not in {"run_manager", "callbacks", "runtime", "return"}
             }
             if filtered_annotations and (
                 len(docstring_blocks) < _MIN_DOCSTRING_BLOCKS
@@ -745,7 +755,7 @@ def _parse_google_docstring(
                 descriptors.append(block)
             else:
                 continue
-        description = " ".join(descriptors)
+        description = " ".join(descriptors).strip()
     else:
         if error_on_invalid_docstring:
             msg = "Found invalid Google-Style docstring."

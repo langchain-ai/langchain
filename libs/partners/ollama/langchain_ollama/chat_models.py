@@ -934,6 +934,12 @@ class ChatOllama(BaseChatModel):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[Mapping[str, Any] | str]:
+        if not self._async_client:
+            msg = (
+                "Ollama async client is not initialized. "
+                "Make sure the model was properly constructed."
+            )
+            raise RuntimeError(msg)
         chat_params = self._chat_params(messages, stop, **kwargs)
 
         if chat_params["stream"]:
@@ -948,12 +954,17 @@ class ChatOllama(BaseChatModel):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> Iterator[Mapping[str, Any] | str]:
+        if not self._client:
+            msg = (
+                "Ollama sync client is not initialized. "
+                "Make sure the model was properly constructed."
+            )
+            raise RuntimeError(msg)
         chat_params = self._chat_params(messages, stop, **kwargs)
 
         if chat_params["stream"]:
-            if self._client:
-                yield from self._client.chat(**chat_params)
-        elif self._client:
+            yield from self._client.chat(**chat_params)
+        else:
             yield self._client.chat(**chat_params)
 
     def _chat_stream_with_aggregation(

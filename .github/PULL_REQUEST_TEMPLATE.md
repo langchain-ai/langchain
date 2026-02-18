@@ -1,6 +1,7 @@
 (Replace this entire block of text)
 
 Read the full contributing guidelines: https://docs.langchain.com/oss/python/contributing/overview
+If you paste a large clearly AI generated description here your PR may be IGNORED or CLOSED!
 
 Thank you for contributing to LangChain! Follow these steps to have your pull request considered as ready for review.
 
@@ -23,8 +24,15 @@ Thank you for contributing to LangChain! Follow these steps to have your pull re
 
   - We will not consider a PR unless these three are passing in CI.
 
+4. How did you verify your code works?
+
 Additional guidelines:
 
   - We ask that if you use generative AI for your contribution, you include a disclaimer.
   - PRs should not touch more than one package unless absolutely necessary.
   - Do not update the `uv.lock` files or add dependencies to `pyproject.toml` files (even optional ones) unless you have explicit permission to do so by a maintainer.
+
+## Social handles (optional)
+<!-- If you'd like a shoutout on release, add your socials below -->
+Twitter: @
+LinkedIn: https://linkedin.com/in/

@@ -355,8 +355,18 @@ class PydanticToolsParser(JsonOutputToolsParser):
                     f"{res['args']}"
                 )
                 raise ValueError(msg)
+
             try:
-                pydantic_objects.append(name_dict[res["type"]](**res["args"]))
+                tool = name_dict[res["type"]]
+            except KeyError as e:
+                available = ", ".join(name_dict.keys()) or "<no_tools>"
+                msg = (
+                    f"Unknown tool type: {res['type']!r}. Available tools: {available}"
+                )
+                raise OutputParserException(msg) from e
+
+            try:
+                pydantic_objects.append(tool(**res["args"]))
             except (ValidationError, ValueError):
                 if partial:
                     continue

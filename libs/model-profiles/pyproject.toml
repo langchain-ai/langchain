@@ -7,7 +7,19 @@ name = "langchain-model-profiles"
 description = "CLI tool for updating model profile data in LangChain integration packages."
 readme = "README.md"
 license = { text = "MIT" }
-authors = []
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
 version = "0.0.5"
 requires-python = ">=3.10.0,<4.0.0"
@@ -23,7 +35,8 @@ langchain-profiles = "langchain_model_profiles.cli:main"
 [project.urls]
 Homepage = "https://docs.langchain.com/"
 Documentation = "https://reference.langchain.com/python/langchain_model_profiles/"
-Source = "https://github.com/langchain-ai/langchain/tree/master/libs/model-profiles"
+Repository = "https://github.com/langchain-ai/langchain"
+Issues = "https://github.com/langchain-ai/langchain/issues"
 Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
@@ -32,14 +45,14 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 dev = []
 
 test = [
-    "pytest>=8.0.0,<9.0.0",
+    "pytest>=8.0.0,<10.0.0",
     "pytest-cov>=4.0.0,<8.0.0",
     "pytest-watcher>=0.2.6,<1.0.0",
     "pytest-asyncio>=0.23.2,<2.0.0",
     "pytest-socket>=0.6.0,<1.0.0",
     "pytest-xdist<4.0.0,>=3.6.1",
     "pytest-mock",
-    "syrupy>=4.0.2,<5.0.0",
+    "syrupy>=4.0.2,<6.0.0",
     "toml>=0.10.2,<1.0.0",
     "langchain[openai]>=1.0.2,<2.0.0",
     "langchain-core",
@@ -48,11 +61,11 @@ test = [
 test_integration = ["langchain-core"]
 
 lint = [
-    "ruff>=0.12.2,<0.13.0",
+    "ruff>=0.15.0,<0.16.0",
     "langchain",
 ]
 typing = [
-    "mypy>=1.18.1,<1.19.0",
+    "mypy>=1.18.1,<1.20.0",
     "types-toml>=0.10.8.20240310,<1.0.0.0",
 ]
 

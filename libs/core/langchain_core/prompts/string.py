@@ -64,9 +64,11 @@ def jinja2_formatter(template: str, /, **kwargs: Any) -> str:
         )
         raise ImportError(msg)
 
-    # Use a restricted sandbox that blocks ALL attribute/method access
-    # Only simple variable lookups like {{variable}} are allowed
-    # Attribute access like {{variable.attr}} or {{variable.method()}} is blocked
+    # Use Jinja2's SandboxedEnvironment which blocks access to dunder attributes
+    # (e.g., __class__, __globals__) to prevent sandbox escapes.
+    # Note: regular attribute access (e.g., {{obj.attr}}) and method calls are
+    # still allowed. This is a best-effort measure — do not use with untrusted
+    # templates.
     return SandboxedEnvironment().from_string(template).render(**kwargs)
 
 
@@ -258,7 +260,7 @@ def get_template_variables(template: str, template_format: str) -> list[str]:
         template: The template string.
         template_format: The template format.
 
-            Should be one of `'f-string'` or `'jinja2'`.
+            Should be one of `'f-string'`, `'mustache'` or `'jinja2'`.
 
     Returns:
         The variables from the template.
