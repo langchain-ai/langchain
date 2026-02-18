@@ -97,7 +97,7 @@ class Node(NamedTuple):
     """The unique identifier of the node."""
     name: str
     """The name of the node."""
-    data: type[BaseModel] | RunnableType | None
+    data: type[BaseModel] | RunnableType[Any, Any] | None
     """The data of the node."""
     metadata: dict[str, Any] | None
     """Optional metadata for the node. """
@@ -177,7 +177,7 @@ class MermaidDrawMethod(Enum):
 
 def node_data_str(
     id: str,
-    data: type[BaseModel] | RunnableType | None,
+    data: type[BaseModel] | RunnableType[Any, Any] | None,
 ) -> str:
     """Convert the data of a node to a string.
 
@@ -311,7 +311,7 @@ class Graph:
 
     def add_node(
         self,
-        data: type[BaseModel] | RunnableType | None,
+        data: type[BaseModel] | RunnableType[Any, Any] | None,
         id: str | None = None,
         *,
         metadata: dict[str, Any] | None = None,

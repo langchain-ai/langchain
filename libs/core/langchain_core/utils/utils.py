@@ -21,7 +21,7 @@ from langchain_core.utils.pydantic import (
 )
 
 
-def xor_args(*arg_groups: tuple[str, ...]) -> Callable:
+def xor_args(*arg_groups: tuple[str, ...]) -> Callable[..., Any]:
     """Validate specified keyword args are mutually exclusive.
 
     Args:
@@ -31,7 +31,7 @@ def xor_args(*arg_groups: tuple[str, ...]) -> Callable:
         Decorator that validates the specified keyword args are mutually exclusive.
     """
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             """Validate exactly one arg in each group is not None."""

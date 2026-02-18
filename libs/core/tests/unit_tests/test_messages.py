@@ -1,5 +1,5 @@
 import uuid
-from typing import get_args
+from typing import Any, get_args
 
 import pytest
 
@@ -460,7 +460,7 @@ def test_message_chunk_to_message() -> None:
 
 
 def test_tool_calls_merge() -> None:
-    chunks: list[dict] = [
+    chunks: list[dict[str, Any]] = [
         {"content": ""},
         {
             "content": "",
@@ -1023,7 +1023,11 @@ def test_tool_message_str() -> None:
         ),
     ],
 )
-def test_merge_content(first: list | str, others: list, expected: list | str) -> None:
+def test_merge_content(
+    first: str | list[str | dict[str, Any]],
+    others: str | list[str | dict[str, Any]],
+    expected: str | list[str | dict[str, Any]],
+) -> None:
     actual = merge_content(first, *others)
     assert actual == expected
 

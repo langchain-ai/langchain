@@ -44,7 +44,7 @@ DEFAULT_LINK_REGEX = (
 
 
 def find_all_links(
-    raw_html: str, *, pattern: str | re.Pattern | None = None
+    raw_html: str, *, pattern: str | re.Pattern[str] | None = None
 ) -> list[str]:
     """Extract all links from a raw HTML string.
 
@@ -64,7 +64,7 @@ def extract_sub_links(
     url: str,
     *,
     base_url: str | None = None,
-    pattern: str | re.Pattern | None = None,
+    pattern: str | re.Pattern[str] | None = None,
     prevent_outside: bool = True,
     exclude_prefixes: Sequence[str] = (),
     continue_on_failure: bool = False,

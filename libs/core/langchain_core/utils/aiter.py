@@ -277,7 +277,7 @@ class Tee(Generic[T]):
 atee = Tee
 
 
-class aclosing(AbstractAsyncContextManager):  # noqa: N801
+class aclosing(AbstractAsyncContextManager[Any]):  # noqa: N801
     """Async context manager to wrap an `AsyncGenerator` that has a `aclose()` method.
 
     Code like this:

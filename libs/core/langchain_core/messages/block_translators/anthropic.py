@@ -197,8 +197,9 @@ def _convert_citation_to_v1(citation: dict[str, Any]) -> types.Annotation:
 
 def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock]:
     """Convert Anthropic message content to v1 format."""
+    content: list[str | dict[str, Any]]
     if isinstance(message.content, str):
-        content: list[str | dict] = [{"type": "text", "text": message.content}]
+        content = [{"type": "text", "text": message.content}]
     else:
         content = message.content
 

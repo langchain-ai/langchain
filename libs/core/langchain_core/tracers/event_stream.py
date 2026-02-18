@@ -98,7 +98,9 @@ def _assign_name(name: str | None, serialized: dict[str, Any] | None) -> str:
 T = TypeVar("T")
 
 
-class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHandler):
+class _AstreamEventsCallbackHandler(
+    AsyncCallbackHandler, _StreamingCallbackHandler[Any]
+):
     """An implementation of an async callback handler for astream events."""
 
     def __init__(
@@ -500,7 +502,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         inputs_ = run_info.get("inputs")
 
         generations: list[list[GenerationChunk]] | list[list[ChatGenerationChunk]]
-        output: dict | BaseMessage = {}
+        output: dict[str, Any] | BaseMessage = {}
 
         if run_info["run_type"] == "chat_model":
             generations = cast("list[list[ChatGenerationChunk]]", response.generations)
@@ -815,7 +817,9 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             run_info["run_type"],
         )
 
-    def __deepcopy__(self, memo: dict) -> _AstreamEventsCallbackHandler:
+    def __deepcopy__(
+        self, memo: dict[int, Any] | None = None
+    ) -> _AstreamEventsCallbackHandler:
         """Return self."""
         return self
 

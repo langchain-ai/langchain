@@ -519,7 +519,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         self._on_retriever_end(retrieval_run)
         return retrieval_run
 
-    def __deepcopy__(self, memo: dict) -> BaseTracer:
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> BaseTracer:
         """Return self."""
         return self
 

@@ -132,7 +132,9 @@ def test_check_package_version(
     ],
 )
 def test_merge_dicts(
-    left: dict, right: dict, expected: dict | AbstractContextManager
+    left: dict[str, Any],
+    right: dict[str, Any],
+    expected: dict[str, Any] | AbstractContextManager[BaseException],
 ) -> None:
     err = expected if isinstance(expected, AbstractContextManager) else nullcontext()
 
@@ -160,7 +162,9 @@ def test_merge_dicts(
 )
 @pytest.mark.xfail(reason="Refactors to make in 0.3")
 def test_merge_dicts_0_3(
-    left: dict, right: dict, expected: dict | AbstractContextManager
+    left: dict[str, Any],
+    right: dict[str, Any],
+    expected: dict[str, Any] | AbstractContextManager[BaseException],
 ) -> None:
     err = expected if isinstance(expected, AbstractContextManager) else nullcontext()
 

@@ -27,7 +27,7 @@ def _populate_extras(
     return standard_block
 
 
-def _parse_code_json(s: str) -> dict:
+def _parse_code_json(s: str) -> dict[str, Any]:
     """Extract Python code from Groq built-in tool content.
 
     Extracts the value of the 'code' field from a string of the form:

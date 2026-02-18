@@ -18,7 +18,7 @@ from langchain_core.prompts.string import (
 class FewShotPromptWithTemplates(StringPromptTemplate):
     """Prompt template that contains few shot examples."""
 
-    examples: list[dict] | None = None
+    examples: list[dict[str, Any]] | None = None
     """Examples to format into the prompt.
 
     Either this or `example_selector` should be provided.
@@ -62,7 +62,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
 
     @model_validator(mode="before")
     @classmethod
-    def check_examples_and_selector(cls, values: dict) -> Any:
+    def check_examples_and_selector(cls, values: dict[str, Any]) -> Any:
         """Check that one and only one of examples/example_selector are provided."""
         examples = values.get("examples")
         example_selector = values.get("example_selector")
@@ -105,14 +105,14 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         extra="forbid",
     )
 
-    def _get_examples(self, **kwargs: Any) -> list[dict]:
+    def _get_examples(self, **kwargs: Any) -> list[dict[str, Any]]:
         if self.examples is not None:
             return self.examples
         if self.example_selector is not None:
             return self.example_selector.select_examples(kwargs)
         raise ValueError
 
-    async def _aget_examples(self, **kwargs: Any) -> list[dict]:
+    async def _aget_examples(self, **kwargs: Any) -> list[dict[str, Any]]:
         if self.examples is not None:
             return self.examples
         if self.example_selector is not None:

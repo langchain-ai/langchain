@@ -73,7 +73,7 @@ def _remove_enum(obj: Any) -> None:
             _remove_enum(item)
 
 
-def _schema(obj: Any) -> dict:
+def _schema(obj: Any) -> dict[str, Any]:
     """Return the schema of the object."""
     # Remap to old style schema
     if isclass(obj):
@@ -99,7 +99,7 @@ def _schema(obj: Any) -> dict:
     raise TypeError(msg)
 
 
-def _remove_additionalproperties(schema: dict) -> dict[str, Any]:
+def _remove_additionalproperties(schema: dict[str, Any]) -> dict[str, Any]:
     """Remove `"additionalProperties": True` from dicts in the schema.
 
     Pydantic 2.11 and later versions include `"additionalProperties": True` when

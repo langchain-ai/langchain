@@ -507,7 +507,7 @@ def get_buffer_string(
     return message_separator.join(string_messages)
 
 
-def _message_from_dict(message: dict) -> BaseMessage:
+def _message_from_dict(message: dict[str, Any]) -> BaseMessage:
     type_ = message["type"]
     if type_ == "human":
         return HumanMessage(**message["data"])
@@ -539,7 +539,7 @@ def _message_from_dict(message: dict) -> BaseMessage:
     raise ValueError(msg)
 
 
-def messages_from_dict(messages: Sequence[dict]) -> list[BaseMessage]:
+def messages_from_dict(messages: Sequence[dict[str, Any]]) -> list[BaseMessage]:
     """Convert a sequence of messages from dicts to `Message` objects.
 
     Args:
@@ -1085,7 +1085,7 @@ def trim_messages(
     max_tokens: int,
     token_counter: Callable[[list[BaseMessage]], int]
     | Callable[[BaseMessage], int]
-    | BaseLanguageModel
+    | BaseLanguageModel[Any]
     | Literal["approximate"],
     strategy: Literal["first", "last"] = "last",
     allow_partial: bool = False,
@@ -1437,10 +1437,11 @@ def trim_messages(
         )
         raise ValueError(msg)
 
+    text_splitter_fn: Callable[[str], list[str]]
     if _HAS_LANGCHAIN_TEXT_SPLITTERS and isinstance(text_splitter, TextSplitter):
         text_splitter_fn = text_splitter.split_text
     elif text_splitter:
-        text_splitter_fn = cast("Callable", text_splitter)
+        text_splitter_fn = cast("Callable[[str], list[str]]", text_splitter)
     else:
         text_splitter_fn = _default_text_splitter
 
@@ -1481,7 +1482,7 @@ def convert_to_openai_messages(
     text_format: Literal["string", "block"] = "string",
     include_id: bool = False,
     pass_through_unknown_blocks: bool = True,
-) -> dict: ...
+) -> dict[str, Any]: ...
 
 
 @overload
@@ -1491,7 +1492,7 @@ def convert_to_openai_messages(
     text_format: Literal["string", "block"] = "string",
     include_id: bool = False,
     pass_through_unknown_blocks: bool = True,
-) -> list[dict]: ...
+) -> list[dict[str, Any]]: ...
 
 
 def convert_to_openai_messages(
@@ -1500,7 +1501,7 @@ def convert_to_openai_messages(
     text_format: Literal["string", "block"] = "string",
     include_id: bool = False,
     pass_through_unknown_blocks: bool = True,
-) -> dict | list[dict]:
+) -> dict[str, Any] | list[dict[str, Any]]:
     """Convert LangChain messages into OpenAI message dicts.
 
     Args:
@@ -1589,7 +1590,7 @@ def convert_to_openai_messages(
         err = f"Unrecognized {text_format=}, expected one of 'string' or 'block'."
         raise ValueError(err)
 
-    oai_messages: list[dict] = []
+    oai_messages: list[dict[str, Any]] = []
 
     if is_single := isinstance(messages, (BaseMessage, dict, str)):
         messages = [messages]
@@ -1597,9 +1598,9 @@ def convert_to_openai_messages(
     messages = convert_to_messages(messages)
 
     for i, message in enumerate(messages):
-        oai_msg: dict = {"role": _get_message_openai_role(message)}
-        tool_messages: list = []
-        content: str | list[dict]
+        oai_msg: dict[str, Any] = {"role": _get_message_openai_role(message)}
+        tool_messages: list[dict[str, Any]] = []
+        content: str | list[dict[str, Any]]
 
         if message.name:
             oai_msg["name"] = message.name
@@ -2169,7 +2170,7 @@ def _get_message_openai_role(message: BaseMessage) -> str:
     raise ValueError(msg)
 
 
-def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:
+def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict[str, Any]]:
     return [
         {
             "type": "function",
