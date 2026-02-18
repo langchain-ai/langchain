@@ -18,12 +18,14 @@ from uuid import UUID, uuid4
 
 from langchain_core.load.serializable import to_json_not_implemented
 from langchain_core.runnables.base import Runnable, RunnableSerializable
-from langchain_core.utils.pydantic import _IgnoreUnserializable, is_basemodel_subclass
+from langchain_core.utils.pydantic import (
+    TypeBaseModel,
+    _IgnoreUnserializable,
+    is_basemodel_subclass,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
-
-    from pydantic import BaseModel
 
     from langchain_core.runnables.base import Runnable as RunnableType
 
@@ -97,7 +99,7 @@ class Node(NamedTuple):
     """The unique identifier of the node."""
     name: str
     """The name of the node."""
-    data: type[BaseModel] | RunnableType | None
+    data: TypeBaseModel | RunnableType | None
     """The data of the node."""
     metadata: dict[str, Any] | None
     """Optional metadata for the node. """
@@ -177,7 +179,7 @@ class MermaidDrawMethod(Enum):
 
 def node_data_str(
     id: str,
-    data: type[BaseModel] | RunnableType | None,
+    data: TypeBaseModel | RunnableType | None,
 ) -> str:
     """Convert the data of a node to a string.
 
@@ -311,7 +313,7 @@ class Graph:
 
     def add_node(
         self,
-        data: type[BaseModel] | RunnableType | None,
+        data: TypeBaseModel | RunnableType | None,
         id: str | None = None,
         *,
         metadata: dict[str, Any] | None = None,

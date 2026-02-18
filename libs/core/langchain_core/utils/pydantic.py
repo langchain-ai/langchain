@@ -69,8 +69,8 @@ PYDANTIC_MINOR_VERSION = PYDANTIC_VERSION.minor
 IS_PYDANTIC_V1 = False
 IS_PYDANTIC_V2 = True
 
-PydanticBaseModel = BaseModel
-TypeBaseModel = type[BaseModel]
+PydanticBaseModel = BaseModel | BaseModelV1
+TypeBaseModel = type[BaseModel] | type[BaseModelV1]
 
 TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
@@ -280,7 +280,7 @@ def _create_subset_model(
     *,
     descriptions: dict | None = None,
     fn_description: str | None = None,
-) -> type[BaseModel]:
+) -> TypeBaseModel:
     """Create subset model using the same pydantic version as the input model.
 
     Returns:
