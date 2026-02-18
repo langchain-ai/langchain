@@ -70,6 +70,9 @@ class LangSmithParams(TypedDict, total=False):
     ls_stop: list[str] | None
     """Stop words for generation."""
 
+    versions: dict[str, str]
+    """Package versions for tracing (e.g., `{"langchain-anthropic": "1.3.3"}`)."""
+
 
 @cache  # Cache the tokenizer
 def get_tokenizer() -> Any:

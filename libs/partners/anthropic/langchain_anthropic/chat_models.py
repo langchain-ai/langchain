@@ -998,6 +998,7 @@ class ChatAnthropic(BaseChatModel):
             ls_params["ls_max_tokens"] = ls_max_tokens
         if ls_stop := stop or params.get("stop", None):
             ls_params["ls_stop"] = ls_stop
+        ls_params["versions"] = {"langchain-anthropic": __version__}
         return ls_params
 
     @model_validator(mode="before")

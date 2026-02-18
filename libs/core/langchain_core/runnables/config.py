@@ -7,7 +7,15 @@ import asyncio
 # Cannot move uuid to TYPE_CHECKING as RunnableConfig is used in Pydantic models
 import uuid  # noqa: TC003
 import warnings
-from collections.abc import Awaitable, Callable, Generator, Iterable, Iterator, Sequence
+from collections.abc import (
+    Awaitable,
+    Callable,
+    Generator,
+    Iterable,
+    Iterator,
+    Mapping,
+    Sequence,
+)
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import Context, ContextVar, Token, copy_context
@@ -354,6 +362,31 @@ def patch_config(
     return config
 
 
+def _merge_metadata_dicts(
+    base: Mapping[str, Any], incoming: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Merge two metadata dicts with one extra level of depth.
+
+    If both sides have a dict value for the same key, the inner dicts are merged
+    (last-writer-wins within). Non-dict values use last-writer-wins at the
+    top level.
+
+    Args:
+        base: The base metadata dict.
+        incoming: The incoming metadata dict to merge on top.
+
+    Returns:
+        A new merged dict. Does not mutate inputs.
+    """
+    merged = {**base}
+    for key, value in incoming.items():
+        if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
+            merged[key] = {**merged[key], **value}
+        else:
+            merged[key] = value
+    return merged
+
+
 def merge_configs(*configs: RunnableConfig | None) -> RunnableConfig:
     """Merge multiple configs into one.
 
@@ -369,10 +402,10 @@ def merge_configs(*configs: RunnableConfig | None) -> RunnableConfig:
     for config in (ensure_config(c) for c in configs if c is not None):
         for key in config:
             if key == "metadata":
-                base["metadata"] = {
-                    **base.get("metadata", {}),
-                    **(config.get("metadata") or {}),
-                }
+                base["metadata"] = _merge_metadata_dicts(
+                    base.get("metadata", {}),
+                    config.get("metadata") or {},
+                )
             elif key == "tags":
                 base["tags"] = sorted(
                     set(base.get("tags", []) + (config.get("tags") or [])),
