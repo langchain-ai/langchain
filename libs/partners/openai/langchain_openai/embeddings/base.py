@@ -295,6 +295,14 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Whether to check the token length of inputs and automatically split inputs
         longer than embedding_ctx_length."""
 
+    rate_limiter: Any | None = Field(default=None, exclude=True)
+    """Optional rate limiter to throttle embedding API requests.
+
+    Accepts a `BaseRateLimiter` instance (e.g., `InMemoryRateLimiter`).
+    When set, each embedding call acquires a token from the rate limiter
+    before making the API request, consistent with chat model rate limiting.
+    """
+
     model_config = ConfigDict(
         extra="forbid", populate_by_name=True, protected_namespaces=()
     )
@@ -690,6 +698,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         self._ensure_sync_client_available()
+        if self.rate_limiter:
+            self.rate_limiter.acquire(blocking=True)
         chunk_size_ = chunk_size or self.chunk_size
         client_kwargs = {**self._invocation_params, **kwargs}
         if not self.check_embedding_ctx_length:
@@ -725,6 +735,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+        if self.rate_limiter:
+            await self.rate_limiter.aacquire(blocking=True)
         chunk_size_ = chunk_size or self.chunk_size
         client_kwargs = {**self._invocation_params, **kwargs}
         if not self.check_embedding_ctx_length:

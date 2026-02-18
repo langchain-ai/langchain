@@ -1,10 +1,13 @@
 """Module contains a few fake embedding models for testing purposes."""
 
 # Please do not add additional fake embedding model implementations here.
+from __future__ import annotations
+
 import contextlib
 import hashlib
+from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing_extensions import override
 
 from langchain_core.embeddings import Embeddings
@@ -55,15 +58,34 @@ class FakeEmbeddings(Embeddings, BaseModel):
     size: int
     """The size of the embedding vector."""
 
+    rate_limiter: Any | None = Field(default=None, exclude=True)
+    """Optional rate limiter for testing rate-limited embedding scenarios."""
+
     def _get_embedding(self) -> list[float]:
         return list(np.random.default_rng().normal(size=self.size))
 
     @override
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        if self.rate_limiter:
+            self.rate_limiter.acquire(blocking=True)
         return [self._get_embedding() for _ in texts]
 
     @override
     def embed_query(self, text: str) -> list[float]:
+        if self.rate_limiter:
+            self.rate_limiter.acquire(blocking=True)
+        return self._get_embedding()
+
+    @override
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
+        if self.rate_limiter:
+            await self.rate_limiter.aacquire(blocking=True)
+        return [self._get_embedding() for _ in texts]
+
+    @override
+    async def aembed_query(self, text: str) -> list[float]:
+        if self.rate_limiter:
+            await self.rate_limiter.aacquire(blocking=True)
         return self._get_embedding()
 
 
@@ -110,6 +132,9 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
     size: int
     """The size of the embedding vector."""
 
+    rate_limiter: Any | None = Field(default=None, exclude=True)
+    """Optional rate limiter for testing rate-limited embedding scenarios."""
+
     def _get_embedding(self, seed: int) -> list[float]:
         # set the seed for the random generator
         rng = np.random.default_rng(seed)
@@ -122,8 +147,24 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
 
     @override
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        if self.rate_limiter:
+            self.rate_limiter.acquire(blocking=True)
         return [self._get_embedding(seed=self._get_seed(_)) for _ in texts]
 
     @override
     def embed_query(self, text: str) -> list[float]:
+        if self.rate_limiter:
+            self.rate_limiter.acquire(blocking=True)
+        return self._get_embedding(seed=self._get_seed(text))
+
+    @override
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
+        if self.rate_limiter:
+            await self.rate_limiter.aacquire(blocking=True)
+        return [self._get_embedding(seed=self._get_seed(_)) for _ in texts]
+
+    @override
+    async def aembed_query(self, text: str) -> list[float]:
+        if self.rate_limiter:
+            await self.rate_limiter.aacquire(blocking=True)
         return self._get_embedding(seed=self._get_seed(text))
