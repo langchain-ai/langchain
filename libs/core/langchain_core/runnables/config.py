@@ -158,6 +158,7 @@ def _set_config_context(
     Returns:
         The token to reset the config and the previous tracing context.
     """
+    # Deferred to avoid importing langsmith at module level (~132ms).
     from langsmith.run_helpers import (  # noqa: PLC0415
         _set_tracing_context,
         get_tracing_context,
@@ -199,6 +200,7 @@ def set_config_context(config: RunnableConfig) -> Generator[Context, None, None]
     Yields:
         The config context.
     """
+    # Deferred to avoid importing langsmith at module level (~132ms).
     from langsmith.run_helpers import _set_tracing_context  # noqa: PLC0415
 
     ctx = copy_context()

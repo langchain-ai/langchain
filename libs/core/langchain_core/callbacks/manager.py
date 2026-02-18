@@ -94,7 +94,9 @@ def trace_as_chain_group(
             manager.on_chain_end({"output": res})
         ```
     """
-    from langchain_core.tracers.context import _get_trace_callbacks  # noqa: PLC0415
+    from langchain_core.tracers.context import (  # noqa: PLC0415 -- deferred to avoid importing langsmith at module level
+        _get_trace_callbacks,
+    )
 
     cb = _get_trace_callbacks(
         project_name, example_id, callback_manager=callback_manager
@@ -175,7 +177,9 @@ async def atrace_as_chain_group(
             await manager.on_chain_end({"output": res})
         ```
     """
-    from langchain_core.tracers.context import _get_trace_callbacks  # noqa: PLC0415
+    from langchain_core.tracers.context import (  # noqa: PLC0415 -- deferred to avoid importing langsmith at module level
+        _get_trace_callbacks,
+    )
 
     cb = _get_trace_callbacks(
         project_name, example_id, callback_manager=callback_manager
@@ -2319,6 +2323,7 @@ def _configure(
     Returns:
         The configured callback manager.
     """
+    # Deferred to avoid importing langsmith at module level (~132ms).
     from langsmith.run_helpers import get_tracing_context  # noqa: PLC0415
 
     from langchain_core.tracers.context import (  # noqa: PLC0415
