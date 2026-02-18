@@ -404,7 +404,6 @@ def get_lambda_source(func: Callable) -> str | None:
     return visitor.source if visitor.count == 1 else name
 
 
-@lru_cache(maxsize=256)
 def get_function_nonlocals(func: Callable) -> list[Any]:
     """Get the nonlocal variables accessed by a function.
 
@@ -414,6 +413,21 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
     Returns:
         The nonlocal variables accessed by the function.
     """
+    # Bound methods hold a strong reference to their object via __self__.
+    # Caching them in @lru_cache prevents the object from being garbage
+    # collected, causing memory leaks. Skip the cache for bound methods.
+    # See https://github.com/langchain-ai/langchain/issues/30667
+    if inspect.ismethod(func):
+        return _get_function_nonlocals_impl(func)
+    return _get_function_nonlocals_cached(func)
+
+
+@lru_cache(maxsize=256)
+def _get_function_nonlocals_cached(func: Callable) -> list[Any]:
+    return _get_function_nonlocals_impl(func)
+
+
+def _get_function_nonlocals_impl(func: Callable) -> list[Any]:
     try:
         code = inspect.getsource(func)
         tree = ast.parse(textwrap.dedent(code))
