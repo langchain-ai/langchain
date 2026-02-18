@@ -16,6 +16,21 @@ https://docs.langchain.com/oss/python/langchain/models#updating-or-overwriting-p
 from typing import Any
 
 _PROFILES: dict[str, dict[str, Any]] = {
+    "prime-intellect/intellect-3": {
+        "max_input_tokens": 131072,
+        "max_output_tokens": 8192,
+        "text_inputs": True,
+        "image_inputs": False,
+        "audio_inputs": False,
+        "video_inputs": False,
+        "text_outputs": True,
+        "image_outputs": False,
+        "audio_outputs": False,
+        "video_outputs": False,
+        "reasoning_output": True,
+        "tool_calling": True,
+        "structured_output": True,
+    },
     "featherless/qwerky-72b": {
         "max_input_tokens": 32768,
         "max_output_tokens": 8192,
@@ -57,6 +72,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "nvidia/nemotron-nano-12b-v2-vl:free": {
         "max_input_tokens": 128000,
@@ -85,6 +101,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "nvidia/nemotron-nano-9b-v2": {
         "max_input_tokens": 131072,
@@ -113,6 +130,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "arcee-ai/trinity-mini:free": {
         "max_input_tokens": 131072,
@@ -127,6 +145,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "xiaomi/mimo-v2-flash": {
         "max_input_tokens": 262144,
@@ -141,6 +160,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "microsoft/mai-ds-r1:free": {
         "max_input_tokens": 163840,
@@ -337,6 +357,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": False,
+        "structured_output": True,
     },
     "kwaipilot/kat-coder-pro:free": {
         "max_input_tokens": 256000,
@@ -351,6 +372,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "deepseek/deepseek-v3.1-terminus:exacto": {
         "max_input_tokens": 131072,
@@ -365,6 +387,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "deepseek/deepseek-r1-0528:free": {
         "max_input_tokens": 163840,
@@ -379,6 +402,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": False,
+        "structured_output": True,
     },
     "deepseek/deepseek-r1-distill-qwen-14b": {
         "max_input_tokens": 64000,
@@ -435,6 +459,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "deepseek/deepseek-chat-v3.1": {
         "max_input_tokens": 163840,
@@ -449,6 +474,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "deepseek/deepseek-chat-v3-0324": {
         "max_input_tokens": 16384,
@@ -463,6 +489,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": False,
+        "structured_output": True,
     },
     "deepseek/deepseek-r1-distill-llama-70b": {
         "max_input_tokens": 8192,
@@ -477,6 +504,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": False,
+        "structured_output": True,
     },
     "deepseek/deepseek-v3.1-terminus": {
         "max_input_tokens": 131072,
@@ -491,6 +519,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "deepseek/deepseek-v3.2": {
         "max_input_tokens": 163840,
@@ -505,6 +534,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "deepseek/deepseek-v3-base:free": {
         "max_input_tokens": 163840,
@@ -548,6 +578,21 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "reasoning_output": False,
         "tool_calling": True,
     },
+    "openrouter/aurora-alpha": {
+        "max_input_tokens": 128000,
+        "max_output_tokens": 50000,
+        "text_inputs": True,
+        "image_inputs": False,
+        "audio_inputs": False,
+        "video_inputs": False,
+        "text_outputs": True,
+        "image_outputs": False,
+        "audio_outputs": False,
+        "video_outputs": False,
+        "reasoning_output": True,
+        "tool_calling": True,
+        "structured_output": True,
+    },
     "moonshotai/kimi-dev-72b:free": {
         "max_input_tokens": 131072,
         "max_output_tokens": 131072,
@@ -589,6 +634,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "moonshotai/kimi-k2-0905:exacto": {
         "max_input_tokens": 262144,
@@ -603,6 +649,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "moonshotai/kimi-k2.5": {
         "max_input_tokens": 262144,
@@ -617,6 +664,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "moonshotai/kimi-k2-thinking": {
         "max_input_tokens": 262144,
@@ -631,6 +679,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "moonshotai/kimi-k2:free": {
         "max_input_tokens": 32800,
@@ -660,6 +709,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "google/gemini-2.5-pro-preview-06-05": {
         "max_input_tokens": 1048576,
@@ -675,6 +725,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "google/gemma-3n-e4b-it:free": {
         "max_input_tokens": 8192,
@@ -704,6 +755,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "google/gemini-2.5-pro-preview-05-06": {
         "max_input_tokens": 1048576,
@@ -719,6 +771,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "google/gemma-3n-e2b-it:free": {
         "max_input_tokens": 8192,
@@ -748,6 +801,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "google/gemini-2.0-flash-001": {
         "max_input_tokens": 1048576,
@@ -763,6 +817,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "google/gemini-3-flash-preview": {
         "max_input_tokens": 1048576,
@@ -778,6 +833,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "google/gemma-3-12b-it:free": {
         "max_input_tokens": 32768,
@@ -807,6 +863,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "google/gemini-2.0-flash-exp:free": {
         "max_input_tokens": 1048576,
@@ -878,6 +935,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "google/gemma-3-12b-it": {
         "max_input_tokens": 131072,
@@ -892,6 +950,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": False,
+        "structured_output": True,
     },
     "google/gemma-3-4b-it": {
         "max_input_tokens": 96000,
@@ -920,6 +979,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "google/gemini-2.5-pro": {
         "max_input_tokens": 1048576,
@@ -935,6 +995,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "google/gemma-3-27b-it:free": {
         "max_input_tokens": 131072,
@@ -978,6 +1039,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "z-ai/glm-4.5": {
         "max_input_tokens": 128000,
@@ -992,6 +1054,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "z-ai/glm-4.6:exacto": {
         "max_input_tokens": 200000,
@@ -1006,6 +1069,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "z-ai/glm-4.7-flash": {
         "max_input_tokens": 200000,
@@ -1049,6 +1113,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "z-ai/glm-4.7": {
         "max_input_tokens": 204800,
@@ -1063,6 +1128,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "z-ai/glm-4.5v": {
         "max_input_tokens": 64000,
@@ -1077,6 +1143,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwen3-next-80b-a3b-thinking": {
         "max_input_tokens": 262144,
@@ -1091,6 +1158,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwen-2.5-vl-7b-instruct:free": {
         "max_input_tokens": 32768,
@@ -1119,6 +1187,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwen3-coder:free": {
         "max_input_tokens": 262144,
@@ -1162,6 +1231,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwen3-235b-a22b-07-25:free": {
         "max_input_tokens": 262144,
@@ -1190,6 +1260,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwen3-coder": {
         "max_input_tokens": 262144,
@@ -1204,6 +1275,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwq-32b:free": {
         "max_input_tokens": 32768,
@@ -1218,6 +1290,22 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
+    },
+    "qwen/qwen3.5-397b-a17b": {
+        "max_input_tokens": 262144,
+        "max_output_tokens": 65536,
+        "text_inputs": True,
+        "image_inputs": True,
+        "audio_inputs": False,
+        "video_inputs": True,
+        "text_outputs": True,
+        "image_outputs": False,
+        "audio_outputs": False,
+        "video_outputs": False,
+        "reasoning_output": True,
+        "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwen3-coder:exacto": {
         "max_input_tokens": 131072,
@@ -1232,6 +1320,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwen-2.5-coder-32b-instruct": {
         "max_input_tokens": 32768,
@@ -1246,6 +1335,22 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": False,
+        "structured_output": True,
+    },
+    "qwen/qwen3.5-plus-02-15": {
+        "max_input_tokens": 1000000,
+        "max_output_tokens": 65536,
+        "text_inputs": True,
+        "image_inputs": True,
+        "audio_inputs": False,
+        "video_inputs": True,
+        "text_outputs": True,
+        "image_outputs": False,
+        "audio_outputs": False,
+        "video_outputs": False,
+        "reasoning_output": True,
+        "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwen3-30b-a3b-instruct-2507": {
         "max_input_tokens": 262000,
@@ -1260,6 +1365,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwen2.5-vl-72b-instruct": {
         "max_input_tokens": 32768,
@@ -1274,6 +1380,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": False,
+        "structured_output": True,
     },
     "qwen/qwen3-coder-30b-a3b-instruct": {
         "max_input_tokens": 160000,
@@ -1288,6 +1395,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwen3-235b-a22b-07-25": {
         "max_input_tokens": 262144,
@@ -1302,6 +1410,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwen3-235b-a22b:free": {
         "max_input_tokens": 131072,
@@ -1316,6 +1425,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwen3-next-80b-a3b-instruct:free": {
         "max_input_tokens": 262144,
@@ -1330,6 +1440,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwen3-4b:free": {
         "max_input_tokens": 40960,
@@ -1344,6 +1455,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwen3-8b:free": {
         "max_input_tokens": 40960,
@@ -1358,6 +1470,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwen3-30b-a3b-thinking-2507": {
         "max_input_tokens": 262000,
@@ -1372,6 +1485,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwen2.5-vl-32b-instruct:free": {
         "max_input_tokens": 8192,
@@ -1386,6 +1500,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwen3-235b-a22b-thinking-2507": {
         "max_input_tokens": 262144,
@@ -1400,6 +1515,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwen3-next-80b-a3b-instruct": {
         "max_input_tokens": 262144,
@@ -1414,6 +1530,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "qwen/qwen2.5-vl-72b-instruct:free": {
         "max_input_tokens": 32768,
@@ -1456,6 +1573,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "x-ai/grok-code-fast-1": {
         "max_input_tokens": 256000,
@@ -1470,6 +1588,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "x-ai/grok-4-fast": {
         "max_input_tokens": 2000000,
@@ -1484,6 +1603,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "x-ai/grok-4": {
         "max_input_tokens": 256000,
@@ -1498,6 +1618,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "x-ai/grok-4.1-fast": {
         "max_input_tokens": 2000000,
@@ -1512,6 +1633,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "x-ai/grok-3-mini-beta": {
         "max_input_tokens": 131072,
@@ -1540,6 +1662,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "x-ai/grok-3-beta": {
         "max_input_tokens": 131072,
@@ -1568,6 +1691,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "meta-llama/llama-4-scout:free": {
         "max_input_tokens": 64000,
@@ -1582,6 +1706,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "meta-llama/llama-3.2-11b-vision-instruct": {
         "max_input_tokens": 131072,
@@ -1624,6 +1749,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": False,
+        "structured_output": True,
     },
     "tngtech/tng-r1t-chimera:free": {
         "max_input_tokens": 163840,
@@ -1638,6 +1764,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "tngtech/deepseek-r1t2-chimera:free": {
         "max_input_tokens": 163840,
@@ -1652,6 +1779,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": False,
+        "structured_output": True,
     },
     "mistralai/devstral-medium-2507": {
         "max_input_tokens": 131072,
@@ -1666,6 +1794,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "mistralai/devstral-small-2505:free": {
         "max_input_tokens": 32768,
@@ -1694,6 +1823,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "mistralai/codestral-2508": {
         "max_input_tokens": 256000,
@@ -1708,6 +1838,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "mistralai/devstral-2512:free": {
         "max_input_tokens": 262144,
@@ -1736,6 +1867,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "mistralai/devstral-small-2505": {
         "max_input_tokens": 128000,
@@ -1778,6 +1910,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "mistralai/mistral-small-3.2-24b-instruct": {
         "max_input_tokens": 96000,
@@ -1792,6 +1925,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "mistralai/mistral-small-3.2-24b-instruct:free": {
         "max_input_tokens": 96000,
@@ -1806,6 +1940,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "mistralai/devstral-small-2507": {
         "max_input_tokens": 131072,
@@ -1820,6 +1955,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "mistralai/mistral-nemo:free": {
         "max_input_tokens": 131072,
@@ -1834,6 +1970,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "mistralai/mistral-medium-3.1": {
         "max_input_tokens": 262144,
@@ -1848,6 +1985,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "openai/gpt-5-codex": {
         "max_input_tokens": 400000,
@@ -1862,6 +2000,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "openai/gpt-5-pro": {
         "max_input_tokens": 400000,
@@ -1876,6 +2015,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "openai/gpt-4o-mini": {
         "max_input_tokens": 128000,
@@ -1890,6 +2030,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "openai/gpt-5.1-codex-max": {
         "max_input_tokens": 400000,
@@ -1934,6 +2075,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "openai/gpt-5.1": {
         "max_input_tokens": 400000,
@@ -1978,6 +2120,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": False,
+        "structured_output": True,
     },
     "openai/gpt-5.1-chat": {
         "max_input_tokens": 128000,
@@ -2008,6 +2151,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "openai/gpt-oss-120b": {
         "max_input_tokens": 131072,
@@ -2022,6 +2166,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "openai/gpt-5.1-codex-mini": {
         "max_input_tokens": 400000,
@@ -2051,6 +2196,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "openai/gpt-oss-20b:free": {
         "max_input_tokens": 131072,
@@ -2079,6 +2225,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "openai/gpt-5": {
         "max_input_tokens": 400000,
@@ -2093,6 +2240,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "openai/o4-mini": {
         "max_input_tokens": 200000,
@@ -2107,6 +2255,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "openai/gpt-4.1-mini": {
         "max_input_tokens": 1047576,
@@ -2121,6 +2270,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "structured_output": True,
     },
     "openai/gpt-oss-safeguard-20b": {
         "max_input_tokens": 131072,
@@ -2179,6 +2329,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "openai/gpt-oss-20b": {
         "max_input_tokens": 131072,
@@ -2193,6 +2344,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "openai/gpt-oss-120b:free": {
         "max_input_tokens": 131072,
@@ -2221,6 +2373,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "minimax/minimax-m1": {
         "max_input_tokens": 1000000,
@@ -2263,6 +2416,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "minimax/minimax-m2": {
         "max_input_tokens": 196600,
@@ -2277,6 +2431,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "minimax/minimax-m2.5": {
         "max_input_tokens": 204800,
@@ -2291,6 +2446,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "bytedance-seed/seedream-4.5": {
         "max_input_tokens": 4096,
@@ -2335,6 +2491,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "anthropic/claude-haiku-4.5": {
         "max_input_tokens": 200000,
@@ -2350,6 +2507,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "anthropic/claude-3.5-haiku": {
         "max_input_tokens": 200000,
@@ -2380,6 +2538,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "anthropic/claude-opus-4": {
         "max_input_tokens": 200000,
@@ -2425,6 +2584,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "anthropic/claude-opus-4.6": {
         "max_input_tokens": 1000000,
@@ -2440,6 +2600,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "black-forest-labs/flux.2-pro": {
         "max_input_tokens": 46864,
@@ -2524,6 +2685,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "structured_output": True,
     },
     "nousresearch/deephermes-3-llama-3-8b-preview": {
         "max_input_tokens": 131072,
@@ -2552,5 +2714,5 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": False,
-    },
+    }
 }
