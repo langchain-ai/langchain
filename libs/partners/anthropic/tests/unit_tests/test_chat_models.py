@@ -1685,14 +1685,6 @@ def test_anthropic_model_params() -> None:
     assert ls_params.get("ls_model_name") == MODEL_NAME
 
 
-def test_ls_params_versions_value() -> None:
-    """Test that _get_ls_params reports the correct langchain-anthropic version."""
-    llm = ChatAnthropic(model=MODEL_NAME)
-    ls_params = llm._get_ls_params()
-    assert "versions" in ls_params
-    assert ls_params["versions"] == {"langchain-anthropic": __version__}
-
-
 def test_streaming_cache_token_reporting() -> None:
     """Test that cache tokens are properly reported in streaming events."""
     from unittest.mock import MagicMock

@@ -203,9 +203,38 @@ class TestMergeMetadataDicts:
         incoming = {"versions": {"b": "2"}}
         base_copy = {"versions": {"a": "1"}}
         incoming_copy = {"versions": {"b": "2"}}
-        _merge_metadata_dicts(base, incoming)
+        result = _merge_metadata_dicts(base, incoming)
         assert base == base_copy
         assert incoming == incoming_copy
+        # Returned nested dicts should not share identity with originals.
+        assert result["versions"] is not base["versions"]
+        assert result["versions"] is not incoming["versions"]
+
+    def test_non_overlapping_nested_dict_is_copied(self) -> None:
+        base = {"versions": {"a": "1"}, "extras": {"x": "y"}}
+        incoming = {"versions": {"b": "2"}}
+        result = _merge_metadata_dicts(base, incoming)
+        # "extras" was not in incoming — result should still be a copy.
+        assert result["extras"] is not base["extras"]
+        assert result["extras"] == {"x": "y"}
+
+    def test_both_empty(self) -> None:
+        assert _merge_metadata_dicts({}, {}) == {}
+
+    def test_empty_base(self) -> None:
+        result = _merge_metadata_dicts({}, {"versions": {"pkg": "1.0"}})
+        assert result == {"versions": {"pkg": "1.0"}}
+
+    def test_empty_incoming(self) -> None:
+        result = _merge_metadata_dicts({"versions": {"pkg": "1.0"}}, {})
+        assert result == {"versions": {"pkg": "1.0"}}
+
+    def test_merge_configs_with_none_metadata(self) -> None:
+        merged = merge_configs(
+            cast("RunnableConfig", {"metadata": None}),
+            {"metadata": {"versions": {"a": "1"}}},
+        )
+        assert merged["metadata"] == {"versions": {"a": "1"}}
 
     def test_three_config_merge_accumulates(self) -> None:
         c1: RunnableConfig = {"metadata": {"versions": {"a": "1"}}}

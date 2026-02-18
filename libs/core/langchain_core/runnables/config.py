@@ -367,23 +367,40 @@ def _merge_metadata_dicts(
 ) -> dict[str, Any]:
     """Merge two metadata dicts with one extra level of depth.
 
-    If both sides have a dict value for the same key, the inner dicts are merged
-    (last-writer-wins within). Non-dict values use last-writer-wins at the
-    top level.
+    If both sides have a `Mapping` value for the same key, the inner mappings
+    are merged (last-writer-wins within). Non-mapping values use
+    last-writer-wins at the top level. Only one level of depth is merged; values
+    nested more deeply are not recursively merged.
 
     Args:
         base: The base metadata dict.
-        incoming: The incoming metadata dict to merge on top.
+
+            Values here are kept unless overridden by `incoming`.
+        incoming: The metadata dict to merge on top.
+
+            Its values take precedence on conflict.
 
     Returns:
-        A new merged dict. Does not mutate inputs.
+        A new merged dict.
+
+            Inputs are not mutated. The returned dict performs shallow copies at
+            the top level and one level deep; mutable values nested beyond that
+            depth are shared references with the originals.
     """
     merged = {**base}
     for key, value in incoming.items():
-        if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
+        if (
+            key in merged
+            and isinstance(merged[key], Mapping)
+            and isinstance(value, Mapping)
+        ):
             merged[key] = {**merged[key], **value}
         else:
             merged[key] = value
+    # Ensure non-overlapping nested mappings are also copies, not shared refs.
+    for key in base:
+        if key not in incoming and isinstance(merged[key], Mapping):
+            merged[key] = {**merged[key]}
     return merged
 
 

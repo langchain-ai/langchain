@@ -71,7 +71,12 @@ class LangSmithParams(TypedDict, total=False):
     """Stop words for generation."""
 
     versions: dict[str, str]
-    """Package versions for tracing (e.g., `{"langchain-anthropic": "1.3.3"}`)."""
+    """Package versions for tracing (e.g., `{"langchain-anthropic": "1.3.3"}`).
+
+    Maps partner package names to their installed versions. Deep-merged with
+    existing metadata so that versions from multiple integration layers are
+    preserved rather than overwritten.
+    """
 
 
 @cache  # Cache the tokenizer
