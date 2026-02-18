@@ -28,7 +28,6 @@ from langchain_core.callbacks.base import (
 )
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.globals import get_debug
-
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.tracers.context import (
     _configure_hooks,
