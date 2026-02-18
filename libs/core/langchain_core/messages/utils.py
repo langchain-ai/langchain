@@ -402,7 +402,7 @@ def get_buffer_string(
         # -> '</message>'
         ```
     """
-    if format not in ("prefix", "xml"):
+    if format not in {"prefix", "xml"}:
         msg = (
             f"Unrecognized format={format!r}. Supported formats are 'prefix' and 'xml'."
         )
@@ -2270,7 +2270,7 @@ def count_tokens_approximately(
                     block_type = block.get("type", "")
 
                     # Apply fixed penalty for image blocks
-                    if block_type in ("image", "image_url"):
+                    if block_type in {"image", "image_url"}:
                         token_count += tokens_per_image
                     # Count text blocks normally
                     elif block_type == "text":

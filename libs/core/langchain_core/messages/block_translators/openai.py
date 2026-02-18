@@ -368,9 +368,9 @@ def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
             "call_id": tool_call_chunk.get("id"),
         }
         if function_call_ids is not None and (
-            _id := function_call_ids.get(tool_call_chunk.get("id"))
+            id_ := function_call_ids.get(tool_call_chunk.get("id"))
         ):
-            function_call["id"] = _id
+            function_call["id"] = id_
         buckets["function_call"].append(function_call)
     else:
         for tool_call in message.tool_calls:
@@ -381,9 +381,9 @@ def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
                 "call_id": tool_call["id"],
             }
             if function_call_ids is not None and (
-                _id := function_call_ids.get(tool_call["id"])
+                id_ := function_call_ids.get(tool_call["id"])
             ):
-                function_call["id"] = _id
+                function_call["id"] = id_
             buckets["function_call"].append(function_call)
 
     # Tool outputs
