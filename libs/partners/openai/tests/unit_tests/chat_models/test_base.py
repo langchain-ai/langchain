@@ -86,8 +86,10 @@ from langchain_openai.chat_models.base import (
 def test_openai_model_param() -> None:
     llm = ChatOpenAI(model="foo")
     assert llm.model_name == "foo"
+    assert llm.model == "foo"
     llm = ChatOpenAI(model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
+    assert llm.model == "foo"
 
     llm = ChatOpenAI(max_tokens=10)  # type: ignore[call-arg]
     assert llm.max_tokens == 10
@@ -1262,6 +1264,23 @@ def test__get_request_payload() -> None:
     }
     payload = llm._get_request_payload(reasoning_messages)
     assert payload == expected
+
+
+def test_sanitize_chat_completions_text_blocks() -> None:
+    messages = [
+        ToolMessage(
+            content=[{"type": "text", "text": "foo", "id": "lc_abc123"}],
+            tool_call_id="def456",
+        ),
+    ]
+    payload = ChatOpenAI(model="gpt-5.2")._get_request_payload(messages)
+    assert payload["messages"] == [
+        {
+            "content": [{"type": "text", "text": "foo"}],
+            "role": "tool",
+            "tool_call_id": "def456",
+        }
+    ]
 
 
 def test_init_o1() -> None:

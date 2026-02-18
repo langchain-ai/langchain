@@ -214,7 +214,7 @@ async def agenerate_from_stream(
     """Async generate from a stream.
 
     Args:
-        stream: Iterator of `ChatGenerationChunk`.
+        stream: AsyncIterator of `ChatGenerationChunk`.
 
     Returns:
         Chat result.
@@ -310,7 +310,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     - If `False` (Default), will always use streaming case if available.
 
     The main reason for this flag is that code might be written using `stream` and
-    a user may want to swap out a given model for another model whose the implementation
+    a user may want to swap out a given model for another model whose implementation
     does not properly support streaming.
     """
 
