@@ -805,3 +805,24 @@ async def test_handler_called_with_modified_request_async() -> None:
     assert received_prompt["value"] is not None
     assert "Original" in received_prompt["value"]
     assert "write_todos" in received_prompt["value"]
+
+
+def test_aafter_model_delegates_to_after_model() -> None:
+    """aafter_model should return the same result as after_model."""
+    import asyncio
+    middleware = TodoListMiddleware()
+    ai_message = AIMessage(
+        content="Here is your answer.",
+        tool_calls=[{
+            "name": "write_todos",
+            "args": {"todos": [{"content": "Task A", "status": "completed"}]},
+            "id": "call_123",
+            "type": "tool_call",
+        }],
+    )
+    state: PlanningState = {"messages": [HumanMessage(content="Hello"), ai_message]}
+
+    sync_result = middleware.after_model(state, _fake_runtime())
+    async_result = asyncio.run(middleware.aafter_model(state, _fake_runtime()))
+
+    assert sync_result == async_result
