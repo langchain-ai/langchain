@@ -29,7 +29,6 @@ from langchain_core.callbacks.base import (
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.globals import get_debug
 
-_MIN_ARGS_FOR_CHAT_MODEL_FALLBACK = 2
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.tracers.context import (
     _configure_hooks,
@@ -42,6 +41,8 @@ from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.stdout import ConsoleCallbackHandler
 from langchain_core.utils.env import env_var_is_set
 from langchain_core.utils.uuid import uuid7
+
+_MIN_ARGS_FOR_CHAT_MODEL_FALLBACK = 2
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Coroutine, Generator, Sequence
@@ -286,7 +287,10 @@ def handle_event(
                     if asyncio.iscoroutine(event):
                         coros.append(event)
             except NotImplementedError as e:
-                if event_name == "on_chat_model_start" and len(args) >= _MIN_ARGS_FOR_CHAT_MODEL_FALLBACK:
+                if (
+                    event_name == "on_chat_model_start"
+                    and len(args) >= _MIN_ARGS_FOR_CHAT_MODEL_FALLBACK
+                ):
                     if message_strings is None:
                         message_strings = [get_buffer_string(m) for m in args[1]]
                     handle_event(
@@ -390,7 +394,10 @@ async def _ahandle_event_for_handler(
                     ),
                 )
     except NotImplementedError as e:
-        if event_name == "on_chat_model_start" and len(args) >= _MIN_ARGS_FOR_CHAT_MODEL_FALLBACK:
+        if (
+            event_name == "on_chat_model_start"
+            and len(args) >= _MIN_ARGS_FOR_CHAT_MODEL_FALLBACK
+        ):
             message_strings = [get_buffer_string(m) for m in args[1]]
             await _ahandle_event_for_handler(
                 handler,
