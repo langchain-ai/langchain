@@ -13,7 +13,7 @@ allowlist. If the class is not in the allowlist, deserialization raises a `Value
 
 ## Security model
 
-!!! warning "Use caution with untrusted input"
+!!! warning "Exercise caution with untrusted input"
 
     These functions deserialize by instantiating Python objects, which means
     constructors (`__init__`) and validators may run and can trigger side effects.
