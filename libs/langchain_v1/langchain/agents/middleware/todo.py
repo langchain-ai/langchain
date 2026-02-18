@@ -320,14 +320,12 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
         content = msg.content
         if isinstance(content, str):
             return bool(content.strip())
-        if isinstance(content, list):
-            return any(
-                isinstance(block, dict)
-                and block.get("type") == "text"
-                and block.get("text", "").strip()
-                for block in content
+        return any(
+            isinstance(block, dict)
+            and block.get("type") == "text"
+            and block.get("text", "").strip()
+            for block in content
             )
-        return False
 
     @override
     async def aafter_model(
