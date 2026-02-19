@@ -253,11 +253,6 @@ def shielded(func: Func) -> Func:
     return cast("Func", wrapped)
 
 
-# Minimum positional args required to fall back from on_chat_model_start to
-# on_llm_start: args[0] = serialized, args[1] = messages.
-_MIN_ARGS_FOR_CHAT_MODEL_FALLBACK = 2
-
-
 def handle_event(
     handlers: list[BaseCallbackHandler],
     event_name: str,
@@ -289,10 +284,7 @@ def handle_event(
                     if asyncio.iscoroutine(event):
                         coros.append(event)
             except NotImplementedError as e:
-                if (
-                    event_name == "on_chat_model_start"
-                    and len(args) >= _MIN_ARGS_FOR_CHAT_MODEL_FALLBACK
-                ):
+                if event_name == "on_chat_model_start":
                     if message_strings is None:
                         message_strings = [get_buffer_string(m) for m in args[1]]
                     handle_event(
@@ -396,10 +388,7 @@ async def _ahandle_event_for_handler(
                     ),
                 )
     except NotImplementedError as e:
-        if (
-            event_name == "on_chat_model_start"
-            and len(args) >= _MIN_ARGS_FOR_CHAT_MODEL_FALLBACK
-        ):
+        if event_name == "on_chat_model_start":
             message_strings = [get_buffer_string(m) for m in args[1]]
             await _ahandle_event_for_handler(
                 handler,

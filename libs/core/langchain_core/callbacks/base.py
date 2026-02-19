@@ -285,9 +285,29 @@ class CallbackManagerMixin:
             This method is called for chat models. If you're implementing a handler for
             a non-chat model, you should use `on_llm_start` instead.
 
+        !!! note
+
+            When overriding this method, the signature **must** include the two
+            required positional arguments ``serialized`` and ``messages``.  Avoid
+            using ``*args`` in your override — doing so causes an ``IndexError``
+            in the fallback path when the callback system converts ``messages``
+            to prompt strings for ``on_llm_start``.  Always declare the
+            signature explicitly:
+
+            .. code-block:: python
+
+                def on_chat_model_start(
+                    self,
+                    serialized: dict[str, Any],
+                    messages: list[list[BaseMessage]],
+                    **kwargs: Any,
+                ) -> None:
+                    raise NotImplementedError  # triggers fallback to on_llm_start
+
         Args:
             serialized: The serialized chat model.
-            messages: The messages.
+            messages: The messages. Must be a list of message lists — this is a
+                required positional argument and must be present in any override.
             run_id: The ID of the current run.
             parent_run_id: The ID of the parent run.
             tags: The tags.
@@ -295,7 +315,7 @@ class CallbackManagerMixin:
             **kwargs: Additional keyword arguments.
         """
         # NotImplementedError is thrown intentionally
-        # Callback handler will fall back to on_llm_start if this is exception is thrown
+        # Callback handler will fall back to on_llm_start if this exception is thrown
         msg = f"{self.__class__.__name__} does not implement `on_chat_model_start`"
         raise NotImplementedError(msg)
 
@@ -534,9 +554,29 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             This method is called for chat models. If you're implementing a handler for
             a non-chat model, you should use `on_llm_start` instead.
 
+        !!! note
+
+            When overriding this method, the signature **must** include the two
+            required positional arguments ``serialized`` and ``messages``.  Avoid
+            using ``*args`` in your override — doing so causes an ``IndexError``
+            in the fallback path when the callback system converts ``messages``
+            to prompt strings for ``on_llm_start``.  Always declare the
+            signature explicitly:
+
+            .. code-block:: python
+
+                async def on_chat_model_start(
+                    self,
+                    serialized: dict[str, Any],
+                    messages: list[list[BaseMessage]],
+                    **kwargs: Any,
+                ) -> None:
+                    raise NotImplementedError  # triggers fallback to on_llm_start
+
         Args:
             serialized: The serialized chat model.
-            messages: The messages.
+            messages: The messages. Must be a list of message lists — this is a
+                required positional argument and must be present in any override.
             run_id: The ID of the current run.
             parent_run_id: The ID of the parent run.
             tags: The tags.
@@ -544,7 +584,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             **kwargs: Additional keyword arguments.
         """
         # NotImplementedError is thrown intentionally
-        # Callback handler will fall back to on_llm_start if this is exception is thrown
+        # Callback handler will fall back to on_llm_start if this exception is thrown
         msg = f"{self.__class__.__name__} does not implement `on_chat_model_start`"
         raise NotImplementedError(msg)
 
