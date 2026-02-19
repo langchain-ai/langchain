@@ -19,9 +19,9 @@ from langchain_core.tracers.context import register_configure_hook
 # Each call to get_usage_metadata_callback() previously created a new ContextVar and
 # registered a new hook, causing unbounded growth of _configure_hooks in long-running
 # applications.
-_usage_metadata_callback_var: ContextVar[
-    "UsageMetadataCallbackHandler | None"
-] = ContextVar("usage_metadata_callback", default=None)
+_usage_metadata_callback_var: ContextVar["UsageMetadataCallbackHandler | None"] = (
+    ContextVar("usage_metadata_callback", default=None)
+)
 register_configure_hook(_usage_metadata_callback_var, inheritable=True)
 
 
