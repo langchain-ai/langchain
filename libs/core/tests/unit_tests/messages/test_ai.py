@@ -502,3 +502,22 @@ def test_content_blocks_reasoning_extraction() -> None:
     content_blocks = message.content_blocks
     assert len(content_blocks) == 1
     assert content_blocks[0]["type"] == "text"
+
+
+def test_str_returns_text_content() -> None:
+    """Test that str() on an AIMessage returns just the text content."""
+    msg = AIMessage(content="The capital of France is Paris.")
+    assert str(msg) == "The capital of France is Paris."
+
+    # Test with empty content
+    msg_empty = AIMessage(content="")
+    assert str(msg_empty) == ""
+
+    # Test with multimodal content (list)
+    msg_list = AIMessage(
+        content=[
+            {"type": "text", "text": "Hello "},
+            {"type": "text", "text": "world"},
+        ]
+    )
+    assert str(msg_list) == "Hello world"
