@@ -122,6 +122,11 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 if self._add_start_index:
                     offset = index + previous_chunk_len - self._chunk_overlap
                     index = text.find(chunk, max(0, offset))
+                    if index == -1:
+                        # Fallback: the overlap may not correspond to character
+                        # length (e.g. token-based splitters express overlap in
+                        # tokens).  Search forward from the previous chunk start.
+                        index = text.find(chunk)
                     metadata["start_index"] = index
                     previous_chunk_len = len(chunk)
                 new_doc = Document(page_content=chunk, metadata=metadata)
