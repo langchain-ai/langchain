@@ -1,6 +1,7 @@
 """Callback Handler that tracks `AIMessage.usage_metadata`."""
 
 import threading
+import warnings
 from collections.abc import Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -13,6 +14,15 @@ from langchain_core.messages import AIMessage
 from langchain_core.messages.ai import UsageMetadata, add_usage
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.tracers.context import register_configure_hook
+
+# Module-level ContextVar registered once to prevent _configure_hooks accumulation.
+# Each call to get_usage_metadata_callback() previously created a new ContextVar and
+# registered a new hook, causing unbounded growth of _configure_hooks in long-running
+# applications.
+_usage_metadata_callback_var: ContextVar[
+    "UsageMetadataCallbackHandler | None"
+] = ContextVar("usage_metadata_callback", default=None)
+register_configure_hook(_usage_metadata_callback_var, inheritable=True)
 
 
 class UsageMetadataCallbackHandler(BaseCallbackHandler):
@@ -99,7 +109,9 @@ def get_usage_metadata_callback(
     [`AIMessage.usage_metadata`][langchain.messages.AIMessage.usage_metadata].
 
     Args:
-        name: The name of the context variable.
+        name: Deprecated. This argument has no effect and will be removed in a
+            future version. The underlying context variable is registered once at
+            module load time to prevent unbounded growth of internal hook state.
 
     Yields:
         The usage metadata callback.
@@ -139,11 +151,16 @@ def get_usage_metadata_callback(
     !!! version-added "Added in `langchain-core` 0.3.49"
 
     """
-    usage_metadata_callback_var: ContextVar[UsageMetadataCallbackHandler | None] = (
-        ContextVar(name, default=None)
-    )
-    register_configure_hook(usage_metadata_callback_var, inheritable=True)
+    if name != "usage_metadata_callback":
+        warnings.warn(
+            "The `name` parameter of `get_usage_metadata_callback` is deprecated "
+            "and will be removed in a future version. It has no effect.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
     cb = UsageMetadataCallbackHandler()
-    usage_metadata_callback_var.set(cb)
-    yield cb
-    usage_metadata_callback_var.set(None)
+    token = _usage_metadata_callback_var.set(cb)
+    try:
+        yield cb
+    finally:
+        _usage_metadata_callback_var.reset(token)
