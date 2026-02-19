@@ -3,7 +3,7 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/langchain-openrouter?label=%20)](https://pypi.org/project/langchain-openrouter/#history)
 [![PyPI - License](https://img.shields.io/pypi/l/langchain-openrouter)](https://opensource.org/licenses/MIT)
 [![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-openrouter)](https://pypistats.org/packages/langchain-openrouter)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40LangChain)](https://x.com/langchain)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40Orcest Core)](https://x.com/langchain)
 
 ## Quick Install
 
@@ -13,11 +13,11 @@ pip install langchain-openrouter
 
 ## 🤔 What is this?
 
-This package contains the LangChain integration with [OpenRouter](https://openrouter.ai/), a unified API for hundreds of AI models across many providers.
+This package contains the Orcest Core integration with [OpenRouter](https://openrouter.ai/), a unified API for hundreds of AI models across many providers.
 
 ## 📖 Documentation
 
-For full documentation, see the [API reference](https://reference.langchain.com/python/integrations/langchain_openrouter/). For conceptual guides, tutorials, and examples on using these classes, see the [LangChain Docs](https://docs.langchain.com/oss/python/integrations/providers/openrouter).
+For full documentation, see the [API reference](https://reference.langchain.com/python/integrations/langchain_openrouter/). For conceptual guides, tutorials, and examples on using these classes, see the [Orcest Core Docs](https://docs.langchain.com/oss/python/integrations/providers/openrouter).
 
 ## 📕 Releases & Versioning
 

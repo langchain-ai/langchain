@@ -3,9 +3,9 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/langchain-fireworks?label=%20)](https://pypi.org/project/langchain-fireworks/#history)
 [![PyPI - License](https://img.shields.io/pypi/l/langchain-fireworks)](https://opensource.org/licenses/MIT)
 [![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-fireworks)](https://pypistats.org/packages/langchain-fireworks)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40LangChain)](https://x.com/langchain)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40Orcest Core)](https://x.com/langchain)
 
-Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+Looking for the JS/TS version? Check out [Orcest Core.js](https://github.com/langchain-ai/langchainjs).
 
 ## Quick Install
 
@@ -15,11 +15,11 @@ pip install langchain-fireworks
 
 ## 🤔 What is this?
 
-This is the partner package for tying Fireworks.ai and LangChain. Fireworks really strive to provide good support for LangChain use cases, so if you run into any issues please let us know. You can reach out to us [in our Discord channel](https://discord.com/channels/1137072072808472616/)
+This is the partner package for tying Fireworks.ai and Orcest Core. Fireworks really strive to provide good support for Orcest Core use cases, so if you run into any issues please let us know. You can reach out to us [in our Discord channel](https://discord.com/channels/1137072072808472616/)
 
 ## 📖 Documentation
 
-For full documentation, see the [API reference](https://reference.langchain.com/python/integrations/langchain_fireworks/). For conceptual guides, tutorials, and examples on using these classes, see the [LangChain Docs](https://docs.langchain.com/oss/python/integrations/providers/fireworks).
+For full documentation, see the [API reference](https://reference.langchain.com/python/integrations/langchain_fireworks/). For conceptual guides, tutorials, and examples on using these classes, see the [Orcest Core Docs](https://docs.langchain.com/oss/python/integrations/providers/fireworks).
 
 ## 📕 Releases & Versioning
 

@@ -1,6 +1,6 @@
-# Global development guidelines for the LangChain monorepo
+# Global development guidelines for the Orcest Core monorepo
 
-This document provides context to understand the LangChain Python project and assist with development.
+This document provides context to understand the Orcest Core Python project and assist with development.
 
 ## Project architecture and context
 
@@ -12,24 +12,24 @@ This is a Python monorepo with multiple independently versioned packages that us
 langchain/
 ├── libs/
 │   ├── core/             # `langchain-core` primitives and base abstractions
-│   ├── langchain/        # `langchain-classic` (legacy, no new features)
+│   ├── langchain/        # `langchain` (legacy, no new features)
 │   ├── langchain_v1/     # Actively maintained `langchain` package
 │   ├── partners/         # Third-party integrations
 │   │   ├── openai/       # OpenAI models and embeddings
 │   │   ├── anthropic/    # Anthropic (Claude) integration
 │   │   ├── ollama/       # Local model support
-│   │   └── ... (other integrations maintained by the LangChain team)
+│   │   └── ... (other integrations maintained by the Orcest Core team)
 │   ├── text-splitters/   # Document chunking utilities
 │   ├── standard-tests/   # Shared test suite for integrations
 │   ├── model-profiles/   # Model configuration profiles
 ├── .github/              # CI/CD workflows and templates
 ├── .vscode/              # VSCode IDE standard settings and recommended extensions
-└── README.md             # Information about LangChain
+└── README.md             # Information about Orcest Core
 ```
 
 - **Core layer** (`langchain-core`): Base abstractions, interfaces, and protocols. Users should not need to know about this layer directly.
 - **Implementation layer** (`langchain`): Concrete implementations and high-level public utilities
-- **Integration layer** (`partners/`): Third-party service integrations. Note that this monorepo is not exhaustive of all LangChain integrations; some are maintained in separate repos, such as `langchain-ai/langchain-google` and `langchain-ai/langchain-aws`. Usually these repos are cloned at the same level as this monorepo, so if needed, you can refer to their code directly by navigating to `../langchain-google/` from this monorepo.
+- **Integration layer** (`partners/`): Third-party service integrations. Note that this monorepo is not exhaustive of all Orcest Core integrations; some are maintained in separate repos, such as `langchain-ai/langchain-google` and `langchain-ai/langchain-aws`. Usually these repos are cloned at the same level as this monorepo, so if needed, you can refer to their code directly by navigating to `../langchain-google/` from this monorepo.
 - **Testing layer** (`standard-tests/`): Standardized integration tests for partner integrations
 
 ### Development tools & commands

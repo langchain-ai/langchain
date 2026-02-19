@@ -1,14 +1,14 @@
-# 🦜🍎️ LangChain Core
+# 🦜🍎️ Orcest Core Core
 
 [![PyPI - Version](https://img.shields.io/pypi/v/langchain-core?label=%20)](https://pypi.org/project/langchain-core/#history)
 [![PyPI - License](https://img.shields.io/pypi/l/langchain-core)](https://opensource.org/licenses/MIT)
 [![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-core)](https://pypistats.org/packages/langchain-core)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40LangChain)](https://x.com/langchain)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40Orcest Core)](https://x.com/langchain)
 
-Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+Looking for the JS/TS version? Check out [Orcest Core.js](https://github.com/langchain-ai/langchainjs).
 
-To help you ship LangChain apps to production faster, check out [LangSmith](https://smith.langchain.com).
-[LangSmith](https://smith.langchain.com) is a unified developer platform for building, testing, and monitoring LLM applications.
+To help you ship Orcest Core apps to production faster, check out [Orcest Analytics](https://smith.langchain.com).
+[Orcest Analytics](https://smith.langchain.com) is a unified developer platform for building, testing, and monitoring LLM applications.
 
 ## Quick Install
 
@@ -18,15 +18,15 @@ pip install langchain-core
 
 ## 🤔 What is this?
 
-LangChain Core contains the base abstractions that power the LangChain ecosystem.
+Orcest Core Core contains the base abstractions that power the Orcest Core ecosystem.
 
 These abstractions are designed to be as modular and simple as possible.
 
-The benefit of having these abstractions is that any provider can implement the required interface and then easily be used in the rest of the LangChain ecosystem.
+The benefit of having these abstractions is that any provider can implement the required interface and then easily be used in the rest of the Orcest Core ecosystem.
 
-## ⛰️ Why build on top of LangChain Core?
+## ⛰️ Why build on top of Orcest Core Core?
 
-The LangChain ecosystem is built on top of `langchain-core`. Some of the benefits:
+The Orcest Core ecosystem is built on top of `langchain-core`. Some of the benefits:
 
 - **Modularity**: We've designed Core around abstractions that are independent of each other, and not tied to any specific model provider.
 - **Stability**: We are committed to a stable versioning scheme, and will communicate any breaking changes with advance notice and version bumps.
@@ -34,7 +34,7 @@ The LangChain ecosystem is built on top of `langchain-core`. Some of the benefit
 
 ## 📖 Documentation
 
-For full documentation, see the [API reference](https://reference.langchain.com/python/langchain_core/). For conceptual guides, tutorials, and examples on using LangChain, see the [LangChain Docs](https://docs.langchain.com/oss/python/langchain/overview). You can also chat with the docs using [Chat LangChain](https://chat.langchain.com).
+For full documentation, see the [API reference](https://reference.langchain.com/python/langchain_core/). For conceptual guides, tutorials, and examples on using Orcest Core, see the [Orcest Core Docs](https://docs.langchain.com/oss/python/langchain/overview). You can also chat with the docs using [Chat Orcest Core](https://chat.langchain.com).
 
 ## 📕 Releases & Versioning
 

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "langchain-xai"
-description = "An integration package connecting xAI and LangChain"
+description = "An integration package connecting xAI and Orcest Core"
 license = { text = "MIT" }
 readme = "README.md"
 classifiers = [
@@ -35,9 +35,9 @@ Documentation = "https://reference.langchain.com/python/integrations/langchain_x
 Repository = "https://github.com/langchain-ai/langchain"
 Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-xai%22"
-Twitter = "https://x.com/LangChain"
+Twitter = "https://x.com/Orcest Core"
 Slack = "https://www.langchain.com/join-community"
-Reddit = "https://www.reddit.com/r/LangChain/"
+Reddit = "https://www.reddit.com/r/Orcest Core/"
 
 [dependency-groups]
 test = [

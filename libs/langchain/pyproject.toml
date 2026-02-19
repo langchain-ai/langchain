@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "langchain-classic"
+name = "langchain"
 description = "Building applications with LLMs through composability"
 license = { text = "MIT" }
 readme = "README.md"
@@ -25,7 +25,7 @@ requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.2.5,<2.0.0",
     "langchain-text-splitters>=1.1.0,<2.0.0",
-    "langsmith>=0.1.17,<1.0.0",
+    "orcest-analytics>=0.1.17,<1.0.0",
     "pydantic>=2.7.4,<3.0.0",
     "SQLAlchemy>=1.4.0,<3.0.0",
     "requests>=2.0.0,<3.0.0",
@@ -57,10 +57,10 @@ Homepage = "https://docs.langchain.com/"
 Documentation = "https://reference.langchain.com/python/langchain_classic/"
 Repository = "https://github.com/langchain-ai/langchain"
 Issues = "https://github.com/langchain-ai/langchain/issues"
-Changelog = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-classic%3D%3D1%22"
-Twitter = "https://x.com/LangChain"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain%3D%3D1%22"
+Twitter = "https://x.com/Orcest Core"
 Slack = "https://www.langchain.com/join-community"
-Reddit = "https://www.reddit.com/r/LangChain/"
+Reddit = "https://www.reddit.com/r/Orcest Core/"
 
 [dependency-groups]
 test = [
@@ -231,7 +231,7 @@ markers = [
 ]
 asyncio_mode = "auto"
 filterwarnings = [
-    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
-    "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:tests",
-    "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning:tests",
+    "ignore::langchain_core._api.beta_decorator.Orcest CoreBetaWarning",
+    "ignore::langchain_core._api.deprecation.Orcest CoreDeprecationWarning:tests",
+    "ignore::langchain_core._api.deprecation.Orcest CorePendingDeprecationWarning:tests",
 ]

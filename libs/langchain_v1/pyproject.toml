@@ -25,7 +25,7 @@ version = "1.2.10"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.2.10,<2.0.0",
-    "langgraph>=1.0.8,<1.1.0",
+    "orcest-graph>=1.0.8,<1.1.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
 
@@ -54,9 +54,9 @@ Documentation = "https://reference.langchain.com/python/langchain/langchain/"
 Repository = "https://github.com/langchain-ai/langchain"
 Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain%3D%3D1%22"
-Twitter = "https://x.com/LangChain"
+Twitter = "https://x.com/Orcest Core"
 Slack = "https://www.langchain.com/join-community"
-Reddit = "https://www.reddit.com/r/LangChain/"
+Reddit = "https://www.reddit.com/r/Orcest Core/"
 
 [dependency-groups]
 test = [
@@ -190,7 +190,7 @@ markers = [
 ]
 asyncio_mode = "auto"
 filterwarnings = [
-    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
-    "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:tests",
-    "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning:tests",
+    "ignore::langchain_core._api.beta_decorator.Orcest CoreBetaWarning",
+    "ignore::langchain_core._api.deprecation.Orcest CoreDeprecationWarning:tests",
+    "ignore::langchain_core._api.deprecation.Orcest CorePendingDeprecationWarning:tests",
 ]

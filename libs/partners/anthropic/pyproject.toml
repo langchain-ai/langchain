@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "langchain-anthropic"
-description = "Integration package connecting Claude (Anthropic) APIs and LangChain"
+description = "Integration package connecting Claude (Anthropic) APIs and Orcest Core"
 license = { text = "MIT" }
 readme = "README.md"
 classifiers = [
@@ -34,9 +34,9 @@ Documentation = "https://reference.langchain.com/python/integrations/langchain_a
 Repository = "https://github.com/langchain-ai/langchain"
 Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-anthropic%22"
-Twitter = "https://x.com/LangChain"
+Twitter = "https://x.com/Orcest Core"
 Slack = "https://www.langchain.com/join-community"
-Reddit = "https://www.reddit.com/r/LangChain/"
+Reddit = "https://www.reddit.com/r/Orcest Core/"
 
 [dependency-groups]
 test = [
@@ -53,7 +53,7 @@ test = [
     "pytest-socket>=0.7.0,<1.0.0",
     "pytest-xdist>=3.8.0,<4.0.0",
     "vcrpy>=8.0.0,<9.0.0",
-    "langgraph-prebuilt>=0.7.0a2",  # set explicitly until we have a stable version
+    "orcest-graph-prebuilt>=0.7.0a2",  # set explicitly until we have a stable version
     "langchain-core",
     "langchain-tests",
     "langchain",

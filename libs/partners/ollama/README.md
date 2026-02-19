@@ -3,9 +3,9 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/langchain-ollama?label=%20)](https://pypi.org/project/langchain-ollama/#history)
 [![PyPI - License](https://img.shields.io/pypi/l/langchain-ollama)](https://opensource.org/licenses/MIT)
 [![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-ollama)](https://pypistats.org/packages/langchain-ollama)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40LangChain)](https://x.com/langchain)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40Orcest Core)](https://x.com/langchain)
 
-Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+Looking for the JS/TS version? Check out [Orcest Core.js](https://github.com/langchain-ai/langchainjs).
 
 ## Quick Install
 
@@ -15,11 +15,11 @@ pip install langchain-ollama
 
 ## 🤔 What is this?
 
-This package contains the LangChain integration with Ollama
+This package contains the Orcest Core integration with Ollama
 
 ## 📖 Documentation
 
-For full documentation, see the [API reference](https://reference.langchain.com/python/integrations/langchain_ollama/). For conceptual guides, tutorials, and examples on using these classes, see the [LangChain Docs](https://docs.langchain.com/oss/python/integrations/providers/ollama).
+For full documentation, see the [API reference](https://reference.langchain.com/python/integrations/langchain_ollama/). For conceptual guides, tutorials, and examples on using these classes, see the [Orcest Core Docs](https://docs.langchain.com/oss/python/integrations/providers/ollama).
 
 ## 📕 Releases & Versioning
 

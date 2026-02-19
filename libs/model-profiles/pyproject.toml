@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "langchain-model-profiles"
-description = "CLI tool for updating model profile data in LangChain integration packages."
+description = "CLI tool for updating model profile data in Orcest Core integration packages."
 readme = "README.md"
 license = { text = "MIT" }
 classifiers = [
@@ -37,9 +37,9 @@ Homepage = "https://docs.langchain.com/"
 Documentation = "https://reference.langchain.com/python/langchain_model_profiles/"
 Repository = "https://github.com/langchain-ai/langchain"
 Issues = "https://github.com/langchain-ai/langchain/issues"
-Twitter = "https://x.com/LangChain"
+Twitter = "https://x.com/Orcest Core"
 Slack = "https://www.langchain.com/join-community"
-Reddit = "https://www.reddit.com/r/LangChain/"
+Reddit = "https://www.reddit.com/r/Orcest Core/"
 
 [dependency-groups]
 dev = []
@@ -121,7 +121,7 @@ markers = [
 ]
 asyncio_mode = "auto"
 filterwarnings = [
-    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
-    "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:tests",
-    "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning:tests",
+    "ignore::langchain_core._api.beta_decorator.Orcest CoreBetaWarning",
+    "ignore::langchain_core._api.deprecation.Orcest CoreDeprecationWarning:tests",
+    "ignore::langchain_core._api.deprecation.Orcest CorePendingDeprecationWarning:tests",
 ]

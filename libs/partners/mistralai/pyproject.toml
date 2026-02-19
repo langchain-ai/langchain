@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "langchain-mistralai"
-description = "An integration package connecting Mistral and LangChain"
+description = "An integration package connecting Mistral and Orcest Core"
 license = { text = "MIT" }
 readme = "README.md"
 classifiers = [
@@ -36,9 +36,9 @@ Documentation = "https://reference.langchain.com/python/integrations/langchain_m
 Repository = "https://github.com/langchain-ai/langchain"
 Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-mistralai%22"
-Twitter = "https://x.com/LangChain"
+Twitter = "https://x.com/Orcest Core"
 Slack = "https://www.langchain.com/join-community"
-Reddit = "https://www.reddit.com/r/LangChain/"
+Reddit = "https://www.reddit.com/r/Orcest Core/"
 
 [dependency-groups]
 test = [
