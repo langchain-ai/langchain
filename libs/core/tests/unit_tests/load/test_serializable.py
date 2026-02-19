@@ -1,4 +1,5 @@
 import json
+import threading
 from typing import Any
 
 import pytest
@@ -891,3 +892,46 @@ class TestJinja2SecurityBlocking:
         # jinja2 should be blocked by default
         with pytest.raises(ValueError, match="Jinja2 templates are not allowed"):
             load(serialized_jinja2, allowed_objects=[PromptTemplate])
+
+
+def test_to_json_thread_safe() -> None:
+    """Regression test for https://github.com/langchain-ai/langchain/issues/34887.
+
+    Concurrent calls to dumpd() while invoke() is running must not raise
+    RuntimeError: dictionary changed size during iteration.
+
+    The root cause is that `Serializable.to_json()` formerly iterated over
+    `self` (Pydantic `__iter__` over `self.__dict__.items()`) while a
+    concurrent thread could write a new key into `__dict__` via a
+    `@cached_property` (e.g. `_serialized` on `BasePromptTemplate`).
+    Snapshotting with `list(self)` before the loop prevents this.
+    """
+    errors: list[BaseException] = []
+    prompt = ChatPromptTemplate.from_messages([("human", "{q}")])
+
+    def serialize() -> None:
+        try:
+            for _ in range(200):
+                # Pop the cached property to force re-computation each iteration,
+                # maximising the chance of the race window being hit.
+                prompt.__dict__.pop("_serialized", None)
+                dumpd(prompt)
+        except BaseException as exc:
+            errors.append(exc)
+
+    def invoke() -> None:
+        try:
+            for _ in range(200):
+                prompt.invoke({"q": "hi"})
+        except BaseException as exc:
+            errors.append(exc)
+
+    threads = [
+        threading.Thread(target=f) for f in [serialize, invoke, serialize, invoke]
+    ]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert not errors, f"Thread-safety errors: {errors}"

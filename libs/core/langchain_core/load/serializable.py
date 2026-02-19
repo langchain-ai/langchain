@@ -222,7 +222,9 @@ class Serializable(BaseModel, ABC):
         secrets = {}
         # Get latest values for kwargs if there is an attribute with same name
         lc_kwargs = {}
-        for k, v in self:
+        # Snapshot to avoid RuntimeError under concurrent __dict__ mutation
+        # (e.g. a @cached_property write racing with this iteration).
+        for k, v in list(self):
             if not _is_field_useful(self, k, v):
                 continue
             # Do nothing if the field is excluded
