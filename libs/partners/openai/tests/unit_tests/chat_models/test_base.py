@@ -1388,6 +1388,26 @@ def test_structured_outputs_parser() -> None:
     assert result == parsed_response
 
 
+def test_structured_outputs_parser_valid_falsy_response() -> None:
+    class LunchBox(BaseModel):
+        sandwiches: list[str]
+
+        def __len__(self) -> int:
+            return len(self.sandwiches)
+
+    # prepare a valid *but falsy* response object, an empty LunchBox
+    parsed_response = LunchBox(sandwiches=[])
+    assert len(parsed_response) == 0
+    llm_output = AIMessage(
+        content='{"sandwiches": []}', additional_kwargs={"parsed": parsed_response}
+    )
+    output_parser = RunnableLambda(
+        partial(_oai_structured_outputs_parser, schema=LunchBox)
+    )
+    result = output_parser.invoke(llm_output)
+    assert result == parsed_response
+
+
 def test__construct_lc_result_from_responses_api_error_handling() -> None:
     """Test that errors in the response are properly raised."""
     response = Response(
