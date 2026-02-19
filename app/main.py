@@ -4,15 +4,22 @@ Platform for reliable AI agents
 """
 
 import os
+import time
+import asyncio
+from datetime import datetime, timezone
 
-from fastapi import FastAPI
+import httpx
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
 app = FastAPI(
     title="Orcest.ai",
     description="The Self-Adaptive LLM Orchestrator platform for reliable AI agents",
     version="1.0.0",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
 
 app.add_middleware(
@@ -95,11 +102,11 @@ footer a:hover{text-decoration:underline}
 <p>AI-powered code editor with intelligent autocomplete, inline chat, and code generation.</p>
 <span class="url">ide.orcest.ai</span>
 </a>
-<a href="/docs" class="card">
-<span class="tag tag-api">API</span>
-<h3>Orcest API</h3>
-<p>Real-time search, extraction, research, and web crawling through a single, secure API.</p>
-<span class="url">orcest.ai/docs</span>
+<a href="https://status.orcest.ai" class="card">
+<span class="tag tag-api">Status</span>
+<h3>System Status</h3>
+<p>Real-time monitoring, quality audits, architecture diagrams, and ecosystem health.</p>
+<span class="url">status.orcest.ai</span>
 </a>
 <a href="https://login.orcest.ai" class="card">
 <span class="tag tag-sso">SSO</span>
@@ -125,18 +132,67 @@ async def landing_page():
     return HTMLResponse(content=LANDING_HTML)
 
 
+ECOSYSTEM_SERVICES = [
+    {"name": "orcest.ai", "url": "https://orcest.ai/health"},
+    {"name": "rm.orcest.ai", "url": "https://rm.orcest.ai/health"},
+    {"name": "llm.orcest.ai", "url": "https://llm.orcest.ai/api/health"},
+    {"name": "agent.orcest.ai", "url": "https://agent.orcest.ai/api/litellm-models"},
+    {"name": "ide.orcest.ai", "url": "https://ide.orcest.ai"},
+    {"name": "login.orcest.ai", "url": "https://login.orcest.ai/health"},
+    {"name": "status.orcest.ai", "url": "https://status-orcest-ai.onrender.com/health"},
+]
+
+_metrics = {"requests": 0, "start_time": time.time()}
+
+
+@app.middleware("http")
+async def metrics_middleware(request: Request, call_next):
+    _metrics["requests"] += 1
+    response = await call_next(request)
+    return response
+
+
 @app.get("/api/info")
 async def api_info():
     return {
         "platform": "orcest.ai",
-        "description": "Real-time search, extraction, research, and web crawling through a single, secure API",
+        "description": "Intelligent LLM Orchestration Platform",
         "services": {
             "rainymodel": "https://rm.orcest.ai",
             "lamino": "https://llm.orcest.ai",
             "maestrist": "https://agent.orcest.ai",
             "orcide": "https://ide.orcest.ai",
             "login": "https://login.orcest.ai",
+            "status": "https://status.orcest.ai",
         },
         "rainymodel_api": RAINYMODEL_BASE_URL,
-        "support": "admin@danial.ai",
+    }
+
+
+@app.get("/ecosystem/health")
+async def ecosystem_health():
+    async with httpx.AsyncClient(follow_redirects=True, timeout=10.0) as client:
+        results = {}
+        for svc in ECOSYSTEM_SERVICES:
+            try:
+                resp = await client.get(svc["url"])
+                results[svc["name"]] = {"status": "operational" if resp.status_code < 400 else "degraded", "code": resp.status_code}
+            except Exception:
+                results[svc["name"]] = {"status": "down", "code": 0}
+    operational = sum(1 for v in results.values() if v["status"] == "operational")
+    return {
+        "overall": "operational" if operational == len(results) else "degraded",
+        "services": results,
+        "checked_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@app.get("/metrics")
+async def metrics_endpoint():
+    uptime = time.time() - _metrics["start_time"]
+    return {
+        "uptime_seconds": int(uptime),
+        "total_requests": _metrics["requests"],
+        "service": "orcest.ai",
+        "version": "1.0.0",
     }
