@@ -13,6 +13,9 @@ app = FastAPI(
     title="Orcest.ai",
     description="The Self-Adaptive LLM Orchestrator platform for reliable AI agents",
     version="1.0.0",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
 
 app.add_middleware(
