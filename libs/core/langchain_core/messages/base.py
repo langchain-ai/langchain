@@ -306,6 +306,29 @@ class BaseMessage(Serializable):
         prompt = ChatPromptTemplate(messages=[self])
         return prompt.__add__(other)
 
+    def __str__(self) -> str:
+        """Return the text content of the message.
+
+        This returns the same value as the ``text`` property, providing an
+        intuitive string representation that contains just the message text
+        rather than the full object representation with metadata.
+
+        Returns:
+            The text content of the message.
+
+        Example:
+            ```python
+            from langchain_core.messages import AIMessage
+
+            msg = AIMessage(content="The capital of France is Paris.")
+            print(str(msg))
+            # "The capital of France is Paris."
+            ```
+
+        .. versionadded:: 0.3.58
+        """
+        return str(self.text)
+
     def pretty_repr(
         self,
         html: bool = False,  # noqa: FBT001,FBT002
