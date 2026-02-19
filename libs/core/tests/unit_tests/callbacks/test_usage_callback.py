@@ -148,8 +148,10 @@ def test_configure_hooks_no_accumulation() -> None:
     )
 
     # Sanity-check: the module-level var is registered exactly once.
-    registered_vars = [var for var, *_ in _configure_hooks]
-    assert registered_vars.count(_usage_metadata_callback_var) == 1
+    count = sum(
+        1 for var, *_ in _configure_hooks if var is _usage_metadata_callback_var
+    )
+    assert count == 1
 
 
 def test_name_parameter_deprecated() -> None:
