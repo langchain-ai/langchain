@@ -452,5 +452,5 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
-    },
+    }
 }

@@ -258,5 +258,5 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "reasoning_output": True,
         "tool_calling": True,
         "structured_output": True,
-    },
+    }
 }
