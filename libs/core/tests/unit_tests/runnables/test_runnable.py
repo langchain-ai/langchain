@@ -3524,6 +3524,42 @@ async def test_bind_with_lambda_async() -> None:
     assert chunks == [4]
 
 
+def test_bind_kwargs_passed_to_methods() -> None:
+    """Test that bound kwargs are passed to methods that accept **kwargs."""
+
+    class MyRunnable(Runnable[str, str]):
+        def invoke(
+            self, input: str, config: RunnableConfig | None = None, **kwargs: Any
+        ) -> str:
+            _ = config
+            _ = kwargs
+            return input
+
+        def method_with_kwargs(self, value: str, **kwargs: Any) -> dict[str, Any]:
+            return {"value": value, "kwargs": kwargs}
+
+        def method_without_kwargs(self, value: str) -> str:
+            return value
+
+    runnable = MyRunnable()
+    bound = cast("MyRunnable", runnable.bind(tool="web_search", extra="data"))
+
+    result = bound.method_with_kwargs("test")
+    assert result == {
+        "value": "test",
+        "kwargs": {"tool": "web_search", "extra": "data"},
+    }
+
+    result_with_override = bound.method_with_kwargs("test", tool="override")
+    assert result_with_override == {
+        "value": "test",
+        "kwargs": {"tool": "override", "extra": "data"},
+    }
+
+    result_no_kwargs = bound.method_without_kwargs("test")
+    assert result_no_kwargs == "test"
+
+
 def test_deep_stream() -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
