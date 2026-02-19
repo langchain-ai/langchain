@@ -62,7 +62,7 @@ class MapReduceChain(Chain):
         stuff_chain = StuffDocumentsChain(
             llm_chain=llm_chain,
             callbacks=callbacks,
-            **(reduce_chain_kwargs if reduce_chain_kwargs else {}),
+            **(reduce_chain_kwargs or {}),
         )
         reduce_documents_chain = ReduceDocumentsChain(
             combine_documents_chain=stuff_chain,
@@ -71,7 +71,7 @@ class MapReduceChain(Chain):
             llm_chain=llm_chain,
             reduce_documents_chain=reduce_documents_chain,
             callbacks=callbacks,
-            **(combine_chain_kwargs if combine_chain_kwargs else {}),
+            **(combine_chain_kwargs or {}),
         )
         return cls(
             combine_documents_chain=combine_documents_chain,

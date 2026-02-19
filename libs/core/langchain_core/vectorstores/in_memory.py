@@ -177,8 +177,8 @@ class InMemoryVectorStore(VectorStore):
     @override
     def delete(self, ids: Sequence[str] | None = None, **kwargs: Any) -> None:
         if ids:
-            for _id in ids:
-                self.store.pop(_id, None)
+            for id_ in ids:
+                self.store.pop(id_, None)
 
     @override
     async def adelete(self, ids: Sequence[str] | None = None, **kwargs: Any) -> None:

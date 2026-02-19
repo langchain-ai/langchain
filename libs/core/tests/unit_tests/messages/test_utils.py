@@ -29,7 +29,7 @@ from langchain_core.messages.utils import (
     merge_message_runs,
     trim_messages,
 )
-from langchain_core.tools import BaseTool
+from langchain_core.tools import BaseTool, tool
 
 
 @pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])
@@ -2908,3 +2908,53 @@ def test_count_tokens_approximately_respects_count_name_flag() -> None:
 
     # When count_name is True, the name should contribute to the token count.
     assert with_name > without_name
+
+
+def test_count_tokens_approximately_with_tools() -> None:
+    """Test that tools parameter adds to token count."""
+    messages = [HumanMessage(content="Hello")]
+    base_count = count_tokens_approximately(messages)
+
+    # Test with a BaseTool instance
+    @tool
+    def get_weather(location: str) -> str:
+        """Get the weather for a location."""
+        return f"Weather in {location}"
+
+    count_with_tool = count_tokens_approximately(messages, tools=[get_weather])
+    assert count_with_tool > base_count
+
+    # Test with a dict tool schema
+    tool_schema = {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get the weather for a location.",
+            "parameters": {
+                "type": "object",
+                "properties": {"location": {"type": "string"}},
+                "required": ["location"],
+            },
+        },
+    }
+    count_with_dict_tool = count_tokens_approximately(messages, tools=[tool_schema])
+    assert count_with_dict_tool > base_count
+
+    # Test with multiple tools
+    @tool
+    def get_time(timezone: str) -> str:
+        """Get the current time in a timezone."""
+        return f"Time in {timezone}"
+
+    count_with_multiple = count_tokens_approximately(
+        messages, tools=[get_weather, get_time]
+    )
+    assert count_with_multiple > count_with_tool
+
+    # Test with no tools (None) should equal base count
+    count_no_tools = count_tokens_approximately(messages, tools=None)
+    assert count_no_tools == base_count
+
+    # Test with empty tools list should equal base count
+    count_empty_tools = count_tokens_approximately(messages, tools=[])
+    assert count_empty_tools == base_count
