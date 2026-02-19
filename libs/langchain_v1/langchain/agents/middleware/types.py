@@ -38,6 +38,7 @@ from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
+    from langchain_core.runnables.config import RunnableConfig
     from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
     from langgraph.types import Command
@@ -402,6 +403,26 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
         Defaults to the class name, but can be overridden for custom naming.
         """
         return self.__class__.__name__
+
+    @staticmethod
+    def _get_internal_model_config(**metadata: Any) -> RunnableConfig:
+        """Get a RunnableConfig for internal model calls within middleware.
+
+        When middleware hooks make internal model calls (e.g., for summarization
+        or tool selection), those calls should not inherit the parent agent's
+        streaming callbacks. This method returns a config with callbacks cleared
+        to prevent token leakage into the parent stream.
+
+        Args:
+            **metadata: Additional metadata to include in the config.
+
+        Returns:
+            A `RunnableConfig` with callbacks cleared and the provided metadata.
+        """
+        config: RunnableConfig = {"callbacks": []}
+        if metadata:
+            config["metadata"] = metadata
+        return config
 
     def before_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run before the agent execution starts.

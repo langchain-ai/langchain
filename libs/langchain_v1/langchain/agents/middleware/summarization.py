@@ -601,7 +601,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         try:
             response = self.model.invoke(
                 self.summary_prompt.format(messages=formatted_messages).rstrip(),
-                config={"metadata": {"lc_source": "summarization"}},
+                config=self._get_internal_model_config(lc_source="summarization"),
             )
             return response.text.strip()
         except Exception as e:
@@ -627,7 +627,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         try:
             response = await self.model.ainvoke(
                 self.summary_prompt.format(messages=formatted_messages).rstrip(),
-                config={"metadata": {"lc_source": "summarization"}},
+                config=self._get_internal_model_config(lc_source="summarization"),
             )
             return response.text.strip()
         except Exception as e:

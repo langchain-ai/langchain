@@ -302,7 +302,8 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             [
                 {"role": "system", "content": selection_request.system_message},
                 selection_request.last_user_message,
-            ]
+            ],
+            config=self._get_internal_model_config(lc_source="tool_selection"),
         )
 
         # Response should be a dict since we're passing a schema (not a Pydantic model class)
@@ -345,7 +346,8 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             [
                 {"role": "system", "content": selection_request.system_message},
                 selection_request.last_user_message,
-            ]
+            ],
+            config=self._get_internal_model_config(lc_source="tool_selection"),
         )
 
         # Response should be a dict since we're passing a schema (not a Pydantic model class)
