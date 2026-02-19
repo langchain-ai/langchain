@@ -102,6 +102,12 @@ footer a:hover{text-decoration:underline}
 <p>AI-powered code editor with intelligent autocomplete, inline chat, and code generation.</p>
 <span class="url">ide.orcest.ai</span>
 </a>
+<a href="/api/info" class="card">
+<span class="tag tag-api">Core API</span>
+<h3>Orcest Core</h3>
+<p>Real-time search, extraction, research, and web crawling through a unified, secure API.</p>
+<span class="url">orcest.ai/api</span>
+</a>
 <a href="https://status.orcest.ai" class="card">
 <span class="tag tag-api">Status</span>
 <h3>System Status</h3>
