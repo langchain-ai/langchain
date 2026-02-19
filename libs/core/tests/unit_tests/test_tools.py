@@ -58,6 +58,7 @@ from langchain_core.tools.base import (
     InjectedToolCallId,
     SchemaAnnotationError,
     _DirectlyInjectedToolArg,
+    _get_runnable_config_param,
     _is_message_content_block,
     _is_message_content_type,
     get_all_basemodel_annotations,
@@ -1176,6 +1177,42 @@ async def test_async_tool_pass_config(tool: BaseTool) -> None:
         await tool.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}})
         == "baz"
     )
+
+
+def test_get_runnable_config_param_optional() -> None:
+    async def fn(*, config: RunnableConfig | None) -> None:
+        pass
+
+    assert _get_runnable_config_param(fn) == "config"
+
+
+class OptionalConfigTool(BaseTool):
+    name: str = "optional_config_tool"
+    description: str = "Tool that accepts Optional[RunnableConfig]"
+
+    def _run(
+        self,
+        query: str,
+        *,
+        config: RunnableConfig | None,
+        **kwargs: Any,
+    ) -> str:
+        # Fail loudly if config was not passed
+        assert config is not None
+        return f"config_value={config.get('configurable', {}).get('value')}"
+
+
+def test_optional_runnable_config_is_passed() -> None:
+    tool = OptionalConfigTool()
+
+    runnable_config = RunnableConfig(configurable={"value": "test123"})
+
+    result = tool.invoke(
+        {"query": "hello"},
+        config=runnable_config,
+    )
+
+    assert result == "config_value=test123"
 
 
 def test_tool_description() -> None:
