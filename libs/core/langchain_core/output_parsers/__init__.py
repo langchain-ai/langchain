@@ -26,6 +26,7 @@ if TYPE_CHECKING:
         BaseLLMOutputParser,
         BaseOutputParser,
     )
+    from langchain_core.output_parsers.fix import OutputFixingParser
     from langchain_core.output_parsers.json import (
         JsonOutputParser,
         SimpleJsonOutputParser,
@@ -62,6 +63,7 @@ __all__ = [
     "ListOutputParser",
     "MarkdownListOutputParser",
     "NumberedListOutputParser",
+    "OutputFixingParser",
     "PydanticOutputParser",
     "PydanticToolsParser",
     "SimpleJsonOutputParser",
@@ -73,6 +75,7 @@ _dynamic_imports = {
     "BaseLLMOutputParser": "base",
     "BaseGenerationOutputParser": "base",
     "BaseOutputParser": "base",
+    "OutputFixingParser": "fix",
     "JsonOutputParser": "json",
     "SimpleJsonOutputParser": "json",
     "ListOutputParser": "list",
