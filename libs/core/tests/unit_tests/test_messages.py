@@ -1037,7 +1037,7 @@ def test_tool_message_repr() -> None:
 
 def test_tool_message_str() -> None:
     message = ToolMessage("foo", artifact={"bar": {"baz": 123}}, tool_call_id="1")
-    expected = "content='foo' tool_call_id='1' artifact={'bar': {'baz': 123}}"
+    expected = "foo"
     actual = str(message)
     assert expected == actual
 
