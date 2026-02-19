@@ -846,14 +846,17 @@ class ChatOllama(BaseChatModel):
                 role = "user"
             elif isinstance(message, AIMessage):
                 role = "assistant"
-                tool_calls = (
-                    [
-                        _lc_tool_call_to_openai_tool_call(tool_call)
-                        for tool_call in message.tool_calls
-                    ]
-                    if message.tool_calls
-                    else None
-                )
+                tool_calls = None
+                if message.tool_calls:
+                    tool_calls = []
+                    for tool_call in message.tool_calls:
+                        # --- FIX: Sanitize arguments ---
+                        # Ollama crashes if 'args' is a list. It must be a dict.
+                        if "args" in tool_call and isinstance(tool_call["args"], list):
+                            tool_call["args"] = {"args_list": tool_call["args"]}
+
+                        tool_calls.append(_lc_tool_call_to_openai_tool_call(tool_call))
+
             elif isinstance(message, SystemMessage):
                 role = "system"
             elif isinstance(message, ChatMessage):
