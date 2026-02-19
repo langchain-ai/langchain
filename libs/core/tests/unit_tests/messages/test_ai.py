@@ -502,3 +502,31 @@ def test_content_blocks_reasoning_extraction() -> None:
     content_blocks = message.content_blocks
     assert len(content_blocks) == 1
     assert content_blocks[0]["type"] == "text"
+
+
+def test_pretty_repr_handles_list_content_with_dicts() -> None:
+    message = AIMessage(
+        content=[
+            "good morning",
+            "you got reply on gmail",
+            "should i summarize",
+            {"sentence_1": "hello"},
+            {"sentence_2": "from"},
+            {"sentence_3": "AI bot"},
+        ],
+        name="bot",
+    )
+
+    output = message.pretty_repr(html=True)
+
+    # Text parts should be preserved
+    assert "good morning" in output
+    assert "you got reply on gmail" in output
+    assert "should i summarize" in output
+
+    # Dict parts should be JSON-formatted, not Python repr
+    assert '"sentence_1": "hello"' in output
+    assert '"sentence_2": "from"' in output
+    assert '"sentence_3": "AI bot"' in output
+    # Raw list repr should not leak
+    assert "['good morning'" not in output
