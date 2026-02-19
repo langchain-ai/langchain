@@ -40,10 +40,12 @@ class _AsyncHttpxClientWrapper(openai.DefaultAsyncHttpxClient):
             return
 
         try:
-            # TODO(someday): support non asyncio runtimes here
-            asyncio.get_running_loop().create_task(self.aclose())
-        except Exception:  # noqa: S110
-            pass
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+
+        if loop.is_running():
+            loop.create_task(self.aclose())
 
 
 def _build_sync_httpx_client(
