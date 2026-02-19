@@ -17,6 +17,18 @@ URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/pro
 logger = logging.getLogger(__name__)
 
 
+def _validate_path(path: Path) -> None:
+    """Validate that a file path does not contain path traversal components."""
+    resolved = path.resolve()
+    cwd = Path.cwd().resolve()
+    if not str(resolved).startswith(str(cwd) + "/") and resolved != cwd:
+        msg = (
+            f"Access to path '{path}' is not allowed. "
+            "Paths must be within the current working directory."
+        )
+        raise ValueError(msg)
+
+
 def load_prompt_from_config(config: dict) -> BasePromptTemplate:
     """Load prompt from config dict.
 
@@ -51,6 +63,7 @@ def _load_template(var_name: str, config: dict) -> dict:
             raise ValueError(msg)
         # Pop the template path from the config.
         template_path = Path(config.pop(f"{var_name}_path"))
+        _validate_path(template_path)
         # Load the template.
         if template_path.suffix == ".txt":
             template = template_path.read_text(encoding="utf-8")
@@ -67,6 +80,7 @@ def _load_examples(config: dict) -> dict:
         pass
     elif isinstance(config["examples"], str):
         path = Path(config["examples"])
+        _validate_path(path)
         with path.open(encoding="utf-8") as f:
             if path.suffix == ".json":
                 examples = json.load(f)
@@ -163,6 +177,7 @@ def _load_prompt_from_file(
     """Load prompt from file."""
     # Convert file to a Path object.
     file_path = Path(file)
+    _validate_path(file_path)
     # Load from either json or yaml.
     if file_path.suffix == ".json":
         with file_path.open(encoding=encoding) as f:
