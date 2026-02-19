@@ -220,18 +220,21 @@ class Serializable(BaseModel, ABC):
 
         model_fields = type(self).model_fields
         secrets = {}
-        # Get latest values for kwargs if there is an attribute with same name
+        # Get latest values for kwargs if there is an attribute with same name.
+        # Iterate over model_fields (a class-level dict, immutable at runtime)
+        # instead of `self` (which walks self.__dict__ live) to prevent
+        # RuntimeError when a @cached_property writes to __dict__ from a
+        # concurrent thread. See https://github.com/langchain-ai/langchain/issues/34887.
         lc_kwargs = {}
-        # Snapshot to avoid RuntimeError under concurrent __dict__ mutation
-        # (e.g. a @cached_property write racing with this iteration).
-        for k, v in list(self):
+        for k, field in model_fields.items():
+            # Do nothing if the field is excluded
+            if field.exclude:
+                continue
+            v = getattr(self, k)
             if not _is_field_useful(self, k, v):
                 continue
-            # Do nothing if the field is excluded
-            if k in model_fields and model_fields[k].exclude:
-                continue
 
-            lc_kwargs[k] = getattr(self, k, v)
+            lc_kwargs[k] = v
 
         # Merge the lc_secrets and lc_attributes from every class in the MRO
         for cls in [None, *self.__class__.mro()]:
