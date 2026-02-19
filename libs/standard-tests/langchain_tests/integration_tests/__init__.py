@@ -1,6 +1,8 @@
 """Integration tests for LangChain components."""
+
 # ruff: noqa: E402
 import importlib.util
+
 import pytest
 
 # Rewrite assert statements for test suite so that implementations can
