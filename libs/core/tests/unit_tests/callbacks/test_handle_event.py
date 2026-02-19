@@ -39,7 +39,7 @@ class _FallbackChatHandler(BaseCallbackHandler):
 
 
 class _FallbackChatHandlerAsync(BaseCallbackHandler):
-    """Async-compatible handler that raises NotImplementedError for on_chat_model_start."""
+    """Async-compatible handler; raises NotImplementedError for on_chat_model_start."""
 
     run_inline = True
 
@@ -95,7 +95,7 @@ def test_handle_event_other_event_not_implemented_logs_warning() -> None:
 
 @pytest.mark.asyncio
 async def test_ahandle_event_chat_model_start_fallback_to_llm_start() -> None:
-    """Async: on_chat_model_start raises NotImplementedError → falls back to on_llm_start."""
+    """Async: on_chat_model_start NotImplementedError falls back to on_llm_start."""
     handler = _FallbackChatHandlerAsync()
     handler.on_llm_start = MagicMock()  # type: ignore[method-assign]
 
