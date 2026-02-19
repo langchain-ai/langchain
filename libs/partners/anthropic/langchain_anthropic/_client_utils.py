@@ -31,6 +31,11 @@ class _SyncHttpxClientWrapper(anthropic.DefaultHttpxClient):
             pass
 
 
+# Keep a reference to background tasks to prevent them from being garbage collected
+# immediately.
+_cleanup_tasks: set[asyncio.Task] = set()
+
+
 class _AsyncHttpxClientWrapper(anthropic.DefaultAsyncHttpxClient):
     """Borrowed from anthropic._base_client."""
 
@@ -44,7 +49,9 @@ class _AsyncHttpxClientWrapper(anthropic.DefaultAsyncHttpxClient):
             return
 
         if loop.is_running():
-            loop.create_task(self.aclose())
+            task = loop.create_task(self.aclose())
+            _cleanup_tasks.add(task)
+            task.add_done_callback(_cleanup_tasks.discard)
 
 
 @lru_cache
