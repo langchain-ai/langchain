@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from pydantic import BaseModel
 from typing_extensions import TypedDict
 
@@ -31,13 +31,17 @@ from langchain.agents.middleware.types import (
     ModelResponse,
     ResponseT,
     before_model,
+    wrap_model_call,
+    wrap_tool_call,
 )
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
     from langgraph.graph.state import CompiledStateGraph
+    from langgraph.prebuilt.tool_node import ToolCallRequest
     from langgraph.runtime import Runtime
+    from langgraph.types import Command
 
 
 # =============================================================================
@@ -78,7 +82,7 @@ class SummaryResult(BaseModel):
 class BackwardsCompatibleMiddleware(AgentMiddleware):
     """Middleware that doesn't specify type parameters - backwards compatible."""
 
-    def before_model(self, state: AgentState[Any], runtime: Runtime[None]) -> dict[str, Any] | None:
+    def before_model(self, state: AgentState[Any], runtime: Runtime[Any]) -> dict[str, Any] | None:
         return None
 
     def wrap_model_call(
@@ -103,7 +107,7 @@ class BackwardsCompatibleMiddleware2(AgentMiddleware):
 
 @before_model
 def backwards_compatible_decorator(
-    state: AgentState[Any], runtime: Runtime[None]
+    state: AgentState[Any], runtime: Runtime[Any]
 ) -> dict[str, Any] | None:
     """Decorator middleware without explicit type parameters."""
     return None
@@ -237,7 +241,7 @@ def fake_model() -> GenericFakeChatModel:
 
 
 def test_create_agent_no_context_schema(fake_model: GenericFakeChatModel) -> None:
-    """Backwards compatible: No context_schema means ContextT=None."""
+    """Backwards compatible: No context_schema means ContextT=Any."""
     agent: CompiledStateGraph[Any, None, Any, Any] = create_agent(
         model=fake_model,
         middleware=[
@@ -441,3 +445,148 @@ def test_model_response_backwards_compatible() -> None:
     )
 
     assert response.structured_response is None
+
+
+# =============================================================================
+# 9. ASYNC DECORATOR VARIANTS FOR wrap_model_call AND wrap_tool_call
+# =============================================================================
+@wrap_model_call
+async def async_wrap_model_retry(
+    request: ModelRequest[UserContext],
+    handler: Callable[[ModelRequest[UserContext]], Awaitable[ModelResponse[Any]]],
+) -> ModelResponse[Any] | AIMessage:
+    """Async wrap_model_call decorator should type-check correctly."""
+    for attempt in range(3):
+        try:
+            return await handler(request)
+        except Exception:
+            if attempt == 2:
+                raise
+    return await handler(request)
+
+
+@wrap_model_call
+async def async_wrap_model_unparameterized(
+    request: ModelRequest,
+    handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+) -> ModelResponse | AIMessage:
+    """Async wrap_model_call with unparameterized types (backwards compat)."""
+    return await handler(request)
+
+
+@wrap_tool_call
+async def async_wrap_tool_retry(
+    request: ToolCallRequest,
+    handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+) -> ToolMessage | Command[Any]:
+    """Async wrap_tool_call decorator should type-check correctly."""
+    for attempt in range(3):
+        try:
+            return await handler(request)
+        except Exception:
+            if attempt == 2:
+                raise
+    return await handler(request)
+
+
+def test_async_wrap_model_call_decorator(fake_model: GenericFakeChatModel) -> None:
+    """Async @wrap_model_call decorator produces valid AgentMiddleware."""
+    agent = create_agent(
+        model=fake_model,
+        middleware=[async_wrap_model_retry],
+        context_schema=UserContext,
+    )
+    assert agent is not None
+
+
+def test_async_wrap_model_call_unparameterized(fake_model: GenericFakeChatModel) -> None:
+    """Async @wrap_model_call with unparameterized types works."""
+    agent = create_agent(
+        model=fake_model,
+        middleware=[async_wrap_model_unparameterized],
+    )
+    assert agent is not None
+
+
+def test_async_wrap_tool_call_decorator(fake_model: GenericFakeChatModel) -> None:
+    """Async @wrap_tool_call decorator produces valid AgentMiddleware."""
+    agent = create_agent(
+        model=fake_model,
+        middleware=[async_wrap_tool_retry],
+    )
+    assert agent is not None
+
+
+# Test sync decorators still work (regression check)
+@wrap_model_call
+def sync_wrap_model(
+    request: ModelRequest[UserContext],
+    handler: Callable[[ModelRequest[UserContext]], ModelResponse[Any]],
+) -> ModelResponse[Any] | AIMessage:
+    """Sync wrap_model_call should still type-check correctly."""
+    return handler(request)
+
+
+@wrap_tool_call
+def sync_wrap_tool(
+    request: ToolCallRequest,
+    handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+) -> ToolMessage | Command[Any]:
+    """Sync wrap_tool_call should still type-check correctly."""
+    return handler(request)
+
+
+def test_sync_wrap_model_call_decorator(fake_model: GenericFakeChatModel) -> None:
+    """Sync @wrap_model_call decorator still works."""
+    agent = create_agent(
+        model=fake_model,
+        middleware=[sync_wrap_model],
+        context_schema=UserContext,
+    )
+    assert agent is not None
+
+
+def test_sync_wrap_tool_call_decorator(fake_model: GenericFakeChatModel) -> None:
+    """Sync @wrap_tool_call decorator still works."""
+    agent = create_agent(
+        model=fake_model,
+        middleware=[sync_wrap_tool],
+    )
+    assert agent is not None
+
+
+# Test with func=None pattern (parenthesized decorator)
+@wrap_model_call()
+async def async_wrap_model_with_parens(
+    request: ModelRequest,
+    handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+) -> ModelResponse | AIMessage:
+    """Async wrap_model_call with parentheses should type-check correctly."""
+    return await handler(request)
+
+
+@wrap_tool_call()
+async def async_wrap_tool_with_parens(
+    request: ToolCallRequest,
+    handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+) -> ToolMessage | Command[Any]:
+    """Async wrap_tool_call with parentheses should type-check correctly."""
+    return await handler(request)
+
+
+def test_async_wrap_model_call_with_parens(fake_model: GenericFakeChatModel) -> None:
+    """Async @wrap_model_call() with parens produces valid AgentMiddleware."""
+    agent = create_agent(
+        model=fake_model,
+        middleware=[async_wrap_model_with_parens],
+    )
+    assert agent is not None
+
+
+def test_async_wrap_tool_call_with_parens(fake_model: GenericFakeChatModel) -> None:
+    """Async @wrap_tool_call() with parens produces valid AgentMiddleware."""
+    agent = create_agent(
+        model=fake_model,
+        middleware=[async_wrap_tool_with_parens],
+    )
+    assert agent is not None

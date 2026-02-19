@@ -7,8 +7,10 @@ Expected errors:
 1. TypedDict "UserContext" has no key "session_id" - accessing wrong context field
 2. Argument incompatible with supertype - mismatched ModelRequest type
 3. Cannot infer value of type parameter - middleware/context_schema mismatch
-4. "AnalysisResult" has no attribute "summary" - accessing wrong response field
-5. Handler returns wrong ResponseT type
+4. (No longer an error) Backwards compatible middleware with context_schema is OK
+   because ContextT defaults to Any, which is compatible with any context_schema
+5. "AnalysisResult" has no attribute "summary" - accessing wrong response field
+6. Handler returns wrong ResponseT type
 """
 
 from __future__ import annotations
@@ -107,7 +109,9 @@ def test_mismatched_context_schema() -> None:
 
 
 # =============================================================================
-# ERROR 4: Backwards compatible middleware with typed context_schema
+# NOTE 4: Backwards compatible middleware with typed context_schema
+# This is NOT a type error because ContextT defaults to Any, which is
+# compatible with any context_schema.
 # =============================================================================
 class BackwardsCompatibleMiddleware(AgentMiddleware):
     def wrap_model_call(
@@ -119,10 +123,10 @@ class BackwardsCompatibleMiddleware(AgentMiddleware):
 
 
 def test_backwards_compat_with_context_schema() -> None:
-    # TYPE ERROR: BackwardsCompatibleMiddleware is AgentMiddleware[..., None]
-    # but context_schema=UserContext expects AgentMiddleware[..., UserContext]
+    # BackwardsCompatibleMiddleware uses default type params (Any),
+    # so it is compatible with any context_schema including UserContext
     fake_model = FakeToolCallingModel()
-    _agent = create_agent(  # type: ignore[misc]
+    _agent = create_agent(
         model=fake_model,
         middleware=[BackwardsCompatibleMiddleware()],
         context_schema=UserContext,
