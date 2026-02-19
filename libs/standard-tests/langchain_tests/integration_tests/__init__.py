@@ -1,6 +1,6 @@
 """Integration tests for LangChain components."""
-
 # ruff: noqa: E402
+import importlib.util
 import pytest
 
 # Rewrite assert statements for test suite so that implementations can
@@ -19,13 +19,8 @@ modules = [
 for module in modules:
     pytest.register_assert_rewrite(f"langchain_tests.integration_tests.{module}")
 
-_HAS_DEEPAGENTS = False
-try:
-    import deepagents  # noqa: F401
-except ImportError:
-    _HAS_DEEPAGENTS = False
-else:
-    _HAS_DEEPAGENTS = True
+_HAS_DEEPAGENTS = importlib.util.find_spec("deepagents") is not None
+if _HAS_DEEPAGENTS:
     pytest.register_assert_rewrite("langchain_tests.integration_tests.sandboxes")
 
 from langchain_tests.integration_tests.base_store import (
