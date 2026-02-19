@@ -152,7 +152,7 @@ def load_evaluator(
                 from langchain_openai import ChatOpenAI
             except ImportError:
                 try:
-                    from langchain_community.chat_models.openai import (  # type: ignore[no-redef]
+                    from langchain_community.chat_models.openai import (
                         ChatOpenAI,
                     )
                 except ImportError as e:

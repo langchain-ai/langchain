@@ -2,6 +2,7 @@
 
 import inspect
 import json
+import logging
 import sys
 import textwrap
 import threading
@@ -2152,6 +2153,7 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
 
         class EmptyModel(BaseModelV1, Generic[A], extra="allow"):
             pass
+
     else:
 
         class ModelA(BaseModel, Generic[A]):  # type: ignore[no-redef]
@@ -2631,7 +2633,8 @@ def test_tool_mutate_input() -> None:
     assert my_input == {"x": "hi"}
 
 
-def test_structured_tool_args_schema_dict() -> None:
+def test_structured_tool_args_schema_dict(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.DEBUG)
     args_schema = {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -2665,6 +2668,8 @@ def test_structured_tool_args_schema_dict() -> None:
         "a": {"title": "A", "type": "integer"},
         "b": {"title": "B", "type": "integer"},
     }
+    # test that we didn't log an error about failing to get args_schema annotations
+    assert "Failed to get args_schema annotations for filtering" not in caplog.text
 
 
 def test_simple_tool_args_schema_dict() -> None:
