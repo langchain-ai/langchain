@@ -206,7 +206,11 @@ class ChatAnthropicBedrock(ChatAnthropic):
     def _set_model_profile(self) -> Self:
         """Set model profile if not overridden."""
         if self.profile is None:
-            model_id = re.sub(r"^[A-Za-z]{2}\.", "", self.model)
+            # Strip region prefix (e.g., "us."), provider prefix (e.g., "anthropic."),
+            # and version suffix (e.g., "-v1:0")
+            model_id = re.sub(r"^[A-Za-z]{2}\.", "", self.model)  # Remove region
+            model_id = re.sub(r"^anthropic\.", "", model_id)  # Remove provider
+            model_id = re.sub(r"-v\d+:\d+$", "", model_id)  # Remove version suffix
             self.profile = _get_default_model_profile(model_id)
         if (
             self.profile is not None
