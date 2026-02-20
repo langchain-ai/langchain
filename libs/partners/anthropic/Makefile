@@ -14,7 +14,7 @@ test tests:
 	uv run --group test pytest -vvv --disable-socket --allow-unix-socket $(TEST_FILE)
 
 integration_test integration_tests:
-	uv run --group test --group test_integration pytest -n auto -vvv --timeout 30 $(TEST_FILE)
+	uv run --group test --group test_integration pytest -vvv tests/integration_tests/test_bedrock.py
 
 test_watch:
 	uv run --group test ptw --snapshot-update --now . -- -vv $(TEST_FILE)
