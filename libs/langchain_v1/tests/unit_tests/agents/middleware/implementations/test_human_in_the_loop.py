@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
+from langchain_core.runnables.config import var_child_runnable_config
 from langgraph.runtime import Runtime
 
 from langchain.agents.middleware import InterruptOnConfig
@@ -12,6 +15,9 @@ from langchain.agents.middleware.human_in_the_loop import (
     HumanInTheLoopMiddleware,
 )
 from langchain.agents.middleware.types import AgentState
+
+if TYPE_CHECKING:
+    from langchain_core.runnables import RunnableConfig
 
 
 def test_human_in_the_loop_middleware_initialization() -> None:
@@ -52,6 +58,117 @@ def test_human_in_the_loop_middleware_no_interrupts_needed() -> None:
     state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
     result = middleware.after_model(state, Runtime())
     assert result is None
+
+
+@pytest.mark.asyncio
+async def test_human_in_the_loop_middleware_async_interrupt_uses_config_context() -> None:
+    """Test async HITL interrupt works even if runnable config context is missing."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
+    )
+
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+    config: RunnableConfig = {"configurable": {"thread_id": "thread-1"}}
+
+    def mock_interrupt(_: Any) -> dict[str, Any]:
+        current_config = var_child_runnable_config.get()
+        if current_config is None:
+            msg = "Runnable config context was not set for async HITL interrupt"
+            raise RuntimeError(msg)
+        assert current_config["configurable"]["thread_id"] == "thread-1"
+        return {"decisions": [{"type": "approve"}]}
+
+    # Simulate Python < 3.11 async execution where runnable config is not available.
+    token = var_child_runnable_config.set(None)
+    try:
+        with patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            side_effect=mock_interrupt,
+        ):
+            result = await middleware.aafter_model(state, Runtime(), config=config)
+    finally:
+        var_child_runnable_config.reset(token)
+
+    assert result is not None
+    assert result["messages"][0].tool_calls[0]["name"] == "test_tool"
+    # Ensure middleware restores context after setting it for the interrupt call.
+    assert var_child_runnable_config.get() is None
+
+
+@pytest.mark.asyncio
+async def test_human_in_the_loop_middleware_async_interrupt_uses_existing_context() -> None:
+    """Test async HITL interrupt keeps existing runnable config context."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
+    )
+
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+    existing_config: RunnableConfig = {"configurable": {"thread_id": "existing-thread"}}
+    passed_config: RunnableConfig = {"configurable": {"thread_id": "passed-thread"}}
+
+    def mock_interrupt(_: Any) -> dict[str, Any]:
+        current_config = var_child_runnable_config.get()
+        assert current_config is not None
+        assert current_config["configurable"]["thread_id"] == "existing-thread"
+        return {"decisions": [{"type": "approve"}]}
+
+    token = var_child_runnable_config.set(existing_config)
+    try:
+        with patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            side_effect=mock_interrupt,
+        ):
+            result = await middleware.aafter_model(state, Runtime(), config=passed_config)
+        current_config = var_child_runnable_config.get()
+        assert current_config is not None
+        assert current_config["configurable"]["thread_id"] == "existing-thread"
+    finally:
+        var_child_runnable_config.reset(token)
+
+    assert result is not None
+    assert result["messages"][0].tool_calls[0]["name"] == "test_tool"
+
+
+@pytest.mark.asyncio
+async def test_human_in_the_loop_middleware_async_interrupt_without_passed_config() -> None:
+    """Test async HITL interrupt works with existing context and no passed config."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
+    )
+
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+    existing_config: RunnableConfig = {"configurable": {"thread_id": "thread-no-passed-config"}}
+
+    def mock_interrupt(_: Any) -> dict[str, Any]:
+        current_config = var_child_runnable_config.get()
+        assert current_config is not None
+        assert current_config["configurable"]["thread_id"] == "thread-no-passed-config"
+        return {"decisions": [{"type": "approve"}]}
+
+    token = var_child_runnable_config.set(existing_config)
+    try:
+        with patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            side_effect=mock_interrupt,
+        ):
+            result = await middleware.aafter_model(state, Runtime())
+    finally:
+        var_child_runnable_config.reset(token)
+
+    assert result is not None
+    assert result["messages"][0].tool_calls[0]["name"] == "test_tool"
 
 
 def test_human_in_the_loop_middleware_single_tool_accept() -> None:
