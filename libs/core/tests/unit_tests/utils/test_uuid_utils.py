@@ -26,12 +26,29 @@ def test_uuid7() -> None:
     assert out1_ms == ms
 
 
+def _uuid_v7_sortable_prefix(uuid_obj: UUID) -> int:
+    """Extract the timestamp + counter bits (top 96 bits minus version/variant)."""
+    val = uuid_obj.int
+    timestamp_ms = (val >> 80) & 0xFFFFFFFFFFFF
+    counter_hi = (val >> 64) & 0x0FFF
+    counter_lo = (val >> 32) & 0x3FFFFFFF
+    return (timestamp_ms << 42) | (counter_hi << 30) | counter_lo
+
+
 def test_monotonicity() -> None:
-    """Test that UUIDs are monotonically increasing."""
-    last = ""
+    """Test that UUIDs are monotonically increasing.
+
+    UUIDv7 guarantees monotonicity of the timestamp+counter portion,
+    but the trailing 32-bit random field can cause raw string or int
+    comparisons to appear non-monotonic. Compare only the sortable prefix.
+    """
+    last_prefix = -1
+    last_uuid = None
     for n in range(100_000):
-        i = str(uuid7())
-        if n > 0 and i <= last:
-            msg = f"UUIDs are not monotonic: {last} versus {i}"
+        u = uuid7()
+        prefix = _uuid_v7_sortable_prefix(u)
+        if n > 0 and prefix < last_prefix:
+            msg = f"UUIDs are not monotonic: {last_uuid} versus {u}"
             raise RuntimeError(msg)
-        last = i
+        last_prefix = prefix
+        last_uuid = u
