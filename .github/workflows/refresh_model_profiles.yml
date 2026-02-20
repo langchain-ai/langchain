@@ -55,9 +55,17 @@ jobs:
               --data-dir "$data_dir"
           done
 
+      - name: "🔑 Generate GitHub App token"
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.MODEL_PROFILE_BOT_APP_ID }}
+          private-key: ${{ secrets.MODEL_PROFILE_BOT_PRIVATE_KEY }}
+
       - name: "🔀 Create pull request"
         uses: peter-evans/create-pull-request@v7
         with:
+          token: ${{ steps.app-token.outputs.token }}
           branch: bot/refresh-model-profiles
           commit-message: "chore(model-profiles): refresh model profile data"
           title: "chore(model-profiles): refresh model profile data"
