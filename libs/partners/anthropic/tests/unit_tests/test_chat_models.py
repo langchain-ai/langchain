@@ -2425,14 +2425,12 @@ def test_chat_anthropic_bedrock_initialization() -> None:
         model=BEDROCK_MODEL_NAME,
         aws_region="us-east-1",
         aws_access_key_id="test-key",
-        aws_secret_access_key="test-secret",
+        aws_secret_access_key="test-secret",  # noqa: S106
         default_request_timeout=2,
     )
     assert model.model == BEDROCK_MODEL_NAME
     assert model.aws_region == "us-east-1"
-    assert (
-        cast("SecretStr", model.aws_access_key_id).get_secret_value() == "test-key"
-    )
+    assert cast("SecretStr", model.aws_access_key_id).get_secret_value() == "test-key"
     assert (
         cast("SecretStr", model.aws_secret_access_key).get_secret_value()
         == "test-secret"
@@ -2447,13 +2445,11 @@ def test_chat_anthropic_bedrock_initialization_with_session_token() -> None:
         model=BEDROCK_MODEL_NAME,
         aws_region="us-west-2",
         aws_access_key_id="test-key",
-        aws_secret_access_key="test-secret",
-        aws_session_token="test-token",
+        aws_secret_access_key="test-secret",  # noqa: S106
+        aws_session_token="test-token",  # noqa: S106
     )
     assert model.aws_region == "us-west-2"
-    assert (
-        cast("SecretStr", model.aws_session_token).get_secret_value() == "test-token"
-    )
+    assert cast("SecretStr", model.aws_session_token).get_secret_value() == "test-token"
 
 
 def test_chat_anthropic_bedrock_initialization_from_env() -> None:
@@ -2484,14 +2480,14 @@ def test_chat_anthropic_bedrock_client_params() -> None:
         model=BEDROCK_MODEL_NAME,
         aws_region="us-east-1",
         aws_access_key_id="test-key",
-        aws_secret_access_key="test-secret",
+        aws_secret_access_key="test-secret",  # noqa: S106
         max_retries=3,
         default_request_timeout=5.0,
     )
     client_params = model._client_params
     assert client_params["aws_region"] == "us-east-1"
     assert client_params["aws_access_key"] == "test-key"
-    assert client_params["aws_secret_key"] == "test-secret"
+    assert client_params["aws_secret_key"] == "test-secret"  # noqa: S105
     assert client_params["max_retries"] == 3
     assert client_params["timeout"] == 5.0
 
@@ -2502,7 +2498,7 @@ def test_chat_anthropic_bedrock_client_initialization() -> None:
         model=BEDROCK_MODEL_NAME,
         aws_region="us-east-1",
         aws_access_key_id="test-key",
-        aws_secret_access_key="test-secret",
+        aws_secret_access_key="test-secret",  # noqa: S106
     )
     # Test that client properties exist and can be accessed
     # Note: We can't actually instantiate AnthropicBedrock without valid AWS creds,
@@ -2531,8 +2527,8 @@ def test_chat_anthropic_bedrock_lc_secrets() -> None:
     assert "aws_secret_access_key" in secrets
     assert "aws_session_token" in secrets
     assert secrets["aws_access_key_id"] == "AWS_ACCESS_KEY_ID"
-    assert secrets["aws_secret_access_key"] == "AWS_SECRET_ACCESS_KEY"
-    assert secrets["aws_session_token"] == "AWS_SESSION_TOKEN"
+    assert secrets["aws_secret_access_key"] == "AWS_SECRET_ACCESS_KEY"  # noqa: S105
+    assert secrets["aws_session_token"] == "AWS_SESSION_TOKEN"  # noqa: S105
 
 
 def test_chat_anthropic_bedrock_get_lc_namespace() -> None:
@@ -2651,7 +2647,7 @@ def test_chat_anthropic_bedrock_inherits_from_chat_anthropic() -> None:
 
 def test_chat_anthropic_bedrock_import() -> None:
     """Test that ChatAnthropicBedrock can be imported."""
-    from langchain_anthropic import ChatAnthropicBedrock  # noqa: F401
+    from langchain_anthropic import ChatAnthropicBedrock
 
     assert ChatAnthropicBedrock is not None
 

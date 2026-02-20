@@ -1,5 +1,7 @@
 """Tests for langchain_anthropic.utils module."""
 
+# ruff: noqa: S105
+
 from __future__ import annotations
 
 from pydantic import SecretStr
@@ -13,26 +15,26 @@ from langchain_anthropic.utils import (
 def test_resolve_aws_credentials_all_provided() -> None:
     """Test resolve_aws_credentials with all credentials provided."""
     creds = resolve_aws_credentials(
-        aws_access_key_id=SecretStr("AKIAIOSFODNN7EXAMPLE"),
-        aws_secret_access_key=SecretStr("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"),
+        aws_access_key_id=SecretStr("example-key"),
+        aws_secret_access_key=SecretStr("example-secret"),
         aws_session_token=SecretStr("session-token-example"),
     )
 
-    assert creds["aws_access_key"] == "AKIAIOSFODNN7EXAMPLE"
-    assert creds["aws_secret_key"] == "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+    assert creds["aws_access_key"] == "example-key"
+    assert creds["aws_secret_key"] == "example-secret"
     assert creds["aws_session_token"] == "session-token-example"
 
 
 def test_resolve_aws_credentials_partial() -> None:
     """Test resolve_aws_credentials with only some credentials provided."""
     creds = resolve_aws_credentials(
-        aws_access_key_id=SecretStr("AKIAIOSFODNN7EXAMPLE"),
-        aws_secret_access_key=SecretStr("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"),
+        aws_access_key_id=SecretStr("example-key"),
+        aws_secret_access_key=SecretStr("example-secret"),
         aws_session_token=None,
     )
 
-    assert creds["aws_access_key"] == "AKIAIOSFODNN7EXAMPLE"
-    assert creds["aws_secret_key"] == "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+    assert creds["aws_access_key"] == "example-key"
+    assert creds["aws_secret_key"] == "example-secret"
     assert "aws_session_token" not in creds
 
 
@@ -71,14 +73,14 @@ def test_create_bedrock_client_params_with_credentials() -> None:
     """Test create_bedrock_client_params with AWS credentials."""
     params = create_bedrock_client_params(
         aws_region="us-west-2",
-        aws_access_key_id=SecretStr("AKIAIOSFODNN7EXAMPLE"),
-        aws_secret_access_key=SecretStr("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"),
+        aws_access_key_id=SecretStr("example-key"),
+        aws_secret_access_key=SecretStr("example-secret"),
         aws_session_token=SecretStr("session-token-example"),
     )
 
     assert params["aws_region"] == "us-west-2"
-    assert params["aws_access_key"] == "AKIAIOSFODNN7EXAMPLE"
-    assert params["aws_secret_key"] == "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+    assert params["aws_access_key"] == "example-key"
+    assert params["aws_secret_key"] == "example-secret"
     assert params["aws_session_token"] == "session-token-example"
 
 
@@ -86,16 +88,16 @@ def test_create_bedrock_client_params_with_all_options() -> None:
     """Test create_bedrock_client_params with all optional parameters."""
     params = create_bedrock_client_params(
         aws_region="eu-west-1",
-        aws_access_key_id=SecretStr("AKIAIOSFODNN7EXAMPLE"),
-        aws_secret_access_key=SecretStr("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"),
+        aws_access_key_id=SecretStr("example-key"),
+        aws_secret_access_key=SecretStr("example-secret"),
         max_retries=5,
         default_headers={"X-Custom-Header": "value"},
         timeout=30.0,
     )
 
     assert params["aws_region"] == "eu-west-1"
-    assert params["aws_access_key"] == "AKIAIOSFODNN7EXAMPLE"
-    assert params["aws_secret_key"] == "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+    assert params["aws_access_key"] == "example-key"
+    assert params["aws_secret_key"] == "example-secret"
     assert params["max_retries"] == 5
     assert params["default_headers"] == {"X-Custom-Header": "value"}
     assert params["timeout"] == 30.0

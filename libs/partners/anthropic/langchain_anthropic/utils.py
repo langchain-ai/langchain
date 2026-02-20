@@ -6,6 +6,7 @@ client creation, used by ChatAnthropicBedrock and other Bedrock-based integratio
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 from pydantic import SecretStr
@@ -64,7 +65,7 @@ def create_bedrock_client_params(
     aws_secret_access_key: SecretStr | None = None,
     aws_session_token: SecretStr | None = None,
     max_retries: int = 2,
-    default_headers: dict[str, str] | None = None,
+    default_headers: Mapping[str, str] | None = None,
     timeout: float | None = None,
 ) -> dict[str, Any]:
     """Create client parameters for AnthropicBedrock client initialization.
