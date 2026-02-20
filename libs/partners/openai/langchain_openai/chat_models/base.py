@@ -230,6 +230,10 @@ def _format_message_content(
     role: str | None = None,
 ) -> Any:
     """Format message content."""
+    # An empty list is not valid message content for LLM providers.
+    # Coerce to empty string to prevent serialization errors.
+    if isinstance(content, list) and len(content) == 0:
+        return ""
     if content and isinstance(content, list):
         formatted_content = []
         for block in content:

@@ -110,6 +110,10 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
                     "string."
                 )
                 raise ValueError(msg) from e
+        elif isinstance(content, list) and len(content) == 0:
+            # Empty lists are not valid message content for LLM providers.
+            # Coerce to empty string to avoid serialization errors.
+            values["content"] = ""
         elif isinstance(content, list):
             values["content"] = []
             for i, x in enumerate(content):

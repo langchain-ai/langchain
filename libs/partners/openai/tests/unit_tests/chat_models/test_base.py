@@ -776,8 +776,9 @@ def test_format_message_content() -> None:
     content = None
     assert content == _format_message_content(content)
 
+    # Empty list is coerced to empty string to prevent provider serialization errors
     content = []
-    assert content == _format_message_content(content)
+    assert _format_message_content(content) == ""
 
     content = [
         {"type": "text", "text": "What is in this image?"},
@@ -873,6 +874,18 @@ def test_format_message_content() -> None:
     expected = [{"type": "file", "file": {"file_id": "file-abc123"}}]
     for content in contents:
         assert expected == _format_message_content([content])
+
+
+def test_tool_message_empty_list_content_serialized_as_string() -> None:
+    """ToolMessage with empty list content should serialize as empty string."""
+    from langchain_core.messages import ToolMessage
+
+    msg = ToolMessage(content=[], tool_call_id="call_123")
+    result = _convert_message_to_dict(msg)
+    assert result["role"] == "tool"
+    # Must be empty string, not [], to avoid provider serialization errors
+    assert result["content"] == ""
+    assert isinstance(result["content"], str)
 
 
 class GenerateUsername(BaseModel):

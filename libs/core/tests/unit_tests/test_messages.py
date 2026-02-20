@@ -1043,6 +1043,13 @@ def test_tool_message_content() -> None:
     )
 
 
+def test_tool_message_empty_list_content_coerced() -> None:
+    """Empty list content is coerced to empty string to prevent provider errors."""
+    msg = ToolMessage([], tool_call_id="1")
+    assert msg.content == ""
+    assert isinstance(msg.content, str)
+
+
 def test_tool_message_tool_call_id() -> None:
     ToolMessage("foo", tool_call_id="1")
     ToolMessage("foo", tool_call_id=uuid.uuid4())
