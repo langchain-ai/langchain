@@ -21,7 +21,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.2.13"
+version = "1.2.14"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langsmith>=0.3.45,<1.0.0",
@@ -133,7 +133,7 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 "langchain_core/sys_info.py" = [ "T201",]
 "tests/unit_tests/test_tools.py" = [ "ARG",]
 "tests/**" = [ "D1", "PLR2004", "S", "SLF",]
-"scripts/**" = [ "INP", "S",]
+"scripts/**" = [ "INP", "S", "T201",]
 
 [tool.coverage.run]
 omit = [ "tests/*",]
