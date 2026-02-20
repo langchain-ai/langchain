@@ -1,15 +1,17 @@
 """Anthropic Bedrock chat models."""
 
 import os
+import re
 from functools import cached_property
 from typing import Any
 
 from langchain_core.language_models.chat_models import LangSmithParams
 from langchain_core.utils import secret_from_env
-from pydantic import ConfigDict, Field, SecretStr
+from pydantic import ConfigDict, Field, SecretStr, model_validator
+from typing_extensions import Self
 
 from langchain_anthropic._bedrock_utils import _create_bedrock_client_params
-from langchain_anthropic.chat_models import ChatAnthropic
+from langchain_anthropic.chat_models import ChatAnthropic, _get_default_model_profile
 
 
 class ChatAnthropicBedrock(ChatAnthropic):
@@ -199,3 +201,17 @@ class ChatAnthropicBedrock(ChatAnthropic):
         if ls_stop := stop or params.get("stop", None):
             ls_params["ls_stop"] = ls_stop
         return ls_params
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            model_id = re.sub(r"^[A-Za-z]{2}\.", "", self.model)
+            self.profile = _get_default_model_profile(model_id)
+        if (
+            self.profile is not None
+            and self.betas
+            and "context-1m-2025-08-07" in self.betas
+        ):
+            self.profile["max_input_tokens"] = 1_000_000
+        return self
