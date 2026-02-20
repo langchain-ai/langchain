@@ -3,6 +3,7 @@
 import os
 from unittest import mock
 
+import httpx
 import pytest
 from langchain_core.messages import HumanMessage
 from pydantic import SecretStr
@@ -174,3 +175,33 @@ def test_max_tokens_converted_to_max_completion_tokens() -> None:
     assert "max_completion_tokens" in payload
     assert payload["max_completion_tokens"] == 1000
     assert "max_tokens" not in payload
+
+
+def test_azure_client_caching() -> None:
+    """Test that AzureChatOpenAI reuses httpx clients across instances."""
+    llm1 = AzureChatOpenAI(
+        azure_deployment="d", openai_api_version="v", azure_endpoint="e"
+    )  # type: ignore[call-arg]
+    llm2 = AzureChatOpenAI(
+        azure_deployment="d", openai_api_version="v", azure_endpoint="e"
+    )  # type: ignore[call-arg]
+    assert llm1.root_client._client is llm2.root_client._client
+    llm3 = AzureChatOpenAI(
+        azure_deployment="d", openai_api_version="v", azure_endpoint="f"
+    )  # type: ignore[call-arg]
+    assert llm1.root_client._client is not llm3.root_client._client
+    llm4 = AzureChatOpenAI(
+        azure_deployment="d", openai_api_version="v", azure_endpoint="e", timeout=None
+    )  # type: ignore[call-arg]
+    assert llm1.root_client._client is llm4.root_client._client
+    llm5 = AzureChatOpenAI(
+        azure_deployment="d", openai_api_version="v", azure_endpoint="e", timeout=3
+    )  # type: ignore[call-arg]
+    assert llm1.root_client._client is not llm5.root_client._client
+    llm6 = AzureChatOpenAI(
+        azure_deployment="d",
+        openai_api_version="v",
+        azure_endpoint="e",
+        timeout=httpx.Timeout(60.0, connect=5.0),
+    )  # type: ignore[call-arg]
+    assert llm1.root_client._client is not llm6.root_client._client
