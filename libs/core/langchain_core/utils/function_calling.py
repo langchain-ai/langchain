@@ -176,12 +176,24 @@ def _convert_pydantic_to_openai_function(
 
     Raises:
         TypeError: If the model is not a Pydantic model.
+        ValueError: If JSON schema generation fails due to non-serializable types.
 
     Returns:
         The function description.
     """
     if hasattr(model, "model_json_schema"):
-        schema = model.model_json_schema()  # Pydantic 2
+        try:
+            schema = model.model_json_schema()  # Pydantic 2
+        except Exception as e:
+            msg = (
+                f"Failed to generate JSON schema for {model.__name__}. "
+                "This typically happens when the model contains fields with "
+                "custom Python classes that cannot be serialized to JSON. "
+                "To fix this, annotate non-serializable fields with "
+                "`Annotated[YourType, InjectedToolArg]` so they are excluded "
+                "from the tool schema sent to the language model."
+            )
+            raise ValueError(msg) from e
     elif hasattr(model, "schema"):
         schema = model.schema()  # Pydantic 1
     else:

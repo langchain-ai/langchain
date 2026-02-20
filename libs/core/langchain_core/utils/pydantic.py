@@ -26,6 +26,7 @@ from pydantic import (  # type: ignore[deprecated]
     Field,
     PydanticDeprecationWarning,
     RootModel,
+    TypeAdapter,
     root_validator,
 )
 from pydantic import (
@@ -301,6 +302,28 @@ def _create_subset_model(
         descriptions=descriptions,
         fn_description=fn_description,
     )
+
+
+def _can_generate_json_schema(annotation: Any) -> bool:
+    """Check if a type annotation can produce a valid JSON schema.
+
+    Uses Pydantic's ``TypeAdapter`` to test schema generation. Returns ``False``
+    for custom Python classes and other types that Pydantic cannot serialize to
+    JSON schema (e.g. ``IsInstanceSchema`` types).
+
+    Args:
+        annotation: The type annotation to check.
+
+    Returns:
+        ``True`` if the annotation can be serialized to a JSON schema,
+        ``False`` otherwise.
+    """
+    try:
+        ta = TypeAdapter(annotation, config=ConfigDict(arbitrary_types_allowed=True))
+        ta.json_schema()
+    except Exception:
+        return False
+    return True
 
 
 @overload

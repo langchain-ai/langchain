@@ -2,6 +2,7 @@
 
 import inspect
 import json
+import logging
 import sys
 import textwrap
 import threading
@@ -3631,3 +3632,130 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
+
+
+def test_tool_schema_excludes_non_serializable_custom_class() -> None:
+    """Custom Python classes that can't produce JSON schema are auto-excluded."""
+
+    class Mohan:
+        """A plain Python class that is not JSON-serializable."""
+
+        name: str = "mohan"
+
+    class MohanInput(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+        mohan: Mohan
+        skill: str
+
+    @tool(args_schema=MohanInput)
+    def my_tool(skill: str, mohan: Mohan) -> str:
+        """Test tool with a non-serializable argument."""
+        return skill
+
+    # The tool_call_schema should only include the serializable field
+    schema_dict = _get_tool_call_json_schema(my_tool)
+    assert "skill" in schema_dict["properties"]
+    assert "mohan" not in schema_dict["properties"]
+
+    # convert_to_openai_function should succeed
+    oai_fn = convert_to_openai_function(my_tool)
+    assert oai_fn["name"] == "my_tool"
+    assert "skill" in oai_fn["parameters"]["properties"]
+    assert "mohan" not in oai_fn["parameters"]["properties"]
+
+
+def test_tool_schema_mixed_serializable_and_non_serializable() -> None:
+    """Only non-serializable fields are excluded; serializable ones remain."""
+
+    class CustomObj:
+        pass
+
+    class MixedInput(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+        query: str
+        count: int
+        custom: CustomObj
+        tags: list[str]
+
+    @tool(args_schema=MixedInput)
+    def mixed_tool(query: str, count: int, custom: CustomObj, tags: list[str]) -> str:
+        """Tool with mixed serializable and non-serializable args."""
+        return query
+
+    schema_dict = _get_tool_call_json_schema(mixed_tool)
+    assert "query" in schema_dict["properties"]
+    assert "count" in schema_dict["properties"]
+    assert "tags" in schema_dict["properties"]
+    assert "custom" not in schema_dict["properties"]
+
+    oai_fn = convert_to_openai_function(mixed_tool)
+    assert set(oai_fn["parameters"]["properties"]) == {"query", "count", "tags"}
+
+
+def test_tool_schema_all_serializable_fields_unchanged() -> None:
+    """Tools with only JSON-serializable types are unaffected by the new logic."""
+
+    class NormalInput(BaseModel):
+        query: str
+        count: int
+        label: str
+
+    @tool(args_schema=NormalInput)
+    def normal_tool(query: str, count: int, label: str) -> str:
+        """Tool with all serializable args."""
+        return query
+
+    schema_dict = _get_tool_call_json_schema(normal_tool)
+    assert set(schema_dict["properties"]) == {"query", "count", "label"}
+
+    oai_fn = convert_to_openai_function(normal_tool)
+    assert set(oai_fn["parameters"]["properties"]) == {"query", "count", "label"}
+
+
+def test_tool_schema_injected_arg_takes_precedence() -> None:
+    """InjectedToolArg fields are excluded before the serialization check."""
+
+    class CustomObj:
+        pass
+
+    @tool
+    def tool_with_injected(
+        query: str,
+        ctx: Annotated[CustomObj, InjectedToolArg],
+    ) -> str:
+        """Tool with an explicitly injected non-serializable arg."""
+        return query
+
+    schema_dict = _get_tool_call_json_schema(tool_with_injected)
+    assert "query" in schema_dict["properties"]
+    assert "ctx" not in schema_dict["properties"]
+
+    oai_fn = convert_to_openai_function(tool_with_injected)
+    assert set(oai_fn["parameters"]["properties"]) == {"query"}
+
+
+def test_tool_schema_non_serializable_emits_warning(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A warning is emitted when non-serializable fields are auto-excluded."""
+
+    class CustomObj:
+        pass
+
+    class WarnInput(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+        query: str
+        obj: CustomObj
+
+    @tool(args_schema=WarnInput)
+    def warn_tool(query: str, obj: CustomObj) -> str:
+        """Tool that should warn about non-serializable field."""
+        return query
+
+    with caplog.at_level(logging.WARNING, logger="langchain_core.tools.base"):
+        _ = warn_tool.tool_call_schema
+
+    assert any("obj" in record.message for record in caplog.records)

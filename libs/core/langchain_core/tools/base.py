@@ -60,6 +60,7 @@ from langchain_core.utils.function_calling import (
 )
 from langchain_core.utils.pydantic import (
     TypeBaseModel,
+    _can_generate_json_schema,
     _create_subset_model,
     get_fields,
     is_basemodel_subclass,
@@ -587,6 +588,10 @@ class ChildTool(BaseTool):
     def tool_call_schema(self) -> ArgsSchema:
         """Get the schema for tool calls, excluding injected arguments.
 
+        Fields that are injected at runtime (annotated with ``InjectedToolArg``)
+        or whose types cannot produce a valid JSON schema (e.g. custom Python
+        classes) are automatically excluded.
+
         Returns:
             The schema that should be used for tool calls from language models.
         """
@@ -601,9 +606,33 @@ class ChildTool(BaseTool):
 
         full_schema = self.get_input_schema()
         fields = []
+        non_serializable_fields = []
+        # model_fields is only available on Pydantic v2 models
+        schema_fields = getattr(full_schema, "model_fields", None)
         for name, type_ in get_all_basemodel_annotations(full_schema).items():
-            if not _is_injected_arg_type(type_):
-                fields.append(name)
+            if _is_injected_arg_type(type_):
+                continue
+            # Check if the field's type can produce a valid JSON schema.
+            # Custom Python classes (non-Pydantic, non-primitive) cannot be
+            # serialized and should be excluded from the LLM-facing schema.
+            if schema_fields and name in schema_fields:
+                annotation = schema_fields[name].annotation
+                if annotation is not None and not _can_generate_json_schema(annotation):
+                    non_serializable_fields.append(name)
+                    continue
+            fields.append(name)
+
+        if non_serializable_fields:
+            _logger.warning(
+                "Tool '%s' has fields with types that cannot be represented in "
+                "a JSON schema and will be excluded from the tool schema sent "
+                "to the model: %s. These arguments must be provided at runtime. "
+                "To silence this warning, annotate them with "
+                "`Annotated[YourType, InjectedToolArg]`.",
+                self.name,
+                non_serializable_fields,
+            )
+
         return _create_subset_model(
             self.name, full_schema, fields, fn_description=self.description
         )
