@@ -41,14 +41,6 @@ class TestAnthropicBedrockStandard(ChatModelUnitTests):
     def chat_model_params(self) -> dict:
         return {"model": _MODEL}
 
-    # @property
-    # def init_from_env_params(self) -> tuple[dict, dict, dict]:
-    #     return (
-    #         {"ANTHROPIC_API_KEY": "test"},
-    #         {"model": _MODEL},
-    #         {"anthropic_api_key": "test"},
-    #     )
-
 
 @pytest.mark.benchmark
 def test_init_time_with_client(benchmark: BenchmarkFixture) -> None:
