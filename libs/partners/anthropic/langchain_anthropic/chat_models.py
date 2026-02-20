@@ -17,7 +17,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.exceptions import OutputParserException
+from langchain_core.exceptions import ContextOverflowError, OutputParserException
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -57,6 +57,7 @@ from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import NotRequired, Self, TypedDict
 
+from langchain_anthropic import __version__
 from langchain_anthropic._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
@@ -74,6 +75,8 @@ _message_type_lookups = {
 }
 
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
+
+_USER_AGENT: Final[str] = f"langchain-anthropic/{__version__}"
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
@@ -251,15 +254,31 @@ def _merge_messages(
             ):
                 curr = HumanMessage(curr.content)  # type: ignore[misc]
             else:
+                tool_content = curr.content
+                cache_ctrl = None
+                # Extract cache_control from content blocks and hoist it
+                # to the tool_result level.  Anthropic's API does not
+                # support cache_control on tool_result content sub-blocks.
+                if isinstance(tool_content, list):
+                    cleaned = []
+                    for block in tool_content:
+                        if isinstance(block, dict) and "cache_control" in block:
+                            cache_ctrl = block["cache_control"]
+                            block = {
+                                k: v for k, v in block.items() if k != "cache_control"
+                            }
+                        cleaned.append(block)
+                    tool_content = cleaned
+                tool_result: dict = {
+                    "type": "tool_result",
+                    "content": tool_content,
+                    "tool_use_id": curr.tool_call_id,
+                    "is_error": curr.status == "error",
+                }
+                if cache_ctrl:
+                    tool_result["cache_control"] = cache_ctrl
                 curr = HumanMessage(  # type: ignore[misc]
-                    [
-                        {
-                            "type": "tool_result",
-                            "content": curr.content,
-                            "tool_use_id": curr.tool_call_id,
-                            "is_error": curr.status == "error",
-                        },
-                    ],
+                    [tool_result],
                 )
         last = merged[-1] if merged else None
         if any(
@@ -722,8 +741,16 @@ def _is_code_execution_related_block(
     return False
 
 
+class AnthropicContextOverflowError(anthropic.BadRequestError, ContextOverflowError):
+    """BadRequestError raised when input exceeds Anthropic's context limit."""
+
+
 def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
     """Handle Anthropic BadRequestError."""
+    if "prompt is too long" in e.message:
+        raise AnthropicContextOverflowError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
     if ("messages: at least one message is required") in e.message:
         message = "Received only system message(s). "
         warnings.warn(message, stacklevel=2)
@@ -865,7 +892,7 @@ class ChatAnthropic(BaseChatModel):
     `#!python {"type": "adaptive"}`
     """
 
-    effort: Literal["high", "medium", "low"] | None = None
+    effort: Literal["max", "high", "medium", "low"] | None = None
     """Control how many tokens Claude uses when responding.
 
     This parameter will be merged into the `output_config` parameter when making
@@ -880,13 +907,8 @@ class ChatAnthropic(BaseChatModel):
 
     !!! note "Model Support"
 
-        This feature is currently only supported by Claude Opus 4.5.
-
-    !!! note "Automatic beta header"
-
-        The required `effort-2025-11-24` beta header is
-        automatically appended to the request when using `effort`, so you
-        don't need to manually specify it in the `betas` parameter.
+        This feature is generally available on Claude Opus 4.6 and Claude Opus 4.5.
+        The `max` effort level is only supported by Claude Opus 4.6.
     """
 
     mcp_servers: list[dict[str, Any]] | None = None
@@ -1003,15 +1025,26 @@ class ChatAnthropic(BaseChatModel):
         """Set model profile if not overridden."""
         if self.profile is None:
             self.profile = _get_default_model_profile(self.model)
+        if (
+            self.profile is not None
+            and self.betas
+            and "context-1m-2025-08-07" in self.betas
+        ):
+            self.profile["max_input_tokens"] = 1_000_000
         return self
 
     @cached_property
     def _client_params(self) -> dict[str, Any]:
+        # Merge User-Agent with user-provided headers (user headers take precedence)
+        default_headers = {"User-Agent": _USER_AGENT}
+        if self.default_headers:
+            default_headers.update(self.default_headers)
+
         client_params: dict[str, Any] = {
             "api_key": self.anthropic_api_key.get_secret_value(),
             "base_url": self.anthropic_api_url,
             "max_retries": self.max_retries,
-            "default_headers": (self.default_headers or None),
+            "default_headers": default_headers,
         }
         # value <= 0 indicates the param should be ignored. None is a meaningful value
         # for Anthropic client and treated differently than not specifying the param at
@@ -1156,16 +1189,6 @@ class ChatAnthropic(BaseChatModel):
 
         if output_config:
             payload["output_config"] = output_config
-
-            # Auto-append required beta for effort
-            if "effort" in output_config:
-                required_beta = "effort-2025-11-24"
-                if payload["betas"]:
-                    # Merge with existing betas
-                    if required_beta not in payload["betas"]:
-                        payload["betas"] = [*payload["betas"], required_beta]
-                else:
-                    payload["betas"] = [required_beta]
 
         if "response_format" in payload:
             # response_format present when using agents.create_agent's ProviderStrategy

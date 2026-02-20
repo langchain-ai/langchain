@@ -977,14 +977,14 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         input_vars: set[str] = set()
         optional_variables: set[str] = set()
         partial_vars: dict[str, Any] = {}
-        for _message in messages_:
-            if isinstance(_message, MessagesPlaceholder) and _message.optional:
-                partial_vars[_message.variable_name] = []
-                optional_variables.add(_message.variable_name)
+        for message in messages_:
+            if isinstance(message, MessagesPlaceholder) and message.optional:
+                partial_vars[message.variable_name] = []
+                optional_variables.add(message.variable_name)
             elif isinstance(
-                _message, (BaseChatPromptTemplate, BaseMessagePromptTemplate)
+                message, (BaseChatPromptTemplate, BaseMessagePromptTemplate)
             ):
-                input_vars.update(_message.input_variables)
+                input_vars.update(message.input_variables)
 
         kwargs = {
             "input_variables": sorted(input_vars),

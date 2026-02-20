@@ -65,6 +65,14 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
         self.send_to_llm = send_to_llm
 
 
+class ContextOverflowError(LangChainException):
+    """Exception raised when input exceeds the model's context limit.
+
+    This exception is raised by chat models when the input tokens exceed
+    the maximum context window supported by the model.
+    """
+
+
 class ErrorCode(Enum):
     """Error codes."""
 
