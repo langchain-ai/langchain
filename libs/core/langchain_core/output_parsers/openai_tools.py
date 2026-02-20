@@ -249,6 +249,18 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
             msg = "This output parser can only be used with a chat generation."
             raise OutputParserException(msg)
         message = generation.message
+
+        # Preserve DeepSeek reasoning during OpenAI-tool parsing
+        if (
+            hasattr(message, "additional_kwargs")
+            and "reasoning_content" in message.additional_kwargs
+            and isinstance(message, AIMessage)
+            and message.tool_calls
+        ):
+            message.additional_kwargs["_deepseek_reasoning"] = (
+                message.additional_kwargs["reasoning_content"]
+            )
+
         if isinstance(message, AIMessage) and message.tool_calls:
             parsed_tool_calls = [dict(tc) for tc in message.tool_calls]
             for tool_call in parsed_tool_calls:
