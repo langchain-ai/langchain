@@ -320,9 +320,9 @@ class TestChatOpenRouterInstantiation:
             )
             call_kwargs = mock_cls.call_args[1]
             assert call_kwargs["http_referer"] == (
-                "https://github.com/langchain-ai/langchain"
+                "https://docs.langchain.com/oss"
             )
-            assert call_kwargs["x_title"] == "langchain-openrouter"
+            assert call_kwargs["x_title"] == "langchain"
 
     def test_user_attribution_overrides_defaults(self) -> None:
         """Test that user-supplied attribution overrides the defaults."""
