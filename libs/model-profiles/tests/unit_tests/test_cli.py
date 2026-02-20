@@ -216,6 +216,63 @@ max_input_tokens = 123
     )
 
 
+def test_refresh_generates_sorted_profiles(
+    tmp_path: Path, mock_models_dev_response: dict
+) -> None:
+    """Test that profiles are sorted alphabetically by model ID."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    # Inject models in reverse-alphabetical order so the API response
+    # is NOT already sorted.
+    mock_models_dev_response["anthropic"]["models"] = {
+        "z-model": {
+            "id": "z-model",
+            "name": "Z Model",
+            "tool_call": True,
+            "limit": {"context": 100000, "output": 2048},
+            "modalities": {"input": ["text"], "output": ["text"]},
+        },
+        "a-model": {
+            "id": "a-model",
+            "name": "A Model",
+            "tool_call": True,
+            "limit": {"context": 100000, "output": 2048},
+            "modalities": {"input": ["text"], "output": ["text"]},
+        },
+        "m-model": {
+            "id": "m-model",
+            "name": "M Model",
+            "tool_call": True,
+            "limit": {"context": 100000, "output": 2048},
+            "modalities": {"input": ["text"], "output": ["text"]},
+        },
+    }
+
+    mock_response = Mock()
+    mock_response.json.return_value = mock_models_dev_response
+    mock_response.raise_for_status = Mock()
+
+    with (
+        patch("langchain_model_profiles.cli.httpx.get", return_value=mock_response),
+        patch("builtins.input", return_value="y"),
+    ):
+        refresh("anthropic", data_dir)
+
+    profiles_file = data_dir / "_profiles.py"
+    spec = importlib.util.spec_from_file_location(
+        "generated_profiles_sorted", profiles_file
+    )
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)  # type: ignore[union-attr]
+
+    model_ids = list(module._PROFILES.keys())  # type: ignore[attr-defined]
+    assert model_ids == sorted(model_ids), (
+        f"Profile keys are not sorted: {model_ids}"
+    )
+
+
 def test_model_data_to_profile_text_modalities() -> None:
     """Test that text input/output modalities are correctly mapped."""
     # Model with text in both input and output
