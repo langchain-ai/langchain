@@ -269,9 +269,7 @@ def test_refresh_generates_sorted_profiles(
     spec.loader.exec_module(module)  # type: ignore[union-attr]
 
     model_ids = list(module._PROFILES.keys())  # type: ignore[attr-defined]
-    assert model_ids == sorted(model_ids), (
-        f"Profile keys are not sorted: {model_ids}"
-    )
+    assert model_ids == sorted(model_ids), f"Profile keys are not sorted: {model_ids}"
 
 
 def test_model_data_to_profile_text_modalities() -> None:
