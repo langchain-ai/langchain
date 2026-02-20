@@ -2171,6 +2171,23 @@ def test_profile() -> None:
     assert model.profile == {"tool_calling": False}
 
 
+def test_profile_1m_context_beta() -> None:
+    model = ChatAnthropic(model="claude-sonnet-4-5")
+    assert model.profile
+    assert model.profile["max_input_tokens"] == 200000
+
+    model = ChatAnthropic(model="claude-sonnet-4-5", betas=["context-1m-2025-08-07"])
+    assert model.profile
+    assert model.profile["max_input_tokens"] == 1000000
+
+    model = ChatAnthropic(
+        model="claude-sonnet-4-5",
+        betas=["token-efficient-tools-2025-02-19"],
+    )
+    assert model.profile
+    assert model.profile["max_input_tokens"] == 200000
+
+
 async def test_model_profile_not_blocking() -> None:
     with blockbuster_ctx():
         model = ChatAnthropic(model="claude-sonnet-4-5")
