@@ -20,11 +20,11 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
-version = "1.3.1"
+version = "1.3.3"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "anthropic>=0.75.0,<1.0.0",
-    "langchain-core>=1.2.6,<2.0.0",
+    "anthropic>=0.78.0,<1.0.0",
+    "langchain-core>=1.2.11,<2.0.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
 

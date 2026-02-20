@@ -347,11 +347,16 @@ class OllamaLLM(BaseLLM):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[Mapping[str, Any] | str]:
-        if self._async_client:
-            async for part in await self._async_client.generate(
-                **self._generate_params(prompt, stop=stop, **kwargs)
-            ):
-                yield part
+        if not self._async_client:
+            msg = (
+                "Ollama async client is not initialized. "
+                "Make sure the model was properly constructed."
+            )
+            raise RuntimeError(msg)
+        async for part in await self._async_client.generate(
+            **self._generate_params(prompt, stop=stop, **kwargs)
+        ):
+            yield part
 
     def _create_generate_stream(
         self,
@@ -359,10 +364,15 @@ class OllamaLLM(BaseLLM):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> Iterator[Mapping[str, Any] | str]:
-        if self._client:
-            yield from self._client.generate(
-                **self._generate_params(prompt, stop=stop, **kwargs)
+        if not self._client:
+            msg = (
+                "Ollama sync client is not initialized. "
+                "Make sure the model was properly constructed."
             )
+            raise RuntimeError(msg)
+        yield from self._client.generate(
+            **self._generate_params(prompt, stop=stop, **kwargs)
+        )
 
     async def _astream_with_aggregation(
         self,
