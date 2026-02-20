@@ -94,6 +94,8 @@ def _get_default_model_profile(model_name: str) -> ModelProfile:
 
 
 _FALLBACK_MAX_OUTPUT_TOKENS: Final[int] = 4096
+_1M_CONTEXT_BETA: Final[str] = "context-1m-2025-08-07"
+_1M_CONTEXT_MAX_INPUT_TOKENS: Final[int] = 1000000
 
 
 class AnthropicTool(TypedDict):
@@ -1024,7 +1026,14 @@ class ChatAnthropic(BaseChatModel):
         """Set model profile if not overridden."""
         if self.profile is None:
             self.profile = _get_default_model_profile(self.model)
+        if self.profile is not None and self._has_1m_context_beta():
+            self.profile["max_input_tokens"] = _1M_CONTEXT_MAX_INPUT_TOKENS
         return self
+
+    def _has_1m_context_beta(self) -> bool:
+        """Check if the 1M context beta header is enabled."""
+        betas = self.betas or self.model_kwargs.get("betas") or []
+        return _1M_CONTEXT_BETA in betas
 
     @cached_property
     def _client_params(self) -> dict[str, Any]:
