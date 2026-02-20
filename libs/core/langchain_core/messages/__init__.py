@@ -66,6 +66,7 @@ if TYPE_CHECKING:
         merge_message_runs,
         message_chunk_to_message,
         messages_from_dict,
+        strip_reasoning,
         trim_messages,
     )
 
@@ -126,6 +127,7 @@ __all__ = (
     "message_to_dict",
     "messages_from_dict",
     "messages_to_dict",
+    "strip_reasoning",
     "trim_messages",
 )
 
@@ -183,6 +185,7 @@ _dynamic_imports = {
     "merge_message_runs": "utils",
     "message_chunk_to_message": "utils",
     "messages_from_dict": "utils",
+    "strip_reasoning": "utils",
     "trim_messages": "utils",
 }
 

@@ -17,6 +17,7 @@ from typing import (
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
+from langchain_core.messages.utils import strip_reasoning
 from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
@@ -994,6 +995,11 @@ def create_agent(
             effective_response_format: The actual strategy used (may differ from initial
                 if auto-detected).
         """
+        # Strip reasoning content (e.g. thinking, reasoning blocks) from the
+        # AI message so that internal reasoning is not persisted in the message
+        # history and re-sent to the model on subsequent turns.
+        output = strip_reasoning(output)
+
         # Handle structured output with provider strategy
         if isinstance(effective_response_format, ProviderStrategy):
             if not output.tool_calls:

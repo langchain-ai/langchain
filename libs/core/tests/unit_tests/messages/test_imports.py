@@ -51,6 +51,7 @@ EXPECTED_ALL = [
     "messages_to_dict",
     "filter_messages",
     "merge_message_runs",
+    "strip_reasoning",
     "trim_messages",
     "convert_to_openai_data_block",
     "convert_to_openai_image_block",

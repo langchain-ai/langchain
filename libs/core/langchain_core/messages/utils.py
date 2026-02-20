@@ -2335,3 +2335,79 @@ def _approximate_token_counter(messages: Sequence[BaseMessage]) -> int:
 _TOKEN_COUNTER_SHORTCUTS = {
     "approximate": _approximate_token_counter,
 }
+
+
+_REASONING_BLOCK_TYPES = frozenset({"reasoning", "thinking", "reasoning_content"})
+
+_REASONING_ADDITIONAL_KWARGS_KEYS = frozenset({"reasoning_content", "reasoning"})
+
+
+def strip_reasoning(message: AIMessage) -> AIMessage:
+    """Strip reasoning content from an AI message.
+
+    Removes internal reasoning traces so they are not sent back to the model
+    in subsequent turns. Strips reasoning from both the message content blocks
+    and ``additional_kwargs``.
+
+    Reasoning content is produced by "thinking" or "reasoning" models and
+    stored in several locations:
+
+    - Content blocks with ``type`` in ``{"reasoning", "thinking",
+      "reasoning_content"}``
+    - ``additional_kwargs["reasoning_content"]`` (string) from providers such
+      as Ollama, DeepSeek, XAI, and Groq
+    - ``additional_kwargs["reasoning"]`` (dict) from the OpenAI Responses API
+
+    Args:
+        message: The AI message to strip reasoning from.
+
+    Returns:
+        A copy of the message with reasoning removed. If no reasoning content
+        is found, returns the original message unchanged.
+
+    Example:
+
+        .. code-block:: python
+
+            from langchain_core.messages import AIMessage
+            from langchain_core.messages.utils import strip_reasoning
+
+            msg = AIMessage(
+                content=[
+                    {"type": "reasoning", "reasoning": "Let me think..."},
+                    {"type": "text", "text": "The answer is 42."},
+                ],
+            )
+            stripped = strip_reasoning(msg)
+            assert stripped.content == [{"type": "text", "text": "The answer is 42."}]
+    """
+    updates: dict[str, Any] = {}
+
+    # Strip reasoning blocks from content list
+    if isinstance(message.content, list):
+        filtered = [
+            block
+            for block in message.content
+            if not (
+                isinstance(block, dict) and block.get("type") in _REASONING_BLOCK_TYPES
+            )
+        ]
+        if len(filtered) != len(message.content):
+            updates["content"] = filtered or ""
+
+    # Strip reasoning keys from additional_kwargs
+    if message.additional_kwargs:
+        keys_to_remove = (
+            _REASONING_ADDITIONAL_KWARGS_KEYS & message.additional_kwargs.keys()
+        )
+        if keys_to_remove:
+            updates["additional_kwargs"] = {
+                k: v
+                for k, v in message.additional_kwargs.items()
+                if k not in keys_to_remove
+            }
+
+    if not updates:
+        return message
+
+    return message.model_copy(update=updates)
