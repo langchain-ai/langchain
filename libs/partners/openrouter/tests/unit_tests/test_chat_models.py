@@ -310,6 +310,34 @@ class TestChatOpenRouterInstantiation:
             call_kwargs = mock_cls.call_args[1]
             assert call_kwargs["x_title"] == "My App"
 
+    def test_default_attribution_headers(self) -> None:
+        """Test that default attribution headers are sent when not overridden."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+            )
+            call_kwargs = mock_cls.call_args[1]
+            assert call_kwargs["http_referer"] == (
+                "https://github.com/langchain-ai/langchain"
+            )
+            assert call_kwargs["x_title"] == "langchain-openrouter"
+
+    def test_user_attribution_overrides_defaults(self) -> None:
+        """Test that user-supplied attribution overrides the defaults."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_url="https://my-custom-app.com",
+                app_title="My Custom App",
+            )
+            call_kwargs = mock_cls.call_args[1]
+            assert call_kwargs["http_referer"] == "https://my-custom-app.com"
+            assert call_kwargs["x_title"] == "My Custom App"
+
     def test_reasoning_in_params(self) -> None:
         """Test that `reasoning` is included in default params."""
         model = _make_model(reasoning={"effort": "high"})
