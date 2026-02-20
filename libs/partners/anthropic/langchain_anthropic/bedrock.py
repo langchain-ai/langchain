@@ -122,7 +122,7 @@ class ChatAnthropicBedrock(ChatAnthropic):
         Returns:
             `["langchain", "chat_models", "anthropic-bedrock"]`
         """
-        return ["langchain", "chat_models", "anthropic-bedrock"]
+        return ["langchain", "chat_models", "anthropic_bedrock"]
 
     @cached_property
     def _client_params(self) -> dict[str, Any]:
@@ -195,6 +195,13 @@ class ChatAnthropicBedrock(ChatAnthropic):
         if ls_stop := stop or params.get("stop", None):
             ls_params["ls_stop"] = ls_stop
         return ls_params
+
+    @model_validator(mode="before")
+    @classmethod
+    def _set_anthropic_api_key(cls, values: dict[str, Any]) -> Any:
+        if not values.get("anthropic_api_key"):
+            values["anthropic_api_key"] = ""
+        return values
 
     @model_validator(mode="after")
     def _set_model_profile(self) -> Self:

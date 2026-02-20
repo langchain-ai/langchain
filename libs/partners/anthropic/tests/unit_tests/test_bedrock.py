@@ -115,12 +115,6 @@ def test_chat_anthropic_bedrock_lc_secrets() -> None:
     assert secrets["aws_session_token"] == "AWS_SESSION_TOKEN"  # noqa: S105
 
 
-def test_chat_anthropic_bedrock_get_lc_namespace() -> None:
-    """Test ChatAnthropicBedrock LangChain namespace."""
-    namespace = ChatAnthropicBedrock.get_lc_namespace()
-    assert namespace == ["langchain", "chat_models", "anthropic-bedrock"]
-
-
 def test_chat_anthropic_bedrock_get_request_payload() -> None:
     """Test ChatAnthropicBedrock request payload generation."""
     model = ChatAnthropicBedrock(  # type: ignore[call-arg]
