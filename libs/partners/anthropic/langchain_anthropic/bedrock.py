@@ -5,6 +5,7 @@ import re
 from functools import cached_property
 from typing import Any
 
+from anthropic import AnthropicBedrock, AsyncAnthropicBedrock
 from langchain_core.language_models.chat_models import LangSmithParams
 from langchain_core.utils import secret_from_env
 from pydantic import ConfigDict, Field, SecretStr, model_validator
@@ -146,36 +147,12 @@ class ChatAnthropicBedrock(ChatAnthropic):
     @cached_property
     def _client(self) -> Any:  # type: ignore[type-arg]
         """Get synchronous AnthropicBedrock client."""
-        try:
-            from anthropic import AnthropicBedrock
-        except ImportError as e:
-            msg = (
-                "AnthropicBedrock client is not available. "
-                "Please ensure you have anthropic>=0.78.0 installed. "
-                "If using an older version, upgrade with: "
-                "pip install --upgrade anthropic"
-            )
-            raise ImportError(msg) from e
-
-        client_params = self._client_params
-        return AnthropicBedrock(**client_params)
+        return AnthropicBedrock(**self._client_params)
 
     @cached_property
     def _async_client(self) -> Any:  # type: ignore[type-arg]
         """Get asynchronous AnthropicBedrock client."""
-        try:
-            from anthropic import AsyncAnthropicBedrock
-        except ImportError as e:
-            msg = (
-                "AsyncAnthropicBedrock client is not available. "
-                "Please ensure you have anthropic>=0.78.0 installed. "
-                "If using an older version, upgrade with: "
-                "pip install --upgrade anthropic"
-            )
-            raise ImportError(msg) from e
-
-        client_params = self._client_params
-        return AsyncAnthropicBedrock(**client_params)
+        return AsyncAnthropicBedrock(**self._client_params)
 
     def _get_ls_params(
         self,
