@@ -69,6 +69,16 @@ def test_create_bedrock_client_params_minimal() -> None:
     assert "timeout" not in params or params["timeout"] is None
 
 
+def test_create_bedrock_client_params_no_region() -> None:
+    """Test create_bedrock_client_params without region (boto3 fallback)."""
+    params = _create_bedrock_client_params(region_name=None)
+
+    # Region should not be in params when None - boto3 will resolve it
+    assert "aws_region" not in params
+    assert params["max_retries"] == 2  # default
+    assert params["default_headers"] is None
+
+
 def test_create_bedrock_client_params_with_credentials() -> None:
     """Test create_bedrock_client_params with AWS credentials."""
     params = _create_bedrock_client_params(

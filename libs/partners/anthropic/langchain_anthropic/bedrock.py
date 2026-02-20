@@ -131,14 +131,8 @@ class ChatAnthropicBedrock(ChatAnthropic):
             self.region_name
             or os.getenv("AWS_REGION")
             or os.getenv("AWS_DEFAULT_REGION")
+            or None  # let boto3 resolve
         )
-        if not region_name:
-            msg = (
-                "AWS region must be specified either via the region_name parameter, "
-                "AWS_REGION environment variable, AWS_DEFAULT_REGION environment "
-                "variable, or ~/.aws/config"
-            )
-            raise ValueError(msg)
         return _create_bedrock_client_params(
             region_name=region_name,
             aws_access_key_id=self.aws_access_key_id,

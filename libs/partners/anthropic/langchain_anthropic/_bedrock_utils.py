@@ -60,7 +60,7 @@ def _resolve_aws_credentials(
 
 
 def _create_bedrock_client_params(
-    region_name: str,
+    region_name: str | None = None,
     aws_access_key_id: SecretStr | None = None,
     aws_secret_access_key: SecretStr | None = None,
     aws_session_token: SecretStr | None = None,
@@ -75,6 +75,8 @@ def _create_bedrock_client_params(
 
     Args:
         region_name: AWS region for Bedrock API calls (e.g., "us-east-1").
+            If not provided, boto3 will use its default resolution chain
+            (including ~/.aws/config).
         aws_access_key_id: Optional AWS access key ID as SecretStr.
         aws_secret_access_key: Optional AWS secret access key as SecretStr.
         aws_session_token: Optional AWS session token as SecretStr.
@@ -104,10 +106,13 @@ def _create_bedrock_client_params(
         ```
     """
     client_params: dict[str, Any] = {
-        "aws_region": region_name,
         "max_retries": max_retries,
         "default_headers": (default_headers or None),
     }
+
+    # Only set region if explicitly provided, otherwise let boto3 resolve it
+    if region_name is not None:
+        client_params["aws_region"] = region_name
 
     # Resolve and add AWS credentials
     credentials = _resolve_aws_credentials(

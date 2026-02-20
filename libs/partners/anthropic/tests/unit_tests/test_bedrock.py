@@ -239,24 +239,6 @@ def test_chat_anthropic_bedrock_region_explicit_overrides_env() -> None:
         assert client_params["aws_region"] == "ap-southeast-1"
 
 
-def test_chat_anthropic_bedrock_region_missing_raises_error() -> None:
-    """Test ChatAnthropicBedrock raises error when region is not provided."""
-    with MonkeyPatch().context() as m:
-        # Ensure no region env variables are set
-        m.delenv("AWS_REGION", raising=False)
-        m.delenv("AWS_DEFAULT_REGION", raising=False)
-        model = ChatAnthropicBedrock(  # type: ignore[call-arg]
-            model=BEDROCK_MODEL_NAME,
-            aws_access_key_id="test-key",
-            aws_secret_access_key="test-secret",  # noqa: S106
-        )
-        with pytest.raises(
-            ValueError,
-            match="AWS region must be specified either via the region_name parameter",
-        ):
-            _ = model._client_params
-
-
 @pytest.mark.parametrize(
     "model_name",
     [
