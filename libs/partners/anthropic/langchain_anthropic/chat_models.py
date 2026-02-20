@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import datetime
 import json
+import os
 import re
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
@@ -58,6 +59,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import NotRequired, Self, TypedDict
 
 from langchain_anthropic import __version__
+from langchain_anthropic._bedrock_utils import _create_bedrock_client_params
 from langchain_anthropic._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
@@ -65,7 +67,6 @@ from langchain_anthropic._client_utils import (
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
 from langchain_anthropic.data._profiles import _PROFILES
 from langchain_anthropic.output_parsers import extract_tool_calls
-from langchain_anthropic.utils import create_bedrock_client_params
 
 _message_type_lookups = {
     "human": "user",
@@ -1842,12 +1843,13 @@ class ChatAnthropicBedrock(ChatAnthropic):
         # pip install -U langchain-anthropic
         # export AWS_ACCESS_KEY_ID="your-access-key"
         # export AWS_SECRET_ACCESS_KEY="your-secret-key"
+        # export AWS_REGION="us-east-1"  # or AWS_DEFAULT_REGION
 
         from langchain_anthropic import ChatAnthropicBedrock
 
         model = ChatAnthropicBedrock(
             model="anthropic.claude-3-5-sonnet-20241022-v2:0",
-            aws_region="us-east-1",
+            # region_name="us-east-1",  # optional, inferred from env if not provided
             # temperature=,
             # max_tokens=,
             # thinking={"type": "enabled", "budget_tokens": 5000},
@@ -1870,25 +1872,51 @@ class ChatAnthropicBedrock(ChatAnthropic):
         populate_by_name=True,
     )
 
-    aws_region: str = Field(default="us-east-1", alias="region_name")
-    """AWS region for Bedrock API calls."""
+    region_name: str | None = None
+    """The aws region, e.g., `us-west-2`.
+
+    Falls back to AWS_REGION or AWS_DEFAULT_REGION env variable or region specified in
+    ~/.aws/config in case it is not provided here.
+    """
 
     aws_access_key_id: SecretStr | None = Field(
-        default_factory=secret_from_env("AWS_ACCESS_KEY_ID", default=None),
-        alias="aws_access_key",
+        default_factory=secret_from_env("AWS_ACCESS_KEY_ID", default=None)
     )
-    """AWS access key ID. Read from env `AWS_ACCESS_KEY_ID` if not provided."""
+    """AWS access key id.
+
+    If provided, aws_secret_access_key must also be provided.
+    If not specified, the default credential profile or, if on an EC2 instance,
+    credentials from IMDS will be used.
+    See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
+
+    If not provided, will be read from 'AWS_ACCESS_KEY_ID' environment variable.
+
+    """
 
     aws_secret_access_key: SecretStr | None = Field(
-        default_factory=secret_from_env("AWS_SECRET_ACCESS_KEY", default=None),
-        alias="aws_secret_key",
+        default_factory=secret_from_env("AWS_SECRET_ACCESS_KEY", default=None)
     )
-    """AWS secret access key. Read from env `AWS_SECRET_ACCESS_KEY` if not provided."""
+    """AWS secret_access_key.
+
+    If provided, aws_access_key_id must also be provided.
+    If not specified, the default credential profile or, if on an EC2 instance,
+    credentials from IMDS will be used.
+    See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
+
+    If not provided, will be read from 'AWS_SECRET_ACCESS_KEY' environment variable.
+    """
 
     aws_session_token: SecretStr | None = Field(
-        default_factory=secret_from_env("AWS_SESSION_TOKEN", default=None),
+        default_factory=secret_from_env("AWS_SESSION_TOKEN", default=None)
     )
-    """AWS session token. Read from env `AWS_SESSION_TOKEN` if not provided."""
+    """AWS session token.
+
+    If provided, aws_access_key_id and aws_secret_access_key must
+    also be provided. Not required unless using temporary credentials.
+    See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
+
+    If not provided, will be read from 'AWS_SESSION_TOKEN' environment variable.
+    """
 
     @property
     def _llm_type(self) -> str:
@@ -1918,8 +1946,20 @@ class ChatAnthropicBedrock(ChatAnthropic):
     @cached_property
     def _client_params(self) -> dict[str, Any]:
         """Get client parameters for AnthropicBedrock."""
-        return create_bedrock_client_params(
-            aws_region=self.aws_region,
+        region_name = (
+            self.region_name
+            or os.getenv("AWS_REGION")
+            or os.getenv("AWS_DEFAULT_REGION")
+        )
+        if not region_name:
+            msg = (
+                "AWS region must be specified either via the region_name parameter, "
+                "AWS_REGION environment variable, AWS_DEFAULT_REGION environment "
+                "variable, or ~/.aws/config"
+            )
+            raise ValueError(msg)
+        return _create_bedrock_client_params(
+            region_name=region_name,
             aws_access_key_id=self.aws_access_key_id,
             aws_secret_access_key=self.aws_secret_access_key,
             aws_session_token=self.aws_session_token,

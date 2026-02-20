@@ -2423,32 +2423,31 @@ def test_chat_anthropic_bedrock_initialization() -> None:
     """Test ChatAnthropicBedrock initialization."""
     model = ChatAnthropicBedrock(  # type: ignore[call-arg]
         model=BEDROCK_MODEL_NAME,
-        aws_region="us-east-1",
+        region_name="us-east-1",
         aws_access_key_id="test-key",
         aws_secret_access_key="test-secret",  # noqa: S106
         default_request_timeout=2,
     )
     assert model.model == BEDROCK_MODEL_NAME
-    assert model.aws_region == "us-east-1"
+    assert model.region_name == "us-east-1"
     assert cast("SecretStr", model.aws_access_key_id).get_secret_value() == "test-key"
     assert (
         cast("SecretStr", model.aws_secret_access_key).get_secret_value()
         == "test-secret"
     )
     assert model.default_request_timeout == 2.0
-    assert model._llm_type == "anthropic-bedrock"
 
 
 def test_chat_anthropic_bedrock_initialization_with_session_token() -> None:
     """Test ChatAnthropicBedrock initialization with session token."""
     model = ChatAnthropicBedrock(  # type: ignore[call-arg]
         model=BEDROCK_MODEL_NAME,
-        aws_region="us-west-2",
+        region_name="us-west-2",
         aws_access_key_id="test-key",
         aws_secret_access_key="test-secret",  # noqa: S106
         aws_session_token="test-token",  # noqa: S106
     )
-    assert model.aws_region == "us-west-2"
+    assert model.region_name == "us-west-2"
     assert cast("SecretStr", model.aws_session_token).get_secret_value() == "test-token"
 
 
@@ -2460,7 +2459,7 @@ def test_chat_anthropic_bedrock_initialization_from_env() -> None:
         m.setenv("AWS_SESSION_TOKEN", "env-token")
         model = ChatAnthropicBedrock(  # type: ignore[call-arg]
             model=BEDROCK_MODEL_NAME,
-            aws_region="us-east-1",
+            region_name="us-east-1",
         )
         assert (
             cast("SecretStr", model.aws_access_key_id).get_secret_value() == "env-key"
@@ -2478,7 +2477,7 @@ def test_chat_anthropic_bedrock_client_params() -> None:
     """Test ChatAnthropicBedrock client parameters."""
     model = ChatAnthropicBedrock(  # type: ignore[call-arg]
         model=BEDROCK_MODEL_NAME,
-        aws_region="us-east-1",
+        region_name="us-east-1",
         aws_access_key_id="test-key",
         aws_secret_access_key="test-secret",  # noqa: S106
         max_retries=3,
@@ -2496,7 +2495,7 @@ def test_chat_anthropic_bedrock_client_initialization() -> None:
     """Test ChatAnthropicBedrock client initialization."""
     model = ChatAnthropicBedrock(  # type: ignore[call-arg]
         model=BEDROCK_MODEL_NAME,
-        aws_region="us-east-1",
+        region_name="us-east-1",
         aws_access_key_id="test-key",
         aws_secret_access_key="test-secret",  # noqa: S106
     )
@@ -2507,20 +2506,11 @@ def test_chat_anthropic_bedrock_client_initialization() -> None:
     assert hasattr(model, "_async_client")
 
 
-def test_chat_anthropic_bedrock_llm_type() -> None:
-    """Test ChatAnthropicBedrock LLM type."""
-    model = ChatAnthropicBedrock(  # type: ignore[call-arg]
-        model=BEDROCK_MODEL_NAME,
-        aws_region="us-east-1",
-    )
-    assert model._llm_type == "anthropic-bedrock"
-
-
 def test_chat_anthropic_bedrock_lc_secrets() -> None:
     """Test ChatAnthropicBedrock LangChain secrets mapping."""
     model = ChatAnthropicBedrock(  # type: ignore[call-arg]
         model=BEDROCK_MODEL_NAME,
-        aws_region="us-east-1",
+        region_name="us-east-1",
     )
     secrets = model.lc_secrets
     assert "aws_access_key_id" in secrets
@@ -2537,28 +2527,11 @@ def test_chat_anthropic_bedrock_get_lc_namespace() -> None:
     assert namespace == ["langchain", "chat_models", "anthropic-bedrock"]
 
 
-def test_chat_anthropic_bedrock_identifying_params() -> None:
-    """Test ChatAnthropicBedrock identifying parameters."""
-    model = ChatAnthropicBedrock(  # type: ignore[call-arg]
-        model=BEDROCK_MODEL_NAME,
-        aws_region="us-east-1",
-        temperature=0.7,
-        max_tokens=1000,
-        thinking={"type": "enabled", "budget_tokens": 5000},
-    )
-    params = model._identifying_params
-    assert params["model"] == BEDROCK_MODEL_NAME
-    assert params["temperature"] == 0.7
-    assert params["max_tokens"] == 1000
-    assert params["thinking"] == {"type": "enabled", "budget_tokens": 5000}
-    assert params["aws_region"] == "us-east-1"
-
-
 def test_chat_anthropic_bedrock_bind_tools() -> None:
     """Test ChatAnthropicBedrock bind_tools method."""
     model = ChatAnthropicBedrock(  # type: ignore[call-arg]
         model=BEDROCK_MODEL_NAME,
-        aws_region="us-east-1",
+        region_name="us-east-1",
     )
 
     class GetWeather(BaseModel):
@@ -2575,7 +2548,7 @@ def test_chat_anthropic_bedrock_bind_tools_parallel_tool_calls() -> None:
     """Test ChatAnthropicBedrock bind_tools with parallel_tool_calls parameter."""
     model = ChatAnthropicBedrock(  # type: ignore[call-arg]
         model=BEDROCK_MODEL_NAME,
-        aws_region="us-east-1",
+        region_name="us-east-1",
     )
 
     class GetWeather(BaseModel):
@@ -2600,7 +2573,7 @@ def test_chat_anthropic_bedrock_thinking_parameter() -> None:
     """Test ChatAnthropicBedrock thinking parameter."""
     model = ChatAnthropicBedrock(  # type: ignore[call-arg]
         model=BEDROCK_MODEL_NAME,
-        aws_region="us-east-1",
+        region_name="us-east-1",
         thinking={"type": "enabled", "budget_tokens": 5000},
     )
     assert model.thinking == {"type": "enabled", "budget_tokens": 5000}
@@ -2616,7 +2589,7 @@ def test_chat_anthropic_bedrock_get_request_payload() -> None:
     """Test ChatAnthropicBedrock request payload generation."""
     model = ChatAnthropicBedrock(  # type: ignore[call-arg]
         model=BEDROCK_MODEL_NAME,
-        aws_region="us-east-1",
+        region_name="us-east-1",
         temperature=0.7,
         max_tokens=1000,
     )
@@ -2633,7 +2606,7 @@ def test_chat_anthropic_bedrock_inherits_from_chat_anthropic() -> None:
     """Test that ChatAnthropicBedrock inherits methods from ChatAnthropic."""
     model = ChatAnthropicBedrock(  # type: ignore[call-arg]
         model=BEDROCK_MODEL_NAME,
-        aws_region="us-east-1",
+        region_name="us-east-1",
     )
     # Verify that key methods from ChatAnthropic are available
     assert hasattr(model, "_generate")
@@ -2654,11 +2627,11 @@ def test_chat_anthropic_bedrock_import() -> None:
 
 def test_chat_anthropic_bedrock_uses_utils() -> None:
     """Test that ChatAnthropicBedrock uses utils.create_bedrock_client_params."""
-    from langchain_anthropic.utils import create_bedrock_client_params
+    from langchain_anthropic._bedrock_utils import _create_bedrock_client_params
 
     model = ChatAnthropicBedrock(  # type: ignore[call-arg]
         model=BEDROCK_MODEL_NAME,
-        aws_region="us-east-1",
+        region_name="us-east-1",
         aws_access_key_id=SecretStr("test-key"),
         aws_secret_access_key=SecretStr("test-secret"),
         max_retries=3,
@@ -2669,8 +2642,8 @@ def test_chat_anthropic_bedrock_uses_utils() -> None:
     client_params = model._client_params
 
     # Manually create expected params using utils
-    expected_params = create_bedrock_client_params(
-        aws_region="us-east-1",
+    expected_params = _create_bedrock_client_params(
+        region_name="us-east-1",
         aws_access_key_id=SecretStr("test-key"),
         aws_secret_access_key=SecretStr("test-secret"),
         max_retries=3,
@@ -2685,20 +2658,75 @@ def test_chat_anthropic_bedrock_uses_utils() -> None:
     assert client_params["timeout"] == expected_params["timeout"]
 
 
-def test_chat_anthropic_bedrock_get_ls_provider() -> None:
-    """Test that ChatAnthropicBedrock overrides _get_ls_provider correctly."""
+def test_chat_anthropic_bedrock_get_ls_params() -> None:
+    """Test that ChatAnthropicBedrock _get_ls_params correctly."""
     model = ChatAnthropicBedrock(  # type: ignore[call-arg]
         model=BEDROCK_MODEL_NAME,
-        aws_region="us-east-1",
+        region_name="us-east-1",
     )
-
-    # Verify _get_ls_provider returns the correct provider name
-    provider = model._get_ls_provider()
-    assert provider == "anthropic-bedrock"
 
     # Verify it's used in _get_ls_params
     ls_params = model._get_ls_params()
     assert ls_params["ls_provider"] == "anthropic-bedrock"
+
+
+def test_chat_anthropic_bedrock_region_inference_from_env() -> None:
+    """Test ChatAnthropicBedrock region inference from environment variables."""
+    with MonkeyPatch().context() as m:
+        m.setenv("AWS_REGION", "us-west-2")
+        model = ChatAnthropicBedrock(  # type: ignore[call-arg]
+            model=BEDROCK_MODEL_NAME,
+            aws_access_key_id="test-key",
+            aws_secret_access_key="test-secret",  # noqa: S106
+        )
+        client_params = model._client_params
+        assert client_params["aws_region"] == "us-west-2"
+
+
+def test_chat_anthropic_bedrock_region_inference_from_default_env() -> None:
+    """Test ChatAnthropicBedrock region inference from AWS_DEFAULT_REGION."""
+    with MonkeyPatch().context() as m:
+        m.setenv("AWS_DEFAULT_REGION", "eu-west-1")
+        model = ChatAnthropicBedrock(  # type: ignore[call-arg]
+            model=BEDROCK_MODEL_NAME,
+            aws_access_key_id="test-key",
+            aws_secret_access_key="test-secret",  # noqa: S106
+        )
+        client_params = model._client_params
+        assert client_params["aws_region"] == "eu-west-1"
+
+
+def test_chat_anthropic_bedrock_region_explicit_overrides_env() -> None:
+    """Test explicit region_name parameter overrides environment variables."""
+    with MonkeyPatch().context() as m:
+        m.setenv("AWS_REGION", "us-west-2")
+        m.setenv("AWS_DEFAULT_REGION", "eu-west-1")
+        model = ChatAnthropicBedrock(  # type: ignore[call-arg]
+            model=BEDROCK_MODEL_NAME,
+            region_name="ap-southeast-1",
+            aws_access_key_id="test-key",
+            aws_secret_access_key="test-secret",  # noqa: S106
+        )
+        client_params = model._client_params
+        assert client_params["aws_region"] == "ap-southeast-1"
+
+
+def test_chat_anthropic_bedrock_region_missing_raises_error() -> None:
+    """Test ChatAnthropicBedrock raises error when region is not provided."""
+    with MonkeyPatch().context() as m:
+        # Ensure no region env variables are set
+        m.delenv("AWS_REGION", raising=False)
+        m.delenv("AWS_DEFAULT_REGION", raising=False)
+        model = ChatAnthropicBedrock(  # type: ignore[call-arg]
+            model=BEDROCK_MODEL_NAME,
+            aws_access_key_id="test-key",
+            aws_secret_access_key="test-secret",  # noqa: S106
+        )
+        with pytest.raises(
+            ValueError,
+            match="AWS region must be specified either via the region_name parameter",
+        ):
+            _ = model._client_params
 
 
 # Test fixtures for context overflow error tests

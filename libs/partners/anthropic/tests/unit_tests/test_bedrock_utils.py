@@ -6,15 +6,15 @@ from __future__ import annotations
 
 from pydantic import SecretStr
 
-from langchain_anthropic.utils import (
-    create_bedrock_client_params,
-    resolve_aws_credentials,
+from langchain_anthropic._bedrock_utils import (
+    _create_bedrock_client_params,
+    _resolve_aws_credentials,
 )
 
 
 def test_resolve_aws_credentials_all_provided() -> None:
     """Test resolve_aws_credentials with all credentials provided."""
-    creds = resolve_aws_credentials(
+    creds = _resolve_aws_credentials(
         aws_access_key_id=SecretStr("example-key"),
         aws_secret_access_key=SecretStr("example-secret"),
         aws_session_token=SecretStr("session-token-example"),
@@ -27,7 +27,7 @@ def test_resolve_aws_credentials_all_provided() -> None:
 
 def test_resolve_aws_credentials_partial() -> None:
     """Test resolve_aws_credentials with only some credentials provided."""
-    creds = resolve_aws_credentials(
+    creds = _resolve_aws_credentials(
         aws_access_key_id=SecretStr("example-key"),
         aws_secret_access_key=SecretStr("example-secret"),
         aws_session_token=None,
@@ -40,7 +40,7 @@ def test_resolve_aws_credentials_partial() -> None:
 
 def test_resolve_aws_credentials_none() -> None:
     """Test resolve_aws_credentials with no credentials provided."""
-    creds = resolve_aws_credentials()
+    creds = _resolve_aws_credentials()
 
     assert len(creds) == 0
     assert "aws_access_key" not in creds
@@ -50,7 +50,7 @@ def test_resolve_aws_credentials_none() -> None:
 
 def test_resolve_aws_credentials_only_session_token() -> None:
     """Test resolve_aws_credentials with only session token."""
-    creds = resolve_aws_credentials(
+    creds = _resolve_aws_credentials(
         aws_session_token=SecretStr("session-token-example"),
     )
 
@@ -61,7 +61,7 @@ def test_resolve_aws_credentials_only_session_token() -> None:
 
 def test_create_bedrock_client_params_minimal() -> None:
     """Test create_bedrock_client_params with minimal required parameters."""
-    params = create_bedrock_client_params(aws_region="us-east-1")
+    params = _create_bedrock_client_params(region_name="us-east-1")
 
     assert params["aws_region"] == "us-east-1"
     assert params["max_retries"] == 2  # default
@@ -71,8 +71,8 @@ def test_create_bedrock_client_params_minimal() -> None:
 
 def test_create_bedrock_client_params_with_credentials() -> None:
     """Test create_bedrock_client_params with AWS credentials."""
-    params = create_bedrock_client_params(
-        aws_region="us-west-2",
+    params = _create_bedrock_client_params(
+        region_name="us-west-2",
         aws_access_key_id=SecretStr("example-key"),
         aws_secret_access_key=SecretStr("example-secret"),
         aws_session_token=SecretStr("session-token-example"),
@@ -86,8 +86,8 @@ def test_create_bedrock_client_params_with_credentials() -> None:
 
 def test_create_bedrock_client_params_with_all_options() -> None:
     """Test create_bedrock_client_params with all optional parameters."""
-    params = create_bedrock_client_params(
-        aws_region="eu-west-1",
+    params = _create_bedrock_client_params(
+        region_name="eu-west-1",
         aws_access_key_id=SecretStr("example-key"),
         aws_secret_access_key=SecretStr("example-secret"),
         max_retries=5,
@@ -105,8 +105,8 @@ def test_create_bedrock_client_params_with_all_options() -> None:
 
 def test_create_bedrock_client_params_timeout_none() -> None:
     """Test create_bedrock_client_params with timeout=None."""
-    params = create_bedrock_client_params(
-        aws_region="us-east-1",
+    params = _create_bedrock_client_params(
+        region_name="us-east-1",
         timeout=None,
     )
 
@@ -115,8 +115,8 @@ def test_create_bedrock_client_params_timeout_none() -> None:
 
 def test_create_bedrock_client_params_timeout_zero() -> None:
     """Test create_bedrock_client_params with timeout=0 (should be excluded)."""
-    params = create_bedrock_client_params(
-        aws_region="us-east-1",
+    params = _create_bedrock_client_params(
+        region_name="us-east-1",
         timeout=0,
     )
 
@@ -126,8 +126,8 @@ def test_create_bedrock_client_params_timeout_zero() -> None:
 
 def test_create_bedrock_client_params_timeout_negative() -> None:
     """Test create_bedrock_client_params with negative timeout (should be excluded)."""
-    params = create_bedrock_client_params(
-        aws_region="us-east-1",
+    params = _create_bedrock_client_params(
+        region_name="us-east-1",
         timeout=-1,
     )
 
@@ -138,8 +138,8 @@ def test_create_bedrock_client_params_timeout_negative() -> None:
 def test_create_bedrock_client_params_reuses_resolve_aws_credentials() -> None:
     """Test that create_bedrock_client_params properly uses resolve_aws_credentials."""
     # This test ensures the functions work together correctly
-    params = create_bedrock_client_params(
-        aws_region="us-east-1",
+    params = _create_bedrock_client_params(
+        region_name="us-east-1",
         aws_access_key_id=SecretStr("test-key"),
         aws_secret_access_key=SecretStr("test-secret"),
     )

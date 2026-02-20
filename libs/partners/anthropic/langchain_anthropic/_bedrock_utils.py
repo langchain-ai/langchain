@@ -12,7 +12,7 @@ from typing import Any
 from pydantic import SecretStr
 
 
-def resolve_aws_credentials(
+def _resolve_aws_credentials(
     aws_access_key_id: SecretStr | None = None,
     aws_secret_access_key: SecretStr | None = None,
     aws_session_token: SecretStr | None = None,
@@ -59,8 +59,8 @@ def resolve_aws_credentials(
     return credentials
 
 
-def create_bedrock_client_params(
-    aws_region: str,
+def _create_bedrock_client_params(
+    region_name: str,
     aws_access_key_id: SecretStr | None = None,
     aws_secret_access_key: SecretStr | None = None,
     aws_session_token: SecretStr | None = None,
@@ -74,7 +74,7 @@ def create_bedrock_client_params(
     or AsyncAnthropicBedrock clients with AWS credentials and configuration.
 
     Args:
-        aws_region: AWS region for Bedrock API calls (e.g., "us-east-1").
+        region_name: AWS region for Bedrock API calls (e.g., "us-east-1").
         aws_access_key_id: Optional AWS access key ID as SecretStr.
         aws_secret_access_key: Optional AWS secret access key as SecretStr.
         aws_session_token: Optional AWS session token as SecretStr.
@@ -94,7 +94,7 @@ def create_bedrock_client_params(
         from anthropic import AnthropicBedrock
 
         params = create_bedrock_client_params(
-            aws_region="us-east-1",
+            region_name="us-east-1",
             aws_access_key_id=SecretStr("AKIA..."),
             aws_secret_access_key=SecretStr("secret..."),
             max_retries=3,
@@ -104,13 +104,13 @@ def create_bedrock_client_params(
         ```
     """
     client_params: dict[str, Any] = {
-        "aws_region": aws_region,
+        "aws_region": region_name,
         "max_retries": max_retries,
         "default_headers": (default_headers or None),
     }
 
     # Resolve and add AWS credentials
-    credentials = resolve_aws_credentials(
+    credentials = _resolve_aws_credentials(
         aws_access_key_id=aws_access_key_id,
         aws_secret_access_key=aws_secret_access_key,
         aws_session_token=aws_session_token,
