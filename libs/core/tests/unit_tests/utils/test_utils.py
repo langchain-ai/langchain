@@ -433,6 +433,41 @@ def test_generation_chunk_addition_type_error() -> None:
             [{"no_index": "b"}],
             [{"no_index": "a"}, {"no_index": "b"}],
         ),
+        # Mixed str and dict elements with matching index
+        # (Mistral inline citations scenario, issue #35259).
+        # Strings containing "index" as a substring previously triggered a
+        # TypeError because Python's `in` operator on a string checks for
+        # substring containment, then str["index"] fails.
+        (
+            [
+                "see index 1 for details",
+                {"type": "reference", "index": 0, "reference_ids": ["iKcb2CAQ7"]},
+                "other answer...",
+            ],
+            [{"type": "reference", "index": 0, "reference_ids": ["DGqzzmqc3"]}],
+            [
+                "see index 1 for details",
+                {
+                    "type": "reference",
+                    "index": 0,
+                    "reference_ids": ["iKcb2CAQ7", "DGqzzmqc3"],
+                },
+                "other answer...",
+            ],
+        ),
+        # Mixed str and dict where dict has no matching index
+        (
+            [
+                "reindex the data",
+                {"type": "reference", "index": 0, "reference_ids": ["abc"]},
+            ],
+            [{"type": "reference", "index": 1, "reference_ids": ["def"]}],
+            [
+                "reindex the data",
+                {"type": "reference", "index": 0, "reference_ids": ["abc"]},
+                {"type": "reference", "index": 1, "reference_ids": ["def"]},
+            ],
+        ),
     ],
 )
 def test_merge_lists(

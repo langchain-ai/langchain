@@ -118,7 +118,8 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
                         i
                         for i, e_left in enumerate(merged)
                         if (
-                            "index" in e_left
+                            isinstance(e_left, dict)
+                            and "index" in e_left
                             and e_left["index"] == e["index"]  # index matches
                             and (  # IDs not inconsistent
                                 e_left.get("id") is None
