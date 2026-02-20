@@ -817,9 +817,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             ls_params["ls_model_name"] = self.model_name
 
         # temperature
-        if "temperature" in kwargs and isinstance(kwargs["temperature"], float):
+        if "temperature" in kwargs and isinstance(kwargs["temperature"], (int, float)):
             ls_params["ls_temperature"] = kwargs["temperature"]
-        elif hasattr(self, "temperature") and isinstance(self.temperature, float):
+        elif hasattr(self, "temperature") and isinstance(
+            self.temperature, (int, float)
+        ):
             ls_params["ls_temperature"] = self.temperature
 
         # max_tokens

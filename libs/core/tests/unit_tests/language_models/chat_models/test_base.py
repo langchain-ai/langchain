@@ -1206,6 +1206,13 @@ def test_get_ls_params() -> None:
     ls_params = llm._get_ls_params(temperature=0.2)
     assert ls_params["ls_temperature"] == 0.2
 
+    # Test integer temperature values (regression test for issue #35300)
+    ls_params = llm._get_ls_params(temperature=0)
+    assert ls_params["ls_temperature"] == 0
+
+    ls_params = llm._get_ls_params(temperature=1)
+    assert ls_params["ls_temperature"] == 1
+
     ls_params = llm._get_ls_params(max_tokens=2048)
     assert ls_params["ls_max_tokens"] == 2048
 
