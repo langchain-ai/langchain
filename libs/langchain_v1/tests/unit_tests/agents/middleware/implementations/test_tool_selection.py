@@ -639,3 +639,193 @@ class TestEdgeCases:
         """Test that empty tools list raises an error in schema creation."""
         with pytest.raises(AssertionError, match="tools must be non-empty"):
             _create_tool_selection_response([])
+
+
+class TestMalformedResponses:
+    """Test handling of malformed LLM responses from the tool selector model."""
+
+    def test_missing_tools_key_falls_back(self) -> None:
+        """Malformed response without 'tools' key falls back to all tools."""
+        model_requests: list[ModelRequest] = []
+
+        @wrap_model_call
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
+            model_requests.append(request)
+            return handler(request)
+
+        # Selector model returns a response without the "tools" key
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {"wrong_key": ["get_weather"]},
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+
+        tool_selector = LLMToolSelectorMiddleware(max_tools=2, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web, calculate],
+            middleware=[tool_selector, trace_model_requests],
+        )
+
+        # Should not raise — falls back to all tools
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+        assert isinstance(response["messages"][-1], AIMessage)
+
+        # Verify all original tools were passed through (fallback)
+        assert len(model_requests) > 0
+        for request in model_requests:
+            tool_names = [t.name for t in request.tools if isinstance(t, BaseTool)]
+            assert len(tool_names) == 3
+
+    def test_invalid_tool_names_ignored(self) -> None:
+        """Invalid tool names are ignored, valid ones are kept."""
+        model_requests: list[ModelRequest] = []
+
+        @wrap_model_call
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
+            model_requests.append(request)
+            return handler(request)
+
+        # Selector model returns a mix of valid and invalid tool names
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {
+                                    "tools": [
+                                        "get_weather",
+                                        "nonexistent_tool",
+                                        "search_web",
+                                    ]
+                                },
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+
+        tool_selector = LLMToolSelectorMiddleware(max_tools=3, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web, calculate],
+            middleware=[tool_selector, trace_model_requests],
+        )
+
+        # Should not raise — invalid tools are warned about and skipped
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+        assert isinstance(response["messages"][-1], AIMessage)
+
+        # Only the valid tools should be passed through
+        assert len(model_requests) > 0
+        for request in model_requests:
+            tool_names = [t.name for t in request.tools if isinstance(t, BaseTool)]
+            assert set(tool_names) == {"get_weather", "search_web"}
+
+    def test_non_string_tool_names_ignored(self) -> None:
+        """Non-string values in tools list are ignored."""
+        model_requests: list[ModelRequest] = []
+
+        @wrap_model_call
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
+            model_requests.append(request)
+            return handler(request)
+
+        # Selector returns non-string values in the tools list
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {"tools": ["get_weather", 123, None, "search_web"]},
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+
+        tool_selector = LLMToolSelectorMiddleware(max_tools=3, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web, calculate],
+            middleware=[tool_selector, trace_model_requests],
+        )
+
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+        assert isinstance(response["messages"][-1], AIMessage)
+
+        # Only the valid string tool names should be selected
+        assert len(model_requests) > 0
+        for request in model_requests:
+            tool_names = [t.name for t in request.tools if isinstance(t, BaseTool)]
+            assert set(tool_names) == {"get_weather", "search_web"}
+
+    async def test_async_malformed_response_falls_back(self) -> None:
+        """Async: malformed response without 'tools' key falls back."""
+        # Selector model returns a response without the "tools" key
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {},
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+
+        tool_selector = LLMToolSelectorMiddleware(max_tools=2, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector],
+        )
+
+        # Should not raise — falls back gracefully in async path too
+        response = await agent.ainvoke({"messages": [HumanMessage("What's the weather?")]})
+        assert isinstance(response["messages"][-1], AIMessage)

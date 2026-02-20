@@ -175,6 +175,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         if message.response_metadata.get("output_version") == "v1":
             message = _convert_from_v1_to_chat_completions(message)
         message_dict = {"role": "assistant", "content": message.content}
+        if "reasoning_content" in message.additional_kwargs:
+            message_dict["reasoning_content"] = message.additional_kwargs[
+                "reasoning_content"
+            ]
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
             # If function call only, content is None not empty string
@@ -225,6 +229,8 @@ def _convert_chunk_to_message_chunk(
     content = cast(str, _dict.get("content") or "")
     additional_kwargs: dict = {}
     tool_call_chunks: list[ToolCallChunk] = []
+    if reasoning_content := _dict.get("reasoning_content"):
+        additional_kwargs["reasoning_content"] = reasoning_content
     if _dict.get("function_call"):
         function_call = dict(_dict["function_call"])
         if "name" in function_call and function_call["name"] is None:

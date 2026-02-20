@@ -237,10 +237,23 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         request: ModelRequest[ContextT],
     ) -> ModelRequest[ContextT]:
         """Process the selection response and return filtered `ModelRequest`."""
+        raw_tools = response.get("tools")
+        if not isinstance(raw_tools, list):
+            logger.warning(
+                "Tool selector model returned malformed response (missing or "
+                "invalid 'tools' key): %s. Falling back to all available tools.",
+                response,
+            )
+            return request
+
         selected_tool_names: list[str] = []
         invalid_tool_selections = []
 
-        for tool_name in response["tools"]:
+        for tool_name in raw_tools:
+            if not isinstance(tool_name, str):
+                invalid_tool_selections.append(tool_name)
+                continue
+
             if tool_name not in valid_tool_names:
                 invalid_tool_selections.append(tool_name)
                 continue
@@ -252,8 +265,12 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
                 selected_tool_names.append(tool_name)
 
         if invalid_tool_selections:
-            msg = f"Model selected invalid tools: {invalid_tool_selections}"
-            raise ValueError(msg)
+            logger.warning(
+                "Tool selector model selected invalid tools: %s. "
+                "Valid tools: %s. Ignoring invalid selections.",
+                invalid_tool_selections,
+                valid_tool_names,
+            )
 
         # Filter tools based on selection and append always-included tools
         selected_tools: list[BaseTool] = [
@@ -307,8 +324,12 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
 
         # Response should be a dict since we're passing a schema (not a Pydantic model class)
         if not isinstance(response, dict):
-            msg = f"Expected dict response, got {type(response)}"
-            raise AssertionError(msg)  # noqa: TRY004
+            logger.warning(
+                "Tool selector model returned non-dict response (%s). "
+                "Falling back to all available tools.",
+                type(response).__name__,
+            )
+            return handler(request)
         modified_request = self._process_selection_response(
             response, selection_request.available_tools, selection_request.valid_tool_names, request
         )
@@ -350,8 +371,12 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
 
         # Response should be a dict since we're passing a schema (not a Pydantic model class)
         if not isinstance(response, dict):
-            msg = f"Expected dict response, got {type(response)}"
-            raise AssertionError(msg)  # noqa: TRY004
+            logger.warning(
+                "Tool selector model returned non-dict response (%s). "
+                "Falling back to all available tools.",
+                type(response).__name__,
+            )
+            return await handler(request)
         modified_request = self._process_selection_response(
             response, selection_request.available_tools, selection_request.valid_tool_names, request
         )
