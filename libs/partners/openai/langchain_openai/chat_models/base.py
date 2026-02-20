@@ -3765,7 +3765,7 @@ def _convert_to_openai_response_format(
 def _oai_structured_outputs_parser(
     ai_msg: AIMessage, schema: type[_BM]
 ) -> PydanticBaseModel | None:
-    if parsed := ai_msg.additional_kwargs.get("parsed"):
+    if (parsed := ai_msg.additional_kwargs.get("parsed")) is not None:
         if isinstance(parsed, dict):
             return schema(**parsed)
         return parsed
