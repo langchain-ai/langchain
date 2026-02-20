@@ -1,7 +1,7 @@
 """Helper class to draw a state graph into a PNG file."""
 
 from itertools import groupby
-from typing import Any, cast
+from typing import Any
 
 from langchain_core.runnables.graph import Graph, LabelsDict
 
@@ -123,14 +123,17 @@ class PngDrawer:
         Requires `graphviz` and `pygraphviz` to be installed.
 
         Args:
-            graph: The graph to draw
-            output_path: The path to save the PNG. If `None`, PNG bytes are returned.
+            graph: The graph to draw.
+            output_path: The path to save the PNG. If `None`, PNG bytes are
+                returned.
 
         Raises:
             ImportError: If `pygraphviz` is not installed.
+            ValueError: If PNG rendering fails to produce bytes when
+                `output_path` is `None`.
 
         Returns:
-            The PNG bytes if `output_path` is None, else None.
+            The PNG bytes if `output_path` is `None`, else `None`.
         """
         if not _HAS_PYGRAPHVIZ:
             msg = "Install pygraphviz to draw graphs: `pip install pygraphviz`."
@@ -147,11 +150,21 @@ class PngDrawer:
         # Update entrypoint and END styles
         self.update_styles(viz, graph)
 
-        # Save the graph as PNG
+        # Render the graph as PNG
         try:
-            return cast("bytes | None", viz.draw(output_path, format="png", prog="dot"))
+            result = viz.draw(output_path, format="png", prog="dot")
         finally:
             viz.close()
+
+        if output_path is None and not isinstance(result, bytes):
+            msg = (
+                "Expected pygraphviz to return PNG bytes when no output path "
+                "is specified, but got None. This may indicate a pygraphviz "
+                "installation issue."
+            )
+            raise ValueError(msg)
+
+        return result  # type: ignore[no-any-return]
 
     def add_nodes(self, viz: Any, graph: Graph) -> None:
         """Add nodes to the graph.

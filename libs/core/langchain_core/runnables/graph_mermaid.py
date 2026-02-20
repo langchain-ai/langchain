@@ -11,7 +11,7 @@ import time
 import urllib.parse
 from dataclasses import asdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal
 
 import yaml
 
@@ -391,8 +391,16 @@ async def _render_mermaid_using_pyppeteer(
         }
     )
 
-    img_bytes = cast("bytes", await page.screenshot({"fullPage": False}))
+    screenshot_result = await page.screenshot({"fullPage": False})
     await browser.close()
+
+    if not isinstance(screenshot_result, bytes):
+        msg = (
+            "Expected pyppeteer screenshot to return bytes, "
+            f"but got {type(screenshot_result).__name__}."
+        )
+        raise TypeError(msg)
+    img_bytes = screenshot_result
 
     if output_file_path is not None:
         await asyncio.get_event_loop().run_in_executor(

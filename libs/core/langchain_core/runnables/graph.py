@@ -190,7 +190,12 @@ def node_data_str(
     """
     if not is_uuid(id) or data is None:
         return id
-    data_str = data.get_name() if isinstance(data, Runnable) else data.__name__
+    if isinstance(data, Runnable):
+        data_str = data.get_name()
+    elif hasattr(data, "__name__"):
+        data_str = data.__name__
+    else:
+        data_str = type(data).__name__
     return data_str if not data_str.startswith("Runnable") else data_str[8:]
 
 
@@ -247,6 +252,31 @@ def node_data_json(
     if node.metadata is not None:
         json["metadata"] = node.metadata
     return json
+
+
+def _validate_node_data(data: Any, id: str) -> None:
+    """Validate that node data is a supported type for graph rendering.
+
+    Args:
+        data: The node data to validate.
+        id: The node id, used in error messages.
+
+    Raises:
+        ValueError: If the data is not a supported node type.
+    """
+    if data is None:
+        return
+    if isinstance(data, Runnable):
+        return
+    if inspect.isclass(data) and is_basemodel_subclass(data):
+        return
+    msg = (
+        f"Invalid node data for node '{id}': expected None, a Runnable instance, "
+        f"or a BaseModel subclass, but got {type(data).__name__} "
+        f"(value: {data!r}). "
+        f"To add nodes with arbitrary data, pass skip_validation=True to add_node()."
+    )
+    raise ValueError(msg)
 
 
 @dataclass
@@ -315,24 +345,33 @@ class Graph:
         id: str | None = None,
         *,
         metadata: dict[str, Any] | None = None,
+        skip_validation: bool = False,
     ) -> Node:
         """Add a node to the graph and return it.
 
         Args:
-            data: The data of the node.
+            data: The data of the node. Must be `None`, a `Runnable` instance,
+                or a `BaseModel` subclass.
             id: The id of the node.
             metadata: Optional metadata for the node.
+            skip_validation: If `True`, skip runtime type validation of node
+                data. Use this when intentionally adding nodes with
+                non-standard data types.
 
         Returns:
             The node that was added to the graph.
 
         Raises:
             ValueError: If a node with the same id already exists.
+            ValueError: If data is not a supported type and
+                `skip_validation` is `False`.
         """
         if id is not None and id in self.nodes:
             msg = f"Node with id {id} already exists"
             raise ValueError(msg)
         id_ = id or self.next_id()
+        if not skip_validation:
+            _validate_node_data(data, id_)
         node = Node(id=id_, data=data, metadata=metadata, name=node_data_str(id_, data))
         self.nodes[node.id] = node
         return node
@@ -504,6 +543,31 @@ class Graph:
         ):
             self.remove_node(last_node)
 
+    def _validate_all_nodes(self) -> None:
+        """Validate all node data types in the graph.
+
+        Raises:
+            ValueError: If any node has an invalid data type, listing all
+                invalid nodes with their IDs and types.
+        """
+        invalid_nodes: list[str] = []
+        for node in self.nodes.values():
+            try:
+                _validate_node_data(node.data, node.id)
+            except ValueError:
+                invalid_nodes.append(
+                    f"  - Node '{node.id}': got {type(node.data).__name__}"
+                )
+        if invalid_nodes:
+            details = "\n".join(invalid_nodes)
+            msg = (
+                f"Cannot render graph: {len(invalid_nodes)} node(s) have "
+                f"invalid data types:\n{details}\n"
+                f"Expected node data to be None, a Runnable instance, "
+                f"or a BaseModel subclass."
+            )
+            raise ValueError(msg)
+
     def draw_ascii(self) -> str:
         """Draw the graph as an ASCII art string.
 
@@ -546,6 +610,9 @@ class Graph:
     ) -> bytes | None:
         """Draw the graph as a PNG image.
 
+        Requires `pygraphviz` to be installed. All nodes must have valid data
+        types (`None`, a `Runnable` instance, or a `BaseModel` subclass).
+
         Args:
             output_file_path: The path to save the image to. If `None`, the image
                 is not saved.
@@ -554,8 +621,14 @@ class Graph:
                 `None`.
 
         Returns:
-            The PNG image as bytes if output_file_path is None, None otherwise.
+            The PNG image as bytes if output_file_path is `None`, `None`
+            otherwise.
+
+        Raises:
+            ValueError: If any node has an invalid data type.
         """
+        self._validate_all_nodes()
+
         # Import locally to prevent circular import
         from langchain_core.runnables.graph_png import PngDrawer  # noqa: PLC0415
 
@@ -678,7 +751,12 @@ class Graph:
 
         Returns:
             The PNG image as bytes.
+
+        Raises:
+            ValueError: If any node has an invalid data type.
         """
+        self._validate_all_nodes()
+
         # Import locally to prevent circular import
         from langchain_core.runnables.graph_mermaid import (  # noqa: PLC0415
             draw_mermaid_png,
