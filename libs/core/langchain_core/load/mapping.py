@@ -268,11 +268,6 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "chat_models",
         "ChatAnthropic",
     ),
-    ("langchain", "chat_models", "anthropic_bedrock", "ChatAnthropicBedrock"): (
-        "langchain_anthropic",
-        "bedrock",
-        "ChatAnthropicBedrock",
-    ),
     ("langchain_groq", "chat_models", "ChatGroq"): (
         "langchain_groq",
         "chat_models",
@@ -308,6 +303,12 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "langchain_mistralai",
         "chat_models",
         "ChatMistralAI",
+    ),
+    ("langchain", "chat_models", "anthropic_bedrock", "ChatAnthropicBedrock"): (
+        "langchain_aws",
+        "chat_models",
+        "anthropic",
+        "ChatAnthropicBedrock",
     ),
     ("langchain", "chat_models", "bedrock", "ChatBedrock"): (
         "langchain_aws",

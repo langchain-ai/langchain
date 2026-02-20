@@ -28,9 +28,6 @@ dependencies = [
     "pydantic>=2.7.4,<3.0.0",
 ]
 
-[project.optional-dependencies]
-bedrock = ["anthropic[bedrock]"]
-
 [project.urls]
 Homepage = "https://docs.langchain.com/oss/python/integrations/providers/anthropic"
 Documentation = "https://reference.langchain.com/python/integrations/langchain_anthropic/"
@@ -63,7 +60,7 @@ test = [
 ]
 lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core"]
-test_integration = ["requests>=2.32.3,<3.0.0", "langchain-core", "anthropic[bedrock]"]
+test_integration = ["requests>=2.32.3,<3.0.0", "langchain-core"]
 typing = [
     "mypy>=1.17.1,<2.0.0",
     "types-requests>=2.31.0,<3.0.0",

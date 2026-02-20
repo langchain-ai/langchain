@@ -5,7 +5,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_tests.unit_tests import ChatModelUnitTests
 from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
 
-from langchain_anthropic import ChatAnthropic, ChatAnthropicBedrock
+from langchain_anthropic import ChatAnthropic
 
 _MODEL = "claude-3-haiku-20240307"
 
@@ -28,18 +28,6 @@ class TestAnthropicStandard(ChatModelUnitTests):
             {"model": _MODEL},
             {"anthropic_api_key": "test"},
         )
-
-
-class TestAnthropicBedrockStandard(ChatModelUnitTests):
-    """Use the standard chat model unit tests against `ChatAnthropicBedrock`."""
-
-    @property
-    def chat_model_class(self) -> type[BaseChatModel]:
-        return ChatAnthropicBedrock
-
-    @property
-    def chat_model_params(self) -> dict:
-        return {"model": _MODEL}
 
 
 @pytest.mark.benchmark
