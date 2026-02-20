@@ -399,7 +399,7 @@ jobs:
     if: false # temporarily skip
     strategy:
       matrix:
-        partner: [openai, anthropic]
+        partner: [anthropic]
       fail-fast: false # Continue testing other partners if one fails
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
