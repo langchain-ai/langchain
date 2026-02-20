@@ -263,7 +263,8 @@ def test_refresh_generates_sorted_profiles(
     spec = importlib.util.spec_from_file_location(
         "generated_profiles_sorted", profiles_file
     )
-    assert spec and spec.loader
+    assert spec
+    assert spec.loader
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)  # type: ignore[union-attr]
 
