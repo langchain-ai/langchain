@@ -1,45 +1,53 @@
-# Git
-.git
-.github
-
-# Python
-__pycache__
+# Development files
+__pycache__/
 *.pyc
 *.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment
+.env
 .venv
-.mypy_cache
-.pytest_cache
-.ruff_cache
-*.egg-info
-.tox
+env/
+venv/
 
 # IDE
-.idea
-.vscode
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# Worktree
-worktree
+# OS
+.DS_Store
+Thumbs.db
 
-# Test artifacts
-.coverage
-htmlcov
-coverage.xml
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+
+# Animation source (keep optimized frames only)
+animation_frames/
+orcest_landing.animation_jpg_pack.zip
+ANIMATION_README.md
 
 # Build artifacts
-dist
-build
-
-# Libs (not needed for Docker build)
-libs
-
-# Docs
-*.md
-*.cff
-LICENSE
-
-# Render config
-render.yaml
-
-# Misc
-*.log
-.DS_Store
+build/
+dist/
+*.egg-info/
