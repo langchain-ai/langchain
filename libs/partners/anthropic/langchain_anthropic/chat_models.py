@@ -1890,22 +1890,10 @@ class ChatAnthropicBedrock(ChatAnthropic):
     )
     """AWS session token. Read from env `AWS_SESSION_TOKEN` if not provided."""
 
-    anthropic_api_url: str | None = Field(
-        default=None,
-        exclude=True,
-    )
-    """Not used with Bedrock - region is used instead."""
-
-    anthropic_proxy: str | None = Field(
-        default=None,
-        exclude=True,
-    )
-    """Not used with Bedrock."""
-
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
-        return "anthropic-bedrock"
+        return "anthropic-bedrock-chat"
 
     @property
     def lc_secrets(self) -> dict[str, str]:
@@ -1914,6 +1902,8 @@ class ChatAnthropicBedrock(ChatAnthropic):
             "aws_access_key_id": "AWS_ACCESS_KEY_ID",
             "aws_secret_access_key": "AWS_SECRET_ACCESS_KEY",
             "aws_session_token": "AWS_SESSION_TOKEN",
+            "mcp_servers": "ANTHROPIC_MCP_SERVERS",
+            "anthropic_api_key": "ANTHROPIC_API_KEY",
         }
 
     @classmethod
@@ -1971,39 +1961,6 @@ class ChatAnthropicBedrock(ChatAnthropic):
 
         client_params = self._client_params
         return AsyncAnthropicBedrock(**client_params)
-
-    def _create(self, payload: dict) -> Any:
-        """Create a message using the AnthropicBedrock client."""
-        if "betas" in payload:
-            return self._client.beta.messages.create(**payload)
-        return self._client.messages.create(**payload)
-
-    async def _acreate(self, payload: dict) -> Any:
-        """Create a message asynchronously using the AsyncAnthropicBedrock client."""
-        if "betas" in payload:
-            return await self._async_client.beta.messages.create(**payload)
-        return await self._async_client.messages.create(**payload)
-
-    @property
-    def _identifying_params(self) -> dict[str, Any]:
-        """Get the identifying parameters."""
-        return {
-            "model": self.model,
-            "max_tokens": self.max_tokens,
-            "temperature": self.temperature,
-            "top_k": self.top_k,
-            "top_p": self.top_p,
-            "model_kwargs": self.model_kwargs,
-            "streaming": self.streaming,
-            "max_retries": self.max_retries,
-            "default_request_timeout": self.default_request_timeout,
-            "thinking": self.thinking,
-            "aws_region": self.aws_region,
-        }
-
-    def _get_ls_provider(self) -> str:
-        """Get the provider identifier for LangSmith tracing."""
-        return "anthropic-bedrock"
 
     def _get_ls_params(
         self,
