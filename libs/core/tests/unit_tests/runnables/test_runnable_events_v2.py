@@ -2908,3 +2908,98 @@ async def test_tool_error_event_tool_call_id_is_none_when_not_provided() -> None
     assert error_event["name"] == "failing_tool_no_id"
     assert "tool_call_id" in error_event["data"]
     assert error_event["data"]["tool_call_id"] is None
+
+
+async def test_tool_start_event_includes_tool_call_id() -> None:
+    """Regression test for https://github.com/langchain-ai/langchain/issues/34849.
+
+    The on_tool_start event must include tool_call_id in its data when the tool
+    is invoked via a ToolCall dict that carries an id.
+    """
+
+    @tool
+    def my_tool(x: int) -> str:
+        """A simple tool."""
+        return f"result: {x}"
+
+    tool_call_id = "test-tool-call-id-start-123"
+    tool_call = {
+        "name": "my_tool",
+        "args": {"x": 42},
+        "id": tool_call_id,
+        "type": "tool_call",
+    }
+
+    events = [event async for event in my_tool.astream_events(tool_call, version="v2")]
+
+    start_events = [e for e in events if e["event"] == "on_tool_start"]
+    assert len(start_events) == 1
+    assert "tool_call_id" in start_events[0]["data"]
+    assert start_events[0]["data"]["tool_call_id"] == tool_call_id
+
+
+async def test_tool_start_event_tool_call_id_is_none_when_not_provided() -> None:
+    """on_tool_start event must have tool_call_id=None when no ToolCall id is given."""
+
+    @tool
+    def my_tool_no_id(x: int) -> str:
+        """A simple tool."""
+        return f"result: {x}"
+
+    events = [
+        event async for event in my_tool_no_id.astream_events({"x": 42}, version="v2")
+    ]
+
+    start_events = [e for e in events if e["event"] == "on_tool_start"]
+    assert len(start_events) == 1
+    assert "tool_call_id" in start_events[0]["data"]
+    assert start_events[0]["data"]["tool_call_id"] is None
+
+
+async def test_tool_end_event_includes_tool_call_id() -> None:
+    """Regression test for https://github.com/langchain-ai/langchain/issues/34849.
+
+    The on_tool_end event must include tool_call_id in its data when the tool
+    is invoked via a ToolCall dict that carries an id.
+    """
+
+    @tool
+    def my_tool_end(x: int) -> str:
+        """A simple tool."""
+        return f"result: {x}"
+
+    tool_call_id = "test-tool-call-id-end-456"
+    tool_call = {
+        "name": "my_tool_end",
+        "args": {"x": 7},
+        "id": tool_call_id,
+        "type": "tool_call",
+    }
+
+    events = [
+        event async for event in my_tool_end.astream_events(tool_call, version="v2")
+    ]
+
+    end_events = [e for e in events if e["event"] == "on_tool_end"]
+    assert len(end_events) == 1
+    assert "tool_call_id" in end_events[0]["data"]
+    assert end_events[0]["data"]["tool_call_id"] == tool_call_id
+
+
+async def test_tool_end_event_tool_call_id_is_none_when_not_provided() -> None:
+    """on_tool_end event must have tool_call_id=None when no ToolCall id is given."""
+
+    @tool
+    def my_tool_end_no_id(x: int) -> str:
+        """A simple tool."""
+        return f"result: {x}"
+
+    events = [
+        event
+        async for event in my_tool_end_no_id.astream_events({"x": 7}, version="v2")
+    ]
+
+    end_events = [e for e in events if e["event"] == "on_tool_end"]
+    assert len(end_events) == 1
+    assert "tool_call_id" in end_events[0]["data"]
+    assert end_events[0]["data"]["tool_call_id"] is None
