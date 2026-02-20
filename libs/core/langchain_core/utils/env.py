@@ -28,7 +28,7 @@ def get_from_dict_or_env(
     key: str | list[str],
     env_key: str,
     default: str | None = None,
-) -> str:
+) -> Any:
     """Get a value from a dictionary or an environment variable.
 
     Args:
@@ -42,15 +42,17 @@ def get_from_dict_or_env(
             or the environment.
 
     Returns:
-        The dict value or the environment variable value.
+        The dict value or the environment variable value. When the value comes
+        from the dictionary, it is returned as-is (preserving its original type).
+        When it comes from an environment variable or default, it will be a string.
     """
     if isinstance(key, (list, tuple)):
         for k in key:
             if value := data.get(k):
-                return str(value)
+                return value
 
     if isinstance(key, str) and key in data and data[key]:
-        return str(data[key])
+        return data[key]
 
     key_for_err = key[0] if isinstance(key, (list, tuple)) else key
 
