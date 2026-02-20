@@ -2500,3 +2500,53 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     # Verify it's both types (multiple inheritance)
     assert isinstance(exc_info.value, anthropic.BadRequestError)
     assert isinstance(exc_info.value, ContextOverflowError)
+
+
+def test__format_messages_empty_human_message_content() -> None:
+    """Test that empty HumanMessage content is handled gracefully.
+
+    Anthropic's API requires all messages to have non-empty content except for
+    the optional final assistant message. Empty user messages should be silently
+    skipped to avoid a 400 BadRequestError.
+    See: https://github.com/langchain-ai/langchain/issues/35081
+    """
+    # Empty string content on HumanMessage should be skipped
+    messages = [
+        HumanMessage(content="hello"),  # type: ignore[misc]
+        AIMessage(content="hi"),  # type: ignore[misc]
+        HumanMessage(content=""),  # type: ignore[misc]
+    ]
+    _, formatted = _format_messages(messages)
+    assert len(formatted) == 2
+    assert formatted[0] == {"role": "user", "content": "hello"}
+    assert formatted[1] == {"role": "assistant", "content": "hi"}
+
+    # Empty list content on HumanMessage should be skipped
+    messages = [
+        HumanMessage(content="hello"),  # type: ignore[misc]
+        AIMessage(content="hi"),  # type: ignore[misc]
+        HumanMessage(content=[]),  # type: ignore[misc]
+    ]
+    _, formatted = _format_messages(messages)
+    assert len(formatted) == 2
+
+    # List content with only empty text blocks should result in empty content
+    # which gets skipped
+    messages = [
+        HumanMessage(content="hello"),  # type: ignore[misc]
+        AIMessage(content="hi"),  # type: ignore[misc]
+        HumanMessage(content=[{"type": "text", "text": ""}]),  # type: ignore[misc]
+    ]
+    _, formatted = _format_messages(messages)
+    assert len(formatted) == 2
+
+    # Non-empty HumanMessage should still be included
+    messages_ok = [HumanMessage(content="hello")]  # type: ignore[misc]
+    _, formatted = _format_messages(messages_ok)
+    assert len(formatted) == 1
+    assert formatted[0] == {"role": "user", "content": "hello"}
+
+    # Single empty HumanMessage should result in empty list
+    messages_empty = [HumanMessage(content="")]  # type: ignore[misc]
+    _, formatted = _format_messages(messages_empty)
+    assert len(formatted) == 0
