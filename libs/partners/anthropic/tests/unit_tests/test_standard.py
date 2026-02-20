@@ -5,7 +5,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_tests.unit_tests import ChatModelUnitTests
 from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
 
-from langchain_anthropic import ChatAnthropic
+from langchain_anthropic import ChatAnthropic, ChatAnthropicBedrock
 
 _MODEL = "claude-3-haiku-20240307"
 
@@ -30,13 +30,25 @@ class TestAnthropicStandard(ChatModelUnitTests):
         )
 
 
+class TestAnthropicBedrockStandard(ChatModelUnitTests):
+    """Use the standard chat model unit tests against `ChatAnthropicBedrock`."""
+
+    @property
+    def chat_model_class(self) -> type[BaseChatModel]:
+        return ChatAnthropicBedrock
+
+    @property
+    def chat_model_params(self) -> dict:
+        return {"model": _MODEL}
+
+
 @pytest.mark.benchmark
 def test_init_time_with_client(benchmark: BenchmarkFixture) -> None:
     """Test initialization time, accounting for lazy loading of client."""
 
     def _init_in_loop_with_clients() -> None:
         for _ in range(10):
-            llm = ChatAnthropic(model="claude-3-5-haiku-20241022")
+            llm = ChatAnthropic(model="claude-haiku-4-5-20251001")
             _ = llm._client
             _ = llm._async_client
 
