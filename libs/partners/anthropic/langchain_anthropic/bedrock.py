@@ -38,9 +38,7 @@ class ChatAnthropicBedrock(ChatAnthropic):
         model = ChatAnthropicBedrock(
             model="anthropic.claude-3-5-sonnet-20241022-v2:0",
             # region_name="us-east-1",  # optional, inferred from env if not provided
-            # temperature=,
-            # max_tokens=,
-            # thinking={"type": "enabled", "budget_tokens": 5000},
+            # other params...
         )
         ```
 
