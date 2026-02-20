@@ -310,7 +310,7 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     print(f"Writing to {output_file}...")
     module_content = [f'"""{MODULE_ADMONITION}"""\n\n', "from typing import Any\n\n"]
     module_content.append("_PROFILES: dict[str, dict[str, Any]] = ")
-    json_str = json.dumps(profiles, indent=4)
+    json_str = json.dumps(dict(sorted(profiles.items())), indent=4)
     json_str = (
         json_str.replace("true", "True")
         .replace("false", "False")
