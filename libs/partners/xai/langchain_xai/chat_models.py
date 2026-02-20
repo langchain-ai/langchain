@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import warnings
+from importlib.metadata import version as _get_pkg_version
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 import openai
@@ -470,6 +471,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         """Get the parameters used to invoke the model."""
         params = super()._get_ls_params(stop=stop, **kwargs)
         params["ls_provider"] = "xai"
+        params["versions"] = {"langchain-xai": _get_pkg_version("langchain-xai")}
         return params
 
     @model_validator(mode="after")

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
+from importlib.metadata import version as _get_pkg_version
 from operator import itemgetter
 from typing import Any, Literal, cast
 
@@ -385,6 +386,9 @@ class ChatOpenRouter(BaseChatModel):
             ls_params["ls_max_tokens"] = ls_max_tokens
         if ls_stop := stop or params.get("stop", None) or self.stop:
             ls_params["ls_stop"] = ls_stop if isinstance(ls_stop, list) else [ls_stop]
+        ls_params["versions"] = {
+            "langchain-openrouter": _get_pkg_version("langchain-openrouter")
+        }
         return ls_params
 
     def _generate(

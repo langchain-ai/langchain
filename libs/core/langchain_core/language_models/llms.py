@@ -54,7 +54,10 @@ from langchain_core.messages import (
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult, RunInfo
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.runnables import RunnableConfig, ensure_config, get_config_list
-from langchain_core.runnables.config import run_in_executor
+from langchain_core.runnables.config import (
+    _merge_metadata_dicts,
+    run_in_executor,
+)
 
 if TYPE_CHECKING:
     import uuid
@@ -525,10 +528,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             params["stop"] = stop
             params = {**params, **kwargs}
             options = {"stop": stop}
-            inheritable_metadata = {
-                **(config.get("metadata") or {}),
-                **self._get_ls_params(stop=stop, **kwargs),
-            }
+            inheritable_metadata = _merge_metadata_dicts(
+                config.get("metadata") or {},
+                self._get_ls_params(stop=stop, **kwargs),
+            )
             callback_manager = CallbackManager.configure(
                 config.get("callbacks"),
                 self.callbacks,
@@ -595,10 +598,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         params["stop"] = stop
         params = {**params, **kwargs}
         options = {"stop": stop}
-        inheritable_metadata = {
-            **(config.get("metadata") or {}),
-            **self._get_ls_params(stop=stop, **kwargs),
-        }
+        inheritable_metadata = _merge_metadata_dicts(
+            config.get("metadata") or {},
+            self._get_ls_params(stop=stop, **kwargs),
+        )
         callback_manager = AsyncCallbackManager.configure(
             config.get("callbacks"),
             self.callbacks,

@@ -8,6 +8,7 @@ import re
 import ssl
 import uuid
 from collections.abc import Callable, Sequence  # noqa: TC003
+from importlib.metadata import version as _get_pkg_version
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -545,6 +546,9 @@ class ChatMistralAI(BaseChatModel):
             ls_params["ls_max_tokens"] = ls_max_tokens
         if ls_stop := stop or params.get("stop", None):
             ls_params["ls_stop"] = ls_stop
+        ls_params["versions"] = {
+            "langchain-mistralai": _get_pkg_version("langchain-mistralai")
+        }
         return ls_params
 
     @property

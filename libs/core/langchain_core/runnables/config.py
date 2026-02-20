@@ -7,7 +7,15 @@ import asyncio
 # Cannot move uuid to TYPE_CHECKING as RunnableConfig is used in Pydantic models
 import uuid  # noqa: TC003
 import warnings
-from collections.abc import Awaitable, Callable, Generator, Iterable, Iterator, Sequence
+from collections.abc import (
+    Awaitable,
+    Callable,
+    Generator,
+    Iterable,
+    Iterator,
+    Mapping,
+    Sequence,
+)
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import Context, ContextVar, Token, copy_context
@@ -354,6 +362,48 @@ def patch_config(
     return config
 
 
+def _merge_metadata_dicts(
+    base: Mapping[str, Any], incoming: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Merge two metadata dicts with one extra level of depth.
+
+    If both sides have a `Mapping` value for the same key, the inner mappings
+    are merged (last-writer-wins within). Non-mapping values use
+    last-writer-wins at the top level. Only one level of depth is merged; values
+    nested more deeply are not recursively merged.
+
+    Args:
+        base: The base metadata dict.
+
+            Values here are kept unless overridden by `incoming`.
+        incoming: The metadata dict to merge on top.
+
+            Its values take precedence on conflict.
+
+    Returns:
+        A new merged dict.
+
+            Inputs are not mutated. The returned dict performs shallow copies at
+            the top level and one level deep; mutable values nested beyond that
+            depth are shared references with the originals.
+    """
+    merged = {**base}
+    for key, value in incoming.items():
+        if (
+            key in merged
+            and isinstance(merged[key], Mapping)
+            and isinstance(value, Mapping)
+        ):
+            merged[key] = {**merged[key], **value}
+        else:
+            merged[key] = value
+    # Ensure non-overlapping nested mappings are also copies, not shared refs.
+    for key in base:
+        if key not in incoming and isinstance(merged[key], Mapping):
+            merged[key] = {**merged[key]}
+    return merged
+
+
 def merge_configs(*configs: RunnableConfig | None) -> RunnableConfig:
     """Merge multiple configs into one.
 
@@ -369,10 +419,10 @@ def merge_configs(*configs: RunnableConfig | None) -> RunnableConfig:
     for config in (ensure_config(c) for c in configs if c is not None):
         for key in config:
             if key == "metadata":
-                base["metadata"] = {
-                    **base.get("metadata", {}),
-                    **(config.get("metadata") or {}),
-                }
+                base["metadata"] = _merge_metadata_dicts(
+                    base.get("metadata", {}),
+                    config.get("metadata") or {},
+                )
             elif key == "tags":
                 base["tags"] = sorted(
                     set(base.get("tags", []) + (config.get("tags") or [])),

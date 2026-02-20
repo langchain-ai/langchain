@@ -45,6 +45,7 @@ import ast
 import json
 import logging
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
+from importlib.metadata import version as _get_pkg_version
 from operator import itemgetter
 from typing import Any, Literal, cast
 from uuid import uuid4
@@ -1032,6 +1033,9 @@ class ChatOllama(BaseChatModel):
         )
         if ls_stop := stop or params.get("stop", None) or self.stop:
             ls_params["ls_stop"] = ls_stop
+        ls_params["versions"] = {
+            "langchain-ollama": _get_pkg_version("langchain-ollama")
+        }
         return ls_params
 
     def _generate(

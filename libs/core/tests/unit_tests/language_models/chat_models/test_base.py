@@ -17,6 +17,7 @@ from langchain_core.language_models import (
     ParrotFakeChatModel,
 )
 from langchain_core.language_models._utils import _normalize_messages
+from langchain_core.language_models.base import LangSmithParams
 from langchain_core.language_models.chat_models import _generate_response_from_error
 from langchain_core.language_models.fake_chat_models import (
     FakeListChatModelError,
@@ -45,6 +46,7 @@ from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
 
 if TYPE_CHECKING:
     from langchain_core.outputs.llm_result import LLMResult
+    from langchain_core.runnables.config import RunnableConfig
 
 
 def _content_blocks_equal_ignore_id(
@@ -1218,6 +1220,53 @@ def test_get_ls_params() -> None:
 
     ls_params = llm._get_ls_params(stop=["stop"])
     assert ls_params["ls_stop"] == ["stop"]
+
+
+class _VersionedFakeModel(FakeListChatModel):
+    """Fake model that reports a versions dict in `ls_params`."""
+
+    def _get_ls_params(
+        self, stop: list[str] | None = None, **kwargs: Any
+    ) -> LangSmithParams:
+        params = super()._get_ls_params(stop=stop, **kwargs)
+        params["versions"] = {"langchain-fake": "0.1.0"}
+        return params
+
+
+def test_user_versions_metadata_survives_merge() -> None:
+    """User-provided versions metadata should be deep-merged with model versions.
+
+    Regression test: if the merge in `BaseChatModel` reverts to a flat dict
+    spread, user-provided versions would be silently overwritten by the
+    model's versions.
+    """
+    llm = _VersionedFakeModel(responses=["hello"])
+    user_config: RunnableConfig = {"metadata": {"versions": {"my-app": "2.0"}}}
+
+    with collect_runs() as cb:
+        llm.invoke([HumanMessage(content="hi")], config=user_config)
+        assert len(cb.traced_runs) == 1
+        run_metadata = cb.traced_runs[0].extra["metadata"]
+        # Both user-provided and model-provided versions must be present.
+        assert run_metadata["versions"] == {
+            "my-app": "2.0",
+            "langchain-fake": "0.1.0",
+        }
+
+
+async def test_user_versions_metadata_survives_merge_async() -> None:
+    """Async variant: user-provided versions metadata deep-merged with model's."""
+    llm = _VersionedFakeModel(responses=["hello"])
+    user_config: RunnableConfig = {"metadata": {"versions": {"my-app": "2.0"}}}
+
+    with collect_runs() as cb:
+        await llm.ainvoke([HumanMessage(content="hi")], config=user_config)
+        assert len(cb.traced_runs) == 1
+        run_metadata = cb.traced_runs[0].extra["metadata"]
+        assert run_metadata["versions"] == {
+            "my-app": "2.0",
+            "langchain-fake": "0.1.0",
+        }
 
 
 def test_model_profiles() -> None:

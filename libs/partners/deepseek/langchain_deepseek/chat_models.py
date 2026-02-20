@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable, Iterator, Sequence
+from importlib.metadata import version as _get_pkg_version
 from json import JSONDecodeError
 from typing import Any, Literal, TypeAlias, cast
 
@@ -216,6 +217,9 @@ class ChatDeepSeek(BaseChatOpenAI):
     ) -> LangSmithParams:
         ls_params = super()._get_ls_params(stop=stop, **kwargs)
         ls_params["ls_provider"] = "deepseek"
+        ls_params["versions"] = {
+            "langchain-deepseek": _get_pkg_version("langchain-deepseek")
+        }
         return ls_params
 
     @model_validator(mode="after")

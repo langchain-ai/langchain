@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from importlib.metadata import version as _get_pkg_version
 from typing import Any, Literal, TypeAlias, TypeVar
 
 import openai
@@ -752,6 +753,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 params["ls_model_name"] = self.model_name
         elif self.deployment_name:
             params["ls_model_name"] = self.deployment_name
+        params["versions"] = {"langchain-openai": _get_pkg_version("langchain-openai")}
         return params
 
     def _create_chat_result(
