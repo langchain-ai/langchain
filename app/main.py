@@ -41,6 +41,11 @@ SSO_CLIENT_ID = os.getenv("SSO_CLIENT_ID", "orcest")
 SSO_CLIENT_SECRET = os.getenv("SSO_CLIENT_SECRET")
 SSO_CALLBACK_URL = os.getenv("SSO_CALLBACK_URL", "https://orcest.ai/auth/callback")
 ORCEST_SSO_COOKIE = "orcest_sso_token"
+ORCEST_USERINFO_COOKIE = "orcest_userinfo"
+
+# Routes that do NOT require SSO authentication
+PUBLIC_PATHS = {"/health", "/auth/callback", "/auth/logout", "/"}
+PUBLIC_PREFIXES = ("/static/",)
 
 LANDING_HTML = """<!DOCTYPE html>
 <html lang="en">
@@ -475,9 +480,104 @@ ECOSYSTEM_SERVICES = [
 _metrics = {"requests": 0, "start_time": time.time()}
 
 
+def _build_sso_authorize_url(return_to: str = "/orchestration") -> str:
+    """Build the SSO authorization redirect URL with state encoding the return path."""
+    state_payload = json.dumps({"returnTo": return_to})
+    state = base64.urlsafe_b64encode(state_payload.encode()).decode().rstrip("=")
+    return (
+        f"{SSO_ISSUER}/oauth2/authorize"
+        f"?client_id={SSO_CLIENT_ID}"
+        f"&redirect_uri={SSO_CALLBACK_URL}"
+        f"&response_type=code"
+        f"&scope=openid%20profile%20email"
+        f"&state={state}"
+    )
+
+
+async def _verify_sso_token(token: str) -> bool:
+    """Verify an SSO access token against the issuer's verification endpoint."""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            verify_res = await client.post(
+                f"{SSO_ISSUER}/api/token/verify",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json",
+                },
+            )
+        return verify_res.status_code == 200 and verify_res.json().get("valid", False)
+    except Exception:
+        return False
+
+
+async def _fetch_userinfo(token: str) -> dict | None:
+    """Fetch the user profile from the SSO userinfo endpoint."""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            res = await client.get(
+                f"{SSO_ISSUER}/oauth2/userinfo",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+        if res.status_code == 200:
+            return res.json()
+    except Exception:
+        pass
+    return None
+
+
+def _is_public_path(path: str) -> bool:
+    """Check whether a request path is public and does not require SSO."""
+    if path in PUBLIC_PATHS:
+        return True
+    for prefix in PUBLIC_PREFIXES:
+        if path.startswith(prefix):
+            return True
+    return False
+
+
 @app.middleware("http")
-async def metrics_middleware(request: Request, call_next):
+async def sso_auth_middleware(request: Request, call_next):
+    """Combined middleware: track metrics and enforce SSO on protected routes."""
     _metrics["requests"] += 1
+
+    path = request.url.path
+
+    # Public routes pass through without auth check
+    if _is_public_path(path):
+        return await call_next(request)
+
+    # SSO enforcement is only active when client secret is configured
+    if SSO_CLIENT_SECRET:
+        token = request.cookies.get(ORCEST_SSO_COOKIE) or (
+            request.headers.get("Authorization", "").replace("Bearer ", "") or None
+        )
+
+        if not token:
+            # No token - redirect browsers, return 401 for API clients
+            if "text/html" in request.headers.get("accept", ""):
+                return RedirectResponse(
+                    url=_build_sso_authorize_url(return_to=str(request.url.path)),
+                    status_code=302,
+                )
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Authentication required. Obtain a token via SSO at login.orcest.ai"},
+            )
+
+        # Verify the token
+        is_valid = await _verify_sso_token(token)
+        if not is_valid:
+            # Invalid/expired token - redirect browsers, return 401 for API clients
+            if "text/html" in request.headers.get("accept", ""):
+                return RedirectResponse(
+                    url=_build_sso_authorize_url(return_to=str(request.url.path)),
+                    status_code=302,
+                )
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "SSO token is invalid or expired. Please re-authenticate."},
+            )
+
     response = await call_next(request)
     return response
 
@@ -532,7 +632,7 @@ async def metrics_endpoint():
 
 @app.get("/auth/callback")
 async def auth_callback(request: Request, response: Response, code: str = "", state: str = ""):
-    """OAuth2 callback from login.orcest.ai - exchange code for token and set cookie"""
+    """OAuth2 callback from login.orcest.ai - exchange code for token, fetch userinfo, and set cookies."""
     if not SSO_CLIENT_SECRET or not code:
         return RedirectResponse(url="/", status_code=302)
 
@@ -545,7 +645,8 @@ async def auth_callback(request: Request, response: Response, code: str = "", st
         except Exception:
             pass
 
-    async with httpx.AsyncClient() as client:
+    # Exchange authorization code for access token
+    async with httpx.AsyncClient(timeout=15.0) as client:
         token_res = await client.post(
             f"{SSO_ISSUER}/oauth2/token",
             data={
@@ -566,6 +667,14 @@ async def auth_callback(request: Request, response: Response, code: str = "", st
     if not access_token:
         return RedirectResponse(url=f"{SSO_ISSUER}?error=no_token", status_code=302)
 
+    # Fetch user profile from the SSO userinfo endpoint
+    userinfo = await _fetch_userinfo(access_token)
+    userinfo_encoded = ""
+    if userinfo:
+        userinfo_encoded = base64.urlsafe_b64encode(
+            json.dumps(userinfo).encode()
+        ).decode()
+
     redirect = RedirectResponse(url=return_to, status_code=302)
     redirect.set_cookie(
         key=ORCEST_SSO_COOKIE,
@@ -575,10 +684,76 @@ async def auth_callback(request: Request, response: Response, code: str = "", st
         samesite="lax",
         max_age=900,
     )
+    if userinfo_encoded:
+        redirect.set_cookie(
+            key=ORCEST_USERINFO_COOKIE,
+            value=userinfo_encoded,
+            httponly=False,
+            secure=True,
+            samesite="lax",
+            max_age=900,
+        )
     return redirect
 
 
-def _orchestration_html():
+def _get_userinfo_from_cookie(request: Request) -> dict | None:
+    """Decode the userinfo cookie and return the user profile dict, or None."""
+    raw = request.cookies.get(ORCEST_USERINFO_COOKIE)
+    if not raw:
+        return None
+    try:
+        decoded = base64.urlsafe_b64decode(raw + "==")
+        return json.loads(decoded)
+    except Exception:
+        return None
+
+
+@app.get("/auth/logout")
+async def auth_logout():
+    """Clear SSO cookies and redirect to the SSO provider's logout endpoint."""
+    redirect = RedirectResponse(url=f"{SSO_ISSUER}/oauth2/logout?client_id={SSO_CLIENT_ID}", status_code=302)
+    redirect.delete_cookie(key=ORCEST_SSO_COOKIE, path="/")
+    redirect.delete_cookie(key=ORCEST_USERINFO_COOKIE, path="/")
+    return redirect
+
+
+@app.get("/api/me")
+async def api_me(request: Request):
+    """Return the current user's SSO profile from the userinfo cookie or live fetch."""
+    # Try cached userinfo cookie first
+    userinfo = _get_userinfo_from_cookie(request)
+    if userinfo:
+        return JSONResponse(content=userinfo)
+
+    # Fall back to live fetch using the SSO token
+    token = request.cookies.get(ORCEST_SSO_COOKIE) or (
+        request.headers.get("Authorization", "").replace("Bearer ", "") or None
+    )
+    if token:
+        userinfo = await _fetch_userinfo(token)
+        if userinfo:
+            return JSONResponse(content=userinfo)
+
+    return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+
+
+def _orchestration_html(user_name: str = "", user_email: str = "", user_role: str = ""):
+    display_name = user_name or "User"
+    user_info_section = ""
+    if user_name or user_email:
+        role_badge = ""
+        if user_role:
+            role_badge = f' <span class="role-badge">{user_role}</span>'
+        email_line = f"<p class=\"user-email\">{user_email}</p>" if user_email else ""
+        user_info_section = f"""<div class="user-card">
+<div class="user-avatar">{display_name[0].upper()}</div>
+<div class="user-details">
+<h3>{display_name}{role_badge}</h3>
+{email_line}
+</div>
+<a href="/auth/logout" class="logout-btn">Logout</a>
+</div>"""
+
     return f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Orcest AI Orchestration</title>
@@ -592,43 +767,69 @@ h1{{background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:t
 a{{color:#60a5fa;text-decoration:none}}
 a:hover{{text-decoration:underline}}
 .sso-status{{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:#1e3a1e;color:#4ade80;border-radius:8px;margin-bottom:24px}}
-.sso-status::before{{content:"✓";font-weight:bold}}
+.sso-status::before{{content:"";font-weight:bold}}
+.user-card{{display:flex;align-items:center;gap:16px;background:#111827;border:1px solid #1f2937;border-radius:12px;padding:16px 24px;margin-bottom:24px}}
+.user-avatar{{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#60a5fa,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;color:#fff;flex-shrink:0}}
+.user-details{{flex:1}}
+.user-details h3{{color:#f8fafc;margin:0;font-size:1.1rem}}
+.user-email{{color:#94a3b8;font-size:0.9rem;margin:2px 0 0}}
+.role-badge{{display:inline-block;font-size:0.7rem;padding:2px 8px;border-radius:10px;background:rgba(96,165,250,0.15);color:#60a5fa;vertical-align:middle;margin-left:8px;text-transform:capitalize}}
+.logout-btn{{color:#f87171;font-size:0.9rem;white-space:nowrap}}
+.greeting{{color:#94a3b8;margin-bottom:24px;font-size:1.05rem}}
 </style></head>
 <body>
 <div class="container">
-<div class="sso-status">ورود با SSO انجام شد</div>
+<div class="sso-status">Authenticated via SSO</div>
+{user_info_section}
 <h1>Orcest AI Orchestration</h1>
-<p style="margin-bottom:24px;color:#94a3b8">سکو LangChain برای عامل‌های هوشمند. فورک از <a href="https://github.com/langchain-ai/langchain" target="_blank">LangChain</a>.</p>
+<p class="greeting">Welcome back, {display_name}. LangChain-based platform for intelligent agents.</p>
 <div class="card">
 <h3>API Endpoints</h3>
-<p><a href="/api/info">/api/info</a> – اطلاعات پلتفرم</p>
-<p><a href="/health">/health</a> – وضعیت سرویس</p>
-<p><a href="/ecosystem/health">/ecosystem/health</a> – سلامت اکوسیستم</p>
+<p><a href="/api/info">/api/info</a> - Platform information</p>
+<p><a href="/health">/health</a> - Service health</p>
+<p><a href="/ecosystem/health">/ecosystem/health</a> - Ecosystem health</p>
+<p><a href="/metrics">/metrics</a> - System metrics</p>
+<p><a href="/api/me">/api/me</a> - Your SSO profile</p>
 </div>
 <div class="card">
 <h3>RainyModel API</h3>
 <p>Base URL: <code>{RAINYMODEL_BASE_URL}</code></p>
-<p>استفاده با کلید API از داشبورد SSO.</p>
+<p>Use with your API key from the SSO dashboard.</p>
 </div>
-<p><a href="https://orcest.ai">← بازگشت به صفحه اصلی</a> | <a href="https://login.orcest.ai/logout">خروج</a></p>
+<p><a href="https://orcest.ai">&larr; Back to landing page</a> | <a href="/auth/logout">Logout</a></p>
 </div></body></html>"""
 
 
 @app.get("/orchestration", response_class=HTMLResponse)
 async def orchestration_page(request: Request):
-    """Orcest AI Orchestration - LangChain-based service (requires SSO)"""
-    token = request.cookies.get(ORCEST_SSO_COOKIE) or request.headers.get("Authorization", "").replace("Bearer ", "")
-    if not token and not SSO_CLIENT_SECRET:
-        return HTMLResponse(content=_orchestration_html())
+    """Orcest AI Orchestration - LangChain-based service (requires SSO).
 
-    if token and SSO_CLIENT_SECRET:
-        async with httpx.AsyncClient() as client:
-            verify_res = await client.post(
-                f"{SSO_ISSUER}/api/token/verify",
-                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-            )
-        if verify_res.status_code == 200 and verify_res.json().get("valid"):
-            return HTMLResponse(content=_orchestration_html())
+    Authentication is enforced by the SSO middleware. This handler extracts
+    the authenticated user's profile from the userinfo cookie (set during
+    the auth callback) and renders the orchestration dashboard with
+    per-user personalization.
+    """
+    # Extract user profile from the cached userinfo cookie
+    userinfo = _get_userinfo_from_cookie(request)
 
-    auth_url = f"{SSO_ISSUER}/oauth2/authorize?client_id={SSO_CLIENT_ID}&redirect_uri={SSO_CALLBACK_URL}&response_type=code&scope=openid%20profile%20email"
-    return RedirectResponse(url=auth_url, status_code=302)
+    # Fall back to a live fetch if the cookie is missing but the token exists
+    if not userinfo:
+        token = request.cookies.get(ORCEST_SSO_COOKIE) or (
+            request.headers.get("Authorization", "").replace("Bearer ", "") or None
+        )
+        if token:
+            userinfo = await _fetch_userinfo(token)
+
+    user_name = ""
+    user_email = ""
+    user_role = ""
+    if userinfo:
+        user_name = userinfo.get("name") or userinfo.get("preferred_username", "")
+        user_email = userinfo.get("email", "")
+        user_role = userinfo.get("role") or userinfo.get("realm_access", {}).get("roles", [""])[0] if userinfo.get("role") or userinfo.get("realm_access") else ""
+
+    return HTMLResponse(content=_orchestration_html(
+        user_name=user_name,
+        user_email=user_email,
+        user_role=user_role,
+    ))
