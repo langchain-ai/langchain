@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable
 
 # Needed as top level import for Pydantic schema generation on AgentState
+import logging
 import warnings
 from typing import TypeAlias
 
@@ -377,6 +378,9 @@ class _DefaultAgentState(AgentState[Any]):
     """AgentMiddleware default state."""
 
 
+_middleware_logger = logging.getLogger(__name__)
+
+
 class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
     """Base middleware class for an agent.
 
@@ -402,6 +406,21 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
         Defaults to the class name, but can be overridden for custom naming.
         """
         return self.__class__.__name__
+
+    def _log_warning(self, message: str, *args: Any, exc_info: bool = False) -> None:
+        """Log a warning with the middleware name as context.
+
+        Use this in middleware implementations to log recoverable issues
+        (e.g., malformed LLM responses) in a consistent format, rather than
+        raising exceptions that abort the agent execution.
+
+        Args:
+            message: Log message format string.
+            *args: Format arguments for the message.
+            exc_info: Whether to include exception info in the log.
+        """
+        formatted = message % args if args else message
+        _middleware_logger.warning("[%s] %s", self.name, formatted, exc_info=exc_info)
 
     def before_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run before the agent execution starts.

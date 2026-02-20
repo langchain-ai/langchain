@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import itertools
+import logging
 from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
@@ -51,6 +52,8 @@ from langchain.agents.structured_output import (
     ToolStrategy,
 )
 from langchain.chat_models import init_chat_model
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -1261,7 +1264,14 @@ def create_agent(
             model_response = _execute_model_sync(request)
             return _build_commands(model_response)
 
-        result = wrap_model_call_handler(request, _execute_model_sync)
+        try:
+            result = wrap_model_call_handler(request, _execute_model_sync)
+        except Exception:
+            _logger.warning(
+                "wrap_model_call middleware raised an exception.",
+                exc_info=True,
+            )
+            raise
         return _build_commands(result.model_response, result.commands)
 
     async def _execute_model_async(request: ModelRequest[ContextT]) -> ModelResponse:
@@ -1309,7 +1319,14 @@ def create_agent(
             model_response = await _execute_model_async(request)
             return _build_commands(model_response)
 
-        result = await awrap_model_call_handler(request, _execute_model_async)
+        try:
+            result = await awrap_model_call_handler(request, _execute_model_async)
+        except Exception:
+            _logger.warning(
+                "wrap_model_call middleware raised an exception.",
+                exc_info=True,
+            )
+            raise
         return _build_commands(result.model_response, result.commands)
 
     # Use sync or async based on model capabilities

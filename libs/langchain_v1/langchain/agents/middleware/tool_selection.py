@@ -236,11 +236,31 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         valid_tool_names: list[str],
         request: ModelRequest[ContextT],
     ) -> ModelRequest[ContextT]:
-        """Process the selection response and return filtered `ModelRequest`."""
+        """Process the selection response and return filtered `ModelRequest`.
+
+        Handles malformed or missing tool selections gracefully by falling back
+        to the unmodified request when the response doesn't match the expected
+        schema.
+        """
+        tools_value = response.get("tools")
+
+        # If "tools" key is missing or not a list, fall back to the original request
+        if not isinstance(tools_value, list):
+            logger.warning(
+                "Tool selection model returned response without a valid 'tools' "
+                "list (got %s). Falling back to all available tools.",
+                type(tools_value).__name__,
+            )
+            return request
+
         selected_tool_names: list[str] = []
         invalid_tool_selections = []
 
-        for tool_name in response["tools"]:
+        for tool_name in tools_value:
+            if not isinstance(tool_name, str):
+                invalid_tool_selections.append(tool_name)
+                continue
+
             if tool_name not in valid_tool_names:
                 invalid_tool_selections.append(tool_name)
                 continue
@@ -252,8 +272,10 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
                 selected_tool_names.append(tool_name)
 
         if invalid_tool_selections:
-            msg = f"Model selected invalid tools: {invalid_tool_selections}"
-            raise ValueError(msg)
+            logger.warning(
+                "Tool selection model returned invalid tool names: %s. These will be ignored.",
+                invalid_tool_selections,
+            )
 
         # Filter tools based on selection and append always-included tools
         selected_tools: list[BaseTool] = [
@@ -278,40 +300,22 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
     ) -> ModelResponse[ResponseT] | AIMessage:
         """Filter tools based on LLM selection before invoking the model via handler.
 
+        If the selection model returns a malformed response, logs a warning and
+        falls back to the original request with all tools.
+
         Args:
             request: Model request to execute (includes state and runtime).
-            handler: Async callback that executes the model request and returns
+            handler: Callback that executes the model request and returns
                 `ModelResponse`.
 
         Returns:
             The model call result.
-
-        Raises:
-            AssertionError: If the selection model response is not a dict.
         """
         selection_request = self._prepare_selection_request(request)
         if selection_request is None:
             return handler(request)
 
-        # Create dynamic response model with Literal enum of available tool names
-        type_adapter = _create_tool_selection_response(selection_request.available_tools)
-        schema = type_adapter.json_schema()
-        structured_model = selection_request.model.with_structured_output(schema)
-
-        response = structured_model.invoke(
-            [
-                {"role": "system", "content": selection_request.system_message},
-                selection_request.last_user_message,
-            ]
-        )
-
-        # Response should be a dict since we're passing a schema (not a Pydantic model class)
-        if not isinstance(response, dict):
-            msg = f"Expected dict response, got {type(response)}"
-            raise AssertionError(msg)  # noqa: TRY004
-        modified_request = self._process_selection_response(
-            response, selection_request.available_tools, selection_request.valid_tool_names, request
-        )
+        modified_request = self._select_tools(selection_request, request)
         return handler(modified_request)
 
     async def awrap_model_call(
@@ -321,6 +325,9 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
     ) -> ModelResponse[ResponseT] | AIMessage:
         """Filter tools based on LLM selection before invoking the model via handler.
 
+        If the selection model returns a malformed response, logs a warning and
+        falls back to the original request with all tools.
+
         Args:
             request: Model request to execute (includes state and runtime).
             handler: Async callback that executes the model request and returns
@@ -328,31 +335,112 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
 
         Returns:
             The model call result.
-
-        Raises:
-            AssertionError: If the selection model response is not a dict.
         """
         selection_request = self._prepare_selection_request(request)
         if selection_request is None:
             return await handler(request)
 
-        # Create dynamic response model with Literal enum of available tool names
-        type_adapter = _create_tool_selection_response(selection_request.available_tools)
-        schema = type_adapter.json_schema()
-        structured_model = selection_request.model.with_structured_output(schema)
-
-        response = await structured_model.ainvoke(
-            [
-                {"role": "system", "content": selection_request.system_message},
-                selection_request.last_user_message,
-            ]
-        )
-
-        # Response should be a dict since we're passing a schema (not a Pydantic model class)
-        if not isinstance(response, dict):
-            msg = f"Expected dict response, got {type(response)}"
-            raise AssertionError(msg)  # noqa: TRY004
-        modified_request = self._process_selection_response(
-            response, selection_request.available_tools, selection_request.valid_tool_names, request
-        )
+        modified_request = await self._aselect_tools(selection_request, request)
         return await handler(modified_request)
+
+    def _select_tools(
+        self,
+        selection_request: _SelectionRequest,
+        request: ModelRequest[ContextT],
+    ) -> ModelRequest[ContextT]:
+        """Run the tool selection model and process the response.
+
+        Falls back to the original request if the selection model fails or
+        returns a malformed response.
+
+        Args:
+            selection_request: Prepared inputs for tool selection.
+            request: Original model request to fall back to.
+
+        Returns:
+            Modified request with filtered tools, or the original request
+            on failure.
+        """
+        try:
+            type_adapter = _create_tool_selection_response(selection_request.available_tools)
+            schema = type_adapter.json_schema()
+            structured_model = selection_request.model.with_structured_output(schema)
+
+            response = structured_model.invoke(
+                [
+                    {"role": "system", "content": selection_request.system_message},
+                    selection_request.last_user_message,
+                ]
+            )
+        except Exception:
+            logger.warning(
+                "Tool selection model call failed. Falling back to all available tools.",
+                exc_info=True,
+            )
+            return request
+
+        if not isinstance(response, dict):
+            logger.warning(
+                "Tool selection model returned non-dict response (got %s). "
+                "Falling back to all available tools.",
+                type(response).__name__,
+            )
+            return request
+
+        return self._process_selection_response(
+            response,
+            selection_request.available_tools,
+            selection_request.valid_tool_names,
+            request,
+        )
+
+    async def _aselect_tools(
+        self,
+        selection_request: _SelectionRequest,
+        request: ModelRequest[ContextT],
+    ) -> ModelRequest[ContextT]:
+        """Run the tool selection model asynchronously and process the response.
+
+        Falls back to the original request if the selection model fails or
+        returns a malformed response.
+
+        Args:
+            selection_request: Prepared inputs for tool selection.
+            request: Original model request to fall back to.
+
+        Returns:
+            Modified request with filtered tools, or the original request
+            on failure.
+        """
+        try:
+            type_adapter = _create_tool_selection_response(selection_request.available_tools)
+            schema = type_adapter.json_schema()
+            structured_model = selection_request.model.with_structured_output(schema)
+
+            response = await structured_model.ainvoke(
+                [
+                    {"role": "system", "content": selection_request.system_message},
+                    selection_request.last_user_message,
+                ]
+            )
+        except Exception:
+            logger.warning(
+                "Tool selection model call failed. Falling back to all available tools.",
+                exc_info=True,
+            )
+            return request
+
+        if not isinstance(response, dict):
+            logger.warning(
+                "Tool selection model returned non-dict response (got %s). "
+                "Falling back to all available tools.",
+                type(response).__name__,
+            )
+            return request
+
+        return self._process_selection_response(
+            response,
+            selection_request.available_tools,
+            selection_request.valid_tool_names,
+            request,
+        )
