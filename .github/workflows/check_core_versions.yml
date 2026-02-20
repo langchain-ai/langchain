@@ -9,6 +9,8 @@ on:
     paths:
       - "libs/core/pyproject.toml"
       - "libs/core/langchain_core/version.py"
+      - "libs/partners/anthropic/pyproject.toml"
+      - "libs/partners/anthropic/langchain_anthropic/_version.py"
 
 permissions:
   contents: read
@@ -48,4 +50,18 @@ jobs:
             exit 1
           else
             echo "Langchain v1 versions match: $LANGCHAIN_PYPROJECT_VERSION"
+          fi
+
+          # Check langchain-anthropic versions
+          ANTHROPIC_PYPROJECT_VERSION=$(grep -Po '(?<=^version = ")[^"]*' libs/partners/anthropic/pyproject.toml)
+          ANTHROPIC_VERSION_PY_VERSION=$(grep -Po '(?<=^__version__ = ")[^"]*' libs/partners/anthropic/langchain_anthropic/_version.py)
+
+          # Compare langchain-anthropic versions
+          if [ "$ANTHROPIC_PYPROJECT_VERSION" != "$ANTHROPIC_VERSION_PY_VERSION" ]; then
+            echo "langchain-anthropic versions in pyproject.toml and _version.py do not match!"
+            echo "pyproject.toml version: $ANTHROPIC_PYPROJECT_VERSION"
+            echo "_version.py version: $ANTHROPIC_VERSION_PY_VERSION"
+            exit 1
+          else
+            echo "Langchain-anthropic versions match: $ANTHROPIC_PYPROJECT_VERSION"
           fi

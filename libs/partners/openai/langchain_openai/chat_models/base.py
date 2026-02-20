@@ -799,6 +799,11 @@ class BaseChatOpenAI(BaseChatModel):
     passed in the parameter during invocation.
     """
 
+    context_management: list[dict[str, Any]] | None = None
+    """Configuration for
+    [context management](https://developers.openai.com/api/docs/guides/compaction).
+    """
+
     include: list[str] | None = None
     """Additional fields to include in generations from Responses API.
 
@@ -900,6 +905,11 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     model_config = ConfigDict(populate_by_name=True)
+
+    @property
+    def model(self) -> str:
+        """Same as model_name."""
+        return self.model_name
 
     @model_validator(mode="before")
     @classmethod
@@ -1091,6 +1101,7 @@ class BaseChatOpenAI(BaseChatModel):
             "reasoning_effort": self.reasoning_effort,
             "reasoning": self.reasoning,
             "verbosity": self.verbosity,
+            "context_management": self.context_management,
             "include": self.include,
             "service_tier": self.service_tier,
             "truncation": self.truncation,
@@ -1477,6 +1488,7 @@ class BaseChatOpenAI(BaseChatModel):
             return self.use_responses_api
         if (
             self.output_version == "responses/v1"
+            or self.context_management is not None
             or self.include is not None
             or self.reasoning is not None
             or self.truncation is not None
@@ -1538,7 +1550,7 @@ class BaseChatOpenAI(BaseChatModel):
         try:
             choices = response_dict["choices"]
         except KeyError as e:
-            msg = f"Response missing `choices` key: {response_dict.keys()}"
+            msg = f"Response missing 'choices' key: {response_dict.keys()}"
             raise KeyError(msg) from e
 
         if choices is None:
@@ -1546,7 +1558,7 @@ class BaseChatOpenAI(BaseChatModel):
             # when the response format differs or an error occurs without
             # populating the error field. Provide a more helpful error message.
             msg = (
-                "Received response with null value for `choices`. "
+                "Received response with null value for 'choices'. "
                 "This can happen when using OpenAI-compatible APIs (e.g., vLLM) "
                 "that return a response in an unexpected format. "
                 f"Full response keys: {list(response_dict.keys())}"
@@ -2692,6 +2704,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         !!! version-added "Added in `langchain-openai` 0.3.9"
 
         !!! version-added "Added in `langchain-openai` 0.3.26"
+
             You can also initialize `ChatOpenAI` with `use_previous_response_id`.
             Input messages up to the most recent response will then be dropped from request
             payloads, and `previous_response_id` will be set using the ID of the most
@@ -2702,10 +2715,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             ```
 
         !!! note "OpenAI-compatible endpoints"
+
             Some OpenAI-compatible providers/proxies may not support forwarding
-            reasoning blocks in request history. If you see request-format errors
-            while using reasoning + Responses API, prefer
-            `use_previous_response_id=True` (so the server keeps conversation state).
+            reasoning blocks in request history. If you see request-format
+            errors while using reasoning + Responses API, prefer
+            `use_previous_response_id=True` (so the server keeps
+            conversation state).
 
     ??? info "Reasoning output"
 
@@ -3750,7 +3765,7 @@ def _convert_to_openai_response_format(
 def _oai_structured_outputs_parser(
     ai_msg: AIMessage, schema: type[_BM]
 ) -> PydanticBaseModel | None:
-    if parsed := ai_msg.additional_kwargs.get("parsed"):
+    if (parsed := ai_msg.additional_kwargs.get("parsed")) is not None:
         if isinstance(parsed, dict):
             return schema(**parsed)
         return parsed
@@ -3886,6 +3901,7 @@ def _use_responses_api(payload: dict) -> bool:
         _is_builtin_tool(tool) for tool in payload["tools"]
     )
     responses_only_args = {
+        "context_management",
         "include",
         "previous_response_id",
         "reasoning",
@@ -4265,6 +4281,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                                 )
                         elif block_type in (
                             "reasoning",
+                            "compaction",
                             "web_search_call",
                             "file_search_call",
                             "function_call",
@@ -4467,6 +4484,7 @@ def _construct_lc_result_from_responses_api(
             tool_calls.append(tool_call)
         elif output.type in (
             "reasoning",
+            "compaction",
             "web_search_call",
             "file_search_call",
             "computer_call",
@@ -4675,6 +4693,7 @@ def _convert_responses_chunk_to_generation_chunk(
             }
         )
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
+        "compaction",
         "web_search_call",
         "file_search_call",
         "computer_call",
