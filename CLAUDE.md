@@ -6,92 +6,218 @@ This document provides context to understand the Orcest Core Python project and 
 
 ### Monorepo structure
 
-This is a Python monorepo with multiple independently versioned packages that use `uv`.
+This is a Python monorepo with multiple independently versioned packages managed by `uv`.
 
 ```txt
-langchain/
+orcest.ai/
 ├── libs/
-│   ├── core/             # `langchain-core` primitives and base abstractions
-│   ├── langchain/        # `langchain` (legacy, no new features)
-│   ├── langchain_v1/     # Actively maintained `langchain` package
-│   ├── partners/         # Third-party integrations
-│   │   ├── openai/       # OpenAI models and embeddings
-│   │   ├── anthropic/    # Anthropic (Claude) integration
-│   │   ├── ollama/       # Local model support
-│   │   └── ... (other integrations maintained by the Orcest Core team)
-│   ├── text-splitters/   # Document chunking utilities
-│   ├── standard-tests/   # Shared test suite for integrations
-│   ├── model-profiles/   # Model configuration profiles
-├── .github/              # CI/CD workflows and templates
-├── .vscode/              # VSCode IDE standard settings and recommended extensions
-└── README.md             # Information about Orcest Core
+│   ├── core/               # `langchain-core` v1.2.13 — primitives and base abstractions
+│   ├── langchain/          # `langchain` v1.0.1 (legacy, no new features)
+│   ├── langchain_v1/       # `langchain` v1.2.10 (actively maintained main package)
+│   ├── text-splitters/     # `langchain-text-splitters` v1.1.0 — document chunking
+│   ├── standard-tests/     # `langchain-tests` v1.1.5 — shared test suite for integrations
+│   ├── model-profiles/     # `langchain-model-profiles` v0.0.5 — model config profiles (CLI)
+│   ├── partners/           # Third-party integrations (15 packages)
+│   │   ├── anthropic/      # langchain-anthropic v1.3.3 (Claude)
+│   │   ├── openai/         # langchain-openai v1.1.9
+│   │   ├── ollama/         # langchain-ollama v1.0.1
+│   │   ├── groq/           # langchain-groq v1.1.2
+│   │   ├── chroma/         # Chroma vector store
+│   │   ├── deepseek/       # Deepseek LLM
+│   │   ├── exa/            # Exa search
+│   │   ├── fireworks/      # Fireworks AI
+│   │   ├── huggingface/    # HuggingFace models
+│   │   ├── mistralai/      # Mistral AI
+│   │   ├── nomic/          # Nomic embeddings
+│   │   ├── openrouter/     # OpenRouter API
+│   │   ├── perplexity/     # Perplexity AI
+│   │   ├── qdrant/         # Qdrant vector store
+│   │   └── xai/            # X AI
+│   └── Makefile            # Workspace-level targets (lock, check-lock)
+├── app/                    # Application code (main.py)
+├── .github/                # CI/CD workflows and templates
+├── .vscode/                # VSCode IDE settings and recommended extensions
+├── .mcp.json               # MCP server config (docs-langchain)
+├── .pre-commit-config.yaml # Pre-commit hooks
+├── .editorconfig           # Editor formatting rules
+└── README.md
 ```
 
+**Architectural layers:**
+
 - **Core layer** (`langchain-core`): Base abstractions, interfaces, and protocols. Users should not need to know about this layer directly.
-- **Implementation layer** (`langchain`): Concrete implementations and high-level public utilities
-- **Integration layer** (`partners/`): Third-party service integrations. Note that this monorepo is not exhaustive of all Orcest Core integrations; some are maintained in separate repos, such as `langchain-ai/langchain-google` and `langchain-ai/langchain-aws`. Usually these repos are cloned at the same level as this monorepo, so if needed, you can refer to their code directly by navigating to `../langchain-google/` from this monorepo.
-- **Testing layer** (`standard-tests/`): Standardized integration tests for partner integrations
+- **Implementation layer** (`langchain`): Concrete implementations and high-level public utilities. `libs/langchain` is legacy (no new features); `libs/langchain_v1` is actively maintained.
+- **Integration layer** (`partners/`): Third-party service integrations. This monorepo is not exhaustive; some integrations are in separate repos (e.g., `langchain-ai/langchain-google`, `langchain-ai/langchain-aws`). These repos are typically cloned at the same level as this monorepo, so navigate to `../langchain-google/` from here if needed.
+- **Testing layer** (`standard-tests/`): Standardized integration tests for partner packages.
 
-### Development tools & commands
+### Python version
 
-- `uv` – Fast Python package installer and resolver (replaces pip/poetry)
-- `make` – Task runner for common development commands. Feel free to look at the `Makefile` for available commands and usage patterns.
-- `ruff` – Fast Python linter and formatter
-- `mypy` – Static type checking
-- `pytest` – Testing framework
+All packages require Python `>=3.10.0, <4.0.0`. The CI matrix tests against 3.11 by default, with support for 3.10 through 3.14.
 
-This monorepo uses `uv` for dependency management. Local development uses editable installs: `[tool.uv.sources]`
+### Build system
 
-Each package in `libs/` has its own `pyproject.toml` and `uv.lock`.
+All packages use `hatchling` as the build backend.
 
-Before running your tests, setup all packages by running:
+## Development tools & commands
+
+### Toolchain
+
+| Tool     | Purpose                      | Version constraint      |
+|----------|------------------------------|-------------------------|
+| `uv`     | Package management & locking | latest                  |
+| `ruff`   | Linting & formatting         | `>=0.15.0, <0.16.0` (core/langchain) |
+| `mypy`   | Static type checking         | `>=1.19.1, <1.20.0` (core/langchain) |
+| `pytest`  | Test framework               | `>=8.0.0` (core) / `>=7.3.0` (partners) |
+| `make`   | Task runner                  | —                       |
+
+Note: Partner packages may pin slightly different versions of ruff/mypy. Always check the specific package's `pyproject.toml`.
+
+### Package setup
+
+Each package in `libs/` has its own `pyproject.toml` and `uv.lock`. Local development uses editable installs via `[tool.uv.sources]`.
 
 ```bash
-# For all groups
+# Navigate to the specific package directory first, e.g.:
+cd libs/core
+
+# Install all dependency groups
 uv sync --all-groups
 
-# or, to install a specific group only:
+# Or install a specific group only
 uv sync --group test
 ```
 
-```bash
-# Run unit tests (no network)
-make test
+### Common Makefile targets
 
-# Run specific test file
-uv run --group test pytest tests/unit_tests/test_specific.py
+Every package has a `Makefile` with these standard targets:
+
+| Target               | Description                                    |
+|----------------------|------------------------------------------------|
+| `make format`        | Run ruff formatter and auto-fix lints          |
+| `make lint`          | Run ruff check, ruff format --diff, and mypy   |
+| `make lint_package`  | Lint only the package source (not tests)       |
+| `make lint_tests`    | Lint only the test code                        |
+| `make test`          | Run unit tests with pytest (no network)        |
+| `make test_watch`    | Run unit tests in watch mode                   |
+| `make integration_tests` | Run integration tests (network allowed)    |
+| `make extended_tests`| Run extended test suites                       |
+| `make type`          | Run mypy type checking only                    |
+| `make help`          | Show available targets                         |
+
+**Core-specific targets:** `check_imports`, `check_version`, `benchmark`
+
+**Workspace-level targets** (from `libs/Makefile`):
+
+```bash
+# Regenerate lockfiles for all core packages
+make -C libs lock
+
+# Verify all lockfiles are up-to-date
+make -C libs check-lock
 ```
 
-```bash
-# Lint code
-make lint
+### Running tests
 
-# Format code
+```bash
+# Run all unit tests for a package (no network)
+make test
+
+# Run a specific test file
+uv run --group test pytest tests/unit_tests/test_specific.py
+
+# Run with parallelism (default in core)
+uv run --group test pytest -n auto --disable-socket --allow-unix-socket tests/unit_tests/
+```
+
+Unit tests use `pytest-socket` to block network calls by default. The following environment variables are explicitly unset during test runs to prevent external service dependencies:
+- `LANGCHAIN_TRACING_V2`
+- `LANGCHAIN_API_KEY`
+- `LANGSMITH_API_KEY`
+- `LANGSMITH_TRACING`
+- `LANGCHAIN_PROJECT`
+
+### Linting and formatting
+
+```bash
+# Format code (auto-fix)
 make format
 
-# Type checking
+# Lint code (check only — runs ruff check, ruff format --diff, mypy)
+make lint
+
+# Type checking only
+make type
+# or
 uv run --group lint mypy .
 ```
 
-#### Key config files
+### Dependency groups
 
-- pyproject.toml: Main workspace configuration with dependency groups
-- uv.lock: Locked dependencies for reproducible builds
-- Makefile: Development tasks
+Standard groups defined in each package's `pyproject.toml`:
 
-#### Commit standards
+| Group              | Purpose                                              |
+|--------------------|------------------------------------------------------|
+| `test`             | Unit testing (pytest, pytest-asyncio, pytest-xdist, pytest-socket, syrupy, freezegun, blockbuster) |
+| `test_integration` | Integration testing dependencies                     |
+| `lint`             | Linting tools (ruff)                                 |
+| `typing`           | Type checking (mypy, type stubs)                     |
+| `dev`              | Development tools (jupyter, setuptools)              |
 
-Suggest PR titles that follow Conventional Commits format. Refer to .github/workflows/pr_lint for allowed types and scopes. Note that all commit/PR titles should be in lowercase with the exception of proper nouns/named entities. All PR titles should include a scope with no exceptions. For example:
+### Key config files per package
+
+- `pyproject.toml` — Package metadata, dependencies, tool configuration (ruff, mypy, pytest)
+- `uv.lock` — Locked dependencies for reproducible builds
+- `Makefile` — Development task runner
+
+## CI/CD workflows
+
+The CI system (`.github/workflows/`) only runs against packages with changed files.
+
+| Workflow                   | Trigger              | Purpose                                         |
+|----------------------------|----------------------|-------------------------------------------------|
+| `check_diffs.yml` (CI)    | push/PR/merge_group  | Primary CI: detects changes, runs lint/test/pydantic/benchmarks |
+| `pr_lint.yml`              | PR open/edit/sync    | Validates PR title follows Conventional Commits  |
+| `integration_tests.yml`   | Daily schedule (1PM UTC) | Full integration test suite                  |
+| `_lint.yml`                | Called by CI          | Shared linting workflow                          |
+| `_test.yml`                | Called by CI          | Shared unit test workflow (current + min deps)   |
+| `_test_pydantic.yml`      | Called by CI          | Pydantic compatibility testing                   |
+| `_compile_integration_test.yml` | Called by CI   | Integration test compilation checks              |
+| `_release.yml`             | Manual/release       | Package release and PyPI publishing              |
+
+CI can be skipped by adding the `ci-ignore` label. CodSpeed benchmarks can be skipped with the `codspeed-ignore` label.
+
+## Commit standards
+
+PR titles and commit messages MUST follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/). All titles must be **lowercase** (except proper nouns). A **scope is always required**.
+
+### Format
+
+```
+<type>(<scope>): <description>
+```
+
+### Allowed types
+
+`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`, `release`
+
+### Allowed scopes
+
+`core`, `langchain`, `langchain-classic`, `model-profiles`, `standard-tests`, `text-splitters`, `docs`, `anthropic`, `chroma`, `deepseek`, `exa`, `fireworks`, `groq`, `huggingface`, `mistralai`, `nomic`, `ollama`, `openai`, `openrouter`, `perplexity`, `qdrant`, `xai`, `infra`, `deps`
+
+### Examples
 
 ```txt
 feat(langchain): add new chat completion feature
 fix(core): resolve type hinting issue in vector store
 chore(anthropic): update infrastructure dependencies
+release(core): 1.2.13
+feat(core,langchain): add multi-tenant support
+feat!: drop Python 3.9 support
 ```
 
-Note how `feat(langchain)` includes a scope even though it is the main package and name of the repo.
+Note: `feat(langchain)` includes a scope even though it is the main package and name of the repo. Multiple scopes are separated by commas.
 
-#### Pull request guidelines
+## Pull request guidelines
 
 - Always add a disclaimer to the PR description mentioning how AI agents are involved with the contribution.
 - Describe the "why" of the changes, why the proposed solution is the right one. Limit prose.
@@ -135,6 +261,18 @@ def filter_unknown_users(users: list[str], known_users: set[str]) -> list[str]:
 - Use descriptive, self-explanatory variable names.
 - Follow existing patterns in the codebase you're modifying
 - Attempt to break up complex functions (>20 lines) into smaller, focused functions where it makes sense
+- Relative imports are banned — use absolute imports only (`ban-relative-imports = "all"`)
+- Google-style pydocstyle convention is enforced
+
+### Ruff configuration
+
+All packages select `ALL` rules with a curated ignore list. Key shared settings:
+
+- Docstring code formatting is enabled
+- Google pydocstyle convention with `ignore-var-parameters = true`
+- Relative imports are banned
+- `flake8-builtins` allows `id`, `input`, `type` as variable names (core)
+- Test files ignore: `D1` (missing docstrings), `S101` (assertions), `SLF001` (private access), `PLR2004` (magic values)
 
 ### Testing requirements
 
@@ -144,6 +282,9 @@ Every new feature or bugfix MUST be covered by unit tests.
 - Integration tests: `tests/integration_tests/` (network calls permitted)
 - We use `pytest` as the testing framework; if in doubt, check other existing tests for examples.
 - The testing file structure should mirror the source code structure.
+- `asyncio_mode = "auto"` is set across all packages — async tests run automatically.
+
+**Key pytest plugins used:** `pytest-asyncio`, `pytest-xdist` (parallel), `pytest-socket` (network blocking), `pytest-mock`, `syrupy` (snapshot testing), `freezegun` (time mocking), `blockbuster`, `pytest-cov`
 
 **Checklist:**
 
@@ -194,7 +335,32 @@ def send_email(to: str, msg: str, *, priority: str = "normal") -> bool:
 - Ensure American English spelling (e.g., "behavior", not "behaviour")
 - Do NOT use Sphinx-style double backtick formatting (` ``code`` `). Use single backticks (`` `code` ``) for inline code references in docstrings and comments.
 
+## Pre-commit hooks
+
+The `.pre-commit-config.yaml` enforces:
+
+1. **General checks:** no direct commits to `master`, YAML/TOML validation, trailing whitespace removal, final newline
+2. **Text normalization:** fix curly quotes to straight quotes, fix non-standard spaces
+3. **Per-package hooks:** runs `make format lint` scoped to each package's directory (core, langchain, standard-tests, text-splitters, and 11 partner packages)
+4. **Version consistency:** checks `core` and `langchain_v1` version fields match between `pyproject.toml` and source files
+
+## Editor configuration
+
+`.editorconfig` enforces:
+- UTF-8 charset, LF line endings, final newline
+- Python: 4-space indent, 88 char line length
+- JSON: 2-space indent
+- YAML: 2-space indent
+- Makefile: tab indent
+
+VSCode settings (`.vscode/`):
+- Ruff as default Python formatter with format-on-save
+- Pylance for analysis (basic type checking mode)
+- Default interpreter: `./.venv/bin/python`
+- Recommended extensions: Python, Ruff, mypy, Jupyter, GitLens, GitHub Actions, and more
+
 ## Additional resources
 
 - **Documentation:** https://docs.langchain.com/oss/python/langchain/overview and source at https://github.com/langchain-ai/docs or `../docs/`. Prefer the local install and use file search tools for best results. If needed, use the docs MCP server as defined in `.mcp.json` for programmatic access.
 - **Contributing Guide:** [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview)
+- **MCP Server:** docs-langchain at `https://docs.langchain.com/mcp` (configured in `.mcp.json`)
