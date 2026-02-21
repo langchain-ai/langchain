@@ -129,6 +129,22 @@ def _validate_tool_call_message(message: BaseMessage) -> None:
     assert content_tool_call["id"] is not None
 
 
+def _validate_tool_call_chunk(chunk: AIMessageChunk) -> bool:
+    """Check whether a streaming chunk contains valid `tool_call_chunk` blocks.
+
+    Returns:
+        `True` if at least one `tool_call_chunk` block was found.
+    """
+    found = False
+    for block in chunk.content_blocks:
+        if block.get("type") == "tool_call_chunk":
+            found = True
+            assert "name" in block, "tool_call_chunk block missing 'name' field"
+            assert "args" in block, "tool_call_chunk block missing 'args' field"
+            assert "id" in block, "tool_call_chunk block missing 'id' field"
+    return found
+
+
 def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
     assert isinstance(message, AIMessage)
     assert len(message.tool_calls) == 1
@@ -1617,18 +1633,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         full: BaseMessage | None = None
         found_tool_call_chunk = False
         for chunk in model_with_tools.stream(query):
-            # Check for tool_call_chunk blocks in content_blocks
-            if tool_call_streaming:
-                for block in chunk.content_blocks:
-                    if block.get("type") == "tool_call_chunk":
-                        found_tool_call_chunk = True
-                        assert "name" in block, (
-                            "tool_call_chunk block missing 'name' field"
-                        )
-                        assert "args" in block, (
-                            "tool_call_chunk block missing 'args' field"
-                        )
-                        assert "id" in block, "tool_call_chunk block missing 'id' field"
+            if tool_call_streaming and isinstance(chunk, AIMessageChunk):
+                found_tool_call_chunk |= _validate_tool_call_chunk(chunk)
             full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
@@ -1706,18 +1712,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         full: BaseMessage | None = None
         found_tool_call_chunk = False
         async for chunk in model_with_tools.astream(query):
-            # Check for tool_call_chunk blocks in content_blocks
-            if tool_call_streaming:
-                for block in chunk.content_blocks:
-                    if block.get("type") == "tool_call_chunk":
-                        found_tool_call_chunk = True
-                        assert "name" in block, (
-                            "tool_call_chunk block missing 'name' field"
-                        )
-                        assert "args" in block, (
-                            "tool_call_chunk block missing 'args' field"
-                        )
-                        assert "id" in block, "tool_call_chunk block missing 'id' field"
+            if tool_call_streaming and isinstance(chunk, AIMessageChunk):
+                found_tool_call_chunk |= _validate_tool_call_chunk(chunk)
             full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)

@@ -82,7 +82,10 @@ class ModelProfile(TypedDict, total=False):
     """Whether the model supports [tool choice](https://docs.langchain.com/oss/python/langchain/models#forcing-tool-calls)"""
 
     tool_call_streaming: bool
-    """Whether the model returns properly structured `tool_call_chunks` when streaming."""  # noqa: E501
+    """Whether the model returns properly structured `tool_call_chunks` when streaming.
+
+    Only meaningful when `tool_calling` is `True`.
+    """
 
     # --- Structured output ---
     structured_output: bool
