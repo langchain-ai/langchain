@@ -33,7 +33,7 @@ class MyCustomAsyncHandler(AsyncCallbackHandler):
     @override
     async def on_llm_new_token(
         self,
-        token: str,
+        token: str | list[str | dict],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,

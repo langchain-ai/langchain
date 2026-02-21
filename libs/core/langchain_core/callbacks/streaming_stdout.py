@@ -47,14 +47,14 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         """
 
     @override
-    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+    def on_llm_new_token(self, token: str | list[str | dict], **kwargs: Any) -> None:
         """Run on new LLM token. Only available when streaming is enabled.
 
         Args:
-            token: The new token.
+            token: The new token, or a list of content blocks.
             **kwargs: Additional keyword arguments.
         """
-        sys.stdout.write(token)
+        sys.stdout.write(str(token))
         sys.stdout.flush()
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:

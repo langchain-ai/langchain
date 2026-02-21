@@ -223,7 +223,7 @@ class _TracerCore(ABC):
 
     def _llm_run_with_token_event(
         self,
-        token: str,
+        token: str | list[str | dict],
         run_id: UUID,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         parent_run_id: UUID | None = None,
@@ -583,14 +583,14 @@ class _TracerCore(ABC):
     def _on_llm_new_token(
         self,
         run: Run,
-        token: str,
+        token: str | list[str | dict],
         chunk: GenerationChunk | ChatGenerationChunk | None,
     ) -> Coroutine[Any, Any, None] | None:
         """Process new LLM token.
 
         Args:
             run: The LLM run.
-            token: The new token.
+            token: The new token, or a list of content blocks.
             chunk: Optional chunk.
         """
         _ = (run, token, chunk)

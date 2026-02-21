@@ -63,7 +63,7 @@ class LLMManagerMixin:
 
     def on_llm_new_token(
         self,
-        token: str,
+        token: str | list[str | dict],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
@@ -78,7 +78,7 @@ class LLMManagerMixin:
         For both chat models and non-chat models (legacy text completion LLMs).
 
         Args:
-            token: The new token.
+            token: The new token, or a list of content blocks.
             chunk: The new generated chunk, containing content and other information.
             run_id: The ID of the current run.
             parent_run_id: The ID of the parent run.
@@ -550,7 +550,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_llm_new_token(
         self,
-        token: str,
+        token: str | list[str | dict],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
@@ -563,7 +563,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         For both chat models and non-chat models (legacy text completion LLMs).
 
         Args:
-            token: The new token.
+            token: The new token, or a list of content blocks.
             chunk: The new generated chunk, containing content and other information.
             run_id: The ID of the current run.
             parent_run_id: The ID of the parent run.
