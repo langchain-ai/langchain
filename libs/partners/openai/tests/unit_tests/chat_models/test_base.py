@@ -80,6 +80,7 @@ from langchain_openai.chat_models.base import (
     _model_prefers_responses_api,
     _oai_structured_outputs_parser,
     _resize,
+    _try_recover_response_from_raw,
 )
 
 
@@ -3431,3 +3432,145 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     # Verify it's both types (multiple inheritance)
     assert isinstance(exc_info.value, openai.BadRequestError)
     assert isinstance(exc_info.value, ContextOverflowError)
+
+
+# Tests for _try_recover_response_from_raw (Issue #32252)
+class MockRawResponse:
+    """Mock raw response object for testing recovery logic."""
+
+    def __init__(self, text: str) -> None:
+        self._text = text
+
+    @property
+    def text(self) -> str:
+        return self._text
+
+
+class MockParsedResponse:
+    """Mock parsed response with choices attribute."""
+
+    def __init__(self, choices: Any) -> None:
+        self.choices = choices
+
+
+def test_try_recover_response_not_needed_with_valid_choices() -> None:
+    """Test that recovery is not attempted when choices is valid."""
+    raw_response = MockRawResponse('{"choices": [{"message": {"content": "test"}}]}')
+    parsed_response = MockParsedResponse(choices=[{"message": {"content": "test"}}])
+
+    result = _try_recover_response_from_raw(raw_response, parsed_response)
+    assert result is None  # No recovery needed
+
+
+def test_try_recover_response_from_raw_success() -> None:
+    """Test successful recovery from raw JSON when parsed choices is None."""
+    raw_json = {
+        "choices": [
+            {
+                "index": 0,
+                "message": {"role": "assistant", "content": "Hello!"},
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+        "model": "test-model",
+    }
+    raw_response = MockRawResponse(json.dumps(raw_json))
+    parsed_response = MockParsedResponse(choices=None)
+
+    result = _try_recover_response_from_raw(raw_response, parsed_response)
+
+    assert result is not None
+    assert result["choices"] is not None
+    assert len(result["choices"]) == 1
+    assert result["choices"][0]["message"]["content"] == "Hello!"
+
+
+def test_try_recover_response_with_dict_response() -> None:
+    """Test recovery when parsed response is a dict with None choices."""
+    raw_json = {
+        "choices": [{"message": {"content": "recovered"}}],
+        "model": "test",
+    }
+    raw_response = MockRawResponse(json.dumps(raw_json))
+    parsed_response = {"choices": None, "model": "test"}
+
+    result = _try_recover_response_from_raw(raw_response, parsed_response)
+
+    assert result is not None
+    assert result["choices"][0]["message"]["content"] == "recovered"
+
+
+def test_try_recover_response_raw_also_has_no_choices() -> None:
+    """Test that recovery returns None when raw JSON also has no valid choices."""
+    raw_response = MockRawResponse('{"error": "something went wrong", "choices": null}')
+    parsed_response = MockParsedResponse(choices=None)
+
+    result = _try_recover_response_from_raw(raw_response, parsed_response)
+    assert result is None
+
+
+def test_try_recover_response_invalid_raw_json() -> None:
+    """Test that recovery handles invalid JSON gracefully."""
+    raw_response = MockRawResponse("not valid json {{{")
+    parsed_response = MockParsedResponse(choices=None)
+
+    result = _try_recover_response_from_raw(raw_response, parsed_response)
+    assert result is None
+
+
+def test_try_recover_response_no_raw_response() -> None:
+    """Test that recovery handles None raw_response gracefully."""
+    parsed_response = MockParsedResponse(choices=None)
+
+    result = _try_recover_response_from_raw(None, parsed_response)
+    assert result is None
+
+
+def test_try_recover_response_no_text_attribute() -> None:
+    """Test that recovery handles raw_response without text attribute."""
+
+    class NoTextResponse:
+        pass
+
+    parsed_response = MockParsedResponse(choices=None)
+    result = _try_recover_response_from_raw(NoTextResponse(), parsed_response)
+    assert result is None
+
+
+def test_try_recover_response_vllm_style_response() -> None:
+    """Test recovery with a realistic vLLM-style response."""
+    vllm_response = {
+        "id": "chatcmpl-abc123",
+        "object": "chat.completion",
+        "created": 1753518740,
+        "model": "meta-llama/Llama-3.1-8B-Instruct",
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": "The capital of France is Paris.",
+                    "tool_calls": [],
+                },
+                "finish_reason": "stop",
+                "logprobs": None,
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 20,
+            "completion_tokens": 10,
+            "total_tokens": 30,
+        },
+    }
+    raw_response = MockRawResponse(json.dumps(vllm_response))
+    parsed_response = MockParsedResponse(choices=None)
+
+    result = _try_recover_response_from_raw(raw_response, parsed_response)
+
+    assert result is not None
+    assert result["id"] == "chatcmpl-abc123"
+    assert result["model"] == "meta-llama/Llama-3.1-8B-Instruct"
+    assert (
+        result["choices"][0]["message"]["content"] == "The capital of France is Paris."
+    )

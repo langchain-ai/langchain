@@ -538,6 +538,55 @@ def _model_prefers_responses_api(model_name: str | None) -> bool:
     return "gpt-5.2-pro" in model_name or "codex" in model_name
 
 
+def _try_recover_response_from_raw(
+    raw_response: Any, parsed_response: Any
+) -> dict | None:
+    """Attempt to recover a valid response dict from raw HTTP response.
+
+    Some OpenAI-compatible APIs (e.g., vLLM) may return responses that the
+    OpenAI SDK cannot fully parse, resulting in `choices` being None even
+    though the raw JSON response contains valid data.
+
+    This function attempts to recover by parsing the raw JSON directly.
+
+    Args:
+        raw_response: The raw HTTP response from the OpenAI SDK
+        parsed_response: The parsed response from raw_response.parse()
+
+    Returns:
+        A dict with the response data if recovery was successful, None otherwise
+    """
+    # Check if recovery is needed
+    needs_recovery = False
+    if hasattr(parsed_response, "choices"):
+        if parsed_response.choices is None:
+            needs_recovery = True
+    elif isinstance(parsed_response, dict) and parsed_response.get("choices") is None:
+        needs_recovery = True
+
+    if not needs_recovery:
+        return None
+
+    # Attempt to recover from raw response
+    if raw_response is None or not hasattr(raw_response, "text"):
+        return None
+
+    try:
+        raw_json = json.loads(raw_response.text)
+        # Verify the raw JSON actually has valid choices
+        if isinstance(raw_json, dict) and raw_json.get("choices") is not None:
+            logger.debug(
+                "Recovered response from raw JSON. "
+                "The OpenAI SDK could not parse the response correctly, "
+                "but raw JSON contains valid 'choices'."
+            )
+            return raw_json
+    except (JSONDecodeError, TypeError, AttributeError):
+        pass
+
+    return None
+
+
 _BM = TypeVar("_BM", bound=BaseModel)
 _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[_BM] | type
 _DictOrPydantic: TypeAlias = dict | _BM
@@ -1481,6 +1530,14 @@ class BaseChatOpenAI(BaseChatModel):
             and hasattr(raw_response, "headers")
         ):
             generation_info = {"headers": dict(raw_response.headers)}
+
+        # Attempt to recover from raw JSON if choices is None
+        # This handles OpenAI-compatible APIs (e.g., vLLM) that return
+        # responses the OpenAI SDK cannot fully parse
+        recovered = _try_recover_response_from_raw(raw_response, response)
+        if recovered is not None:
+            response = recovered
+
         return self._create_chat_result(response, generation_info)
 
     def _use_responses_api(self, payload: dict) -> bool:
@@ -1741,6 +1798,14 @@ class BaseChatOpenAI(BaseChatModel):
             and hasattr(raw_response, "headers")
         ):
             generation_info = {"headers": dict(raw_response.headers)}
+
+        # Attempt to recover from raw JSON if choices is None
+        # This handles OpenAI-compatible APIs (e.g., vLLM) that return
+        # responses the OpenAI SDK cannot fully parse
+        recovered = _try_recover_response_from_raw(raw_response, response)
+        if recovered is not None:
+            response = recovered
+
         return await run_in_executor(
             None, self._create_chat_result, response, generation_info
         )
