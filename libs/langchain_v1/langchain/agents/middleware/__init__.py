@@ -19,7 +19,10 @@ from langchain.agents.middleware.shell_tool import (
 )
 from langchain.agents.middleware.summarization import SummarizationMiddleware
 from langchain.agents.middleware.todo import TodoListMiddleware
-from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
+from langchain.agents.middleware.tool_call_limit import (
+    ToolCallLimitExceededError,
+    ToolCallLimitMiddleware,
+)
 from langchain.agents.middleware.tool_emulator import LLMToolEmulator
 from langchain.agents.middleware.tool_retry import ToolRetryMiddleware
 from langchain.agents.middleware.tool_selection import LLMToolSelectorMiddleware
@@ -67,6 +70,7 @@ __all__ = [
     "ShellToolMiddleware",
     "SummarizationMiddleware",
     "TodoListMiddleware",
+    "ToolCallLimitExceededError",
     "ToolCallLimitMiddleware",
     "ToolCallRequest",
     "ToolRetryMiddleware",

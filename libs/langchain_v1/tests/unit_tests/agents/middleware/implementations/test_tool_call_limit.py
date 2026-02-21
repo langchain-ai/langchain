@@ -720,13 +720,24 @@ def test_parallel_tool_calls_with_limit_end_mode() -> None:
 
     # Verify tool message counts
     # With "end" behavior, when we jump to end, NO tools execute (not even allowed ones)
-    # We only get error ToolMessages for the 2 blocked calls
+    # ALL tool calls get error ToolMessages (both allowed and blocked)
     tool_messages = [msg for msg in messages if isinstance(msg, ToolMessage)]
     successful_tool_messages = [msg for msg in tool_messages if msg.status != "error"]
     error_tool_messages = [msg for msg in tool_messages if msg.status == "error"]
 
     assert len(successful_tool_messages) == 0, "No tools execute when we jump to end"
-    assert len(error_tool_messages) == 2, "Should have 2 blocked tool messages (q2, q3)"
+    assert len(error_tool_messages) == 3, "All 3 tool calls get error ToolMessages"
+
+    # Verify every tool_call_id from the AIMessage has a corresponding ToolMessage
+    ai_messages_with_calls = [
+        msg for msg in messages if isinstance(msg, AIMessage) and msg.tool_calls
+    ]
+    assert len(ai_messages_with_calls) == 1
+    tool_call_ids = {tc["id"] for tc in ai_messages_with_calls[0].tool_calls}
+    tool_message_ids = {msg.tool_call_id for msg in error_tool_messages}
+    assert tool_call_ids == tool_message_ids, (
+        "Every tool_call_id must have a corresponding ToolMessage"
+    )
 
     # Verify error tool messages (sent to model - include "Do not" instruction)
     for error_msg in error_tool_messages:
@@ -815,3 +826,121 @@ def test_parallel_mixed_tool_calls_with_specific_tool_limit() -> None:
     assert len(search_success) == 1, "Should have 1 successful search call"
     assert len(search_blocked) == 2, "Should have 2 blocked search calls"
     assert len(calc_success) == 2, "All calculator calls should succeed (not limited)"
+
+
+def test_end_behavior_all_tool_calls_have_responses() -> None:
+    """Test that 'end' behavior creates error ToolMessages for ALL tool calls.
+
+    When the model emits 4 parallel tool calls with a limit of 2,
+    all 4 should get error ToolMessages since none are executed when
+    jumping to end.
+    """
+
+    @tool
+    def search(query: str) -> str:
+        """Search for information."""
+        return f"Results: {query}"
+
+    # Model proposes 4 parallel search calls
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                ToolCall(name="search", args={"query": "q1"}, id="tc1"),
+                ToolCall(name="search", args={"query": "q2"}, id="tc2"),
+                ToolCall(name="search", args={"query": "q3"}, id="tc3"),
+                ToolCall(name="search", args={"query": "q4"}, id="tc4"),
+            ],
+            [],
+        ]
+    )
+
+    limiter = ToolCallLimitMiddleware(thread_limit=2, exit_behavior="end")
+    agent = create_agent(
+        model=model, tools=[search], middleware=[limiter], checkpointer=InMemorySaver()
+    )
+
+    result = agent.invoke(
+        {"messages": [HumanMessage("Test")]}, {"configurable": {"thread_id": "test"}}
+    )
+    messages = result["messages"]
+
+    # All 4 calls should have error ToolMessages
+    tool_messages = [msg for msg in messages if isinstance(msg, ToolMessage)]
+    error_tool_messages = [msg for msg in tool_messages if msg.status == "error"]
+    assert len(error_tool_messages) == 4, "All 4 tool calls must get error ToolMessages"
+
+    # Verify every tool_call_id has a ToolMessage
+    ai_msg = next(m for m in messages if isinstance(m, AIMessage) and m.tool_calls)
+    expected_ids = {tc["id"] for tc in ai_msg.tool_calls}
+    actual_ids = {msg.tool_call_id for msg in error_tool_messages}
+    assert expected_ids == actual_ids, "Every tool_call_id must have a ToolMessage"
+
+    # Verify final AI message explaining the limit
+    final_ai = [
+        m
+        for m in messages
+        if isinstance(m, AIMessage)
+        and not m.tool_calls
+        and isinstance(m.content, str)
+        and "limit" in m.content.lower()
+    ]
+    assert len(final_ai) == 1, "Should have exactly one AI message explaining the limit"
+
+
+def test_end_behavior_state_valid_for_next_invocation() -> None:
+    """Test that state is valid for a subsequent invocation after 'end' behavior.
+
+    After the first invocation hits the tool call limit and jumps to end,
+    the state should be valid for a second invocation (no orphaned tool calls).
+    """
+
+    @tool
+    def search(query: str) -> str:
+        """Search for information."""
+        return f"Results: {query}"
+
+    call_count = 0
+
+    class CountingModel(FakeToolCallingModel):
+        def invoke(self, *args: object, **kwargs: object) -> AIMessage:
+            nonlocal call_count
+            call_count += 1
+            return super().invoke(*args, **kwargs)
+
+    # First invocation: model proposes 3 calls, limit is 1, jump to end
+    # Second invocation: model returns a plain text response
+    model = CountingModel(
+        tool_calls=[
+            [
+                ToolCall(name="search", args={"query": "q1"}, id="first_1"),
+                ToolCall(name="search", args={"query": "q2"}, id="first_2"),
+                ToolCall(name="search", args={"query": "q3"}, id="first_3"),
+            ],
+            [],  # Plain response for second invocation
+        ]
+    )
+
+    limiter = ToolCallLimitMiddleware(run_limit=1, exit_behavior="end")
+    checkpointer = InMemorySaver()
+    agent = create_agent(
+        model=model, tools=[search], middleware=[limiter], checkpointer=checkpointer
+    )
+
+    config = {"configurable": {"thread_id": "test_valid_state"}}
+
+    # First invocation - should hit limit and jump to end
+    result1 = agent.invoke({"messages": [HumanMessage("First query")]}, config)
+    messages1 = result1["messages"]
+
+    # Verify all tool calls have responses
+    ai_with_calls = [m for m in messages1 if isinstance(m, AIMessage) and m.tool_calls]
+    tool_msgs = [m for m in messages1 if isinstance(m, ToolMessage)]
+    all_tc_ids = set()
+    for ai_msg in ai_with_calls:
+        all_tc_ids.update(tc["id"] for tc in ai_msg.tool_calls)
+    all_tm_ids = {m.tool_call_id for m in tool_msgs}
+    assert all_tc_ids <= all_tm_ids, "All tool_call IDs must have corresponding ToolMessages"
+
+    # Second invocation - should succeed without errors from orphaned tool calls
+    result2 = agent.invoke({"messages": [HumanMessage("Second query")]}, config)
+    assert result2 is not None, "Second invocation should succeed"

@@ -26,9 +26,10 @@ ExitBehavior = Literal["continue", "error", "end"]
 - `'continue'`: Block exceeded tools with error messages, let other tools continue
     (default)
 - `'error'`: Raise a `ToolCallLimitExceededError` exception
-- `'end'`: Stop execution immediately, injecting a `ToolMessage` and an `AIMessage` for
-    the single tool call that exceeded the limit. Raises `NotImplementedError` if there
-    are other pending tool calls (due to parallel tool calling).
+- `'end'`: Stop execution immediately, injecting error `ToolMessage` objects for all
+    pending tool calls and a final `AIMessage` explaining the limit. Raises
+    `NotImplementedError` if there are pending tool calls for tools not tracked by this
+    middleware (use `'continue'` or `'error'` instead).
 """
 
 
@@ -148,9 +149,9 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
         - `exit_behavior`: How to handle when limits are exceeded
             - `'continue'`: Block exceeded tools, let execution continue (default)
             - `'error'`: Raise an exception
-            - `'end'`: Stop immediately with a `ToolMessage` + AI message for the single
-                tool call that exceeded the limit (raises `NotImplementedError` if there
-                are other pending tool calls (due to parallel tool calling).
+            - `'end'`: Stop immediately with error `ToolMessage` objects for all pending
+                tool calls and a final AI message explaining the limit. Raises
+                `NotImplementedError` if there are pending calls for untracked tools.
 
     Examples:
         !!! example "Continue execution with blocked tools (default)"
@@ -336,14 +337,15 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
 
         Returns:
             State updates with incremented tool call counts. If limits are exceeded
-                and exit_behavior is `'end'`, also includes a jump to end with a
-                `ToolMessage` and AI message for the single exceeded tool call.
+                and exit_behavior is `'end'`, also includes a jump to end with error
+                `ToolMessage` objects for all pending tool calls and a final AI message.
 
         Raises:
             ToolCallLimitExceededError: If limits are exceeded and `exit_behavior`
                 is `'error'`.
             NotImplementedError: If limits are exceeded, `exit_behavior` is `'end'`,
-                and there are multiple tool calls.
+                and there are pending tool calls for tools not tracked by this
+                middleware.
         """
         # Get the last AIMessage to check for tool calls
         messages = state.get("messages", [])
@@ -435,6 +437,20 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
                 )
                 raise NotImplementedError(msg)
 
+            # When jumping to end, ALL tool calls need error ToolMessages since
+            # none will be executed (not just blocked ones — allowed calls are
+            # also skipped because we jump straight to end).
+            all_calls = allowed_calls + blocked_calls
+            artificial_messages = [
+                ToolMessage(
+                    content=tool_msg_content,
+                    tool_call_id=tool_call["id"],
+                    name=tool_call.get("name"),
+                    status="error",
+                )
+                for tool_call in all_calls
+            ]
+
             # Build final AI message content (displayed to user - includes thread/run details)
             # Use hypothetical thread count (what it would have been if call wasn't blocked)
             # to show which limit was actually exceeded
@@ -476,13 +492,14 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
 
         Returns:
             State updates with incremented tool call counts. If limits are exceeded
-                and exit_behavior is `'end'`, also includes a jump to end with a
-                `ToolMessage` and AI message for the single exceeded tool call.
+                and exit_behavior is `'end'`, also includes a jump to end with error
+                `ToolMessage` objects for all pending tool calls and a final AI message.
 
         Raises:
             ToolCallLimitExceededError: If limits are exceeded and `exit_behavior`
                 is `'error'`.
             NotImplementedError: If limits are exceeded, `exit_behavior` is `'end'`,
-                and there are multiple tool calls.
+                and there are pending tool calls for tools not tracked by this
+                middleware.
         """
         return self.after_model(state, runtime)

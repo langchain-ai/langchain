@@ -1226,7 +1226,7 @@ def create_agent(
         """
         # Get the bound model (with auto-detection if needed)
         model_, effective_response_format = _get_bound_model(request)
-        messages = request.messages
+        messages = _repair_orphaned_tool_calls(request.messages)
         if request.system_message:
             messages = [request.system_message, *messages]
 
@@ -1274,7 +1274,7 @@ def create_agent(
         """
         # Get the bound model (with auto-detection if needed)
         model_, effective_response_format = _get_bound_model(request)
-        messages = request.messages
+        messages = _repair_orphaned_tool_calls(request.messages)
         if request.system_message:
             messages = [request.system_message, *messages]
 
@@ -1617,6 +1617,69 @@ def _resolve_jump(
     if jump_to == "tools":
         return "tools"
     return None
+
+
+def _repair_orphaned_tool_calls(messages: list[AnyMessage]) -> list[AnyMessage]:
+    """Inject placeholder `ToolMessage` objects for orphaned tool calls.
+
+    Scans messages for `AIMessage` objects whose `tool_calls` lack corresponding
+    `ToolMessage` responses and injects error `ToolMessage` objects so the LLM API
+    won't reject the history.
+
+    This is a defense-in-depth measure that protects against:
+    - Existing invalid states persisted in checkpointers (Postgres, etc.)
+    - Middleware or custom code that may create orphaned tool calls
+
+    Args:
+        messages: The message history to repair.
+
+    Returns:
+        A new list with placeholder `ToolMessage` objects injected where needed.
+        If no repairs are needed, returns the original list unchanged.
+    """
+    # Collect all tool_call_ids that have ToolMessage responses
+    answered_ids: set[str | None] = set()
+    for msg in messages:
+        if isinstance(msg, ToolMessage) and msg.tool_call_id:
+            answered_ids.add(msg.tool_call_id)
+
+    # Find orphaned tool calls (AIMessage tool_calls without ToolMessage responses)
+    needs_repair = False
+    for msg in messages:
+        if isinstance(msg, AIMessage) and msg.tool_calls:
+            for tc in msg.tool_calls:
+                if tc["id"] not in answered_ids:
+                    needs_repair = True
+                    break
+            if needs_repair:
+                break
+
+    if not needs_repair:
+        return messages
+
+    # Build repaired message list by injecting placeholders after each AIMessage
+    repaired: list[AnyMessage] = []
+    for msg in messages:
+        repaired.append(msg)
+        if isinstance(msg, AIMessage) and msg.tool_calls:
+            orphaned = [tc for tc in msg.tool_calls if tc["id"] not in answered_ids]
+            for tc in orphaned:
+                tc_id = tc["id"]
+                repaired.append(
+                    ToolMessage(
+                        content=(
+                            f"Tool call '{tc.get('name', 'unknown')}' was not executed "
+                            f"due to a prior tool call limit. Do not retry this call."
+                        ),
+                        tool_call_id=tc_id,
+                        name=tc.get("name"),
+                        status="error",
+                    )
+                )
+                # Mark as answered so we don't double-inject
+                answered_ids.add(tc_id)
+
+    return repaired
 
 
 def _fetch_last_ai_and_tool_messages(
