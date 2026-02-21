@@ -279,6 +279,19 @@ def _format_message_content(
                     continue
             else:
                 formatted_content.append(block)
+
+        # Tool messages must have string content for broad compatibility with
+        # OpenAI-compatible servers (e.g., locally hosted Llama endpoints) that
+        # don't support content arrays in tool turns.  Collapse any text-only list
+        # to a plain string; leave the list intact only when it contains non-text
+        # blocks (images, files, etc.) that a native OpenAI endpoint can handle.
+        if role == "tool" and all(
+            isinstance(b, str) or (isinstance(b, dict) and b.get("type") == "text")
+            for b in formatted_content
+        ):
+            return "\n".join(
+                b if isinstance(b, str) else b["text"] for b in formatted_content
+            )
     else:
         formatted_content = content
 

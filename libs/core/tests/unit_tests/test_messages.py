@@ -1037,7 +1037,8 @@ def test_tool_message_content() -> None:
     assert ToolMessage(("a", "b", "c"), tool_call_id="1").content == ["a", "b", "c"]  # type: ignore[call-overload]
     assert ToolMessage(5, tool_call_id="1").content == "5"  # type: ignore[call-overload]
     assert ToolMessage(5.1, tool_call_id="1").content == "5.1"  # type: ignore[call-overload]
-    assert ToolMessage({"foo": "bar"}, tool_call_id="1").content == "{'foo': 'bar'}"  # type: ignore[call-overload]
+    # dicts must be JSON-encoded (double quotes), not Python repr (single quotes)
+    assert ToolMessage({"foo": "bar"}, tool_call_id="1").content == '{"foo": "bar"}'  # type: ignore[call-overload]
     assert (
         ToolMessage(Document("foo"), tool_call_id="1").content == "page_content='foo'"  # type: ignore[call-overload]
     )

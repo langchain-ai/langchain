@@ -1203,6 +1203,39 @@ def test_convert_to_openai_messages_tool_message() -> None:
     assert result[0]["tool_call_id"] == "123"
 
 
+def test_convert_to_openai_messages_tool_message_dict_content() -> None:
+    """ToolMessage with dict content should be JSON-encoded (not Python repr)."""
+    # When a MCP tool returns a dict, ToolMessage.coerce_args converts it via
+    # json.dumps so the model receives valid JSON rather than Python repr strings.
+    tool_msg = ToolMessage(
+        content={"result": "value", "count": 42},  # type: ignore[call-overload]
+        tool_call_id="call_1",
+    )
+    # Content must be valid JSON (double-quoted keys/strings), not Python repr
+    assert tool_msg.content == '{"result": "value", "count": 42}'
+    result = convert_to_openai_messages([tool_msg])
+    assert result[0]["content"] == '{"result": "value", "count": 42}'
+    assert result[0]["role"] == "tool"
+    assert result[0]["tool_call_id"] == "call_1"
+
+
+def test_convert_to_openai_messages_tool_message_text_list_string_mode() -> None:
+    """ToolMessage with text-block list content should be collapsed to string."""
+    # When a ToolMessage has a list of text blocks, convert to string mode should
+    # join them into a plain string so Llama-compatible servers don't reject it.
+    tool_msg = ToolMessage(
+        content=[
+            {"type": "text", "text": "first result"},
+            {"type": "text", "text": "second result"},
+        ],
+        tool_call_id="call_2",
+    )
+    result = convert_to_openai_messages([tool_msg], text_format="string")
+    assert result[0]["content"] == "first result\nsecond result"
+    assert result[0]["role"] == "tool"
+    assert result[0]["tool_call_id"] == "call_2"
+
+
 def test_convert_to_openai_messages_tool_use() -> None:
     messages = [
         AIMessage(

@@ -1625,6 +1625,27 @@ def convert_to_openai_messages(
                 block if isinstance(block, str) else block["text"]
                 for block in message.content
             )
+        elif (
+            text_format == "string"
+            and isinstance(message, ToolMessage)
+            and any(
+                isinstance(block, str)
+                or (isinstance(block, dict) and block.get("type") == "text")
+                for block in message.content
+            )
+        ):
+            # ToolMessage content may mix text blocks with non-text blocks (e.g. from
+            # Anthropic or MCP adapters).  When converting to string mode and there is
+            # at least one text block, extract all text portions and join them so the
+            # model receives a plain string.  When there are NO text blocks (image-only
+            # content), fall through to the else branch to preserve the media blocks.
+            text_parts = [
+                block if isinstance(block, str) else block["text"]
+                for block in message.content
+                if isinstance(block, str)
+                or (isinstance(block, dict) and block.get("type") == "text")
+            ]
+            content = "\n".join(text_parts)
         else:
             content = []
             for j, block in enumerate(message.content):

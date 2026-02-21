@@ -875,6 +875,66 @@ def test_format_message_content() -> None:
         assert expected == _format_message_content([content])
 
 
+def test_format_message_content_tool_role_collapses_text_list() -> None:
+    """Tool-role content that is a list of text blocks must be collapsed to a string.
+
+    Many OpenAI-compatible servers (e.g., locally hosted Llama endpoints) only
+    support string content in tool turns.  The fix ensures _format_message_content
+    collapses text-only lists to a plain string when role=='tool'.
+    """
+    # Single text block → plain string
+    content = [{"type": "text", "text": "tool result"}]
+    assert _format_message_content(content, role="tool") == "tool result"
+
+    # Multiple text blocks → newline-joined string
+    content = [
+        {"type": "text", "text": "first"},
+        {"type": "text", "text": "second"},
+    ]
+    assert _format_message_content(content, role="tool") == "first\nsecond"
+
+    # Mixed str and text-block → joined string
+    content = ["plain string", {"type": "text", "text": "block text"}]  # type: ignore[list-item]
+    assert _format_message_content(content, role="tool") == "plain string\nblock text"
+
+    # If non-text blocks are present, do NOT collapse (images, etc. stay as list)
+    content = [  # type: ignore[assignment, dict-item]
+        {"type": "text", "text": "here is an image"},
+        {"type": "image_url", "image_url": {"url": "http://example.com/img.png"}},  # type: ignore[dict-item]
+    ]
+    result = _format_message_content(content, role="tool")
+    assert isinstance(result, list), "Mixed content should stay as a list"
+
+    # Non-tool roles are unaffected: text list stays as list
+    content = [{"type": "text", "text": "assistant reply"}]
+    result = _format_message_content(content, role="ai")
+    assert isinstance(result, list)
+
+
+def test_convert_message_to_dict_tool_message_string_content() -> None:
+    """_convert_message_to_dict must produce string content for ToolMessage.
+
+    Verifies the full pipeline: ToolMessage with list content → _convert_message_to_dict
+    → the dict sent to the API has a string 'content', not a list.
+    """
+    from langchain_openai.chat_models.base import _convert_message_to_dict
+
+    # List-of-text content is collapsed to string
+    msg = ToolMessage(
+        content=[{"type": "text", "text": "result text"}],
+        tool_call_id="call_abc",
+    )
+    result = _convert_message_to_dict(msg)
+    assert result["content"] == "result text"
+    assert result["role"] == "tool"
+    assert result["tool_call_id"] == "call_abc"
+
+    # String content passes through unchanged
+    msg_str = ToolMessage(content="plain result", tool_call_id="call_xyz")
+    result_str = _convert_message_to_dict(msg_str)
+    assert result_str["content"] == "plain result"
+
+
 class GenerateUsername(BaseModel):
     "Get a username based on someone's name and hair color."
 

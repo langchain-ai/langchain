@@ -101,29 +101,39 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
             content = list(content)
 
         if not isinstance(content, (str, list)):
+            # Prefer JSON serialization over Python's str() so that structured tool
+            # results (e.g. dicts returned by MCP tools) are formatted as valid JSON
+            # rather than Python repr strings (which use single quotes and cannot be
+            # reliably parsed by LLMs such as Llama that expect JSON).
             try:
-                values["content"] = str(content)
-            except ValueError as e:
-                msg = (
-                    "ToolMessage content should be a string or a list of string/dicts. "
-                    f"Received:\n\n{content=}\n\n which could not be coerced into a "
-                    "string."
-                )
-                raise ValueError(msg) from e
+                values["content"] = json.dumps(content)
+            except (TypeError, ValueError):
+                try:
+                    values["content"] = str(content)
+                except ValueError as e:
+                    msg = (
+                        "ToolMessage content should be a string or a list of "
+                        f"string/dicts. Received:\n\n{content=}\n\n which could not "
+                        "be coerced into a string."
+                    )
+                    raise ValueError(msg) from e
         elif isinstance(content, list):
             values["content"] = []
             for i, x in enumerate(content):
                 if not isinstance(x, (str, dict)):
                     try:
-                        values["content"].append(str(x))
-                    except ValueError as e:
-                        msg = (
-                            "ToolMessage content should be a string or a list of "
-                            "string/dicts. Received a list but "
-                            f"element ToolMessage.content[{i}] is not a dict and could "
-                            f"not be coerced to a string.:\n\n{x}"
-                        )
-                        raise ValueError(msg) from e
+                        values["content"].append(json.dumps(x))
+                    except (TypeError, ValueError):
+                        try:
+                            values["content"].append(str(x))
+                        except ValueError as e:
+                            msg = (
+                                "ToolMessage content should be a string or a list of "
+                                "string/dicts. Received a list but "
+                                f"element ToolMessage.content[{i}] is not a dict and "
+                                f"could not be coerced to a string.:\n\n{x}"
+                            )
+                            raise ValueError(msg) from e
                 else:
                     values["content"].append(x)
 
