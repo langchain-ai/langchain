@@ -152,7 +152,10 @@ def test_unknown_tool_raises_error() -> None:
         middleware=[BadMiddleware()],
     )
 
-    with pytest.raises(ValueError, match="Middleware returned unknown tool names"):
+    with pytest.raises(
+        ValueError,
+        match=r"(?s)Middleware added tools.*Unknown tools:.*unknown_tool",
+    ):
         agent.invoke({"messages": [HumanMessage("Hello")]})
 
 

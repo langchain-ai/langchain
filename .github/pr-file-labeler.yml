@@ -17,11 +17,6 @@ langchain:
       - any-glob-to-any-file:
           - "libs/langchain_v1/**/*"
 
-cli:
-  - changed-files:
-      - any-glob-to-any-file:
-          - "libs/cli/**/*"
-
 standard-tests:
   - changed-files:
       - any-glob-to-any-file:
@@ -98,15 +93,15 @@ openai:
       - any-glob-to-any-file:
           - "libs/partners/openai/**/*"
 
+openrouter:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/openrouter/**/*"
+
 perplexity:
   - changed-files:
       - any-glob-to-any-file:
           - "libs/partners/perplexity/**/*"
-
-prompty:
-  - changed-files:
-      - any-glob-to-any-file:
-          - "libs/partners/prompty/**/*"
 
 qdrant:
   - changed-files:
@@ -117,17 +112,6 @@ xai:
   - changed-files:
       - any-glob-to-any-file:
           - "libs/partners/xai/**/*"
-
-# Infrastructure and DevOps
-infra:
-  - changed-files:
-      - any-glob-to-any-file:
-          - ".github/**/*"
-          - "Makefile"
-          - ".pre-commit-config.yaml"
-          - "scripts/**/*"
-          - "docker/**/*"
-          - "Dockerfile*"
 
 github_actions:
   - changed-files:
@@ -142,11 +126,3 @@ dependencies:
           - "uv.lock"
           - "**/requirements*.txt"
           - "**/poetry.lock"
-
-# Documentation
-documentation:
-  - changed-files:
-      - any-glob-to-any-file:
-          - "**/*.md"
-          - "**/README*"
-

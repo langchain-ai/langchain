@@ -16,7 +16,10 @@ if TYPE_CHECKING:
 
 
 class StreamingStdOutCallbackHandler(BaseCallbackHandler):
-    """Callback handler for streaming. Only works with LLMs that support streaming."""
+    """Callback handler for streaming.
+
+    !!! warning "Only works with LLMs that support streaming."
+    """
 
     def on_llm_start(
         self, serialized: dict[str, Any], prompts: list[str], **kwargs: Any

@@ -33,8 +33,9 @@ def get_from_dict_or_env(
 
     Args:
         data: The dictionary to look up the key in.
-        key: The key to look up in the dictionary. This can be a list of keys to try
-            in order.
+        key: The key to look up in the dictionary.
+
+            This can be a list of keys to try in order.
         env_key: The environment variable to look up if the key is not
             in the dictionary.
         default: The default value to return if the key is not in the dictionary

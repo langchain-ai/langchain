@@ -30,7 +30,6 @@ jobs:
               "langchain-anthropic": "anthropic",
               "langchain-classic": "langchain-classic",
               "langchain-core": "core",
-              "langchain-cli": "cli",
               "langchain-model-profiles": "model-profiles",
               "langchain-tests": "standard-tests",
               "langchain-text-splitters": "text-splitters",
@@ -43,8 +42,8 @@ jobs:
               "langchain-mistralai": "mistralai",
               "langchain-nomic": "nomic",
               "langchain-ollama": "ollama",
+              "langchain-openrouter": "openrouter",
               "langchain-perplexity": "perplexity",
-              "langchain-prompty": "prompty",
               "langchain-qdrant": "qdrant",
               "langchain-xai": "xai",
             };

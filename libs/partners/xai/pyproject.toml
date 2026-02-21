@@ -7,13 +7,24 @@ name = "langchain-xai"
 description = "An integration package connecting xAI and LangChain"
 license = { text = "MIT" }
 readme = "README.md"
-authors = []
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 
-version = "1.2.1"
+version = "1.2.2"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-openai>=1.1.6,<2.0.0",
-    "langchain-core>=1.2.6,<2.0.0",
+    "langchain-openai>=1.1.7,<2.0.0",
+    "langchain-core>=1.2.7,<2.0.0",
     "requests>=2.0.0,<3.0.0",
     "aiohttp>=3.9.1,<4.0.0",
 ]
@@ -21,7 +32,8 @@ dependencies = [
 [project.urls]
 Homepage = "https://docs.langchain.com/oss/python/integrations/providers/xai"
 Documentation = "https://reference.langchain.com/python/integrations/langchain_xai/"
-Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/xai"
+Repository = "https://github.com/langchain-ai/langchain"
+Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-xai%22"
 Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
@@ -65,6 +77,7 @@ docstring-code-line-length = 100
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
+    "ANN401",  # Allow annotating `Any`
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful

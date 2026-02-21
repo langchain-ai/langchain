@@ -41,8 +41,9 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = ()) -> None:
     """
     # Packages that do not start with "langchain" prefix.
     other_langchain_packages = [
-        "langserve",
         "langsmith",
+        "deepagents",
+        "deepagents-cli",
     ]
 
     langchain_pkgs = [
