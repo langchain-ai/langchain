@@ -6103,34 +6103,46 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):  # type: ignore[no-re
     def __getattr__(self, name: str) -> Any:  # type: ignore[misc]
         attr = getattr(self.bound, name)
 
-        if callable(attr) and (
-            config_param := inspect.signature(attr).parameters.get("config")
-        ):
-            if config_param.kind == inspect.Parameter.KEYWORD_ONLY:
+        if callable(attr):
+            sig = inspect.signature(attr)
+            config_param = sig.parameters.get("config")
+            has_var_keyword = any(
+                p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
+            )
+
+            if config_param is not None or (has_var_keyword and self.kwargs):
 
                 @wraps(attr)
-                def wrapper(*args: Any, **kwargs: Any) -> Any:
-                    return attr(
-                        *args,
-                        config=merge_configs(self.config, kwargs.pop("config", None)),
-                        **kwargs,
-                    )
+                def wrapper(
+                    *args: Any,
+                    _attr: Any = attr,
+                    _config_param: Any = config_param,
+                    _has_var_keyword: bool = has_var_keyword,
+                    _sig: Any = sig,
+                    **kwargs: Any,
+                ) -> Any:
+                    if _has_var_keyword and self.kwargs:
+                        kwargs = {**self.kwargs, **kwargs}
 
-                return wrapper
-            if config_param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
-                idx = list(inspect.signature(attr).parameters).index("config")
+                    if _config_param is not None:
+                        if _config_param.kind == inspect.Parameter.KEYWORD_ONLY:
+                            kwargs["config"] = merge_configs(
+                                self.config, kwargs.pop("config", None)
+                            )
+                        elif (
+                            _config_param.kind
+                            == inspect.Parameter.POSITIONAL_OR_KEYWORD
+                        ):
+                            idx = list(_sig.parameters).index("config")
+                            if len(args) >= idx + 1:
+                                argsl = list(args)
+                                argsl[idx] = merge_configs(self.config, argsl[idx])
+                                return _attr(*argsl, **kwargs)
+                            kwargs["config"] = merge_configs(
+                                self.config, kwargs.pop("config", None)
+                            )
 
-                @wraps(attr)
-                def wrapper(*args: Any, **kwargs: Any) -> Any:
-                    if len(args) >= idx + 1:
-                        argsl = list(args)
-                        argsl[idx] = merge_configs(self.config, argsl[idx])
-                        return attr(*argsl, **kwargs)
-                    return attr(
-                        *args,
-                        config=merge_configs(self.config, kwargs.pop("config", None)),
-                        **kwargs,
-                    )
+                    return _attr(*args, **kwargs)
 
                 return wrapper
 
