@@ -43,6 +43,13 @@ def _get_default_model_profile(model_name: str) -> ModelProfile:
     return default.copy()
 
 
+def _is_thinking_enabled_from_extra_body(extra_body: Any) -> bool:
+    if not isinstance(extra_body, dict):
+        return False
+    thinking = extra_body.get("thinking")
+    return isinstance(thinking, dict) and thinking.get("type") == "enabled"
+
+
 class ChatDeepSeek(BaseChatOpenAI):
     """DeepSeek chat model integration to access models hosted in DeepSeek's API.
 
@@ -221,9 +228,7 @@ class ChatDeepSeek(BaseChatOpenAI):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate necessary environment vars and client params."""
-        if self.api_base == DEFAULT_API_BASE and not (
-            self.api_key and self.api_key.get_secret_value()
-        ):
+        if self.api_base == DEFAULT_API_BASE and self.api_key is None:
             msg = "If using default api base, DEEPSEEK_API_KEY must be set."
             raise ValueError(msg)
         client_params: dict = {
@@ -243,13 +248,14 @@ class ChatDeepSeek(BaseChatOpenAI):
             sync_specific: dict = {"http_client": self.http_client}
             self.root_client = openai.OpenAI(**client_params, **sync_specific)
             self.client = self.root_client.chat.completions
+
         if not (self.async_client or None):
             async_specific: dict = {"http_client": self.http_async_client}
             self.root_async_client = openai.AsyncOpenAI(
-                **client_params,
-                **async_specific,
+                **client_params, **async_specific
             )
             self.async_client = self.root_async_client.chat.completions
+
         return self
 
     @model_validator(mode="after")
@@ -259,6 +265,93 @@ class ChatDeepSeek(BaseChatOpenAI):
             self.profile = _get_default_model_profile(self.model_name)
         return self
 
+    def _is_thinking_enabled(
+        self,
+        payload: dict,
+        kwargs: dict[str, Any],
+    ) -> bool:
+        # Model name implies thinking mode
+        if getattr(self, "model_name", None) == "deepseek-reasoner":
+            return True
+
+        # Check extra_body from payload / kwargs / self
+        extra_body = (
+            payload.get("extra_body")
+            or kwargs.get("extra_body")
+            or getattr(self, "extra_body", None)
+        )
+        return _is_thinking_enabled_from_extra_body(extra_body)
+
+    def _get_original_messages(
+        self,
+        input_: LanguageModelInput,
+    ) -> list[BaseMessage] | None:
+        if isinstance(input_, list):
+            return input_
+
+        try:
+            prompt_value = self._convert_input(input_)  # type: ignore[attr-defined]
+            return prompt_value.to_messages()
+        except (AttributeError, TypeError, ValueError):
+            return None
+
+    def _coerce_deepseek_message_content(self, msg: dict) -> None:
+        # tool role content sometimes becomes list -> DeepSeek expects string
+        if msg.get("role") == "tool" and isinstance(msg.get("content"), list):
+            msg["content"] = json.dumps(msg["content"])
+            return
+
+        # assistant role content sometimes becomes list -> DeepSeek expects string
+        if msg.get("role") == "assistant" and isinstance(msg.get("content"), list):
+            text_parts = [
+                block.get("text", "")
+                for block in msg["content"]
+                if isinstance(block, dict) and block.get("type") == "text"
+            ]
+            msg["content"] = "".join(text_parts)
+
+    def _inject_reasoning_content_if_needed(
+        self,
+        *,
+        msg: dict,
+        msg_index: int,
+        original_msgs: list[BaseMessage] | None,
+        thinking_enabled: bool,
+    ) -> None:
+        if not thinking_enabled:
+            return
+        if msg.get("role") != "assistant":
+            return
+        if msg.get("tool_calls") is None:
+            return
+        if "reasoning_content" in msg:
+            return
+
+        rc = ""
+        if original_msgs is not None and msg_index < len(original_msgs):
+            ak = getattr(original_msgs[msg_index], "additional_kwargs", None)
+            if isinstance(ak, dict):
+                rc = ak.get("reasoning_content") or ""
+
+        # DeepSeek requires the field to exist (empty string is acceptable)
+        msg["reasoning_content"] = rc
+
+    def _prepare_payload_messages(
+        self,
+        payload: dict,
+        *,
+        original_msgs: list[BaseMessage] | None,
+        thinking_enabled: bool,
+    ) -> None:
+        for i, msg in enumerate(payload["messages"]):
+            self._coerce_deepseek_message_content(msg)
+            self._inject_reasoning_content_if_needed(
+                msg=msg,
+                msg_index=i,
+                original_msgs=original_msgs,
+                thinking_enabled=thinking_enabled,
+            )
+
     def _get_request_payload(
         self,
         input_: LanguageModelInput,
@@ -267,6 +360,15 @@ class ChatDeepSeek(BaseChatOpenAI):
         **kwargs: Any,
     ) -> dict:
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+
+        thinking_enabled = self._is_thinking_enabled(payload, kwargs)
+        original_msgs = self._get_original_messages(input_)
+
+        self._prepare_payload_messages(
+            payload,
+            original_msgs=original_msgs,
+            thinking_enabled=thinking_enabled,
+        )
         for message in payload["messages"]:
             if message["role"] == "tool" and isinstance(message["content"], list):
                 message["content"] = json.dumps(message["content"])
