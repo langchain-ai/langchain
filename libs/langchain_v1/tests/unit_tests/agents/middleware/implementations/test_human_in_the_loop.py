@@ -13,6 +13,211 @@ from langchain.agents.middleware.human_in_the_loop import (
 )
 from langchain.agents.middleware.types import AgentState
 
+# -- Async tests for aafter_model --
+
+
+@pytest.mark.asyncio
+async def test_aafter_model_no_interrupts_needed() -> None:
+    """Test aafter_model when no interrupts are needed."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
+    )
+
+    # Test with no messages
+    state = AgentState[Any](messages=[])
+    result = await middleware.aafter_model(state, Runtime())
+    assert result is None
+
+    # Test with message but no tool calls
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), AIMessage(content="Hi there")])
+    result = await middleware.aafter_model(state, Runtime())
+    assert result is None
+
+    # Test with tool calls that don't require interrupts
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "other_tool", "args": {"input": "test"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+    result = await middleware.aafter_model(state, Runtime())
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_aafter_model_single_tool_accept() -> None:
+    """Test aafter_model with single tool accept response."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
+    )
+
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    def mock_accept(_: Any) -> dict[str, Any]:
+        return {"decisions": [{"type": "approve"}]}
+
+    with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_accept):
+        result = await middleware.aafter_model(state, Runtime())
+        assert result is not None
+        assert "messages" in result
+        assert len(result["messages"]) == 1
+        assert result["messages"][0] == ai_message
+        assert result["messages"][0].tool_calls == ai_message.tool_calls
+
+
+@pytest.mark.asyncio
+async def test_aafter_model_single_tool_edit() -> None:
+    """Test aafter_model with single tool edit response."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
+    )
+
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    def mock_edit(_: Any) -> dict[str, Any]:
+        return {
+            "decisions": [
+                {
+                    "type": "edit",
+                    "edited_action": Action(
+                        name="test_tool",
+                        args={"input": "edited"},
+                    ),
+                }
+            ]
+        }
+
+    with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_edit):
+        result = await middleware.aafter_model(state, Runtime())
+        assert result is not None
+        assert "messages" in result
+        assert len(result["messages"]) == 1
+        assert result["messages"][0].tool_calls[0]["args"] == {"input": "edited"}
+        assert result["messages"][0].tool_calls[0]["id"] == "1"
+
+
+@pytest.mark.asyncio
+async def test_aafter_model_single_tool_reject() -> None:
+    """Test aafter_model with single tool reject response."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
+    )
+
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    def mock_reject(_: Any) -> dict[str, Any]:
+        return {"decisions": [{"type": "reject", "message": "Not allowed"}]}
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_reject
+    ):
+        result = await middleware.aafter_model(state, Runtime())
+        assert result is not None
+        assert "messages" in result
+        assert len(result["messages"]) == 2
+        assert isinstance(result["messages"][0], AIMessage)
+        assert isinstance(result["messages"][1], ToolMessage)
+        assert result["messages"][1].content == "Not allowed"
+        assert result["messages"][1].tool_call_id == "1"
+
+
+@pytest.mark.asyncio
+async def test_aafter_model_multiple_tools_mixed_responses() -> None:
+    """Test aafter_model with multiple tools and mixed response types."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "get_forecast": {"allowed_decisions": ["approve", "edit", "reject"]},
+            "get_temperature": {"allowed_decisions": ["approve", "edit", "reject"]},
+        }
+    )
+
+    ai_message = AIMessage(
+        content="I'll help you with weather",
+        tool_calls=[
+            {"name": "get_forecast", "args": {"location": "San Francisco"}, "id": "1"},
+            {"name": "get_temperature", "args": {"location": "San Francisco"}, "id": "2"},
+        ],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="What's the weather?"), ai_message])
+
+    def mock_mixed(_: Any) -> dict[str, Any]:
+        return {
+            "decisions": [
+                {"type": "approve"},
+                {"type": "reject", "message": "User rejected this"},
+            ]
+        }
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_mixed
+    ):
+        result = await middleware.aafter_model(state, Runtime())
+        assert result is not None
+        assert len(result["messages"]) == 2
+
+        updated_ai_message = result["messages"][0]
+        assert len(updated_ai_message.tool_calls) == 2
+        assert updated_ai_message.tool_calls[0]["name"] == "get_forecast"
+        assert updated_ai_message.tool_calls[1]["name"] == "get_temperature"
+
+        tool_message = result["messages"][1]
+        assert isinstance(tool_message, ToolMessage)
+        assert tool_message.content == "User rejected this"
+
+
+@pytest.mark.asyncio
+async def test_aafter_model_preserves_tool_call_order() -> None:
+    """Test that aafter_model preserves original tool call order."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "tool_b": {"allowed_decisions": ["approve", "edit", "reject"]},
+            "tool_d": {"allowed_decisions": ["approve", "edit", "reject"]},
+        }
+    )
+
+    ai_message = AIMessage(
+        content="Processing multiple tools",
+        tool_calls=[
+            {"name": "tool_a", "args": {"val": 1}, "id": "id_a"},
+            {"name": "tool_b", "args": {"val": 2}, "id": "id_b"},
+            {"name": "tool_c", "args": {"val": 3}, "id": "id_c"},
+            {"name": "tool_d", "args": {"val": 4}, "id": "id_d"},
+            {"name": "tool_e", "args": {"val": 5}, "id": "id_e"},
+        ],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    def mock_approve_all(_: Any) -> dict[str, Any]:
+        return {"decisions": [{"type": "approve"}, {"type": "approve"}]}
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_approve_all
+    ):
+        result = await middleware.aafter_model(state, Runtime())
+        assert result is not None
+
+        updated_ai_message = result["messages"][0]
+        assert len(updated_ai_message.tool_calls) == 5
+        assert updated_ai_message.tool_calls[0]["name"] == "tool_a"
+        assert updated_ai_message.tool_calls[1]["name"] == "tool_b"
+        assert updated_ai_message.tool_calls[2]["name"] == "tool_c"
+        assert updated_ai_message.tool_calls[3]["name"] == "tool_d"
+        assert updated_ai_message.tool_calls[4]["name"] == "tool_e"
+
+
+# -- Sync tests --
+
 
 def test_human_in_the_loop_middleware_initialization() -> None:
     """Test HumanInTheLoopMiddleware initialization."""
