@@ -51,6 +51,14 @@ class EventData(TypedDict, total=False):
     This field is available for the `on_tool_error` event and can be used to
     link errors to specific tool calls in stateless agent implementations.
     """
+    artifact: NotRequired[Any]
+    """Artifact data from a tool execution.
+
+    This field is available for the `on_tool_end` event when a tool uses
+    ``response_format='content_and_artifact'``. It contains data that is not
+    meant to be sent to the model but may be needed elsewhere in the
+    application.
+    """
 
 
 class BaseStreamEvent(TypedDict):
