@@ -76,12 +76,10 @@ class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
         self.answer_reached = False
 
     @override
-    def on_llm_new_token(
-        self, token: str | list[str | dict[str, Any]], **kwargs: Any
-    ) -> None:
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
         # Remember the last n tokens, where n = len(answer_prefix_tokens)
-        self.append_to_last_tokens(str(token))
+        self.append_to_last_tokens(token)
 
         # Check if the last n tokens match the answer_prefix_tokens list ...
         if self.check_if_answer_reached():
@@ -94,5 +92,5 @@ class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
 
         # ... if yes, then print tokens from now on
         if self.answer_reached:
-            sys.stdout.write(str(token))
+            sys.stdout.write(token)
             sys.stdout.flush()
