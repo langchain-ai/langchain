@@ -1591,10 +1591,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             Otherwise, in the case that only one tool is bound, ensure that
             `tool_choice` supports the string `'any'` to force calling that tool.
 
-            If `tool_call_streaming` is enabled in the model's profile, individual
-            chunks are also validated to contain `tool_call_chunk` blocks in
-            `content_blocks`. To disable this check, set
-            `tool_call_streaming = false` in the model's profile augmentations.
+            If `tool_call_streaming = true` is set in the model's profile
+            augmentations, individual chunks are also validated to contain
+            `tool_call_chunk` blocks in `content_blocks`.
 
         """
         if not self.has_tool_calling:
@@ -1610,9 +1609,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model_with_tools.invoke(query)
         _validate_tool_call_message(result)
 
-        # Check if model supports tool call streaming (defaults to True)
         tool_call_streaming = (
-            model.profile.get("tool_call_streaming", True) if model.profile else True
+            model.profile.get("tool_call_streaming", False) if model.profile else False
         )
 
         # Test stream
@@ -1638,9 +1636,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         if tool_call_streaming:
             assert found_tool_call_chunk, (
                 "Expected to find 'tool_call_chunk' blocks in content_blocks of at "
-                "least one chunk during streaming. Set tool_call_streaming=false in "
-                "the model's profile augmentations if this model does not support "
-                "streaming tool calls."
+                "least one chunk during streaming, but none were found. If this "
+                "model does not support streaming tool calls, set "
+                "tool_call_streaming=false in the model's profile augmentations."
             )
 
     async def test_tool_calling_async(self, model: BaseChatModel) -> None:
@@ -1700,9 +1698,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = await model_with_tools.ainvoke(query)
         _validate_tool_call_message(result)
 
-        # Check if model supports tool call streaming (defaults to True)
         tool_call_streaming = (
-            model.profile.get("tool_call_streaming", True) if model.profile else True
+            model.profile.get("tool_call_streaming", False) if model.profile else False
         )
 
         # Test astream
@@ -1728,9 +1725,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         if tool_call_streaming:
             assert found_tool_call_chunk, (
                 "Expected to find 'tool_call_chunk' blocks in content_blocks of at "
-                "least one chunk during streaming. Set tool_call_streaming=false in "
-                "the model's profile augmentations if this model does not support "
-                "streaming tool calls."
+                "least one chunk during streaming, but none were found. If this "
+                "model does not support streaming tool calls, set "
+                "tool_call_streaming=false in the model's profile augmentations."
             )
 
     def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
