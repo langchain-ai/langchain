@@ -35,7 +35,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
 from tests.unit_tests._utils import FakeCallbackHandler
 
-MODEL_NAME = "claude-3-5-haiku-20241022"
+MODEL_NAME = "claude-haiku-4-5-20251001"
 
 
 def test_stream() -> None:
@@ -454,7 +454,7 @@ async def test_astreaming() -> None:
 
 def test_tool_use() -> None:
     llm = ChatAnthropic(
-        model="claude-3-7-sonnet-20250219",  # type: ignore[call-arg]
+        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
         temperature=0,
     )
     tool_definition = {
@@ -487,7 +487,7 @@ def test_tool_use() -> None:
 
     # Test streaming
     llm = ChatAnthropic(
-        model="claude-3-7-sonnet-20250219",  # type: ignore[call-arg]
+        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
         temperature=0,
         # Add extra headers to also test token-efficient tools
         model_kwargs={
