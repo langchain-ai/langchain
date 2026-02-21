@@ -8,7 +8,8 @@ via snapshot testing (e.g., see unit tests for runnables).
 import contextvars
 from contextlib import asynccontextmanager
 from typing import Any
-from uuid import UUID
+from unittest.mock import Mock
+from uuid import UUID, uuid4
 
 from typing_extensions import override
 
@@ -17,6 +18,8 @@ from langchain_core.callbacks import (
     AsyncCallbackManager,
     BaseCallbackHandler,
 )
+from langchain_core.callbacks.manager import _ahandle_event_for_handler
+from langchain_core.messages import HumanMessage
 
 
 async def test_inline_handlers_share_parent_context() -> None:
@@ -210,3 +213,54 @@ async def test_shielded_callback_context_preservation() -> None:
         f"but got {handler.context_values}. "
         f"This indicates the shielded decorator is not preserving context variables."
     )
+
+
+async def test_ahandle_event_not_implemented_error_no_args() -> None:
+    """No IndexError when NotImplementedError raised with no positional args.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/31576
+    """
+    handler = Mock(spec=BaseCallbackHandler)
+    handler.on_chat_model_start = Mock(side_effect=NotImplementedError)
+    handler.raise_error = False
+    handler.run_inline = False
+
+    # Should not raise IndexError — should log a warning instead
+    await _ahandle_event_for_handler(
+        handler,
+        "on_chat_model_start",
+        None,
+    )
+
+
+async def test_ahandle_event_not_implemented_error_with_args() -> None:
+    """Async fallback to on_llm_start for NotImplementedError."""
+    llm_start_calls: list[Any] = []
+
+    class FallbackHandler(AsyncCallbackHandler):
+        async def on_llm_start(
+            self,
+            serialized: dict[str, Any],
+            prompts: list[str],
+            **kwargs: Any,  # noqa: ARG002
+        ) -> None:
+            llm_start_calls.append((serialized, prompts))
+
+    handler = FallbackHandler()
+
+    serialized = {"name": "test_model"}
+    messages = [[HumanMessage(content="hello")]]
+
+    await _ahandle_event_for_handler(
+        handler,
+        "on_chat_model_start",
+        None,
+        serialized,
+        messages,
+        run_id=uuid4(),
+    )
+
+    assert len(llm_start_calls) == 1
+    assert llm_start_calls[0][0] == serialized
+    assert isinstance(llm_start_calls[0][1], list)
+    assert isinstance(llm_start_calls[0][1][0], str)

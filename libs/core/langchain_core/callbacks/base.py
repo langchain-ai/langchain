@@ -285,6 +285,9 @@ class CallbackManagerMixin:
             This method is called for chat models. If you're implementing a handler for
             a non-chat model, you should use `on_llm_start` instead.
 
+        The default implementation converts messages to strings and delegates to
+        `on_llm_start`. Override this method to handle chat model events directly.
+
         Args:
             serialized: The serialized chat model.
             messages: The messages.
@@ -294,10 +297,18 @@ class CallbackManagerMixin:
             metadata: The metadata.
             **kwargs: Additional keyword arguments.
         """
-        # NotImplementedError is thrown intentionally
-        # Callback handler will fall back to on_llm_start if this is exception is thrown
-        msg = f"{self.__class__.__name__} does not implement `on_chat_model_start`"
-        raise NotImplementedError(msg)
+        from langchain_core.messages import get_buffer_string  # noqa: PLC0415
+
+        message_strings = [get_buffer_string(m) for m in messages]
+        return self.on_llm_start(
+            serialized,
+            message_strings,
+            run_id=run_id,
+            parent_run_id=parent_run_id,
+            tags=tags,
+            metadata=metadata,
+            **kwargs,
+        )
 
     def on_retriever_start(
         self,
@@ -534,6 +545,9 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             This method is called for chat models. If you're implementing a handler for
             a non-chat model, you should use `on_llm_start` instead.
 
+        The default implementation converts messages to strings and delegates to
+        `on_llm_start`. Override this method to handle chat model events directly.
+
         Args:
             serialized: The serialized chat model.
             messages: The messages.
@@ -543,10 +557,18 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             metadata: The metadata.
             **kwargs: Additional keyword arguments.
         """
-        # NotImplementedError is thrown intentionally
-        # Callback handler will fall back to on_llm_start if this is exception is thrown
-        msg = f"{self.__class__.__name__} does not implement `on_chat_model_start`"
-        raise NotImplementedError(msg)
+        from langchain_core.messages import get_buffer_string  # noqa: PLC0415
+
+        message_strings = [get_buffer_string(m) for m in messages]
+        await self.on_llm_start(
+            serialized,
+            message_strings,
+            run_id=run_id,
+            parent_run_id=parent_run_id,
+            tags=tags,
+            metadata=metadata,
+            **kwargs,
+        )
 
     async def on_llm_new_token(
         self,

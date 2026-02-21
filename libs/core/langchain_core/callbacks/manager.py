@@ -55,6 +55,10 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Minimum number of positional args needed for the on_chat_model_start →
+# on_llm_start fallback (serialized, messages).
+_CHAT_MODEL_FALLBACK_MIN_ARGS = 2
+
 
 def _get_debug() -> bool:
     return get_debug()
@@ -284,7 +288,10 @@ def handle_event(
                     if asyncio.iscoroutine(event):
                         coros.append(event)
             except NotImplementedError as e:
-                if event_name == "on_chat_model_start":
+                if (
+                    event_name == "on_chat_model_start"
+                    and len(args) >= _CHAT_MODEL_FALLBACK_MIN_ARGS
+                ):
                     if message_strings is None:
                         message_strings = [get_buffer_string(m) for m in args[1]]
                     handle_event(
@@ -388,7 +395,10 @@ async def _ahandle_event_for_handler(
                     ),
                 )
     except NotImplementedError as e:
-        if event_name == "on_chat_model_start":
+        if (
+            event_name == "on_chat_model_start"
+            and len(args) >= _CHAT_MODEL_FALLBACK_MIN_ARGS
+        ):
             message_strings = [get_buffer_string(m) for m in args[1]]
             await _ahandle_event_for_handler(
                 handler,

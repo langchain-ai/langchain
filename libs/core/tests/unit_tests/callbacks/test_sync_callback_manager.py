@@ -1,4 +1,11 @@
+import logging
+from typing import Any
+from unittest.mock import Mock
+from uuid import uuid4
+
 from langchain_core.callbacks.base import BaseCallbackHandler, BaseCallbackManager
+from langchain_core.callbacks.manager import handle_event
+from langchain_core.messages import HumanMessage
 
 
 def test_remove_handler() -> None:
@@ -36,3 +43,71 @@ def test_merge_preserves_handler_distinction() -> None:
 
     assert set(merged.handlers) == {h1, h2}
     assert set(merged.inheritable_handlers) == {ih1, ih2}
+
+
+def test_handle_event_not_implemented_error_no_args() -> None:
+    """No IndexError when NotImplementedError raised with no positional args.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/31576
+    """
+    handler = Mock(spec=BaseCallbackHandler)
+    handler.on_chat_model_start = Mock(side_effect=NotImplementedError)
+    handler.raise_error = False
+
+    # Should not raise IndexError — should log a warning instead
+    handle_event(
+        [handler],
+        "on_chat_model_start",
+        None,
+    )
+
+
+def test_handle_event_not_implemented_error_with_args() -> None:
+    """Fallback to on_llm_start when on_chat_model_start raises NotImplementedError."""
+    llm_start_calls: list[Any] = []
+
+    class FallbackHandler(BaseCallbackHandler):
+        def on_llm_start(
+            self,
+            serialized: dict[str, Any],
+            prompts: list[str],
+            **kwargs: Any,  # noqa: ARG002
+        ) -> None:
+            llm_start_calls.append((serialized, prompts))
+
+    handler = FallbackHandler()
+
+    serialized = {"name": "test_model"}
+    messages = [[HumanMessage(content="hello")]]
+
+    handle_event(
+        [handler],
+        "on_chat_model_start",
+        None,
+        serialized,
+        messages,
+        run_id=uuid4(),
+    )
+
+    assert len(llm_start_calls) == 1
+    assert llm_start_calls[0][0] == serialized
+    # The fallback should have converted messages to strings
+    assert isinstance(llm_start_calls[0][1], list)
+    assert isinstance(llm_start_calls[0][1][0], str)
+
+
+def test_handle_event_non_chat_model_not_implemented(caplog: Any) -> None:
+    """handle_event logs a warning for NotImplementedError on non-chat events."""
+    handler = Mock(spec=BaseCallbackHandler)
+    handler.on_llm_start = Mock(side_effect=NotImplementedError("not implemented"))
+    handler.raise_error = False
+    handler.__class__.__name__ = "MockHandler"
+
+    with caplog.at_level(logging.WARNING):
+        handle_event(
+            [handler],
+            "on_llm_start",
+            None,
+        )
+
+    assert "NotImplementedError" in caplog.text

@@ -11,7 +11,6 @@ from langchain_core.callbacks.base import BaseCallbackHandler
 
 if TYPE_CHECKING:
     from langchain_core.agents import AgentAction, AgentFinish
-    from langchain_core.messages import BaseMessage
     from langchain_core.outputs import LLMResult
 
 
@@ -29,20 +28,6 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         Args:
             serialized: The serialized LLM.
             prompts: The prompts to run.
-            **kwargs: Additional keyword arguments.
-        """
-
-    def on_chat_model_start(
-        self,
-        serialized: dict[str, Any],
-        messages: list[list[BaseMessage]],
-        **kwargs: Any,
-    ) -> None:
-        """Run when LLM starts running.
-
-        Args:
-            serialized: The serialized LLM.
-            messages: The messages to run.
             **kwargs: Additional keyword arguments.
         """
 
