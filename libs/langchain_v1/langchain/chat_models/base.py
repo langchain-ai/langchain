@@ -37,6 +37,7 @@ def _call(cls: type[BaseChatModel], **kwargs: Any) -> BaseChatModel:
 
 _BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
     "anthropic": ("langchain_anthropic", "ChatAnthropic", _call),
+    "anthropic_bedrock": ("langchain_aws", "ChatAnthropicBedrock", _call),
     "azure_ai": ("langchain_azure_ai.chat_models", "AzureAIChatCompletionsModel", _call),
     "azure_openai": ("langchain_openai", "AzureChatOpenAI", _call),
     "bedrock": ("langchain_aws", "ChatBedrock", _call),
@@ -264,6 +265,7 @@ def init_chat_model(
             - `azure_ai`                -> [`langchain-azure-ai`](https://docs.langchain.com/oss/python/integrations/providers/microsoft)
             - `google_vertexai`         -> [`langchain-google-vertexai`](https://docs.langchain.com/oss/python/integrations/providers/google)
             - `google_genai`            -> [`langchain-google-genai`](https://docs.langchain.com/oss/python/integrations/providers/google)
+            - `anthropic_bedrock`       -> [`langchain-aws`](https://docs.langchain.com/oss/python/integrations/providers/aws)
             - `bedrock`                 -> [`langchain-aws`](https://docs.langchain.com/oss/python/integrations/providers/aws)
             - `bedrock_converse`        -> [`langchain-aws`](https://docs.langchain.com/oss/python/integrations/providers/aws)
             - `cohere`                  -> [`langchain-cohere`](https://docs.langchain.com/oss/python/integrations/providers/cohere)

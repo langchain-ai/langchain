@@ -1024,6 +1024,12 @@ class ChatAnthropic(BaseChatModel):
         """Set model profile if not overridden."""
         if self.profile is None:
             self.profile = _get_default_model_profile(self.model)
+        if (
+            self.profile is not None
+            and self.betas
+            and "context-1m-2025-08-07" in self.betas
+        ):
+            self.profile["max_input_tokens"] = 1_000_000
         return self
 
     @cached_property
