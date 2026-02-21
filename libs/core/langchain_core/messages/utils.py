@@ -2335,3 +2335,79 @@ def _approximate_token_counter(messages: Sequence[BaseMessage]) -> int:
 _TOKEN_COUNTER_SHORTCUTS = {
     "approximate": _approximate_token_counter,
 }
+
+_REASONING_BLOCK_TYPES = {"reasoning", "thinking"}
+"""Content block types that represent model reasoning/thinking traces."""
+
+_REASONING_ADDITIONAL_KWARGS_KEYS = {"reasoning_content", "reasoning"}
+"""Keys in `additional_kwargs` that store reasoning content."""
+
+
+def strip_reasoning(message: AIMessage) -> AIMessage:
+    """Strip reasoning content from an AI message.
+
+    Removes internal reasoning/thinking traces from the message so they don't
+    persist in conversation history. This prevents reasoning data from being
+    sent back to the model API on subsequent turns, which many providers reject.
+
+    Reasoning is removed from two locations:
+
+    - **Content blocks**: Blocks with ``type`` in ``{"reasoning", "thinking"}``
+      are filtered out from ``message.content`` (when content is a list).
+    - **``additional_kwargs``**: Keys ``"reasoning_content"`` (string, used by
+      Ollama/DeepSeek/XAI/Groq) and ``"reasoning"`` (dict, used by OpenAI
+      Responses API) are removed.
+
+    All other message data (tool calls, message ID, response metadata, etc.)
+    is preserved.
+
+    Args:
+        message: The AI message to strip reasoning from.
+
+    Returns:
+        A new `AIMessage` with reasoning removed, or the original message
+        if no reasoning was found.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_core.messages import AIMessage, strip_reasoning
+
+            msg = AIMessage(
+                content=[
+                    {"type": "reasoning", "reasoning": "Let me think..."},
+                    {"type": "text", "text": "The answer is 42."},
+                ],
+            )
+            cleaned = strip_reasoning(msg)
+            # cleaned.content == [{"type": "text", "text": "The answer is 42."}]
+    """
+    updates: dict[str, Any] = {}
+
+    # Strip reasoning content blocks
+    content = message.content
+    if isinstance(content, list):
+        filtered = [
+            block
+            for block in content
+            if not (
+                isinstance(block, dict) and block.get("type") in _REASONING_BLOCK_TYPES
+            )
+        ]
+        if len(filtered) != len(content):
+            # Use empty string instead of empty list to avoid downstream issues
+            updates["content"] = filtered if filtered else ""
+
+    # Strip reasoning from additional_kwargs
+    additional_kwargs = message.additional_kwargs
+    if additional_kwargs:
+        keys_to_remove = _REASONING_ADDITIONAL_KWARGS_KEYS & additional_kwargs.keys()
+        if keys_to_remove:
+            updates["additional_kwargs"] = {
+                k: v for k, v in additional_kwargs.items() if k not in keys_to_remove
+            }
+
+    if not updates:
+        return message
+
+    return message.model_copy(update=updates)

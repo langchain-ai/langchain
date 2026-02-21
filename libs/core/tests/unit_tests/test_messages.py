@@ -28,8 +28,10 @@ from langchain_core.messages import (
     message_to_dict,
     messages_from_dict,
     messages_to_dict,
+    strip_reasoning,
 )
 from langchain_core.messages.content import KNOWN_BLOCK_TYPES, ContentBlock
+from langchain_core.messages.tool import ToolCall
 from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
@@ -1358,3 +1360,149 @@ def test_text_accessor() -> None:
     assert empty_msg.text == ""
     assert empty_msg.text == ""
     assert str(empty_msg.text) == str(empty_msg.text)
+
+
+class TestStripReasoning:
+    """Tests for strip_reasoning utility function."""
+
+    def test_strip_reasoning_content_blocks(self) -> None:
+        """Test stripping reasoning blocks from content list."""
+        msg = AIMessage(
+            content=[
+                {"type": "reasoning", "reasoning": "Let me think step by step..."},
+                {"type": "text", "text": "The answer is 42."},
+            ],
+            id="msg1",
+        )
+        result = strip_reasoning(msg)
+        assert result.content == [{"type": "text", "text": "The answer is 42."}]
+        assert result.id == "msg1"
+
+    def test_strip_thinking_content_blocks(self) -> None:
+        """Test stripping Anthropic-style thinking blocks."""
+        msg = AIMessage(
+            content=[
+                {"type": "thinking", "thinking": "Internal monologue..."},
+                {"type": "text", "text": "Here is my response."},
+            ],
+        )
+        result = strip_reasoning(msg)
+        assert result.content == [{"type": "text", "text": "Here is my response."}]
+
+    def test_strip_mixed_content_preserves_text(self) -> None:
+        """Test that non-reasoning blocks are preserved."""
+        msg = AIMessage(
+            content=[
+                {"type": "reasoning", "reasoning": "Thinking..."},
+                {"type": "text", "text": "First part."},
+                {"type": "thinking", "thinking": "More thinking..."},
+                {"type": "text", "text": "Second part."},
+            ],
+        )
+        result = strip_reasoning(msg)
+        assert result.content == [
+            {"type": "text", "text": "First part."},
+            {"type": "text", "text": "Second part."},
+        ]
+
+    def test_strip_additional_kwargs_reasoning_content(self) -> None:
+        """Test stripping reasoning_content from additional_kwargs."""
+        msg = AIMessage(
+            content="The answer is 42.",
+            additional_kwargs={"reasoning_content": "Step by step..."},
+        )
+        result = strip_reasoning(msg)
+        assert result.content == "The answer is 42."
+        assert "reasoning_content" not in result.additional_kwargs
+
+    def test_strip_additional_kwargs_reasoning_dict(self) -> None:
+        """Test stripping OpenAI Responses API reasoning dict."""
+        msg = AIMessage(
+            content="The answer is 42.",
+            additional_kwargs={
+                "reasoning": {
+                    "id": "rs_abc",
+                    "type": "reasoning",
+                    "summary": [{"text": "Thought process"}],
+                },
+            },
+        )
+        result = strip_reasoning(msg)
+        assert result.content == "The answer is 42."
+        assert "reasoning" not in result.additional_kwargs
+
+    def test_preserves_other_additional_kwargs(self) -> None:
+        """Test that non-reasoning additional_kwargs are preserved."""
+        msg = AIMessage(
+            content="Response.",
+            additional_kwargs={
+                "reasoning_content": "Thinking...",
+                "refusal": None,
+                "custom_field": "keep me",
+            },
+        )
+        result = strip_reasoning(msg)
+        assert "reasoning_content" not in result.additional_kwargs
+        assert result.additional_kwargs["refusal"] is None
+        assert result.additional_kwargs["custom_field"] == "keep me"
+
+    def test_preserves_tool_calls(self) -> None:
+        """Test that tool calls are preserved when reasoning is stripped."""
+        msg = AIMessage(
+            content=[
+                {"type": "reasoning", "reasoning": "I should search..."},
+                {"type": "text", "text": "Let me search."},
+            ],
+            tool_calls=[ToolCall(name="search", args={"q": "test"}, id="tc1")],
+        )
+        result = strip_reasoning(msg)
+        assert len(result.tool_calls) == 1
+        assert result.tool_calls[0]["name"] == "search"
+
+    def test_preserves_response_metadata(self) -> None:
+        """Test that response_metadata is preserved."""
+        msg = AIMessage(
+            content=[
+                {"type": "reasoning", "reasoning": "..."},
+                {"type": "text", "text": "Response."},
+            ],
+            response_metadata={"model": "gpt-4o", "finish_reason": "stop"},
+        )
+        result = strip_reasoning(msg)
+        assert result.response_metadata["model"] == "gpt-4o"
+
+    def test_noop_when_no_reasoning(self) -> None:
+        """Test that message is returned as-is when no reasoning present."""
+        msg = AIMessage(content="Just a normal message.", id="msg1")
+        result = strip_reasoning(msg)
+        assert result is msg  # Same object, not a copy
+
+    def test_noop_for_string_content(self) -> None:
+        """Test that string content without reasoning kwargs is a no-op."""
+        msg = AIMessage(content="Hello world.")
+        result = strip_reasoning(msg)
+        assert result is msg
+
+    def test_all_reasoning_becomes_empty_string(self) -> None:
+        """Test that content becomes empty string when all blocks are reasoning."""
+        msg = AIMessage(
+            content=[
+                {"type": "reasoning", "reasoning": "All reasoning."},
+                {"type": "thinking", "thinking": "More thinking."},
+            ],
+        )
+        result = strip_reasoning(msg)
+        assert result.content == ""
+
+    def test_strip_both_content_and_kwargs(self) -> None:
+        """Test stripping from both content blocks and additional_kwargs."""
+        msg = AIMessage(
+            content=[
+                {"type": "reasoning", "reasoning": "Reasoning block."},
+                {"type": "text", "text": "Visible text."},
+            ],
+            additional_kwargs={"reasoning_content": "Also reasoning."},
+        )
+        result = strip_reasoning(msg)
+        assert result.content == [{"type": "text", "text": "Visible text."}]
+        assert "reasoning_content" not in result.additional_kwargs
