@@ -13,7 +13,7 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel, Field
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, override
 
 from langchain.agents import create_agent
 from langchain.agents.factory import _supports_provider_strategy
@@ -803,6 +803,7 @@ class TestDynamicModelWithResponseFormat:
         class CustomModel(GenericFakeChatModel):
             tool_bindings: list[Any] = Field(default_factory=list)
 
+            @override
             def bind_tools(
                 self,
                 tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
@@ -836,7 +837,7 @@ class TestDynamicModelWithResponseFormat:
         calls = []
 
         def mock_supports_provider_strategy(
-            model: str | BaseChatModel, tools: list[Any] | None = None
+            model: str | BaseChatModel, *_args: Any, **_kwargs: Any
         ) -> bool:
             """Track which model is checked and return True for ProviderStrategy."""
             calls.append(model)

@@ -15,7 +15,7 @@ from langgraph.prebuilt.tool_node import ToolCallRequest
 from langgraph.runtime import Runtime
 from langgraph.types import Command
 from syrupy.assertion import SnapshotAssertion
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, override
 
 from langchain.agents.factory import _get_can_jump_to, create_agent
 from langchain.agents.middleware.types import (
@@ -191,6 +191,7 @@ def test_hook_config_decorator_on_class_method() -> None:
 
     class JumpMiddleware(AgentMiddleware):
         @hook_config(can_jump_to=["end", "model"])
+        @override
         def before_model(
             self, state: AgentState[Any], runtime: Runtime[None]
         ) -> dict[str, Any] | None:
@@ -199,6 +200,7 @@ def test_hook_config_decorator_on_class_method() -> None:
             return None
 
         @hook_config(can_jump_to=["tools"])
+        @override
         def after_model(
             self, state: AgentState[Any], runtime: Runtime[None]
         ) -> dict[str, Any] | None:
@@ -527,6 +529,7 @@ def test_get_can_jump_to_only_overridden_methods() -> None:
     # Middleware with only sync method overridden
     class SyncOnlyMiddleware(AgentMiddleware):
         @hook_config(can_jump_to=["end"])
+        @override
         def before_model(
             self, state: AgentState[Any], runtime: Runtime[None]
         ) -> dict[str, Any] | None:
@@ -541,6 +544,7 @@ def test_get_can_jump_to_only_overridden_methods() -> None:
     # Middleware with only async method overridden
     class AsyncOnlyMiddleware(AgentMiddleware):
         @hook_config(can_jump_to=["model"])
+        @override
         async def aafter_model(
             self, state: AgentState[Any], runtime: Runtime[None]
         ) -> dict[str, Any] | None:
@@ -627,7 +631,7 @@ def test_dynamic_prompt_decorator() -> None:
     """Test dynamic_prompt decorator with basic usage."""
 
     @dynamic_prompt
-    def my_prompt(request: ModelRequest) -> str:
+    def my_prompt(_: ModelRequest) -> str:
         return "Dynamic test prompt"
 
     assert isinstance(my_prompt, AgentMiddleware)
@@ -688,7 +692,7 @@ def test_dynamic_prompt_integration() -> None:
     prompt_calls = 0
 
     @dynamic_prompt
-    def context_aware_prompt(request: ModelRequest) -> str:
+    def context_aware_prompt(_: ModelRequest) -> str:
         nonlocal prompt_calls
         prompt_calls += 1
         return "you are a helpful assistant."
@@ -706,7 +710,7 @@ def test_async_dynamic_prompt_decorator() -> None:
     """Test dynamic_prompt decorator with async function."""
 
     @dynamic_prompt
-    async def async_prompt(request: ModelRequest) -> str:
+    async def async_prompt(_: ModelRequest) -> str:
         return "Async dynamic prompt"
 
     assert isinstance(async_prompt, AgentMiddleware)
@@ -720,7 +724,7 @@ async def test_async_dynamic_prompt_integration() -> None:
     prompt_calls = 0
 
     @dynamic_prompt
-    async def async_context_prompt(request: ModelRequest) -> str:
+    async def async_context_prompt(_: ModelRequest) -> str:
         nonlocal prompt_calls
         prompt_calls += 1
         return "Async assistant."
@@ -737,7 +741,7 @@ def test_dynamic_prompt_overwrites_system_prompt() -> None:
     """Test that dynamic_prompt overwrites the original system_prompt."""
 
     @dynamic_prompt
-    def override_prompt(request: ModelRequest) -> str:
+    def override_prompt(_: ModelRequest) -> str:
         return "Overridden prompt."
 
     agent = create_agent(
@@ -755,11 +759,11 @@ def test_dynamic_prompt_multiple_in_sequence() -> None:
     """Test multiple dynamic_prompt decorators in sequence (last wins)."""
 
     @dynamic_prompt
-    def first_prompt(request: ModelRequest) -> str:
+    def first_prompt(_: ModelRequest) -> str:
         return "First prompt."
 
     @dynamic_prompt
-    def second_prompt(request: ModelRequest) -> str:
+    def second_prompt(_: ModelRequest) -> str:
         return "Second prompt."
 
     # When used together, the last middleware in the list should win
@@ -783,7 +787,7 @@ def test_async_dynamic_prompt_skipped_on_sync_invoke() -> None:
     calls = []
 
     @dynamic_prompt
-    async def async_only_prompt(request: ModelRequest) -> str:
+    async def async_only_prompt(_: ModelRequest) -> str:
         calls.append("async_prompt")
         return "Async prompt"
 
@@ -807,7 +811,7 @@ async def test_sync_dynamic_prompt_on_async_invoke() -> None:
     calls = []
 
     @dynamic_prompt
-    def sync_prompt(request: ModelRequest) -> str:
+    def sync_prompt(_: ModelRequest) -> str:
         calls.append("sync_prompt")
         return "Sync prompt"
 

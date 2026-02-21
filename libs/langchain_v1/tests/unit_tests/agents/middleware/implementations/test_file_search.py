@@ -42,7 +42,7 @@ class TestFilesystemGrepSearch:
         class DummyResult:
             stdout = ""
 
-        def fake_run(*args: Any, **kwargs: Any) -> DummyResult:
+        def fake_run(*args: Any, **_kwargs: Any) -> DummyResult:
             cmd = args[0]
             captured["cmd"] = cmd
             return DummyResult()

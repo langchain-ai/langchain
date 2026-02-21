@@ -10,6 +10,7 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langgraph.checkpoint.memory import InMemorySaver
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware._retry import calculate_delay
@@ -29,6 +30,7 @@ class TemporaryFailureModel(FakeToolCallingModel):
     fail_count: int = Field(default=0)
     attempt: int = Field(default=0)
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -66,6 +68,7 @@ class AlwaysFailingModel(FakeToolCallingModel):
     error_message: str = Field(default="Model error")
     error_type: type[Exception] = Field(default=ValueError)
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -340,6 +343,7 @@ def test_model_retry_custom_exception_filter() -> None:
     class CustomErrorModel(FakeToolCallingModel):
         """Model that raises CustomError."""
 
+        @override
         def _generate(
             self,
             messages: list[BaseMessage],
