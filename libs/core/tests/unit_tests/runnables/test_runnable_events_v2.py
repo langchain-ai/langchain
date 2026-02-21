@@ -30,6 +30,7 @@ from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
     SystemMessage,
+    ToolMessage,
 )
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -2908,3 +2909,65 @@ async def test_tool_error_event_tool_call_id_is_none_when_not_provided() -> None
     assert error_event["name"] == "failing_tool_no_id"
     assert "tool_call_id" in error_event["data"]
     assert error_event["data"]["tool_call_id"] is None
+
+
+async def test_event_stream_with_tool_artifact() -> None:
+    """Test that on_tool_end event includes artifact for content_and_artifact tools."""
+
+    @tool(response_format="content_and_artifact")
+    def reverse_tool(text: str) -> tuple[str, str]:
+        """Reverse text tool."""
+        reversed_text = text[::-1]
+        return reversed_text, f"Original={text}, Reversed={reversed_text}"
+
+    events = await _collect_events(
+        reverse_tool.astream_events({"text": "Hello World"}, version="v2")
+    )
+
+    # Find the on_tool_end event
+    tool_end_events = [e for e in events if e["event"] == "on_tool_end"]
+    assert len(tool_end_events) == 1
+
+    tool_end_event = tool_end_events[0]
+    assert tool_end_event["name"] == "reverse_tool"
+
+    # The output should be a ToolMessage with the artifact preserved
+    output = tool_end_event["data"]["output"]
+    assert isinstance(output, ToolMessage)
+    assert output.content == "dlroW olleH"
+    assert output.artifact == "Original=Hello World, Reversed=dlroW olleH"
+
+    # The artifact should also be available as a top-level field in data
+    assert "artifact" in tool_end_event["data"]
+    assert tool_end_event["data"]["artifact"] == output.artifact
+
+
+async def test_event_stream_with_tool_artifact_with_tool_call() -> None:
+    """Test artifact preserved when tool is invoked with a ToolCall."""
+
+    @tool(response_format="content_and_artifact")
+    def artifact_tool(x: int) -> tuple[str, dict]:
+        """Tool returning content and artifact."""
+        return f"result_{x}", {"raw_value": x, "computed": x * 2}
+
+    tool_call = {
+        "name": "artifact_tool",
+        "args": {"x": 42},
+        "id": "call_123",
+        "type": "tool_call",
+    }
+
+    events = await _collect_events(
+        artifact_tool.astream_events(tool_call, version="v2")
+    )
+
+    tool_end_events = [e for e in events if e["event"] == "on_tool_end"]
+    assert len(tool_end_events) == 1
+
+    output = tool_end_events[0]["data"]["output"]
+    assert isinstance(output, ToolMessage)
+    assert output.content == "result_42"
+    assert output.artifact == {"raw_value": 42, "computed": 84}
+    assert output.tool_call_id == "call_123"
+
+    assert tool_end_events[0]["data"]["artifact"] == {"raw_value": 42, "computed": 84}

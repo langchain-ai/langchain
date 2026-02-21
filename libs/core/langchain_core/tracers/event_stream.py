@@ -732,13 +732,17 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """End a trace for a tool run."""
         run_info, inputs = self._get_tool_run_info_with_inputs(run_id)
 
+        data: EventData = {
+            "output": output,
+            "input": inputs,
+        }
+        if hasattr(output, "artifact") and output.artifact is not None:
+            data["artifact"] = output.artifact
+
         self._send(
             {
                 "event": "on_tool_end",
-                "data": {
-                    "output": output,
-                    "input": inputs,
-                },
+                "data": data,
                 "run_id": str(run_id),
                 "name": run_info["name"],
                 "tags": run_info["tags"],
@@ -927,6 +931,15 @@ async def _astream_events_implementation_v1(
 
                 # None is a VALID output for an end event
                 data["output"] = log_entry["final_output"]
+
+                # Include artifact from ToolMessage for tool end events
+                final_output = log_entry.get("final_output")
+                if (
+                    final_output is not None
+                    and hasattr(final_output, "artifact")
+                    and final_output.artifact is not None
+                ):
+                    data["artifact"] = final_output.artifact
 
             if event_type == "stream":
                 num_chunks = len(log_entry["streamed_output"])

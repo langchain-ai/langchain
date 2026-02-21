@@ -1266,14 +1266,16 @@ def _format_output(
     Returns:
         The formatted output, either as a `ToolMessage` or the original content.
     """
-    if isinstance(content, ToolOutputMixin) or tool_call_id is None:
+    if isinstance(content, ToolOutputMixin):
+        return content
+    if tool_call_id is None and artifact is None:
         return content
     if not _is_message_content_type(content):
         content = _stringify(content)
     return ToolMessage(
         content,
         artifact=artifact,
-        tool_call_id=tool_call_id,
+        tool_call_id=tool_call_id or "",
         name=name,
         status=status,
     )

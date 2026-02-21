@@ -454,7 +454,7 @@ class _TracerCore(ABC):
 
     def _complete_tool_run(
         self,
-        output: dict[str, Any],
+        output: Any,
         run_id: UUID,
     ) -> Run:
         """Update a tool run with outputs and end time."""
@@ -463,6 +463,8 @@ class _TracerCore(ABC):
             tool_run.outputs = {}
         if not tool_run.extra.get("__omit_auto_outputs", False):
             cast("dict[str, Any]", tool_run.outputs).update({"output": output})
+            if hasattr(output, "artifact") and output.artifact is not None:
+                cast("dict[str, Any]", tool_run.outputs)["artifact"] = output.artifact
         tool_run.end_time = datetime.now(timezone.utc)
         tool_run.events.append({"name": "end", "time": tool_run.end_time})
         return tool_run

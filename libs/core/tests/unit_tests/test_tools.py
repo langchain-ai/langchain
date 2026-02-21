@@ -1538,8 +1538,13 @@ def test_tool_call_input_tool_message_with_artifact(tool: BaseTool) -> None:
     with pytest.raises(ValidationError):
         tool.invoke(tool_call)
 
-    actual_content = tool.invoke(tool_call["args"])
-    assert actual_content == expected.content
+    actual_result = tool.invoke(tool_call["args"])
+    # When invoked without a tool_call_id but with content_and_artifact format,
+    # the result should be a ToolMessage preserving the artifact.
+    assert isinstance(actual_result, ToolMessage)
+    assert actual_result.content == expected.content
+    assert actual_result.artifact == expected.artifact
+    assert actual_result.tool_call_id == ""
 
 
 def test_convert_from_runnable_dict() -> None:
@@ -2280,7 +2285,16 @@ def test_create_retriever_tool() -> None:
     assert isinstance(retriever_tool_artifact, BaseTool)
     assert retriever_tool_artifact.name == "retriever_tool_artifact"
     assert retriever_tool_artifact.description == "Retriever Tool Artifact"
-    assert retriever_tool_artifact.invoke("bar") == "foo bar\n\nbar"
+    result = retriever_tool_artifact.invoke("bar")
+    # When invoked without a tool_call_id but with content_and_artifact format,
+    # the result should be a ToolMessage preserving the artifact.
+    assert isinstance(result, ToolMessage)
+    assert result.content == "foo bar\n\nbar"
+    assert result.tool_call_id == ""
+    assert result.artifact == [
+        Document(page_content="foo bar"),
+        Document(page_content="bar"),
+    ]
     assert retriever_tool_artifact.invoke(
         ToolCall(
             name="retriever_tool_artifact",
