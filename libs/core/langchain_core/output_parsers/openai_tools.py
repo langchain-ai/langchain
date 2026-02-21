@@ -14,7 +14,7 @@ from langchain_core.messages.tool import invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
-from langchain_core.utils.json import parse_partial_json
+from langchain_core.utils.json import parse_partial_json, strip_reasoning_tags
 from langchain_core.utils.pydantic import (
     TypeBaseModel,
     is_pydantic_v1_subclass,
@@ -61,13 +61,23 @@ def parse_tool_call(
     else:
         try:
             function_args = json.loads(arguments, strict=strict)
-        except JSONDecodeError as e:
-            msg = (
-                f"Function {raw_tool_call['function']['name']} arguments:\n\n"
-                f"{arguments}\n\nare not valid JSON. "
-                f"Received JSONDecodeError {e}"
-            )
-            raise OutputParserException(msg) from e
+        except JSONDecodeError as original_error:
+            # Some reasoning models (e.g. DeepSeek-R1) include <think>...</think>
+            # or <tool_call>...</tool_call> tags in tool call arguments.
+            # Try stripping those tags before giving up.
+            cleaned = strip_reasoning_tags(arguments)
+            if cleaned is not None:
+                try:
+                    function_args = json.loads(cleaned, strict=strict)
+                except JSONDecodeError:
+                    cleaned = None
+            if cleaned is None:
+                msg = (
+                    f"Function {raw_tool_call['function']['name']} arguments:\n\n"
+                    f"{arguments}\n\nare not valid JSON. "
+                    f"Received JSONDecodeError {original_error}"
+                )
+                raise OutputParserException(msg) from original_error
     parsed = {
         "name": raw_tool_call["function"]["name"] or "",
         "args": function_args or {},

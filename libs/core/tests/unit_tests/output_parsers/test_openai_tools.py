@@ -20,6 +20,7 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration
+from langchain_core.utils.json import strip_reasoning_tags
 
 STREAMED_MESSAGES = [
     AIMessageChunk(content=""),
@@ -1452,3 +1453,121 @@ def test_pydantic_tools_parser_unknown_tool_raises_output_parser_exception(
     msg = str(excinfo.value)
     assert "Unknown tool type" in msg
     assert "UnknownTool" in msg
+
+
+@pytest.mark.parametrize(
+    ("arguments", "expected"),
+    [
+        (
+            '<think>\nsome reasoning\n</think>\n{"key": "value"}',
+            '{"key": "value"}',
+        ),
+        (
+            '<thinking>\nreasoning\n</thinking>\n{"key": "value"}',
+            '{"key": "value"}',
+        ),
+        (
+            '<reasoning>\nreasoning\n</reasoning>\n{"key": "value"}',
+            '{"key": "value"}',
+        ),
+        (
+            '<tool_call>\n{"key": "value"}\n</tool_call>',
+            '{"key": "value"}',
+        ),
+        (
+            "<think>\n</think>\n"
+            '<tool_call>\n{"result": [{"name": "test"}]}\n</tool_call>',
+            '{"result": [{"name": "test"}]}',
+        ),
+    ],
+    ids=["think", "thinking", "reasoning", "tool_call", "think+tool_call"],
+)
+def test_strip_reasoning_tags(arguments: str, expected: str) -> None:
+    assert strip_reasoning_tags(arguments) == expected
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        '{"key": "value"}',
+        "not json at all",
+        '<think>reasoning</thinking>\n{"key": "value"}',
+    ],
+    ids=["clean_json", "plain_text", "mismatched_tags"],
+)
+def test_strip_reasoning_tags_returns_none(arguments: str) -> None:
+    """Test _strip_reasoning_tags returns None when no tags can be stripped."""
+    assert strip_reasoning_tags(arguments) is None
+
+
+def test_parse_tool_call_with_reasoning_tags() -> None:
+    raw_tool_call = {
+        "function": {
+            "arguments": (
+                "<think>\n</think>\n"
+                "<tool_call>\n"
+                '{"result": [{"name": {"key": "value"}, '
+                '"information": {"key": "description"}}]}'
+                "\n</tool_call>"
+            ),
+            "name": "AnalysisResult",
+        },
+        "id": "call_abc",
+        "type": "function",
+    }
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["name"] == "AnalysisResult"
+    assert len(result["args"]["result"]) == 1
+    assert result["args"]["result"][0]["name"] == {"key": "value"}
+
+
+def test_parse_tool_call_raises_for_invalid_json_inside_tags() -> None:
+    """Test parse_tool_call raises when JSON inside reasoning tags is also invalid."""
+    raw_tool_call = {
+        "function": {
+            "arguments": (
+                "<think>\nreasoning\n</think>\n<tool_call>\nnot json\n</tool_call>"
+            ),
+            "name": "MyTool",
+        },
+        "id": "call_123",
+        "type": "function",
+    }
+    with pytest.raises(OutputParserException):
+        parse_tool_call(raw_tool_call, return_id=True)
+
+
+def test_pydantic_tools_parser_with_reasoning_tags_in_additional_kwargs() -> None:
+    """Test full pipeline: reasoning tags in additional_kwargs -> Pydantic object."""
+
+    class AnalysisResult(BaseModel):
+        result: list[dict]
+
+    parser = PydanticToolsParser(tools=[AnalysisResult])
+    message = AIMessage(
+        content="",
+        additional_kwargs={
+            "tool_calls": [
+                {
+                    "id": "call_abc123",
+                    "function": {
+                        "name": "AnalysisResult",
+                        "arguments": (
+                            "<think>\n</think>\n"
+                            '<tool_call>\n{"result": [{"name": "test"}]}'
+                            "\n</tool_call>"
+                        ),
+                    },
+                    "type": "function",
+                }
+            ]
+        },
+    )
+    generation = ChatGeneration(message=message)
+    result = parser.parse_result([generation])
+
+    assert len(result) == 1
+    assert isinstance(result[0], AnalysisResult)
+    assert result[0].result == [{"name": "test"}]
