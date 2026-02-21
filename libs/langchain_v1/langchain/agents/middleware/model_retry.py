@@ -118,6 +118,7 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
         initial_delay: float = 1.0,
         max_delay: float = 60.0,
         jitter: bool = True,
+        depends_on: tuple[type[AgentMiddleware] | AgentMiddleware, ...] = (),
     ) -> None:
         """Initialize `ModelRetryMiddleware`.
 
@@ -150,6 +151,8 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
 
                 Caps exponential backoff growth.
             jitter: Whether to add random jitter (`±25%`) to delay to avoid thundering herd.
+            depends_on: Optional tuple of middleware classes or instances that must be
+                executed before this middleware.
 
         Raises:
             ValueError: If `max_retries < 0` or delays are negative.
@@ -167,6 +170,7 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
         self.initial_delay = initial_delay
         self.max_delay = max_delay
         self.jitter = jitter
+        self.depends_on = depends_on
 
     @staticmethod
     def _format_failure_message(exc: Exception, attempts_made: int) -> AIMessage:

@@ -517,6 +517,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
         tool_name: str = SHELL_TOOL_NAME,
         shell_command: Sequence[str] | str | None = None,
         env: Mapping[str, Any] | None = None,
+        depends_on: tuple[type[AgentMiddleware] | AgentMiddleware, ...] = (),
     ) -> None:
         """Initialize an instance of `ShellToolMiddleware`.
 
@@ -553,6 +554,8 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
 
                 Values are coerced to strings before command execution. If omitted, the
                 session inherits the parent process environment.
+            depends_on: Optional tuple of middleware classes or instances that must be
+                executed before this middleware.
         """
         super().__init__()
         self._workspace_root = Path(workspace_root) if workspace_root else None
@@ -569,6 +572,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
         )
         self._startup_commands = self._normalize_commands(startup_commands)
         self._shutdown_commands = self._normalize_commands(shutdown_commands)
+        self.depends_on = depends_on
 
         # Create a proper tool that executes directly (no interception needed)
         description = tool_description or DEFAULT_TOOL_DESCRIPTION

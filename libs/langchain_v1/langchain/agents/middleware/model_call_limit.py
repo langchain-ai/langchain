@@ -129,6 +129,7 @@ class ModelCallLimitMiddleware(
         thread_limit: int | None = None,
         run_limit: int | None = None,
         exit_behavior: Literal["end", "error"] = "end",
+        depends_on: tuple[type[AgentMiddleware] | AgentMiddleware, ...] = (),
     ) -> None:
         """Initialize the call tracking middleware.
 
@@ -145,6 +146,8 @@ class ModelCallLimitMiddleware(
                     inject an artificial AI message indicating that the limit was
                     exceeded.
                 - `'error'`: Raise a `ModelCallLimitExceededError`
+            depends_on: Optional tuple of middleware classes or instances that must be
+                executed before this middleware.
 
         Raises:
             ValueError: If both limits are `None` or if `exit_behavior` is invalid.
@@ -162,6 +165,7 @@ class ModelCallLimitMiddleware(
         self.thread_limit = thread_limit
         self.run_limit = run_limit
         self.exit_behavior = exit_behavior
+        self.depends_on = depends_on
 
     @hook_config(can_jump_to=["end"])
     @override
