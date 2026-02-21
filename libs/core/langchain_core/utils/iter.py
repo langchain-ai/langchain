@@ -42,9 +42,9 @@ def tee_peer(
 ) -> Generator[T, None, None]:
     """An individual iterator of a `.tee`.
 
-    This function is a generator that yields items from the shared iterator
-    `iterator`. It buffers items until the least advanced iterator has
-    yielded them as well. The buffer is shared with all other peers.
+    This function is a generator that yields items from the shared iterator `iterator`.
+    It buffers items until the least advanced iterator has yielded them as well. The
+    buffer is shared with all other peers.
 
     Args:
         iterator: The shared iterator.
@@ -91,13 +91,13 @@ def tee_peer(
 class Tee(Generic[T]):
     """Create `n` separate asynchronous iterators over `iterable`.
 
-    This splits a single `iterable` into multiple iterators, each providing
-    the same items in the same order.
-    All child iterators may advance separately but share the same items
-    from `iterable` -- when the most advanced iterator retrieves an item,
-    it is buffered until the least advanced iterator has yielded it as well.
-    A `tee` works lazily and can handle an infinite `iterable`, provided
-    that all iterators advance.
+    This splits a single `iterable` into multiple iterators, each providing the same
+    items in the same order.
+
+    All child iterators may advance separately but share the same items from `iterable`
+    -- when the most advanced iterator retrieves an item, it is buffered until the least
+    advanced iterator has yielded it as well. A `tee` works lazily and can handle an
+    infinite `iterable`, provided that all iterators advance.
 
     ```python
     async def derivative(sensor_data):
@@ -106,23 +106,23 @@ class Tee(Generic[T]):
         return a.map(operator.sub, previous, current)
     ```
 
-    Unlike `itertools.tee`, `.tee` returns a custom type instead
-    of a :py`tuple`. Like a tuple, it can be indexed, iterated and unpacked
-    to get the child iterators. In addition, its `.tee.aclose` method
-    immediately closes all children, and it can be used in an `async with` context
-    for the same effect.
+    Unlike `itertools.tee`, `.tee` returns a custom type instead of a `tuple`. Like a
+    tuple, it can be indexed, iterated and unpacked to get the child iterators. In
+    addition, its `.tee.aclose` method immediately closes all children, and it can be
+    used in an `async with` context for the same effect.
 
-    If `iterable` is an iterator and read elsewhere, `tee` will *not*
-    provide these items. Also, `tee` must internally buffer each item until the
-    last iterator has yielded it; if the most and least advanced iterator differ
-    by most data, using a :py`list` is more efficient (but not lazy).
+    If `iterable` is an iterator and read elsewhere, `tee` will *not* provide these
+    items. Also, `tee` must internally buffer each item until the last iterator has
+    yielded it; if the most and least advanced iterator differ by most data, using a
+    `list` is more efficient (but not lazy).
 
-    If the underlying iterable is concurrency safe (`anext` may be awaited
-    concurrently) the resulting iterators are concurrency safe as well. Otherwise,
-    the iterators are safe if there is only ever one single "most advanced" iterator.
-    To enforce sequential use of `anext`, provide a `lock`
-    - e.g. an :py`asyncio.Lock` instance in an :py:mod:`asyncio` application -
-    and access is automatically synchronised.
+    If the underlying iterable is concurrency safe (`anext` may be awaited concurrently)
+    the resulting iterators are concurrency safe as well. Otherwise, the iterators are
+    safe if there is only ever one single "most advanced" iterator. To enforce
+    sequential use of `anext`, provide a `lock`
+
+    - e.g., an `asyncio.Lock` instance in an `asyncio` application - and access is
+        automatically synchronised.
 
     """
 
@@ -176,7 +176,7 @@ class Tee(Generic[T]):
         yield from self._children
 
     def __enter__(self) -> "Tee[T]":
-        """Return Tee instance."""
+        """Return `Tee` instance."""
         return self
 
     def __exit__(
@@ -188,7 +188,7 @@ class Tee(Generic[T]):
         """Close all child iterators.
 
         Returns:
-            False (exception not suppressed).
+            `False` (exception not suppressed).
         """
         self.close()
         return False
@@ -207,7 +207,9 @@ def batch_iterate(size: int | None, iterable: Iterable[T]) -> Iterator[list[T]]:
     """Utility batching function.
 
     Args:
-        size: The size of the batch. If `None`, returns a single batch.
+        size: The size of the batch.
+
+            If `None`, returns a single batch.
         iterable: The iterable to batch.
 
     Yields:

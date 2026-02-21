@@ -165,6 +165,7 @@ def test_summarization_middleware_helper_methods() -> None:
     assert isinstance(new_messages[0], HumanMessage)
     assert "Here is a summary of the conversation to date:" in new_messages[0].content
     assert summary in new_messages[0].content
+    assert new_messages[0].additional_kwargs.get("lc_source") == "summarization"
 
 
 def test_summarization_middleware_summary_creation() -> None:
@@ -352,8 +353,8 @@ def test_summarization_middleware_token_retention_preserves_ai_tool_pairs() -> N
         model=ProfileChatModel(),
         trigger=("fraction", 0.1),
         keep=("fraction", 0.5),
+        token_counter=token_counter,
     )
-    middleware.token_counter = token_counter
 
     # Total tokens: 300 + 200 + 50 + 180 + 160 = 890
     # Target keep: 500 tokens (50% of 1000)
@@ -1027,6 +1028,32 @@ def test_summarization_middleware_many_parallel_tool_calls_safety() -> None:
     assert middleware._find_safe_cutoff_point(messages, 1) == 1
 
 
+def test_summarization_before_model_uses_unscaled_tokens_for_cutoff() -> None:
+    calls: list[dict[str, Any]] = []
+
+    def fake_counter(_: Iterable[MessageLikeRepresentation], **kwargs: Any) -> int:
+        calls.append(kwargs)
+        return 100
+
+    with patch(
+        "langchain.agents.middleware.summarization.count_tokens_approximately",
+        side_effect=fake_counter,
+    ) as mock_counter:
+        middleware = SummarizationMiddleware(
+            model=MockChatModel(),
+            trigger=("tokens", 1),
+            keep=("tokens", 1),
+            token_counter=mock_counter,
+        )
+        state = AgentState[Any](messages=[HumanMessage(content="one"), HumanMessage(content="two")])
+        assert middleware.before_model(state, Runtime()) is not None
+
+    # Test we support partial token counting (which for default token counter does not
+    # use use_usage_metadata_scaling)
+    assert any(call.get("use_usage_metadata_scaling") is False for call in calls)
+    assert any(call.get("use_usage_metadata_scaling") is True for call in calls)
+
+
 def test_summarization_middleware_find_safe_cutoff_preserves_ai_tool_pair() -> None:
     """Test `_find_safe_cutoff` preserves AI/Tool message pairs together."""
     middleware = SummarizationMiddleware(
@@ -1213,3 +1240,73 @@ def test_usage_metadata_trigger() -> None:
         ]
     )
     assert not middleware._should_summarize(messages, 0)
+
+
+class ConfigCapturingModel(BaseChatModel):
+    """Mock model that captures the config passed to invoke/ainvoke."""
+
+    captured_configs: list[RunnableConfig | None] = Field(default_factory=list, exclude=True)
+
+    @override
+    def invoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_configs.append(config)
+        return AIMessage(content="Summary")
+
+    @override
+    async def ainvoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_configs.append(config)
+        return AIMessage(content="Summary")
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+    @property
+    def _llm_type(self) -> str:
+        return "config-capturing"
+
+
+@pytest.mark.parametrize("use_async", [False, True], ids=["sync", "async"])
+async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None:  # noqa: FBT001
+    """Test that summary creation passes `lc_source` metadata to the model.
+
+    When called outside a LangGraph runnable context, `get_config()` raises
+    `RuntimeError`. The middleware catches this and still passes the `lc_source`
+    metadata to the model.
+    """
+    model = ConfigCapturingModel()
+    model.captured_configs = []  # Reset for this test
+    middleware = SummarizationMiddleware(model=model, trigger=("tokens", 1000))
+    messages: list[AnyMessage] = [HumanMessage(content="Hello"), AIMessage(content="Hi")]
+
+    if use_async:
+        summary = await middleware._acreate_summary(messages)
+    else:
+        summary = middleware._create_summary(messages)
+
+    assert summary == "Summary"
+    assert len(model.captured_configs) == 1
+    config = model.captured_configs[0]
+    assert config is not None
+    assert "metadata" in config
+    assert config["metadata"]["lc_source"] == "summarization"

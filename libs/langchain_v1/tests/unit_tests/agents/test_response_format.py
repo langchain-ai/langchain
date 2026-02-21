@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 from langchain.agents import create_agent
+from langchain.agents.factory import _supports_provider_strategy
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     ModelCallResult,
@@ -196,6 +197,37 @@ class TestResponseFormatAsModel:
 
         assert response["structured_response"] == EXPECTED_WEATHER_DICT
         assert len(response["messages"]) == 5
+
+    def test_autostrategy_with_anonymous_json_schema(self) -> None:
+        """Test response_format as anonymous JSON schema (AutoStrategy).
+
+        Verifies that tool name mismatch is avoided when using AutoStrategy with
+        schemas that generate random names by ensuring the ToolStrategy instance
+        is reused during execution.
+        """
+        anonymous_schema = {
+            "type": "object",
+            "properties": {
+                "result": {"type": "string"},
+            },
+            "required": ["result"],
+        }
+
+        with patch("langchain.agents.factory._supports_provider_strategy", return_value=False):
+            model = FakeToolCallingModel(tool_calls=[])
+            agent = create_agent(model, [], response_format=anonymous_schema)
+
+            # We expect a recursion error or similar because we didn't mock the tool call
+            # matching our anonymous schema, but it should NOT raise ValueError
+            # during the binding phase.
+            try:
+                agent.invoke({"messages": [HumanMessage("hi")]}, config={"recursion_limit": 1})
+            except ValueError as e:
+                if "which wasn't declared" in str(e):
+                    pytest.fail(f"Tool name mismatch occurred: {e}")
+            except Exception:  # noqa: S110
+                # Other exceptions mean we passed the binding phase
+                pass
 
 
 class TestResponseFormatAsToolStrategy:
@@ -866,3 +898,44 @@ def test_union_of_types() -> None:
 
     assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
     assert len(response["messages"]) == 5
+
+
+class TestSupportsProviderStrategy:
+    """Unit tests for `_supports_provider_strategy`."""
+
+    @staticmethod
+    def _make_structured_model(model_name: str):
+        class GeminiTestChatModel(GenericFakeChatModel):
+            model_name: str
+
+        return GeminiTestChatModel(
+            messages=iter(
+                [
+                    AIMessage(content="test-response"),
+                ]
+            ),
+            profile={"structured_output": True},
+            model_name=model_name,
+        )
+
+    def test_blocks_gemini_v2_with_tools(self) -> None:
+        """Gemini 2 series models cannot use provider strategy with tools."""
+        model = self._make_structured_model("gemini-2.5-flash")
+        assert not _supports_provider_strategy(model, tools=[get_weather])
+
+    def test_allows_gemini_v3_with_tools(self) -> None:
+        """Gemini 3 series models support structured output alongside tools."""
+        model = self._make_structured_model("gemini-3-pro-preview")
+        assert _supports_provider_strategy(model, tools=[get_weather])
+
+    @pytest.mark.parametrize(
+        "alias",
+        [
+            "gemini-flash-latest",
+            "gemini-flash-lite-latest",
+        ],
+    )
+    def test_blocks_gemini_latest_aliases(self, alias: str) -> None:
+        """Latest aliases stay blocked until they point to Gemini 3."""
+        model = self._make_structured_model(alias)
+        assert not _supports_provider_strategy(model, tools=[get_weather])

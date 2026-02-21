@@ -5,6 +5,7 @@ from __future__ import annotations
 import random
 import re
 import string
+import textwrap
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -107,7 +108,7 @@ def test_character_text_splitter_longer_words() -> None:
 
 # edge cases
 def test_character_text_splitter_no_separator_in_text() -> None:
-    """Text splitting where there is no seperator but a single word."""
+    """Text splitting where there is no separator but a single word."""
     text = "singleword"
     splitter = CharacterTextSplitter(separator=" ", chunk_size=10, chunk_overlap=0)
     output = splitter.split_text(text)
@@ -621,6 +622,34 @@ def test_svelte_text_splitter() -> None:
         "<style>\n  button {\n    color: blue;\n  }\n</style>",
     ]
     assert [s.strip() for s in splits] == [s.strip() for s in expected_splits]
+
+
+def test_jsx_splitter_separator_not_mutated_across_calls() -> None:
+    """Regression test: repeated split_text() calls must not mutate separators.
+
+    Calling split_text() multiple times on the same JSFrameworkTextSplitter
+    instance must not grow the internal separator list between calls.
+
+    Before the fix, self._separators was overwritten with the full expanded list
+    on every invocation, so a second call would start with the already-expanded
+    list and append even more separators.
+    """
+    splitter = JSFrameworkTextSplitter(chunk_size=30, chunk_overlap=0)
+
+    # Record separator count after constructing (should be 0 - no custom separators)
+    initial_sep_count = len(splitter._separators)
+
+    # Call split_text twice; the results should be identical for identical input
+    splits_first = splitter.split_text(FAKE_JSX_TEXT)
+    splits_second = splitter.split_text(FAKE_JSX_TEXT)
+
+    assert splits_first == splits_second, (
+        "split_text() must return identical results on repeated calls with the "
+        "same input"
+    )
+    assert len(splitter._separators) == initial_sep_count, (
+        "split_text() must not mutate self._separators between calls"
+    )
 
 
 CHUNK_SIZE = 16
@@ -3971,6 +4000,79 @@ def test_html_splitter_keep_separator_default() -> None:
     ]
 
     assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_preserved_elements_reverse_order() -> None:
+    """Test HTML splitter with preserved elements and conflicting placeholders.
+
+    This test validates that preserved elements are reinserted in reverse order
+    to prevent conflicts when one placeholder might be a substring of another.
+    """
+    html_content = """
+    <h1>Section 1</h1>
+    <table>
+        <tr><td>Table 1 content</td></tr>
+    </table>
+    <p>Some text between tables</p>
+    <table>
+        <tr><td>Table 10 content</td></tr>
+    </table>
+    <ul>
+        <li>List item 1</li>
+        <li>List item 10</li>
+    </ul>
+    """
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            elements_to_preserve=["table", "ul"],
+            max_chunk_size=100,
+        )
+    documents = splitter.split_text(html_content)
+
+    # Verify that all preserved elements are correctly reinserted
+    # This would fail if placeholders were processed in forward order
+    # when one placeholder is a substring of another
+    assert len(documents) >= 1
+    # Check that table content is preserved
+    content = " ".join(doc.page_content for doc in documents)
+    assert "Table 1 content" in content
+    assert "Table 10 content" in content
+    assert "List item 1" in content
+    assert "List item 10" in content
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_replacement_order() -> None:
+    body = textwrap.dedent(
+        """
+        <p>Hello1</p>
+        <p>Hello2</p>
+        <p>Hello3</p>
+        <p>Hello4</p>
+        <p>Hello5</p>
+        <p>Hello6</p>
+        <p>Hello7</p>
+        <p>Hello8</p>
+        <p>Hello9</p>
+        <p>Hello10</p>
+        <p>Hello11</p>
+        <p>Hello12</p>
+        <p>Hello13</p>
+        <p>Hello14</p>
+        """
+    )
+
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[],
+            elements_to_preserve=["p"],
+        )
+    documents = splitter.split_text(body)
+    assert len(documents) == 1
+    content = documents[0].page_content
+    assert content == " ".join([f"Hello{i}" for i in range(1, 15)])
 
 
 def test_character_text_splitter_discard_regex_separator_on_merge() -> None:

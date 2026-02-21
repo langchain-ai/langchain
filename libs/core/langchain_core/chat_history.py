@@ -1,4 +1,4 @@
-"""**Chat message history** stores a history of the message interactions in a chat."""
+"""Chat message history stores a history of the message interactions in a chat."""
 
 from __future__ import annotations
 
@@ -26,19 +26,19 @@ class BaseChatMessageHistory(ABC):
 
     Implementations are expected to over-ride all or some of the following methods:
 
-    * add_messages: sync variant for bulk addition of messages
-    * aadd_messages: async variant for bulk addition of messages
-    * messages: sync variant for getting messages
-    * aget_messages: async variant for getting messages
-    * clear: sync variant for clearing messages
-    * aclear: async variant for clearing messages
+    * `add_messages`: sync variant for bulk addition of messages
+    * `aadd_messages`: async variant for bulk addition of messages
+    * `messages`: sync variant for getting messages
+    * `aget_messages`: async variant for getting messages
+    * `clear`: sync variant for clearing messages
+    * `aclear`: async variant for clearing messages
 
-    add_messages contains a default implementation that calls add_message
+    `add_messages` contains a default implementation that calls `add_message`
     for each message in the sequence. This is provided for backwards compatibility
-    with existing implementations which only had add_message.
+    with existing implementations which only had `add_message`.
 
     Async variants all have default implementations that call the sync variants.
-    Implementers can choose to over-ride the async implementations to provide
+    Implementers can choose to override the async implementations to provide
     truly async implementations.
 
     Usage guidelines:
@@ -47,8 +47,7 @@ class BaseChatMessageHistory(ABC):
     over `add_message` or other variants like `add_user_message` and `add_ai_message`
     to avoid unnecessary round-trips to the underlying persistence layer.
 
-    Example: Shows a default implementation.
-
+    Example:
         ```python
         import json
         import os
@@ -93,9 +92,8 @@ class BaseChatMessageHistory(ABC):
     messages: list[BaseMessage]
     """A property or attribute that returns a list of messages.
 
-    In general, getting the messages may involve IO to the underlying
-    persistence layer, so this operation is expected to incur some
-    latency.
+    In general, getting the messages may involve IO to the underlying persistence
+    layer, so this operation is expected to incur some latency.
     """
 
     async def aget_messages(self) -> list[BaseMessage]:
@@ -103,8 +101,8 @@ class BaseChatMessageHistory(ABC):
 
         Can over-ride this method to provide an efficient async implementation.
 
-        In general, fetching messages may involve IO to the underlying
-        persistence layer.
+        In general, fetching messages may involve IO to the underlying persistence
+        layer.
 
         Returns:
             The messages.
@@ -115,6 +113,7 @@ class BaseChatMessageHistory(ABC):
         """Convenience method for adding a human message string to the store.
 
         !!! note
+
             This is a convenience method. Code should favor the bulk `add_messages`
             interface instead to save on round-trips to the persistence layer.
 
@@ -132,6 +131,7 @@ class BaseChatMessageHistory(ABC):
         """Convenience method for adding an `AIMessage` string to the store.
 
         !!! note
+
             This is a convenience method. Code should favor the bulk `add_messages`
             interface instead to save on round-trips to the persistence layer.
 
@@ -149,7 +149,7 @@ class BaseChatMessageHistory(ABC):
         """Add a Message object to the store.
 
         Args:
-            message: A BaseMessage object to store.
+            message: A `BaseMessage` object to store.
 
         Raises:
             NotImplementedError: If the sub-class has not implemented an efficient
@@ -212,8 +212,9 @@ class InMemoryChatMessageHistory(BaseChatMessageHistory, BaseModel):
         """Async version of getting messages.
 
         Can over-ride this method to provide an efficient async implementation.
-        In general, fetching messages may involve IO to the underlying
-        persistence layer.
+
+        In general, fetching messages may involve IO to the underlying persistence
+        layer.
 
         Returns:
             List of messages.

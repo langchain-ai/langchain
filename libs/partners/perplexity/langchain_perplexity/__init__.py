@@ -1,3 +1,5 @@
+"""Perplexity AI integration for LangChain."""
+
 from langchain_perplexity.chat_models import ChatPerplexity
 from langchain_perplexity.output_parsers import (
     ReasoningJsonOutputParser,

@@ -35,8 +35,9 @@ def _call(cls: type[BaseChatModel], **kwargs: Any) -> BaseChatModel:
     return cls(**kwargs)
 
 
-_SUPPORTED_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
+_BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
     "anthropic": ("langchain_anthropic", "ChatAnthropic", _call),
+    "anthropic_bedrock": ("langchain_aws", "ChatAnthropicBedrock", _call),
     "azure_ai": ("langchain_azure_ai.chat_models", "AzureAIChatCompletionsModel", _call),
     "azure_openai": ("langchain_openai", "AzureChatOpenAI", _call),
     "bedrock": ("langchain_aws", "ChatBedrock", _call),
@@ -66,6 +67,7 @@ _SUPPORTED_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] =
     "nvidia": ("langchain_nvidia_ai_endpoints", "ChatNVIDIA", _call),
     "ollama": ("langchain_ollama", "ChatOllama", _call),
     "openai": ("langchain_openai", "ChatOpenAI", _call),
+    "openrouter": ("langchain_openrouter", "ChatOpenRouter", _call),
     "perplexity": ("langchain_perplexity", "ChatPerplexity", _call),
     "together": ("langchain_together", "ChatTogether", _call),
     "upstage": ("langchain_upstage", "ChatUpstage", _call),
@@ -81,6 +83,18 @@ Each entry maps a provider key to a tuple of:
     not exported from the package root.
 - `class_name`: The name of the chat model class to import.
 - `creator_func`: A callable that instantiates the class with provided kwargs.
+
+!!! note
+
+    This dict is not exhaustive of all providers supported by LangChain, but is
+    meant to cover the most popular ones and serve as a template for adding more
+    providers in the future. If a provider is not in this dict, it can still be
+    used with `init_chat_model` as long as its integration package is installed,
+    but the provider key will not be inferred from the model name and must be
+    specified explicitly via the `model_provider` parameter.
+
+    Refer to the LangChain [integration documentation](https://docs.langchain.com/oss/python/integrations/providers/overview)
+    for a full list of supported providers and their corresponding packages.
 """
 
 
@@ -111,7 +125,7 @@ def _import_module(module: str, class_name: str) -> ModuleType:
         raise ImportError(msg) from e
 
 
-@functools.lru_cache(maxsize=len(_SUPPORTED_PROVIDERS))
+@functools.lru_cache(maxsize=len(_BUILTIN_PROVIDERS))
 def _get_chat_model_creator(
     provider: str,
 ) -> Callable[..., BaseChatModel]:
@@ -122,22 +136,22 @@ def _get_chat_model_creator(
     Args:
         provider: The name of the model provider (e.g., `'openai'`, `'anthropic'`).
 
-            Must be a key in `_SUPPORTED_PROVIDERS`.
+            Must be a key in `_BUILTIN_PROVIDERS`.
 
     Returns:
         A callable that accepts model kwargs and returns a `BaseChatModel` instance for
             the specified provider.
 
     Raises:
-        ValueError: If the provider is not in `_SUPPORTED_PROVIDERS`.
+        ValueError: If the provider is not in `_BUILTIN_PROVIDERS`.
         ImportError: If the provider's integration package is not installed.
     """
-    if provider not in _SUPPORTED_PROVIDERS:
-        supported = ", ".join(_SUPPORTED_PROVIDERS.keys())
+    if provider not in _BUILTIN_PROVIDERS:
+        supported = ", ".join(_BUILTIN_PROVIDERS.keys())
         msg = f"Unsupported {provider=}.\n\nSupported model providers are: {supported}"
         raise ValueError(msg)
 
-    pkg, class_name, creator_func = _SUPPORTED_PROVIDERS[provider]
+    pkg, class_name, creator_func = _BUILTIN_PROVIDERS[provider]
     try:
         module = _import_module(pkg, class_name)
     except ImportError as e:
@@ -209,6 +223,7 @@ def init_chat_model(
         changing your code
 
     !!! note "Installation requirements"
+
         Requires the integration package for the chosen model provider to be installed.
 
         See the `model_provider` parameter below for specific package names
@@ -219,6 +234,9 @@ def init_chat_model(
 
     Args:
         model: The model name, optionally prefixed with provider (e.g., `'openai:gpt-4o'`).
+
+            Prefer exact model IDs from provider docs over aliases for reliable behavior
+            (e.g., dated versions like `'...-20250514'` instead of `'...-latest'`).
 
             Will attempt to infer `model_provider` from model if not specified.
 
@@ -247,6 +265,7 @@ def init_chat_model(
             - `azure_ai`                -> [`langchain-azure-ai`](https://docs.langchain.com/oss/python/integrations/providers/microsoft)
             - `google_vertexai`         -> [`langchain-google-vertexai`](https://docs.langchain.com/oss/python/integrations/providers/google)
             - `google_genai`            -> [`langchain-google-genai`](https://docs.langchain.com/oss/python/integrations/providers/google)
+            - `anthropic_bedrock`       -> [`langchain-aws`](https://docs.langchain.com/oss/python/integrations/providers/aws)
             - `bedrock`                 -> [`langchain-aws`](https://docs.langchain.com/oss/python/integrations/providers/aws)
             - `bedrock_converse`        -> [`langchain-aws`](https://docs.langchain.com/oss/python/integrations/providers/aws)
             - `cohere`                  -> [`langchain-cohere`](https://docs.langchain.com/oss/python/integrations/providers/cohere)
@@ -261,6 +280,7 @@ def init_chat_model(
             - `ibm`                     -> [`langchain-ibm`](https://docs.langchain.com/oss/python/integrations/providers/ibm)
             - `nvidia`                  -> [`langchain-nvidia-ai-endpoints`](https://docs.langchain.com/oss/python/integrations/providers/nvidia)
             - `xai`                     -> [`langchain-xai`](https://docs.langchain.com/oss/python/integrations/providers/xai)
+            - `openrouter`              -> [`langchain-openrouter`](https://docs.langchain.com/oss/python/integrations/providers/openrouter)
             - `perplexity`              -> [`langchain-perplexity`](https://docs.langchain.com/oss/python/integrations/providers/perplexity)
             - `upstage`                 -> [`langchain-upstage`](https://docs.langchain.com/oss/python/integrations/providers/upstage)
 
@@ -433,6 +453,13 @@ def init_chat_model(
         ```
 
     """  # noqa: E501
+    if model is not None and not isinstance(model, str):
+        msg = (  # type: ignore[unreachable]
+            f"`model` must be a string (e.g., 'openai:gpt-4o'), got "
+            f"{type(model).__name__}. If you've already constructed a chat model "
+            f"object, use it directly instead of passing it to init_chat_model()."
+        )
+        raise TypeError(msg)
     if not model and not configurable_fields:
         configurable_fields = ("model", "model_provider")
     config_prefix = config_prefix or ""
@@ -545,7 +572,7 @@ def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
     if (
         not model_provider
         and ":" in model
-        and model.split(":", maxsplit=1)[0] in _SUPPORTED_PROVIDERS
+        and model.split(":", maxsplit=1)[0] in _BUILTIN_PROVIDERS
     ):
         model_provider = model.split(":", maxsplit=1)[0]
         model = ":".join(model.split(":")[1:])
@@ -555,7 +582,7 @@ def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
 
     if not model_provider:
         # Enhanced error message with suggestions
-        supported_list = ", ".join(sorted(_SUPPORTED_PROVIDERS))
+        supported_list = ", ".join(sorted(_BUILTIN_PROVIDERS))
         msg = (
             f"Unable to infer model provider for {model=}. "
             f"Please specify 'model_provider' directly.\n\n"
