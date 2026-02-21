@@ -71,9 +71,11 @@ class LLMManagerMixin:
         tags: list[str] | None = None,
         **kwargs: Any,
     ) -> Any:
-        """Run on new output token. Only available when streaming is enabled.
+        """Run on new output token.
 
-        For both chat models and non-chat models (legacy LLMs).
+        Only available when streaming is enabled.
+
+        For both chat models and non-chat models (legacy text completion LLMs).
 
         Args:
             token: The new token.
@@ -250,8 +252,9 @@ class CallbackManagerMixin:
         """Run when LLM starts running.
 
         !!! warning
-            This method is called for non-chat models (regular LLMs). If you're
-            implementing a handler for a chat model, you should use
+
+            This method is called for non-chat models (regular text completion LLMs). If
+            you're implementing a handler for a chat model, you should use
             `on_chat_model_start` instead.
 
         Args:
@@ -278,6 +281,7 @@ class CallbackManagerMixin:
         """Run when a chat model starts running.
 
         !!! warning
+
             This method is called for chat models. If you're implementing a handler for
             a non-chat model, you should use `on_llm_start` instead.
 
@@ -418,8 +422,9 @@ class RunManagerMixin:
 
         Args:
             name: The name of the custom event.
-            data: The data for the custom event. Format will match the format specified
-                by the user.
+            data: The data for the custom event.
+
+                Format will match the format specified by the user.
             run_id: The ID of the run.
             tags: The tags associated with the custom event (includes inherited tags).
             metadata: The metadata associated with the custom event (includes inherited
@@ -496,8 +501,9 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run when the model starts running.
 
         !!! warning
-            This method is called for non-chat models (regular LLMs). If you're
-            implementing a handler for a chat model, you should use
+
+            This method is called for non-chat models (regular text completion LLMs). If
+            you're implementing a handler for a chat model, you should use
             `on_chat_model_start` instead.
 
         Args:
@@ -524,6 +530,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run when a chat model starts running.
 
         !!! warning
+
             This method is called for chat models. If you're implementing a handler for
             a non-chat model, you should use `on_llm_start` instead.
 
@@ -553,7 +560,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run on new output token. Only available when streaming is enabled.
 
-        For both chat models and non-chat models (legacy LLMs).
+        For both chat models and non-chat models (legacy text completion LLMs).
 
         Args:
             token: The new token.
@@ -878,13 +885,13 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
         Args:
             name: The name of the custom event.
-            data: The data for the custom event. Format will match
-                the format specified by the user.
+            data: The data for the custom event.
+
+                Format will match the format specified by the user.
             run_id: The ID of the run.
-            tags: The tags associated with the custom event
-                (includes inherited tags).
-            metadata: The metadata associated with the custom event
-                (includes inherited metadata).
+            tags: The tags associated with the custom event (includes inherited tags).
+            metadata: The metadata associated with the custom event (includes inherited
+                metadata).
         """
 
 
@@ -945,9 +952,9 @@ class BaseCallbackManager(CallbackManagerMixin):
         Returns:
             The merged callback manager of the same type as the current object.
 
-        Example: Merging two callback managers.
-
+        Example:
             ```python
+            # Merging two callback managers`
             from langchain_core.callbacks.manager import (
                 CallbackManager,
                 trace_as_chain_group,

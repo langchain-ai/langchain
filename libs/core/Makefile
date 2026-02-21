@@ -1,4 +1,4 @@
-.PHONY: all format lint test tests test_watch integration_tests help extended_tests
+.PHONY: all format lint type test tests test_watch integration_tests help extended_tests check_version
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -13,6 +13,7 @@ test tests:
 	env \
 	-u LANGCHAIN_TRACING_V2 \
 	-u LANGCHAIN_API_KEY \
+	-u LANGSMITH_API_KEY \
 	-u LANGSMITH_TRACING \
 	-u LANGCHAIN_PROJECT \
 	uv run --group test pytest -n auto --disable-socket --allow-unix-socket $(TEST_FILE)
@@ -21,6 +22,7 @@ test_watch:
 	env \
 	-u LANGCHAIN_TRACING_V2 \
 	-u LANGCHAIN_API_KEY \
+	-u LANGSMITH_API_KEY \
 	-u LANGSMITH_TRACING \
 	-u LANGCHAIN_PROJECT \
 	uv run --group test ptw --snapshot-update --now . --disable-socket --allow-unix-socket -vv -- $(TEST_FILE)
@@ -30,6 +32,9 @@ test_profile:
 
 check_imports: $(shell find langchain_core -name '*.py')
 	uv run --group test python ./scripts/check_imports.py $^
+
+check_version:
+	uv run python ./scripts/check_version.py
 
 extended_tests:
 	uv run --group test pytest --only-extended --disable-socket --allow-unix-socket $(TEST_FILE)
@@ -54,6 +59,9 @@ lint lint_diff lint_package lint_tests:
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES) --diff
 	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && uv run --all-groups mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
+type:
+	mkdir -p $(MYPY_CACHE) && uv run --all-groups mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+
 format format_diff:
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check --fix $(PYTHON_FILES)
@@ -69,6 +77,8 @@ help:
 	@echo '----'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
+	@echo 'type                         - run type checking'
+	@echo 'check_version                - validate version consistency'
 	@echo 'test                         - run unit tests'
 	@echo 'tests                        - run unit tests'
 	@echo 'test TEST_FILE=<test_file>   - run all tests in file'

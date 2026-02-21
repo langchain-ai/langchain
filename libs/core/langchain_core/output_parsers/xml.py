@@ -42,16 +42,18 @@ Here are the output tags:
 class _StreamingParser:
     """Streaming parser for XML.
 
-    This implementation is pulled into a class to avoid implementation
-    drift between transform and atransform of the `XMLOutputParser`.
+    This implementation is pulled into a class to avoid implementation drift between
+    `transform` and `atransform` of the `XMLOutputParser`.
     """
 
     def __init__(self, parser: Literal["defusedxml", "xml"]) -> None:
         """Initialize the streaming parser.
 
         Args:
-            parser: Parser to use for XML parsing. Can be either `'defusedxml'` or
-                `'xml'`. See documentation in `XMLOutputParser` for more information.
+            parser: Parser to use for XML parsing.
+
+                Can be either `'defusedxml'` or `'xml'`. See documentation in
+                `XMLOutputParser` for more information.
 
         Raises:
             ImportError: If `defusedxml` is not installed and the `defusedxml` parser is
@@ -160,30 +162,35 @@ class XMLOutputParser(BaseTransformOutputParser):
     For example, with `tags=["foo", "bar", "baz"]`:
 
     1. A well-formatted XML instance:
-        `"<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>"`
+        `'<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>'`
 
     2. A badly-formatted XML instance (missing closing tag for 'bar'):
-        `"<foo>\n   <bar>\n   </foo>"`
+        `'<foo>\n   <bar>\n   </foo>'`
 
     3. A badly-formatted XML instance (unexpected 'tag' element):
-        `"<foo>\n   <tag>\n   </tag>\n</foo>"`
+        `'<foo>\n   <tag>\n   </tag>\n</foo>'`
     """
     encoding_matcher: re.Pattern = re.compile(
         r"<([^>]*encoding[^>]*)>\n(.*)", re.MULTILINE | re.DOTALL
     )
+
     parser: Literal["defusedxml", "xml"] = "defusedxml"
-    """Parser to use for XML parsing. Can be either `'defusedxml'` or `'xml'`.
+    """Parser to use for XML parsing.
 
-    * `'defusedxml'` is the default parser and is used to prevent XML vulnerabilities
-        present in some distributions of Python's standard library xml.
-        `defusedxml` is a wrapper around the standard library parser that
-        sets up the parser with secure defaults.
-    * `'xml'` is the standard library parser.
+    Can be either `'defusedxml'` or `'xml'`.
 
-    Use `xml` only if you are sure that your distribution of the standard library is not
-    vulnerable to XML vulnerabilities.
+    - `'defusedxml'` is the default parser and is used to prevent XML vulnerabilities
+        present in some distributions of Python's standard library xml. `defusedxml` is
+        a wrapper around the standard library parser that sets up the parser with secure
+        defaults.
+    - `'xml'` is the standard library parser.
 
-    Please review the following resources for more information:
+    !!! warning
+
+        Use `xml` only if you are sure that your distribution of the standard library is
+        not vulnerable to XML vulnerabilities.
+
+    Review the following resources for more information:
 
     * https://docs.python.org/3/library/xml.html#xml-vulnerabilities
     * https://github.com/tiran/defusedxml

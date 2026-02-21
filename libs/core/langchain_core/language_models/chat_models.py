@@ -214,7 +214,7 @@ async def agenerate_from_stream(
     """Async generate from a stream.
 
     Args:
-        stream: Iterator of `ChatGenerationChunk`.
+        stream: AsyncIterator of `ChatGenerationChunk`.
 
     Returns:
         Chat result.
@@ -310,7 +310,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     - If `False` (Default), will always use streaming case if available.
 
     The main reason for this flag is that code might be written using `stream` and
-    a user may want to swap out a given model for another model whose the implementation
+    a user may want to swap out a given model for another model whose implementation
     does not properly support streaming.
     """
 
@@ -812,9 +812,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             ls_params["ls_model_name"] = self.model_name
 
         # temperature
-        if "temperature" in kwargs and isinstance(kwargs["temperature"], float):
+        if "temperature" in kwargs and isinstance(kwargs["temperature"], (int, float)):
             ls_params["ls_temperature"] = kwargs["temperature"]
-        elif hasattr(self, "temperature") and isinstance(self.temperature, float):
+        elif hasattr(self, "temperature") and isinstance(
+            self.temperature, (int, float)
+        ):
             ls_params["ls_temperature"] = self.temperature
 
         # max_tokens

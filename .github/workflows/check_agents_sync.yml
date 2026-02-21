@@ -1,0 +1,42 @@
+# Ensures CLAUDE.md and AGENTS.md stay synchronized.
+#
+# These files contain the same development guidelines but are named differently
+# for compatibility with different AI coding assistants (Claude Code uses CLAUDE.md,
+# other tools may use AGENTS.md).
+
+name: "🔄 Check CLAUDE.md / AGENTS.md Sync"
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "CLAUDE.md"
+      - "AGENTS.md"
+  pull_request:
+    paths:
+      - "CLAUDE.md"
+      - "AGENTS.md"
+
+permissions:
+  contents: read
+
+jobs:
+  check-sync:
+    name: "verify files are identical"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "📋 Checkout Code"
+        uses: actions/checkout@v6
+
+      - name: "🔍 Check CLAUDE.md and AGENTS.md are in sync"
+        run: |
+          if ! diff -q CLAUDE.md AGENTS.md > /dev/null 2>&1; then
+            echo "❌ CLAUDE.md and AGENTS.md are out of sync!"
+            echo ""
+            echo "These files must contain identical content."
+            echo "Differences:"
+            echo ""
+            diff --color=always CLAUDE.md AGENTS.md || true
+            exit 1
+          fi
+          echo "✅ CLAUDE.md and AGENTS.md are in sync"
