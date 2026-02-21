@@ -6,6 +6,7 @@ pdf_inputs = true
 pdf_tool_message = true
 image_tool_message = true
 tool_choice = true
+tool_call_streaming = true
 
 [overrides."gpt-3.5-turbo"]
 image_url_inputs = false
