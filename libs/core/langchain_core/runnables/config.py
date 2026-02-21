@@ -20,7 +20,6 @@ from typing import (
     cast,
 )
 
-from langsmith.run_helpers import _set_tracing_context, get_tracing_context
 from typing_extensions import TypedDict
 
 from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
@@ -30,7 +29,6 @@ from langchain_core.runnables.utils import (
     accepts_config,
     accepts_run_manager,
 )
-from langchain_core.tracers.langchain import LangChainTracer
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.base import BaseCallbackManager, Callbacks
@@ -160,6 +158,14 @@ def _set_config_context(
     Returns:
         The token to reset the config and the previous tracing context.
     """
+    # Deferred to avoid importing langsmith at module level (~132ms).
+    from langsmith.run_helpers import (  # noqa: PLC0415
+        _set_tracing_context,
+        get_tracing_context,
+    )
+
+    from langchain_core.tracers.langchain import LangChainTracer  # noqa: PLC0415
+
     config_token = var_child_runnable_config.set(config)
     current_context = None
     if (
@@ -194,6 +200,9 @@ def set_config_context(config: RunnableConfig) -> Generator[Context, None, None]
     Yields:
         The config context.
     """
+    # Deferred to avoid importing langsmith at module level (~132ms).
+    from langsmith.run_helpers import _set_tracing_context  # noqa: PLC0415
+
     ctx = copy_context()
     config_token, _ = ctx.run(_set_config_context, config)
     try:
