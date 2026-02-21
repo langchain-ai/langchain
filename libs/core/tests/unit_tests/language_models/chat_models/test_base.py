@@ -1230,6 +1230,73 @@ def test_model_profiles() -> None:
     assert model_with_profile.profile == {"max_input_tokens": 100}
 
 
+def test_tracing_parameter_invoke() -> None:
+    """Test that the tracing parameter enables tracing for invoke."""
+    llm = FakeListChatModel(responses=["test response"], tracing=True)
+
+    with collect_runs() as cb:
+        llm.invoke("test message")
+        # When tracing=True, we should get a traced run
+        assert len(cb.traced_runs) == 1
+
+
+async def test_tracing_parameter_ainvoke() -> None:
+    """Test that the tracing parameter enables tracing for ainvoke."""
+    llm = FakeListChatModel(responses=["test response"], tracing=True)
+
+    with collect_runs() as cb:
+        await llm.ainvoke("test message")
+        # When tracing=True, we should get a traced run
+        assert len(cb.traced_runs) == 1
+
+
+def test_tracing_parameter_stream() -> None:
+    """Test that the tracing parameter enables tracing for stream."""
+    llm = FakeListChatModel(responses=["test response"], tracing=True)
+
+    with collect_runs() as cb:
+        list(llm.stream("test message"))
+        # When tracing=True, we should get a traced run
+        assert len(cb.traced_runs) == 1
+
+
+async def test_tracing_parameter_astream() -> None:
+    """Test that the tracing parameter enables tracing for astream."""
+    llm = FakeListChatModel(responses=["test response"], tracing=True)
+
+    with collect_runs() as cb:
+        async for _ in llm.astream("test message"):
+            pass
+        # When tracing=True, we should get a traced run
+        assert len(cb.traced_runs) == 1
+
+
+def test_tracing_parameter_batch() -> None:
+    """Test that the tracing parameter enables tracing for batch."""
+    llm = FakeListChatModel(responses=["response1", "response2"], tracing=True)
+
+    with collect_runs() as cb:
+        llm.batch(["message1", "message2"])
+        # When tracing=True, we should get traced runs for each batch item
+        assert len(cb.traced_runs) == 2
+
+
+async def test_tracing_parameter_abatch() -> None:
+    """Test that the tracing parameter enables tracing for abatch."""
+    llm = FakeListChatModel(responses=["response1", "response2"], tracing=True)
+
+    with collect_runs() as cb:
+        await llm.abatch(["message1", "message2"])
+        # When tracing=True, we should get traced runs for each batch item
+        assert len(cb.traced_runs) == 2
+
+
+def test_tracing_parameter_default_false() -> None:
+    """Test that tracing defaults to False."""
+    llm = FakeListChatModel(responses=["test response"])
+    assert llm.tracing is False
+
+
 class MockResponse:
     """Mock response for testing _generate_response_from_error."""
 
