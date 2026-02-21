@@ -85,11 +85,19 @@ class ToolDescription(TypedDict):
     """The function description."""
 
 
+_SCHEMA_COMPOSITION_KEYS = frozenset({"anyOf", "oneOf", "allOf"})
+
+
 def _rm_titles(kv: dict, prev_key: str = "") -> dict:
     """Recursively removes `'title'` fields from a JSON schema dictionary.
 
     Remove `'title'` fields from the input JSON schema dictionary,
     except when a `'title'` appears within a property definition under `'properties'`.
+
+    Also recurses into list values for schema composition keywords (`anyOf`,
+    `oneOf`, `allOf`) so that titles inside optional or union Pydantic v2 model
+    schemas are cleaned up consistently (e.g. `Optional[NestedModel]` expands to
+    `anyOf: [{model schema with title}, {type: null}]` after `$ref` resolution).
 
     Args:
         kv: The input JSON schema as a dictionary.
@@ -112,8 +120,15 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
         elif isinstance(v, dict):
             # Recurse into nested dictionaries
             new_kv[k] = _rm_titles(v, k)
+        elif isinstance(v, list) and k in _SCHEMA_COMPOSITION_KEYS:
+            # Recurse into items of schema composition keywords so that titles
+            # inside nested model schemas (e.g. Optional[NestedModel] → anyOf)
+            # are cleaned up after $ref dereferencing.
+            new_kv[k] = [  # type: ignore[assignment]
+                _rm_titles(item, k) if isinstance(item, dict) else item for item in v
+            ]
         else:
-            # Leave non-dict values untouched
+            # Leave non-dict values and non-composition list values untouched
             new_kv[k] = v
 
     return new_kv

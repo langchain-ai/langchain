@@ -58,6 +58,7 @@ from langchain_core.utils.function_calling import (
     _parse_google_docstring,
     _py_38_safe_origin,
 )
+from langchain_core.utils.json_schema import dereference_refs
 from langchain_core.utils.pydantic import (
     TypeBaseModel,
     _create_subset_model,
@@ -569,7 +570,8 @@ class ChildTool(BaseTool):
         """Get the tool's input arguments schema.
 
         Returns:
-            `dict` containing the tool's argument properties.
+            `dict` containing the tool's argument properties, with any JSON Schema
+            `$ref` references resolved inline (Pydantic v2 nested models).
         """
         if isinstance(self.args_schema, dict):
             json_schema = self.args_schema
@@ -581,6 +583,10 @@ class ChildTool(BaseTool):
                 json_schema = input_schema
             else:
                 json_schema = input_schema.model_json_schema()
+        # Pydantic v2 schemas for nested models use $defs + $ref. Inline all refs so
+        # callers of `args` see fully-resolved property schemas, not bare $ref objects.
+        if "$defs" in json_schema or "definitions" in json_schema:
+            json_schema = dereference_refs(json_schema)
         return cast("dict", json_schema["properties"])
 
     @property

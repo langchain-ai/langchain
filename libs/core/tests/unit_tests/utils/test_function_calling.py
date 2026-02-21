@@ -1,11 +1,13 @@
+import json
 import typing
 from collections.abc import Callable, Iterable, Mapping, MutableMapping, Sequence
-from typing import Annotated as ExtensionsAnnotated
 from typing import (
+    Annotated,
     Any,
     Literal,
     TypeAlias,
 )
+from typing import Annotated as ExtensionsAnnotated
 from typing import TypedDict as TypingTypedDict
 
 import pytest
@@ -406,8 +408,9 @@ def test_convert_to_openai_function(
     assert actual == expected
 
 
-@pytest.mark.xfail(reason="Direct pydantic v2 models not yet supported")
 def test_convert_to_openai_function_nested_v2() -> None:
+    """Pydantic v2 nested models are correctly inlined into tool schemas."""
+
     class NestedV2(BaseModelV2Maybe):
         nested_v2_arg1: int = FieldV2Maybe(..., description="foo")
         nested_v2_arg2: Literal["bar", "baz"] = FieldV2Maybe(
@@ -417,7 +420,31 @@ def test_convert_to_openai_function_nested_v2() -> None:
     def my_function(arg1: NestedV2) -> None:
         """Dummy function."""
 
-    convert_to_openai_function(my_function)
+    expected = {
+        "name": "my_function",
+        "description": "Dummy function.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "arg1": {
+                    "type": "object",
+                    "properties": {
+                        "nested_v2_arg1": {"type": "integer", "description": "foo"},
+                        "nested_v2_arg2": {
+                            "type": "string",
+                            "enum": ["bar", "baz"],
+                            "description": "one of 'bar', 'baz'",
+                        },
+                    },
+                    "required": ["nested_v2_arg1", "nested_v2_arg2"],
+                },
+            },
+            "required": ["arg1"],
+        },
+    }
+
+    actual = convert_to_openai_function(my_function)
+    assert actual == expected
 
 
 def test_convert_to_openai_function_nested() -> None:
@@ -518,23 +545,21 @@ def test_convert_to_openai_function_strict_union_of_objects_arg_type() -> None:
                 "my_arg": {
                     "anyOf": [
                         {
-                            "properties": {"foo": {"title": "Foo", "type": "string"}},
+                            # titles inside anyOf items are removed by _rm_titles
+                            "properties": {"foo": {"type": "string"}},
                             "required": ["foo"],
-                            "title": "NestedA",
                             "type": "object",
                             "additionalProperties": False,
                         },
                         {
-                            "properties": {"bar": {"title": "Bar", "type": "integer"}},
+                            "properties": {"bar": {"type": "integer"}},
                             "required": ["bar"],
-                            "title": "NestedB",
                             "type": "object",
                             "additionalProperties": False,
                         },
                         {
-                            "properties": {"baz": {"title": "Baz", "type": "boolean"}},
+                            "properties": {"baz": {"type": "boolean"}},
                             "required": ["baz"],
-                            "title": "NestedC",
                             "type": "object",
                             "additionalProperties": False,
                         },
@@ -1209,3 +1234,115 @@ def test_convert_to_openai_function_json_schema_missing_title_includes_schema() 
     }
     with pytest.raises(ValueError, match="my_field"):
         convert_to_openai_function(schema_without_title)
+
+
+# ---------------------------------------------------------------------------
+# Nested Pydantic v2 schema tests
+# ---------------------------------------------------------------------------
+
+
+def test_nested_pydantic_v2_optional_field_no_title() -> None:
+    """Optional[NestedModel] schema must not contain title fields anywhere."""
+
+    class Inner(BaseModelV2Maybe):
+        value: str = FieldV2Maybe(..., description="the value")
+
+    class Outer(BaseModelV2Maybe):
+        """Outer schema."""
+
+        inner: Inner
+        opt: Inner | None = None
+
+    result = convert_to_openai_function(Outer)
+    params = result["parameters"]
+
+    # No title should remain anywhere in the parameters dict after conversion
+    params_str = json.dumps(params)
+    assert '"title"' not in params_str, (
+        f"Unexpected 'title' fields remain in schema: {json.dumps(params, indent=2)}"
+    )
+
+    # The inner model must be fully inlined (not a $ref)
+    assert params["properties"]["inner"]["type"] == "object"
+    assert "value" in params["properties"]["inner"]["properties"]
+
+
+def test_nested_pydantic_v2_optional_anyof_no_title() -> None:
+    """Optional[NestedModel] produces anyOf; titles inside anyOf must be removed."""
+
+    class Leaf(BaseModelV2Maybe):
+        x: int = FieldV2Maybe(..., description="an integer")
+
+    class Root(BaseModelV2Maybe):
+        """Root schema."""
+
+        leaf: Leaf | None = None
+
+    result = convert_to_openai_function(Root)
+    params = result["parameters"]
+
+    params_str = json.dumps(params)
+    assert '"title"' not in params_str, (
+        f"Unexpected 'title' fields in Optional[NestedModel] schema: "
+        f"{json.dumps(params, indent=2)}"
+    )
+
+    # leaf must be represented as anyOf
+    leaf_schema = params["properties"]["leaf"]
+    assert "anyOf" in leaf_schema
+    # One branch should be the object schema for Leaf
+    object_branches = [b for b in leaf_schema["anyOf"] if b.get("type") == "object"]
+    assert len(object_branches) == 1
+    assert "x" in object_branches[0]["properties"]
+
+
+def test_nested_pydantic_v2_constraints_preserved() -> None:
+    """Field constraints (min_length, max_length, enum) survive schema conversion."""
+
+    class Inner(BaseModelV2Maybe):
+        name: Annotated[str, FieldV2Maybe(min_length=1, max_length=50)]
+        kind: Literal["fast", "slow"] = "fast"
+
+    class Outer(BaseModelV2Maybe):
+        """Outer schema."""
+
+        inner: Inner
+
+    result = convert_to_openai_function(Outer)
+    inner_props = result["parameters"]["properties"]["inner"]["properties"]
+
+    assert inner_props["name"]["minLength"] == 1
+    assert inner_props["name"]["maxLength"] == 50
+    assert inner_props["kind"]["enum"] == ["fast", "slow"]
+    assert inner_props["kind"]["default"] == "fast"
+
+
+def test_nested_pydantic_v2_three_levels_deep() -> None:
+    """Schemas with three levels of nesting are fully inlined."""
+
+    class Level3(BaseModelV2Maybe):
+        value: str
+
+    class Level2(BaseModelV2Maybe):
+        level3: Level3
+
+    class Level1(BaseModelV2Maybe):
+        """Top-level schema."""
+
+        level2: Level2
+
+    result = convert_to_openai_function(Level1)
+    params = result["parameters"]
+
+    # Navigate three levels deep and verify the leaf field is present
+    l1_props = params["properties"]
+    assert "level2" in l1_props
+    l2_props = l1_props["level2"]["properties"]
+    assert "level3" in l2_props
+    l3_props = l2_props["level3"]["properties"]
+    assert "value" in l3_props
+    assert l3_props["value"]["type"] == "string"
+
+    params_str = json.dumps(params)
+    assert '"$ref"' not in params_str, "Unresolved $ref found in three-level schema"
+    assert '"$defs"' not in params_str, "Dangling $defs found in three-level schema"

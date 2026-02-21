@@ -3631,3 +3631,80 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
+
+
+def test_tool_args_nested_pydantic_v2_no_ref() -> None:
+    """BaseTool.args must return fully inlined schemas for nested Pydantic v2 models.
+
+    Pydantic v2's model_json_schema() uses $defs + $ref for nested models.
+    The `args` property must resolve these references so callers receive
+    a self-contained properties dict without bare $ref entries.
+    """
+
+    class InnerModel(BaseModel):
+        """Inner nested model."""
+
+        value: str = Field(description="The value")
+        count: int = Field(default=0, description="A count")
+
+    class OuterModel(BaseModel):
+        """Tool input schema."""
+
+        inner: InnerModel
+        label: str | None = None
+
+    @tool(args_schema=OuterModel)
+    def nested_tool(inner: InnerModel, label: str | None = None) -> str:
+        """A tool with nested Pydantic v2 model input."""
+        return "ok"
+
+    args = nested_tool.args
+
+    # `inner` must be fully inlined — no $ref allowed
+    assert "$ref" not in json.dumps(args), (
+        f"Unresolved $ref found in tool.args: {json.dumps(args, indent=2)}"
+    )
+
+    # The nested model schema must expose its own properties
+    inner_schema = args["inner"]
+    assert inner_schema.get("type") == "object"
+    assert "value" in inner_schema.get("properties", {})
+    assert "count" in inner_schema.get("properties", {})
+
+
+def test_tool_args_nested_pydantic_v2_invocation() -> None:
+    """Tools with nested Pydantic v2 args_schema can be invoked end-to-end."""
+
+    class Filter(BaseModel):
+        """Filter criteria."""
+
+        field: str = Field(description="Field name to filter on")
+        value: str = Field(description="Value to match")
+
+    class QueryInput(BaseModel):
+        """Tool input schema."""
+
+        query: str = Field(description="The query string")
+        filters: list[Filter] = Field(default_factory=list)
+
+    received: dict = {}
+
+    @tool(args_schema=QueryInput)
+    def query_tool(query: str, filters: list[Filter]) -> str:
+        """Run a query with optional filters."""
+        received["query"] = query
+        received["filters"] = filters
+        return "done"
+
+    result = query_tool.invoke(
+        {
+            "query": "hello",
+            "filters": [{"field": "status", "value": "active"}],
+        }
+    )
+    assert result == "done"
+    assert received["query"] == "hello"
+    assert len(received["filters"]) == 1
+    # Filters should be deserialized as Filter model instances
+    assert isinstance(received["filters"][0], Filter)
+    assert received["filters"][0].field == "status"
