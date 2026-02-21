@@ -25,7 +25,9 @@ from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
 from langgraph.types import Command, Send
 from typing_extensions import NotRequired, Required, TypedDict
 
+from langchain.agents._callbacks import _aemit_agent_finish, _emit_agent_finish
 from langchain.agents.middleware.types import (
+    AGENT_FINISH_NODE,
     AgentMiddleware,
     AgentState,
     ContextT,
@@ -1403,6 +1405,20 @@ def create_agent(
                 f"{m.name}.after_agent", after_agent_node, input_schema=resolved_state_schema
             )
 
+    # Add agent finish callback node (always last node before END)
+    def _agent_finish_sync(state: AgentState[Any], config: RunnableConfig) -> None:
+        _emit_agent_finish(state, config)
+
+    async def _agent_finish_async(state: AgentState[Any], config: RunnableConfig) -> None:
+        await _aemit_agent_finish(state, config)
+
+    graph.add_node(
+        AGENT_FINISH_NODE,
+        RunnableCallable(_agent_finish_sync, _agent_finish_async, trace=False),
+        input_schema=resolved_state_schema,
+    )
+    graph.add_edge(AGENT_FINISH_NODE, END)
+
     # Determine the entry node (runs once at start): before_agent -> before_model -> model
     if middleware_w_before_agent:
         entry_node = f"{middleware_w_before_agent[0].name}.before_agent"
@@ -1425,11 +1441,11 @@ def create_agent(
     else:
         loop_exit_node = "model"
 
-    # Determine the exit node (runs once at end): after_agent or END
+    # Determine the exit node (runs once at end): after_agent or agent_finish
     if middleware_w_after_agent:
         exit_node = f"{middleware_w_after_agent[-1].name}.after_agent"
     else:
-        exit_node = END
+        exit_node = AGENT_FINISH_NODE
 
     graph.add_edge(START, entry_node)
     # add conditional edges only if tools exist
@@ -1579,11 +1595,11 @@ def create_agent(
                 can_jump_to=_get_can_jump_to(m1, "after_agent"),
             )
 
-        # Connect the last after_agent to END
+        # Connect the last after_agent to agent_finish callback node
         _add_middleware_edge(
             graph,
             name=f"{middleware_w_after_agent[0].name}.after_agent",
-            default_destination=END,
+            default_destination=AGENT_FINISH_NODE,
             model_destination=loop_entry_node,
             end_destination=exit_node,
             can_jump_to=_get_can_jump_to(middleware_w_after_agent[0], "after_agent"),

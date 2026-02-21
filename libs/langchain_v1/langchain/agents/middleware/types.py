@@ -45,6 +45,7 @@ if TYPE_CHECKING:
     from langchain.agents.structured_output import ResponseFormat
 
 __all__ = [
+    "AGENT_FINISH_NODE",
     "AgentMiddleware",
     "AgentState",
     "ContextT",
@@ -65,6 +66,13 @@ __all__ = [
     "hook_config",
     "wrap_tool_call",
 ]
+
+AGENT_FINISH_NODE: str = "__agent_finish__"
+"""Internal graph node name for the agent finish callback emission node.
+
+This node always runs as the last node before ``END`` and emits the
+``on_agent_finish`` callback event to all registered handlers.
+"""
 
 JumpTo = Literal["tools", "model", "end"]
 """Destination to jump to when a middleware node returns."""
