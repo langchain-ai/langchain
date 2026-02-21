@@ -4,11 +4,11 @@
 
         `ChatOpenAI` targets
         [official OpenAI API specifications](https://github.com/openai/openai-openapi)
-        only. Non-standard response fields added by third-party providers (e.g.,
-        `reasoning_content`, `reasoning_details`) are **not** extracted or
-        preserved. If you are pointing `base_url` at a provider such as
-        OpenRouter, vLLM, or DeepSeek, use the corresponding provider-specific
-        LangChain package instead (e.g., `ChatDeepSeek`, `ChatOpenRouter`).
+        only. Non-standard response fields added by third-party providers are **not**
+        extracted or preserved unless explicitly supported. If you are pointing
+        `base_url` at a provider such as OpenRouter, vLLM, or DeepSeek, use the
+        corresponding provider-specific LangChain package instead
+        (e.g., `ChatDeepSeek`, `ChatOpenRouter`).
 """
 
 from __future__ import annotations
@@ -202,6 +202,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                     )
         if audio := _dict.get("audio"):
             additional_kwargs["audio"] = audio
+        if reasoning_content := _dict.get("reasoning_content"):
+            additional_kwargs["reasoning_content"] = reasoning_content
         return AIMessage(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -526,8 +528,8 @@ class BaseChatOpenAI(BaseChatModel):
 
     This base class targets
     [official OpenAI API specifications](https://github.com/openai/openai-openapi)
-    only. Non-standard response fields added by third-party providers (e.g.,
-    `reasoning_content`) are not extracted. Use a provider-specific subclass for
+    only. Non-standard response fields added by third-party providers are not
+    extracted unless explicitly supported. Use a provider-specific subclass for
     full provider support.
     """
 
@@ -1561,6 +1563,10 @@ class BaseChatOpenAI(BaseChatModel):
                 generations[0].message.additional_kwargs["parsed"] = message.parsed
             if hasattr(message, "refusal"):
                 generations[0].message.additional_kwargs["refusal"] = message.refusal
+            if hasattr(message, "reasoning_content"):
+                generations[0].message.additional_kwargs["reasoning_content"] = (
+                    message.reasoning_content
+                )
 
         return ChatResult(generations=generations, llm_output=llm_output)
 
@@ -2284,11 +2290,11 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         `ChatOpenAI` targets
         [official OpenAI API specifications](https://github.com/openai/openai-openapi)
-        only. Non-standard response fields added by third-party providers (e.g.,
-        `reasoning_content`, `reasoning_details`) are **not** extracted or
-        preserved. If you are pointing `base_url` at a provider such as
-        OpenRouter, vLLM, or DeepSeek, use the corresponding provider-specific
-        LangChain package instead (e.g., `ChatDeepSeek`, `ChatOpenRouter`).
+        only. Non-standard response fields added by third-party providers are **not**
+        extracted or preserved unless explicitly supported. If you are pointing
+        `base_url` at a provider such as OpenRouter, vLLM, or DeepSeek, use the
+        corresponding provider-specific LangChain package instead
+        (e.g., `ChatDeepSeek`, `ChatOpenRouter`).
 
     ???+ info "Setup"
 
