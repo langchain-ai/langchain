@@ -304,6 +304,12 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "chat_models",
         "ChatMistralAI",
     ),
+    ("langchain", "chat_models", "anthropic_bedrock", "ChatAnthropicBedrock"): (
+        "langchain_aws",
+        "chat_models",
+        "anthropic",
+        "ChatAnthropicBedrock",
+    ),
     ("langchain", "chat_models", "bedrock", "ChatBedrock"): (
         "langchain_aws",
         "chat_models",

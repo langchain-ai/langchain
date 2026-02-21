@@ -13,7 +13,6 @@ from contextlib import asynccontextmanager, contextmanager
 from contextvars import copy_context
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
-from langsmith.run_helpers import get_tracing_context
 from typing_extensions import Self, override
 
 from langchain_core.callbacks.base import (
@@ -29,15 +28,6 @@ from langchain_core.callbacks.base import (
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.globals import get_debug
 from langchain_core.messages import BaseMessage, get_buffer_string
-from langchain_core.tracers.context import (
-    _configure_hooks,
-    _get_trace_callbacks,
-    _get_tracer_project,
-    _tracing_v2_is_enabled,
-    tracing_v2_callback_var,
-)
-from langchain_core.tracers.langchain import LangChainTracer
-from langchain_core.tracers.stdout import ConsoleCallbackHandler
 from langchain_core.utils.env import env_var_is_set
 from langchain_core.utils.uuid import uuid7
 
@@ -104,6 +94,10 @@ def trace_as_chain_group(
             manager.on_chain_end({"output": res})
         ```
     """
+    from langchain_core.tracers.context import (  # noqa: PLC0415 -- deferred to avoid importing langsmith at module level
+        _get_trace_callbacks,
+    )
+
     cb = _get_trace_callbacks(
         project_name, example_id, callback_manager=callback_manager
     )
@@ -183,6 +177,10 @@ async def atrace_as_chain_group(
             await manager.on_chain_end({"output": res})
         ```
     """
+    from langchain_core.tracers.context import (  # noqa: PLC0415 -- deferred to avoid importing langsmith at module level
+        _get_trace_callbacks,
+    )
+
     cb = _get_trace_callbacks(
         project_name, example_id, callback_manager=callback_manager
     )
@@ -2325,6 +2323,18 @@ def _configure(
     Returns:
         The configured callback manager.
     """
+    # Deferred to avoid importing langsmith at module level (~132ms).
+    from langsmith.run_helpers import get_tracing_context  # noqa: PLC0415
+
+    from langchain_core.tracers.context import (  # noqa: PLC0415
+        _configure_hooks,
+        _get_tracer_project,
+        _tracing_v2_is_enabled,
+        tracing_v2_callback_var,
+    )
+    from langchain_core.tracers.langchain import LangChainTracer  # noqa: PLC0415
+    from langchain_core.tracers.stdout import ConsoleCallbackHandler  # noqa: PLC0415
+
     tracing_context = get_tracing_context()
     tracing_metadata = tracing_context["metadata"]
     tracing_tags = tracing_context["tags"]
