@@ -176,6 +176,11 @@ def register_configure_hook(
 ) -> None:
     """Register a configure hook.
 
+    Registration is idempotent: if `context_var` is already registered the call
+    is a no-op, preventing `_configure_hooks` from accumulating duplicate entries
+    across repeated registrations (e.g. inside a loop or a frequently called
+    context manager).
+
     Args:
         context_var: The context variable.
         inheritable: Whether the context variable is inheritable.
@@ -189,6 +194,12 @@ def register_configure_hook(
     if env_var is not None and handle_class is None:
         msg = "If env_var is set, handle_class must also be set to a non-None value."
         raise ValueError(msg)
+
+    # Skip registration when the exact same ContextVar object is already present.
+    # This makes the function idempotent and prevents unbounded growth of
+    # _configure_hooks when the same variable is registered more than once.
+    if any(var is context_var for var, _, _, _ in _configure_hooks):
+        return
 
     _configure_hooks.append(
         (

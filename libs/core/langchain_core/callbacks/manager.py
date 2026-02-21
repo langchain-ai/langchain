@@ -2448,7 +2448,16 @@ def _configure(
                         run_tree.dotted_order,
                     )
                     handler.run_map[str(run_tree.id)] = run_tree
+    # Guard against the same ContextVar appearing more than once in _configure_hooks
+    # (e.g. via legacy code that bypasses register_configure_hook's idempotency).
+    # Using object identity (id) so that different vars with the same name are
+    # still processed independently.
+    seen_var_ids: set[int] = set()
     for var, inheritable, handler_class, env_var in _configure_hooks:
+        var_id = id(var)
+        if var_id in seen_var_ids:
+            continue
+        seen_var_ids.add(var_id)
         create_one = (
             env_var is not None
             and env_var_is_set(env_var)

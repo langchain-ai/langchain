@@ -14,6 +14,12 @@ from langchain_core.messages.ai import UsageMetadata, add_usage
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.tracers.context import register_configure_hook
 
+# Module-level context variable registered once at import time to avoid the
+# global _configure_hooks list growing on every call to get_usage_metadata_callback.
+_usage_metadata_callback_var: ContextVar["UsageMetadataCallbackHandler | None"] = (
+    ContextVar("usage_metadata_callback", default=None)
+)
+
 
 class UsageMetadataCallbackHandler(BaseCallbackHandler):
     """Callback Handler that tracks `AIMessage.usage_metadata`.
@@ -89,9 +95,14 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
                     )
 
 
+# Register the module-level context variable once so _configure_hooks never
+# accumulates duplicate entries across repeated calls to get_usage_metadata_callback.
+register_configure_hook(_usage_metadata_callback_var, inheritable=True)
+
+
 @contextmanager
 def get_usage_metadata_callback(
-    name: str = "usage_metadata_callback",
+    name: str = "usage_metadata_callback",  # noqa: ARG001
 ) -> Generator[UsageMetadataCallbackHandler, None, None]:
     """Get usage metadata callback.
 
@@ -99,7 +110,7 @@ def get_usage_metadata_callback(
     [`AIMessage.usage_metadata`][langchain.messages.AIMessage.usage_metadata].
 
     Args:
-        name: The name of the context variable.
+        name: Deprecated. Has no effect and will be removed in a future release.
 
     Yields:
         The usage metadata callback.
@@ -139,11 +150,9 @@ def get_usage_metadata_callback(
     !!! version-added "Added in `langchain-core` 0.3.49"
 
     """
-    usage_metadata_callback_var: ContextVar[UsageMetadataCallbackHandler | None] = (
-        ContextVar(name, default=None)
-    )
-    register_configure_hook(usage_metadata_callback_var, inheritable=True)
     cb = UsageMetadataCallbackHandler()
-    usage_metadata_callback_var.set(cb)
-    yield cb
-    usage_metadata_callback_var.set(None)
+    token = _usage_metadata_callback_var.set(cb)
+    try:
+        yield cb
+    finally:
+        _usage_metadata_callback_var.reset(token)

@@ -4,6 +4,7 @@ from langchain_core.callbacks import (
     UsageMetadataCallbackHandler,
     get_usage_metadata_callback,
 )
+from langchain_core.callbacks.usage import _usage_metadata_callback_var
 from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage
 from langchain_core.messages.ai import (
@@ -13,6 +14,7 @@ from langchain_core.messages.ai import (
     add_usage,
 )
 from langchain_core.outputs import ChatResult
+from langchain_core.tracers.context import _configure_hooks, register_configure_hook
 
 usage1 = UsageMetadata(
     input_tokens=1,
@@ -120,3 +122,106 @@ async def test_usage_callback_async() -> None:
     callback = UsageMetadataCallbackHandler()
     _ = await llm.abatch(["Message 1", "Message 2"], config={"callbacks": [callback]})
     assert callback.usage_metadata == {"test_model": total_1_2}
+
+
+# ---------------------------------------------------------------------------
+# Bug regression tests: _configure_hooks must not grow across repeated calls
+# (https://github.com/langchain-ai/langchain/issues/32300)
+# ---------------------------------------------------------------------------
+
+
+def test_configure_hooks_no_accumulation_sequential() -> None:
+    """_configure_hooks must not grow with repeated sequential calls."""
+    # _usage_metadata_callback_var is registered once at module import time.
+    # Capture the hook count after the first registration has already happened.
+    hook_count_before = len(_configure_hooks)
+
+    # Many sequential uses must not append new entries.
+    for _ in range(10):
+        with get_usage_metadata_callback():
+            pass
+
+    assert len(_configure_hooks) == hook_count_before, (
+        f"_configure_hooks grew from {hook_count_before} to {len(_configure_hooks)} "
+        "after repeated calls to get_usage_metadata_callback — hook accumulation bug."
+    )
+
+
+def test_configure_hooks_no_accumulation_nested() -> None:
+    """_configure_hooks must not grow with nested calls."""
+    hook_count_before = len(_configure_hooks)
+
+    with (
+        get_usage_metadata_callback(),
+        get_usage_metadata_callback(),
+        get_usage_metadata_callback(),
+    ):
+        pass
+
+    assert len(_configure_hooks) == hook_count_before
+
+
+def test_usage_metadata_callback_var_is_module_level() -> None:
+    """The ContextVar used by get_usage_metadata_callback is the module-level singleton.
+
+    Verifies that there is exactly ONE entry for _usage_metadata_callback_var in
+    _configure_hooks, regardless of how many times get_usage_metadata_callback is used.
+    """
+    # Count entries that correspond to the module-level var.
+    matching = [
+        var for var, _, _, _ in _configure_hooks if var is _usage_metadata_callback_var
+    ]
+    assert len(matching) == 1, (
+        f"Expected exactly 1 hook entry for _usage_metadata_callback_var, "
+        f"got {len(matching)}."
+    )
+
+
+def test_configure_hooks_idempotent_registration() -> None:
+    """register_configure_hook is idempotent: re-registering the same var is a no-op."""
+    hook_count_before = len(_configure_hooks)
+    # Attempt to register the already-registered module-level var again.
+    register_configure_hook(_usage_metadata_callback_var, inheritable=True)
+    assert len(_configure_hooks) == hook_count_before, (
+        "register_configure_hook added a duplicate entry for an already-registered var."
+    )
+
+
+def test_nested_usage_callback_inner_does_not_pollute_outer() -> None:
+    """Nested context managers track usage independently; outer is restored on exit."""
+    llm = FakeChatModelWithResponseMetadata(
+        messages=iter(messages), model_name="test_model"
+    )
+
+    with get_usage_metadata_callback() as outer_cb:
+        _ = llm.invoke("Message 1")  # usage1 → outer_cb
+
+        with get_usage_metadata_callback() as inner_cb:
+            _ = llm.invoke("Message 2")  # usage2 → inner_cb only
+            assert inner_cb.usage_metadata == {"test_model": usage2}
+            # outer_cb must not have received the inner invocation
+            assert outer_cb.usage_metadata == {"test_model": usage1}
+
+        # After inner context exits, outer_cb resumes collecting.
+        _ = llm.invoke("Message 3")  # usage3 → outer_cb
+        assert outer_cb.usage_metadata == {"test_model": add_usage(usage1, usage3)}, (
+            "Outer callback was not properly restored after inner context exited."
+        )
+
+
+def test_multiple_llm_instances_share_callback() -> None:
+    """Multiple LLM instances all report to the same callback inside the context."""
+    llm_1 = FakeChatModelWithResponseMetadata(
+        messages=iter(messages[:2]), model_name="model_a"
+    )
+    llm_2 = FakeChatModelWithResponseMetadata(
+        messages=iter(messages[2:4]), model_name="model_b"
+    )
+
+    with get_usage_metadata_callback() as cb:
+        _ = llm_1.invoke("hello")  # usage1
+        _ = llm_2.invoke("hello")  # usage3
+        assert cb.usage_metadata == {
+            "model_a": usage1,
+            "model_b": usage3,
+        }
