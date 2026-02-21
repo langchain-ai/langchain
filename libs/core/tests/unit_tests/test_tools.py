@@ -3631,3 +3631,159 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
+
+
+class TestStrictSchemaWithInjectedArgs:
+    """Tests for tools with extra='forbid' schemas and injected arguments."""
+
+    def test_structured_tool_strict_schema_with_directly_injected_arg(self) -> None:
+        """StructuredTool with extra='forbid' + _DirectlyInjectedToolArg."""
+
+        class StrictSchema(BaseModel):
+            model_config = ConfigDict(extra="forbid")
+            query: str
+
+        @dataclass
+        class MyRuntime(_DirectlyInjectedToolArg):
+            data: object
+
+        captured: dict[str, Any] = {}
+
+        def my_func(query: str, runtime: MyRuntime) -> str:
+            """Search tool."""
+            captured["runtime"] = runtime
+            return f"Query: {query}"
+
+        t = StructuredTool.from_function(
+            func=my_func, name="t", description="test", args_schema=StrictSchema
+        )
+        rt = MyRuntime(data={"key": "value"})
+        result = t.invoke({"query": "hello", "runtime": rt})
+        assert result == "Query: hello"
+        assert captured["runtime"] is rt
+
+    def test_structured_tool_strict_schema_with_annotated_injected_arg(self) -> None:
+        """StructuredTool with extra='forbid' + Annotated[T, InjectedToolArg]."""
+
+        class StrictSchema(BaseModel):
+            model_config = ConfigDict(extra="forbid")
+            query: str
+
+        captured: dict[str, Any] = {}
+
+        def my_func(query: str, ctx: Annotated[Any, InjectedToolArg]) -> str:
+            """Search tool."""
+            captured["ctx"] = ctx
+            return f"Query: {query}, ctx={ctx}"
+
+        t = StructuredTool.from_function(
+            func=my_func, name="t", description="test", args_schema=StrictSchema
+        )
+        result = t.invoke({"query": "hello", "ctx": "injected_value"})
+        assert result == "Query: hello, ctx=injected_value"
+        assert captured["ctx"] == "injected_value"
+
+    def test_tool_decorator_strict_schema_with_injected_arg(self) -> None:
+        """@tool(args_schema=...) with extra='forbid' + injected args."""
+
+        class StrictSchema(BaseModel):
+            model_config = ConfigDict(extra="forbid")
+            x: int
+
+        captured: dict[str, Any] = {}
+
+        @tool(args_schema=StrictSchema)
+        def my_tool(x: int, ctx: Annotated[str, InjectedToolArg]) -> str:
+            """Multiply tool."""
+            captured["ctx"] = ctx
+            return f"{x}-{ctx}"
+
+        result = my_tool.invoke({"x": 42, "ctx": "injected"})
+        assert result == "42-injected"
+        assert captured["ctx"] == "injected"
+
+    def test_strict_schema_injected_arg_reaches_function(self) -> None:
+        """Verify injected arg value is actually received by the function."""
+
+        class StrictSchema(BaseModel):
+            model_config = ConfigDict(extra="forbid")
+            query: str
+
+        captured: dict[str, Any] = {}
+
+        @dataclass
+        class MyRuntime(_DirectlyInjectedToolArg):
+            data: dict[str, Any]
+
+        def my_func(query: str, runtime: MyRuntime) -> str:
+            """Search tool."""
+            captured["runtime"] = runtime
+            return query
+
+        t = StructuredTool.from_function(
+            func=my_func, name="t", description="test", args_schema=StrictSchema
+        )
+        rt = MyRuntime(data={"key": "value"})
+        t.invoke({"query": "hello", "runtime": rt})
+        assert captured["runtime"] is rt
+        assert captured["runtime"].data == {"key": "value"}
+
+    async def test_strict_schema_async_with_injected_arg(self) -> None:
+        """Async path with extra='forbid' + injected args."""
+
+        class StrictSchema(BaseModel):
+            model_config = ConfigDict(extra="forbid")
+            x: int
+
+        captured: dict[str, Any] = {}
+
+        async def my_func(x: int, ctx: Annotated[str, InjectedToolArg]) -> str:
+            """Async tool."""
+            captured["ctx"] = ctx
+            return f"{x}-{ctx}"
+
+        t = StructuredTool.from_function(
+            coroutine=my_func, name="t", description="test", args_schema=StrictSchema
+        )
+        result = await t.ainvoke({"x": 42, "ctx": "async_injected"})
+        assert result == "42-async_injected"
+        assert captured["ctx"] == "async_injected"
+
+    def test_strict_schema_with_injected_tool_call_id_not_in_schema(self) -> None:
+        """InjectedToolCallId with extra='forbid' schema (not in schema)."""
+
+        class StrictSchema(BaseModel):
+            model_config = ConfigDict(extra="forbid")
+            x: int
+
+        @tool(args_schema=StrictSchema)
+        def my_tool(
+            x: int, tool_call_id: Annotated[str, InjectedToolCallId]
+        ) -> ToolMessage:
+            """Tool with injected call ID."""
+            return ToolMessage(str(x), tool_call_id=tool_call_id)
+
+        result = my_tool.invoke(
+            {
+                "type": "tool_call",
+                "args": {"x": 42},
+                "name": "my_tool",
+                "id": "test_id",
+            }
+        )
+        assert result == ToolMessage("42", tool_call_id="test_id")
+
+    def test_strict_schema_rejects_unknown_non_injected_args(self) -> None:
+        """Regression: strict schema should still reject truly unknown args."""
+
+        class StrictSchema(BaseModel):
+            model_config = ConfigDict(extra="forbid")
+            x: int
+
+        @tool(args_schema=StrictSchema)
+        def my_tool(x: int) -> str:
+            """Simple tool."""
+            return str(x)
+
+        with pytest.raises(ValidationError):
+            my_tool.invoke({"x": 42, "unknown_arg": "bad"})

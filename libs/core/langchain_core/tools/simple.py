@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 from collections.abc import Awaitable, Callable
 from inspect import signature
 from typing import (
@@ -21,6 +22,7 @@ from langchain_core.tools.base import (
     ArgsSchema,
     BaseTool,
     ToolException,
+    _get_injected_keys_from_func,
     _get_runnable_config_param,
 )
 
@@ -53,6 +55,10 @@ class Tool(BaseTool):
             return await run_in_executor(config, self.invoke, input, config, **kwargs)
 
         return await super().ainvoke(input, config, **kwargs)
+
+    @functools.cached_property
+    def _injected_args_keys(self) -> frozenset[str]:
+        return _get_injected_keys_from_func(self.func, self.coroutine)
 
     # --- Tool ---
 

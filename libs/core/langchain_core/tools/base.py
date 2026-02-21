@@ -613,6 +613,20 @@ class ChildTool(BaseTool):
         # Base implementation doesn't manage injected args
         return _EMPTY_SET
 
+    @functools.cached_property
+    def _schema_injected_keys(self) -> frozenset[str]:
+        """Injected argument keys found in the ``args_schema`` annotations."""
+        if self.args_schema is None or isinstance(self.args_schema, dict):
+            return _EMPTY_SET
+        try:
+            return frozenset(
+                k
+                for k, v in get_all_basemodel_annotations(self.args_schema).items()
+                if _is_injected_arg_type(v)
+            )
+        except Exception:
+            return _EMPTY_SET
+
     # --- Runnable ---
 
     @override
@@ -708,7 +722,17 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
-                result = input_args.model_validate(tool_input)
+                # Strip injected args not in the schema before validation so
+                # that schemas with extra="forbid" don't reject them.
+                schema_fields = set(get_fields(input_args).keys())
+                keys_to_strip = self._injected_args_keys - schema_fields
+                if keys_to_strip:
+                    validation_input = {
+                        k: v for k, v in tool_input.items() if k not in keys_to_strip
+                    }
+                else:
+                    validation_input = tool_input
+                result = input_args.model_validate(validation_input)
                 result_dict = result.model_dump()
             elif issubclass(input_args, BaseModelV1):
                 # Check args_schema for InjectedToolCallId
@@ -724,7 +748,17 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
-                result = input_args.parse_obj(tool_input)
+                # Strip injected args not in the schema before validation so
+                # that schemas with extra="forbid" don't reject them.
+                schema_fields = set(get_fields(input_args).keys())
+                keys_to_strip = self._injected_args_keys - schema_fields
+                if keys_to_strip:
+                    validation_input = {
+                        k: v for k, v in tool_input.items() if k not in keys_to_strip
+                    }
+                else:
+                    validation_input = tool_input
+                result = input_args.parse_obj(validation_input)
                 result_dict = result.dict()
             else:
                 msg = (
@@ -812,27 +846,9 @@ class ChildTool(BaseTool):
         Returns:
             A filtered dictionary with injected arguments removed.
         """
-        # Start with filtered args from the constant
         filtered_keys = set[str](FILTERED_ARGS)
-
-        # Add injected args from function signature (e.g., ToolRuntime parameters)
         filtered_keys.update(self._injected_args_keys)
-
-        # If we have an args_schema, use it to identify injected args
-        if self.args_schema is not None:
-            try:
-                annotations = get_all_basemodel_annotations(self.args_schema)
-                for field_name, field_type in annotations.items():
-                    if _is_injected_arg_type(field_type):
-                        filtered_keys.add(field_name)
-            except Exception:
-                # If we can't get annotations, just use FILTERED_ARGS
-                _logger.debug(
-                    "Failed to get args_schema annotations for filtering.",
-                    exc_info=True,
-                )
-
-        # Filter out the injected keys from tool_input
+        filtered_keys.update(self._schema_injected_keys)
         return {k: v for k, v in tool_input.items() if k not in filtered_keys}
 
     def _to_args_and_kwargs(
@@ -1464,6 +1480,31 @@ def _is_injected_arg_type(
         isinstance(arg, injected_type)
         or (isinstance(arg, type) and issubclass(arg, injected_type))
         for arg in get_args(type_)[1:]
+    )
+
+
+def _get_injected_keys_from_func(
+    func: Callable | None, coroutine: Callable | None = None
+) -> frozenset[str]:
+    """Get injected argument keys from a function's signature.
+
+    Inspects the function's parameter annotations to find arguments that are
+    annotated as injected (e.g., ``ToolRuntime``, ``Annotated[T, InjectedToolArg]``).
+
+    Args:
+        func: The synchronous function to inspect.
+        coroutine: The asynchronous function to inspect (used if ``func`` is ``None``).
+
+    Returns:
+        Frozen set of parameter names that are injected arguments.
+    """
+    fn = func or coroutine
+    if fn is None:
+        return _EMPTY_SET
+    return frozenset(
+        k
+        for k, v in inspect.signature(fn).parameters.items()
+        if _is_injected_arg_type(v.annotation)
     )
 
 
