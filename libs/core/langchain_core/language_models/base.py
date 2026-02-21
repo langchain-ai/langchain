@@ -18,8 +18,8 @@ from typing import (
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import TypedDict, override
 
-from langchain_core.caches import BaseCache  # noqa: TC001
-from langchain_core.callbacks import Callbacks  # noqa: TC001
+from langchain_core.caches import BaseCache
+from langchain_core.callbacks import Callbacks
 from langchain_core.globals import get_verbose
 from langchain_core.messages import (
     AIMessage,
@@ -33,7 +33,7 @@ from langchain_core.prompt_values import (
     PromptValue,
     StringPromptValue,
 )
-from langchain_core.runnables import Runnable, RunnableSerializable
+from langchain_core.runnables.base import Runnable, RunnableSerializable
 
 if TYPE_CHECKING:
     from langchain_core.outputs import LLMResult
