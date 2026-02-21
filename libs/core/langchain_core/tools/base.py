@@ -775,21 +775,29 @@ class ChildTool(BaseTool):
         return tool_input
 
     @abstractmethod
-    def _run(self, *args: Any, **kwargs: Any) -> Any:
+    def _run(self, /, *args: Any, **kwargs: Any) -> Any:
         """Use the tool.
 
         Add `run_manager: CallbackManagerForToolRun | None = None` to child
         implementations to enable tracing.
 
+        Note: ``self`` is positional-only so that callers can pass a keyword
+        argument named ``"self"`` (e.g. from user-supplied tool input) without
+        colliding with the method receiver.
+
         Returns:
             The result of the tool execution.
         """
 
-    async def _arun(self, *args: Any, **kwargs: Any) -> Any:
+    async def _arun(self, /, *args: Any, **kwargs: Any) -> Any:
         """Use the tool asynchronously.
 
         Add `run_manager: AsyncCallbackManagerForToolRun | None = None` to child
         implementations to enable tracing.
+
+        Note: ``self`` is positional-only so that callers can pass a keyword
+        argument named ``"self"`` (e.g. from user-supplied tool input) without
+        colliding with the method receiver.
 
         Returns:
             The result of the tool execution.
