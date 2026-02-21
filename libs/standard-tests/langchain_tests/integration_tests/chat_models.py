@@ -1592,9 +1592,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             `tool_choice` supports the string `'any'` to force calling that tool.
 
             If `tool_call_streaming` is enabled in the model's profile, individual
-            chunks are also validated to contain properly structured `tool_call_chunks`.
-            To disable this check, set `tool_call_streaming = false` in the model's
-            profile augmentations.
+            chunks are also validated to contain `tool_call_chunk` blocks in
+            `content_blocks`. To disable this check, set
+            `tool_call_streaming = false` in the model's profile augmentations.
 
         """
         if not self.has_tool_calling:
@@ -1619,27 +1619,28 @@ class ChatModelIntegrationTests(ChatModelTests):
         full: BaseMessage | None = None
         found_tool_call_chunk = False
         for chunk in model_with_tools.stream(query):
-            # Check for tool_call_chunks in individual chunks
-            if (
-                tool_call_streaming
-                and hasattr(chunk, "tool_call_chunks")
-                and chunk.tool_call_chunks
-            ):
-                found_tool_call_chunk = True
-                for tc_chunk in chunk.tool_call_chunks:
-                    assert "name" in tc_chunk, "tool_call_chunk missing 'name' field"
-                    assert "args" in tc_chunk, "tool_call_chunk missing 'args' field"
-                    assert "id" in tc_chunk, "tool_call_chunk missing 'id' field"
-                    assert "index" in tc_chunk, "tool_call_chunk missing 'index' field"
+            # Check for tool_call_chunk blocks in content_blocks
+            if tool_call_streaming:
+                for block in chunk.content_blocks:
+                    if block.get("type") == "tool_call_chunk":
+                        found_tool_call_chunk = True
+                        assert "name" in block, (
+                            "tool_call_chunk block missing 'name' field"
+                        )
+                        assert "args" in block, (
+                            "tool_call_chunk block missing 'args' field"
+                        )
+                        assert "id" in block, "tool_call_chunk block missing 'id' field"
             full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
 
         if tool_call_streaming:
             assert found_tool_call_chunk, (
-                "Expected to find tool_call_chunks in at least one chunk during "
-                "streaming. Set tool_call_streaming=false in the model's profile "
-                "augmentations if this model does not support streaming tool calls."
+                "Expected to find 'tool_call_chunk' blocks in content_blocks of at "
+                "least one chunk during streaming. Set tool_call_streaming=false in "
+                "the model's profile augmentations if this model does not support "
+                "streaming tool calls."
             )
 
     async def test_tool_calling_async(self, model: BaseChatModel) -> None:
@@ -1708,27 +1709,28 @@ class ChatModelIntegrationTests(ChatModelTests):
         full: BaseMessage | None = None
         found_tool_call_chunk = False
         async for chunk in model_with_tools.astream(query):
-            # Check for tool_call_chunks in individual chunks
-            if (
-                tool_call_streaming
-                and hasattr(chunk, "tool_call_chunks")
-                and chunk.tool_call_chunks
-            ):
-                found_tool_call_chunk = True
-                for tc_chunk in chunk.tool_call_chunks:
-                    assert "name" in tc_chunk, "tool_call_chunk missing 'name' field"
-                    assert "args" in tc_chunk, "tool_call_chunk missing 'args' field"
-                    assert "id" in tc_chunk, "tool_call_chunk missing 'id' field"
-                    assert "index" in tc_chunk, "tool_call_chunk missing 'index' field"
+            # Check for tool_call_chunk blocks in content_blocks
+            if tool_call_streaming:
+                for block in chunk.content_blocks:
+                    if block.get("type") == "tool_call_chunk":
+                        found_tool_call_chunk = True
+                        assert "name" in block, (
+                            "tool_call_chunk block missing 'name' field"
+                        )
+                        assert "args" in block, (
+                            "tool_call_chunk block missing 'args' field"
+                        )
+                        assert "id" in block, "tool_call_chunk block missing 'id' field"
             full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
 
         if tool_call_streaming:
             assert found_tool_call_chunk, (
-                "Expected to find tool_call_chunks in at least one chunk during "
-                "streaming. Set tool_call_streaming=false in the model's profile "
-                "augmentations if this model does not support streaming tool calls."
+                "Expected to find 'tool_call_chunk' blocks in content_blocks of at "
+                "least one chunk during streaming. Set tool_call_streaming=false in "
+                "the model's profile augmentations if this model does not support "
+                "streaming tool calls."
             )
 
     def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
