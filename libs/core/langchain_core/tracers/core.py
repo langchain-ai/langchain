@@ -585,7 +585,7 @@ class _TracerCore(ABC):
 
         Args:
             run: The LLM run.
-            token: The new token, or a list of content blocks for structured output.
+            token: The new token, or a list of content blocks.
             chunk: Optional chunk.
         """
         _ = (run, token, chunk)

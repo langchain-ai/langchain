@@ -686,7 +686,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
         """Run when LLM generates a new token.
 
         Args:
-            token: The new token, or a list of content blocks for structured output.
+            token: The new token, or a list of content blocks.
             chunk: The chunk.
             **kwargs: Additional keyword arguments.
 
@@ -784,7 +784,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
         """Run when LLM generates a new token.
 
         Args:
-            token: The new token, or a list of content blocks for structured output.
+            token: The new token, or a list of content blocks.
             chunk: The chunk.
             **kwargs: Additional keyword arguments.
 

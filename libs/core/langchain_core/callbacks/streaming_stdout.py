@@ -48,7 +48,7 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         """Run on new LLM token. Only available when streaming is enabled.
 
         Args:
-            token: The new token, or a list of content blocks for structured output.
+            token: The new token, or a list of content blocks.
             **kwargs: Additional keyword arguments.
         """
         sys.stdout.write(str(token))

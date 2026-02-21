@@ -76,7 +76,7 @@ class LLMManagerMixin:
         For both chat models and non-chat models (legacy LLMs).
 
         Args:
-            token: The new token, or a list of content blocks for structured output.
+            token: The new token, or a list of content blocks.
             chunk: The new generated chunk, containing content and other information.
             run_id: The ID of the current run.
             parent_run_id: The ID of the parent run.
@@ -556,7 +556,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         For both chat models and non-chat models (legacy LLMs).
 
         Args:
-            token: The new token, or a list of content blocks for structured output.
+            token: The new token, or a list of content blocks.
             chunk: The new generated chunk, containing content and other information.
             run_id: The ID of the current run.
             parent_run_id: The ID of the parent run.
