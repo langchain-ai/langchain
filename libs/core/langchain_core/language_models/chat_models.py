@@ -1150,14 +1150,20 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if check_cache:
             if llm_cache:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
-                normalized_messages = [
-                    (
-                        msg.model_copy(update={"id": None})
-                        if getattr(msg, "id", None) is not None
-                        else msg
-                    )
-                    for msg in messages
-                ]
+                normalized_messages = []
+                for m in messages:
+                    updates: dict = {}
+                    if getattr(m, "id", None) is not None:
+                        updates["id"] = None
+                    if isinstance(m, AIMessage) and m.usage_metadata:
+                        updates["usage_metadata"] = {
+                            **m.usage_metadata,
+                            "total_cost": 0,
+                        }
+                    if updates:
+                        normalized_messages.append(m.model_copy(update=updates))
+                    else:
+                        normalized_messages.append(m)
                 prompt = dumps(normalized_messages)
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
@@ -1276,14 +1282,20 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if check_cache:
             if llm_cache:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
-                normalized_messages = [
-                    (
-                        msg.model_copy(update={"id": None})
-                        if getattr(msg, "id", None) is not None
-                        else msg
-                    )
-                    for msg in messages
-                ]
+                normalized_messages = []
+                for m in messages:
+                    updates: dict = {}
+                    if getattr(m, "id", None) is not None:
+                        updates["id"] = None
+                    if isinstance(m, AIMessage) and m.usage_metadata:
+                        updates["usage_metadata"] = {
+                            **m.usage_metadata,
+                            "total_cost": 0,
+                        }
+                    if updates:
+                        normalized_messages.append(m.model_copy(update=updates))
+                    else:
+                        normalized_messages.append(m)
                 prompt = dumps(normalized_messages)
                 cache_val = await llm_cache.alookup(prompt, llm_string)
                 if isinstance(cache_val, list):
