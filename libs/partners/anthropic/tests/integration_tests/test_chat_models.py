@@ -1638,6 +1638,7 @@ def test_web_fetch_v1(output_version: Literal["v0", "v1"]) -> None:
     )
 
 
+@pytest.mark.default_cassette("test_code_execution_old.yaml.gz")
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["v0", "v1"])
 def test_code_execution_old(output_version: Literal["v0", "v1"]) -> None:
@@ -1736,7 +1737,6 @@ def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
         assert block_types == {
             "text",
             "server_tool_use",
-            "text_editor_code_execution_tool_result",
             "bash_code_execution_tool_result",
         }
     else:
@@ -1754,7 +1754,6 @@ def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
         assert block_types == {
             "text",
             "server_tool_use",
-            "text_editor_code_execution_tool_result",
             "bash_code_execution_tool_result",
         }
     else:
