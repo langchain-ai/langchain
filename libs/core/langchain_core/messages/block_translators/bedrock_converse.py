@@ -1,7 +1,7 @@
 """Derivations of standard content blocks from Amazon (Bedrock Converse) content."""
 
 import base64
-from collections.abc import Iterable
+from collections.abc import Iterator
 from typing import Any, cast
 
 from langchain_core.messages import AIMessage, AIMessageChunk
@@ -49,7 +49,7 @@ def _convert_to_v1_from_converse_input(
         Updated list with Converse blocks converted to v1 format.
     """
 
-    def _iter_blocks() -> Iterable[types.ContentBlock]:
+    def _iter_blocks() -> Iterator[types.ContentBlock]:
         blocks: list[dict[str, Any]] = [
             cast("dict[str, Any]", block)
             if block.get("type") != "non_standard"
@@ -162,7 +162,7 @@ def _convert_to_v1_from_converse(message: AIMessage) -> list[types.ContentBlock]
     if isinstance(message.content, str):
         message.content = [{"type": "text", "text": message.content}]
 
-    def _iter_blocks() -> Iterable[types.ContentBlock]:
+    def _iter_blocks() -> Iterator[types.ContentBlock]:
         for block in message.content:
             if not isinstance(block, dict):
                 continue
@@ -240,8 +240,6 @@ def _convert_to_v1_from_converse(message: AIMessage) -> list[types.ContentBlock]
                                     "id": tc.get("id"),
                                 }
                                 break
-                    else:
-                        pass
                     if not tool_call_block:
                         tool_call_block = {
                             "type": "tool_call",
@@ -283,12 +281,26 @@ def _convert_to_v1_from_converse(message: AIMessage) -> list[types.ContentBlock]
 
 
 def translate_content(message: AIMessage) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a message with Bedrock Converse content."""
+    """Derive standard content blocks from a message with Bedrock Converse content.
+
+    Args:
+        message: The message to translate.
+
+    Returns:
+        The derived content blocks.
+    """
     return _convert_to_v1_from_converse(message)
 
 
 def translate_content_chunk(message: AIMessageChunk) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a chunk with Bedrock Converse content."""
+    """Derive standard content blocks from a chunk with Bedrock Converse content.
+
+    Args:
+        message: The message chunk to translate.
+
+    Returns:
+        The derived content blocks.
+    """
     return _convert_to_v1_from_converse(message)
 
 

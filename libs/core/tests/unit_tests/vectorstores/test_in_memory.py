@@ -138,7 +138,7 @@ async def test_inmemory_filter_by_document_id() -> None:
 
     # Test async version
     output = await store.asimilarity_search(
-        "document", filter=lambda doc: doc.id in ["doc_1", "doc_3"]
+        "document", filter=lambda doc: doc.id in {"doc_1", "doc_3"}
     )
     assert len(output) == 2
     ids = {doc.id for doc in output}

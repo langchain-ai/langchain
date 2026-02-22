@@ -65,14 +65,28 @@ def _convert_to_v1_from_bedrock_chunk(
 
 
 def translate_content(message: AIMessage) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a message with Bedrock content."""
+    """Derive standard content blocks from a message with Bedrock content.
+
+    Args:
+        message: The message to translate.
+
+    Returns:
+        The derived content blocks.
+    """
     if "claude" not in message.response_metadata.get("model_name", "").lower():
         raise NotImplementedError  # fall back to best-effort parsing
     return _convert_to_v1_from_bedrock(message)
 
 
 def translate_content_chunk(message: AIMessageChunk) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a message chunk with Bedrock content."""
+    """Derive standard content blocks from a message chunk with Bedrock content.
+
+    Args:
+        message: The message chunk to translate.
+
+    Returns:
+        The derived content blocks.
+    """
     # TODO: add model_name to all Bedrock chunks and update core merging logic
     # to not append during aggregation. Then raise NotImplementedError here if
     # not an Anthropic model to fall back to best-effort parsing.

@@ -1,20 +1,24 @@
 import os
 import tempfile
+import time
 from collections import defaultdict
-from functools import partial
+from typing import Any
 
+from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.base import (
     ChannelVersions,
     Checkpoint,
     CheckpointMetadata,
-    SerializerProtocol,
 )
 from langgraph.checkpoint.memory import InMemorySaver, PersistentDict
+from langgraph.checkpoint.serde.base import (
+    SerializerProtocol,
+)
 from langgraph.pregel._checkpoint import copy_checkpoint
 
 
 class MemorySaverAssertImmutable(InMemorySaver):
-    storage_for_copies: defaultdict[str, dict[str, dict[str, Checkpoint]]]
+    storage_for_copies: defaultdict[str, dict[str, dict[str, tuple[str, bytes]]]]
 
     def __init__(
         self,
@@ -23,21 +27,24 @@ class MemorySaverAssertImmutable(InMemorySaver):
         put_sleep: float | None = None,
     ) -> None:
         _, filename = tempfile.mkstemp()
-        super().__init__(serde=serde, factory=partial(PersistentDict, filename=filename))
+
+        class TempfilePersistentDict(PersistentDict):
+            def __init__(self, *args: Any, **kwargs: Any) -> None:
+                super().__init__(*args, filename=filename, **kwargs)
+
+        super().__init__(serde=serde, factory=TempfilePersistentDict)
         self.storage_for_copies = defaultdict(lambda: defaultdict(dict))
         self.put_sleep = put_sleep
         self.stack.callback(os.remove, filename)
 
     def put(
         self,
-        config: dict,
+        config: RunnableConfig,
         checkpoint: Checkpoint,
         metadata: CheckpointMetadata,
         new_versions: ChannelVersions,
-    ) -> None:
+    ) -> RunnableConfig:
         if self.put_sleep:
-            import time
-
             time.sleep(self.put_sleep)
         # assert checkpoint hasn't been modified since last written
         thread_id = config["configurable"]["thread_id"]

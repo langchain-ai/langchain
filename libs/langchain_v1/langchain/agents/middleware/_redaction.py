@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import ipaddress
+import operator
 import re
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -47,7 +48,14 @@ Detector = Callable[[str], list[PIIMatch]]
 
 
 def detect_email(content: str) -> list[PIIMatch]:
-    """Detect email addresses in content."""
+    """Detect email addresses in content.
+
+    Args:
+        content: The text content to scan for email addresses.
+
+    Returns:
+        A list of detected email matches.
+    """
     pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
     return [
         PIIMatch(
@@ -61,7 +69,14 @@ def detect_email(content: str) -> list[PIIMatch]:
 
 
 def detect_credit_card(content: str) -> list[PIIMatch]:
-    """Detect credit card numbers in content using Luhn validation."""
+    """Detect credit card numbers in content using Luhn validation.
+
+    Args:
+        content: The text content to scan for credit card numbers.
+
+    Returns:
+        A list of detected credit card matches.
+    """
     pattern = r"\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b"
     matches = []
 
@@ -81,7 +96,14 @@ def detect_credit_card(content: str) -> list[PIIMatch]:
 
 
 def detect_ip(content: str) -> list[PIIMatch]:
-    """Detect IPv4 or IPv6 addresses in content."""
+    """Detect IPv4 or IPv6 addresses in content.
+
+    Args:
+        content: The text content to scan for IP addresses.
+
+    Returns:
+        A list of detected IP address matches.
+    """
     matches: list[PIIMatch] = []
     ipv4_pattern = r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b"
 
@@ -104,7 +126,14 @@ def detect_ip(content: str) -> list[PIIMatch]:
 
 
 def detect_mac_address(content: str) -> list[PIIMatch]:
-    """Detect MAC addresses in content."""
+    """Detect MAC addresses in content.
+
+    Args:
+        content: The text content to scan for MAC addresses.
+
+    Returns:
+        A list of detected MAC address matches.
+    """
     pattern = r"\b([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b"
     return [
         PIIMatch(
@@ -118,7 +147,14 @@ def detect_mac_address(content: str) -> list[PIIMatch]:
 
 
 def detect_url(content: str) -> list[PIIMatch]:
-    """Detect URLs in content using regex and stdlib validation."""
+    """Detect URLs in content using regex and stdlib validation.
+
+    Args:
+        content: The text content to scan for URLs.
+
+    Returns:
+        A list of detected URL matches.
+    """
     matches: list[PIIMatch] = []
 
     # Pattern 1: URLs with scheme (http:// or https://)
@@ -127,7 +163,7 @@ def detect_url(content: str) -> list[PIIMatch]:
     for match in re.finditer(scheme_pattern, content):
         url = match.group()
         result = urlparse(url)
-        if result.scheme in ("http", "https") and result.netloc:
+        if result.scheme in {"http", "https"} and result.netloc:
             matches.append(
                 PIIMatch(
                     type="url",
@@ -202,7 +238,7 @@ def _passes_luhn(card_number: str) -> bool:
 
 def _apply_redact_strategy(content: str, matches: list[PIIMatch]) -> str:
     result = content
-    for match in sorted(matches, key=lambda item: item["start"], reverse=True):
+    for match in sorted(matches, key=operator.itemgetter("start"), reverse=True):
         replacement = f"[REDACTED_{match['type'].upper()}]"
         result = result[: match["start"]] + replacement + result[match["end"] :]
     return result
@@ -214,7 +250,7 @@ _IPV4_PARTS_NUMBER = 4
 
 def _apply_mask_strategy(content: str, matches: list[PIIMatch]) -> str:
     result = content
-    for match in sorted(matches, key=lambda item: item["start"], reverse=True):
+    for match in sorted(matches, key=operator.itemgetter("start"), reverse=True):
         value = match["value"]
         pii_type = match["type"]
         if pii_type == "email":
@@ -260,7 +296,7 @@ def _apply_mask_strategy(content: str, matches: list[PIIMatch]) -> str:
 
 def _apply_hash_strategy(content: str, matches: list[PIIMatch]) -> str:
     result = content
-    for match in sorted(matches, key=lambda item: item["start"], reverse=True):
+    for match in sorted(matches, key=operator.itemgetter("start"), reverse=True):
         digest = hashlib.sha256(match["value"].encode()).hexdigest()[:8]
         replacement = f"<{match['type']}_hash:{digest}>"
         result = result[: match["start"]] + replacement + result[match["end"] :]
@@ -272,7 +308,20 @@ def apply_strategy(
     matches: list[PIIMatch],
     strategy: RedactionStrategy,
 ) -> str:
-    """Apply the configured strategy to matches within content."""
+    """Apply the configured strategy to matches within content.
+
+    Args:
+        content: The content to apply strategy to.
+        matches: List of detected PII matches.
+        strategy: The redaction strategy to apply.
+
+    Returns:
+        The content with the strategy applied.
+
+    Raises:
+        PIIDetectionError: If the strategy is `'block'` and matches are found.
+        ValueError: If the strategy is unknown.
+    """
     if not matches:
         return content
     if strategy == "redact":
@@ -283,12 +332,24 @@ def apply_strategy(
         return _apply_hash_strategy(content, matches)
     if strategy == "block":
         raise PIIDetectionError(matches[0]["type"], matches)
-    msg = f"Unknown redaction strategy: {strategy}"
+    msg = f"Unknown redaction strategy: {strategy}"  # type: ignore[unreachable]
     raise ValueError(msg)
 
 
 def resolve_detector(pii_type: str, detector: Detector | str | None) -> Detector:
-    """Return a callable detector for the given configuration."""
+    """Return a callable detector for the given configuration.
+
+    Args:
+        pii_type: The PII type name.
+        detector: Optional custom detector or regex pattern. If `None`, a built-in detector
+            for the given PII type will be used.
+
+    Returns:
+        The resolved detector.
+
+    Raises:
+        ValueError: If an unknown PII type is specified without a custom detector or regex.
+    """
     if detector is None:
         if pii_type not in BUILTIN_DETECTORS:
             msg = (
@@ -324,7 +385,11 @@ class RedactionRule:
     detector: Detector | str | None = None
 
     def resolve(self) -> ResolvedRedactionRule:
-        """Resolve runtime detector and return an immutable rule."""
+        """Resolve runtime detector and return an immutable rule.
+
+        Returns:
+            The resolved redaction rule.
+        """
         resolved_detector = resolve_detector(self.pii_type, self.detector)
         return ResolvedRedactionRule(
             pii_type=self.pii_type,
@@ -342,7 +407,14 @@ class ResolvedRedactionRule:
     detector: Detector
 
     def apply(self, content: str) -> tuple[str, list[PIIMatch]]:
-        """Apply this rule to content, returning new content and matches."""
+        """Apply this rule to content, returning new content and matches.
+
+        Args:
+            content: The text content to scan and redact.
+
+        Returns:
+            A tuple of (updated content, list of detected matches).
+        """
         matches = self.detector(content)
         if not matches:
             return content, []

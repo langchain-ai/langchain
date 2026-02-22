@@ -6,6 +6,7 @@ from typing import Any
 from pydantic import ConfigDict, model_validator
 from typing_extensions import Self
 
+from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
@@ -19,27 +20,33 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
 
     examples: list[dict] | None = None
     """Examples to format into the prompt.
-    Either this or example_selector should be provided."""
 
-    example_selector: Any = None
-    """ExampleSelector to choose the examples to format into the prompt.
-    Either this or examples should be provided."""
+    Either this or `example_selector` should be provided.
+    """
+
+    example_selector: BaseExampleSelector | None = None
+    """`ExampleSelector` to choose the examples to format into the prompt.
+
+    Either this or `examples` should be provided.
+    """
 
     example_prompt: PromptTemplate
-    """PromptTemplate used to format an individual example."""
+    """`PromptTemplate` used to format an individual example."""
 
     suffix: StringPromptTemplate
-    """A PromptTemplate to put after the examples."""
+    """A `PromptTemplate` to put after the examples."""
 
     example_separator: str = "\n\n"
     """String separator used to join the prefix, the examples, and suffix."""
 
     prefix: StringPromptTemplate | None = None
-    """A PromptTemplate to put before the examples."""
+    """A `PromptTemplate` to put before the examples."""
 
     template_format: PromptTemplateFormat = "f-string"
     """The format of the prompt template.
-    Options are: 'f-string', 'jinja2', 'mustache'."""
+
+    Options are: `'f-string'`, `'jinja2'`, `'mustache'`.
+    """
 
     validate_template: bool = False
     """Whether or not to try validating the template."""
@@ -122,9 +129,9 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
             A formatted string.
 
         Example:
-        ```python
-        prompt.format(variable1="foo")
-        ```
+            ```python
+            prompt.format(variable1="foo")
+            ```
         """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         # Get the examples to use.
@@ -215,7 +222,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
             file_path: The path to save the prompt to.
 
         Raises:
-            ValueError: If example_selector is provided.
+            ValueError: If `example_selector` is provided.
         """
         if self.example_selector:
             msg = "Saving an example selector is not currently supported"

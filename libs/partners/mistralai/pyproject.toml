@@ -7,7 +7,18 @@ name = "langchain-mistralai"
 description = "An integration package connecting Mistral and LangChain"
 license = { text = "MIT" }
 readme = "README.md"
-authors = []
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 
 version = "1.1.1"
 requires-python = ">=3.10.0,<4.0.0"
@@ -22,9 +33,10 @@ dependencies = [
 [project.urls]
 Homepage = "https://docs.langchain.com/oss/python/integrations/providers/mistralai"
 Documentation = "https://reference.langchain.com/python/integrations/langchain_mistralai/"
-Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/mistralai"
+Repository = "https://github.com/langchain-ai/langchain"
+Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-mistralai%22"
-Twitter = "https://x.com/LangChainAI"
+Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
@@ -86,6 +98,9 @@ unfixable = ["B028"] # People should intentionally tune the stacklevel
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.coverage.run]
 omit = ["tests/*"]

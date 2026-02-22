@@ -2,6 +2,7 @@
 
 import time
 from collections.abc import Callable
+from typing import Any
 
 import pytest
 from langchain_core.messages import HumanMessage, ToolCall, ToolMessage
@@ -13,6 +14,7 @@ from langgraph.types import Command
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware._retry import calculate_delay
 from langchain.agents.middleware.tool_retry import ToolRetryMiddleware
+from langchain.agents.middleware.types import wrap_tool_call
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
@@ -867,13 +869,15 @@ def test_tool_retry_multiple_middleware_composition() -> None:
     call_log = []
 
     # Custom middleware that logs calls
-    from langchain.agents.middleware.types import wrap_tool_call
-
     @wrap_tool_call
-    def logging_middleware(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
-        call_log.append(f"before_{request.tool.name}")
+    def logging_middleware(
+        request: ToolCallRequest, handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]]
+    ) -> ToolMessage | Command[Any]:
+        if request.tool:
+            call_log.append(f"before_{request.tool.name}")
         response = handler(request)
-        call_log.append(f"after_{request.tool.name}")
+        if request.tool:
+            call_log.append(f"after_{request.tool.name}")
         return response
 
     model = FakeToolCallingModel(
@@ -910,7 +914,7 @@ def test_tool_retry_deprecated_raise_keyword() -> None:
     with pytest.warns(DeprecationWarning, match="on_failure='raise' is deprecated"):
         retry = ToolRetryMiddleware(
             max_retries=2,
-            on_failure="raise",
+            on_failure="raise",  # type: ignore[arg-type]
         )
 
     # Should be converted to 'error'
@@ -949,7 +953,7 @@ def test_tool_retry_deprecated_raise_behavior() -> None:
             max_retries=2,
             initial_delay=0.01,
             jitter=False,
-            on_failure="raise",
+            on_failure="raise",  # type: ignore[arg-type]
         )
 
     agent = create_agent(

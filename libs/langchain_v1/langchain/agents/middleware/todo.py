@@ -2,23 +2,26 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Literal, cast
+from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-from langchain_core.messages import SystemMessage, ToolMessage
+    from langgraph.runtime import Runtime
+
+from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.types import Command
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired, TypedDict, override
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
-    ModelCallResult,
+    ContextT,
     ModelRequest,
     ModelResponse,
     OmitFromInput,
+    ResponseT,
 )
 from langchain.tools import InjectedToolCallId
 
@@ -33,8 +36,12 @@ class Todo(TypedDict):
     """The current status of the todo item."""
 
 
-class PlanningState(AgentState):
-    """State schema for the todo middleware."""
+class PlanningState(AgentState[ResponseT]):
+    """State schema for the todo middleware.
+
+    Type Parameters:
+        ResponseT: The type of the structured response. Defaults to `Any`.
+    """
 
     todos: Annotated[NotRequired[list[Todo]], OmitFromInput]
     """List of todo items for tracking task progress."""
@@ -116,7 +123,9 @@ Writing todos takes time and tokens, use it when it is helpful for managing comp
 
 
 @tool(description=WRITE_TODOS_TOOL_DESCRIPTION)
-def write_todos(todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
+def write_todos(
+    todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCallId]
+) -> Command[Any]:
     """Create and manage a structured task list for your current work session."""
     return Command(
         update={
@@ -126,7 +135,7 @@ def write_todos(todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCall
     )
 
 
-class TodoListMiddleware(AgentMiddleware):
+class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, ResponseT]):
     """Middleware that provides todo list management capabilities to agents.
 
     This middleware adds a `write_todos` tool that allows agents to create and manage
@@ -135,7 +144,9 @@ class TodoListMiddleware(AgentMiddleware):
     into task completion status.
 
     The middleware automatically injects system prompts that guide the agent on when
-    and how to use the todo functionality effectively.
+    and how to use the todo functionality effectively. It also enforces that the
+    `write_todos` tool is called at most once per model turn, since the tool replaces
+    the entire todo list and parallel calls would create ambiguity about precedence.
 
     Example:
         ```python
@@ -151,7 +162,7 @@ class TodoListMiddleware(AgentMiddleware):
         ```
     """
 
-    state_schema = PlanningState
+    state_schema = PlanningState  # type: ignore[assignment]
 
     def __init__(
         self,
@@ -174,7 +185,7 @@ class TodoListMiddleware(AgentMiddleware):
         @tool(description=self.tool_description)
         def write_todos(
             todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCallId]
-        ) -> Command:
+        ) -> Command[Any]:
             """Create and manage a structured task list for your current work session."""
             return Command(
                 update={
@@ -189,10 +200,19 @@ class TodoListMiddleware(AgentMiddleware):
 
     def wrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
-    ) -> ModelCallResult:
-        """Update the system message to include the todo system prompt."""
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
+        """Update the system message to include the todo system prompt.
+
+        Args:
+            request: Model request to execute (includes state and runtime).
+            handler: Async callback that executes the model request and returns
+                `ModelResponse`.
+
+        Returns:
+            The model call result.
+        """
         if request.system_message is not None:
             new_system_content = [
                 *request.system_message.content_blocks,
@@ -207,10 +227,19 @@ class TodoListMiddleware(AgentMiddleware):
 
     async def awrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-    ) -> ModelCallResult:
-        """Update the system message to include the todo system prompt (async version)."""
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
+        """Update the system message to include the todo system prompt.
+
+        Args:
+            request: Model request to execute (includes state and runtime).
+            handler: Async callback that executes the model request and returns
+                `ModelResponse`.
+
+        Returns:
+            The model call result.
+        """
         if request.system_message is not None:
             new_system_content = [
                 *request.system_message.content_blocks,
@@ -222,3 +251,77 @@ class TodoListMiddleware(AgentMiddleware):
             content=cast("list[str | dict[str, str]]", new_system_content)
         )
         return await handler(request.override(system_message=new_system_message))
+
+    @override
+    def after_model(
+        self, state: PlanningState[ResponseT], runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
+        """Check for parallel write_todos tool calls and return errors if detected.
+
+        The todo list is designed to be updated at most once per model turn. Since
+        the `write_todos` tool replaces the entire todo list with each call, making
+        multiple parallel calls would create ambiguity about which update should take
+        precedence. This method prevents such conflicts by rejecting any response that
+        contains multiple write_todos tool calls.
+
+        Args:
+            state: The current agent state containing messages.
+            runtime: The LangGraph runtime instance.
+
+        Returns:
+            A dict containing error ToolMessages for each write_todos call if multiple
+            parallel calls are detected, otherwise None to allow normal execution.
+        """
+        messages = state["messages"]
+        if not messages:
+            return None
+
+        last_ai_msg = next((msg for msg in reversed(messages) if isinstance(msg, AIMessage)), None)
+        if not last_ai_msg or not last_ai_msg.tool_calls:
+            return None
+
+        # Count write_todos tool calls
+        write_todos_calls = [tc for tc in last_ai_msg.tool_calls if tc["name"] == "write_todos"]
+
+        if len(write_todos_calls) > 1:
+            # Create error tool messages for all write_todos calls
+            error_messages = [
+                ToolMessage(
+                    content=(
+                        "Error: The `write_todos` tool should never be called multiple times "
+                        "in parallel. Please call it only once per model invocation to update "
+                        "the todo list."
+                    ),
+                    tool_call_id=tc["id"],
+                    status="error",
+                )
+                for tc in write_todos_calls
+            ]
+
+            # Keep the tool calls in the AI message but return error messages
+            # This follows the same pattern as HumanInTheLoopMiddleware
+            return {"messages": error_messages}
+
+        return None
+
+    @override
+    async def aafter_model(
+        self, state: PlanningState[ResponseT], runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
+        """Check for parallel write_todos tool calls and return errors if detected.
+
+        Async version of `after_model`. The todo list is designed to be updated at
+        most once per model turn. Since the `write_todos` tool replaces the entire
+        todo list with each call, making multiple parallel calls would create ambiguity
+        about which update should take precedence. This method prevents such conflicts
+        by rejecting any response that contains multiple write_todos tool calls.
+
+        Args:
+            state: The current agent state containing messages.
+            runtime: The LangGraph runtime instance.
+
+        Returns:
+            A dict containing error ToolMessages for each write_todos call if multiple
+            parallel calls are detected, otherwise None to allow normal execution.
+        """
+        return self.after_model(state, runtime)

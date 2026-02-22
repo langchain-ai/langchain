@@ -141,7 +141,9 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Run:
-        """Run on new LLM token. Only available when streaming is enabled.
+        """Run on new LLM token.
+
+        Only available when streaming is enabled.
 
         Args:
             token: The token.
@@ -440,7 +442,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         name: str | None = None,
         **kwargs: Any,
     ) -> Run:
-        """Run when the Retriever starts running.
+        """Run when the `Retriever` starts running.
 
         Args:
             serialized: The serialized retriever.
@@ -477,7 +479,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         run_id: UUID,
         **kwargs: Any,
     ) -> Run:
-        """Run when Retriever errors.
+        """Run when `Retriever` errors.
 
         Args:
             error: The error.
@@ -499,7 +501,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
     def on_retriever_end(
         self, documents: Sequence[Document], *, run_id: UUID, **kwargs: Any
     ) -> Run:
-        """Run when the Retriever ends running.
+        """Run when the `Retriever` ends running.
 
         Args:
             documents: The documents.
@@ -527,7 +529,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
 
 
 class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
-    """Async Base interface for tracers."""
+    """Async base interface for tracers."""
 
     @abstractmethod
     @override
@@ -538,8 +540,9 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
     async def _start_trace(self, run: Run) -> None:
         """Start a trace for a run.
 
-        Starting a trace will run concurrently with each _on_[run_type]_start method.
-        No _on_[run_type]_start callback should depend on operations in _start_trace.
+        Starting a trace will run concurrently with each `_on_[run_type]_start` method.
+        No `_on_[run_type]_start` callback should depend on operations in
+        `_start_trace`.
         """
         super()._start_trace(run)
         await self._on_run_create(run)
@@ -548,8 +551,8 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
     async def _end_trace(self, run: Run) -> None:
         """End a trace for a run.
 
-        Ending a trace will run concurrently with each _on_[run_type]_end method.
-        No _on_[run_type]_end callback should depend on operations in _end_trace.
+        Ending a trace will run concurrently with each `_on_[run_type]_end` method.
+        No `_on_[run_type]_end` callback should depend on operations in `_end_trace`.
         """
         if not run.parent_run_id:
             await self._persist_run(run)

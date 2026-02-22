@@ -32,7 +32,9 @@ class BaseMessagePromptTemplate(Serializable, ABC):
 
     @abstractmethod
     def format_messages(self, **kwargs: Any) -> list[BaseMessage]:
-        """Format messages from kwargs. Should return a list of `BaseMessage` objects.
+        """Format messages from kwargs.
+
+        Should return a list of `BaseMessage` objects.
 
         Args:
             **kwargs: Keyword arguments to use for formatting.
@@ -92,4 +94,4 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         from langchain_core.prompts.chat import ChatPromptTemplate  # noqa: PLC0415
 
         prompt = ChatPromptTemplate(messages=[self])
-        return prompt + other
+        return prompt.__add__(other)

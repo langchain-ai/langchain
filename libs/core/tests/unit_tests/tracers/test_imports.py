@@ -2,13 +2,13 @@ from langchain_core.tracers import __all__
 
 EXPECTED_ALL = [
     "BaseTracer",
+    "ConsoleCallbackHandler",
     "EvaluatorCallbackHandler",
     "LangChainTracer",
-    "ConsoleCallbackHandler",
+    "LogStreamCallbackHandler",
     "Run",
     "RunLog",
     "RunLogPatch",
-    "LogStreamCallbackHandler",
 ]
 
 

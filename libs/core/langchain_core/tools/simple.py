@@ -11,9 +11,10 @@ from typing import (
 
 from typing_extensions import override
 
+# Cannot move to TYPE_CHECKING as _run/_arun parameter annotations are needed at runtime
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
+    AsyncCallbackManagerForToolRun,  # noqa: TC001
+    CallbackManagerForToolRun,  # noqa: TC001
 )
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
@@ -31,8 +32,10 @@ class Tool(BaseTool):
     """Tool that takes in function or coroutine directly."""
 
     description: str = ""
+
     func: Callable[..., str] | None
     """The function to run when the tool is called."""
+
     coroutine: Callable[..., Awaitable[str]] | None = None
     """The asynchronous version of the function."""
 

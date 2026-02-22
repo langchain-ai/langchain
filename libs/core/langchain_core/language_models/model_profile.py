@@ -7,6 +7,7 @@ class ModelProfile(TypedDict, total=False):
     """Model profile.
 
     !!! warning "Beta feature"
+
         This is a beta feature. The format of model profiles is subject to change.
 
     Provides information about chat model capabilities, such as context window sizes
@@ -17,6 +18,9 @@ class ModelProfile(TypedDict, total=False):
 
     max_input_tokens: int
     """Maximum context window (tokens)"""
+
+    text_inputs: bool
+    """Whether text inputs are supported."""
 
     image_inputs: bool
     """Whether image inputs are supported."""
@@ -54,6 +58,9 @@ class ModelProfile(TypedDict, total=False):
 
     reasoning_output: bool
     """Whether the model supports [reasoning / chain-of-thought](https://docs.langchain.com/oss/python/langchain/models#reasoning)"""
+
+    text_outputs: bool
+    """Whether text outputs are supported."""
 
     image_outputs: bool
     """Whether [image outputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)

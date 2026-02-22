@@ -47,7 +47,9 @@ def tracing_v2_enabled(
     """Instruct LangChain to log all runs in context to LangSmith.
 
     Args:
-        project_name: The name of the project. Defaults to `'default'`.
+        project_name: The name of the project.
+
+            Defaults to `'default'`.
         example_id: The ID of the example.
         tags: The tags to add to the run.
         client: The client of the langsmith.
@@ -137,7 +139,7 @@ def _get_tracer_project() -> str:
     tracing_context = ls_rh.get_tracing_context()
     run_tree = tracing_context["parent"]
     if run_tree is None and tracing_context["project_name"] is not None:
-        return tracing_context["project_name"]
+        return cast("str", tracing_context["project_name"])
     return getattr(
         run_tree,
         "session_name",
@@ -181,7 +183,7 @@ def register_configure_hook(
         env_var: The environment variable.
 
     Raises:
-        ValueError: If env_var is set, handle_class must also be set to a non-None
+        ValueError: If `env_var` is set, `handle_class` must also be set to a non-`None`
             value.
     """
     if env_var is not None and handle_class is None:

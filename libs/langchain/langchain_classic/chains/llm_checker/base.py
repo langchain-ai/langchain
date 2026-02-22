@@ -68,7 +68,7 @@ def _load_question_to_checked_assertions_chain(
     message=(
         "See LangGraph guides for a variety of self-reflection and corrective "
         "strategies for question-answering and other tasks: "
-        "https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_self_rag/"
+        "https://docs.langchain.com/oss/python/langchain/overview"
     ),
     removal="1.0",
 )

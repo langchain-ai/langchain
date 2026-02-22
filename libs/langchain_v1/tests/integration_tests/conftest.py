@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from dotenv import load_dotenv
 
 # Getting the absolute path of the current file's directory
 ABS_PATH = Path(__file__).resolve().parent
@@ -13,8 +14,6 @@ PROJECT_DIR = ABS_PATH.parent.parent
 def _load_env() -> None:
     dotenv_path = PROJECT_DIR / "tests" / "integration_tests" / ".env"
     if dotenv_path.exists():
-        from dotenv import load_dotenv
-
         load_dotenv(dotenv_path)
 
 

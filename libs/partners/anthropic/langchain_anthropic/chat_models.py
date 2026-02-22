@@ -17,7 +17,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.exceptions import OutputParserException
+from langchain_core.exceptions import ContextOverflowError, OutputParserException
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -57,6 +57,7 @@ from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import NotRequired, Self, TypedDict
 
+from langchain_anthropic import __version__
 from langchain_anthropic._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
@@ -73,6 +74,8 @@ _message_type_lookups = {
 }
 
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
+
+_USER_AGENT: Final[str] = f"langchain-anthropic/{__version__}"
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
@@ -250,15 +253,31 @@ def _merge_messages(
             ):
                 curr = HumanMessage(curr.content)  # type: ignore[misc]
             else:
+                tool_content = curr.content
+                cache_ctrl = None
+                # Extract cache_control from content blocks and hoist it
+                # to the tool_result level.  Anthropic's API does not
+                # support cache_control on tool_result content sub-blocks.
+                if isinstance(tool_content, list):
+                    cleaned = []
+                    for block in tool_content:
+                        if isinstance(block, dict) and "cache_control" in block:
+                            cache_ctrl = block["cache_control"]
+                            block = {
+                                k: v for k, v in block.items() if k != "cache_control"
+                            }
+                        cleaned.append(block)
+                    tool_content = cleaned
+                tool_result: dict = {
+                    "type": "tool_result",
+                    "content": tool_content,
+                    "tool_use_id": curr.tool_call_id,
+                    "is_error": curr.status == "error",
+                }
+                if cache_ctrl:
+                    tool_result["cache_control"] = cache_ctrl
                 curr = HumanMessage(  # type: ignore[misc]
-                    [
-                        {
-                            "type": "tool_result",
-                            "content": curr.content,
-                            "tool_use_id": curr.tool_call_id,
-                            "is_error": curr.status == "error",
-                        },
-                    ],
+                    [tool_result],
                 )
         last = merged[-1] if merged else None
         if any(
@@ -643,6 +662,17 @@ def _format_messages(
                 _lc_tool_calls_to_anthropic_tool_use_blocks(missing_tool_calls),
             )
 
+        if role == "assistant" and _i == len(merged_messages) - 1:
+            if isinstance(content, str):
+                content = content.rstrip()
+            elif (
+                isinstance(content, list)
+                and content
+                and isinstance(content[-1], dict)
+                and content[-1].get("type") == "text"
+            ):
+                content[-1]["text"] = content[-1]["text"].rstrip()
+
         if not content and role == "assistant" and _i < len(merged_messages) - 1:
             # anthropic.BadRequestError: Error code: 400: all messages must have
             # non-empty content except for the optional final assistant message
@@ -651,8 +681,75 @@ def _format_messages(
     return system, formatted_messages
 
 
+def _collect_code_execution_tool_ids(formatted_messages: list[dict]) -> set[str]:
+    """Collect tool_use IDs that were called by code_execution.
+
+    These blocks cannot have cache_control applied per Anthropic API requirements.
+    """
+    code_execution_tool_ids: set[str] = set()
+
+    for message in formatted_messages:
+        if message.get("role") != "assistant":
+            continue
+        content = message.get("content", [])
+        if not isinstance(content, list):
+            continue
+        for block in content:
+            if not isinstance(block, dict):
+                continue
+            if block.get("type") != "tool_use":
+                continue
+            caller = block.get("caller")
+            if isinstance(caller, dict):
+                caller_type = caller.get("type", "")
+                if caller_type.startswith("code_execution"):
+                    tool_id = block.get("id")
+                    if tool_id:
+                        code_execution_tool_ids.add(tool_id)
+
+    return code_execution_tool_ids
+
+
+def _is_code_execution_related_block(
+    block: dict,
+    code_execution_tool_ids: set[str],
+) -> bool:
+    """Check if a content block is related to code_execution.
+
+    Returns True for blocks that should NOT have cache_control applied.
+    """
+    if not isinstance(block, dict):
+        return False
+
+    block_type = block.get("type")
+
+    # tool_use blocks called by code_execution
+    if block_type == "tool_use":
+        caller = block.get("caller")
+        if isinstance(caller, dict):
+            caller_type = caller.get("type", "")
+            if caller_type.startswith("code_execution"):
+                return True
+
+    # tool_result blocks for code_execution called tools
+    if block_type == "tool_result":
+        tool_use_id = block.get("tool_use_id")
+        if tool_use_id and tool_use_id in code_execution_tool_ids:
+            return True
+
+    return False
+
+
+class AnthropicContextOverflowError(anthropic.BadRequestError, ContextOverflowError):
+    """BadRequestError raised when input exceeds Anthropic's context limit."""
+
+
 def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
     """Handle Anthropic BadRequestError."""
+    if "prompt is too long" in e.message:
+        raise AnthropicContextOverflowError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
     if ("messages: at least one message is required") in e.message:
         message = "Received only system message(s). "
         warnings.warn(message, stacklevel=2)
@@ -789,9 +886,12 @@ class ChatAnthropic(BaseChatModel):
     """Parameters for Claude reasoning,
 
     e.g., `#!python {"type": "enabled", "budget_tokens": 10_000}`
+
+    For Claude Opus 4.6, `budget_tokens` is deprecated in favor of
+    `#!python {"type": "adaptive"}`
     """
 
-    effort: Literal["high", "medium", "low"] | None = None
+    effort: Literal["max", "high", "medium", "low"] | None = None
     """Control how many tokens Claude uses when responding.
 
     This parameter will be merged into the `output_config` parameter when making
@@ -806,13 +906,8 @@ class ChatAnthropic(BaseChatModel):
 
     !!! note "Model Support"
 
-        This feature is currently only supported by Claude Opus 4.5.
-
-    !!! note "Automatic beta header"
-
-        The required `effort-2025-11-24` beta header is
-        automatically appended to the request when using `effort`, so you
-        don't need to manually specify it in the `betas` parameter.
+        This feature is generally available on Claude Opus 4.6 and Claude Opus 4.5.
+        The `max` effort level is only supported by Claude Opus 4.6.
     """
 
     mcp_servers: list[dict[str, Any]] | None = None
@@ -835,6 +930,12 @@ class ChatAnthropic(BaseChatModel):
     model responses will include container metadata. Set `reuse_last_container=True`
     to automatically reuse the container from the most recent response for subsequent
     invocations.
+    """
+
+    inference_geo: str | None = None
+    """Controls where model inference runs. See Anthropic's
+    [data residency](https://platform.claude.com/docs/en/build-with-claude/data-residency)
+    docs for more information.
     """
 
     @property
@@ -923,15 +1024,26 @@ class ChatAnthropic(BaseChatModel):
         """Set model profile if not overridden."""
         if self.profile is None:
             self.profile = _get_default_model_profile(self.model)
+        if (
+            self.profile is not None
+            and self.betas
+            and "context-1m-2025-08-07" in self.betas
+        ):
+            self.profile["max_input_tokens"] = 1_000_000
         return self
 
     @cached_property
     def _client_params(self) -> dict[str, Any]:
+        # Merge User-Agent with user-provided headers (user headers take precedence)
+        default_headers = {"User-Agent": _USER_AGENT}
+        if self.default_headers:
+            default_headers.update(self.default_headers)
+
         client_params: dict[str, Any] = {
             "api_key": self.anthropic_api_key.get_secret_value(),
             "base_url": self.anthropic_api_url,
             "max_retries": self.max_retries,
-            "default_headers": (self.default_headers or None),
+            "default_headers": default_headers,
         }
         # value <= 0 indicates the param should be ignored. None is a meaningful value
         # for Anthropic client and treated differently than not specifying the param at
@@ -1008,17 +1120,33 @@ class ChatAnthropic(BaseChatModel):
 
         system, formatted_messages = _format_messages(messages)
 
-        # If cache_control is provided in kwargs, add it to the last message with
-        # content (Anthropic requires cache_control to be nested within a message
-        # block).
+        # If cache_control is provided in kwargs, add it to the last eligible message
+        # block (Anthropic requires cache_control to be nested within a message block).
+        # Skip blocks related to code_execution as they cannot have cache_control.
         cache_control = kwargs.pop("cache_control", None)
         if cache_control and formatted_messages:
+            # Collect tool IDs called by code_execution
+            code_execution_tool_ids = _collect_code_execution_tool_ids(
+                formatted_messages
+            )
+
+            cache_applied = False
             for formatted_message in reversed(formatted_messages):
+                if cache_applied:
+                    break
                 content = formatted_message.get("content")
                 if isinstance(content, list) and content:
-                    content[-1]["cache_control"] = cache_control
-                    break
-                if isinstance(content, str):
+                    # Find last eligible block (not code_execution related)
+                    for block in reversed(content):
+                        if isinstance(block, dict):
+                            if _is_code_execution_related_block(
+                                block, code_execution_tool_ids
+                            ):
+                                continue
+                            block["cache_control"] = cache_control
+                            cache_applied = True
+                            break
+                elif isinstance(content, str):
                     formatted_message["content"] = [
                         {
                             "type": "text",
@@ -1026,10 +1154,10 @@ class ChatAnthropic(BaseChatModel):
                             "cache_control": cache_control,
                         }
                     ]
-                    break
-            # If we didn't find a message with content we silently drop the control.
-            # Anthropic would reject a payload with empty content blocks.
-
+                    cache_applied = True
+            # If we didn't find an eligible block we silently drop the control.
+            # Anthropic would reject a payload with cache_control on
+            # code_execution blocks.
         payload = {
             "model": self.model,
             "max_tokens": self.max_tokens,
@@ -1047,6 +1175,8 @@ class ChatAnthropic(BaseChatModel):
         }
         if self.thinking is not None:
             payload["thinking"] = self.thinking
+        if self.inference_geo is not None:
+            payload["inference_geo"] = self.inference_geo
 
         # Handle output_config and effort parameter
         # Priority: self.effort > payload output_config
@@ -1058,16 +1188,6 @@ class ChatAnthropic(BaseChatModel):
 
         if output_config:
             payload["output_config"] = output_config
-
-            # Auto-append required beta for effort
-            if "effort" in output_config:
-                required_beta = "effort-2025-11-24"
-                if payload["betas"]:
-                    # Merge with existing betas
-                    if required_beta not in payload["betas"]:
-                        payload["betas"] = [*payload["betas"], required_beta]
-                else:
-                    payload["betas"] = [required_beta]
 
         if "response_format" in payload:
             # response_format present when using agents.create_agent's ProviderStrategy
@@ -1081,22 +1201,22 @@ class ChatAnthropic(BaseChatModel):
                 and "schema" in response_format.get("json_schema", {})
             ):
                 response_format = cast(dict, response_format["json_schema"]["schema"])
-            # Convert OpenAI-style response_format to Anthropic's output_format
-            payload["output_format"] = _convert_to_anthropic_output_format(
+            # Convert OpenAI-style response_format to Anthropic's output_config.format
+            output_config = payload.setdefault("output_config", {})
+            output_config["format"] = _convert_to_anthropic_output_config_format(
                 response_format
             )
 
+        # Handle deprecated output_format parameter for backward compatibility
         if "output_format" in payload:
-            # Native structured output requires the structured outputs beta
-            if payload["betas"]:
-                if "structured-outputs-2025-11-13" not in payload["betas"]:
-                    # Merge with existing betas
-                    payload["betas"] = [
-                        *payload["betas"],
-                        "structured-outputs-2025-11-13",
-                    ]
-            else:
-                payload["betas"] = ["structured-outputs-2025-11-13"]
+            warnings.warn(
+                "The 'output_format' parameter is deprecated and will be removed in a "
+                "future version. Use 'output_config={\"format\": ...}' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            output_config = payload.setdefault("output_config", {})
+            output_config["format"] = payload.pop("output_format")
 
         if self.reuse_last_container:
             # Check for most recent AIMessage with container set in response_metadata
@@ -1111,24 +1231,9 @@ class ChatAnthropic(BaseChatModel):
                     payload["container"] = container_id
                     break
 
-        # Check if any tools have strict mode enabled
+        # Note: Beta headers are no longer required for structured outputs
+        # (output_config.format or strict tool use) as they are now generally available
         if "tools" in payload and isinstance(payload["tools"], list):
-            has_strict_tool = any(
-                isinstance(tool, dict) and tool.get("strict") is True
-                for tool in payload["tools"]
-            )
-            if has_strict_tool:
-                # Strict tool use requires the structured outputs beta
-                if payload["betas"]:
-                    if "structured-outputs-2025-11-13" not in payload["betas"]:
-                        # Merge with existing betas
-                        payload["betas"] = [
-                            *payload["betas"],
-                            "structured-outputs-2025-11-13",
-                        ]
-                else:
-                    payload["betas"] = ["structured-outputs-2025-11-13"]
-
             # Auto-append required betas for specific tool types and input_examples
             has_input_examples = False
             for tool in payload["tools"]:
@@ -1198,6 +1303,7 @@ class ChatAnthropic(BaseChatModel):
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
                 and not _thinking_in_params(payload)
+                and not _compact_in_params(payload)
             )
             block_start_event = None
             for event in stream:
@@ -1234,6 +1340,7 @@ class ChatAnthropic(BaseChatModel):
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
                 and not _thinking_in_params(payload)
+                and not _compact_in_params(payload)
             )
             block_start_event = None
             async for event in stream:
@@ -1596,7 +1703,9 @@ class ChatAnthropic(BaseChatModel):
                 )
         elif method == "json_schema":
             llm = self.bind(
-                output_format=_convert_to_anthropic_output_format(schema),
+                output_config={
+                    "format": _convert_to_anthropic_output_config_format(schema)
+                },
                 ls_structured_output_format={
                     "kwargs": {"method": "json_schema"},
                     "schema": convert_to_openai_tool(schema),
@@ -1795,6 +1904,12 @@ def _documents_in_params(params: dict) -> bool:
     return False
 
 
+def _compact_in_params(params: dict) -> bool:
+    edits = params.get("context_management", {}).get("edits") or []
+
+    return any("compact" in (edit.get("type") or "") for edit in edits)
+
+
 class _AnthropicToolUse(TypedDict):
     type: Literal["tool_use"]
     name: str
@@ -1817,10 +1932,16 @@ def _lc_tool_calls_to_anthropic_tool_use_blocks(
     ]
 
 
-def _convert_to_anthropic_output_format(schema: dict | type) -> dict[str, Any]:
-    """Convert JSON schema, Pydantic model, or `TypedDict` into Claude `output_format`.
+def _convert_to_anthropic_output_config_format(schema: dict | type) -> dict[str, Any]:
+    """Convert JSON schema, Pydantic model, or `TypedDict` into `output_config.format`.
 
     See Claude docs on [structured outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs).
+
+    Args:
+        schema: A JSON schema dict, Pydantic model class, or TypedDict.
+
+    Returns:
+        A dict with `type` and `schema` keys suitable for `output_config.format`.
     """
     from anthropic import transform_schema
 
@@ -1973,6 +2094,13 @@ def _make_message_chunk_from_anthropic_event(
                 content=[content_block],
                 tool_call_chunks=tool_call_chunks,
             )
+
+        # Compaction block
+        elif event.delta.type == "compaction_delta":
+            content_block = event.delta.model_dump()
+            content_block["index"] = event.index
+            content_block["type"] = "compaction"
+            message_chunk = AIMessageChunk(content=[content_block])
 
     # Process final usage metadata and completion info
     elif event.type == "message_delta" and stream_usage:

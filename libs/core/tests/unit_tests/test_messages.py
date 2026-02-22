@@ -370,6 +370,14 @@ class TestGetBufferString:
 
         assert get_buffer_string(msgs) == expected_output
 
+    def test_custom_message_separator(self) -> None:
+        msgs = [
+            self._HUMAN_MSG,
+            self._AI_MSG,
+        ]
+        expected_output = "Human: human\n\nAI: ai"
+        assert get_buffer_string(msgs, message_separator="\n\n") == expected_output
+
 
 def test_multiple_msg() -> None:
     human_msg = HumanMessage(content="human", additional_kwargs={"key": "value"})
@@ -908,6 +916,47 @@ def test_merge_tool_calls() -> None:
     assert len(merged) == 2
 
 
+def test_merge_tool_calls_parallel_same_index() -> None:
+    """Test parallel tool calls with same index but different IDs."""
+    # Two parallel tool calls with the same index but different IDs
+    left = create_tool_call_chunk(
+        name="read_file", args='{"path": "foo.txt"}', id="tooluse_ABC", index=0
+    )
+    right = create_tool_call_chunk(
+        name="search_text", args='{"query": "bar"}', id="tooluse_DEF", index=0
+    )
+    merged = merge_lists([left], [right])
+    assert merged is not None
+    assert len(merged) == 2
+    assert merged[0]["name"] == "read_file"
+    assert merged[0]["id"] == "tooluse_ABC"
+    assert merged[1]["name"] == "search_text"
+    assert merged[1]["id"] == "tooluse_DEF"
+
+    # Streaming continuation: same index, id=None on continuation chunk
+    # should still merge correctly with the original chunk
+    first = create_tool_call_chunk(name="tool1", args="", id="id1", index=0)
+    continuation = create_tool_call_chunk(
+        name=None, args='{"key": "value"}', id=None, index=0
+    )
+    merged = merge_lists([first], [continuation])
+    assert merged is not None
+    assert len(merged) == 1
+    assert merged[0]["name"] == "tool1"
+    assert merged[0]["args"] == '{"key": "value"}'
+    assert merged[0]["id"] == "id1"
+
+    # Three parallel tool calls all with the same index
+    tc1 = create_tool_call_chunk(name="tool_a", args="{}", id="id_a", index=0)
+    tc2 = create_tool_call_chunk(name="tool_b", args="{}", id="id_b", index=0)
+    tc3 = create_tool_call_chunk(name="tool_c", args="{}", id="id_c", index=0)
+    merged = merge_lists([tc1], [tc2], [tc3])
+    assert merged is not None
+    assert len(merged) == 3
+    assert [m["name"] for m in merged] == ["tool_a", "tool_b", "tool_c"]
+    assert [m["id"] for m in merged] == ["id_a", "id_b", "id_c"]
+
+
 def test_tool_message_serdes() -> None:
     message = ToolMessage(
         "foo", artifact={"bar": {"baz": 123}}, tool_call_id="1", status="error"
@@ -925,7 +974,7 @@ def test_tool_message_serdes() -> None:
         },
     }
     assert dumpd(message) == ser_message
-    assert load(dumpd(message)) == message
+    assert load(dumpd(message), allowed_objects=[ToolMessage]) == message
 
 
 class BadObject:
@@ -954,7 +1003,7 @@ def test_tool_message_ser_non_serializable() -> None:
     }
     assert dumpd(message) == ser_message
     with pytest.raises(NotImplementedError):
-        load(dumpd(ser_message))
+        load(dumpd(message), allowed_objects=[ToolMessage])
 
 
 def test_tool_message_to_dict() -> None:
@@ -1105,20 +1154,32 @@ def test_is_data_content_block() -> None:
     # Image blocks
     assert is_data_content_block({"type": "image", "url": "https://..."})
     assert is_data_content_block(
-        {"type": "image", "base64": "<base64 data>", "mime_type": "image/jpeg"}
+        {
+            "type": "image",
+            "base64": "<base64 data>",
+            "mime_type": "image/jpeg",
+        }
     )
 
     # Video blocks
     assert is_data_content_block({"type": "video", "url": "https://video.mp4"})
     assert is_data_content_block(
-        {"type": "video", "base64": "<base64 video>", "mime_type": "video/mp4"}
+        {
+            "type": "video",
+            "base64": "<base64 video>",
+            "mime_type": "video/mp4",
+        }
     )
     assert is_data_content_block({"type": "video", "file_id": "vid_123"})
 
     # Audio blocks
     assert is_data_content_block({"type": "audio", "url": "https://audio.mp3"})
     assert is_data_content_block(
-        {"type": "audio", "base64": "<base64 audio>", "mime_type": "audio/mp3"}
+        {
+            "type": "audio",
+            "base64": "<base64 audio>",
+            "mime_type": "audio/mp3",
+        }
     )
     assert is_data_content_block({"type": "audio", "file_id": "aud_123"})
 
@@ -1130,7 +1191,11 @@ def test_is_data_content_block() -> None:
     # File blocks
     assert is_data_content_block({"type": "file", "url": "https://file.pdf"})
     assert is_data_content_block(
-        {"type": "file", "base64": "<base64 file>", "mime_type": "application/pdf"}
+        {
+            "type": "file",
+            "base64": "<base64 file>",
+            "mime_type": "application/pdf",
+        }
     )
     assert is_data_content_block({"type": "file", "file_id": "file_123"})
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Literal
 
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
@@ -139,7 +139,8 @@ def pull(
     if hasattr(client, "pull_repo"):
         # >= 0.1.15
         res_dict = client.pull_repo(owner_repo_commit)
-        obj = loads(json.dumps(res_dict["manifest"]))
+        allowed_objects: Literal["all", "core"] = "all" if include_model else "core"
+        obj = loads(json.dumps(res_dict["manifest"]), allowed_objects=allowed_objects)
         if isinstance(obj, BasePromptTemplate):
             if obj.metadata is None:
                 obj.metadata = {}

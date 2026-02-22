@@ -8,6 +8,7 @@ from pydantic import ConfigDict, Field
 
 from langchain_core._api.deprecation import warn_deprecated
 from langchain_core.load.serializable import Serializable
+from langchain_core.messages import content as types
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
@@ -17,7 +18,6 @@ if TYPE_CHECKING:
 
     from typing_extensions import Self
 
-    from langchain_core.messages import content as types
     from langchain_core.prompts.chat import ChatPromptTemplate
 
 
@@ -204,7 +204,6 @@ class BaseMessage(Serializable):
 
         """
         # Needed here to avoid circular import, as these classes import BaseMessages
-        from langchain_core.messages import content as types  # noqa: PLC0415
         from langchain_core.messages.block_translators.anthropic import (  # noqa: PLC0415
             _convert_to_v1_from_anthropic_input,
         )
@@ -266,6 +265,9 @@ class BaseMessage(Serializable):
 
         Can be used as both property (`message.text`) and method (`message.text()`).
 
+        Handles both string and list content types (e.g. for content blocks). Only
+        extracts blocks with `type: 'text'`; other block types are ignored.
+
         !!! deprecated
             As of `langchain-core` 1.0.0, calling `.text()` as a method is deprecated.
             Use `.text` as a property instead. This method will be removed in 2.0.0.
@@ -277,7 +279,7 @@ class BaseMessage(Serializable):
         if isinstance(self.content, str):
             text_value = self.content
         else:
-            # must be a list
+            # Must be a list
             blocks = [
                 block
                 for block in self.content
@@ -302,7 +304,7 @@ class BaseMessage(Serializable):
         from langchain_core.prompts.chat import ChatPromptTemplate  # noqa: PLC0415
 
         prompt = ChatPromptTemplate(messages=[self])
-        return prompt + other
+        return prompt.__add__(other)
 
     def pretty_repr(
         self,
@@ -317,7 +319,22 @@ class BaseMessage(Serializable):
         Returns:
             A pretty representation of the message.
 
-        """
+        Example:
+            ```python
+            from langchain_core.messages import HumanMessage
+
+            msg = HumanMessage(content="What is the capital of France?")
+            print(msg.pretty_repr())
+            ```
+
+            Results in:
+
+            ```txt
+            ================================ Human Message =================================
+
+            What is the capital of France?
+            ```
+        """  # noqa: E501
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
         # TODO: handle non-string content.
         if self.name is not None:
@@ -325,7 +342,24 @@ class BaseMessage(Serializable):
         return f"{title}\n\n{self.content}"
 
     def pretty_print(self) -> None:
-        """Print a pretty representation of the message."""
+        """Print a pretty representation of the message.
+
+        Example:
+            ```python
+            from langchain_core.messages import AIMessage
+
+            msg = AIMessage(content="The capital of France is Paris.")
+            msg.pretty_print()
+            ```
+
+            Results in:
+
+            ```txt
+            ================================== Ai Message ==================================
+
+            The capital of France is Paris.
+            ```
+        """  # noqa: E501
         print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
 

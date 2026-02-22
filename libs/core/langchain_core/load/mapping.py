@@ -1,21 +1,19 @@
 """Serialization mapping.
 
-This file contains a mapping between the lc_namespace path for a given
-subclass that implements from Serializable to the namespace
+This file contains a mapping between the `lc_namespace` path for a given
+subclass that implements from `Serializable` to the namespace
 where that class is actually located.
 
 This mapping helps maintain the ability to serialize and deserialize
 well-known LangChain objects even if they are moved around in the codebase
 across different LangChain versions.
 
-For example,
+For example, the code for the `AIMessage` class is located in
+`langchain_core.messages.ai.AIMessage`. This message is associated with the
+`lc_namespace` of `["langchain", "schema", "messages", "AIMessage"]`,
+because this code was originally in `langchain.schema.messages.AIMessage`.
 
-The code for AIMessage class is located in langchain_core.messages.ai.AIMessage,
-This message is associated with the lc_namespace
-["langchain", "schema", "messages", "AIMessage"],
-because this code was originally in langchain.schema.messages.AIMessage.
-
-The mapping allows us to deserialize an AIMessage created with an older
+The mapping allows us to deserialize an `AIMessage` created with an older
 version of LangChain where the code was in a different location.
 """
 
@@ -275,6 +273,16 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "chat_models",
         "ChatGroq",
     ),
+    ("langchain_openrouter", "chat_models", "ChatOpenRouter"): (
+        "langchain_openrouter",
+        "chat_models",
+        "ChatOpenRouter",
+    ),
+    ("langchain_xai", "chat_models", "ChatXAI"): (
+        "langchain_xai",
+        "chat_models",
+        "ChatXAI",
+    ),
     ("langchain", "chat_models", "fireworks", "ChatFireworks"): (
         "langchain_fireworks",
         "chat_models",
@@ -295,6 +303,12 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "langchain_mistralai",
         "chat_models",
         "ChatMistralAI",
+    ),
+    ("langchain", "chat_models", "anthropic_bedrock", "ChatAnthropicBedrock"): (
+        "langchain_aws",
+        "chat_models",
+        "anthropic",
+        "ChatAnthropicBedrock",
     ),
     ("langchain", "chat_models", "bedrock", "ChatBedrock"): (
         "langchain_aws",
@@ -528,16 +542,6 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "prompts",
         "structured",
         "StructuredPrompt",
-    ),
-    ("langchain_sambanova", "chat_models", "ChatSambaNovaCloud"): (
-        "langchain_sambanova",
-        "chat_models",
-        "ChatSambaNovaCloud",
-    ),
-    ("langchain_sambanova", "chat_models", "ChatSambaStudio"): (
-        "langchain_sambanova",
-        "chat_models",
-        "ChatSambaStudio",
     ),
     ("langchain_core", "prompts", "message", "_DictMessagePromptTemplate"): (
         "langchain_core",

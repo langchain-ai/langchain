@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from typing_extensions import override
+
 from langchain_text_splitters.base import TextSplitter
 
 try:
@@ -25,7 +27,18 @@ class NLTKTextSplitter(TextSplitter):
         use_span_tokenize: bool = False,
         **kwargs: Any,
     ) -> None:
-        """Initialize the NLTK splitter."""
+        """Initialize the NLTK splitter.
+
+        Args:
+            separator: The separator to use when combining splits.
+            language: The language to use.
+            use_span_tokenize: Whether to use `span_tokenize` instead of
+                `sent_tokenize`.
+
+        Raises:
+            ImportError: If NLTK is not installed.
+            ValueError: If `use_span_tokenize` is `True` and separator is not `''`.
+        """
         super().__init__(**kwargs)
         self._separator = separator
         self._language = language
@@ -41,8 +54,8 @@ class NLTKTextSplitter(TextSplitter):
         else:
             self._tokenizer = nltk.tokenize.sent_tokenize
 
+    @override
     def split_text(self, text: str) -> list[str]:
-        """Split incoming text and return chunks."""
         # First we naively split the large input into a bunch of smaller ones.
         if self._use_span_tokenize:
             spans = list(self._tokenizer.span_tokenize(text))

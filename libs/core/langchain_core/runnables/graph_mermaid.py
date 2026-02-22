@@ -8,9 +8,10 @@ import random
 import re
 import string
 import time
+import urllib.parse
 from dataclasses import asdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import yaml
 
@@ -81,6 +82,7 @@ def draw_mermaid(
                 }
             }
             ```
+
     Returns:
         Mermaid graph syntax.
 
@@ -389,7 +391,7 @@ async def _render_mermaid_using_pyppeteer(
         }
     )
 
-    img_bytes = await page.screenshot({"fullPage": False})
+    img_bytes = cast("bytes", await page.screenshot({"fullPage": False}))
     await browser.close()
 
     if output_file_path is not None:
@@ -433,9 +435,11 @@ def _render_mermaid_using_api(
         if not hex_color_pattern.match(background_color):
             background_color = f"!{background_color}"
 
+    # URL-encode the background_color to handle special characters like '!'
+    encoded_bg_color = urllib.parse.quote(str(background_color), safe="")
     image_url = (
         f"{base_url}/img/{mermaid_syntax_encoded}"
-        f"?type={file_type}&bgColor={background_color}"
+        f"?type={file_type}&bgColor={encoded_bg_color}"
     )
 
     error_msg_suffix = (

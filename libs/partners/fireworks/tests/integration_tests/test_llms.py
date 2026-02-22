@@ -1,17 +1,19 @@
 """Test Fireworks API wrapper.
 
 In order to run this test, you need to have an Fireworks api key.
+
 You can get it by registering for free at https://api.fireworks.ai/.
+
 A test key can be found at https://api.fireworks.ai/settings/api-keys
 
-You'll then need to set FIREWORKS_API_KEY environment variable to your api key.
+You'll then need to set `FIREWORKS_API_KEY` environment variable to your api key.
 """
 
 import pytest as pytest
 
 from langchain_fireworks import Fireworks
 
-_MODEL = "accounts/fireworks/models/llama-v3p1-8b-instruct"
+_MODEL = "accounts/fireworks/models/deepseek-v3p1"
 
 
 def test_fireworks_call() -> None:

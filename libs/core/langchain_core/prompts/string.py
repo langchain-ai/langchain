@@ -1,13 +1,14 @@
-"""BasePrompt schema definition."""
+"""`BasePrompt` schema definition."""
 
 from __future__ import annotations
 
 import warnings
-from abc import ABC
+from abc import ABC, abstractmethod
 from string import Formatter
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from pydantic import BaseModel, create_model
+from typing_extensions import override
 
 from langchain_core.prompt_values import PromptValue, StringPromptValue
 from langchain_core.prompts.base import BasePromptTemplate
@@ -32,14 +33,16 @@ PromptTemplateFormat = Literal["f-string", "mustache", "jinja2"]
 def jinja2_formatter(template: str, /, **kwargs: Any) -> str:
     """Format a template using jinja2.
 
-    *Security warning*:
-        As of LangChain 0.0.329, this method uses Jinja2's
-        SandboxedEnvironment by default. However, this sand-boxing should
-        be treated as a best-effort approach rather than a guarantee of security.
+    !!! warning "Security"
+
+        As of LangChain 0.0.329, this method uses Jinja2's `SandboxedEnvironment` by
+        default. However, this sandboxing should be treated as a best-effort approach
+        rather than a guarantee of security.
+
         Do not accept jinja2 templates from untrusted sources as they may lead
         to arbitrary Python code execution.
 
-        https://jinja.palletsprojects.com/en/3.1.x/sandbox/
+        [More information.](https://jinja.palletsprojects.com/en/3.1.x/sandbox/)
 
     Args:
         template: The template string.
@@ -61,9 +64,11 @@ def jinja2_formatter(template: str, /, **kwargs: Any) -> str:
         )
         raise ImportError(msg)
 
-    # Use a restricted sandbox that blocks ALL attribute/method access
-    # Only simple variable lookups like {{variable}} are allowed
-    # Attribute access like {{variable.attr}} or {{variable.method()}} is blocked
+    # Use Jinja2's SandboxedEnvironment which blocks access to dunder attributes
+    # (e.g., __class__, __globals__) to prevent sandbox escapes.
+    # Note: regular attribute access (e.g., {{obj.attr}}) and method calls are
+    # still allowed. This is a best-effort measure — do not use with untrusted
+    # templates.
     return SandboxedEnvironment().from_string(template).render(**kwargs)
 
 
@@ -122,14 +127,14 @@ def mustache_template_vars(
 ) -> set[str]:
     """Get the top-level variables from a mustache template.
 
-    For nested variables like `{{person.name}}`, only the top-level
-    key (`person`) is returned.
+    For nested variables like `{{person.name}}`, only the top-level key (`person`) is
+    returned.
 
     Args:
         template: The template string.
 
     Returns:
-       The top-level variables from the template.
+        The top-level variables from the template.
     """
     variables: set[str] = set()
     section_depth = 0
@@ -189,17 +194,20 @@ def mustache_schema(template: str) -> type[BaseModel]:
     return _create_model_recursive("PromptInput", defs)
 
 
-def _create_model_recursive(name: str, defs: Defs) -> type:
-    return create_model(  # type: ignore[call-overload]
-        name,
-        **{
-            k: (_create_model_recursive(k, v), None) if v else (type(v), None)
-            for k, v in defs.items()
-        },
+def _create_model_recursive(name: str, defs: Defs) -> type[BaseModel]:
+    return cast(
+        "type[BaseModel]",
+        create_model(  # type: ignore[call-overload]
+            name,
+            **{
+                k: (_create_model_recursive(k, v), None) if v else (type(v), None)
+                for k, v in defs.items()
+            },
+        ),
     )
 
 
-DEFAULT_FORMATTER_MAPPING: dict[str, Callable] = {
+DEFAULT_FORMATTER_MAPPING: dict[str, Callable[..., str]] = {
     "f-string": formatter.format,
     "mustache": mustache_formatter,
     "jinja2": jinja2_formatter,
@@ -218,7 +226,9 @@ def check_valid_template(
 
     Args:
         template: The template string.
-        template_format: The template format. Should be one of "f-string" or "jinja2".
+        template_format: The template format.
+
+            Should be one of `'f-string'` or `'jinja2'`.
         input_variables: The input variables.
 
     Raises:
@@ -248,7 +258,9 @@ def get_template_variables(template: str, template_format: str) -> list[str]:
 
     Args:
         template: The template string.
-        template_format: The template format. Should be one of "f-string" or "jinja2".
+        template_format: The template format.
+
+            Should be one of `'f-string'`, `'mustache'` or `'jinja2'`.
 
     Returns:
         The variables from the template.
@@ -330,6 +342,10 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
         """
         return StringPromptValue(text=await self.aformat(**kwargs))
 
+    @override
+    @abstractmethod
+    def format(self, **kwargs: Any) -> str: ...
+
     def pretty_repr(
         self,
         html: bool = False,  # noqa: FBT001,FBT002
@@ -358,7 +374,7 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
 
 
 def is_subsequence(child: Sequence, parent: Sequence) -> bool:
-    """Return True if child is subsequence of parent."""
+    """Return `True` if child is subsequence of parent."""
     if len(child) == 0 or len(parent) == 0:
         return False
     if len(parent) < len(child):

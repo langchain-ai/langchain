@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from typing_extensions import override
+
 from langchain_text_splitters.base import TextSplitter
 
 try:
@@ -47,8 +49,8 @@ class SpacyTextSplitter(TextSplitter):
         self._separator = separator
         self._strip_whitespace = strip_whitespace
 
+    @override
     def split_text(self, text: str) -> list[str]:
-        """Split incoming text and return chunks."""
         splits = (
             s.text if self._strip_whitespace else s.text_with_ws
             for s in self._tokenizer(text).sents

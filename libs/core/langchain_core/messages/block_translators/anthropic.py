@@ -1,7 +1,7 @@
 """Derivations of standard content blocks from Anthropic content."""
 
 import json
-from collections.abc import Iterable
+from collections.abc import Iterator
 from typing import Any, cast
 
 from langchain_core.messages import AIMessage, AIMessageChunk
@@ -45,7 +45,7 @@ def _convert_to_v1_from_anthropic_input(
         Updated list with Anthropic blocks converted to v1 format.
     """
 
-    def _iter_blocks() -> Iterable[types.ContentBlock]:
+    def _iter_blocks() -> Iterator[types.ContentBlock]:
         blocks: list[dict[str, Any]] = [
             cast("dict[str, Any]", block)
             if block.get("type") != "non_standard"
@@ -159,12 +159,12 @@ def _convert_citation_to_v1(citation: dict[str, Any]) -> types.Annotation:
 
         return url_citation
 
-    if citation_type in (
+    if citation_type in {
         "char_location",
         "content_block_location",
         "page_location",
         "search_result_location",
-    ):
+    }:
         document_citation: types.Citation = {
             "type": "citation",
             "cited_text": citation["cited_text"],
@@ -173,8 +173,6 @@ def _convert_citation_to_v1(citation: dict[str, Any]) -> types.Annotation:
             document_citation["title"] = citation["document_title"]
         elif title := citation.get("title"):
             document_citation["title"] = title
-        else:
-            pass
         known_fields = {
             "type",
             "cited_text",
@@ -204,7 +202,7 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
     else:
         content = message.content
 
-    def _iter_blocks() -> Iterable[types.ContentBlock]:
+    def _iter_blocks() -> Iterator[types.ContentBlock]:
         for block in content:
             if not isinstance(block, dict):
                 continue
@@ -280,8 +278,6 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                                     "id": tc.get("id"),
                                 }
                                 break
-                    else:
-                        pass
                     if not tool_call_block:
                         tool_call_block = {
                             "type": "tool_call",
@@ -465,12 +461,26 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
 
 
 def translate_content(message: AIMessage) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a message with Anthropic content."""
+    """Derive standard content blocks from a message with Anthropic content.
+
+    Args:
+        message: The message to translate.
+
+    Returns:
+        The derived content blocks.
+    """
     return _convert_to_v1_from_anthropic(message)
 
 
 def translate_content_chunk(message: AIMessageChunk) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a message chunk with Anthropic content."""
+    """Derive standard content blocks from a message chunk with Anthropic content.
+
+    Args:
+        message: The message chunk to translate.
+
+    Returns:
+        The derived content blocks.
+    """
     return _convert_to_v1_from_anthropic(message)
 
 

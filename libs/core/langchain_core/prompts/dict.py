@@ -1,8 +1,8 @@
-"""Dict prompt template."""
+"""Dictionary prompt template."""
 
 import warnings
 from functools import cached_property
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from typing_extensions import override
 
@@ -16,10 +16,11 @@ from langchain_core.runnables.config import ensure_config
 
 
 class DictPromptTemplate(RunnableSerializable[dict, dict]):
-    """Template represented by a dict.
+    """Template represented by a dictionary.
 
-    Recognizes variables in f-string or mustache formatted string dict values. Does NOT
-    recognize variables in dict keys. Applies recursively.
+    Recognizes variables in f-string or mustache formatted string dict values.
+
+    Does NOT recognize variables in dict keys. Applies recursively.
     """
 
     template: dict[str, Any]
@@ -65,7 +66,10 @@ class DictPromptTemplate(RunnableSerializable[dict, dict]):
 
     @cached_property
     def _serialized(self) -> dict[str, Any]:
-        return dumpd(self)
+        # self is always a Serializable object in this case, thus the result is
+        # guaranteed to be a dict since dumpd uses the default callback, which uses
+        # obj.to_json which always returns TypedDict subclasses
+        return cast("dict[str, Any]", dumpd(self))
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -116,7 +120,7 @@ def _insert_input_variables(
     inputs: dict[str, Any],
     template_format: Literal["f-string", "mustache"],
 ) -> dict[str, Any]:
-    formatted = {}
+    formatted: dict[str, Any] = {}
     formatter = DEFAULT_FORMATTER_MAPPING[template_format]
     for k, v in template.items():
         if isinstance(v, str):
@@ -132,7 +136,7 @@ def _insert_input_variables(
                 warnings.warn(msg, stacklevel=2)
             formatted[k] = _insert_input_variables(v, inputs, template_format)
         elif isinstance(v, (list, tuple)):
-            formatted_v = []
+            formatted_v: list[str | dict[str, Any]] = []
             for x in v:
                 if isinstance(x, str):
                     formatted_v.append(formatter(x, **inputs))

@@ -1,0 +1,13 @@
+provider = "perplexity"
+
+[overrides."sonar-deep-research"]
+max_input_tokens = 128000
+max_output_tokens = 8192
+image_inputs = true
+audio_inputs = false
+video_inputs = false
+image_outputs = false
+audio_outputs = false
+video_outputs = false
+reasoning_output = true
+tool_calling = false

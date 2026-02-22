@@ -12,9 +12,9 @@ When invoking models via the standard runnable methods (e.g. invoke, batch, etc.
 - LLMs will return regular text strings.
 
 In addition, users can access the raw output of either LLMs or chat models via
-callbacks. The `on_chat_model_end` and `on_llm_end` callbacks will return an
-LLMResult object containing the generated outputs and any additional information
-returned by the model provider.
+callbacks. The `on_chat_model_end` and `on_llm_end` callbacks will return an `LLMResult`
+object containing the generated outputs and any additional information returned by the
+model provider.
 
 In general, if information is already available in the AIMessage object, it is
 recommended to access it from there rather than from the `LLMResult` object.

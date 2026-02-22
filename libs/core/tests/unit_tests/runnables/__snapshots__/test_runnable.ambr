@@ -2007,8 +2007,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/InvalidToolCall',
             }),
@@ -2032,8 +2030,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCall',
             }),
@@ -2116,8 +2112,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/InvalidToolCall',
             }),
@@ -2141,8 +2135,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCallChunk',
             }),
@@ -2150,8 +2142,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCall',
             }),
@@ -2926,6 +2916,13 @@
           
               This represents a request to call the tool named `'foo'` with arguments
               `{"a": 1}` and an identifier of `'123'`.
+          
+          !!! note "Factory function"
+          
+              `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+              include:
+          
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -2964,9 +2961,9 @@
         'description': '''
           A chunk of a tool call (yielded when streaming).
           
-          When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
-          all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+          string attributes are concatenated. Chunks are only merged if their values of
+          `index` are equal and not `None`.
           
           Example:
           ```python
@@ -3405,8 +3402,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/InvalidToolCall',
             }),
@@ -3430,8 +3425,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCall',
             }),
@@ -3514,8 +3507,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/InvalidToolCall',
             }),
@@ -3539,8 +3530,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCallChunk',
             }),
@@ -3548,8 +3537,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/$defs/ToolCall',
             }),
@@ -4406,6 +4393,13 @@
           
               This represents a request to call the tool named `'foo'` with arguments
               `{"a": 1}` and an identifier of `'123'`.
+          
+          !!! note "Factory function"
+          
+              `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+              include:
+          
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -4444,9 +4438,9 @@
         'description': '''
           A chunk of a tool call (yielded when streaming).
           
-          When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
-          all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+          string attributes are concatenated. Chunks are only merged if their values of
+          `index` are equal and not `None`.
           
           Example:
           ```python
@@ -4897,8 +4891,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -4922,8 +4914,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -5006,8 +4996,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -5031,8 +5019,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCallChunk',
             }),
@@ -5040,8 +5026,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -5898,6 +5882,13 @@
           
               This represents a request to call the tool named `'foo'` with arguments
               `{"a": 1}` and an identifier of `'123'`.
+          
+          !!! note "Factory function"
+          
+              `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+              include:
+          
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -5936,9 +5927,9 @@
         'description': '''
           A chunk of a tool call (yielded when streaming).
           
-          When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
-          all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+          string attributes are concatenated. Chunks are only merged if their values of
+          `index` are equal and not `None`.
           
           Example:
           ```python
@@ -6327,8 +6318,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -6352,8 +6341,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -6436,8 +6423,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -6461,8 +6446,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCallChunk',
             }),
@@ -6470,8 +6453,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -7246,6 +7227,13 @@
           
               This represents a request to call the tool named `'foo'` with arguments
               `{"a": 1}` and an identifier of `'123'`.
+          
+          !!! note "Factory function"
+          
+              `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+              include:
+          
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -7284,9 +7272,9 @@
         'description': '''
           A chunk of a tool call (yielded when streaming).
           
-          When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
-          all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+          string attributes are concatenated. Chunks are only merged if their values of
+          `index` are equal and not `None`.
           
           Example:
           ```python
@@ -7767,8 +7755,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -7792,8 +7778,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -7876,8 +7860,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -7901,8 +7883,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCallChunk',
             }),
@@ -7910,8 +7890,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -8768,6 +8746,13 @@
           
               This represents a request to call the tool named `'foo'` with arguments
               `{"a": 1}` and an identifier of `'123'`.
+          
+          !!! note "Factory function"
+          
+              `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+              include:
+          
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -8806,9 +8791,9 @@
         'description': '''
           A chunk of a tool call (yielded when streaming).
           
-          When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
-          all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+          string attributes are concatenated. Chunks are only merged if their values of
+          `index` are equal and not `None`.
           
           Example:
           ```python
@@ -9242,8 +9227,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -9267,8 +9250,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -9351,8 +9332,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -9376,8 +9355,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCallChunk',
             }),
@@ -9385,8 +9362,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -10161,6 +10136,13 @@
           
               This represents a request to call the tool named `'foo'` with arguments
               `{"a": 1}` and an identifier of `'123'`.
+          
+          !!! note "Factory function"
+          
+              `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+              include:
+          
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -10199,9 +10181,9 @@
         'description': '''
           A chunk of a tool call (yielded when streaming).
           
-          When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
-          all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+          string attributes are concatenated. Chunks are only merged if their values of
+          `index` are equal and not `None`.
           
           Example:
           ```python
@@ -10590,8 +10572,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -10615,8 +10595,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -10699,8 +10677,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -10724,8 +10700,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCallChunk',
             }),
@@ -10733,8 +10707,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -11602,6 +11574,13 @@
           
               This represents a request to call the tool named `'foo'` with arguments
               `{"a": 1}` and an identifier of `'123'`.
+          
+          !!! note "Factory function"
+          
+              `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+              include:
+          
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -11640,9 +11619,9 @@
         'description': '''
           A chunk of a tool call (yielded when streaming).
           
-          When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
-          all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+          string attributes are concatenated. Chunks are only merged if their values of
+          `index` are equal and not `None`.
           
           Example:
           ```python
@@ -12043,8 +12022,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -12068,8 +12045,6 @@
             'type': 'object',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -12152,8 +12127,6 @@
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/InvalidToolCall',
             }),
@@ -12177,8 +12150,6 @@
             'type': 'object',
           }),
           'tool_call_chunks': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCallChunk',
             }),
@@ -12186,8 +12157,6 @@
             'type': 'array',
           }),
           'tool_calls': dict({
-            'default': list([
-            ]),
             'items': dict({
               '$ref': '#/definitions/ToolCall',
             }),
@@ -13044,6 +13013,13 @@
           
               This represents a request to call the tool named `'foo'` with arguments
               `{"a": 1}` and an identifier of `'123'`.
+          
+          !!! note "Factory function"
+          
+              `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+              include:
+          
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -13082,9 +13058,9 @@
         'description': '''
           A chunk of a tool call (yielded when streaming).
           
-          When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
-          all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+          string attributes are concatenated. Chunks are only merged if their values of
+          `index` are equal and not `None`.
           
           Example:
           ```python

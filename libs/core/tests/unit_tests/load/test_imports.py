@@ -1,6 +1,13 @@
 from langchain_core.load import __all__
 
-EXPECTED_ALL = ["dumpd", "dumps", "load", "loads", "Serializable"]
+EXPECTED_ALL = [
+    "InitValidator",
+    "Serializable",
+    "dumpd",
+    "dumps",
+    "load",
+    "loads",
+]
 
 
 def test_all_imports() -> None:

@@ -1,13 +1,14 @@
 import ast
 import importlib
 import warnings
+from importlib.util import find_spec
 from pathlib import Path
 from typing import Any
 
 # Attempt to recursively import all modules in langchain
 PKG_ROOT = Path(__file__).parent.parent.parent
 
-COMMUNITY_NOT_INSTALLED = importlib.util.find_spec("langchain_community") is None
+COMMUNITY_NOT_INSTALLED = find_spec("langchain_community") is None
 
 
 def test_import_all() -> None:

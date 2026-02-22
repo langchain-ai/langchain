@@ -26,7 +26,7 @@
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // "forwardPorts": [],
   // Run commands after the container is created
-  "postCreateCommand": "uv sync && echo 'LangChain (Python) dev environment ready!'",
+  "postCreateCommand": "cd libs/langchain_v1 && uv sync && echo 'LangChain (Python) dev environment ready!'",
   // Configure tool-specific properties.
   "customizations": {
     "vscode": {
@@ -42,7 +42,7 @@
         "GitHub.copilot-chat"
       ],
       "settings": {
-        "python.defaultInterpreterPath": ".venv/bin/python",
+        "python.defaultInterpreterPath": "libs/langchain_v1/.venv/bin/python",
         "python.formatting.provider": "none",
         "[python]": {
           "editor.formatOnSave": true,

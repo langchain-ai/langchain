@@ -301,14 +301,17 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     @functools.cached_property
     def _serialized(self) -> dict[str, Any]:
-        return dumpd(self)
+        # self is always a Serializable object in this case, thus the result is
+        # guaranteed to be a dict since dumps uses the default callback, which uses
+        # obj.to_json which always returns TypedDict subclasses
+        return cast("dict[str, Any]", dumpd(self))
 
     # --- Runnable methods ---
 
     @property
     @override
     def OutputType(self) -> type[str]:
-        """Get the input type for this `Runnable`."""
+        """Get the output type for this `Runnable`."""
         return str
 
     def _convert_input(self, model_input: LanguageModelInput) -> PromptValue:
@@ -348,9 +351,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ls_params["ls_model_name"] = self.model_name
 
         # temperature
-        if "temperature" in kwargs and isinstance(kwargs["temperature"], float):
+        if "temperature" in kwargs and isinstance(kwargs["temperature"], (int, float)):
             ls_params["ls_temperature"] = kwargs["temperature"]
-        elif hasattr(self, "temperature") and isinstance(self.temperature, float):
+        elif hasattr(self, "temperature") and isinstance(
+            self.temperature, (int, float)
+        ):
             ls_params["ls_temperature"] = self.temperature
 
         # max_tokens
