@@ -961,8 +961,10 @@ class ChildTool(BaseTool):
                 )
                 if signature(self._run).parameters.get("run_manager"):
                     tool_kwargs |= {"run_manager": run_manager}
-                if config_param := _get_runnable_config_param(self._run):
-                    tool_kwargs |= {config_param: config}
+                if (
+                    config_param := _get_runnable_config_param(self._run)
+                ) and config_param not in tool_kwargs:
+                    tool_kwargs[config_param] = config
                 response = context.run(self._run, *tool_args, **tool_kwargs)
             if self.response_format == "content_and_artifact":
                 msg = (
@@ -1089,7 +1091,9 @@ class ChildTool(BaseTool):
                 )
                 if signature(func_to_check).parameters.get("run_manager"):
                     tool_kwargs["run_manager"] = run_manager
-                if config_param := _get_runnable_config_param(func_to_check):
+                if (
+                    config_param := _get_runnable_config_param(func_to_check)
+                ) and config_param not in tool_kwargs:
                     tool_kwargs[config_param] = config
 
                 coro = self._arun(*tool_args, **tool_kwargs)

@@ -3631,3 +3631,103 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
+
+
+# Tests for issue #34029: Tool parameter named "config" collides with RunnableConfig
+
+
+def test_tool_with_config_str_param() -> None:
+    """Tool with a parameter named 'config' (type str) should work correctly."""
+
+    @tool
+    def my_tool(config: str, name: str) -> str:
+        """A tool that takes a config string."""
+        return f"config={config}, name={name}"
+
+    result = my_tool.invoke({"config": "my_config", "name": "test"})
+    assert result == "config=my_config, name=test"
+
+
+def test_tool_with_config_str_param_via_tool_call() -> None:
+    """Tool with 'config' param invoked via ToolCall should work."""
+
+    @tool
+    def my_tool(config: str, name: str) -> str:
+        """A tool that takes a config string."""
+        return f"config={config}, name={name}"
+
+    tool_call: ToolCall = {
+        "name": "my_tool",
+        "args": {"config": "my_config", "name": "test"},
+        "id": "abc123",
+        "type": "tool_call",
+    }
+    result = my_tool.invoke(tool_call)
+    assert result == ToolMessage(
+        content="config=my_config, name=test",
+        name="my_tool",
+        tool_call_id="abc123",
+    )
+
+
+async def test_async_tool_with_config_str_param() -> None:
+    """Async tool with 'config' param should also work."""
+
+    @tool
+    async def my_tool(config: str, name: str) -> str:
+        """A tool that takes a config string."""
+        return f"config={config}, name={name}"
+
+    result = await my_tool.ainvoke({"config": "my_config", "name": "test"})
+    assert result == "config=my_config, name=test"
+
+
+def test_tool_with_config_runnable_config_still_works() -> None:
+    """Tool with config: RunnableConfig should still receive the RunnableConfig."""
+
+    @tool
+    def my_tool(bar: str, config: RunnableConfig) -> str:
+        """A tool that uses RunnableConfig."""
+        assert config["configurable"]["foo"] == "not-bar"
+        return bar
+
+    result = my_tool.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}})
+    assert result == "baz"
+
+
+async def test_async_tool_with_config_runnable_config_still_works() -> None:
+    """Async tool with config: RunnableConfig should still get it."""
+
+    @tool
+    async def my_tool(bar: str, config: RunnableConfig) -> str:
+        """A tool that uses RunnableConfig."""
+        assert config["configurable"]["foo"] == "not-bar"
+        return bar
+
+    result = await my_tool.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}})
+    assert result == "baz"
+
+
+def test_structured_tool_with_config_str_param() -> None:
+    """StructuredTool.from_function with 'config' str param should work."""
+
+    def my_func(config: str, name: str) -> str:
+        """A function that takes a config string."""
+        return f"config={config}, name={name}"
+
+    my_tool = StructuredTool.from_function(my_func)
+    result = my_tool.invoke({"config": "my_config", "name": "test"})
+    assert result == "config=my_config, name=test"
+
+
+def test_tool_with_config_str_param_schema() -> None:
+    """Tool with 'config: str' should include 'config' in the schema."""
+
+    @tool
+    def my_tool(config: str, name: str) -> str:
+        """A tool that takes a config string."""
+        return f"config={config}, name={name}"
+
+    schema = my_tool.get_input_schema().model_json_schema()
+    assert "config" in schema["properties"]
+    assert "name" in schema["properties"]

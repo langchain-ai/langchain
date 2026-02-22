@@ -16,7 +16,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,  # noqa: TC001
     CallbackManagerForToolRun,  # noqa: TC001
 )
-from langchain_core.runnables import RunnableConfig, run_in_executor
+from langchain_core.runnables import RunnableConfig, ensure_config, run_in_executor
 from langchain_core.tools.base import (
     ArgsSchema,
     BaseTool,
@@ -99,7 +99,6 @@ class Tool(BaseTool):
     def _run(
         self,
         *args: Any,
-        config: RunnableConfig,
         run_manager: CallbackManagerForToolRun | None = None,
         **kwargs: Any,
     ) -> Any:
@@ -107,13 +106,13 @@ class Tool(BaseTool):
 
         Args:
             *args: Positional arguments to pass to the tool
-            config: Configuration for the run
             run_manager: Optional callback manager to use for the run
             **kwargs: Keyword arguments to pass to the tool
 
         Returns:
             The result of the tool execution
         """
+        config = ensure_config()
         if self.func:
             if run_manager and signature(self.func).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
@@ -126,7 +125,6 @@ class Tool(BaseTool):
     async def _arun(
         self,
         *args: Any,
-        config: RunnableConfig,
         run_manager: AsyncCallbackManagerForToolRun | None = None,
         **kwargs: Any,
     ) -> Any:
@@ -134,13 +132,13 @@ class Tool(BaseTool):
 
         Args:
             *args: Positional arguments to pass to the tool
-            config: Configuration for the run
             run_manager: Optional callback manager to use for the run
             **kwargs: Keyword arguments to pass to the tool
 
         Returns:
             The result of the tool execution
         """
+        config = ensure_config()
         if self.coroutine:
             if run_manager and signature(self.coroutine).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
@@ -150,9 +148,7 @@ class Tool(BaseTool):
 
         # NOTE: this code is unreachable since _arun is only called if coroutine is not
         # None.
-        return await super()._arun(
-            *args, config=config, run_manager=run_manager, **kwargs
-        )
+        return await super()._arun(*args, run_manager=run_manager, **kwargs)
 
     # TODO: this is for backwards compatibility, remove in future
     def __init__(
