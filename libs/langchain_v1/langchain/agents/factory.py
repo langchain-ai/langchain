@@ -50,6 +50,7 @@ from langchain.agents.structured_output import (
     StructuredOutputValidationError,
     ToolStrategy,
 )
+from langchain.agents.tool_manager import DynamicToolManager
 from langchain.chat_models import init_chat_model
 
 
@@ -842,6 +843,12 @@ def create_agent(
         for response_schema in tool_strategy_for_setup.schema_specs:
             structured_tool_info = OutputToolBinding.from_schema_spec(response_schema)
             structured_output_tools[structured_tool_info.tool.name] = structured_tool_info
+    # Include built-in DynamicToolManager for post-creation tool management.
+    # Appended last so it's innermost in wrap chains — dynamic tools are added
+    # closest to execution and won't be filtered by other middleware.
+    dynamic_tool_manager = DynamicToolManager()
+    middleware = [*middleware, dynamic_tool_manager]  # type: ignore[list-item]
+
     middleware_tools = [t for m in middleware for t in getattr(m, "tools", [])]
 
     # Collect middleware with wrap_tool_call or awrap_tool_call hooks
@@ -896,6 +903,9 @@ def create_agent(
         if available_tools or wrap_tool_call_wrapper or awrap_tool_call_wrapper
         else None
     )
+
+    # Provide ToolNode reference for direct tool registration by DynamicToolManager
+    dynamic_tool_manager.set_tool_node(tool_node)
 
     # Default tools for ModelRequest initialization
     # Use converted BaseTool instances from ToolNode (not raw callables)
@@ -1120,13 +1130,19 @@ def create_agent(
 
         # Check if any requested tools are unknown CLIENT-SIDE tools
         # Only validate if wrap_tool_call is NOT defined (no dynamic tool handling)
+        # Also exclude tools registered via DynamicToolManager.add_tool()
         if not has_wrap_tool_call:
+            dynamic_tool_names = dynamic_tool_manager.dynamic_tool_names
             unknown_tool_names = []
             for t in request.tools:
                 # Only validate BaseTool instances (skip built-in dict tools)
                 if isinstance(t, dict):
                     continue
-                if isinstance(t, BaseTool) and t.name not in available_tools_by_name:
+                if (
+                    isinstance(t, BaseTool)
+                    and t.name not in available_tools_by_name
+                    and t.name not in dynamic_tool_names
+                ):
                     unknown_tool_names.append(t.name)
 
             if unknown_tool_names:
@@ -1593,7 +1609,7 @@ def create_agent(
     if name:
         config["metadata"] = {"lc_agent_name": name}
 
-    return graph.compile(
+    compiled = graph.compile(
         checkpointer=checkpointer,
         store=store,
         interrupt_before=interrupt_before,
@@ -1602,6 +1618,14 @@ def create_agent(
         name=name,
         cache=cache,
     ).with_config(config)
+
+    # Attach dynamic tool management convenience methods to the compiled graph
+    compiled.add_tool = dynamic_tool_manager.add_tool  # type: ignore[attr-defined]
+    compiled.remove_tool = dynamic_tool_manager.remove_tool  # type: ignore[attr-defined]
+    compiled.add_tools = dynamic_tool_manager.add_tools  # type: ignore[attr-defined]
+    compiled.remove_tools = dynamic_tool_manager.remove_tools  # type: ignore[attr-defined]
+
+    return compiled
 
 
 def _resolve_jump(

@@ -40,6 +40,7 @@ from langchain.agents.middleware.types import (
     wrap_model_call,
     wrap_tool_call,
 )
+from langchain.agents.tool_manager import DynamicToolManager
 
 __all__ = [
     "AgentMiddleware",
@@ -48,6 +49,7 @@ __all__ = [
     "CodexSandboxExecutionPolicy",
     "ContextEditingMiddleware",
     "DockerExecutionPolicy",
+    "DynamicToolManager",
     "ExtendedModelResponse",
     "FilesystemFileSearchMiddleware",
     "HostExecutionPolicy",
