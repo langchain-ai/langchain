@@ -17,6 +17,7 @@ from typing import (
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
+from langchain_core.runnables.config import ensure_config
 from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
@@ -1235,7 +1236,15 @@ def create_agent(
         if request.system_message:
             messages = [request.system_message, *messages]
 
-        output = model_.invoke(messages)
+        model_call_config = ensure_config()
+        extra_tags = [
+            "lc:agent",
+            "lc:agent_node:model",
+            *([f"lc:agent_name:{name}"] if name else []),
+        ]
+        model_call_config["tags"] = [*model_call_config["tags"], *extra_tags]
+
+        output = model_.invoke(messages, config=model_call_config)
         if name:
             output.name = name
 
@@ -1283,7 +1292,15 @@ def create_agent(
         if request.system_message:
             messages = [request.system_message, *messages]
 
-        output = await model_.ainvoke(messages)
+        model_call_config = ensure_config()
+        extra_tags = [
+            "lc:agent",
+            "lc:agent_node:model",
+            *([f"lc:agent_name:{name}"] if name else []),
+        ]
+        model_call_config["tags"] = [*model_call_config["tags"], *extra_tags]
+
+        output = await model_.ainvoke(messages, config=model_call_config)
         if name:
             output.name = name
 

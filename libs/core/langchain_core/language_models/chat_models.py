@@ -476,6 +476,29 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         handlers = run_manager.handlers if run_manager else []
         return any(isinstance(h, _StreamingCallbackHandler) for h in handlers)
 
+    def _get_lc_token_callback_metadata(
+        self, chunk: ChatGenerationChunk
+    ) -> dict[str, Any]:
+        """Build metadata for filtering streamed tokens in callbacks."""
+        msg = chunk.message
+        if not isinstance(msg, AIMessageChunk):
+            return {
+                "lc_token_type": "other",
+                "lc_is_assistant_content": False,
+                "lc_is_tool_call": False,
+            }
+
+        has_tool_call = bool(getattr(msg, "tool_call_chunks", None))
+
+        lc_stream_type: Literal["content", "tool_call", "other"] = (
+            "tool_call" if has_tool_call else "content"
+        )
+        return {
+            "lc_token_type": lc_stream_type,
+            "lc_is_assistant_content": lc_stream_type == "content",
+            "lc_is_tool_call": has_tool_call,
+        }
+
     @override
     def stream(
         self,
@@ -555,7 +578,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                             if "index" not in block:
                                 block["index"] = index
                     run_manager.on_llm_new_token(
-                        cast("str", chunk.message.content), chunk=chunk
+                        cast("str", chunk.message.content),
+                        chunk=chunk,
+                        **self._get_lc_token_callback_metadata(chunk),
                     )
                     chunks.append(chunk)
                     yield cast("AIMessageChunk", chunk.message)
@@ -575,7 +600,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                         content=empty_content, chunk_position="last", id=run_id
                     )
                     run_manager.on_llm_new_token(
-                        "", chunk=ChatGenerationChunk(message=msg_chunk)
+                        "",
+                        chunk=ChatGenerationChunk(message=msg_chunk),
+                        **self._get_lc_token_callback_metadata(
+                            ChatGenerationChunk(message=msg_chunk)
+                        ),
                     )
                     yield msg_chunk
             except BaseException as e:
@@ -687,7 +716,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                         if "index" not in block:
                             block["index"] = index
                 await run_manager.on_llm_new_token(
-                    cast("str", chunk.message.content), chunk=chunk
+                    cast("str", chunk.message.content),
+                    chunk=chunk,
+                    **self._get_lc_token_callback_metadata(chunk),
                 )
                 chunks.append(chunk)
                 yield cast("AIMessageChunk", chunk.message)
@@ -706,7 +737,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     content=empty_content, chunk_position="last", id=run_id
                 )
                 await run_manager.on_llm_new_token(
-                    "", chunk=ChatGenerationChunk(message=msg_chunk)
+                    "",
+                    chunk=ChatGenerationChunk(message=msg_chunk),
+                    **self._get_lc_token_callback_metadata(
+                        ChatGenerationChunk(message=msg_chunk)
+                    ),
                 )
                 yield msg_chunk
         except BaseException as e:
@@ -1208,7 +1243,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     if chunk.message.id is None:
                         chunk.message.id = run_id
                     run_manager.on_llm_new_token(
-                        cast("str", chunk.message.content), chunk=chunk
+                        cast("str", chunk.message.content),
+                        chunk=chunk,
+                        **self._get_lc_token_callback_metadata(chunk),
                     )
                 chunks.append(chunk)
                 yielded = True
@@ -1228,7 +1265,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     )
                 )
                 if run_manager:
-                    run_manager.on_llm_new_token("", chunk=chunk)
+                    run_manager.on_llm_new_token(
+                        "",
+                        chunk=chunk,
+                        **self._get_lc_token_callback_metadata(chunk),
+                    )
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
         elif inspect.signature(self._generate).parameters.get("run_manager"):
@@ -1334,7 +1375,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     if chunk.message.id is None:
                         chunk.message.id = run_id
                     await run_manager.on_llm_new_token(
-                        cast("str", chunk.message.content), chunk=chunk
+                        cast("str", chunk.message.content),
+                        chunk=chunk,
+                        **self._get_lc_token_callback_metadata(chunk),
                     )
                 chunks.append(chunk)
                 yielded = True
@@ -1354,7 +1397,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     )
                 )
                 if run_manager:
-                    await run_manager.on_llm_new_token("", chunk=chunk)
+                    await run_manager.on_llm_new_token(
+                        "",
+                        chunk=chunk,
+                        **self._get_lc_token_callback_metadata(chunk),
+                    )
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
         elif inspect.signature(self._agenerate).parameters.get("run_manager"):

@@ -9,6 +9,7 @@ import pytest
 from typing_extensions import override
 
 from langchain_core.callbacks import (
+    BaseCallbackHandler,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import (
@@ -29,6 +30,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.tracers import LogStreamCallbackHandler
@@ -264,6 +266,74 @@ async def test_astream_implementation_fallback_to_stream() -> None:
         _any_id_ai_message_chunk(content="b", chunk_position="last"),
     ]
     assert len({chunk.id for chunk in astream_chunks}) == 1
+
+
+def test_streaming_token_callback_includes_lc_token_metadata() -> None:
+    class _RecordingHandler(BaseCallbackHandler):
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, dict[str, Any]]] = []
+
+        def on_llm_new_token(  # type: ignore[override]
+            self,
+            token: str,
+            *,
+            run_id: uuid.UUID,
+            chunk: ChatGenerationChunk | None = None,
+            **kwargs: Any,
+        ) -> None:
+            del run_id, chunk
+            self.calls.append((token, kwargs))
+
+    class _ToolCallStreamingModel(BaseChatModel):
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            return ChatResult(
+                generations=[ChatGeneration(message=AIMessage(content="unused"))]
+            )
+
+        @override
+        def _stream(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> Iterator[ChatGenerationChunk]:
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(
+                    content="",
+                    tool_call_chunks=[
+                        tool_call_chunk(name="search", args="{}", id="call_1", index=0)
+                    ],
+                )
+            )
+            yield ChatGenerationChunk(message=AIMessageChunk(content="hi"))
+
+        @property
+        @override
+        def _llm_type(self) -> str:
+            return "tool-call-streaming"
+
+    handler = _RecordingHandler()
+    model = _ToolCallStreamingModel(callbacks=[handler])
+
+    _ = list(model.stream([HumanMessage(content="hello")]))
+
+    assert any(
+        kw.get("lc_token_type") == "tool_call" and kw.get("lc_is_tool_call") is True
+        for _token, kw in handler.calls
+    )
+    assert any(
+        kw.get("lc_token_type") == "content"
+        and kw.get("lc_is_assistant_content") is True
+        for _token, kw in handler.calls
+    )
 
 
 async def test_astream_implementation_uses_astream() -> None:
