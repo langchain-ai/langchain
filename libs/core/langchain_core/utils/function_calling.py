@@ -202,7 +202,7 @@ def _convert_pydantic_to_openai_function(
             "For more information, see: "
             "https://python.langchain.com/docs/how_to/custom_tools/"
         )
-        raise TypeError(msg) from e
+        raise PydanticInvalidForJsonSchema(msg) from e
     return _convert_json_schema_to_openai_function(
         schema, name=name, description=description, rm_titles=rm_titles
     )

@@ -23,6 +23,7 @@ from importlib.metadata import version
 
 from packaging.version import parse
 from pydantic import BaseModel, ConfigDict, Field
+from pydantic.errors import PydanticInvalidForJsonSchema
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import Runnable, RunnableLambda
@@ -1175,8 +1176,8 @@ def test_convert_to_openai_function_arbitrary_type_error() -> None:
     """Test that a helpful error is raised for non-JSON-serializable types.
 
     When a Pydantic model contains a custom Python class that cannot be
-    serialized to JSON schema, we should raise a TypeError with a helpful
-    error message explaining the issue and suggesting solutions.
+    serialized to JSON schema, we should raise a PydanticInvalidForJsonSchema
+    with a helpful error message explaining the issue and suggesting solutions.
 
     See: https://github.com/langchain-ai/langchain/issues/34371
     """
@@ -1193,7 +1194,7 @@ def test_convert_to_openai_function_arbitrary_type_error() -> None:
         custom_obj: CustomClass = Field(..., description="A custom object")
         name: str = Field(..., description="A name")
 
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(PydanticInvalidForJsonSchema) as exc_info:
         convert_to_openai_function(SchemaWithArbitraryType)
 
     error_message = str(exc_info.value)
