@@ -2133,10 +2133,41 @@ def test__is_message_content_block(obj: Any, *, expected: bool) -> None:
         ("foo", True),
         (valid_tool_result_blocks, True),
         (invalid_tool_result_blocks, False),
+        ([], False),  # Empty list should not be valid content
     ],
 )
 def test__is_message_content_type(obj: Any, *, expected: bool) -> None:
     assert _is_message_content_type(obj) is expected
+
+
+def test_tool_empty_list_return_stringified() -> None:
+    """Tool returning [] should produce ToolMessage(content='[]'), not content=[]."""
+
+    def return_empty_list(x: str) -> list:
+        return []
+
+    tool = Tool(name="empty_list", func=return_empty_list, description="test")
+    result = tool.invoke(
+        ToolCall(name="empty_list", args={"x": "hello"}, id="1", type="tool_call")
+    )
+    assert isinstance(result, ToolMessage)
+    assert result.content == "[]"
+    assert isinstance(result.content, str)
+
+
+def test_tool_empty_dict_return_stringified() -> None:
+    """Tool returning {} should produce ToolMessage(content='{}')."""
+
+    def return_empty_dict(x: str) -> dict:
+        return {}
+
+    tool = Tool(name="empty_dict", func=return_empty_dict, description="test")
+    result = tool.invoke(
+        ToolCall(name="empty_dict", args={"x": "hello"}, id="1", type="tool_call")
+    )
+    assert isinstance(result, ToolMessage)
+    assert result.content == "{}"
+    assert isinstance(result.content, str)
 
 
 @pytest.mark.parametrize("use_v1_namespace", [True, False])

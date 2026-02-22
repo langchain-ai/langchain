@@ -1203,6 +1203,37 @@ def test_convert_to_openai_messages_tool_message() -> None:
     assert result[0]["tool_call_id"] == "123"
 
 
+def test_convert_to_openai_messages_tool_message_empty_list_string_format() -> None:
+    """ToolMessage with empty list content + text_format='string' should produce ''."""
+    tool_message = ToolMessage(content="", tool_call_id="123")
+    result = convert_to_openai_messages([tool_message], text_format="string")
+    assert len(result) == 1
+    assert result[0]["content"] == ""
+    assert result[0]["tool_call_id"] == "123"
+
+
+def test_convert_to_openai_messages_tool_message_empty_content_block_format() -> None:
+    """ToolMessage with empty content + text_format='block' should produce ''."""
+    tool_message = ToolMessage(content="", tool_call_id="123")
+    result = convert_to_openai_messages([tool_message], text_format="block")
+    assert len(result) == 1
+    # ToolMessage empty content is always "" even in block format, because
+    # many model APIs reject empty arrays for tool message content.
+    assert result[0]["content"] == ""
+    assert result[0]["tool_call_id"] == "123"
+
+
+def test_convert_to_openai_messages_tool_message_list_block_format() -> None:
+    """ToolMessage with list content + text_format='block' stays as list."""
+    tool_message = ToolMessage(
+        content=[{"type": "text", "text": "hello"}], tool_call_id="123"
+    )
+    result = convert_to_openai_messages([tool_message], text_format="block")
+    assert len(result) == 1
+    assert isinstance(result[0]["content"], list)
+    assert result[0]["content"] == [{"type": "text", "text": "hello"}]
+
+
 def test_convert_to_openai_messages_tool_use() -> None:
     messages = [
         AIMessage(

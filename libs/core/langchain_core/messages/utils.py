@@ -1611,7 +1611,12 @@ def convert_to_openai_messages(
             oai_msg["id"] = message.id
 
         if not message.content:
-            content = "" if text_format == "string" else []
+            # ToolMessage empty content should always be "" since many model
+            # APIs reject empty arrays for tool message content fields.
+            if isinstance(message, ToolMessage):
+                content = ""
+            else:
+                content = "" if text_format == "string" else []
         elif isinstance(message.content, str):
             if text_format == "string":
                 content = message.content

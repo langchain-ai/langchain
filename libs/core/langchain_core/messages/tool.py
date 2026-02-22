@@ -126,6 +126,9 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
                         raise ValueError(msg) from e
                 else:
                     values["content"].append(x)
+            # Empty list is not valid content for many model APIs.
+            if not values["content"]:
+                values["content"] = ""
 
         tool_call_id = values["tool_call_id"]
         if isinstance(tool_call_id, (UUID, int, float)):

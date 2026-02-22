@@ -1043,6 +1043,20 @@ def test_tool_message_content() -> None:
     )
 
 
+def test_tool_message_empty_list_content() -> None:
+    """Empty list content should be normalized to empty string."""
+    msg = ToolMessage([], tool_call_id="1")
+    assert msg.content == ""
+    assert isinstance(msg.content, str)
+
+
+def test_tool_message_nonempty_list_content_preserved() -> None:
+    """Non-empty list content with valid items should be preserved."""
+    msg = ToolMessage([{"type": "text", "text": "hello"}], tool_call_id="1")
+    assert msg.content == [{"type": "text", "text": "hello"}]
+    assert isinstance(msg.content, list)
+
+
 def test_tool_message_tool_call_id() -> None:
     ToolMessage("foo", tool_call_id="1")
     ToolMessage("foo", tool_call_id=uuid.uuid4())
