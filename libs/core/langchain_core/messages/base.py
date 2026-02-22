@@ -336,10 +336,13 @@ class BaseMessage(Serializable):
             ```
         """  # noqa: E501
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
-        # TODO: handle non-string content.
         if self.name is not None:
             title += f"\nName: {self.name}"
-        return f"{title}\n\n{self.content}"
+        if isinstance(self.content, list):
+            content_str = _render_content_blocks(self.content)
+        else:
+            content_str = self.content
+        return f"{title}\n\n{content_str}"
 
     def pretty_print(self) -> None:
         """Print a pretty representation of the message.
@@ -496,6 +499,31 @@ def messages_to_dict(messages: Sequence[BaseMessage]) -> list[dict]:
 
     """
     return [message_to_dict(m) for m in messages]
+
+
+def _render_content_blocks(content: list[str | dict]) -> str:
+    """Render a list of content blocks as a human-readable string.
+
+    Args:
+        content: A list of content blocks, where each block is either a string
+            or a dict with a `type` key (e.g. `{"type": "text", "text": "..."}`).
+            Non-text block types are rendered as `[type]` placeholders.
+
+    Returns:
+        A human-readable string representation of the content blocks.
+
+    """
+    parts = []
+    for block in content:
+        if isinstance(block, str):
+            parts.append(block)
+        elif isinstance(block, dict):
+            block_type = block.get("type", "")
+            if block_type == "text":
+                parts.append(str(block.get("text", "")))
+            else:
+                parts.append(f"[{block_type}]")
+    return "\n".join(parts)
 
 
 def get_msg_title_repr(title: str, *, bold: bool = False) -> str:
