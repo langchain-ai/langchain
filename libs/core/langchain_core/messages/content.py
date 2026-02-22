@@ -267,13 +267,12 @@ class ToolCall(TypedDict):
     type: Literal["tool_call"]
     """Used for discrimination."""
 
-    id: str | None
+    id: NotRequired[str | None]
     """An identifier associated with the tool call.
 
     An identifier is needed to associate a tool call request with a tool
     call result in events when multiple concurrent tool calls are made.
     """
-    # TODO: Consider making this NotRequired[str] in the future.
 
     name: str
     """The name of the tool to be called."""
@@ -307,23 +306,20 @@ class ToolCallChunk(TypedDict):
     ```
     """
 
-    # TODO: Consider making fields NotRequired[str] in the future.
-
     type: Literal["tool_call_chunk"]
     """Used for serialization."""
 
-    id: str | None
+    id: NotRequired[str | None]
     """An identifier associated with the tool call.
 
     An identifier is needed to associate a tool call request with a tool
     call result in events when multiple concurrent tool calls are made.
     """
-    # TODO: Consider making this NotRequired[str] in the future.
 
-    name: str | None
+    name: NotRequired[str | None]
     """The name of the tool to be called."""
 
-    args: str | None
+    args: NotRequired[str | None]
     """The arguments to the tool call."""
 
     index: NotRequired[int | str]
@@ -340,26 +336,22 @@ class InvalidToolCall(TypedDict):
     (e.g., invalid JSON arguments.)
     """
 
-    # TODO: Consider making fields NotRequired[str] in the future.
-
     type: Literal["invalid_tool_call"]
     """Used for discrimination."""
 
-    id: str | None
+    id: NotRequired[str | None]
     """An identifier associated with the tool call.
 
     An identifier is needed to associate a tool call request with a tool
     call result in events when multiple concurrent tool calls are made.
     """
-    # TODO: Consider making this NotRequired[str] in the future.
-
-    name: str | None
+    name: NotRequired[str | None]
     """The name of the tool to be called."""
 
-    args: str | None
+    args: NotRequired[str | None]
     """The arguments to the tool call."""
 
-    error: str | None
+    error: NotRequired[str | None]
     """An error message associated with the tool call."""
 
     index: NotRequired[int | str]
