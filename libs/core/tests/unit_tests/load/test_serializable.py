@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 from langchain_core.documents import Document
 from langchain_core.load import InitValidator, Serializable, dumpd, dumps, load, loads
+from langchain_core.load.mapping import SERIALIZABLE_MAPPING
 from langchain_core.load.serializable import _is_field_useful
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, Generation
@@ -891,3 +892,23 @@ class TestJinja2SecurityBlocking:
         # jinja2 should be blocked by default
         with pytest.raises(ValueError, match="Jinja2 templates are not allowed"):
             load(serialized_jinja2, allowed_objects=[PromptTemplate])
+
+
+def test_chat_bedrock_converse_in_serializable_mapping() -> None:
+    """ChatBedrockConverse must be in SERIALIZABLE_MAPPING.
+
+    Ensures langsmith pull_prompt(include_model=True) can deserialize it.
+    Regression test for https://github.com/langchain-ai/langchain/issues/34645.
+    """
+    key = ("langchain_aws", "chat_models", "ChatBedrockConverse")
+    assert key in SERIALIZABLE_MAPPING, (
+        "ChatBedrockConverse is missing from SERIALIZABLE_MAPPING. "
+        "Add it so langsmith pull_prompt(include_model=True) can deserialize it."
+    )
+    expected_value = (
+        "langchain_aws",
+        "chat_models",
+        "bedrock_converse",
+        "ChatBedrockConverse",
+    )
+    assert SERIALIZABLE_MAPPING[key] == expected_value
