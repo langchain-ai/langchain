@@ -53,6 +53,15 @@ def test_initialization() -> None:
         assert model.anthropic_api_url == "https://api.anthropic.com"
 
 
+def test_user_agent_header_in_client_params() -> None:
+    """Test that _client_params includes a User-Agent header."""
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="test-key")  # type: ignore[arg-type]
+    params = llm._client_params
+    assert "default_headers" in params
+    assert "User-Agent" in params["default_headers"]
+    assert params["default_headers"]["User-Agent"].startswith("langchain-anthropic/")
+
+
 @pytest.mark.parametrize("async_api", [True, False])
 def test_streaming_attribute_should_stream(async_api: bool) -> None:  # noqa: FBT001
     llm = ChatAnthropic(model=MODEL_NAME, streaming=True)
@@ -2160,6 +2169,23 @@ def test_profile() -> None:
     # Test passing in profile
     model = ChatAnthropic(model="claude-sonnet-4-5", profile={"tool_calling": False})
     assert model.profile == {"tool_calling": False}
+
+
+def test_profile_1m_context_beta() -> None:
+    model = ChatAnthropic(model="claude-sonnet-4-5")
+    assert model.profile
+    assert model.profile["max_input_tokens"] == 200000
+
+    model = ChatAnthropic(model="claude-sonnet-4-5", betas=["context-1m-2025-08-07"])
+    assert model.profile
+    assert model.profile["max_input_tokens"] == 1000000
+
+    model = ChatAnthropic(
+        model="claude-sonnet-4-5",
+        betas=["token-efficient-tools-2025-02-19"],
+    )
+    assert model.profile
+    assert model.profile["max_input_tokens"] == 200000
 
 
 async def test_model_profile_not_blocking() -> None:

@@ -1,8 +1,8 @@
-"""Check version consistency between `pyproject.toml` and `version.py`.
+"""Check version consistency between `pyproject.toml` and `_version.py`.
 
-This script validates that the version defined in pyproject.toml matches the `VERSION`
-variable in `langchain_core/version.py`. Intended for use as a pre-commit hook to
-prevent version mismatches.
+This script validates that the version defined in pyproject.toml matches the
+`__version__` variable in `langchain_anthropic/_version.py`. Intended for use as a
+pre-commit hook to prevent version mismatches.
 """
 
 import re
@@ -18,9 +18,9 @@ def get_pyproject_version(pyproject_path: Path) -> str | None:
 
 
 def get_version_py_version(version_path: Path) -> str | None:
-    """Extract `VERSION` from `version.py`."""
+    """Extract `__version__` from `_version.py`."""
     content = version_path.read_text(encoding="utf-8")
-    match = re.search(r'^VERSION\s*=\s*"([^"]+)"', content, re.MULTILINE)
+    match = re.search(r'^__version__\s*=\s*"([^"]+)"', content, re.MULTILINE)
     return match.group(1) if match else None
 
 
@@ -30,34 +30,34 @@ def main() -> int:
     package_dir = script_dir.parent
 
     pyproject_path = package_dir / "pyproject.toml"
-    version_path = package_dir / "langchain_core" / "version.py"
+    version_path = package_dir / "langchain_anthropic" / "_version.py"
 
     if not pyproject_path.exists():
-        print(f"Error: {pyproject_path} not found")
+        print(f"Error: {pyproject_path} not found")  # noqa: T201
         return 1
 
     if not version_path.exists():
-        print(f"Error: {version_path} not found")
+        print(f"Error: {version_path} not found")  # noqa: T201
         return 1
 
     pyproject_version = get_pyproject_version(pyproject_path)
     version_py_version = get_version_py_version(version_path)
 
     if pyproject_version is None:
-        print("Error: Could not find version in pyproject.toml")
+        print("Error: Could not find version in pyproject.toml")  # noqa: T201
         return 1
 
     if version_py_version is None:
-        print("Error: Could not find VERSION in langchain_core/version.py")
+        print("Error: Could not find __version__ in langchain_anthropic/_version.py")  # noqa: T201
         return 1
 
     if pyproject_version != version_py_version:
-        print("Error: Version mismatch detected!")
-        print(f"  pyproject.toml: {pyproject_version}")
-        print(f"  langchain_core/version.py: {version_py_version}")
+        print("Error: Version mismatch detected!")  # noqa: T201
+        print(f"  pyproject.toml: {pyproject_version}")  # noqa: T201
+        print(f"  langchain_anthropic/_version.py: {version_py_version}")  # noqa: T201
         return 1
 
-    print(f"Version check passed: {pyproject_version}")
+    print(f"Version check passed: {pyproject_version}")  # noqa: T201
     return 0
 
 

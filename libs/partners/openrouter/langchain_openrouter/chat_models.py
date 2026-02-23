@@ -152,14 +152,27 @@ class ChatOpenRouter(BaseChatModel):
     """OpenRouter API base URL. Maps to SDK `server_url`."""
 
     app_url: str | None = Field(
-        default_factory=from_env("OPENROUTER_APP_URL", default=None),
+        default_factory=from_env(
+            "OPENROUTER_APP_URL",
+            default="https://docs.langchain.com/oss",
+        ),
     )
-    """Application URL for OpenRouter attribution. Maps to `HTTP-Referer` header."""
+    """Application URL for OpenRouter attribution.
+
+    Maps to `HTTP-Referer` header.
+
+    See https://openrouter.ai/docs/app-attribution for details.
+    """
 
     app_title: str | None = Field(
-        default_factory=from_env("OPENROUTER_APP_TITLE", default=None),
+        default_factory=from_env("OPENROUTER_APP_TITLE", default="langchain"),
     )
-    """Application title for OpenRouter attribution. Maps to `X-Title` header."""
+    """Application title for OpenRouter attribution.
+
+    Maps to `X-Title` header.
+
+    See https://openrouter.ai/docs/app-attribution for details.
+    """
 
     request_timeout: int | None = Field(default=None, alias="timeout")
     """Timeout for requests in milliseconds. Maps to SDK `timeout_ms`."""
