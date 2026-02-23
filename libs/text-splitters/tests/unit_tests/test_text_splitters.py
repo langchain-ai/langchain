@@ -3260,7 +3260,7 @@ def test_split_json_no_data_loss_on_chunk_boundary() -> None:
     Empty dict values at the edge of chunk boundaries were silently dropped
     because recursing into an empty dict produces no items.
     """
-    input_data = {
+    input_data: dict[str, Any] = {
         "projects": {
             "AS": {"AS-1": {}},
             "DLP": {
@@ -3350,7 +3350,7 @@ def test_split_json_empty_dict_values_preserved() -> None:
     When empty dict values don't fit in the current chunk and trigger
     a new chunk creation, they must still be included in the output.
     """
-    data = {
+    data: dict[str, Any] = {
         "a": {f"key{i}": {} for i in range(20)},
     }
     splitter = RecursiveJsonSplitter(max_chunk_size=100)
@@ -3374,7 +3374,7 @@ def test_split_json_non_dict_leaf_values_preserved() -> None:
     String, number, None, and list values at the edge of chunks must
     not be dropped during splitting.
     """
-    data = {
+    data: dict[str, Any] = {
         "group": {f"item{i}": f"value{i}" for i in range(30)},
     }
     splitter = RecursiveJsonSplitter(max_chunk_size=150)
