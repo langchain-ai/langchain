@@ -1554,16 +1554,32 @@ class BaseChatOpenAI(BaseChatModel):
             raise KeyError(msg) from e
 
         if choices is None:
-            # Some OpenAI-compatible APIs (e.g., vLLM) may return null choices
-            # when the response format differs or an error occurs without
-            # populating the error field. Provide a more helpful error message.
-            msg = (
-                "Received response with null value for 'choices'. "
-                "This can happen when using OpenAI-compatible APIs (e.g., vLLM) "
-                "that return a response in an unexpected format. "
-                f"Full response keys: {list(response_dict.keys())}"
-            )
-            raise TypeError(msg)
+            # Fallback for OpenAI-compatible APIs (e.g., vLLM) where model_dump()
+            # may return None for choices even though choices are accessible via
+            # direct attribute access. See: https://github.com/langchain-ai/langchain/issues/32252
+            if not isinstance(response, dict) and hasattr(response, "choices") and response.choices:
+                choices = [
+                    {
+                        "message": {
+                            "content": c.message.content,
+                            "role": c.message.role,
+                            "tool_calls": getattr(c.message, "tool_calls", None),
+                            "function_call": getattr(c.message, "function_call", None),
+                        },
+                        "finish_reason": c.finish_reason,
+                        "index": c.index,
+                    }
+                    for c in response.choices
+                ]
+                response_dict["choices"] = choices
+            else:
+                msg = (
+                    "Received response with null value for 'choices'. "
+                    "This can happen when using OpenAI-compatible APIs (e.g., vLLM) "
+                    "that return a response in an unexpected format. "
+                    f"Full response keys: {list(response_dict.keys())}"
+                )
+                raise TypeError(msg)
 
         token_usage = response_dict.get("usage")
         service_tier = response_dict.get("service_tier")
