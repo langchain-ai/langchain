@@ -3253,6 +3253,149 @@ def test_split_json_many_calls() -> None:
     assert chunk1 == chunk1_output
 
 
+def test_split_json_no_data_loss_on_chunk_boundary() -> None:
+    """Test that items at chunk boundaries are not dropped.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/29153
+    Empty dict values at the edge of chunk boundaries were silently dropped
+    because recursing into an empty dict produces no items.
+    """
+    input_data = {
+        "projects": {
+            "AS": {"AS-1": {}},
+            "DLP": {
+                "DLP-7": {},
+                "DLP-6": {},
+                "DLP-5": {},
+                "DLP-4": {},
+                "DLP-3": {},
+                "DLP-2": {},
+                "DLP-1": {},
+            },
+            "GTMS": {
+                "GTMS-22": {},
+                "GTMS-21": {},
+                "GTMS-20": {},
+                "GTMS-19": {},
+                "GTMS-18": {},
+                "GTMS-17": {},
+                "GTMS-16": {},
+                "GTMS-15": {},
+                "GTMS-14": {},
+                "GTMS-13": {},
+                "GTMS-12": {},
+                "GTMS-11": {},
+                "GTMS-10": {},
+                "GTMS-9": {},
+                "GTMS-8": {},
+                "GTMS-7": {},
+                "GTMS-6": {},
+                "GTMS-5": {},
+                "GTMS-4": {},
+                "GTMS-3": {},
+                "GTMS-2": {},
+                "GTMS-1": {},
+            },
+            "IT": {"IT-3": {}, "IT-2": {}, "IT-1": {}},
+            "ITSAMPLE": {
+                "ITSAMPLE-12": {},
+                "ITSAMPLE-11": {},
+                "ITSAMPLE-10": {},
+                "ITSAMPLE-9": {},
+                "ITSAMPLE-8": {},
+                "ITSAMPLE-7": {},
+                "ITSAMPLE-6": {},
+                "ITSAMPLE-5": {},
+                "ITSAMPLE-4": {},
+                "ITSAMPLE-3": {},
+                "ITSAMPLE-2": {},
+                "ITSAMPLE-1": {},
+            },
+            "MAR": {"MAR-2": {}, "MAR-1": {}},
+        }
+    }
+
+    splitter = RecursiveJsonSplitter(max_chunk_size=216)
+    json_chunks = splitter.split_json(json_data=input_data)
+
+    # Reconstruct all keys from chunks and verify every key from
+    # the original data is present (no data loss)
+    all_chunk_keys: set[str] = set()
+    for chunk in json_chunks:
+        projects = chunk.get("projects", {})
+        for group_items in projects.values():
+            if isinstance(group_items, dict):
+                for item_key in group_items:
+                    all_chunk_keys.add(item_key)
+
+    all_input_keys: set[str] = set()
+    for group_items in input_data["projects"].values():
+        if isinstance(group_items, dict):
+            for item_key in group_items:
+                all_input_keys.add(item_key)
+
+    missing_keys = all_input_keys - all_chunk_keys
+    assert not missing_keys, (
+        f"Data loss: these keys were dropped during splitting: {missing_keys}"
+    )
+
+    # Verify the specific keys mentioned in the bug report
+    assert "GTMS-10" in all_chunk_keys
+    assert "ITSAMPLE-2" in all_chunk_keys
+
+
+def test_split_json_empty_dict_values_preserved() -> None:
+    """Test that empty dict values are preserved at chunk boundaries.
+
+    When empty dict values don't fit in the current chunk and trigger
+    a new chunk creation, they must still be included in the output.
+    """
+    data = {
+        "a": {f"key{i}": {} for i in range(20)},
+    }
+    splitter = RecursiveJsonSplitter(max_chunk_size=100)
+    chunks = splitter.split_json(json_data=data)
+
+    # Reconstruct all keys from chunks
+    all_keys: set[str] = set()
+    for chunk in chunks:
+        a_dict = chunk.get("a", {})
+        if isinstance(a_dict, dict):
+            all_keys.update(a_dict.keys())
+
+    expected_keys = {f"key{i}" for i in range(20)}
+    missing = expected_keys - all_keys
+    assert not missing, f"Empty dict values lost during splitting: {missing}"
+
+
+def test_split_json_non_dict_leaf_values_preserved() -> None:
+    """Test that non-dict leaf values are preserved at chunk boundaries.
+
+    String, number, None, and list values at the edge of chunks must
+    not be dropped during splitting.
+    """
+    data = {
+        "group": {f"item{i}": f"value{i}" for i in range(30)},
+    }
+    splitter = RecursiveJsonSplitter(max_chunk_size=150)
+    chunks = splitter.split_json(json_data=data)
+
+    # Reconstruct all key-value pairs
+    all_items: dict[str, str] = {}
+    for chunk in chunks:
+        group = chunk.get("group", {})
+        if isinstance(group, dict):
+            all_items.update(group)
+
+    for i in range(30):
+        key = f"item{i}"
+        assert key in all_items, f"Key {key} was lost during splitting"
+        assert all_items[key] == f"value{i}", (
+            f"Value for {key} was corrupted: expected 'value{i}', "
+            f"got '{all_items[key]}'"
+        )
+
+
 def test_powershell_code_splitter_short_code() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.POWERSHELL, chunk_size=60, chunk_overlap=0
