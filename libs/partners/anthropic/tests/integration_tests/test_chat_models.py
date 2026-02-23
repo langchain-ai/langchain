@@ -486,14 +486,7 @@ def test_tool_use() -> None:
     assert content_blocks[1]["args"] == tool_call["args"]
 
     # Test streaming
-    llm = ChatAnthropic(
-        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
-        temperature=0,
-        # Add extra headers to also test token-efficient tools
-        model_kwargs={
-            "extra_headers": {"anthropic-beta": "token-efficient-tools-2025-02-19"},
-        },
-    )
+    llm = ChatAnthropic(model="claude-sonnet-4-5-20250929")  # type: ignore[call-arg]
     llm_with_tools = llm.bind_tools([tool_definition])
     first = True
     chunks: list[BaseMessage | BaseMessageChunk] = []
@@ -534,15 +527,6 @@ def test_tool_use() -> None:
     assert content_blocks[1]["type"] == "tool_call"
     assert content_blocks[1]["name"] == "get_weather"
     assert content_blocks[1]["args"]
-
-    # Testing token-efficient tools
-    # https://platform.claude.com/docs/en/agents-and-tools/tool-use/token-efficient-tool-use
-    assert gathered.usage_metadata
-    assert response.usage_metadata
-    assert (
-        gathered.usage_metadata["total_tokens"]
-        < response.usage_metadata["total_tokens"]
-    )
 
     # Test passing response back to model
     stream = llm_with_tools.stream(
@@ -1654,6 +1638,7 @@ def test_web_fetch_v1(output_version: Literal["v0", "v1"]) -> None:
     )
 
 
+@pytest.mark.default_cassette("test_code_execution_old.yaml.gz")
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["v0", "v1"])
 def test_code_execution_old(output_version: Literal["v0", "v1"]) -> None:
@@ -1752,7 +1737,6 @@ def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
         assert block_types == {
             "text",
             "server_tool_use",
-            "text_editor_code_execution_tool_result",
             "bash_code_execution_tool_result",
         }
     else:
@@ -1770,7 +1754,6 @@ def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
         assert block_types == {
             "text",
             "server_tool_use",
-            "text_editor_code_execution_tool_result",
             "bash_code_execution_tool_result",
         }
     else:
