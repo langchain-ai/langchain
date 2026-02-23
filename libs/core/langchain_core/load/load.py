@@ -13,6 +13,20 @@ allowlist. If the class is not in the allowlist, deserialization raises a `Value
 
 ## Security model
 
+!!! warning "Exercise caution with untrusted input"
+
+    These functions deserialize by instantiating Python objects, which means
+    constructors (`__init__`) and validators may run and can trigger side effects.
+    With the default settings, deserialization is restricted to a core allowlist
+    of `langchain_core` types (for example: messages, documents, and prompts)
+    defined in `langchain_core.load.mapping`.
+
+    If you broaden `allowed_objects` (for example, by using `'all'` or adding
+    additional classes), treat the serialized payload as a manifest and only
+    deserialize data that comes from a trusted source. A crafted payload that
+    is allowed to instantiate unintended classes could cause network calls,
+    file operations, or environment variable access during `__init__`.
+
 The `allowed_objects` parameter controls which classes can be deserialized:
 
 - **`'core'` (default)**: Allow classes defined in the serialization mappings for
@@ -34,6 +48,16 @@ These classes do not perform side effects during initialization.
 
 Import paths are also validated against trusted namespaces before any module is
 imported.
+
+### Best practices
+
+- Use the most restrictive `allowed_objects` possible. Prefer an explicit list
+    of classes over `'core'` or `'all'`.
+- Keep `secrets_from_env` set to `False` (the default). If you must use it,
+    ensure the serialized data comes from a fully trusted source, as a crafted
+    payload can read arbitrary environment variables.
+- When using `secrets_map`, include only the specific secrets that the
+    serialized object requires.
 
 ### Injection protection (escape-based)
 
@@ -299,11 +323,18 @@ class Reviver:
                     `langchain_core.load.mapping` for the full list.
                 - Explicit list of classes: Only those specific classes are allowed.
             secrets_map: A map of secrets to load.
-                If a secret is not found in the map, it will be loaded from the
-                environment if `secrets_from_env` is `True`.
+
+                Only include the specific secrets the serialized object
+                requires. If a secret is not found in the map, it will be loaded
+                from the environment if `secrets_from_env` is `True`.
             valid_namespaces: Additional namespaces (modules) to allow during
                 deserialization, beyond the default trusted namespaces.
             secrets_from_env: Whether to load secrets from the environment.
+
+                A crafted payload can name arbitrary environment variables in
+                its `secret` fields, so enabling this on untrusted data can leak
+                sensitive values. Keep this `False` (the default) unless the
+                serialized data is fully trusted.
             additional_import_mappings: A dictionary of additional namespace mappings.
 
                 You can use this to override default mappings or add new mappings.
@@ -490,10 +521,12 @@ def loads(
     core LangChain types (messages, prompts, documents, etc.). See
     `langchain_core.load.mapping` for the full list.
 
-    !!! warning "Beta feature"
+    !!! warning "Do not use with untrusted input"
 
-        This is a beta feature. Please be wary of deploying experimental code to
-        production unless you've taken appropriate precautions.
+        This function instantiates Python objects and can trigger side effects
+        during deserialization. **Never call `loads()` on data from an untrusted
+        or unauthenticated source.** See the module-level security model
+        documentation for details and best practices.
 
     Args:
         text: The string to load.
@@ -511,11 +544,17 @@ def loads(
             - `[]`: Disallow all deserialization (will raise on any object).
         secrets_map: A map of secrets to load.
 
-            If a secret is not found in the map, it will be loaded from the environment
-            if `secrets_from_env` is `True`.
+            Only include the specific secrets the serialized object requires. If
+            a secret is not found in the map, it will be loaded from the
+            environment if `secrets_from_env` is `True`.
         valid_namespaces: Additional namespaces (modules) to allow during
             deserialization, beyond the default trusted namespaces.
         secrets_from_env: Whether to load secrets from the environment.
+
+            A crafted payload can name arbitrary environment variables in its
+            `secret` fields, so enabling this on untrusted data can leak
+            sensitive values. Keep this `False` (the default) unless the
+            serialized data is fully trusted.
         additional_import_mappings: A dictionary of additional namespace mappings.
 
             You can use this to override default mappings or add new mappings.
@@ -573,10 +612,12 @@ def load(
     core LangChain types (messages, prompts, documents, etc.). See
     `langchain_core.load.mapping` for the full list.
 
-    !!! warning "Beta feature"
+    !!! warning "Do not use with untrusted input"
 
-        This is a beta feature. Please be wary of deploying experimental code to
-        production unless you've taken appropriate precautions.
+        This function instantiates Python objects and can trigger side effects
+        during deserialization. **Never call `load()` on data from an untrusted
+        or unauthenticated source.** See the module-level security model
+        documentation for details and best practices.
 
     Args:
         obj: The object to load.
@@ -594,11 +635,18 @@ def load(
             - `[]`: Disallow all deserialization (will raise on any object).
         secrets_map: A map of secrets to load.
 
+            Only include the specific secrets the serialized object requires.
+
             If a secret is not found in the map, it will be loaded from the environment
             if `secrets_from_env` is `True`.
         valid_namespaces: Additional namespaces (modules) to allow during
             deserialization, beyond the default trusted namespaces.
         secrets_from_env: Whether to load secrets from the environment.
+
+            A crafted payload can name arbitrary environment variables in its
+            `secret` fields, so enabling this on untrusted data can leak
+            sensitive values. Keep this `False` (the default) unless the
+            serialized data is fully trusted.
         additional_import_mappings: A dictionary of additional namespace mappings.
 
             You can use this to override default mappings or add new mappings.

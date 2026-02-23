@@ -86,8 +86,10 @@ from langchain_openai.chat_models.base import (
 def test_openai_model_param() -> None:
     llm = ChatOpenAI(model="foo")
     assert llm.model_name == "foo"
+    assert llm.model == "foo"
     llm = ChatOpenAI(model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
+    assert llm.model == "foo"
 
     llm = ChatOpenAI(max_tokens=10)  # type: ignore[call-arg]
     assert llm.max_tokens == 10
@@ -1383,6 +1385,26 @@ def test_structured_outputs_parser() -> None:
     deserialized = loads(serialized, allowed_objects=[ChatGeneration, AIMessage])
     assert isinstance(deserialized, ChatGeneration)
     result = output_parser.invoke(cast(AIMessage, deserialized.message))
+    assert result == parsed_response
+
+
+def test_structured_outputs_parser_valid_falsy_response() -> None:
+    class LunchBox(BaseModel):
+        sandwiches: list[str]
+
+        def __len__(self) -> int:
+            return len(self.sandwiches)
+
+    # prepare a valid *but falsy* response object, an empty LunchBox
+    parsed_response = LunchBox(sandwiches=[])
+    assert len(parsed_response) == 0
+    llm_output = AIMessage(
+        content='{"sandwiches": []}', additional_kwargs={"parsed": parsed_response}
+    )
+    output_parser = RunnableLambda(
+        partial(_oai_structured_outputs_parser, schema=LunchBox)
+    )
+    result = output_parser.invoke(llm_output)
     assert result == parsed_response
 
 
