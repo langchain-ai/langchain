@@ -1124,8 +1124,14 @@ class Runnable(ABC, Generic[Input, Output]):
             for i, (input_, config) in enumerate(zip(inputs, configs, strict=False))
         ]
 
-        for coro in asyncio.as_completed(coros):
-            yield await coro
+        tasks = [asyncio.ensure_future(coro) for coro in coros]
+        try:
+            for fut in asyncio.as_completed(tasks):
+                yield await fut
+        finally:
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
 
     def stream(
         self,
