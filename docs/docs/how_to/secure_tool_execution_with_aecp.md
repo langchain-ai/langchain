@@ -5,7 +5,7 @@ Agent tool calls can trigger real side effects, but most examples do not show de
 ## Install
 
 ```bash
-pip install langchain-core aecp-sdk==0.1.0 aecp-langchain==0.1.0
+pip install langchain-core aecp-sdk aecp-langchain
 ```
 
 ## Start AECP locally
@@ -15,6 +15,8 @@ Start a local AECP control plane with Docker Compose (from your AECP checkout):
 ```bash
 docker compose up -d --build
 ```
+
+AECP control plane must be running before the wrapped tool can authorize. For a quick end-to-end environment check, run the AECP demo script in the AECP repo (`scripts/demo_langchain.sh --check`).
 
 Then, at a high level:
 
@@ -90,10 +92,11 @@ Expected behavior with budget limit `1`:
 
 - Call 1: allowed, tool executes, receipt is emitted.
 - Call 2: denied by AECP (`BUDGET_EXCEEDED`), tool does not execute (fail closed).
+- On deny, `wrap_tool` raises `AuthorizationDenied` before calling the underlying tool.
 
 ## Safety notes
 
 AECP signs permits and receipts, and receipts are hash-chained per delegation. This gives auditors a tamper-evident execution trail while preserving a minimal integration surface for tool authors.
 
-- AECP README: <AECP_REPO_README_URL>
-- Signature and chain verification: <AECP_REPO_TRUST_MD_URL>
+- AECP README: https://github.com/PetrefiedThunder/aecp#readme
+- Signature and chain verification: https://github.com/PetrefiedThunder/aecp/blob/main/docs/TRUST.md
