@@ -121,10 +121,9 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
                             "index" in e_left
                             and e_left["index"] == e["index"]  # index matches
                             and (  # IDs not inconsistent
-                                (left_id := e_left.get("id")) is None
-                                or left_id == ""
-                                or (right_id := e.get("id")) is None
-                                or right_id in ("", left_id)
+                                e_left.get("id") in (None, "")
+                                or e.get("id") in (None, "")
+                                or e_left.get("id") == e.get("id")
                             )
                         )
                     ]
