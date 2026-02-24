@@ -119,9 +119,7 @@ async def test_aafter_model_single_tool_reject() -> None:
     def mock_reject(_: Any) -> dict[str, Any]:
         return {"decisions": [{"type": "reject", "message": "Not allowed"}]}
 
-    with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_reject
-    ):
+    with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_reject):
         result = await middleware.aafter_model(state, Runtime())
         assert result is not None
         assert "messages" in result
@@ -159,9 +157,7 @@ async def test_aafter_model_multiple_tools_mixed_responses() -> None:
             ]
         }
 
-    with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_mixed
-    ):
+    with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_mixed):
         result = await middleware.aafter_model(state, Runtime())
         assert result is not None
         assert len(result["messages"]) == 2
