@@ -471,6 +471,12 @@ def _format_messages(
                     if "type" not in block:
                         msg = "Dict content block must have a type key"
                         raise ValueError(msg)
+                    if block["type"] in ("reasoning", "function_call") and (
+                        not isinstance(message, AIMessage)
+                        or message.response_metadata.get("model_provider")
+                        != "anthropic"
+                    ):
+                        continue
                     if block["type"] == "image_url":
                         # convert format
                         source = _format_image(block["image_url"]["url"])
