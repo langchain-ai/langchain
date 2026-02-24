@@ -27,6 +27,7 @@ LangChain [agents](https://docs.langchain.com/oss/python/langchain/agents) are b
 ## 📖 Documentation
 
 For full documentation, see the [API reference](https://reference.langchain.com/python/langchain/langchain/). For conceptual guides, tutorials, and examples on using LangChain, see the [LangChain Docs](https://docs.langchain.com/oss/python/langchain/overview). You can also chat with the docs using [Chat LangChain](https://chat.langchain.com).
+For production eval and tracing workflows, see [LangSmith Evaluation Quickstart](https://docs.langchain.com/langsmith/evaluation-quickstart) and [LangSmith Observability Quickstart](https://docs.langchain.com/langsmith/observability-quickstart).
 
 ## 📕 Releases & Versioning
 
