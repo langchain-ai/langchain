@@ -16,7 +16,7 @@ from pydantic import (
     SecretStr,
     model_validator,
 )
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_fixed
 from tokenizers import Tokenizer  # type: ignore[import]
 from typing_extensions import Self
 
@@ -27,6 +27,25 @@ MAX_TOKENS = 16_000
 accepted by the embedding model for each document/chunk, but rather the maximum number
 of tokens that can be sent in a single request to the Mistral API (across multiple
 documents/chunks)"""
+
+
+def _is_retryable_error(exception: BaseException) -> bool:
+    """Determine if an exception should trigger a retry.
+
+    Only retries on:
+    - Timeout exceptions
+    - 429 (rate limit) errors
+    - 5xx (server) errors
+
+    Does NOT retry on 400 (bad request) or other 4xx client errors.
+    """
+    if isinstance(exception, httpx.TimeoutException):
+        return True
+    if isinstance(exception, httpx.HTTPStatusError):
+        status_code = exception.response.status_code
+        # Retry on rate limit (429) or server errors (5xx)
+        return status_code == 429 or status_code >= 500
+    return False
 
 
 class DummyTokenizer:
@@ -225,9 +244,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             return func
 
         return retry(
-            retry=retry_if_exception_type(
-                (httpx.TimeoutException, httpx.HTTPStatusError)
-            ),
+            retry=retry_if_exception(_is_retryable_error),
             wait=wait_fixed(self.wait_time),
             stop=stop_after_attempt(self.max_retries),
         )(func)

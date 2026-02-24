@@ -264,8 +264,9 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
                 - `'original'` is the format used by all current tracers. This format is
                     slightly inconsistent with respect to inputs and outputs.
                 - 'streaming_events' is used for supporting streaming events, for
-                    internal usage. It will likely change in the future, or deprecated
-                    entirely in favor of a dedicated async tracer for streaming events.
+                    internal usage. It will likely change in the future,
+                    or be deprecated entirely in favor of a dedicated async
+                    tracer for streaming events.
 
         Raises:
             ValueError: If an invalid schema format is provided (internal use only).
@@ -356,7 +357,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
             yield chunk
 
     def tap_output_iter(self, run_id: UUID, output: Iterator[T]) -> Iterator[T]:
-        """Tap an output async iterator to stream its values to the log.
+        """Tap an output iterator to stream its values to the log.
 
         Args:
             run_id: The ID of the run.
@@ -673,7 +674,7 @@ async def _astream_log_implementation(
     """Implementation of astream_log for a given runnable.
 
     The implementation has been factored out (at least temporarily) as both
-    `astream_log` and `astream_events` relies on it.
+    `astream_log` and `astream_events` rely on it.
 
     Args:
         runnable: The runnable to run in streaming mode.
