@@ -3130,7 +3130,9 @@ def test_gpt_5_temperature(use_responses_api: bool) -> None:
 
     messages = [HumanMessage(content="Hello")]
     payload = llm._get_request_payload(messages)
-    assert "temperature" not in payload  # not supported for gpt-5 family models
+    assert (
+        payload["temperature"] == 0.5
+    )  # Temperature is kept when reasoning is not set
 
     llm = ChatOpenAI(
         model="gpt-5-chat", temperature=0.5, use_responses_api=use_responses_api
@@ -3159,7 +3161,9 @@ def test_gpt_5_temperature_case_insensitive(
 
     messages = [HumanMessage(content="Hello")]
     payload = llm._get_request_payload(messages)
-    assert "temperature" not in payload
+    assert (
+        payload["temperature"] == 0.5
+    )  # Temperature is kept when reasoning is not set
 
     for chat_model in ["GPT-5-CHAT", "Gpt-5-Chat", "gpt-5-chat"]:
         llm = ChatOpenAI(
@@ -3174,8 +3178,16 @@ def test_gpt_5_temperature_case_insensitive(
 def test_gpt_5_1_temperature_with_reasoning_effort_none(
     use_responses_api: bool,
 ) -> None:
-    """Test that temperature is preserved when reasoning_effort is explicitly 'none'."""
-    # Test with reasoning_effort='none' explicitly set
+    """Test temperature behavior with reasoning parameters.
+
+    Temperature is kept when:
+    - reasoning is None (not set)
+    - reasoning is 'none'
+
+    Temperature is removed when:
+    - reasoning is set to other values ex: ('low', 'medium', 'high')
+    """
+    # Temperature is kept when reasoning_effort='none'
     llm = ChatOpenAI(
         model="gpt-5.1",
         temperature=0.5,
@@ -3186,7 +3198,7 @@ def test_gpt_5_1_temperature_with_reasoning_effort_none(
     payload = llm._get_request_payload(messages)
     assert payload["temperature"] == 0.5
 
-    # Test with reasoning={'effort': 'none'}
+    # Temperature is kept when reasoning={'effort': 'none'}
     llm = ChatOpenAI(
         model="gpt-5.1",
         temperature=0.5,
@@ -3197,7 +3209,7 @@ def test_gpt_5_1_temperature_with_reasoning_effort_none(
     payload = llm._get_request_payload(messages)
     assert payload["temperature"] == 0.5
 
-    # Test that temperature is restricted by default (no reasoning_effort)
+    # Temperature is kept when reasoning is not set
     llm = ChatOpenAI(
         model="gpt-5.1",
         temperature=0.5,
@@ -3205,9 +3217,9 @@ def test_gpt_5_1_temperature_with_reasoning_effort_none(
     )
     messages = [HumanMessage(content="Hello")]
     payload = llm._get_request_payload(messages)
-    assert "temperature" not in payload
+    assert payload["temperature"] == 0.5
 
-    # Test that temperature is still restricted when reasoning_effort is something else
+    # Temperature is removed when reasoning_effort='low'
     llm = ChatOpenAI(
         model="gpt-5.1",
         temperature=0.5,
@@ -3218,7 +3230,7 @@ def test_gpt_5_1_temperature_with_reasoning_effort_none(
     payload = llm._get_request_payload(messages)
     assert "temperature" not in payload
 
-    # Test with reasoning={'effort': 'low'}
+    # Temperature is removed when reasoning={'effort': 'low'}
     llm = ChatOpenAI(
         model="gpt-5.1",
         temperature=0.5,

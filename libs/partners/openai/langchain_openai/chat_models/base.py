@@ -933,14 +933,18 @@ class BaseChatOpenAI(BaseChatModel):
         if model_lower.startswith("o1") and "temperature" not in values:
             values["temperature"] = 1
 
-        # For gpt-5 models, handle temperature restrictions. Temperature is supported
-        # by gpt-5-chat and gpt-5 models with reasoning_effort='none' or
-        # reasoning={'effort': 'none'}.
+        reasoning_effort = values.get("reasoning_effort")
+        reasoning = (values.get("reasoning") or {}).get("effort")
+
+        # Only restrict temperature if reasoning is explicitly enabled.
+        # Unset reasoning defaults to "none", so temperature is allowed.
+        reasoning_enabled = (
+            reasoning_effort is not None and reasoning_effort != "none"
+        ) or (reasoning is not None and reasoning != "none")
         if (
             model_lower.startswith("gpt-5")
             and ("chat" not in model_lower)
-            and values.get("reasoning_effort") != "none"
-            and (values.get("reasoning") or {}).get("effort") != "none"
+            and reasoning_enabled
         ):
             temperature = values.get("temperature")
             if temperature is not None and temperature != 1:
@@ -3946,15 +3950,18 @@ def _construct_responses_api_payload(
     if "reasoning_effort" in payload and "reasoning" not in payload:
         payload["reasoning"] = {"effort": payload.pop("reasoning_effort")}
 
-    # Remove temperature parameter for models that don't support it in responses API
-    # gpt-5-chat supports temperature, and gpt-5 models with reasoning.effort='none'
-    # also support temperature
+    # Remove temperature for gpt-5 (non-chat) models only when reasoning
+    # is explicitly enabled. Unset reasoning defaults to "none", so
+    # temperature should be preserved.
     model = payload.get("model") or ""
-    if (
-        model.startswith("gpt-5")
-        and ("chat" not in model)  # gpt-5-chat supports
-        and (payload.get("reasoning") or {}).get("effort") != "none"
-    ):
+    reasoning_effort = payload.get("reasoning_effort")
+    reasoning = (payload.get("reasoning") or {}).get("effort")
+
+    reasoning_enabled = (
+        reasoning_effort is not None and reasoning_effort != "none"
+    ) or (reasoning is not None and reasoning != "none")
+
+    if model.startswith("gpt-5") and ("chat" not in model) and reasoning_enabled:
         payload.pop("temperature", None)
 
     payload["input"] = _construct_responses_api_input(messages)
