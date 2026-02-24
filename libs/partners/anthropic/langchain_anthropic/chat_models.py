@@ -471,7 +471,7 @@ def _format_messages(
                     if "type" not in block:
                         msg = "Dict content block must have a type key"
                         raise ValueError(msg)
-                    if block["type"] == "reasoning" and (
+                    if block["type"] in ("reasoning", "function_call") and (
                         not isinstance(message, AIMessage)
                         or message.response_metadata.get("model_provider")
                         != "anthropic"

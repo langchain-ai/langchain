@@ -2395,29 +2395,24 @@ def test_extras_with_multiple_fields() -> None:
     assert "input_examples" in tool_def
 
 
-def test__format_messages_filters_reasoning_non_anthropic() -> None:
-    """Test that reasoning blocks are filtered out for non-anthropic providers."""
+@pytest.mark.parametrize("block_type", ["reasoning", "function_call"])
+def test__format_messages_filters_non_anthropic_blocks(block_type: str) -> None:
+    """Test that reasoning/function_call blocks are filtered for non-anthropic."""
+    block = {"type": block_type, "other": "foo"}
     human = HumanMessage("hi")  # type: ignore[misc]
     ai = AIMessage(  # type: ignore[misc]
-        content=[
-            {"type": "reasoning", "reasoning": "thinking..."},
-            {"type": "text", "text": "hello"},
-        ],
+        content=[block, {"type": "text", "text": "hello"}],
         response_metadata={"model_provider": "openai"},
     )
     _, msgs = _format_messages([human, ai])
     assert msgs[1]["content"] == [{"type": "text", "text": "hello"}]
 
-    # Anthropic provider keeps reasoning blocks
     ai_anthropic = AIMessage(  # type: ignore[misc]
-        content=[
-            {"type": "reasoning", "reasoning": "thinking..."},
-            {"type": "text", "text": "hello"},
-        ],
-        response_metadata={"model_provider": "anthropic", "output_version": "v1"},
+        content=[block, {"type": "text", "text": "hello"}],
+        response_metadata={"model_provider": "anthropic"},
     )
     _, msgs = _format_messages([human, ai_anthropic])
-    assert any(b["type"] == "reasoning" for b in msgs[1]["content"])
+    assert any(b["type"] == block_type for b in msgs[1]["content"])
 
 
 def test__format_messages_trailing_whitespace() -> None:
