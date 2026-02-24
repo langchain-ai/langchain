@@ -53,6 +53,15 @@ def test_initialization() -> None:
         assert model.anthropic_api_url == "https://api.anthropic.com"
 
 
+def test_user_agent_header_in_client_params() -> None:
+    """Test that _client_params includes a User-Agent header."""
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="test-key")  # type: ignore[arg-type]
+    params = llm._client_params
+    assert "default_headers" in params
+    assert "User-Agent" in params["default_headers"]
+    assert params["default_headers"]["User-Agent"].startswith("langchain-anthropic/")
+
+
 @pytest.mark.parametrize("async_api", [True, False])
 def test_streaming_attribute_should_stream(async_api: bool) -> None:  # noqa: FBT001
     llm = ChatAnthropic(model=MODEL_NAME, streaming=True)
@@ -2162,6 +2171,23 @@ def test_profile() -> None:
     assert model.profile == {"tool_calling": False}
 
 
+def test_profile_1m_context_beta() -> None:
+    model = ChatAnthropic(model="claude-sonnet-4-5")
+    assert model.profile
+    assert model.profile["max_input_tokens"] == 200000
+
+    model = ChatAnthropic(model="claude-sonnet-4-5", betas=["context-1m-2025-08-07"])
+    assert model.profile
+    assert model.profile["max_input_tokens"] == 1000000
+
+    model = ChatAnthropic(
+        model="claude-sonnet-4-5",
+        betas=["token-efficient-tools-2025-02-19"],
+    )
+    assert model.profile
+    assert model.profile["max_input_tokens"] == 200000
+
+
 async def test_model_profile_not_blocking() -> None:
     with blockbuster_ctx():
         model = ChatAnthropic(model="claude-sonnet-4-5")
@@ -2367,6 +2393,26 @@ def test_extras_with_multiple_fields() -> None:
     assert tool_def.get("defer_loading") is True
     assert tool_def.get("cache_control") == {"type": "ephemeral"}
     assert "input_examples" in tool_def
+
+
+@pytest.mark.parametrize("block_type", ["reasoning", "function_call"])
+def test__format_messages_filters_non_anthropic_blocks(block_type: str) -> None:
+    """Test that reasoning/function_call blocks are filtered for non-anthropic."""
+    block = {"type": block_type, "other": "foo"}
+    human = HumanMessage("hi")  # type: ignore[misc]
+    ai = AIMessage(  # type: ignore[misc]
+        content=[block, {"type": "text", "text": "hello"}],
+        response_metadata={"model_provider": "openai"},
+    )
+    _, msgs = _format_messages([human, ai])
+    assert msgs[1]["content"] == [{"type": "text", "text": "hello"}]
+
+    ai_anthropic = AIMessage(  # type: ignore[misc]
+        content=[block, {"type": "text", "text": "hello"}],
+        response_metadata={"model_provider": "anthropic"},
+    )
+    _, msgs = _format_messages([human, ai_anthropic])
+    assert any(b["type"] == block_type for b in msgs[1]["content"])
 
 
 def test__format_messages_trailing_whitespace() -> None:
