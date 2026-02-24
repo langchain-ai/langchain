@@ -61,6 +61,8 @@ from langchain_core.runnables.config import (
     run_in_executor,
     set_config_context,
 )
+from langchain_core.instrumentation._helpers import instrumented_span
+from langchain_core.instrumentation.types import SpanKind
 from langchain_core.runnables.utils import (
     AddableDict,
     AnyConfigurableField,
@@ -2045,33 +2047,37 @@ class Runnable(ABC, Generic[Input, Output]):
         """
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
+        run_name = config.get("run_name") or self.get_name()
         run_manager = callback_manager.on_chain_start(
             serialized,
             input_,
             run_type=run_type,
-            name=config.get("run_name") or self.get_name(),
+            name=run_name,
             run_id=config.pop("run_id", None),
         )
-        try:
-            child_config = patch_config(config, callbacks=run_manager.get_child())
-            with set_config_context(child_config) as context:
-                output = cast(
-                    "Output",
-                    context.run(
-                        call_func_with_variable_args,  # type: ignore[arg-type]
-                        func,
-                        input_,
-                        config,
-                        run_manager,
-                        **kwargs,
-                    ),
+        with instrumented_span(run_name, SpanKind.CHAIN):
+            try:
+                child_config = patch_config(
+                    config, callbacks=run_manager.get_child(),
                 )
-        except BaseException as e:
-            run_manager.on_chain_error(e)
-            raise
-        else:
-            run_manager.on_chain_end(output)
-            return output
+                with set_config_context(child_config) as context:
+                    output = cast(
+                        "Output",
+                        context.run(
+                            call_func_with_variable_args,  # type: ignore[arg-type]
+                            func,
+                            input_,
+                            config,
+                            run_manager,
+                            **kwargs,
+                        ),
+                    )
+            except BaseException as e:
+                run_manager.on_chain_error(e)
+                raise
+            else:
+                run_manager.on_chain_end(output)
+                return output
 
     async def _acall_with_config(
         self,
@@ -2095,26 +2101,30 @@ class Runnable(ABC, Generic[Input, Output]):
         """
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
+        run_name = config.get("run_name") or self.get_name()
         run_manager = await callback_manager.on_chain_start(
             serialized,
             input_,
             run_type=run_type,
-            name=config.get("run_name") or self.get_name(),
+            name=run_name,
             run_id=config.pop("run_id", None),
         )
-        try:
-            child_config = patch_config(config, callbacks=run_manager.get_child())
-            with set_config_context(child_config) as context:
-                coro = acall_func_with_variable_args(
-                    func, input_, config, run_manager, **kwargs
+        with instrumented_span(run_name, SpanKind.CHAIN):
+            try:
+                child_config = patch_config(
+                    config, callbacks=run_manager.get_child(),
                 )
-                output: Output = await coro_with_context(coro, context)
-        except BaseException as e:
-            await run_manager.on_chain_error(e)
-            raise
-        else:
-            await run_manager.on_chain_end(output)
-            return output
+                with set_config_context(child_config) as context:
+                    coro = acall_func_with_variable_args(
+                        func, input_, config, run_manager, **kwargs
+                    )
+                    output: Output = await coro_with_context(coro, context)
+            except BaseException as e:
+                await run_manager.on_chain_error(e)
+                raise
+            else:
+                await run_manager.on_chain_end(output)
+                return output
 
     def _batch_with_config(
         self,

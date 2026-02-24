@@ -70,10 +70,43 @@ def _log_error_once(msg: str) -> None:
     logger.error(msg)
 
 
+def _record_retry_on_span(span: Any | None, retry_state: RetryCallState) -> None:
+    """Record a retry event on an instrumentation span and emit a metric."""
+    if span is None or not hasattr(span, "add_event"):
+        return
+
+    attrs: dict[str, Any] = {
+        "attempt": retry_state.attempt_number,
+        "slept": retry_state.idle_for,
+    }
+    if retry_state.outcome is not None:
+        if retry_state.outcome.failed:
+            exc = retry_state.outcome.exception()
+            attrs["outcome"] = "failed"
+            attrs["exception_type"] = type(exc).__name__ if exc else "unknown"
+            attrs["exception"] = str(exc) if exc else ""
+        else:
+            attrs["outcome"] = "success"
+
+    span.add_event("retry", attributes=attrs)
+
+    from langchain_core.instrumentation.config import get_instrumentation_provider
+    from langchain_core.instrumentation.types import MetricEvent
+
+    get_instrumentation_provider().record_metric(MetricEvent(
+        name="langchain.llm.retries",
+        value=1.0,
+        unit="count",
+        tags={"attempt": str(retry_state.attempt_number)},
+    ))
+
+
 def create_base_retry_decorator(
     error_types: list[type[BaseException]],
     max_retries: int = 1,
     run_manager: AsyncCallbackManagerForLLMRun | CallbackManagerForLLMRun | None = None,
+    *,
+    span: Any | None = None,
 ) -> Callable[[Any], Any]:
     """Create a retry decorator for a given LLM and provided a list of error types.
 
@@ -81,6 +114,7 @@ def create_base_retry_decorator(
         error_types: List of error types to retry on.
         max_retries: Number of retries.
         run_manager: Callback manager for the run.
+        span: Optional instrumentation span to record retry events on.
 
     Returns:
         A retry decorator.
@@ -92,6 +126,9 @@ def create_base_retry_decorator(
 
     def _before_sleep(retry_state: RetryCallState) -> None:
         logging_(retry_state)
+
+        _record_retry_on_span(span, retry_state)
+
         if run_manager:
             if isinstance(run_manager, AsyncCallbackManagerForLLMRun):
                 coro = run_manager.on_retry(retry_state)

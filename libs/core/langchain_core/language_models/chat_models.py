@@ -72,6 +72,13 @@ from langchain_core.utils.function_calling import (
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 
+from langchain_core.instrumentation._helpers import (
+    extract_llm_attributes,
+    instrumented_span,
+    record_token_usage,
+)
+from langchain_core.instrumentation.types import SpanKind
+
 if TYPE_CHECKING:
     import builtins
     import uuid
@@ -79,6 +86,24 @@ if TYPE_CHECKING:
     from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tools import BaseTool
+
+
+def _record_usage_from_output(
+    span: Any, output: LLMResult, model_name: str | None
+) -> None:
+    """Extract token usage from LLMResult and record on the span + as metrics."""
+    if not output.llm_output:
+        return
+    usage = output.llm_output.get("token_usage") or output.llm_output.get("usage", {})
+    if not usage:
+        return
+    record_token_usage(
+        span,
+        input_tokens=usage.get("prompt_tokens"),
+        output_tokens=usage.get("completion_tokens"),
+        total_tokens=usage.get("total_tokens"),
+        model_name=model_name,
+    )
 
 
 def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
@@ -923,45 +948,57 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             run_id=run_id,
             batch_size=len(messages),
         )
-        results = []
-        input_messages = [
-            _normalize_messages(message_list) for message_list in messages
-        ]
-        for i, m in enumerate(input_messages):
-            try:
-                results.append(
-                    self._generate_with_cache(
-                        m,
-                        stop=stop,
-                        run_manager=run_managers[i] if run_managers else None,
-                        **kwargs,
+
+        span_attrs = extract_llm_attributes(self, stop=stop, **kwargs)
+        with instrumented_span(
+            self.get_name(), SpanKind.LLM, attributes=span_attrs,
+        ) as span:
+            results = []
+            input_messages = [
+                _normalize_messages(message_list) for message_list in messages
+            ]
+            for i, m in enumerate(input_messages):
+                try:
+                    results.append(
+                        self._generate_with_cache(
+                            m,
+                            stop=stop,
+                            run_manager=run_managers[i] if run_managers else None,
+                            **kwargs,
+                        )
                     )
-                )
-            except BaseException as e:
-                if run_managers:
-                    generations_with_error_metadata = _generate_response_from_error(e)
-                    run_managers[i].on_llm_error(
-                        e,
-                        response=LLMResult(
-                            generations=[generations_with_error_metadata]
-                        ),
-                    )
-                raise
-        flattened_outputs = [
-            LLMResult(generations=[res.generations], llm_output=res.llm_output)
-            for res in results
-        ]
-        llm_output = self._combine_llm_outputs([res.llm_output for res in results])
-        generations = [res.generations for res in results]
-        output = LLMResult(generations=generations, llm_output=llm_output)
-        if run_managers:
-            run_infos = []
-            for manager, flattened_output in zip(
-                run_managers, flattened_outputs, strict=False
-            ):
-                manager.on_llm_end(flattened_output)
-                run_infos.append(RunInfo(run_id=manager.run_id))
-            output.run = run_infos
+                except BaseException as e:
+                    if run_managers:
+                        generations_with_error_metadata = (
+                            _generate_response_from_error(e)
+                        )
+                        run_managers[i].on_llm_error(
+                            e,
+                            response=LLMResult(
+                                generations=[generations_with_error_metadata]
+                            ),
+                        )
+                    raise
+            flattened_outputs = [
+                LLMResult(generations=[res.generations], llm_output=res.llm_output)
+                for res in results
+            ]
+            llm_output = self._combine_llm_outputs(
+                [res.llm_output for res in results]
+            )
+            generations = [res.generations for res in results]
+            output = LLMResult(generations=generations, llm_output=llm_output)
+            if run_managers:
+                run_infos = []
+                for manager, flattened_output in zip(
+                    run_managers, flattened_outputs, strict=False
+                ):
+                    manager.on_llm_end(flattened_output)
+                    run_infos.append(RunInfo(run_id=manager.run_id))
+                output.run = run_infos
+
+            _record_usage_from_output(span, output, span_attrs.model_name)
+
         return output
 
     async def agenerate(

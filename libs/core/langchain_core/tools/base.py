@@ -54,6 +54,12 @@ from langchain_core.runnables import (
 )
 from langchain_core.runnables.config import set_config_context
 from langchain_core.runnables.utils import coro_with_context
+
+from langchain_core.instrumentation._helpers import (
+    extract_tool_attributes,
+    instrumented_span,
+)
+from langchain_core.instrumentation.types import SpanKind, SpanStatus
 from langchain_core.utils.function_calling import (
     _parse_google_docstring,
     _py_38_safe_origin,
@@ -950,57 +956,73 @@ class ChildTool(BaseTool):
             **kwargs,
         )
 
-        content = None
-        artifact = None
-        status = "success"
-        error_to_raise: Exception | KeyboardInterrupt | None = None
-        try:
-            child_config = patch_config(config, callbacks=run_manager.get_child())
-            with set_config_context(child_config) as context:
-                tool_args, tool_kwargs = self._to_args_and_kwargs(
-                    tool_input, tool_call_id
+        tool_attrs = extract_tool_attributes(self)
+        with instrumented_span(
+            self.name, SpanKind.TOOL, attributes=tool_attrs,
+        ) as span:
+            content = None
+            artifact = None
+            status = "success"
+            error_to_raise: Exception | KeyboardInterrupt | None = None
+            try:
+                child_config = patch_config(
+                    config, callbacks=run_manager.get_child(),
                 )
-                if signature(self._run).parameters.get("run_manager"):
-                    tool_kwargs |= {"run_manager": run_manager}
-                if config_param := _get_runnable_config_param(self._run):
-                    tool_kwargs |= {config_param: config}
-                response = context.run(self._run, *tool_args, **tool_kwargs)
-            if self.response_format == "content_and_artifact":
-                msg = (
-                    "Since response_format='content_and_artifact' "
-                    "a two-tuple of the message content and raw tool output is "
-                    f"expected. Instead, generated response is of type: "
-                    f"{type(response)}."
-                )
-                if not isinstance(response, tuple):
-                    error_to_raise = ValueError(msg)
-                else:
-                    try:
-                        content, artifact = response
-                    except ValueError:
+                with set_config_context(child_config) as context:
+                    tool_args, tool_kwargs = self._to_args_and_kwargs(
+                        tool_input, tool_call_id
+                    )
+                    if signature(self._run).parameters.get("run_manager"):
+                        tool_kwargs |= {"run_manager": run_manager}
+                    if config_param := _get_runnable_config_param(self._run):
+                        tool_kwargs |= {config_param: config}
+                    response = context.run(self._run, *tool_args, **tool_kwargs)
+                if self.response_format == "content_and_artifact":
+                    msg = (
+                        "Since response_format='content_and_artifact' "
+                        "a two-tuple of the message content and raw tool output is "
+                        f"expected. Instead, generated response is of type: "
+                        f"{type(response)}."
+                    )
+                    if not isinstance(response, tuple):
                         error_to_raise = ValueError(msg)
-            else:
-                content = response
-        except (ValidationError, ValidationErrorV1) as e:
-            if not self.handle_validation_error:
+                    else:
+                        try:
+                            content, artifact = response
+                        except ValueError:
+                            error_to_raise = ValueError(msg)
+                else:
+                    content = response
+            except (ValidationError, ValidationErrorV1) as e:
+                if not self.handle_validation_error:
+                    error_to_raise = e
+                else:
+                    content = _handle_validation_error(
+                        e, flag=self.handle_validation_error,
+                    )
+                    status = "error"
+            except ToolException as e:
+                if not self.handle_tool_error:
+                    error_to_raise = e
+                else:
+                    content = _handle_tool_error(e, flag=self.handle_tool_error)
+                    status = "error"
+            except (Exception, KeyboardInterrupt) as e:
                 error_to_raise = e
-            else:
-                content = _handle_validation_error(e, flag=self.handle_validation_error)
-                status = "error"
-        except ToolException as e:
-            if not self.handle_tool_error:
-                error_to_raise = e
-            else:
-                content = _handle_tool_error(e, flag=self.handle_tool_error)
-                status = "error"
-        except (Exception, KeyboardInterrupt) as e:
-            error_to_raise = e
 
-        if error_to_raise:
-            run_manager.on_tool_error(error_to_raise, tool_call_id=tool_call_id)
-            raise error_to_raise
-        output = _format_output(content, artifact, tool_call_id, self.name, status)
-        run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
+            if error_to_raise:
+                run_manager.on_tool_error(
+                    error_to_raise, tool_call_id=tool_call_id,
+                )
+                span.set_status(
+                    SpanStatus.ERROR, description=str(error_to_raise),
+                )
+                raise error_to_raise
+            output = _format_output(
+                content, artifact, tool_call_id, self.name, status,
+            )
+            run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
+
         return output
 
     async def arun(
