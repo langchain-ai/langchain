@@ -19,6 +19,9 @@ class ModelProfile(TypedDict, total=False):
     max_input_tokens: int
     """Maximum context window (tokens)"""
 
+    text_inputs: bool
+    """Whether text inputs are supported."""
+
     image_inputs: bool
     """Whether image inputs are supported."""
     # TODO: add more detail about formats?
@@ -55,6 +58,9 @@ class ModelProfile(TypedDict, total=False):
 
     reasoning_output: bool
     """Whether the model supports [reasoning / chain-of-thought](https://docs.langchain.com/oss/python/langchain/models#reasoning)"""
+
+    text_outputs: bool
+    """Whether text outputs are supported."""
 
     image_outputs: bool
     """Whether [image outputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)

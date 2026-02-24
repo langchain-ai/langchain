@@ -1,4 +1,4 @@
-.PHONY: all coverage test tests extended_tests test_watch test_watch_extended integration_tests check_imports lint format lint_diff format_diff lint_package lint_tests help
+.PHONY: all coverage test tests extended_tests test_watch test_watch_extended integration_tests check_imports lint format type lint_diff format_diff lint_package lint_tests help
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -54,13 +54,16 @@ lint_tests: MYPY_CACHE=.mypy_cache_test
 
 lint lint_diff lint_package lint_tests:
 	./scripts/lint_imports.sh
-	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES) --diff
-	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && uv run --all-groups mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+	[ "$(PYTHON_FILES)" = "" ] || uv run --group lint --group typing ruff check $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || uv run --group lint --group typing ruff format $(PYTHON_FILES) --diff
+	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && uv run --group lint --group typing mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+
+type:
+	mkdir -p $(MYPY_CACHE) && uv run --group lint --group typing mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
-	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check --fix $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || uv run --group lint --group typing ruff format $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || uv run --group lint --group typing ruff check --fix $(PYTHON_FILES)
 
 ######################
 # HELP
@@ -71,6 +74,7 @@ help:
 	@echo '-- LINTING --'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
+	@echo 'type                         - run type checking'
 	@echo '-- TESTS --'
 	@echo 'coverage                     - run unit tests and generate coverage report'
 	@echo 'test                         - run unit tests'

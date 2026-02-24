@@ -5,7 +5,7 @@ import importlib
 import pytest
 from langchain_core.embeddings import Embeddings
 
-from langchain.embeddings.base import _SUPPORTED_PROVIDERS, init_embeddings
+from langchain.embeddings.base import _BUILTIN_PROVIDERS, init_embeddings
 
 
 @pytest.mark.parametrize(
@@ -18,7 +18,7 @@ from langchain.embeddings.base import _SUPPORTED_PROVIDERS, init_embeddings
     ],
 )
 async def test_init_embedding_model(provider: str, model: str) -> None:
-    package = _SUPPORTED_PROVIDERS[provider][0]
+    package = _BUILTIN_PROVIDERS[provider][0]
     try:
         importlib.import_module(package)
     except ImportError:
