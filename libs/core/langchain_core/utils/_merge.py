@@ -124,8 +124,7 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
                                 (left_id := e_left.get("id")) is None
                                 or left_id == ""
                                 or (right_id := e.get("id")) is None
-                                or right_id == ""
-                                or left_id == right_id
+                                or right_id in ("", left_id)
                             )
                         )
                     ]
