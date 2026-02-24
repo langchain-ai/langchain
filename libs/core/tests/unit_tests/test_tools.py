@@ -2134,6 +2134,7 @@ def test__is_message_content_block(obj: Any, *, expected: bool) -> None:
         ("foo", True),
         (valid_tool_result_blocks, True),
         (invalid_tool_result_blocks, False),
+        ([], False),  # empty list is not valid content
     ],
 )
 def test__is_message_content_type(obj: Any, *, expected: bool) -> None:
