@@ -2395,6 +2395,31 @@ def test_extras_with_multiple_fields() -> None:
     assert "input_examples" in tool_def
 
 
+def test__format_messages_filters_reasoning_non_anthropic() -> None:
+    """Test that reasoning blocks are filtered out for non-anthropic providers."""
+    human = HumanMessage("hi")  # type: ignore[misc]
+    ai = AIMessage(  # type: ignore[misc]
+        content=[
+            {"type": "reasoning", "reasoning": "thinking..."},
+            {"type": "text", "text": "hello"},
+        ],
+        response_metadata={"model_provider": "openai"},
+    )
+    _, msgs = _format_messages([human, ai])
+    assert msgs[1]["content"] == [{"type": "text", "text": "hello"}]
+
+    # Anthropic provider keeps reasoning blocks
+    ai_anthropic = AIMessage(  # type: ignore[misc]
+        content=[
+            {"type": "reasoning", "reasoning": "thinking..."},
+            {"type": "text", "text": "hello"},
+        ],
+        response_metadata={"model_provider": "anthropic", "output_version": "v1"},
+    )
+    _, msgs = _format_messages([human, ai_anthropic])
+    assert any(b["type"] == "reasoning" for b in msgs[1]["content"])
+
+
 def test__format_messages_trailing_whitespace() -> None:
     """Test that trailing whitespace is trimmed from the final assistant message."""
     human = HumanMessage("foo")  # type: ignore[misc]
