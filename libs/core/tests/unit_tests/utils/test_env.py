@@ -3,7 +3,9 @@ import pytest
 from langchain_core.utils.env import get_from_dict_or_env
 
 
-class _MaskedValue:
+class _MaskedValue(str):
+    __slots__ = ()
+
     def __str__(self) -> str:
         return "masked"
 
@@ -75,15 +77,14 @@ def test_get_from_dict_or_env() -> None:
 
 
 def test_get_from_dict_or_env_does_not_coerce_with_str() -> None:
-    value = _MaskedValue()
-
-    assert (
-        get_from_dict_or_env(
-            {
-                "a": value,
-            },
-            "a",
-            "__SOME_KEY_IN_ENV",
-        )
-        is value
+    value = _MaskedValue("original")
+    result = get_from_dict_or_env(
+        {
+            "a": value,
+        },
+        "a",
+        "__SOME_KEY_IN_ENV",
     )
+
+    assert isinstance(result, _MaskedValue)
+    assert result == "original"
