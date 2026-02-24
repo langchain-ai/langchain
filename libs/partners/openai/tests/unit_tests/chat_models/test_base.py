@@ -76,6 +76,7 @@ from langchain_openai.chat_models.base import (
     _create_usage_metadata_responses,
     _format_message_content,
     _get_last_messages,
+    _gpt5_defaults_to_no_reasoning,
     _make_computer_call_output_from_message,
     _model_prefers_responses_api,
     _oai_structured_outputs_parser,
@@ -3175,7 +3176,8 @@ def test_gpt_5_1_temperature_with_reasoning_effort_none(
     payload = llm._get_request_payload(messages)
     assert payload["temperature"] == 0.5
 
-    # Test that temperature is restricted by default (no reasoning_effort)
+    # Test that temperature is preserved by default for gpt-5.1+ (defaults to
+    # reasoning_effort='none')
     llm = ChatOpenAI(
         model="gpt-5.1",
         temperature=0.5,
@@ -3183,7 +3185,7 @@ def test_gpt_5_1_temperature_with_reasoning_effort_none(
     )
     messages = [HumanMessage(content="Hello")]
     payload = llm._get_request_payload(messages)
-    assert "temperature" not in payload
+    assert payload["temperature"] == 0.5
 
     # Test that temperature is still restricted when reasoning_effort is something else
     llm = ChatOpenAI(
@@ -3216,6 +3218,57 @@ def test_model_prefers_responses_api() -> None:
     assert _model_prefers_responses_api("gpt-5-codex")
     assert not _model_prefers_responses_api("gpt-5.1")
     assert not _model_prefers_responses_api("gpt-5")
+
+
+def test_gpt5_defaults_to_no_reasoning() -> None:
+    """Test the helper that identifies gpt-5 variants defaulting to no reasoning."""
+    assert _gpt5_defaults_to_no_reasoning("gpt-5.1")
+    assert _gpt5_defaults_to_no_reasoning("gpt-5.2")
+    assert _gpt5_defaults_to_no_reasoning("gpt-5.2-mini")
+    assert _gpt5_defaults_to_no_reasoning("gpt-5.2-nano")
+    assert _gpt5_defaults_to_no_reasoning("GPT-5.2")  # case insensitive
+    assert not _gpt5_defaults_to_no_reasoning("gpt-5")  # base model
+    assert not _gpt5_defaults_to_no_reasoning("gpt-5-nano")  # base variant
+    assert not _gpt5_defaults_to_no_reasoning("gpt-5.2-pro")  # pro variant
+    assert not _gpt5_defaults_to_no_reasoning("gpt-5-chat")  # chat variant
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_gpt_5_2_temperature_default_no_reasoning(use_responses_api: bool) -> None:
+    """Test that gpt-5.2 preserves temperature by default (reasoning_effort='none')."""
+    llm = ChatOpenAI(
+        model="gpt-5.2",
+        temperature=0.5,
+        use_responses_api=use_responses_api,
+    )
+    payload = llm._get_request_payload([HumanMessage(content="Hello")])
+    assert payload["temperature"] == 0.5
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_gpt_5_0_temperature_default_medium_reasoning(
+    use_responses_api: bool,
+) -> None:
+    """Test that base gpt-5 still strips temperature (defaults to medium reasoning)."""
+    llm = ChatOpenAI(
+        model="gpt-5",
+        temperature=0.5,
+        use_responses_api=use_responses_api,
+    )
+    payload = llm._get_request_payload([HumanMessage(content="Hello")])
+    assert "temperature" not in payload
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_gpt_5_2_pro_temperature_stripped(use_responses_api: bool) -> None:
+    """Test that gpt-5.2-pro still strips temperature (defaults to medium reasoning)."""
+    llm = ChatOpenAI(
+        model="gpt-5.2-pro",
+        temperature=0.5,
+        use_responses_api=use_responses_api,
+    )
+    payload = llm._get_request_payload([HumanMessage(content="Hello")])
+    assert "temperature" not in payload
 
 
 def test_openai_structured_output_refusal_handling_responses_api() -> None:

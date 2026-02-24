@@ -532,6 +532,19 @@ def _handle_openai_api_error(e: openai.APIError) -> None:
     raise
 
 
+def _gpt5_defaults_to_no_reasoning(model: str) -> bool:
+    """Return True if a gpt-5 variant defaults to reasoning_effort='none'.
+
+    gpt-5.1+, gpt-5.2+, etc. default to no reasoning (temperature supported).
+    Exceptions: 'pro' variants default to medium reasoning.
+    Base gpt-5 (no dot version) defaults to medium reasoning.
+    """
+    model_lower = model.lower()
+    if "pro" in model_lower:
+        return False
+    return bool(re.match(r"gpt-5\.\d+", model_lower))
+
+
 def _model_prefers_responses_api(model_name: str | None) -> bool:
     if not model_name:
         return False
@@ -925,12 +938,19 @@ class BaseChatOpenAI(BaseChatModel):
 
         # For gpt-5 models, handle temperature restrictions. Temperature is supported
         # by gpt-5-chat and gpt-5 models with reasoning_effort='none' or
-        # reasoning={'effort': 'none'}.
+        # reasoning={'effort': 'none'}. gpt-5.1+ models default to
+        # reasoning_effort='none', so temperature is preserved unless reasoning
+        # is explicitly enabled.
+        reasoning_effort = values.get("reasoning_effort") or (
+            values.get("reasoning") or {}
+        ).get("effort")
+        if reasoning_effort is None and _gpt5_defaults_to_no_reasoning(model_lower):
+            reasoning_effort = "none"
+
         if (
             model_lower.startswith("gpt-5")
             and ("chat" not in model_lower)
-            and values.get("reasoning_effort") != "none"
-            and (values.get("reasoning") or {}).get("effort") != "none"
+            and reasoning_effort != "none"
         ):
             temperature = values.get("temperature")
             if temperature is not None and temperature != 1:
@@ -3932,12 +3952,18 @@ def _construct_responses_api_payload(
 
     # Remove temperature parameter for models that don't support it in responses API
     # gpt-5-chat supports temperature, and gpt-5 models with reasoning.effort='none'
-    # also support temperature
+    # also support temperature. gpt-5.1+ models default to reasoning_effort='none',
+    # so temperature is preserved unless reasoning is explicitly enabled.
     model = payload.get("model") or ""
+    model_lower = model.lower()
+    reasoning_effort = (payload.get("reasoning") or {}).get("effort")
+    if reasoning_effort is None and _gpt5_defaults_to_no_reasoning(model_lower):
+        reasoning_effort = "none"
+
     if (
-        model.startswith("gpt-5")
-        and ("chat" not in model)  # gpt-5-chat supports
-        and (payload.get("reasoning") or {}).get("effort") != "none"
+        model_lower.startswith("gpt-5")
+        and ("chat" not in model_lower)
+        and reasoning_effort != "none"
     ):
         payload.pop("temperature", None)
 
