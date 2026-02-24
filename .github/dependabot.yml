@@ -41,6 +41,7 @@ updates:
       - "/libs/partners/nomic/"
       - "/libs/partners/ollama/"
       - "/libs/partners/openai/"
+      - "/libs/partners/openrouter/"
       - "/libs/partners/perplexity/"
       - "/libs/partners/qdrant/"
       - "/libs/partners/xai/"
