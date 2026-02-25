@@ -1,6 +1,7 @@
 """Entrypoint to using [middleware](https://docs.langchain.com/oss/python/langchain/middleware) plugins with [Agents](https://docs.langchain.com/oss/python/langchain/agents)."""  # noqa: E501
 
 from langchain.agents.middleware.context_editing import ClearToolUsesEdit, ContextEditingMiddleware
+from langchain.agents.middleware.double_buffer import DoubleBufferMiddleware
 from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
 from langchain.agents.middleware.human_in_the_loop import (
     HumanInTheLoopMiddleware,
@@ -48,6 +49,7 @@ __all__ = [
     "CodexSandboxExecutionPolicy",
     "ContextEditingMiddleware",
     "DockerExecutionPolicy",
+    "DoubleBufferMiddleware",
     "ExtendedModelResponse",
     "FilesystemFileSearchMiddleware",
     "HostExecutionPolicy",
