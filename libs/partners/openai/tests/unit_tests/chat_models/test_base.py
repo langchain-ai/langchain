@@ -3431,3 +3431,77 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     # Verify it's both types (multiple inheritance)
     assert isinstance(exc_info.value, openai.BadRequestError)
     assert isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_create_chat_result_null_choices_in_model_dump_vllm() -> None:
+    """Test _create_chat_result handles null choices from model_dump() for vLLM.
+
+    When using OpenAI-compatible APIs like vLLM, model_dump() can return None
+    for choices even though the response object exposes valid choices via direct
+    attribute access. This is a serialization quirk in the OpenAI SDK's Pydantic
+    model when handling non-standard response shapes.
+
+    Regression test for: https://github.com/langchain-ai/langchain/issues/32252
+    """
+    # Simulate a vLLM choice with valid data accessible via model_dump()
+    mock_choice = MagicMock(spec=openai.BaseModel)
+    mock_choice.model_dump.return_value = {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": None,
+        "message": {
+            "content": "Hello! How can I help you?",
+            "role": "assistant",
+            "tool_calls": None,
+            "function_call": None,
+        },
+    }
+
+    # Simulate vLLM response: top-level model_dump() returns choices=None,
+    # but response.choices is populated and valid.
+    mock_response = MagicMock(spec=openai.BaseModel)
+    mock_response.model_dump.return_value = {
+        "choices": None,
+        "created": 1234567890,
+        "id": "chatcmpl-test",
+        "model": "meta-llama/Llama-3.1-8B-Instruct",
+        "object": "chat.completion",
+        "usage": {
+            "completion_tokens": 20,
+            "prompt_tokens": 10,
+            "total_tokens": 30,
+        },
+    }
+    mock_response.choices = [mock_choice]
+
+    llm = ChatOpenAI(model="meta-llama/Llama-3.1-8B-Instruct", api_key="test-key")  # type: ignore[arg-type]
+
+    # Should succeed by falling back to direct attribute access on response.choices
+    result = llm._create_chat_result(mock_response)
+
+    assert len(result.generations) == 1
+    assert result.generations[0].message.content == "Hello! How can I help you?"
+
+
+def test_create_chat_result_null_choices_still_raises_when_genuinely_absent() -> None:
+    """Test _create_chat_result still raises TypeError when choices are truly absent.
+
+    The fallback for vLLM must not swallow genuinely missing choices. When both
+    model_dump() and direct attribute access return null/empty choices, the
+    TypeError should still be raised.
+    """
+    mock_response = MagicMock(spec=openai.BaseModel)
+    mock_response.model_dump.return_value = {
+        "choices": None,
+        "created": 1234567890,
+        "id": "chatcmpl-test",
+        "model": "test-model",
+        "object": "chat.completion",
+    }
+    # choices attribute is also None (genuine absence)
+    mock_response.choices = None
+
+    llm = ChatOpenAI(model="test-model", api_key="test-key")  # type: ignore[arg-type]
+
+    with pytest.raises(TypeError, match="null value for 'choices'"):
+        llm._create_chat_result(mock_response)

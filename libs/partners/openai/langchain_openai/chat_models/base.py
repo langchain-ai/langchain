@@ -1554,9 +1554,24 @@ class BaseChatOpenAI(BaseChatModel):
             raise KeyError(msg) from e
 
         if choices is None:
-            # Some OpenAI-compatible APIs (e.g., vLLM) may return null choices
-            # when the response format differs or an error occurs without
-            # populating the error field. Provide a more helpful error message.
+            # When using OpenAI-compatible APIs (e.g., vLLM), `model_dump()` can
+            # return None for `choices` even though the response object has valid
+            # choices accessible via direct attribute access. This happens because
+            # the OpenAI SDK's Pydantic model may not serialize non-standard fields
+            # correctly. Fall back to extracting choices directly from the object.
+            # See: https://github.com/langchain-ai/langchain/issues/32252
+            if isinstance(response, openai.BaseModel):
+                raw_choices = getattr(response, "choices", None)
+                if raw_choices is not None:
+                    choices = [
+                        choice.model_dump()
+                        if hasattr(choice, "model_dump")
+                        else choice
+                        for choice in raw_choices
+                    ]
+                    response_dict["choices"] = choices
+
+        if choices is None:
             msg = (
                 "Received response with null value for 'choices'. "
                 "This can happen when using OpenAI-compatible APIs (e.g., vLLM) "
