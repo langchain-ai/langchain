@@ -803,6 +803,167 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             prompt_strings, stop=stop, callbacks=callbacks, **kwargs
         )
 
+    def _get_llm_string(self, stop: list[str] | None = None, **kwargs: Any) -> str:
+        """Get the llm_string for caching purposes.
+
+        Args:
+            stop: Stop words to use when generating.
+            **kwargs: Arbitrary additional keyword arguments for the LLM.
+
+        Returns:
+            A string representation of the LLM configuration.
+        """
+        params = self.dict()
+        params["stop"] = stop
+        params.update(kwargs)
+        return str(sorted(params.items()))
+
+    def _generate_with_cache(
+        self,
+        prompts: list[str],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        """Generate text with caching support.
+
+        Checks the cache for each prompt before generating, and updates the cache
+        after generation. This method delegates to _generate for the actual
+        generation work.
+
+        Args:
+            prompts: List of prompts to generate from.
+            stop: Stop words to use when generating.
+            run_manager: Callback manager for the run.
+            **kwargs: Arbitrary additional keyword arguments for the LLM.
+
+        Returns:
+            An LLMResult with generated text and metadata.
+        """
+        llm_cache = self.cache if isinstance(self.cache, BaseCache) else get_llm_cache()
+        # We should check the cache unless it's explicitly set to False
+        check_cache = self.cache or self.cache is None
+        if not check_cache or not llm_cache:
+            # No caching, use the standard _generate method
+            return self._generate(
+                prompts, stop=stop, run_manager=run_manager, **kwargs
+            )
+
+        llm_string = self._get_llm_string(stop=stop, **kwargs)
+        generations: list[Any] = []
+        cached_indices: dict[int, Any] = {}
+        uncached_prompts: list[str] = []
+        uncached_indices: list[int] = []
+
+        # Check cache for each prompt
+        for i, prompt in enumerate(prompts):
+            cache_val = llm_cache.lookup(prompt, llm_string)
+            if isinstance(cache_val, list):
+                cached_indices[i] = cache_val
+            else:
+                uncached_prompts.append(prompt)
+                uncached_indices.append(i)
+
+        # Generate for uncached prompts
+        if uncached_prompts:
+            # Call _generate for only the uncached prompts
+            new_results = self._generate(
+                uncached_prompts, stop=stop, run_manager=run_manager, **kwargs
+            )
+            # Update cache for each new result
+            for j, _ in enumerate(uncached_indices):
+                prompt = uncached_prompts[j]
+                generation = new_results.generations[j]
+                llm_cache.update(prompt, llm_string, generation)
+
+            # Build result with both cached and new generations
+            generations = [[] for _ in range(len(prompts))]
+            for i in range(len(prompts)):
+                if i in cached_indices:
+                    generations[i] = cached_indices[i]
+                else:
+                    # Find corresponding index in new_results
+                    uncached_idx = uncached_indices.index(i)
+                    generations[i] = new_results.generations[uncached_idx]
+        else:
+            # All prompts are cached
+            generations = [cached_indices[i] for i in range(len(prompts))]
+
+        return LLMResult(generations=generations)
+
+    async def _agenerate_with_cache(
+        self,
+        prompts: list[str],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        """Async generate text with caching support.
+
+        Checks the cache for each prompt before generating, and updates the cache
+        after generation. This method delegates to _agenerate for the actual
+        generation work.
+
+        Args:
+            prompts: List of prompts to generate from.
+            stop: Stop words to use when generating.
+            run_manager: Async callback manager for the run.
+            **kwargs: Arbitrary additional keyword arguments for the LLM.
+
+        Returns:
+            An LLMResult with generated text and metadata.
+        """
+        llm_cache = self.cache if isinstance(self.cache, BaseCache) else get_llm_cache()
+        # We should check the cache unless it's explicitly set to False
+        check_cache = self.cache or self.cache is None
+        if not check_cache or not llm_cache:
+            # No caching, use the standard _agenerate method
+            return await self._agenerate(
+                prompts, stop=stop, run_manager=run_manager, **kwargs
+            )
+
+        llm_string = self._get_llm_string(stop=stop, **kwargs)
+        generations: list[Any] = []
+        cached_indices: dict[int, Any] = {}
+        uncached_prompts: list[str] = []
+        uncached_indices: list[int] = []
+
+        # Check cache for each prompt (using async)
+        for i, prompt in enumerate(prompts):
+            cache_val = await llm_cache.alookup(prompt, llm_string)
+            if isinstance(cache_val, list):
+                cached_indices[i] = cache_val
+            else:
+                uncached_prompts.append(prompt)
+                uncached_indices.append(i)
+
+        # Generate for uncached prompts
+        if uncached_prompts:
+            # Call _agenerate for only the uncached prompts
+            new_results = await self._agenerate(
+                uncached_prompts, stop=stop, run_manager=run_manager, **kwargs
+            )
+            # Update cache for each new result
+            for j, _ in enumerate(uncached_indices):
+                prompt = uncached_prompts[j]
+                generation = new_results.generations[j]
+                await llm_cache.aupdate(prompt, llm_string, generation)
+
+            # Build result with both cached and new generations
+            generations = [[] for _ in range(len(prompts))]
+            for i in range(len(prompts)):
+                if i in cached_indices:
+                    generations[i] = cached_indices[i]
+                else:
+                    # Find corresponding index in new_results
+                    uncached_idx = uncached_indices.index(i)
+                    generations[i] = new_results.generations[uncached_idx]
+        else:
+            # All prompts are cached
+            generations = [cached_indices[i] for i in range(len(prompts))]
+
+        return LLMResult(generations=generations)
+
     def _generate_helper(
         self,
         prompts: list[str],
@@ -814,7 +975,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     ) -> LLMResult:
         try:
             output = (
-                self._generate(
+                self._generate_with_cache(
                     prompts,
                     stop=stop,
                     # TODO: support multiple run managers
@@ -822,7 +983,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     **kwargs,
                 )
                 if new_arg_supported
-                else self._generate(prompts, stop=stop)
+                else self._generate_with_cache(
+                    prompts, stop=stop, **kwargs
+                )
             )
         except BaseException as e:
             for run_manager in run_managers:
@@ -1082,14 +1245,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     ) -> LLMResult:
         try:
             output = (
-                await self._agenerate(
+                await self._agenerate_with_cache(
                     prompts,
                     stop=stop,
                     run_manager=run_managers[0] if run_managers else None,
                     **kwargs,
                 )
                 if new_arg_supported
-                else await self._agenerate(prompts, stop=stop)
+                else await self._agenerate_with_cache(prompts, stop=stop, **kwargs)
             )
         except BaseException as e:
             await asyncio.gather(
@@ -1499,7 +1662,20 @@ class LLM(BaseLLM):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> LLMResult:
-        # TODO: add caching here.
+        """Generate text without caching.
+
+        This is the core generation method that subclasses can override.
+        For caching support, use _generate_with_cache instead.
+
+        Args:
+            prompts: List of prompts to generate from.
+            stop: Stop words to use when generating.
+            run_manager: Callback manager for the run.
+            **kwargs: Arbitrary additional keyword arguments for the LLM.
+
+        Returns:
+            An LLMResult with generated text and metadata.
+        """
         generations = []
         new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
         for prompt in prompts:
@@ -1518,6 +1694,20 @@ class LLM(BaseLLM):
         run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> LLMResult:
+        """Async generate text without caching.
+
+        This is the core async generation method that subclasses can override.
+        For caching support, use _agenerate_with_cache instead.
+
+        Args:
+            prompts: List of prompts to generate from.
+            stop: Stop words to use when generating.
+            run_manager: Async callback manager for the run.
+            **kwargs: Arbitrary additional keyword arguments for the LLM.
+
+        Returns:
+            An LLMResult with generated text and metadata.
+        """
         generations = []
         new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
         for prompt in prompts:

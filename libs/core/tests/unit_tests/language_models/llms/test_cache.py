@@ -109,3 +109,92 @@ async def test_no_cache_generate_async() -> None:
         assert global_cache._cache == {}
     finally:
         set_llm_cache(None)
+
+
+def test_fine_grained_caching_overlapping_prompts() -> None:
+    """Test that fine-grained caching works with overlapping prompt sets.
+
+    This demonstrates that caching is now done at the prompt level,
+    not the batch level. If you generate prompts [a, b], then [a, c],
+    prompt 'a' will be retrieved from cache.
+    """
+    local_cache = InMemoryCache()
+    try:
+        # Create an LLM with specific responses
+        llm = FakeListLLM(
+            cache=local_cache,
+            responses=["response_a", "response_b", "response_c"]
+        )
+
+        # First call: generate for prompts "a" and "b"
+        output1 = llm.generate(["a", "b"])
+        assert output1.generations[0][0].text == "response_a"
+        assert output1.generations[1][0].text == "response_b"
+
+        # Cache should now have 2 entries
+        assert len(local_cache._cache) == 2
+
+        # Second call: generate for prompts "a" and "c"
+        # "a" should be from cache (not consuming another response)
+        # "c" should be newly generated
+        output2 = llm.generate(["a", "c"])
+        assert output2.generations[0][0].text == "response_a"  # From cache
+        assert output2.generations[1][0].text == "response_c"  # New generation
+
+        # Cache should now have 3 entries (a, b, c)
+        assert len(local_cache._cache) == 3
+    finally:
+        pass
+
+
+async def test_fine_grained_caching_overlapping_prompts_async() -> None:
+    """Async version of fine-grained caching test."""
+    local_cache = InMemoryCache()
+    try:
+        llm = FakeListLLM(
+            cache=local_cache,
+            responses=["response_a", "response_b", "response_c"]
+        )
+
+        # First call: generate for prompts "a" and "b"
+        output1 = await llm.agenerate(["a", "b"])
+        assert output1.generations[0][0].text == "response_a"
+        assert output1.generations[1][0].text == "response_b"
+        assert len(local_cache._cache) == 2
+
+        # Second call: generate for prompts "a" and "c"
+        output2 = await llm.agenerate(["a", "c"])
+        assert output2.generations[0][0].text == "response_a"  # From cache
+        assert output2.generations[1][0].text == "response_c"  # New generation
+        assert len(local_cache._cache) == 3
+    finally:
+        pass
+
+
+def test_fine_grained_caching_all_cached() -> None:
+    """Test that all cached prompts returns without generating."""
+    local_cache = InMemoryCache()
+    try:
+        llm = FakeListLLM(
+            cache=local_cache,
+            responses=["response_a", "response_b", "response_c"]
+        )
+
+        # First call: cache prompts "a" and "b"
+        output1 = llm.generate(["a", "b"])
+        assert output1.generations[0][0].text == "response_a"
+        assert output1.generations[1][0].text == "response_b"
+        assert len(local_cache._cache) == 2
+
+        # Second call: request same prompts in different order
+        # Both should be from cache, so call "c" should not be used
+        output2 = llm.generate(["b", "a"])
+        assert output2.generations[0][0].text == "response_b"  # From cache
+        assert output2.generations[1][0].text == "response_a"  # From cache
+
+        # Third response should still be available (not consumed)
+        assert len(local_cache._cache) == 2
+        output3 = llm.generate(["c"])
+        assert output3.generations[0][0].text == "response_c"  # New generation
+    finally:
+        pass
