@@ -86,7 +86,8 @@ async def test_abatch_as_completed_cancels_pending_tasks_on_exception() -> None:
     async def tracked_function(x: str) -> str:
         if x == "bad":
             await asyncio.sleep(0.01)
-            raise RuntimeError("boom")
+            msg = "boom"
+            raise RuntimeError(msg)
 
         blocked_task_inputs.append(x)
         try:
